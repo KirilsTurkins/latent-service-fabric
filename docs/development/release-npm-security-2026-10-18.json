@@ -1,0 +1,1280 @@
+{
+  "observedAt": "2026-10-18T20:51:21.411721+00:00",
+  "defaultBranch": "release",
+  "releaseBase": "0ad80497604b2815487e4e5c870aa8fa1f1a0a61",
+  "existingDevelopmentRepairs": "c5992d9ce2cfb5b1d6da9141d66a3ce5384c45b9",
+  "alertsSha256": "2b793d598120cb1c8ea54962be26f30efa62094feb88b7661c9d7d6c5a3d11b3",
+  "alerts": [
+    {
+      "alert": 10,
+      "ghsa": "GHSA-ff3f-86qr-9cv3",
+      "severity": "high",
+      "package": "@angular/router",
+      "lock": "examples/renderer-profile/package-lock.json",
+      "alertedVersion": "22.1.7",
+      "vulnerableRange": ">= 22.0.0, < 22.2.0",
+      "firstPatchedVersion": "22.2.0",
+      "before": [
+        {
+          "path": "node_modules/@angular/router",
+          "version": "22.1.7",
+          "dependencyPath": [
+            "node_modules/@angular/router"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/@angular/router",
+          "version": "22.2.1",
+          "resolved": "https://registry.npmjs.org/@angular/router/-/router-22.2.1.tgz",
+          "integrity": "sha512-HJfJ4yA1znKd9YFtbDOJfKmD12x0PhS7LkmYdWlJRu2WkQZRBVrdGKdmbvV5UvrqCRllVWKpzw1TIZJM69rlcw==",
+          "dependencyPath": [
+            "node_modules/@angular/router"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 11,
+      "ghsa": "GHSA-ch52-4w7c-c8xp",
+      "severity": "high",
+      "package": "http-cache-semantics",
+      "lock": "website/toolchain/package-lock.json",
+      "alertedVersion": "4.2.0",
+      "vulnerableRange": "<= 4.2.0",
+      "firstPatchedVersion": null,
+      "before": [
+        {
+          "path": "node_modules/npm/node_modules/http-cache-semantics",
+          "version": "4.2.0",
+          "dependencyPath": [
+            "node_modules/npm",
+            "node_modules/npm/node_modules/make-fetch-happen",
+            "node_modules/npm/node_modules/http-cache-semantics"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/npm/node_modules/http-cache-semantics",
+          "version": "4.3.0",
+          "resolved": null,
+          "integrity": null,
+          "dependencyPath": [
+            "node_modules/npm",
+            "node_modules/npm/node_modules/make-fetch-happen",
+            "node_modules/npm/node_modules/http-cache-semantics"
+          ]
+        }
+      ],
+      "remediation": "4.3.0 plus maintained source repair; alert API lists no first patched version"
+    },
+    {
+      "alert": 12,
+      "ghsa": "GHSA-ch52-4w7c-c8xp",
+      "severity": "high",
+      "package": "http-cache-semantics",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "4.2.0",
+      "vulnerableRange": "<= 4.2.0",
+      "firstPatchedVersion": null,
+      "before": [
+        {
+          "path": "node_modules/http-cache-semantics",
+          "version": "4.2.0",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/update-notifier",
+            "node_modules/latest-version",
+            "node_modules/package-json",
+            "node_modules/got",
+            "node_modules/cacheable-request",
+            "node_modules/http-cache-semantics"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/http-cache-semantics",
+          "version": "4.3.0",
+          "resolved": "file:../target/website-package-manager/http-cache-semantics-4.3.0-lsf-cache-v1.tar",
+          "integrity": "sha512-QoxZXkxpoKP9VMMA6OnDx1Ps0lIb4tBzw3DDVuH4MgHLaesYSqFBXdRJ0v7jpv2YzhtJ1qI/UzrrEerE9O/K9Q==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/update-notifier",
+            "node_modules/latest-version",
+            "node_modules/package-json",
+            "node_modules/got",
+            "node_modules/cacheable-request",
+            "node_modules/http-cache-semantics"
+          ]
+        }
+      ],
+      "remediation": "4.3.0 plus maintained source repair; alert API lists no first patched version"
+    },
+    {
+      "alert": 13,
+      "ghsa": "GHSA-ch52-4w7c-c8xp",
+      "severity": "high",
+      "package": "http-cache-semantics",
+      "lock": "examples/framework-compatibility/package-lock.json",
+      "alertedVersion": "4.2.0",
+      "vulnerableRange": "<= 4.2.0",
+      "firstPatchedVersion": null,
+      "before": [
+        {
+          "path": "node_modules/http-cache-semantics",
+          "version": "4.2.0",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/update-notifier",
+            "node_modules/latest-version",
+            "node_modules/package-json",
+            "node_modules/got",
+            "node_modules/cacheable-request",
+            "node_modules/http-cache-semantics"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/http-cache-semantics",
+          "version": "4.3.0",
+          "resolved": "file:../../target/website-package-manager/http-cache-semantics-4.3.0-lsf-cache-v1.tar",
+          "integrity": "sha512-QoxZXkxpoKP9VMMA6OnDx1Ps0lIb4tBzw3DDVuH4MgHLaesYSqFBXdRJ0v7jpv2YzhtJ1qI/UzrrEerE9O/K9Q==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/update-notifier",
+            "node_modules/latest-version",
+            "node_modules/package-json",
+            "node_modules/got",
+            "node_modules/cacheable-request",
+            "node_modules/http-cache-semantics"
+          ]
+        }
+      ],
+      "remediation": "4.3.0 plus maintained source repair; alert API lists no first patched version"
+    },
+    {
+      "alert": 14,
+      "ghsa": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "high",
+      "package": "braces",
+      "lock": "examples/framework-compatibility/package-lock.json",
+      "alertedVersion": "3.0.3",
+      "vulnerableRange": "<= 3.0.3",
+      "firstPatchedVersion": null,
+      "before": [
+        {
+          "path": "node_modules/braces",
+          "version": "3.0.3",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/core/node_modules/chokidar",
+            "node_modules/braces"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/braces",
+          "version": "3.0.3",
+          "resolved": "file:../../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar",
+          "integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/core/node_modules/chokidar",
+            "node_modules/braces"
+          ]
+        }
+      ],
+      "remediation": "maintained-source-repair; upstream version remains advisory-affected"
+    },
+    {
+      "alert": 15,
+      "ghsa": "GHSA-85c8-ppgw-ccpr",
+      "severity": "critical",
+      "package": "tinypool",
+      "lock": "examples/framework-compatibility/package-lock.json",
+      "alertedVersion": "1.1.1",
+      "vulnerableRange": "< 2.1.2",
+      "firstPatchedVersion": "2.1.2",
+      "before": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "1.1.1",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "2.1.2",
+          "resolved": "https://registry.npmjs.org/tinypool/-/tinypool-2.1.2.tgz",
+          "integrity": "sha512-9YodfrxS9g9IbFr/KOjE5bAeJ0p61n3bW6mqvy0jtoeKd1kTW1Cxm0oulm6KX2lyM9Gl6WIe8nEbY7LWv5ZJww==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 16,
+      "ghsa": "GHSA-5gmw-xhrv-c9v3",
+      "severity": "critical",
+      "package": "tinypool",
+      "lock": "examples/framework-compatibility/package-lock.json",
+      "alertedVersion": "1.1.1",
+      "vulnerableRange": "<= 2.1.0",
+      "firstPatchedVersion": "2.1.1",
+      "before": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "1.1.1",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "2.1.2",
+          "resolved": "https://registry.npmjs.org/tinypool/-/tinypool-2.1.2.tgz",
+          "integrity": "sha512-9YodfrxS9g9IbFr/KOjE5bAeJ0p61n3bW6mqvy0jtoeKd1kTW1Cxm0oulm6KX2lyM9Gl6WIe8nEbY7LWv5ZJww==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 17,
+      "ghsa": "GHSA-rj75-hqrm-r3gf",
+      "severity": "medium",
+      "package": "postcss-selector-parser",
+      "lock": "examples/framework-compatibility/package-lock.json",
+      "alertedVersion": "6.1.4",
+      "vulnerableRange": "< 7.1.6",
+      "firstPatchedVersion": "7.1.6",
+      "before": [
+        {
+          "path": "node_modules/@csstools/postcss-cascade-layers/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/@csstools/postcss-cascade-layers",
+            "node_modules/@csstools/postcss-cascade-layers/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/@csstools/postcss-is-pseudo-class/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/@csstools/postcss-is-pseudo-class",
+            "node_modules/@csstools/postcss-is-pseudo-class/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/@csstools/postcss-scope-pseudo-class/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/@csstools/postcss-scope-pseudo-class",
+            "node_modules/@csstools/postcss-scope-pseudo-class/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/css-blank-pseudo/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/css-blank-pseudo",
+            "node_modules/css-blank-pseudo/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/css-has-pseudo/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/css-has-pseudo",
+            "node_modules/css-has-pseudo/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-attribute-case-insensitive/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-attribute-case-insensitive",
+            "node_modules/postcss-attribute-case-insensitive/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-custom-selectors/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-custom-selectors",
+            "node_modules/postcss-custom-selectors/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-dir-pseudo-class/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-dir-pseudo-class",
+            "node_modules/postcss-dir-pseudo-class/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-focus-visible/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-focus-visible",
+            "node_modules/postcss-focus-visible/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-focus-within/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-focus-within",
+            "node_modules/postcss-focus-within/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-modules-local-by-default/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/css-loader",
+            "node_modules/postcss-modules-local-by-default",
+            "node_modules/postcss-modules-local-by-default/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-modules-scope/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/css-loader",
+            "node_modules/postcss-modules-scope",
+            "node_modules/postcss-modules-scope/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-nesting/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-nesting",
+            "node_modules/postcss-nesting/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-pseudo-class-any-link/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-pseudo-class-any-link",
+            "node_modules/postcss-pseudo-class-any-link/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-selector-not/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-selector-not",
+            "node_modules/postcss-selector-not/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-selector-parser",
+          "version": "6.1.4",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/@docusaurus/cssnano-preset",
+            "node_modules/cssnano-preset-advanced",
+            "node_modules/postcss-discard-unused",
+            "node_modules/postcss-selector-parser"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "resolved": "https://registry.npmjs.org/postcss-selector-parser/-/postcss-selector-parser-7.1.6.tgz",
+          "integrity": "sha512-7qASPzhKF2l2KLboRZux8CCTRMdGiV08vWmyKzPz22qZ7ZjQBOeY7rNzNoCLSUiftJ7HUq0GERHmxw/t0dCdMw==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/css-loader",
+            "node_modules/postcss-modules-local-by-default",
+            "node_modules/postcss-selector-parser"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 18,
+      "ghsa": "GHSA-68fv-2mgg-jv7q",
+      "severity": "high",
+      "package": "source-map-js",
+      "lock": "examples/framework-compatibility/package-lock.json",
+      "alertedVersion": "1.2.1",
+      "vulnerableRange": ">= 1.0.0, < 1.2.2",
+      "firstPatchedVersion": "1.2.2",
+      "before": [
+        {
+          "path": "node_modules/source-map-js",
+          "version": "1.2.1",
+          "dependencyPath": [
+            "node_modules/postcss",
+            "node_modules/source-map-js"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/source-map-js",
+          "version": "1.2.2",
+          "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz",
+          "integrity": "sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==",
+          "dependencyPath": [
+            "node_modules/postcss",
+            "node_modules/source-map-js"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 19,
+      "ghsa": "GHSA-pqg4-j6r4-53mv",
+      "severity": "critical",
+      "package": "shell-quote",
+      "lock": "examples/framework-compatibility/package-lock.json",
+      "alertedVersion": "1.10.0",
+      "vulnerableRange": ">= 1.8.4, < 1.11.0",
+      "firstPatchedVersion": "1.11.0",
+      "before": [
+        {
+          "path": "node_modules/shell-quote",
+          "version": "1.10.0",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/webpack-dev-server",
+            "node_modules/launch-editor",
+            "node_modules/shell-quote"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/shell-quote",
+          "version": "1.12.0",
+          "resolved": "https://registry.npmjs.org/shell-quote/-/shell-quote-1.12.0.tgz",
+          "integrity": "sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/webpack-dev-server",
+            "node_modules/launch-editor",
+            "node_modules/shell-quote"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 20,
+      "ghsa": "GHSA-p98j-92pf-mc4p",
+      "severity": "low",
+      "package": "dompurify",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "3.4.15",
+      "vulnerableRange": ">= 3.4.13, <= 3.4.15",
+      "firstPatchedVersion": "3.4.16",
+      "before": [
+        {
+          "path": "node_modules/dompurify",
+          "version": "3.4.15",
+          "dependencyPath": [
+            "node_modules/@docusaurus/theme-mermaid",
+            "node_modules/mermaid",
+            "node_modules/dompurify"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/dompurify",
+          "version": "3.4.17",
+          "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.17.tgz",
+          "integrity": "sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/theme-mermaid",
+            "node_modules/mermaid",
+            "node_modules/dompurify"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 21,
+      "ghsa": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "high",
+      "package": "braces",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "3.0.3",
+      "vulnerableRange": "<= 3.0.3",
+      "firstPatchedVersion": null,
+      "before": [
+        {
+          "path": "node_modules/braces",
+          "version": "3.0.3",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/chokidar",
+            "node_modules/braces"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/braces",
+          "version": "3.0.3",
+          "resolved": "file:../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar",
+          "integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/chokidar",
+            "node_modules/braces"
+          ]
+        }
+      ],
+      "remediation": "maintained-source-repair; upstream version remains advisory-affected"
+    },
+    {
+      "alert": 22,
+      "ghsa": "GHSA-85c8-ppgw-ccpr",
+      "severity": "critical",
+      "package": "tinypool",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "1.1.1",
+      "vulnerableRange": "< 2.1.2",
+      "firstPatchedVersion": "2.1.2",
+      "before": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "1.1.1",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "2.1.2",
+          "resolved": "https://registry.npmjs.org/tinypool/-/tinypool-2.1.2.tgz",
+          "integrity": "sha512-9YodfrxS9g9IbFr/KOjE5bAeJ0p61n3bW6mqvy0jtoeKd1kTW1Cxm0oulm6KX2lyM9Gl6WIe8nEbY7LWv5ZJww==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 23,
+      "ghsa": "GHSA-5gmw-xhrv-c9v3",
+      "severity": "critical",
+      "package": "tinypool",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "1.1.1",
+      "vulnerableRange": "<= 2.1.0",
+      "firstPatchedVersion": "2.1.1",
+      "before": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "1.1.1",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "2.1.2",
+          "resolved": "https://registry.npmjs.org/tinypool/-/tinypool-2.1.2.tgz",
+          "integrity": "sha512-9YodfrxS9g9IbFr/KOjE5bAeJ0p61n3bW6mqvy0jtoeKd1kTW1Cxm0oulm6KX2lyM9Gl6WIe8nEbY7LWv5ZJww==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/tinypool"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 24,
+      "ghsa": "GHSA-rj75-hqrm-r3gf",
+      "severity": "medium",
+      "package": "postcss-selector-parser",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "6.1.4",
+      "vulnerableRange": "< 7.1.6",
+      "firstPatchedVersion": "7.1.6",
+      "before": [
+        {
+          "path": "node_modules/@csstools/postcss-cascade-layers/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/@csstools/postcss-cascade-layers",
+            "node_modules/@csstools/postcss-cascade-layers/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/@csstools/postcss-is-pseudo-class/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/@csstools/postcss-is-pseudo-class",
+            "node_modules/@csstools/postcss-is-pseudo-class/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/@csstools/postcss-scope-pseudo-class/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/@csstools/postcss-scope-pseudo-class",
+            "node_modules/@csstools/postcss-scope-pseudo-class/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/css-blank-pseudo/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/css-blank-pseudo",
+            "node_modules/css-blank-pseudo/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/css-has-pseudo/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/css-has-pseudo",
+            "node_modules/css-has-pseudo/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-attribute-case-insensitive/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-attribute-case-insensitive",
+            "node_modules/postcss-attribute-case-insensitive/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-custom-selectors/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-custom-selectors",
+            "node_modules/postcss-custom-selectors/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-dir-pseudo-class/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-dir-pseudo-class",
+            "node_modules/postcss-dir-pseudo-class/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-focus-visible/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-focus-visible",
+            "node_modules/postcss-focus-visible/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-focus-within/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-focus-within",
+            "node_modules/postcss-focus-within/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-modules-local-by-default/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/css-loader",
+            "node_modules/postcss-modules-local-by-default",
+            "node_modules/postcss-modules-local-by-default/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-modules-scope/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/css-loader",
+            "node_modules/postcss-modules-scope",
+            "node_modules/postcss-modules-scope/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-nesting/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-nesting",
+            "node_modules/postcss-nesting/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-pseudo-class-any-link/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-pseudo-class-any-link",
+            "node_modules/postcss-pseudo-class-any-link/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-selector-not/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss-preset-env",
+            "node_modules/postcss-selector-not",
+            "node_modules/postcss-selector-not/node_modules/postcss-selector-parser"
+          ]
+        },
+        {
+          "path": "node_modules/postcss-selector-parser",
+          "version": "6.1.4",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/@docusaurus/cssnano-preset",
+            "node_modules/cssnano-preset-advanced",
+            "node_modules/postcss-discard-unused",
+            "node_modules/postcss-selector-parser"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "resolved": "https://registry.npmjs.org/postcss-selector-parser/-/postcss-selector-parser-7.1.6.tgz",
+          "integrity": "sha512-7qASPzhKF2l2KLboRZux8CCTRMdGiV08vWmyKzPz22qZ7ZjQBOeY7rNzNoCLSUiftJ7HUq0GERHmxw/t0dCdMw==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/css-loader",
+            "node_modules/postcss-modules-local-by-default",
+            "node_modules/postcss-selector-parser"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 25,
+      "ghsa": "GHSA-68fv-2mgg-jv7q",
+      "severity": "high",
+      "package": "source-map-js",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "1.2.1",
+      "vulnerableRange": ">= 1.0.0, < 1.2.2",
+      "firstPatchedVersion": "1.2.2",
+      "before": [
+        {
+          "path": "node_modules/source-map-js",
+          "version": "1.2.1",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss",
+            "node_modules/source-map-js"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/source-map-js",
+          "version": "1.2.2",
+          "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz",
+          "integrity": "sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/@docusaurus/bundler",
+            "node_modules/postcss",
+            "node_modules/source-map-js"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 26,
+      "ghsa": "GHSA-238p-pmpm-9mq7",
+      "severity": "low",
+      "package": "katex",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "0.16.47",
+      "vulnerableRange": ">= 0.11.0, < 0.18.2",
+      "firstPatchedVersion": "0.18.2",
+      "before": [
+        {
+          "path": "node_modules/katex",
+          "version": "0.16.47",
+          "dependencyPath": [
+            "node_modules/@docusaurus/theme-mermaid",
+            "node_modules/mermaid",
+            "node_modules/katex"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/katex",
+          "version": "0.18.2",
+          "resolved": "https://registry.npmjs.org/katex/-/katex-0.18.2.tgz",
+          "integrity": "sha512-3snve4y0SXTMequLim1FMiPvLGElySam0blN5xQZBqEY3lOJz1TnuaaiugnBZBqHzlSAGmFTYL7MCQkORuLKCA==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/theme-mermaid",
+            "node_modules/mermaid",
+            "node_modules/katex"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 27,
+      "ghsa": "GHSA-6688-9rhm-gjv2",
+      "severity": "low",
+      "package": "dompurify",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "3.4.15",
+      "vulnerableRange": "<= 3.4.15",
+      "firstPatchedVersion": "3.4.16",
+      "before": [
+        {
+          "path": "node_modules/dompurify",
+          "version": "3.4.15",
+          "dependencyPath": [
+            "node_modules/@docusaurus/theme-mermaid",
+            "node_modules/mermaid",
+            "node_modules/dompurify"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/dompurify",
+          "version": "3.4.17",
+          "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.17.tgz",
+          "integrity": "sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/theme-mermaid",
+            "node_modules/mermaid",
+            "node_modules/dompurify"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 28,
+      "ghsa": "GHSA-pqg4-j6r4-53mv",
+      "severity": "critical",
+      "package": "shell-quote",
+      "lock": "website/package-lock.json",
+      "alertedVersion": "1.10.0",
+      "vulnerableRange": ">= 1.8.4, < 1.11.0",
+      "firstPatchedVersion": "1.11.0",
+      "before": [
+        {
+          "path": "node_modules/shell-quote",
+          "version": "1.10.0",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/webpack-dev-server",
+            "node_modules/launch-editor",
+            "node_modules/shell-quote"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/shell-quote",
+          "version": "1.12.0",
+          "resolved": "https://registry.npmjs.org/shell-quote/-/shell-quote-1.12.0.tgz",
+          "integrity": "sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q==",
+          "dependencyPath": [
+            "node_modules/@docusaurus/core",
+            "node_modules/webpack-dev-server",
+            "node_modules/launch-editor",
+            "node_modules/shell-quote"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    },
+    {
+      "alert": 29,
+      "ghsa": "GHSA-rj75-hqrm-r3gf",
+      "severity": "medium",
+      "package": "postcss-selector-parser",
+      "lock": "website/toolchain/package-lock.json",
+      "alertedVersion": "7.1.4",
+      "vulnerableRange": "< 7.1.6",
+      "firstPatchedVersion": "7.1.6",
+      "before": [
+        {
+          "path": "node_modules/npm/node_modules/postcss-selector-parser",
+          "version": "7.1.4",
+          "dependencyPath": [
+            "node_modules/npm",
+            "node_modules/npm/node_modules/@npmcli/arborist",
+            "node_modules/npm/node_modules/@npmcli/query",
+            "node_modules/npm/node_modules/postcss-selector-parser"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "path": "node_modules/npm/node_modules/postcss-selector-parser",
+          "version": "7.1.6",
+          "resolved": null,
+          "integrity": null,
+          "dependencyPath": [
+            "node_modules/npm",
+            "node_modules/npm/node_modules/@npmcli/arborist",
+            "node_modules/npm/node_modules/@npmcli/query",
+            "node_modules/npm/node_modules/postcss-selector-parser"
+          ]
+        }
+      ],
+      "remediation": "version outside alerted vulnerable range"
+    }
+  ],
+  "locks": {
+    "examples/framework-compatibility/package-lock.json": {
+      "beforeSha256": "2e82306faf05ff5e4e4b3ddc8262ff8ee413ed4207c88dc04c13f077f2a675d7",
+      "afterSha256": "385920a3f644c34d659f705eaf1e9100b27a05a0a9b333a7087005311946ba7d",
+      "beforePackages": 1344,
+      "afterPackages": 1329,
+      "added": [],
+      "removed": [
+        "node_modules/@csstools/postcss-cascade-layers/node_modules/postcss-selector-parser",
+        "node_modules/@csstools/postcss-is-pseudo-class/node_modules/postcss-selector-parser",
+        "node_modules/@csstools/postcss-scope-pseudo-class/node_modules/postcss-selector-parser",
+        "node_modules/css-blank-pseudo/node_modules/postcss-selector-parser",
+        "node_modules/css-has-pseudo/node_modules/postcss-selector-parser",
+        "node_modules/postcss-attribute-case-insensitive/node_modules/postcss-selector-parser",
+        "node_modules/postcss-custom-selectors/node_modules/postcss-selector-parser",
+        "node_modules/postcss-dir-pseudo-class/node_modules/postcss-selector-parser",
+        "node_modules/postcss-focus-visible/node_modules/postcss-selector-parser",
+        "node_modules/postcss-focus-within/node_modules/postcss-selector-parser",
+        "node_modules/postcss-modules-local-by-default/node_modules/postcss-selector-parser",
+        "node_modules/postcss-modules-scope/node_modules/postcss-selector-parser",
+        "node_modules/postcss-nesting/node_modules/postcss-selector-parser",
+        "node_modules/postcss-pseudo-class-any-link/node_modules/postcss-selector-parser",
+        "node_modules/postcss-selector-not/node_modules/postcss-selector-parser"
+      ],
+      "changedVersions": [
+        {
+          "path": "node_modules/http-cache-semantics",
+          "before": "4.2.0",
+          "after": "4.3.0"
+        },
+        {
+          "path": "node_modules/postcss-selector-parser",
+          "before": "6.1.4",
+          "after": "7.1.6"
+        },
+        {
+          "path": "node_modules/shell-quote",
+          "before": "1.10.0",
+          "after": "1.12.0"
+        },
+        {
+          "path": "node_modules/source-map-js",
+          "before": "1.2.1",
+          "after": "1.2.2"
+        },
+        {
+          "path": "node_modules/tinypool",
+          "before": "1.1.1",
+          "after": "2.1.2"
+        }
+      ]
+    },
+    "examples/renderer-profile/package-lock.json": {
+      "beforeSha256": "b69be7d26c004f7e20198edc856dd75429ca34bfdeb41eb1ffd27c1f82738147",
+      "afterSha256": "0fa844f2560db91d1745603ff5ea12156dbda15de6991231ed42cbf1340c3a1c",
+      "beforePackages": 278,
+      "afterPackages": 278,
+      "added": [],
+      "removed": [],
+      "changedVersions": [
+        {
+          "path": "node_modules/@angular/common",
+          "before": "22.1.7",
+          "after": "22.2.1"
+        },
+        {
+          "path": "node_modules/@angular/compiler",
+          "before": "22.1.7",
+          "after": "22.2.1"
+        },
+        {
+          "path": "node_modules/@angular/compiler-cli",
+          "before": "22.1.7",
+          "after": "22.2.1"
+        },
+        {
+          "path": "node_modules/@angular/core",
+          "before": "22.1.7",
+          "after": "22.2.1"
+        },
+        {
+          "path": "node_modules/@angular/platform-browser",
+          "before": "22.1.7",
+          "after": "22.2.1"
+        },
+        {
+          "path": "node_modules/@angular/platform-server",
+          "before": "22.1.7",
+          "after": "22.2.1"
+        },
+        {
+          "path": "node_modules/@angular/router",
+          "before": "22.1.7",
+          "after": "22.2.1"
+        }
+      ]
+    },
+    "website/package-lock.json": {
+      "beforeSha256": "95a69221bc33e50dd736389932a806655c42872e670299094e31274573c8a317",
+      "afterSha256": "761fb735e22014536ce7939291bdcee164ad105d53cd01af7066690dd2673563",
+      "beforePackages": 1402,
+      "afterPackages": 1387,
+      "added": [],
+      "removed": [
+        "node_modules/@csstools/postcss-cascade-layers/node_modules/postcss-selector-parser",
+        "node_modules/@csstools/postcss-is-pseudo-class/node_modules/postcss-selector-parser",
+        "node_modules/@csstools/postcss-scope-pseudo-class/node_modules/postcss-selector-parser",
+        "node_modules/css-blank-pseudo/node_modules/postcss-selector-parser",
+        "node_modules/css-has-pseudo/node_modules/postcss-selector-parser",
+        "node_modules/postcss-attribute-case-insensitive/node_modules/postcss-selector-parser",
+        "node_modules/postcss-custom-selectors/node_modules/postcss-selector-parser",
+        "node_modules/postcss-dir-pseudo-class/node_modules/postcss-selector-parser",
+        "node_modules/postcss-focus-visible/node_modules/postcss-selector-parser",
+        "node_modules/postcss-focus-within/node_modules/postcss-selector-parser",
+        "node_modules/postcss-modules-local-by-default/node_modules/postcss-selector-parser",
+        "node_modules/postcss-modules-scope/node_modules/postcss-selector-parser",
+        "node_modules/postcss-nesting/node_modules/postcss-selector-parser",
+        "node_modules/postcss-pseudo-class-any-link/node_modules/postcss-selector-parser",
+        "node_modules/postcss-selector-not/node_modules/postcss-selector-parser"
+      ],
+      "changedVersions": [
+        {
+          "path": "node_modules/dompurify",
+          "before": "3.4.15",
+          "after": "3.4.17"
+        },
+        {
+          "path": "node_modules/http-cache-semantics",
+          "before": "4.2.0",
+          "after": "4.3.0"
+        },
+        {
+          "path": "node_modules/katex",
+          "before": "0.16.47",
+          "after": "0.18.2"
+        },
+        {
+          "path": "node_modules/postcss-selector-parser",
+          "before": "6.1.4",
+          "after": "7.1.6"
+        },
+        {
+          "path": "node_modules/shell-quote",
+          "before": "1.10.0",
+          "after": "1.12.0"
+        },
+        {
+          "path": "node_modules/source-map-js",
+          "before": "1.2.1",
+          "after": "1.2.2"
+        },
+        {
+          "path": "node_modules/tinypool",
+          "before": "1.1.1",
+          "after": "2.1.2"
+        }
+      ]
+    },
+    "website/toolchain/package-lock.json": {
+      "beforeSha256": "426037c8f5167bbbdeb4b981a089f87e2fa03a0cc4bc27ba2d28dc2b7c6594ea",
+      "afterSha256": "4c8481d3c1e1b0ed947d7fdd1ad2f250280764c79050b15ab0fea276f39d2f95",
+      "beforePackages": 148,
+      "afterPackages": 144,
+      "added": [],
+      "removed": [
+        "node_modules/balanced-match",
+        "node_modules/brace-expansion",
+        "node_modules/ip-address",
+        "node_modules/undici"
+      ],
+      "changedVersions": [
+        {
+          "path": "node_modules/npm/node_modules/http-cache-semantics",
+          "before": "4.2.0",
+          "after": "4.3.0"
+        },
+        {
+          "path": "node_modules/npm/node_modules/postcss-selector-parser",
+          "before": "7.1.4",
+          "after": "7.1.6"
+        }
+      ]
+    }
+  },
+  "independentSourceRepairs": [
+    {
+      "name": "braces",
+      "version": "3.0.3",
+      "profile": "braces-3.0.3-lsf-depth-v1",
+      "upstream_integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
+      "derived_integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
+      "repair_sha256": "18d0f840ab68095416f854968eaf7524f0fe241d0f3130c514323d5e2e69728b",
+      "files": 5,
+      "locks": [
+        "examples/framework-compatibility/package-lock.json",
+        "website/package-lock.json"
+      ],
+      "advisories": [
+        {
+          "id": "GHSA-vfj7-8cjw-p6xm",
+          "modified": "2026-10-02T22:45:04.328737Z"
+        }
+      ]
+    },
+    {
+      "name": "http-cache-semantics",
+      "version": "4.3.0",
+      "profile": "http-cache-semantics-4.3.0-lsf-cache-v1",
+      "upstream_integrity": "sha512-M5t5LlJpS1UHMjvwRQVdFHvPISGeLAxNcrWuJkeGh0KxsqCHZ1O3NXZU/8x7cD0BDcGW8kapxMKTvwlqrNkHkA==",
+      "derived_integrity": "sha512-QoxZXkxpoKP9VMMA6OnDx1Ps0lIb4tBzw3DDVuH4MgHLaesYSqFBXdRJ0v7jpv2YzhtJ1qI/UzrrEerE9O/K9Q==",
+      "repair_sha256": "c903c8ad20a3c0f21bf217163550cd9c5989384ea1970626688b6cab30d0245a",
+      "files": 1,
+      "locks": [
+        "examples/framework-compatibility/package-lock.json",
+        "website/package-lock.json",
+        "website/toolchain/package-lock.json"
+      ],
+      "advisories": []
+    }
+  ],
+  "scope": "20 reported alerts; no claim of all-dependency audit completeness"
+}

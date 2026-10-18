@@ -108,7 +108,8 @@ partial language availability, documentation corrections, linked sources,
 missing regions, altered copies and interrupted publication. Synthetic examples
 remain labelled as rendering fixtures and provide no SDK qualification.
 
-After committing the reviewed sources, install the separately locked package
+After committing the reviewed sources, prepare its reviewed archives with
+`python3 website/toolchain/prepare.py`, install the separately locked package
 manager with `npm ci --prefix website/toolchain --ignore-scripts`, then run
 `node website/scripts/patch-package-manager.mjs` before using that npm. Build both
 base paths, install the pinned browser and run `npm run test:versions` from

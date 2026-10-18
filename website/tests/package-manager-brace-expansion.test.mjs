@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {fileURLToPath} from 'node:url';
-import {braceExpansionIntegrity, braceExpansionVersion, replaceBundledBraceExpansion, verifyBundledBraceExpansion} from '../lib/package-manager-security.mjs';
+import {braceExpansionIntegrity, braceExpansionVersion, replaceBundledBraceExpansion} from '../lib/package-manager-security.mjs';
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lsf-brace-security-'));
@@ -80,7 +82,20 @@ test('brace-expansion cannot follow a bundled directory symlink', t => {
 });
 
 test('npm minimatch resolves the complete patched brace-expansion with bounded APIs', () => {
-  assert.equal(verifyBundledBraceExpansion(fileURLToPath(new URL('../', import.meta.url))).braceExpansion, braceExpansionVersion);
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const lock = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/package-lock.json')));
+  const bundle = lock.packages['node_modules/npm'];
+  const raw = fs.readFileSync(path.resolve(root, 'toolchain', bundle.resolved.slice('file:'.length)));
+  assert.equal(bundle.integrity, `sha512-${createHash('sha512').update(raw).digest('base64')}`);
+  const npmRequire = createRequire(path.join(root, 'toolchain/node_modules/npm/package.json'));
+  const minimatchRequire = createRequire(npmRequire.resolve('minimatch'));
+  assert.equal(fs.realpathSync(minimatchRequire.resolve('brace-expansion')),
+    fs.realpathSync(path.join(root, 'toolchain/node_modules/npm/node_modules/brace-expansion/dist/commonjs/index.js')));
+  assert.equal(minimatchRequire('brace-expansion/package.json').version, braceExpansionVersion);
+  const {expand} = minimatchRequire('brace-expansion');
+  assert.deepEqual(expand('file-{a,b}-{1..2}.txt'), ['file-a-1.txt', 'file-a-2.txt', 'file-b-1.txt', 'file-b-2.txt']);
+  assert.deepEqual(expand('{{{{a,b}}}}', {maxDepth: 2}), ['{{{{a,b}}}}']);
+  assert.deepEqual(expand('{a}}},z}', {maxRewrites: 1}), ['{a}}},z}']);
 });
 
 test('the actual npm brace-expansion bounds parsing, nesting and rewrite-heavy inputs', () => {

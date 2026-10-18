@@ -41,26 +41,27 @@ intentional until their delegated owners provide reviewed execution evidence.
 From the repository root, install and verify the toolchain before invoking it:
 
 ```sh
+python3 website/toolchain/prepare.py
 npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
 node website/scripts/patch-package-manager.mjs
 node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
 ```
 
-The reviewed npm 11.19.1 tarball still bundles `ip-address` 10.5.0. A normal
-npm override or a lockfile-only edit
-does not replace bundled files. The explicit bootstrap therefore copies the
-complete, separately installed and SHA-512-pinned upstream 10.7.2 package
-over npm's bundled copy, removes stale hidden lock inventories, and verifies
-every locked dependency before the selected npm performs any work. It never
-enables dependency lifecycle scripts or downloads code itself.
+The preparer authenticates upstream archives, applies the reviewed source
+repairs, and writes the exact integrity-pinned npm bundle and library archives
+under `target/website-package-manager`. A normal npm override cannot replace
+files already bundled inside npm. Preparing the immutable archive before
+installation keeps the lock and installed graph consistent; no installed code
+is patched after extraction. Dependency lifecycle scripts remain disabled.
 
-The toolchain lock describes the final patched installation, including both
-copies of 10.7.2. A bare `npm ci` is only the first bootstrap step: always run
-the patch command after a clean reinstall. The read-only identity checker
-rejects an unpatched installation. When refreshing this lock, retain the
-separately pinned replacement entries and run the clean-install regression;
-do not accept npm's regenerated 10.5.0 bundle record. Remove this replacement
-only after reviewing an npm distribution whose actual bundle is patched.
+The toolchain lock describes the final prepared installation. The historical
+`patch-package-manager.mjs` command now only verifies installed identities.
+See the [release security backport review](../docs/development/release-npm-security.md)
+for the 20-alert mapping and the separate expired security-baseline blocker.
+When refreshing this lock, retain the exact source pins and derived archive
+integrity and run the clean-install regression; do not accept npm's original
+10.5.0 bundle record. Remove a replacement only after reviewing an npm
+distribution whose actual bundle is patched.
 
 The regression exercises the package resolved from npm's SOCKS dependency,
 including local-use NAT64 boundaries, several prefix layouts, loopback,
@@ -70,14 +71,14 @@ IPv4 address. This addresses [GHSA-2vr4-cq9g-pvrc](https://github.com/advisories
 in build tooling; it is not evidence of a reachable LSF runtime SSRF exploit
 or a replacement for DNS, connected-peer and redirect validation.
 
-The same bootstrap replaces npm's bundled `brace-expansion` 5.0.9 with the
-complete, separately SHA-512-pinned 5.0.12 package. Its `balanced-match`
-dependency is locked for both the standalone source and npm's bundled graph.
+The same preparation replaces npm's bundled `brace-expansion` 5.0.9 with the
+complete, SHA-512-pinned 5.0.12 package. Its existing `balanced-match`
+dependency remains locked in npm's bundled graph.
 The verifier checks the package actually resolved by npm's `minimatch`,
 normal expansion, nesting limits and rewrite limits. A bounded child-process
 regression covers chained comma parsing, nested groups and rewrite-heavy input.
 This addresses GHSA-6j4f-fj2g-mc7p, GHSA-qhr7-859c-m2p7 and GHSA-q2hr-2g5m-vwhr
-without suppressing advisory findings. Retain all separately pinned replacement
+without suppressing advisory findings. Retain all pinned replacement
 records, including Undici, when regenerating the toolchain lock.
 
 The `ip-address` regression also checks cross-family subnet rejection and
@@ -85,14 +86,14 @@ pre-parser address length bounds for GHSA-j6r3-76f7-8jcv and GHSA-h3mg-xc3c-68pw
 
 ## Additional security-baseline repair
 
-The same bootstrap also replaces npm's bundled Undici 6.28.0 with the complete,
-separately integrity-pinned Undici 6.28.1 package for
+The same preparation also replaces npm's bundled Undici 6.28.0 with the complete,
+integrity-pinned Undici 6.28.1 package for
 [GHSA-3wwx-pv8p-q78v](https://github.com/nodejs/undici/security/advisories/GHSA-3wwx-pv8p-q78v).
-The lock describes both final patched packages, not the unmodified npm archive.
+The lock describes the final prepared bundle, not the unmodified npm archive.
 The checker verifies the installed Undici bytes and npm's module resolution;
 a bounded child-process regression checks normal decompression and rejects an
 oversized malformed compressed message without an unhandled zlib error. Run the
-same patch command after every clean toolchain installation. No lifecycle hooks,
+same verification command after every clean toolchain installation. No lifecycle hooks,
 advisory exceptions or changes to Node's separately bundled global fetch are made.
 
 The Java compiler recipes separately select Jackson 2.18.10 in both buildscript

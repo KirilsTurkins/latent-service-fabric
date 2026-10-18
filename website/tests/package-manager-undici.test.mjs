@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {fileURLToPath} from 'node:url';
-import {replaceBundledUndici, verifyBundledUndici, undiciVersion, undiciIntegrity} from '../lib/package-manager-security.mjs';
+import {replaceBundledUndici, undiciVersion, undiciIntegrity} from '../lib/package-manager-security.mjs';
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lsf-undici-security-'));
@@ -76,7 +78,16 @@ test('Undici replacement cannot follow a bundled directory symlink', t => {
 });
 
 test('installed npm resolves the complete patched Undici', () => {
-  assert.equal(verifyBundledUndici(fileURLToPath(new URL('../', import.meta.url))).undici, undiciVersion);
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const lock = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/package-lock.json')));
+  const bundle = lock.packages['node_modules/npm'];
+  const raw = fs.readFileSync(path.resolve(root, 'toolchain', bundle.resolved.slice('file:'.length)));
+  assert.equal(bundle.integrity, `sha512-${createHash('sha512').update(raw).digest('base64')}`);
+  const npmRequire = createRequire(path.join(root, 'toolchain/node_modules/npm/package.json'));
+  assert.equal(fs.realpathSync(npmRequire.resolve('undici')),
+    fs.realpathSync(path.join(root, 'toolchain/node_modules/npm/node_modules/undici/index.js')));
+  assert.equal(npmRequire('undici/package.json').version, undiciVersion);
+  assert.equal(typeof npmRequire('undici').fetch, 'function');
 });
 
 test('the actual npm Undici survives oversized malformed decompression', () => {

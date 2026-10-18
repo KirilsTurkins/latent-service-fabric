@@ -1,7 +1,7 @@
-import {verifyBundledIpAddress, verifyBundledUndici, verifyBundledBraceExpansion} from '../lib/package-manager-security.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -9,9 +9,18 @@ const read = name => JSON.parse(fs.readFileSync(path.join(root, name), 'utf8'));
 const website = read('package.json');
 const toolchain = read('toolchain/package.json');
 const lock = read('toolchain/package-lock.json');
-assert.equal(toolchain.dependencies.npm, website.engines.npm);
-assert.equal(website.packageManager, `npm@${toolchain.dependencies.npm}`);
-assert.equal(read('content/toolchain.json').npm, toolchain.dependencies.npm);
+const source = read('toolchain/source.json');
+const npmVersion = source.base.version;
+assert.equal(toolchain.dependencies.npm, lock.packages['node_modules/npm'].resolved);
+assert.equal(lock.packages['node_modules/npm'].version, npmVersion);
+assert.equal(npmVersion, website.engines.npm);
+assert.equal(website.packageManager, `npm@${npmVersion}`);
+assert.equal(read('content/toolchain.json').npm, npmVersion);
+for (const patch of source.patches) {
+  const installed = read(`toolchain/node_modules/npm/node_modules/${patch.name}/package.json`);
+  assert.equal(installed.name, patch.name);
+  assert.equal(installed.version, patch.version);
+}
 assert.ok(Object.keys(lock.packages).length > 1 && Object.keys(lock.packages).length <= 300);
 let packages = 0;
 for (const [location, expected] of Object.entries(lock.packages)) {
@@ -22,4 +31,14 @@ for (const [location, expected] of Object.entries(lock.packages)) {
   assert.equal(actual.version, expected.version, `Installed package manager dependency differs: ${location}`);
   packages++;
 }
-console.log(JSON.stringify({npm: toolchain.dependencies.npm, verifiedInstalledPackages: packages, ...verifyBundledIpAddress(root), ...verifyBundledUndici(root), ...verifyBundledBraceExpansion(root)}));
+const npmRequire = createRequire(path.join(root, 'toolchain/node_modules/npm/package.json'));
+for (const [consumer, dependency] of [['socks', 'ip-address'], ['minimatch', 'brace-expansion'], ['brace-expansion', 'balanced-match'],
+  ['@npmcli/query', 'postcss-selector-parser'], ['postcss-selector-parser', 'cssesc'], ['postcss-selector-parser', 'util-deprecate']]) {
+  const consumerRequire = createRequire(npmRequire.resolve(consumer));
+  assert.equal(fs.realpathSync(consumerRequire.resolve(dependency)), fs.realpathSync(npmRequire.resolve(dependency)),
+    `Unexpected bundled dependency resolution: ${consumer} -> ${dependency}`);
+}
+assert.equal(read('toolchain/node_modules/npm/node_modules/balanced-match/package.json').version, '4.0.4');
+assert.equal(read('toolchain/node_modules/npm/node_modules/cssesc/package.json').version, '3.0.0');
+assert.equal(read('toolchain/node_modules/npm/node_modules/util-deprecate/package.json').version, '1.0.2');
+console.log(JSON.stringify({npm: npmVersion, distribution: source.profile, verifiedInstalledPackages: packages}));

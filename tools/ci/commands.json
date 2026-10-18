@@ -1038,7 +1038,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/scripts/patch-package-manager.mjs\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install"
+      "run": "python3 website/toolchain/prepare.py\nnpm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/scripts/patch-package-manager.mjs\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install"
     },
     ".github/workflows/docs-pages.yml:browser:Verify live navigation, assets, search and selected-version examples": {
       "job": "browser",
@@ -1118,7 +1118,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/scripts/patch-package-manager.mjs\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund"
+      "run": "python3 website/toolchain/prepare.py\nnpm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/scripts/patch-package-manager.mjs\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund"
     },
     ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": {
       "job": "website",
@@ -2048,7 +2048,7 @@
       "stepIf": "needs.profile.outputs.renderer == 'true'",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
+      "run": "python3 website/toolchain/prepare.py\nnpm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
     },
     ".github/workflows/developer-tools.yml:guest-tools:Qualify the static site and TypeScript API in Chromium": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3397,9 +3397,6 @@
     }
   },
   "delegatedOwners": {
-    "tools/run_harbor_registry_tests.py": {
-      "sha256": "ebcefe5489127650cbdb634060222da39fb853a3155aa9653c58207b96c3203b"
-    },
     "sdk/c/tools/validate.py": {
       "sha256": "60d239e77fc42814896aeede9e765d0c988983fa8d3a801bd905e2e126377716"
     },
@@ -3444,6 +3441,9 @@
     },
     "tools/build_echo_capsule.py": {
       "sha256": "1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"
+    },
+    "tools/build_framework_sites.py": {
+      "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
     },
     "tools/build_guest_capsules.py": {
       "sha256": "0fc418c9dce391c402562b01e303abe71d45a6ee6e8046ba5008a9ea16667570"
@@ -3511,6 +3511,9 @@
     "tools/compare_portable_guest_tests.py": {
       "sha256": "53d331d99878fa00a54a160c89ac2bbb629558364b0719352aa1409666c9656e"
     },
+    "tools/container_runtime/qualification.py": {
+      "sha256": "03e2fceb1077fba22ffd2144fc3783a4d1ca7165b0c9fe2e208034f8ad6ae94e"
+    },
     "tools/dev_blob_fixture_probe.py": {
       "sha256": "a6db24af71eac4ade98f70e1441ad981f58b2fb33ed3526fc20c1b8ec39a314f"
     },
@@ -3564,6 +3567,9 @@
     },
     "tools/phase3_security.py": {
       "sha256": "261070388f3aefc3604aa07b58d28f79b3dd2cb26bd2e58217619caf0bca232e"
+    },
+    "tools/prepare_container_runtime.py": {
+      "sha256": "de3bb9f2e814513ef974e775a6538a87bf3d2a8aee74a29251a340535f25836a"
     },
     "tools/prepare_dev_packaged_probe.py": {
       "sha256": "da346e6f90223ba2edd3b18a3f0ba6bb0df3d21c268e5f3f6ffa9641649ac449"
@@ -3630,6 +3636,12 @@
     },
     "tools/run_dev_recovery_ci.py": {
       "sha256": "a6916b7d4eaea62b85587428499113b14e404a1ef6329df9412ddfcdc1eab182"
+    },
+    "tools/run_framework_sites.py": {
+      "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
+    },
+    "tools/run_harbor_registry_tests.py": {
+      "sha256": "ebcefe5489127650cbdb634060222da39fb853a3155aa9653c58207b96c3203b"
     },
     "tools/run_native_vm.py": {
       "sha256": "2ff295ba3f746535db4ab08fbeb6ec7e44ca939ca9d93769998c1cdd20b05b12"
@@ -3709,11 +3721,20 @@
     "tools/stage_runtime_wit.py": {
       "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
     },
+    "tools/static-release/unpack.py": {
+      "sha256": "1ae084a12a972b16be293e0a020c750074a57d856bc8264e47b9a1ace269b579"
+    },
+    "tools/static_api/ci.py": {
+      "sha256": "c60f503924a68e7e03c16a3d0c024b8010af324164b459560c4f9a7a1b974917"
+    },
     "tools/static_site.py": {
       "sha256": "bf037162dcb6b332b50f4dd88175425b87bd2b209645e754ad6bddf74daedbd3"
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
+    },
+    "tools/trusted_edge/qualification.py": {
+      "sha256": "af626191e30624a2fe3a047d195c4e300eecac43ab6569dc4849e49cbb6679b2"
     },
     "tools/typescript_capsule.py": {
       "sha256": "9bde963d139e42fc9788f9200ed81f98276824ebd175e149deb20996806fb842"
@@ -3747,27 +3768,6 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
-    },
-    "tools/static-release/unpack.py": {
-      "sha256": "1ae084a12a972b16be293e0a020c750074a57d856bc8264e47b9a1ace269b579"
-    },
-    "tools/container_runtime/qualification.py": {
-      "sha256": "03e2fceb1077fba22ffd2144fc3783a4d1ca7165b0c9fe2e208034f8ad6ae94e"
-    },
-    "tools/prepare_container_runtime.py": {
-      "sha256": "de3bb9f2e814513ef974e775a6538a87bf3d2a8aee74a29251a340535f25836a"
-    },
-    "tools/trusted_edge/qualification.py": {
-      "sha256": "af626191e30624a2fe3a047d195c4e300eecac43ab6569dc4849e49cbb6679b2"
-    },
-    "tools/build_framework_sites.py": {
-      "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
-    },
-    "tools/run_framework_sites.py": {
-      "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
-    },
-    "tools/static_api/ci.py": {
-      "sha256": "c60f503924a68e7e03c16a3d0c024b8010af324164b459560c4f9a7a1b974917"
     }
   },
   "pythonCases": {
@@ -6634,6 +6634,9 @@
       "SecurityFixtureTests.test_child_environment_and_output_bound_redact_failures",
       "SecurityFixtureTests.test_current_manifest_inventory_covers_guest_client_and_build_locks",
       "SecurityFixtureTests.test_deep_tracked_inputs_are_read_without_relaxing_path_validation",
+      "SecurityFixtureTests.test_derived_npm_bundle_keeps_complete_advisory_coverage",
+      "SecurityFixtureTests.test_derived_npm_does_not_enable_arbitrary_file_sources",
+      "SecurityFixtureTests.test_derived_npm_rejects_omissions_and_changed_inputs",
       "SecurityFixtureTests.test_duplicate_json_and_committed_expired_fixture_fail",
       "SecurityFixtureTests.test_each_reviewed_source_rule_has_a_harmless_detection_fixture",
       "SecurityFixtureTests.test_exact_exception_matches_no_other_version_path_or_finding",
@@ -6648,6 +6651,7 @@
       "SecurityFixtureTests.test_renderer_toolchain_removes_the_unpatched_archive_extractor",
       "SecurityFixtureTests.test_secret_exception_cannot_hide_changed_content_location_or_rule",
       "SecurityFixtureTests.test_source_exception_is_bound_to_exact_content_and_location",
+      "SecurityFixtureTests.test_source_repair_classifies_only_the_proved_braces_advisory",
       "SecurityFixtureTests.test_stage_only_selected_documentation_and_reject_path_escape",
       "SecurityFixtureTests.test_stale_database_head_age_and_future_timestamp_fail",
       "SecurityFixtureTests.test_synthetic_source_rule_has_pass_and_fail_without_execution",
@@ -6665,6 +6669,16 @@
       "NativeAotInventoryTests.test_project_lock_and_both_configuration_changes_fail_closed",
       "NativeAotInventoryTests.test_unknown_rid_cannot_hide_in_a_reviewed_lock",
       "NativeAotInventoryTests.test_unresolved_versions_and_missing_checksums_fail"
+    ],
+    "tools/tests/test_security_npm_sources.py": [
+      "NpmSourceRepairTests.test_archive_paths_links_duplicate_members_and_hidden_graphs_fail",
+      "NpmSourceRepairTests.test_independent_reconstruction_checks_both_libraries_and_complete_bundle",
+      "NpmSourceRepairTests.test_independent_reconstruction_rejects_upstream_source_lock_and_patch_drift",
+      "NpmSourceRepairTests.test_library_allowance_does_not_admit_aliases_or_changed_versions_and_integrities",
+      "NpmSourceRepairTests.test_only_exact_advisory_revision_verified_version_and_lock_are_remediated",
+      "NpmSourceRepairTests.test_repair_preserves_identity_graph_license_unchanged_bytes_and_modes",
+      "NpmSourceRepairTests.test_repair_rejects_missing_walkers_preimage_postimage_edit_and_upstream_drift",
+      "NpmSourceRepairTests.test_selector_bundle_refuses_changed_or_shadowed_existing_dependencies"
     ],
     "tools/tests/test_security_rustsec_workflow.py": [
       "SecurityWorkflowTests.test_actual_aggregate_checks_selected_results_and_rejects_failures",
@@ -7181,6 +7195,7 @@
     "tools/tests/test_security_baseline.py",
     "tools/tests/test_security_changed_paths.py",
     "tools/tests/test_security_native_aot.py",
+    "tools/tests/test_security_npm_sources.py",
     "tools/tests/test_security_rustsec_workflow.py",
     "tools/tests/test_security_sdk_graphs.py",
     "tools/tests/test_security_settings.py",
@@ -7204,26 +7219,26 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
-    ".github/workflows/registry-cli.yml": "a713a8b94a6165e048cbb65688f6c767010393b619c8c9cc9e080830786be854",
     ".github/workflows/c-guest-authoring.yml": "9517e1d2a98749f05121d389421f649c3b8aff8323e97046d5f456f1d489bc42",
-    ".github/workflows/ci.yml": "de96fb23dc62d831a4c67ed9468478326e6bc7eca81848a5b5795421f8e79a24",
+    ".github/workflows/ci.yml": "2621c01653a6ea291eba149513a2d07555f2390dec076b02d1f16bf19d2044c9",
+    ".github/workflows/container-runtime.yml": "fa948637784d182887c13bbcb3d32fbf571f92a852475a7941809417d98f2cdb",
     ".github/workflows/developer-packaged-qualification.yml": "e9ec2f74bb293bd7694830746f8d23bc00eb439413ce8aa2312f6e223acea758",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "ba8a97d024e2735da86ff0e82c4ec20866195ad00b9cd7b77526d670aa94b27f",
-    ".github/workflows/docs-pages.yml": "47c4460b3d4012ad281749dfac2e77f0929ebd2daaca9eb32c85182e8f25bddd",
-    ".github/workflows/docs-site.yml": "2bd014d771ec16a342e33abeb01c49c2c2b63fab432ea5fdf9291739e752021c",
+    ".github/workflows/docs-pages.yml": "6d2c03962b0a8297fe1a48688a80aec9e1d337c68e4444a6efe55f85fdba895d",
+    ".github/workflows/docs-site.yml": "358b400d64ac0fa7c3fb210098fe0d974aeb11de0a78e641f418670b214f42e6",
     ".github/workflows/dotnet-guest.yml": "ba561b0cde473d42842f6befa873cf21275ee413593e9e5824d32fbc41d7f384",
+    ".github/workflows/frontend-release.yml": "1eb1ecbb76336486ea574e1f5be3c42ae82776bd947be1cf5864e68e4101bd17",
     ".github/workflows/go-guest.yml": "be03d57ac8393a82fca64d7ca007771841f8df3981f779ade51b83f721ae86cd",
     ".github/workflows/java-guest-feasibility.yml": "8eb8dd3b1e4d60809cf7866f7746fed2a5728cb3cedc7ec902d5dcd86f565856",
     ".github/workflows/native-runtime-release.yml": "a3d7098159c5320f4cd4bd8aafe09e2b5bdb1c0eb74e3149208a48d2be2e7dd9",
     ".github/workflows/native-runtime.yml": "2b41e8b2ba3aef1379181f41f3e2df76b2f8ca1ee09c71ee359c16b0ddb74098",
     ".github/workflows/phase1-controlled-comparison.yml": "e4effcd44cbe12832b4e8b0c64a49469d2082e3009d28ce0e810cae09dc5cb06",
     ".github/workflows/phase1-measurements.yml": "4a203b687456bfe091d9bb07de8051ac3ab6e120a8ae764ca7634ee9a6cb697a",
+    ".github/workflows/registry-cli.yml": "a713a8b94a6165e048cbb65688f6c767010393b619c8c9cc9e080830786be854",
     ".github/workflows/rust-capsule-authoring.yml": "77170efe48eb4e1cc6bad62a8f070d0d467ab0003e4007b8cb9e75c05e2d95f1",
     ".github/workflows/security-baseline.yml": "36c52f1ade3bb10f0f3b2af5c75d3c00c6a2d63febaa93f55eaa67a36f21fa30",
     ".github/workflows/security-rustsec.yml": "bb84f00e8aac8b3434151c569d64fa4a202322759f57aedff5e4fb663875cbbc",
-    ".github/workflows/typescript-guest.yml": "cb54ab7430ad4cc86d58bc5f2e54cd72df0ef3c4d30a5028268b7ce503cbc160",
-    ".github/workflows/frontend-release.yml": "1eb1ecbb76336486ea574e1f5be3c42ae82776bd947be1cf5864e68e4101bd17",
-    ".github/workflows/container-runtime.yml": "fa948637784d182887c13bbcb3d32fbf571f92a852475a7941809417d98f2cdb"
+    ".github/workflows/typescript-guest.yml": "cb54ab7430ad4cc86d58bc5f2e54cd72df0ef3c4d30a5028268b7ce503cbc160"
   }
 }

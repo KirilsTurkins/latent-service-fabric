@@ -21,6 +21,7 @@ jobs:
           node-version: 24.19.0
       - name: Install the reviewed website dependency graph without lifecycle scripts
         run: |
+          python3 website/toolchain/prepare.py
           npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
           node website/scripts/patch-package-manager.mjs
           echo "$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin" >> "$GITHUB_PATH"
