@@ -193,6 +193,21 @@ class ResourceCapture(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(resources.ResourceError):
                 resources.capture(files, COMPONENT, SOURCE, additional_resources=[{**additional, key: value}])
 
+    def test_rehashed_dependency_index_cannot_adopt_ambiguous_owner(self):
+        payload = b"captured transitive bytes"
+        owner = "private:transitive:2.0"
+        lock = {"artifacts": [{"id": owner, "files": [{"path": "data.txt", "digest": digest(payload), "size": len(payload)}]}]}
+        files = {"latent.dependencies.lock.json": encode(lock), "dependencies/java-resources/data.txt": payload}
+        additional = {**row("data.txt", "dependencies/java-resources/data.txt"), "digest": digest(payload), "owner": owner}
+        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+        for forged in ("private:other..owner:2.0", "private:other//owner:2.0"):
+            changed = copy.deepcopy(packaged.index)
+            changed["resources"][0]["owner"] = forged
+            changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
+            with self.subTest(owner=forged), self.assertRaisesRegex(resources.ResourceError, "resource-index-origin"):
+                resources.verify(encode(changed), packaged.objects, source_digest=digest(SOURCE),
+                    component_digest=digest(COMPONENT), dependency_lock_digest=digest(files["latent.dependencies.lock.json"]))
+
     def test_forged_dependency_mapping_without_lock_cannot_package_bytes(self):
         files = {"data.txt": b"outside unverified data"}
         additional = {**row("data.txt", "data.txt"), "digest": digest(files["data.txt"]), "owner": "external:unknown:1.0"}
