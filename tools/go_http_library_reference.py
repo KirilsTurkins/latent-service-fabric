@@ -30,20 +30,26 @@ import (
 )
 
 func main() {
-    if len(os.Args) != 2 { panic("reference client required") }
+    if len(os.Args) != 2 && len(os.Args) != 3 { panic("reference client required") }
     var which uint32
     switch os.Args[1] { case "sling": which = 0; case "requests": which = 100; default: panic("unknown reference client") }
+    scenario, body, declared := "truncated", "short", 32
+    if len(os.Args) == 3 {
+        if os.Args[2] != "malformed-json" { panic("unknown reference response") }
+        scenario, body, declared = "malformed-json", `{"id":`, 6
+    }
     var calls atomic.Uint32
     var invalid atomic.Bool
     server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         calls.Add(1)
-        if r.Method != "GET" || r.URL.Path != "/conformance/body/truncated" { invalid.Store(true) }
-        w.Header().Set("Content-Length", "32")
+        if r.Method != "GET" || r.URL.Path != "/conformance/body/"+scenario { invalid.Store(true) }
+        if scenario == "malformed-json" { w.Header().Set("Content-Length", "6")
+        } else { w.Header().Set("Content-Length", "32") }
         w.Header().Set("Content-Type", "application/json")
         w.Header().Set("Connection", "close")
-        io.WriteString(w, "short")
+        io.WriteString(w, body)
     }))
-    result := app.Run(which, server.URL+"/conformance/body/truncated")
+    result := app.Run(which, server.URL+"/conformance/body/"+scenario)
     server.Close()
     json.NewEncoder(os.Stdout).Encode(struct {
         Client string `json:"client"`
@@ -52,17 +58,17 @@ func main() {
         InvalidRequest bool `json:"invalidRequest"`
         BodyBytes int `json:"bodyBytes"`
         DeclaredBytes int `json:"declaredBytes"`
-    }{os.Args[1], result, calls.Load(), invalid.Load(), 5, 32})
+    }{os.Args[1], result, calls.Load(), invalid.Load(), len(body), declared})
 }
 '''
 
 
-def client_outcome(expected: str, row: dict) -> str:
+def client_outcome(expected: str, row: dict, *, body_bytes: int = 5, declared_bytes: int = 32) -> str:
     require(isinstance(row, dict) and set(row) == {'client', 'result', 'requests', 'invalidRequest', 'bodyBytes', 'declaredBytes'}
         and row['client'] == expected and type(row['result']) is str and row['result'] in {'invalid-json', 'transport-error'}
         and type(row['requests']) is int and row['requests'] == 1 and row['invalidRequest'] is False
-        and type(row['bodyBytes']) is int and row['bodyBytes'] == 5
-        and type(row['declaredBytes']) is int and row['declaredBytes'] == 32,
+        and type(row['bodyBytes']) is int and row['bodyBytes'] == body_bytes
+        and type(row['declaredBytes']) is int and row['declaredBytes'] == declared_bytes,
         'go-http-native-reference-client-result')
     return row['result']
 
@@ -76,7 +82,15 @@ def outcomes(record: dict) -> dict[str, str]:
     return {name: client_outcome(name, row) for name, row in zip(('sling', 'requests'), rows, strict=True)}
 
 
-def observe(app: Path, go: Path, output: Path, *, deadline: float) -> dict:
+def malformed_outcomes(record: dict) -> dict[str, str]:
+    outcomes(record)
+    rows = record.get('malformedJsonClients')
+    require(isinstance(rows, list) and len(rows) == 2, 'go-http-native-reference-malformed-client-count')
+    return {name: client_outcome(name, row, body_bytes=6, declared_bytes=6)
+            for name, row in zip(('sling', 'requests'), rows, strict=True)}
+
+
+def observe(app: Path, go: Path, output: Path, *, deadline: float, include_malformed: bool = False) -> dict:
     record = {'schemaVersion': 'latent.go.http-client.native-reference.v1', 'status': 'in-progress',
               'guestExecution': False, 'scope': 'truncated-body-original-client-reference', 'stage': 'capture', 'clients': []}
     deadline = min(deadline, time.monotonic()+120)
@@ -122,10 +136,20 @@ def observe(app: Path, go: Path, output: Path, *, deadline: float) -> dict:
                 record['clients'].append(row)
                 write_json(output.with_name(output.stem+'-'+name+'.json'), row)
                 client_outcome(name, row)
+            if include_malformed:
+                record['malformedJsonClients'] = []
+                for name in ('sling', 'requests'):
+                    record['stage'] = name+'-malformed-json'
+                    row = json.loads(command([str(binary), name, 'malformed-json'], 10).stdout)
+                    record['malformedJsonClients'].append(row)
+                    write_json(output.with_name(output.stem+'-malformed-json-'+name+'.json'), row)
+                    client_outcome(name, row, body_bytes=6, declared_bytes=6)
             closure.check_unchanged(); observed.check_unchanged()
         require(read_file(app/'src/main.go') == source_before and file_identity(go) == original_go,
                 'go-http-native-reference-original-input-changed')
         outcomes({**record, 'status': 'passed'})
+        if include_malformed:
+            malformed_outcomes({**record, 'status': 'passed'})
         record.update(status='passed', stage='complete')
         return record
     except BaseException:

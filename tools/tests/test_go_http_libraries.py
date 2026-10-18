@@ -15,6 +15,137 @@ from tools.rust_capsule_project import read_file, snapshot
 
 
 class HttpLibraryCapture(unittest.TestCase):
+    def test_malformed_json_oracle_requires_paired_native_results_in_signed_runner(self):
+        import ast
+        import inspect
+        from copy import deepcopy
+        from tools import go_standard_http_node as node
+        from tools.go_http_library_reference import malformed_outcomes
+        from tools.standard_http.vectors import BY_ID, response
+        from types import SimpleNamespace
+        prefix, suffix = response(BY_ID['malformed-json'],SimpleNamespace(method=b'GET'),1)
+        self.assertIn(b'Content-Length: 6\r\n',prefix)
+        self.assertEqual(prefix.split(b'\r\n\r\n',1)[1]+suffix,b'{"id":')
+        observed = {'schemaVersion':'latent.go.http-client.native-reference.v1','status':'passed','guestExecution':False,
+                    'clients':[{'client':name,'result':result,'requests':1,'invalidRequest':False,'bodyBytes':5,'declaredBytes':32}
+                               for name,result in (('sling','invalid-json'),('requests','transport-error'))],
+                    'malformedJsonClients':[{'client':name,'result':result,'requests':1,'invalidRequest':False,'bodyBytes':6,'declaredBytes':6}
+                               for name,result in (('sling','transport-error'),('requests','invalid-json'))]}
+        self.assertEqual(malformed_outcomes(observed),{'sling':'transport-error','requests':'invalid-json'})
+        rows = node.library_cases({'host':'127.0.0.1','port':1},observed)
+        self.assertEqual(len(rows),30)
+        self.assertEqual({row[0]:row[3] for row in rows if row[0].endswith('-malformed-json')},
+                         {'sling-malformed-json':'transport-error','requests-malformed-json':'invalid-json'})
+        changed = deepcopy(observed); changed['malformedJsonClients'][0]['result'] = 'invalid-json'
+        self.assertEqual([row for row in rows if row[0] != 'sling-malformed-json'],
+                         [row for row in node.library_cases({'host':'127.0.0.1','port':1},changed) if row[0] != 'sling-malformed-json'])
+        tree = ast.parse(inspect.getsource(node.run))
+        branch = next(value for value in ast.walk(tree) if isinstance(value,ast.If)
+                      and ast.unparse(value.test) == "suite == 'libraries'" and any(
+                          isinstance(call,ast.Call) and isinstance(call.func,ast.Name) and call.func.id == 'library_cases'
+                          for statement in value.body for call in ast.walk(statement)))
+        calls = [call.func.id for statement in branch.body for call in ast.walk(statement)
+                 if isinstance(call,ast.Call) and isinstance(call.func,ast.Name)]
+        self.assertLess(calls.index('malformed_outcomes'),calls.index('library_cases'))
+        qualifier = ast.parse(inspect.getsource(qualify))
+        observe = next(call for call in ast.walk(qualifier) if isinstance(call,ast.Call)
+                       and isinstance(call.func,ast.Name) and call.func.id == 'native_reference')
+        self.assertIs(next(value.value.value for value in observe.keywords
+                           if value.arg == 'include_malformed'),True)
+        for change in ({'bodyBytes':True},{'bodyBytes':5},{'declaredBytes':32},{'requests':True},
+                       {'requests':0},{'requests':2},{'invalidRequest':True},{'client':'requests'},{'result':'invented'}):
+            bad = deepcopy(observed); bad['malformedJsonClients'][0].update(change)
+            with self.subTest(change=change), self.assertRaisesRegex(WorkflowError,'native-reference-client-result'):
+                malformed_outcomes(bad)
+        for rows in (None,[],observed['malformedJsonClients'][:1],list(reversed(observed['malformedJsonClients']))):
+            bad = deepcopy(observed); bad['malformedJsonClients'] = rows
+            with self.subTest(rows=rows), self.assertRaisesRegex(WorkflowError,'native-reference-'):
+                malformed_outcomes(bad)
+
+    def test_native_malformed_observations_share_frozen_build_and_persist_failed_row(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools import go_http_library_reference as reference
+        for fail in (False,True):
+            with self.subTest(fail=fail), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); app = root/'application'; (app/'src').mkdir(parents=True)
+                source = b'package app\nfunc Run(uint32,string) string { return "unchanged" }\n'
+                (app/'src/main.go').write_bytes(source)
+                (app/'vendor/lsf/sdk/go-guest').mkdir(parents=True)
+                (app/'vendor/lsf/sdk/go-guest/toolchain.lock.json').write_text('{"go":{"version":"go1.27.2"}}')
+                go = root/'go'; go.write_bytes(b'pinned-go')
+                cache = root/'download'; cache.mkdir(); (cache/'captured.mod').write_bytes(b'captured')
+                closure = Mock(identity='captured-reviewed-graph')
+                captured = Mock(files={'src/main.go':source},dependency_root=app)
+                calls = []; output = root/'native-reference.json'
+                def command(arguments, _work, environment, seconds, maximum):
+                    calls.append(arguments)
+                    self.assertLessEqual(seconds,120); self.assertEqual(maximum,65536)
+                    self.assertEqual(environment['GOPROXY'],'off'); self.assertEqual(environment['GOFLAGS'],'-mod=readonly')
+                    if arguments[1] == 'version': return SimpleNamespace(stdout=b'go version go1.27.2 linux/amd64')
+                    if arguments[1] == 'build':
+                        self.assertNotIn('-overlay',arguments)
+                        harness = read_file(Path(arguments[-1]))
+                        self.assertIn(b'scenario, body, declared = "malformed-json", `{"id":`, 6',harness)
+                        self.assertIn(b'app.Run(which,',harness)
+                        Path(arguments[arguments.index('-o')+1]).write_bytes(b'native-reference')
+                        return SimpleNamespace(stdout=b'')
+                    name = arguments[1]; malformed = len(arguments) == 3
+                    row = {'client':name,'result':('transport-error' if name == 'sling' else 'invalid-json') if malformed else
+                           ('invalid-json' if name == 'sling' else 'transport-error'),
+                           'requests':1,'invalidRequest':False,'bodyBytes':6 if malformed else 5,'declaredBytes':6 if malformed else 32}
+                    if fail and malformed and name == 'requests': row['requests'] = True
+                    return SimpleNamespace(stdout=json.dumps(row).encode())
+                with patch.object(reference.sys,'platform','linux'), patch.object(reference,'capture_source',return_value=captured), \
+                        patch.object(reference,'prepare',return_value=closure), \
+                        patch.object(reference,'configure',return_value={'module':'outside.test/app','downloadCache':str(cache)}), \
+                        patch.object(reference,'run_bounded',side_effect=command):
+                    if fail:
+                        with self.assertRaisesRegex(WorkflowError,'native-reference-client-result'):
+                            reference.observe(app,go,output,deadline=reference.time.monotonic()+120,include_malformed=True)
+                    else:
+                        result = reference.observe(app,go,output,deadline=reference.time.monotonic()+120,include_malformed=True)
+                        self.assertEqual(reference.malformed_outcomes(result),{'sling':'transport-error','requests':'invalid-json'})
+                        closure.check_unchanged.assert_called_once(); captured.check_unchanged.assert_called_once()
+                saved = json.loads(read_file(output))
+                self.assertEqual(saved['status'],'failed' if fail else 'passed')
+                self.assertEqual(len(saved['clients']),2); self.assertEqual(len(saved['malformedJsonClients']),2)
+                self.assertEqual(len(calls),6)
+                self.assertEqual(sum(arguments[1] == 'build' for arguments in calls),1)
+                self.assertEqual(json.loads(read_file(root/'native-reference-malformed-json-requests.json')),saved['malformedJsonClients'][1])
+                self.assertEqual(read_file(app/'src/main.go'),source)
+
+    def test_declared_oversized_response_is_refused_before_either_client_decoder(self):
+        from types import SimpleNamespace
+        from tools import go_standard_http_node as node
+        from tools.standard_http.vectors import BY_ID, response
+        from tools.rust_capsule_project import ROOT
+        observed = {'schemaVersion':'latent.go.http-client.native-reference.v1','status':'passed','guestExecution':False,
+                    'clients':[{'client':name,'result':result,'requests':1,'invalidRequest':False,'bodyBytes':5,'declaredBytes':32}
+                               for name,result in (('sling','invalid-json'),('requests','transport-error'))]}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root/'node.json'
+            config.write_text(json.dumps({'cells':[{}],'execution':{},'audit':{}}))
+            with patch.object(node,'configure_node',return_value=config):
+                node.configuration(root,root,{'destinations':[]},root/'credential')
+            provider = json.loads(read_file(config))['providers']['httpStreaming']
+        prefix, suffix = response(BY_ID['oversized-body'],SimpleNamespace(method=b'GET'),1)
+        head, body = prefix.split(b'\r\n\r\n',1)
+        declared = int(next(line.split(b': ',1)[1] for line in head.split(b'\r\n') if line.startswith(b'Content-Length: ')))
+        self.assertEqual(declared,len(body+suffix))
+        self.assertEqual(declared,65536)
+        self.assertEqual(provider['limits']['maximumOutputBytes'],32768)
+        self.assertEqual(provider['configuration']['limits']['maximumResponseBodyBytes'],32768)
+        self.assertGreater(declared,provider['limits']['maximumOutputBytes'])
+        host = read_file(ROOT/'crates/latent-http/src/streaming/response.rs').decode()
+        begin = host[host.index('pub(super) fn begin('):host.index('fn copy_headers(')]
+        self.assertLess(begin.index('return Err(HttpError::ResponseTooLarge.into())'),begin.index('Ok(Body {'))
+        cases = node.library_cases({'host':'127.0.0.1','port':1},observed)
+        self.assertEqual(len(cases),30)
+        self.assertEqual({row[0]:row[3] for row in cases if row[0].endswith('-oversized')},
+                         {'sling-oversized':'transport-error','requests-oversized':'transport-error'})
+
     def test_truncated_oracle_requires_actual_native_observation_and_keeps_other_cases(self):
         def reference_rows():
             return {'schemaVersion':'latent.go.http-client.native-reference.v1','status':'passed','guestExecution':False,

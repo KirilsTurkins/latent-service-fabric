@@ -344,6 +344,8 @@ jobs:
             ${{ runner.temp }}/go-http-libraries/*/native-reference.json
             ${{ runner.temp }}/go-http-libraries/*/native-reference-sling.json
             ${{ runner.temp }}/go-http-libraries/*/native-reference-requests.json
+            ${{ runner.temp }}/go-http-libraries/*/native-reference-malformed-json-sling.json
+            ${{ runner.temp }}/go-http-libraries/*/native-reference-malformed-json-requests.json
             ${{ runner.temp }}/go-http-libraries/*/capture-command.json
             ${{ runner.temp }}/go-http-libraries/*/capture.*.txt
             ${{ runner.temp }}/go-http-libraries/*/application/src/**

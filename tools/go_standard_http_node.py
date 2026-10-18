@@ -180,20 +180,22 @@ def entry_probes(client, probe, target, output, address, result, *, libraries=Fa
 
 
 def library_cases(secondary: dict, native_reference: dict | None = None) -> list[tuple]:
-    from tools.go_http_library_reference import outcomes
+    from tools.go_http_library_reference import outcomes, malformed_outcomes
     truncated = outcomes(native_reference)
+    # Legacy source-only inventories can construct the original case list.
+    # The signed runner below requires the additional actual observation.
+    malformed = malformed_outcomes(native_reference) if 'malformedJsonClients' in native_reference else None
     cases = []
     for index,name in enumerate(('sling','requests')):
-        # Sling's original streaming JSON decoder can reject malformed bytes
-        # before its deferred discard encounters the provider's size error.
-        oversized = 'invalid-json' if index == 0 else 'transport-error'
+        # The declared response length exceeds the host's output allowance:
+        # both clients receive the refusal before any JSON decoder runs.
         for label,mode,path,expected in (
             ('json',0,'/conformance/json','200:domain:7:caf\u00e9:first|\u03bb'),
             ('http404',0,'/conformance/status/404','404:error:domain-error'),
             ('http500',0,'/conformance/status/500','500:error:domain-error'),
             ('truncated',0,'/conformance/body/truncated',truncated[name]),
-            ('oversized',0,'/conformance/body/oversized',oversized),
-            ('malformed-json',0,'/conformance/body/malformed-json','invalid-json'),
+            ('oversized',0,'/conformance/body/oversized','transport-error'),
+            ('malformed-json',0,'/conformance/body/malformed-json',malformed[name] if malformed is not None else 'invalid-json'),
             ('forbidden',3,'/conformance/json','transport-error'),
             ('cancel-headers',4,'/conformance/hold/headers','cancelled'),
             ('partial-context-cancel',5,'/conformance/body/partial','cancelled'),
@@ -339,6 +341,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('noncanonical-user-agent-denied', 24, '/conformance/json', 'transport-error'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
             if suite == 'libraries':
+                from tools.go_http_library_reference import malformed_outcomes
+                malformed_outcomes(native_reference)
                 result['nativeReference'] = native_reference
                 cases = library_cases(secondary,native_reference)
             for name, which, path, expected in cases:

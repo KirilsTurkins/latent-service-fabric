@@ -39,10 +39,11 @@ There is no additional native workspace build or automatic release publication.
 
 Cases cover domain JSON, HTTP 404/500, truncation, body limits, malformed JSON,
 reserved credentials, pending contexts, pre-cancellation, sibling cancellation,
-POST and lost replies, denied alternate destinations and fresh state. Sling's
-original decoder can reject malformed bytes before its deferred discard reaches
-a provider size error; that case expects its actual syntax error rather than
-inventing a later exception. Its partial-response context cancellation does not
+POST and lost replies, denied alternate destinations and fresh state. The
+oversized vector declares65,536 bytes, exceeding the host's32,768-byte output
+allowance. Both clients receive that transport refusal before any JSON decoding;
+this host policy result is independent of an unrestricted native client.
+Sling's partial-response context cancellation does not
 independently prove that headers were returned first. Requests starts that
 cancellation in its response callback. The existing independent 33-case standard
 HTTP gate remains responsible for concrete transports, early close and separately
@@ -51,11 +52,14 @@ labelled custom transports, including its after-header body cancellation case.
 Before each signed library variant, a native reference compiles the unchanged
 captured application's ordinary Run function against the reviewed offline module
 closure. The private origin remains unavailable. One native binary is invoked
-in a fresh process per client against a local short-body response (five bytes,
-declared Content-Length32); each must make exactly one GET. Sling streams its
+in a fresh process per client and response vector: short body (five bytes,
+declared Content-Length32), then complete malformed JSON (six bytes,
+declared Content-Length6). Each must make exactly one GET. Sling streams its
 JSON decoder and can report syntax before body truncation, while Requests reads
-the entire response before decoding. Only the two truncated-body expectations
-come from these observed native results; the other28 signed cases are unchanged.
+the entire response before decoding. The four truncated/malformed-body
+expectations come from these observed native results. Host authority and body
+limit refusals retain their independent strict oracles; no native result can
+permit a denied operation or enlarge a limit.
 A missing, failed, malformed, repeated-request or wrong-source reference cannot
 supply an oracle. Native control rows are retained separately, never counted as
 guest execution or among the24 signed peer contacts. No transport is injected,

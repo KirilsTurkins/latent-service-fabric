@@ -62,7 +62,7 @@ def qualify(output: Path, native_qualification: Path):
             require(result.returncode == 0,'go-http-libraries-native-capture-failed')
             captured = read_json(owned/'capture.json')
             stage = variant+'-native-truncated-reference'
-            reference = native_reference(app,go,owned/'native-reference.json',deadline=deadline)
+            reference = native_reference(app,go,owned/'native-reference.json',deadline=deadline,include_malformed=True)
             require(reference['sourceDigest'] == captured['sourceDigest'],'go-http-libraries-native-reference-source')
             stage = variant+'-normal-component-build'
             command = [sys.executable,str(ROOT/'tools/go_capsule.py'),'build',str(app),
