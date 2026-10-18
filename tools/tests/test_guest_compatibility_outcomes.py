@@ -38,6 +38,50 @@ def rehash(value):
 
 
 class OutcomeReader(unittest.TestCase):
+    def test_observed_lifecycle_disposition_round_trips_for_every_language_without_cause_claims(self):
+        for language in compatibility.LANGUAGES:
+            with self.subTest(language=language):
+                report = compatibility.report(language, digest(b'source'), digest(b'component'),
+                    'lsf-host-abi-phase3-v4', [], [])
+                selected_context = context.create(report, [], {'state': 'absent'})
+                collector = outcomes.Capture(digest(b'frontend'), report['componentDigest'], selected_context)
+                result = observation(code='guest-trap')
+                result['error']['details'] = [{'kind': 'activation.guest-trap',
+                    'fields': {'code': 'runtime-lifecycle-unproven', 'cell_id': 'private-cell'}}]
+                original = copy.deepcopy(result)
+                collector.observe('lifecycle-refusal', result, True)
+                value = outcomes.read(encode(collector.snapshot()), report=report, selected_context=selected_context)
+                row = value['cases'][0]
+                self.assertEqual(row['guestTrapCode'], 'runtime-lifecycle-unproven')
+                self.assertEqual((row['cause'], row['resourceDimension'], row['physicalRetirement']),
+                                 ('unknown', 'unknown', 'unproven'))
+                self.assertEqual((value['libraryReachability'], value['workerDrain'], value['retrySafety']),
+                                 ('unknown', 'unproven', 'unknown'))
+                self.assertIn('runtime disposition runtime-lifecycle-unproven', outcomes.present(value))
+                self.assertNotIn('private-', encode(value).decode())
+                self.assertEqual(result, original)
+
+    def test_lifecycle_disposition_cannot_certify_a_cause_or_accept_unknown_tokens(self):
+        report, selected_context = selected()
+        collector = outcomes.Capture(digest(b'frontend'), report['componentDigest'], selected_context)
+        result = observation(code='guest-trap')
+        detail = {'kind': 'activation.guest-trap', 'fields': {'code': 'runtime-lifecycle-unproven'}}
+        result['error']['details'] = [detail]
+        collector.observe('lifecycle-refusal', result, True)
+        value = collector.snapshot()
+        for field, claim in (('cause', 'lifecycle-unproven'), ('resourceDimension', 'timers'),
+                             ('physicalRetirement', 'reaped'), ('guestTrapCode', 'private-token')):
+            changed = copy.deepcopy(value); changed['cases'][0][field] = claim; rehash(changed)
+            with self.subTest(field=field), self.assertRaises(DevError): outcomes.validate(changed)
+        for details in ([detail, detail], [detail] * 17,
+                        [{'kind': 'activation.guest-trap', 'fields': {'code': 'private-token'}}]):
+            result['error']['details'] = details
+            projected = outcomes.original(result)
+            self.assertNotIn('guestTrapCode', projected)
+            self.assertTrue(projected['trapDetailsUnavailable'])
+            self.assertEqual((projected['cause'], projected['resourceDimension']), ('unknown', 'unknown'))
+            self.assertNotIn('private-token', encode(projected).decode())
+
     def test_round_trip_binds_component_report_context_and_distinct_frontend_source(self):
         value, report, selected_context = capture()
         self.assertEqual(outcomes.read(encode(value), report=report, selected_context=selected_context), value)
