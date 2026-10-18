@@ -23,10 +23,38 @@ PROFILE = 'dotnet-native-aot-component-v1'
 PROJECT = 'Capsule.csproj'
 LOCK = 'packages.lock.json'
 ASSETS = 'nuget-resolved.lock.json'
+MAX_NATIVE_JSON = 16 * 1024 * 1024
 IMPORT_GUARDS = ('ImportDirectoryBuildProps', 'ImportDirectoryBuildTargets',
                  'ImportProjectExtensionProps', 'ImportProjectExtensionTargets',
                  'ImportUserLocationsByWildcardBeforeMicrosoftCommonProps', 'ImportUserLocationsByWildcardAfterMicrosoftCommonProps',
                  'ImportUserLocationsByWildcardBeforeMicrosoftCommonTargets', 'ImportUserLocationsByWildcardAfterMicrosoftCommonTargets')
+
+
+def native_json(data: bytes) -> dict:
+    """Keep native NuGet fields unambiguous before graph selection or compilation."""
+    if len(data) > MAX_NATIVE_JSON:
+        raise DependencyError('nuget-native-json-limit')
+
+    def fields(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise DependencyError('nuget-native-json-duplicate-field')
+            result[key] = value
+        return result
+
+    def invalid_constant(_):
+        raise ValueError()
+
+    try:
+        value = json.loads(data, object_pairs_hook=fields, parse_constant=invalid_constant)
+    except DependencyError:
+        raise
+    except (UnicodeError, ValueError, RecursionError):
+        raise DependencyError('nuget-native-json-invalid') from None
+    if not isinstance(value, dict):
+        raise DependencyError('nuget-native-json-invalid')
+    return value
 
 
 def selection(value: dict | None = None) -> dict:
@@ -373,7 +401,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     helper_source = snapshot(tools / 'package-hash-source')
     files = source_files(project)
     declared = declarations(files)
-    baseline = json.loads(files['vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'])
+    baseline = native_json(files['vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'])
     if helper_source != snapshot(project / 'vendor/lsf/sdk/dotnet-guest/tools/package-hash'):
         raise DependencyError('nuget-content-hash-helper-source-not-sdk-owned')
     with tempfile.TemporaryDirectory(prefix='lsf-nuget-resolve-') as temporary:
@@ -396,9 +424,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         run_bounded([str(dotnet), 'restore', str(owned / PROJECT), '--configfile', str(owned / 'nuget.config'),
             '--packages', str(owned / 'packages'), '--disable-parallel', '--locked-mode' if existing and not update_lock else '--force-evaluate',
             '-p:NuGetAudit=false', *['-p:' + key + '=false' for key in IMPORT_GUARDS]], owned, environment, 600, 4 * 1024 * 1024)
-        lock_bytes, assets_bytes = read_bytes(owned / LOCK), read_bytes(owned / 'obj/project.assets.json', 16 * 1024 * 1024)
-        native = analyze(json.loads(lock_bytes), json.loads(assets_bytes), baseline, declared)
-        native['assets'] = {key: json.loads(assets_bytes)[key] for key in ('version', 'targets', 'libraries')}
+        lock_bytes, assets_bytes = read_bytes(owned / LOCK, MAX_NATIVE_JSON), read_bytes(owned / 'obj/project.assets.json', MAX_NATIVE_JSON)
+        native_lock, assets = native_json(lock_bytes), native_json(assets_bytes)
+        native = analyze(native_lock, assets, baseline, declared)
+        native['assets'] = {key: assets[key] for key in ('version', 'targets', 'libraries')}
         native['fetchPolicy'] = source_policy
         helper = tools / 'package-hash/PackageHash.dll'
         native['resolver'] = {'dotnet': file_identity(dotnet, 'dotnet'), 'contentHashHelper': file_identity(helper, 'nuget-content-hash-helper')}
@@ -456,7 +485,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         for original in originals.values():
             staged_store.put(store.get(**original))
         captured = capture(check, cache=store.root)
-        validate_selection(files, declared['selection'], json.loads(lock_bytes), native, captured['artifacts'])
+        validate_selection(files, declared['selection'], native_lock, native, captured['artifacts'])
         if (source_files(project) != files or optional(owner, MANIFEST) != previous_manifest
                 or optional(owner, 'latent.dependencies.lock.json') != previous_lock
                 or file_identity(dotnet, 'dotnet') != resolver_before
@@ -476,7 +505,7 @@ def validate_selection(files: dict[str, bytes], selected: dict, native_lock: dic
                        artifacts: list[dict]) -> tuple[dict, list[dict], dict]:
     """Check the native graph identically during exact review and compilation."""
     declared = declarations(files, selected)
-    baseline = json.loads(files['vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'])
+    baseline = native_json(files['vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'])
     if native['selection'] != declared['selection'] or native['sdkBaselineDigest'] != digest(canonical(baseline)):
         raise DependencyError('nuget-native-selection-or-sdk-baseline-drift')
     expected = analyze(native_lock, native['assets'], baseline, declared)
@@ -510,9 +539,9 @@ def validate_selection(files: dict[str, bytes], selected: dict, native_lock: dic
 def configure(closure, project: Path, packages: Path) -> dict:
     from tools.guest_dependency_inputs import read_native
     files = snapshot(project, exclude=('dependencies', 'application-vendor'))
-    native = json.loads(read_native(closure, ASSETS, 16 * 1024 * 1024))
+    native = native_json(read_native(closure, ASSETS, MAX_NATIVE_JSON))
     declared, active, rows = validate_selection(files, closure.lock['selection'],
-        json.loads(read_native(closure, LOCK)), native, closure.lock['artifacts'])
+        native_json(read_native(closure, LOCK, MAX_NATIVE_JSON)), native, closure.lock['artifacts'])
     layouts = []
     for row in active:
         identity = row['package'] + '/' + row['version']
