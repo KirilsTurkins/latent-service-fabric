@@ -55,14 +55,15 @@ A package name alone cannot make an unobserved file a trusted resource.
 | C | Captured constant data / selected compiler resource inputs | Runtime resource facade still requires component evidence |
 | TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
 | Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
-| Java | Captured selected classpath resource bytes | `getResourceAsStream` integration and emitted component tests pending |
+| Java | Captured selected classpath resource bytes | Selected `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` signed-node cases; broader lookup APIs pending |
 | .NET | One verified selection supplies package layers and embedded compiler inputs | `Assembly.GetManifestResourceStream` runs in the focused signed resource fixture; broader library/distribution acceptance remains open |
 
 The [.NET resource and explicit wall-clock reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-12/pr856-reconciliation.md)
 records fresh signed-node checks for binary/empty resources, literal names,
 independent stream positions, absent lookup and disposal. Those checks do not
-qualify every NuGet library or a new packaged toolkit. Java's captured resource
-layers still require their own emitted-component lookup qualification.
+qualify every NuGet library or a new packaged toolkit. Java's selected class and
+classloader lookup cases require current-head emitted-component qualification;
+other Java lookup APIs remain outside that finite evidence.
 
 This table identifies the ingestion paths and their runtime acceptance boundaries;
 package assembly alone does not prove those APIs execute. The index records
