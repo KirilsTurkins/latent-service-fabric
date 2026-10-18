@@ -35,6 +35,31 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+def write_dependency_tests(application: Path, expected: str) -> None:
+    from tools.dev_workflow import paths, scenarios
+    from tools.dev_workflow.common import MAX_DOCUMENT, decode
+    original = scenarios.validate(decode(paths.read(application, 'tests/scenarios.json', MAX_DOCUMENT)), 'node')
+    cases = original['scenarios']
+    require(all(case['service'] == 'examples/my-greeting'
+                and case['contract'] == 'examples:greeting/api@1.0.0' and case['function'] == 'greet'
+                for case in cases), 'maintained-greeting-scenarios-required')
+    require(all(case['timeoutMillis'] == 5000 and 'nodeTimeoutMillis' in case for case in cases),
+            'maintained-portable-and-node-timeouts-required')
+    timeouts = {case['nodeTimeoutMillis'] for case in cases}
+    require(len(timeouts) == 1, 'maintained-node-timeout-ambiguous')
+    node_timeout = timeouts.pop()
+    location = application / 'tests'
+    (location / 'library-input.json').write_bytes(b'["SDK"]')
+    (location / 'library-expected.json').write_bytes(json.dumps([{'ok': expected}], separators=(',', ':')).encode())
+    write(location / 'scenarios.json', {'schemaVersion': 'latent.dev.scenarios.v1', 'scenarios': [{
+        'id': 'dependency-output', 'service': 'examples/my-greeting',
+        'contract': 'examples:greeting/api@1.0.0', 'function': 'greet',
+        'input': 'tests/library-input.json', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
+        'expect': {'category': 'success', 'payload': 'tests/library-expected.json'},
+        'requires': [], 'timeoutMillis': 5000, 'nodeTimeoutMillis': node_timeout,
+        'required': True, 'fixtures': []}]})
+
+
 def public_failed_test_report(value):
     """Project already parsed scenario results without identifiers or payloads."""
     if (not isinstance(value, dict) or value.get('schemaVersion') != 'latent.dev.test-report.v1'
@@ -251,15 +276,7 @@ def main() -> int:
         raise ValueError('watch-event-deadline-' + label)
 
     def tests(expected):
-        location = application / 'tests'
-        (location / 'library-input.json').write_bytes(b'["SDK"]')
-        (location / 'library-expected.json').write_bytes(json.dumps([{'ok': expected}], separators=(',', ':')).encode())
-        write(location / 'scenarios.json', {'schemaVersion': 'latent.dev.scenarios.v1', 'scenarios': [{
-            'id': 'dependency-output', 'service': 'examples/my-greeting',
-            'contract': 'examples:greeting/api@1.0.0', 'function': 'greet',
-            'input': 'tests/library-input.json', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
-            'expect': {'category': 'success', 'payload': 'tests/library-expected.json'},
-            'requires': [], 'timeoutMillis': 5000, 'required': True, 'fixtures': []}]})
+        write_dependency_tests(application, expected)
 
     def review(label):
         candidate = root / (label + '-candidate.json')

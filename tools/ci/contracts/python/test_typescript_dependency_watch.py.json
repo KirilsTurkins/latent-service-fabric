@@ -8,6 +8,8 @@
     "DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call",
     "DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper",
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
+    "MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs",
+    "MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget",
     "PostDeployFailureProjection.test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure",
     "PostDeployFailureProjection.test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields",
     "PostDeployFailureProjection.test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings",
@@ -136,6 +138,30 @@
       "fixtureGuards": [
         "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:ce47aa8e6bb2696f3b83e57add2a21472bbb59e00104ae691add267bfd158fbd"
+      ],
+      "skipSites": []
+    },
+    "MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:ce47aa8e6bb2696f3b83e57add2a21472bbb59e00104ae691add267bfd158fbd"
       ],
       "skipSites": []
     },
@@ -298,6 +324,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_dependency_watch.py",
-  "reviewReason": "Add original deadline producer to public numeric diagnostic controls with unchanged prior cases and execution guards",
+  "reviewReason": "Add real delivered template and actual scenario adapter controls proving separate maintained deadlines and invalid-input refusal",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -419,6 +419,107 @@ class DeliveredTemplateCaller(unittest.TestCase):
             self.run_actual_main_to_resolver_boundary(Path(temporary), flat=True)
 
 
+class MaintainedScenarioBudget(unittest.TestCase):
+    def delivered_application(self, root):
+        from unittest.mock import patch
+        from tools import dev_tool_distribution as distribution
+        from tools.dev_workflow import project
+        from tools.dev_workflow.common import decode
+        installed = root / 'installed'
+        for name in ('sdk/bin/python', 'sdk/bin/capsule-contracts', 'sdk/bin/capsule-test-signer',
+                     'sdk/bin/wasm-tools', 'sdk/bin/wit-bindgen', 'recipe/tools/dev_guest_recipe.py'):
+            selected = installed / name
+            selected.parent.mkdir(parents=True, exist_ok=True)
+            selected.write_bytes(b'explicit source-fixture bytes; never executed')
+        distribution.compiler_inventory(installed, 'a' * 40, 'typescript')
+        with patch.object(distribution, 'TUTORIAL_CASES', {'greeting': distribution.TUTORIAL_CASES['greeting']}):
+            catalogue = distribution.templates(installed, 'a' * 40, 'typescript')
+        entry = catalogue['greeting']
+        template = installed / entry['path']
+        manifest = decode((template / 'template.json').read_bytes())
+        application = root / 'application'
+        project.scaffold(template, application, manifest, entry['identity'])
+        return application, template
+
+    def test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget(self):
+        import base64
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        from tools.dev_workflow import scenarios
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(qualifier.subprocess, 'run', side_effect=AssertionError('process forbidden')), \
+                patch.object(qualifier.subprocess, 'Popen', side_effect=AssertionError('process forbidden')):
+            application, template = self.delivered_application(Path(temporary))
+            original = (template / 'tests/scenarios.json').read_bytes()
+            original_cases = json.loads(original)['scenarios']
+            self.assertEqual({(case['timeoutMillis'], case['nodeTimeoutMillis']) for case in original_cases},
+                             {(5000, 120000)})
+            sdk_lock = (application / 'app/sdk-lock.json').read_bytes()
+            for expected in ('42/SDK/captured watch data', '43/SDK/captured watch data', 'removed/SDK'):
+                qualifier.write_dependency_tests(application, expected)
+                document = json.loads((application / 'tests/scenarios.json').read_bytes())
+                case, = document['scenarios']
+                self.assertEqual((case['timeoutMillis'], case['nodeTimeoutMillis'], case['required']),
+                                 (5000, 120000, True))
+                self.assertEqual(case['expect']['category'], 'success')
+                seen = []
+                def adapter(selected, raw):
+                    seen.append((selected['timeoutMillis'], raw))
+                    if selected['timeoutMillis'] == 120000:
+                        return {'category': 'platform-failure', 'outcomeKnown': True,
+                                'error': {'code': 'deadline-exceeded'}, 'data': {}}
+                    payload = (application / 'tests/library-expected.json').read_bytes()
+                    return {'category': 'success', 'outcomeKnown': True, 'data': {'payload': {
+                        'encoding': 'base64', 'data': base64.b64encode(payload).decode(),
+                        'byteLength': str(len(payload)), 'mediaType': case['mediaType']}}}
+                node = scenarios.run(document, application, 'node', ['dependency-output'], adapter, {}, supported=set())
+                portable = scenarios.run(document, application, 'portable', ['dependency-output'], adapter, {}, supported=set())
+                self.assertEqual(seen, [(120000, b'["SDK"]'), (5000, b'["SDK"]')])
+                self.assertFalse(node['passed'])
+                self.assertEqual(node['results'][0]['platformCode'], 'deadline-exceeded')
+                self.assertTrue(portable['passed'])
+                self.assertEqual((application / 'app/sdk-lock.json').read_bytes(), sdk_lock)
+                self.assertEqual((template / 'tests/scenarios.json').read_bytes(), original)
+
+    def test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs(self):
+        import copy
+        from tools import qualify_typescript_dependency_watch as qualifier
+        with tempfile.TemporaryDirectory() as temporary:
+            application, _template = self.delivered_application(Path(temporary))
+            selected = application / 'tests/scenarios.json'
+            original = json.loads(selected.read_bytes())
+            alternatives = [None, b'{', b'{"schemaVersion":NaN}', b'{}']
+            for value in (None, True, '120000', 0, -1, 120001):
+                changed = copy.deepcopy(original)
+                for case in changed['scenarios']:
+                    if value is None:
+                        del case['nodeTimeoutMillis']
+                    else:
+                        case['nodeTimeoutMillis'] = value
+                alternatives.append(json.dumps(changed).encode())
+            changed = copy.deepcopy(original)
+            changed['scenarios'][0]['nodeTimeoutMillis'] = 60000
+            alternatives.append(json.dumps(changed).encode())
+            changed = copy.deepcopy(original)
+            changed['scenarios'][0]['timeoutMillis'] = 6000
+            alternatives.append(json.dumps(changed).encode())
+            changed = copy.deepcopy(original)
+            changed['scenarios'][0]['service'] = 'examples/foreign-service'
+            alternatives.append(json.dumps(changed).encode())
+            for ordinal, raw in enumerate(alternatives):
+                with self.subTest(ordinal=ordinal):
+                    if selected.exists():
+                        selected.unlink()
+                    if raw is not None:
+                        selected.write_bytes(raw)
+                    before = {path.relative_to(application).as_posix(): path.read_bytes()
+                              for path in application.rglob('*') if path.is_file()}
+                    with self.assertRaises(ValueError):
+                        qualifier.write_dependency_tests(application, '42/SDK/captured watch data')
+                    self.assertEqual({path.relative_to(application).as_posix(): path.read_bytes()
+                                      for path in application.rglob('*') if path.is_file()}, before)
+
+
 class PostDeployFailureProjection(unittest.TestCase):
     def producer_report(self):
         from tools.dev_workflow import scenarios
