@@ -2,6 +2,8 @@
 from pathlib import Path
 import time
 
+from tools.application_dependency_store import DependencyError
+
 from . import build_client, state
 from .common import DevError, MAX_DEPLOY_SECONDS, require
 
@@ -45,7 +47,10 @@ def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emi
                 if observation() != observed_source:
                     continue
             except (DevError, OSError, ValueError) as error:
-                code = error.code if isinstance(error, DevError) else "source-unavailable-during-edit"
+                code = (error.code if isinstance(error, DevError)
+                        else "dependency-native-lock-drift" if isinstance(error, DependencyError)
+                        and str(error) == "dependency-native-lock-drift"
+                        else "source-unavailable-during-edit")
                 if code != last_error:
                     event("edit-failed", phase="source", code=code, uncertain=False)
                     last_error = code

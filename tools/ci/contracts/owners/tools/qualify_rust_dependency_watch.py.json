@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require exact certain native-lock refusals and retain six bounded witnesses with the actual deploy-phase signed-workspace boundary; preserve all qualification limits.",
+  "reviewReason": "Observe exact recipe-trust refusal after queued Rust source and dependency reconciliation within 120 seconds; retain the 2400-second campaign, unreviewed-lock gate, signed stages and bounded public projection.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0ba79eac55b16ed6e9457a3b7f1bd323cbe3788bbe308e8c2cf3298bb92ac7ac"
+  "sha256": "4f62856e6c520024cac571bb1399126f6b51a3a5ed041effb0b8f13b52dc4990"
 }
