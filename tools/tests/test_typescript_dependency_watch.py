@@ -442,6 +442,82 @@ class PostDeployFailureProjection(unittest.TestCase):
         self.assertNotIn('private', json.dumps(projected))
         self.assertNotIn('Sha256', json.dumps(projected))
 
+    def test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure(self):
+        from unittest.mock import patch
+        from tools.dev_workflow import scenarios
+        from tools import qualify_typescript_dependency_watch as qualifier
+        case = {'id': 'private-case-name', 'required': True, 'timeoutMillis': 5000,
+            'expect': {'category': 'success'}, 'fixtures': []}
+        observed = []
+        def original_result(selected, raw):
+            observed.append((selected['timeoutMillis'], raw))
+            return {'outcomeKnown': True, 'category': 'platform-failure',
+                'error': {'code': 'deadline-exceeded', 'message': 'private-error'},
+                'data': {'consumption': {'cpuFuel': '18446744073709551615', 'wallTimeMicros': '5000000',
+                    'peakMemoryBytes': '134217728', 'childCalls': 0, 'secret': 'private-token'},
+                    'payload': {'data': 'private-body'}}}
+        value = scenarios.run_prepared([(case, b'private input', None)], {}, 'node', original_result, {})
+        target = {}
+        with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$'):
+            qualifier.check_post_deploy_test({'passed': False, 'report': value}, target, 'initial')
+        self.assertEqual(observed, [(5000, b'private input')])
+        projected = target['postDeployTestFailure']
+        self.assertFalse(projected['qualification'])
+        self.assertEqual(projected['results'][0]['platformCode'], 'deadline-exceeded')
+        self.assertEqual(projected['results'][0]['consumption'], {
+            'cpuFuel': '18446744073709551615', 'wallTimeMicros': '5000000',
+            'peakMemoryBytes': '134217728', 'childCalls': '0'})
+        self.assertNotIn('private', json.dumps(projected))
+        self.assertLess(len(json.dumps(projected).encode()), 4096)
+        real_require = qualifier.require
+        for error in (RecursionError('private parser detail'), RuntimeError('private observer detail')):
+            originals = []
+            def keep_original(selected, reason):
+                try:
+                    real_require(selected, reason)
+                except ValueError as original:
+                    originals.append(original)
+                    raise
+            with patch.object(qualifier, 'require', side_effect=keep_original), \
+                    patch.object(qualifier.re, 'fullmatch', side_effect=error):
+                with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$') as observed_error:
+                    qualifier.check_post_deploy_test({'passed': False, 'report': value}, {}, 'initial')
+            self.assertEqual(len(originals), 1)
+            self.assertIs(observed_error.exception, originals[0])
+
+    def test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        value = self.producer_report()
+        item = value['results'][0]
+        invalid_u64 = (True, -1, 1, 1.5, float('nan'), float('inf'), '00', '+1', '1e3', '-1',
+                       str(1 << 64), 'token-secret', '9' * 10000, {'nested': 'token-secret'})
+        invalid_u32 = (*invalid_u64, str(1 << 32))
+        for name, invalid in (('cpuFuel', invalid_u64), ('childCalls', invalid_u32)):
+            for selected in invalid:
+                with self.subTest(name=name, selected=type(selected).__name__):
+                    item['consumption'] = {name: selected, 'wallTimeMicros': '5', 'secret': 'token-secret'}
+                    original = json.dumps(value, sort_keys=True)
+                    result = qualifier.public_failed_test_report(value)
+                    self.assertEqual(result['results'][0]['consumption'], {'wallTimeMicros': '5'})
+                    self.assertNotIn('token-secret', json.dumps(result))
+                    self.assertEqual(json.dumps(value, sort_keys=True), original)
+                    self.assertIs(value['results'][0]['consumption'][name], selected)
+        item['consumption'] = {'cpuFuel': '0', 'childCalls': str((1 << 32) - 1),
+                               'outboundRequests': '0', 'effectCount': '1'}
+        expected = dict(item['consumption'])
+        self.assertEqual(qualifier.public_failed_test_report(value)['results'][0]['consumption'], expected)
+        item['status'] = 'passed'
+        self.assertNotIn('consumption', qualifier.public_failed_test_report(value)['results'][0])
+        from tools.dev_workflow.node_diagnostics import U64_FIELDS, U32_FIELDS
+        item['status'] = 'failed'
+        item['consumption'] = {**{name: str((1 << 64) - 1) for name in U64_FIELDS},
+                               **{name: str((1 << 32) - 1) for name in U32_FIELDS}}
+        value['results'] = [item] * 32
+        result = qualifier.public_failed_test_report(value)
+        self.assertEqual(len(result['results']), 8)
+        self.assertTrue(all(row['consumption'] == item['consumption'] for row in result['results']))
+        self.assertLess(len(json.dumps(result).encode()), 8192)
+
     def test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape(self):
         from tools import qualify_typescript_dependency_watch as qualifier
         secret = 'token-secret'

@@ -13,6 +13,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -65,6 +66,17 @@ def public_failed_test_report(value):
         for key in ('required', 'outcomeKnown', 'targetMatches'):
             if type(item.get(key)) is bool:
                 row[key] = item[key]
+        consumption = item.get('consumption')
+        if item.get('status') == 'failed' and isinstance(consumption, dict):
+            from tools.dev_workflow.node_diagnostics import U64_FIELDS, U32_FIELDS
+            retained = {}
+            for name, bits in [(name, 64) for name in U64_FIELDS] + [(name, 32) for name in U32_FIELDS]:
+                selected = consumption.get(name)
+                if (type(selected) is str and re.fullmatch(r'0|[1-9][0-9]{0,19}', selected)
+                        and int(selected) < 1 << bits):
+                    retained[name] = selected
+            if retained:
+                row['consumption'] = retained
         result['results'].append(row)
     return result
 

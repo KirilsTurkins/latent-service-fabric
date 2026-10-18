@@ -21,8 +21,11 @@
     "PublicFailureObservation.test_actual_link_and_owner_refusals_remain_closed_metadata_observations",
     "PublicFailureObservation.test_actual_oversized_metadata_still_refuses_and_retains_closed_observation",
     "PublicFailureObservation.test_existing_valid_metadata_and_success_output_remain_unchanged",
+    "PublicFailureObservation.test_later_oversized_request_and_logs_keep_original_taxonomy_and_closed_per_file_observations",
+    "PublicFailureObservation.test_owned_approval_request_above_64k_uses_canonical_viewer_bound_without_exposing_or_approving_it",
     "PublicFailureObservation.test_unknown_credentials_long_or_multiple_arguments_are_not_published",
     "PublicFailureObservation.test_unreadable_exception_arguments_cannot_replace_original_failure",
+    "PublicFailureObservation.test_unsafe_optional_approval_file_still_fails_closed_instead_of_becoming_unavailable",
     "PublicWatchEvents.test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty",
     "PublicWatchEvents.test_projection_retains_only_the_last_32_observations",
     "PublicWatchEvents.test_public_event_phase_and_code_vocabulary_has_only_real_producer_literals",
@@ -285,6 +288,30 @@
       ],
       "skipSites": []
     },
+    "PublicFailureObservation.test_later_oversized_request_and_logs_keep_original_taxonomy_and_closed_per_file_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:dedab0adadebb20419ba7ff8caddac6959d92822f527f52f99d227e645315137"
+      ],
+      "skipSites": []
+    },
+    "PublicFailureObservation.test_owned_approval_request_above_64k_uses_canonical_viewer_bound_without_exposing_or_approving_it": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:dedab0adadebb20419ba7ff8caddac6959d92822f527f52f99d227e645315137"
+      ],
+      "skipSites": []
+    },
     "PublicFailureObservation.test_unknown_credentials_long_or_multiple_arguments_are_not_published": {
       "bases": [
         "unittest.TestCase"
@@ -298,6 +325,18 @@
       "skipSites": []
     },
     "PublicFailureObservation.test_unreadable_exception_arguments_cannot_replace_original_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:dedab0adadebb20419ba7ff8caddac6959d92822f527f52f99d227e645315137"
+      ],
+      "skipSites": []
+    },
+    "PublicFailureObservation.test_unsafe_optional_approval_file_still_fails_closed_instead_of_becoming_unavailable": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -408,6 +447,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_watch.py",
-  "reviewReason": "Add six pure metadata observation-refusal/privacy/error-identity controls while preserving all twenty-five original cases, guards and skips",
+  "reviewReason": "Add request bound and diagnostic loss regressions while preserving every prior case and execution guard",
   "schemaVersion": "latent.ci.contracts.v1"
 }

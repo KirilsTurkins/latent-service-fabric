@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain only bounded closed ordinal fields from an already parsed failed post-deploy report; preserve original error identity, all14 prior cases/guards and every qualification criterion.",
+  "reviewReason": "Retain only original failed node scenario unsigned consumption in the bounded public watch diagnostic without changing invocation or acceptance",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8113804972a452077da1a65b9dd83d1ca1d442ee4e76dc02984f3eedfcf7336f"
+  "sha256": "6bb05603fa5a5b41e151b35e5f2e2d5edfa13cce6a0b8ec65e48d3904dcb7658"
 }

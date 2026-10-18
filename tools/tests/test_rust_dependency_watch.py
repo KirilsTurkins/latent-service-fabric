@@ -575,6 +575,73 @@ class PublicFailureObservation(unittest.TestCase):
             public = self.preserve_original(root, lambda: 'output')
             self.assert_closed_observation(public, 'owned-attempt-metadata', 'file-byte-limit')
 
+    def test_owned_approval_request_above_64k_uses_canonical_viewer_bound_without_exposing_or_approving_it(self):
+        import json
+        from tools.build_snapshot import canonical, digest
+        from tools.dev_workflow.executable_approval_request import MAX_REQUEST
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        request, private = PublicExecutableApproval().request()
+        request['specification']['executableInputs'][0]['metadata']['targets'] = [
+            {'name': private + str(index), 'src_path': '/private/' + private, 'kind': ['proc-macro']}
+            for index in range(400)]
+        request['identity'] = digest(canonical(request['specification']))
+        raw = canonical(request)
+        self.assertGreater(len(raw), 65536)
+        self.assertLessEqual(len(raw), MAX_REQUEST)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, _cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_text(json.dumps({'stage': 'executable-input-approval',
+                'reason': 'captured Cargo build scripts/macros require the exact retained executable-input approval identity'}))
+            target = output / 'executable-input-approval-request.json'
+            target.write_bytes(raw)
+            row = collect_build_failures(root, 'output')[0]
+            self.assertEqual(row['reasonCode'], 'executable-input-approval-required')
+            observed = row['executableApprovalRequest']
+            self.assertEqual(observed['requestIdentity'], request['identity'])
+            self.assertIs(observed['qualification'], False)
+            self.assertNotIn('approvalIdentity', observed)
+            self.assertNotIn(private, json.dumps(row))
+            self.assertNotIn('/private/', json.dumps(row))
+            self.assertEqual(target.read_bytes(), raw)
+
+    def test_later_oversized_request_and_logs_keep_original_taxonomy_and_closed_per_file_observations(self):
+        import json
+        from tools.dev_workflow.executable_approval_request import MAX_REQUEST
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_text(json.dumps({'stage': 'compile', 'reason': 'captured-input-missing'}))
+            (output / 'executable-input-approval-request.json').write_bytes(b'x' * (MAX_REQUEST + 1))
+            for stream in ('stdout', 'stderr'):
+                (cache / ('compiler-' + stream + '.log')).write_bytes(b'x' * (1024 * 1024 + 1))
+            public = self.preserve_original(root, lambda: 'output')
+            self.assertEqual(public['failure'], 'initial-build-failed')
+            self.assertIs(public['passed'], False)
+            self.assertNotIn('buildFailureObservation', public)
+            self.assertEqual(len(public['buildFailures']), 1)
+            row = public['buildFailures'][0]
+            self.assertEqual(row['stage'], 'compile')
+            self.assertIn('reasonSha256', row)
+            self.assertEqual(row['unavailable'], {'executableApprovalRequest': 'file-byte-limit',
+                'compilerStdout': 'file-byte-limit', 'compilerStderr': 'file-byte-limit'})
+            self.assertLess(len(json.dumps(public)), 1024)
+
+    def test_unsafe_optional_approval_file_still_fails_closed_instead_of_becoming_unavailable(self):
+        import os
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, _cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_text('{"stage":"compile"}')
+            target = output / 'executable-input-approval-request.json'
+            target.write_text('{}')
+            os.link(target, output / 'alias')
+            with self.assertRaisesRegex(ValueError, 'single-link-regular-file-required'):
+                collect_build_failures(root, 'output')
+            public = self.preserve_original(root, lambda: 'output')
+            self.assert_closed_observation(public, 'owned-attempt-metadata', 'single-link-regular-file-required')
+
     def test_actual_link_and_owner_refusals_remain_closed_metadata_observations(self):
         import os
         from tools.dev_workflow import state
