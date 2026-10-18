@@ -184,6 +184,46 @@ fn activation_runtime_linker_preserves_exact_shape_and_unknown_profile_denial() 
         .is_err());
 }
 
+#[test]
+fn native_runtime_linker_requires_exact_dependency_and_support_start_shape() {
+    let engine = engine();
+    let spec = latent_core::PHASE3_HOST_ABI_V6
+        .interface(crate::host::native::CAPABILITY)
+        .unwrap();
+    let activation = latent_core::PHASE3_HOST_ABI_V5
+        .interface(crate::host::runtime::CAPABILITY)
+        .unwrap();
+    let encode = |source: &str, name: &str| {
+        fixture::with_host(
+            fixture::Options::default(),
+            name,
+            &host_fixture::interface_with_dependencies(
+                &[("activation.wit", activation.wit), ("native.wit", source)],
+                spec.interface,
+                None,
+            ),
+        )
+    };
+    let component = Component::new(&engine, encode(spec.wit, spec.interface)).unwrap();
+    let mut linker = Linker::<HostState>::new(&engine);
+    assert!(linker.instantiate_pre(&component).is_err());
+    crate::host::native::install(&mut linker).unwrap();
+    linker.instantiate_pre(&component).unwrap();
+    for source in [
+        spec.wit.replace("start: func", "start: async func"),
+        spec.wit.replace("result<_, error>", "result<u32, error>"),
+    ] {
+        assert_ne!(source, spec.wit);
+        assert!(linker
+            .instantiate_pre(&Component::new(&engine, encode(&source, spec.interface)).unwrap())
+            .is_err());
+    }
+    let wrong = spec.interface.replace("0.1.0", "0.2.0");
+    assert!(linker
+        .instantiate_pre(&Component::new(&engine, encode(spec.wit, &wrong)).unwrap())
+        .is_err());
+}
+
 // Only a test provider: no endpoint, credential, pool or production registration.
 struct TestHttp;
 impl http::Host for TestHttp {}

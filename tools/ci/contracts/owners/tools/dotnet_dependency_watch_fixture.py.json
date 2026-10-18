@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dotnet_dependency_watch_fixture.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Declare the same explicit fixture random world using verified delivered SDK WIT, without an unavailable source-only qualification module; retain immutable SDK and exact copied compiler checks.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6142c9d0fb7002ac496bd0b496fa372067b5de67618b1d4211e9a67002723727"
+}

@@ -90,6 +90,59 @@ class Projection(unittest.TestCase):
                                                      "cleanShutdown": True}, observed)["confirmed"])
 
 
+class ScenarioConsumption(unittest.TestCase):
+    def report(self, result, environment="node"):
+        from tools.dev_workflow import scenarios
+        case = {"id": "private-case-name", "required": True, "timeoutMillis": 5000,
+                "expect": {"category": "success"}, "fixtures": []}
+        adapter = Mock(return_value=result)
+        report = scenarios.run_prepared([(case, b"private input", None)], {}, environment, adapter, {})
+        adapter.assert_called_once_with(case, b"private input")
+        self.assertEqual(report["results"][0]["timeoutMillis"], 5000)
+        return report
+
+    def test_failed_node_retains_only_original_closed_unsigned_consumption(self):
+        result = failure()
+        result["error"]["code"] = "deadline-exceeded"
+        result["data"]["consumption"].update(secret="private-token", outboundRequests=0)
+        original = copy.deepcopy(result)
+        report = self.report(result)
+        row = report["results"][0]
+        self.assertFalse(report["passed"])
+        self.assertEqual((row["status"], row["platformCode"], row["outcomeKnown"]),
+                         ("failed", "deadline-exceeded", True))
+        self.assertEqual(row["consumption"], {"cpuFuel": str((1 << 64) - 1),
+            "peakMemoryBytes": "67108864", "wallTimeMicros": "999",
+            "childCalls": str((1 << 32) - 1), "outboundRequests": "0"})
+        self.assertNotIn("private-", json.dumps(row["consumption"]))
+        self.assertEqual(result, original)
+
+    def test_passing_node_and_failed_portable_leave_existing_result_shape_unchanged(self):
+        passed = {"category": "success", "outcomeKnown": True,
+                  "data": {"consumption": {"cpuFuel": "123"}}}
+        with patch.object(diagnostics, "original_result", side_effect=AssertionError("unselected observer")):
+            node = self.report(passed)
+            portable = self.report(failure(), "portable")
+        self.assertTrue(node["passed"])
+        self.assertFalse(portable["passed"])
+        self.assertNotIn("consumption", node["results"][0])
+        self.assertNotIn("consumption", portable["results"][0])
+
+    def test_projection_errors_cannot_replace_the_original_failed_outcome(self):
+        result = failure()
+        result["error"]["code"] = "deadline-exceeded"
+        for error in (RecursionError("private parser detail"), RuntimeError("private observer detail")):
+            with self.subTest(error=type(error).__name__), \
+                    patch.object(diagnostics, "original_result", side_effect=error) as observe:
+                report = self.report(result)
+                observe.assert_called_once_with(result)
+            self.assertFalse(report["passed"])
+            row = report["results"][0]
+            self.assertEqual((row["platformCode"], row["outcomeKnown"]), ("deadline-exceeded", True))
+            self.assertNotIn("consumption", row)
+            self.assertNotIn("private observer", json.dumps(report))
+
+
 @unittest.skipUnless(os.name == "posix", "Linux source-node ownership")
 class ProbeIntegration(unittest.TestCase):
     def test_concrete_client_retains_failure_only_after_its_real_child_is_reaped(self):

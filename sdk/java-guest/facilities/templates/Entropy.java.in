@@ -1,0 +1,11 @@
+package dev.latent.guest.facilities;
+
+public final class Entropy {
+    private Entropy() { }
+    public static void fill(byte[] target) {
+        java.util.Objects.requireNonNull(target);
+        if (target.length > 4096) throw new java.security.ProviderException("bounded-entropy-length-limit");
+        if (target.length == 0) return;
+        ENTROPY_BODY
+    }
+}

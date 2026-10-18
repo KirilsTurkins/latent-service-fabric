@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "DotnetDependencyRecovery.test_all_four_faults_require_idle_and_fresh_component_calls",
+    "DotnetDependencyRecovery.test_failure_requires_terminal_identity_reaping_and_original_memory_bound",
+    "DotnetDependencyRecovery.test_fuel_case_requires_exact_lowered_budget_consumption",
+    "DotnetDependencyRecovery.test_insufficient_startup_margin_stops_before_fault_or_cancellation",
+    "DotnetDependencyRecovery.test_wrong_identity_and_unknown_cancel_never_retry_or_report_recovery"
+  ],
+  "guards": {
+    "DotnetDependencyRecovery.test_all_four_faults_require_idle_and_fresh_component_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6253cb17d81f10eaeaf06edeede64d566efe937d1e51034901c13e4b1bb252de",
+        "class:setup-sha256:ba2a5d0a8f77c7ecfc5eb61943f54b61632b31474176c5aef0ecb978c531cae1"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyRecovery.test_failure_requires_terminal_identity_reaping_and_original_memory_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6253cb17d81f10eaeaf06edeede64d566efe937d1e51034901c13e4b1bb252de",
+        "class:setup-sha256:ba2a5d0a8f77c7ecfc5eb61943f54b61632b31474176c5aef0ecb978c531cae1"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyRecovery.test_fuel_case_requires_exact_lowered_budget_consumption": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6253cb17d81f10eaeaf06edeede64d566efe937d1e51034901c13e4b1bb252de",
+        "class:setup-sha256:ba2a5d0a8f77c7ecfc5eb61943f54b61632b31474176c5aef0ecb978c531cae1"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyRecovery.test_insufficient_startup_margin_stops_before_fault_or_cancellation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6253cb17d81f10eaeaf06edeede64d566efe937d1e51034901c13e4b1bb252de",
+        "class:setup-sha256:ba2a5d0a8f77c7ecfc5eb61943f54b61632b31474176c5aef0ecb978c531cae1"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyRecovery.test_wrong_identity_and_unknown_cancel_never_retry_or_report_recovery": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6253cb17d81f10eaeaf06edeede64d566efe937d1e51034901c13e4b1bb252de",
+        "class:setup-sha256:ba2a5d0a8f77c7ecfc5eb61943f54b61632b31474176c5aef0ecb978c531cae1"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_dependency_recovery.py",
+  "reviewReason": "Explicit fixture review: keep all four original cases and zero skips; native success mocks now report measured startup fuel, fuel-failure mocks consume the actual selected sublimit, add an insufficient-margin rejection. No execution guard or decorator changes.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

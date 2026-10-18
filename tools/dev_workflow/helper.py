@@ -197,7 +197,7 @@ def dispatch(request: dict) -> dict:
     if operation == "hello":
         members(arguments, set())
         return protocol.hello()
-    root = state.workspace(root_directory(create=False) if operation == "preflight" else root_directory(),
+    root = state.workspace(root_directory(create=False) if operation in {"preflight", "executable-approval-request"} else root_directory(),
                            request["workspace"], create=operation in {"install", "asset-begin", "capture-begin", "purge"})
     if operation == "preflight":
         from .preflight_operation import packaged
@@ -261,11 +261,21 @@ def dispatch(request: dict) -> dict:
         if operation == "snapshot":
             return sync(root, arguments)
         if operation == "build":
-            members(arguments, {"toolRoot", "buildId"})
+            members(arguments, {"toolRoot", "buildId"}, {'executableApproval'})
             saved = state.load(root, "project.json")
+            from .executable_approval import selection
+            approval = arguments.get('executableApproval')
+            require('executableApproval' not in arguments or approval is not None, 'invalid-sha256')
+            selection(saved['descriptor'], approval)
             with build_control.session(root, arguments["buildId"]) as control:
                 return build.execute(root, Path(saved["source"]), saved["descriptor"], Path(arguments["toolRoot"]),
-                                     trusted=saved["trust"], cli=installation(root)[1] / "bin/latent", control=control)
+                                     trusted=saved["trust"], cli=installation(root)[1] / "bin/latent", control=control,
+                                     **({'executable_approval': approval} if approval is not None else {}))
+        if operation == 'executable-approval-request':
+            members(arguments, set())
+            from .executable_approval_request import read
+            with state.lock(root, 'build-control.lock', timeout=1):
+                return read(root)
         if operation == "deploy":
             members(arguments, set())
             return deploy(root)
@@ -347,6 +357,6 @@ def main() -> int:
         result = protocol.response(request, {}, code=code, uncertain=request["operation"] in {"install", "purge"})
     except Exception:
         result = protocol.response(request, {}, code="helper-operation-failed", uncertain=request["operation"] not in
-                                   {"hello", "doctor", "status", "logs"})
+                                   {"hello", "doctor", "status", "logs", "executable-approval-request"})
     sys.stdout.buffer.write(encode(result))
     return 0

@@ -12,10 +12,16 @@ def selection(root, descriptor, publication, execution, installed, client, journ
     operators = [item for item in node["credentials"] if item["tenant"] == descriptor["tenant"] and item["role"] == "operator"]
     require(len(operators) == 1, "test-requires-exact-scoped-operator")
     from tools.guest_runtime_profiles import RUNTIME
-    from . import blob_fixture, event_fixture, http_fixture, local_service_fixture, metric_fixture, secret_fixture
+    from . import blob_fixture, event_fixture, http_fixture, local_service_fixture, metric_fixture, random_fixture, secret_fixture
     profiles = {**RUNTIME, "http": http_fixture.PROVIDER, "blob": blob_fixture.PROVIDER,
                 "secrets": secret_fixture.PROVIDER, "metrics": metric_fixture.PROVIDER,
                 "localService": local_service_fixture.PROVIDER, "events": event_fixture.PROVIDER}
+    selected_random = None
+    if any(by_capability[capability][0] == "random" for capability in execution["grants"]):
+        fixtures = state.load(root, "test-profile.json").get("fixtures") or {}
+        if "random" in fixtures:
+            selected_random = random_fixture.validate(fixtures["random"])
+            profiles["random"] = random_fixture.PROVIDER
     grants = []
     for capability in sorted(execution["grants"]):
         name, entry = by_capability[capability]
@@ -32,6 +38,8 @@ def selection(root, descriptor, publication, execution, installed, client, journ
             "operations": operations, "resources": {"kind": kind},
             "ceiling": {"operations": 4096, "inputBytes": 8 if kind == "random" else 0,
                         "outputBytes": 32768, "wallTimeMillis": 5000}}]}
+        if name == "random" and selected_random is not None:
+            policy["rules"][0]["ceiling"] = random_fixture.ceiling(selected_random)
         if kind == "http":
             fixture = state.load(root, "test-profile.json")["fixtures"]["http"]
             http_fixture.credential(root, fixture)

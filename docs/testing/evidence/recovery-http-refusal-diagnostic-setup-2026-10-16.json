@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-15T22:58:08.849548+00:00",
+  "status": "private-diagnostic-built-but-not-executed-at-this-checkpoint",
+  "pullRequest": 991,
+  "productionSource": {
+    "commit": "36e95627397b409dbcbd0e27b01f54009af15f23",
+    "tree": "4a8e373e599ffd193d11a38f89a000ce84eeb5ed",
+    "trackedInputs": 9654,
+    "publishedEvidenceOnlyChildAtCheckpoint": "a038f845b2af2979cd7b2a419e7567b7d4d12068"
+  },
+  "unresolvedStockFailure": {
+    "programme": "ordinary-terminal",
+    "safeSummarySHA256": "0797eb9ddcfa775c1997910b2ca08a3cc6508bc272d0a363bc5d26fde4cd0b99",
+    "completedCases": 30,
+    "cliProcesses": 120,
+    "nativeActions": 0,
+    "firstUnmetAssertion": "host-owned-transaction-response-headers",
+    "exchangeOrdinal": 44,
+    "observedHttpStatus": 503,
+    "bodyBytes": 0,
+    "transactionMediaTypePresent": false,
+    "originalRefusalProducerKnown": false,
+    "cancelledObservationMayBeCleanupConsequence": true,
+    "laterCrashRestartPathReached": false
+  },
+  "privateObserver": {
+    "baseCommit": "36e95627397b409dbcbd0e27b01f54009af15f23",
+    "overridePaths": {
+      "apps/latentd/src/standalone/http/dispatch.rs": "489f95f81356807a1df8c74a5c1cd62986c77ab665dc98c7ec58a3e1d03e24cf",
+      "crates/latent-node/src/transaction_runtime/capacity.rs": "ae9cbe020e40dfce65f44bb1c82a26a266caa33f1c7a086946bd4dcdacc7197e"
+    },
+    "allOther9652InputsExact": true,
+    "patchSHA256": "b56c6b3511238ca3d9056fbb44aab39e8e0906f359c395cb37f470d46cc781ed",
+    "publishedProductionInstrumentation": false,
+    "maximumDispatchEventsPerNode": 24,
+    "maximumNativeCapacityEventsPerNode": 8,
+    "maximumCombinedEventsPerNode": 32,
+    "maximumAddedOutputBytesPerNode": 3232,
+    "addedClockReads": 0,
+    "recordsOnlyFixedPhaseWireCodeRetryableAndNativeErrorEnum": true,
+    "originalErrorReturnedUnchanged": true,
+    "originalStartupReservationSeconds": 5,
+    "originalStartupReservationMovedOrRenewed": false
+  },
+  "privateBuild": {
+    "compiled": true,
+    "executedAtCheckpoint": false,
+    "qualified": false,
+    "nodeSHA256": "4518595e49ea00e293810ec2ba935f13a557d9f07534987a9066e671ddeccef3",
+    "nodeBytes": 182408240,
+    "features": [],
+    "cargoFreshFlag": false,
+    "testProfile": false,
+    "optLevel": "0",
+    "debugInfo": 0,
+    "debugAssertions": true,
+    "overflowChecks": true,
+    "sourceReceiptSHA256": "675654d61c2ffca6eb19acbc34c1ef8d7347afa2c88633e737de2fe37859a229",
+    "buildReceiptSHA256": "9cc7251d65cb24143a8d243699aa0f2953631f902be91c51d8520186d6d42444",
+    "hostArchiveIndexSHA256": "fa55243264e19a59805eadee7a046d33cc3afb415d725be67af098c67a423e67",
+    "archiveSHA256": "502e64bf2b3fc3ac7e33251981d275e685a740a92df47c1380ccb3c47989cbec",
+    "hostArchiveVerificationSHA256": "15718b3d0d38e24dd6d1b5a4f5a910713d32ea7882d96e43da211f3a106f4e8d",
+    "allFourArchivedPayloadHashesSizesAndModesVerified": true,
+    "normalSixProductsUnchanged": true
+  },
+  "preparedDiagnostic": {
+    "programme": "original-terminal",
+    "attemptStarted": false,
+    "privateNodeUsedIfRun": true,
+    "genuineSixStockRolesOnly": false,
+    "otherFiveExecutablesRemainStock36e": true,
+    "runnerSHA256": "cb24e075d120b09a7ac55b200d2b8c137e492e3eaf44e136b96307d29562734f",
+    "finalBindingsSHA256": "33d6f92a0045bda0575ff8b1f0c05f2f224d012e90ddb9ee13f8484f134a6ad6",
+    "closedStderrParserSHA256": "47c4cfa1c7685ffa31105c9db3fb65b147a76a0949f76ab91bf3f1b842ff0931",
+    "independentCaptureReviewSHA256": "76be566af99cf3f7ecf8c6622a90d31d852ace69984b0a744031848babdf0d29",
+    "originalInnerSeconds": 1200,
+    "originalOuterSeconds": 1250,
+    "headroomSampleSeconds": 1,
+    "originalHostFloorBytes": 3221225472,
+    "originalAssertionsMaterialsProfilesAndCleanupPreserved": true,
+    "closedAuthenticatedNodeStderrOnly": true,
+    "markerAbsenceIsConclusive": false,
+    "ordinaryProgrammeQualificationAccepted": false
+  },
+  "setupBlockers": {
+    "preflightPassed": false,
+    "sourceOnlyPreflightDockerApiStatus": 500,
+    "preflightBoundarySHA256": "bb4e4a042dddcb11710bb120d3f79f60fcc2d1bba9c42b26d6087288700c8745",
+    "dockerDataMountFlag": "emergency_ro",
+    "mountMetadataSHA256": "d61ace80f8a0d16aa66f9cfa72a131a2442cfa0bb82a7b0dd6468fb946f6ac33",
+    "originalHostFloorInitiallyMet": false,
+    "closedPublicArchiveNtfsCompression": {
+      "archiveCount": 9,
+      "allPathsLogicalSizesAndSHA256Preserved": true,
+      "allocationBytesReclaimed": 1933076480,
+      "hostFreeBytesImmediatelyAfter": 4229865472,
+      "originalHostFloorImmediatelyAfterMet": true,
+      "receiptSHA256": "b414838a277a8749393ab2323438091fa808bb914198fae79549c168836f472b",
+      "deletedOrMovedFiles": false,
+      "vhdxChanged": false
+    },
+    "normalDesktopRestart": {
+      "attempts": 1,
+      "timeoutSeconds": 60,
+      "exitCode": 1,
+      "elapsedSeconds": 60.519565,
+      "outer75SecondGuardFired": false,
+      "fixedFailure": "failed-to-stop-docker-desktop",
+      "receiptSHA256": "aa5b32390727778e1513bfd4dd35c19074ed9f8bea81e8d3e8534f348002b7ed"
+    },
+    "forcedRecoveryAttemptedAtCheckpoint": false,
+    "noProtectedStoreOrSnapshotPayloadRead": true,
+    "noResetPruneDeletionOrGlobalWslShutdown": true,
+    "sourceDefectOrHistoricalFailureCauseInferredFromSetup": false
+  },
+  "qualification": {
+    "diagnosticExecution": false,
+    "ordinaryTerminalRecovery": false,
+    "wholeHead": false,
+    "packagedDistribution": false,
+    "allLinkedIssueAcceptance": false,
+    "ticketClosures": []
+  },
+  "immutablePriorEvidence": [
+    "recovery-startup-continuation-checkpoint-2026-10-15.json",
+    "recovery-startup-deadline-observation-2026-10-15.json",
+    "recovery-startup-followup-validation-2026-10-16.json"
+  ],
+  "boundary": "This is the closed setup checkpoint before any private HTTP-refusal runtime attempt. The private Node build and prepared scripts establish no runtime result. Earlier stock pending/early passes and terminal failure retain their exact36e source and separate receipts. Docker setup observations do not identify the original HTTP refusal or qualify later terminal startup, an issue, or a package."
+}

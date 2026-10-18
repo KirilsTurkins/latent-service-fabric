@@ -1,0 +1,361 @@
+{
+  "schema": "recovery-startup-followup-source-bound-validation.v1",
+  "status": "PENDING_AND_EARLY_RECOVERY_PASS_TERMINAL_HTTP_QUERY_REFUSAL",
+  "recordedAt": "2026-10-15T22:16:55.040692+00:00",
+  "pullRequest": "https://github.com/KirilsTurkins/latent-service-fabric/pull/991",
+  "source": {
+    "commit": "36e95627397b409dbcbd0e27b01f54009af15f23",
+    "tree": "4a8e373e599ffd193d11a38f89a000ce84eeb5ed",
+    "trackedFiles": 9654,
+    "privateObserversUsed": false,
+    "runtimeChanges": [
+      "Construct the runtime engine and AOT compatibility profile from the same validated configuration without allocating a spare engine.",
+      "Reuse freshly verified immutable stored layer bytes only through an opaque owner tied to each exact path, size and digest; preserve original verification on mismatch."
+    ],
+    "fixtureCorrection": "Detach the selected helper fixture hard link before replacing bytes; no production or test assertion changes."
+  },
+  "nativeSuites": {
+    "closedAt": "2026-10-15T21:45:14.230574+00:00",
+    "receiptSHA256": "de8379bd905e90f9a7559d40389e04cbdee9b8855d554fd300d4b930f95c49af",
+    "closedSummarySHA256": "6f283fc2c28373a2c4d8032d17bd781f5b3a77be7b0f00655ff00895cf3bfd4d",
+    "fullUnfilteredSuiteCount": 11,
+    "activePassed": 1625,
+    "originalIgnored": 40,
+    "mandatoryWitnessesPassed": 55,
+    "suites": [
+      {
+        "name": "latent-policy.lib.latent-policy",
+        "activePassed": 147,
+        "originalIgnored": 7,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-artifacts.lib.latent-artifacts",
+        "activePassed": 276,
+        "originalIgnored": 1,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-artifacts.test.package-adversarial",
+        "activePassed": 6,
+        "originalIgnored": 0,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-artifacts.test.package-format",
+        "activePassed": 6,
+        "originalIgnored": 0,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-artifacts.test.package-golden",
+        "activePassed": 2,
+        "originalIgnored": 0,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-state.lib.latent-state",
+        "activePassed": 376,
+        "originalIgnored": 0,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latentd.lib.latentd",
+        "activePassed": 402,
+        "originalIgnored": 30,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-policy.example.capsule-authoring",
+        "activePassed": 31,
+        "originalIgnored": 0,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-wasmtime.lib.latent-wasmtime",
+        "activePassed": 361,
+        "originalIgnored": 2,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-wasmtime.test.native-aot-cache",
+        "activePassed": 5,
+        "originalIgnored": 0,
+        "fullUnfiltered": true
+      },
+      {
+        "name": "latent-wasmtime.test.isolated-aot",
+        "activePassed": 13,
+        "originalIgnored": 0,
+        "fullUnfiltered": true
+      }
+    ],
+    "ownedProcesses": 370,
+    "allOwnedProcessesRetiredCleanly": true,
+    "sourceAndFrozenArtifactGuards": {
+      "sourceInputsVerifiedBefore": true,
+      "sourceInputsVerifiedAfter": true,
+      "historicalStockProductsVerifiedBefore": true,
+      "historicalStockProductsVerifiedAfter": true,
+      "preserved92cFrozenProductsBefore": true,
+      "preserved92cFrozenProductsAfter": true,
+      "auxiliaryCompilerUnchangedAfter": true,
+      "frozenArtifactsUnchanged": true
+    }
+  },
+  "staticChecks": {
+    "strictNodeClippy": "PASS",
+    "format": "PASS",
+    "ordinaryClippyBaselineSource": "fcbfcd6f352875aa4a73a6cba70ef581a2603b68",
+    "ordinaryClippyComparisons": {
+      "latent-wasmtime": {
+        "noNewDiagnostics": true,
+        "baselineWarningCount": 327,
+        "currentWarningCount": 327,
+        "introduced": {},
+        "removed": {}
+      },
+      "latent-artifacts": {
+        "noNewDiagnostics": true,
+        "baselineWarningCount": 159,
+        "currentWarningCount": 159,
+        "introduced": {},
+        "removed": {}
+      },
+      "latent-policy": {
+        "noNewDiagnostics": true,
+        "baselineWarningCount": 33,
+        "currentWarningCount": 33,
+        "introduced": {},
+        "removed": {}
+      }
+    },
+    "extraStrictWasmtimeOnPredecessor": "FAILED on 92c5d9fd; parent reproduced library failure. Preserved separately from applicable ordinary lint comparisons on actual36e."
+  },
+  "freshDefaultBuilds": {
+    "sourceCommit": "36e95627397b409dbcbd0e27b01f54009af15f23",
+    "sourceSelectionSHA256": "3728495f57e87f61d7b753f59e2882a605ae33f9376d38bfa362f9cd4bee73a1",
+    "sourceManifestSHA256": "04676cbc0661c4a758fef047be9eff9fcd12f4a9054f7ff55073277879529c22",
+    "archiveSHA256": "4c040fbc707f70f49031dee9024333d4bf78409fe98dd7b190114f9ed9ec75dd",
+    "archiveBytes": 517877760,
+    "archiveIndexSHA256": "4cc0d327ea23d44de494412cdb907da8057518486b76ac14186572cab26d61f6",
+    "roles": [
+      {
+        "role": "node",
+        "sha256": "a20858c3fe4b1cad52640220bcfcd7964e1403fcd1750436f9253edd67bb5b4d",
+        "bytes": 182387848,
+        "features": [],
+        "profile": {
+          "opt_level": "0",
+          "debuginfo": 0,
+          "debug_assertions": true,
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      {
+        "role": "recovery_helper",
+        "sha256": "b47e09d541bffc7aecd45aa3b7062c68f71880032bc8528119fc8a9e5f9cad06",
+        "bytes": 187197520,
+        "features": [],
+        "profile": {
+          "opt_level": "0",
+          "debuginfo": 0,
+          "debug_assertions": true,
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      {
+        "role": "cli",
+        "sha256": "b90a0fe28067c40c5accded565d8f43158b1c87d59276e83517f720a077316d4",
+        "bytes": 69364256,
+        "features": [],
+        "profile": {
+          "opt_level": "0",
+          "debuginfo": 0,
+          "debug_assertions": true,
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      {
+        "role": "contracts_tool",
+        "sha256": "c7bb55897d325fa8dc680a709038827cf8b52e90bad51af139220d8c8ec61d9a",
+        "bytes": 7904720,
+        "features": [],
+        "profile": {
+          "opt_level": "0",
+          "debuginfo": 0,
+          "debug_assertions": true,
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      {
+        "role": "aot_compiler",
+        "sha256": "e30efc59f9728eed6248fccdba28552b54686f858417a0126aa2055558782587",
+        "bytes": 41772864,
+        "features": [],
+        "profile": {
+          "opt_level": "0",
+          "debuginfo": 0,
+          "debug_assertions": true,
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      {
+        "role": "signer",
+        "sha256": "dbf6abac4dd8854e1920af29eddbfc377041cffcfbbece359f9604410be48763",
+        "bytes": 24853328,
+        "features": [],
+        "profile": {
+          "opt_level": "0",
+          "debuginfo": 0,
+          "debug_assertions": true,
+          "overflow_checks": true,
+          "test": false
+        }
+      }
+    ],
+    "allRoleProfilesNonTest": true,
+    "independentFrozenCopies": true,
+    "sixBuildOwnedProcesses": 115,
+    "allOwnedProcessesRetiredCleanly": true,
+    "completeSourcePostcheckPassed": true,
+    "allSevenArchivePayloadsIndependentlyVerified": true,
+    "desiredCargoFreshFlag": false,
+    "actualBuildProducedAllSixDesiredExecutables": true
+  },
+  "stockRecovery": {
+    "status": "CLOSED_WITH_TERMINAL_FAILURE",
+    "allThreeClosedReceiptSHA256": "7cac777d2cb49836fa6e78c0ce503332af260c59bc423807e8ddae9e48b22cf8",
+    "actualBindingReceiptSHA256": "89c9b92585d2ee56c4a82ba2157545ebb445331df61be135426b4ac7710c801c",
+    "programmes": [
+      {
+        "programme": "terminal",
+        "passed": false,
+        "safeSummarySHA256": "0797eb9ddcfa775c1997910b2ca08a3cc6508bc272d0a363bc5d26fde4cd0b99",
+        "completedCases": 30,
+        "cliProcesses": 120,
+        "nativeRecoveryActions": 0,
+        "seconds": 144.094755,
+        "ownedProcesses": 75,
+        "allOwnedProcessesRetiredCleanly": true,
+        "normalPhysicalStops": 10,
+        "intentionalCrashes": 0,
+        "startupFailureReports": 0,
+        "allSixPostguardsPassed": true,
+        "closedRetainedFileCount": 585
+      },
+      {
+        "programme": "pending",
+        "passed": true,
+        "safeSummarySHA256": "e651f7515613ed8bfe4bec2854bb26d72c475aa8ea66c39e367dcd058bf6c277",
+        "completedCases": 16,
+        "cliProcesses": 82,
+        "nativeRecoveryActions": 12,
+        "seconds": 229.5946,
+        "ownedProcesses": 81,
+        "allOwnedProcessesRetiredCleanly": true,
+        "normalPhysicalStops": 7,
+        "intentionalCrashes": 0,
+        "startupFailureReports": 0,
+        "allSixPostguardsPassed": true,
+        "closedRetainedFileCount": 392
+      },
+      {
+        "programme": "early",
+        "passed": true,
+        "safeSummarySHA256": "6728fabf2c6b82cbbc243a25215b8deaa40bf8a793c81a9c698e0c18a3139ebf",
+        "completedCases": 4,
+        "cliProcesses": 24,
+        "nativeRecoveryActions": 0,
+        "seconds": 47.611157,
+        "ownedProcesses": 21,
+        "allOwnedProcessesRetiredCleanly": true,
+        "normalPhysicalStops": 4,
+        "intentionalCrashes": 0,
+        "startupFailureReports": 0,
+        "allSixPostguardsPassed": true,
+        "closedRetainedFileCount": 121
+      }
+    ],
+    "terminalFailure": {
+      "stage": "actual-http",
+      "fixedReason": "host-owned-transaction-response-headers",
+      "httpOrdinal": 44,
+      "requestMode": "query",
+      "route": "/transaction/query",
+      "clientKeyOrPreconditionOrMinimumViewOrBodyPresent": false,
+      "httpStatus": 503,
+      "bodyBytes": 0,
+      "contentTypeCount": 0,
+      "cacheControl": [
+        "no-store"
+      ],
+      "lastCompletedCases": [
+        "compatible-original-commit",
+        "compatible-original-rejection"
+      ],
+      "activationObservation": {
+        "observationAvailable": true,
+        "rootCount": 1,
+        "truncated": false,
+        "roots": [
+          {
+            "phase": "admitted",
+            "terminalState": "cancelled",
+            "principalKind": "user",
+            "targetMatchesCurrentService": true,
+            "diagnostic": {
+              "stage": 5,
+              "reason": 15
+            },
+            "diagnosticIsTerminal": true
+          }
+        ]
+      },
+      "finiteReviewSHA256": "31c801808693630c14be3747e1e00b9e204e2a8cb59c5670ebb79bb08f2b295b",
+      "innerRefusalCauseIsolated": false,
+      "cancelledRecordMayBeCleanupConsequence": true,
+      "laterTerminalCrashRestartAndCancellationScenariosReached": false
+    },
+    "originalInnerSeconds": 1200,
+    "originalOuterSeconds": 1250,
+    "pidfdOwnership": true,
+    "originalHeadroomFloorBytes": 3221225472,
+    "headroomSampleIntervalSeconds": 1,
+    "originalAssertionsMaterialsProfilesAndCleanupPreserved": true,
+    "unchangedFailuresRetried": false
+  },
+  "preservedFailedAttempts": [
+    {
+      "sourceCommit": "8cc444273ab751c157f51096c47951277b1d7333",
+      "receiptSHA256": "e8031fbec50d9625a572962927c4d2dfb3e3daf84ae958adae10624de891806d",
+      "result": "Two new fixture setups failed after Policy147 and Artifacts274 passes; remaining nine suites/statics did not run. Fixed only in helper child36e."
+    },
+    {
+      "sourceCommit": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+      "result": "Stock terminal Node12 and pending Node6 startup failures; stock early passed. Separate private observer saw original deadline expiry before kernel, without isolating historical stock failures."
+    }
+  ],
+  "qualification": {
+    "ordinaryTerminalRecovery": false,
+    "ordinaryPendingRecovery": true,
+    "ordinaryEarlyRecovery": true,
+    "wholeHead": false,
+    "allLinkedIssueAcceptance": false,
+    "ticketClosures": [],
+    "measuredCandidatePerformanceSaving": false,
+    "historicalFailureCauseIsolated": false,
+    "originalTerminalStartupFailureResolved": false,
+    "boundary": "Pending and early programmes pass on exact36e. Terminal fails earlier than the historical startup refusal, so its later crash/restart path and that old startup blocker remain unqualified. No individual candidate savings or common failure cause is established."
+  },
+  "immutablePriorEvidence": [
+    "recovery-startup-continuation-checkpoint-2026-10-15.json",
+    "recovery-startup-deadline-observation-2026-10-15.json"
+  ],
+  "boundary": "This record describes only its exact source and actual runs. Historical failures, private observer results, current scoped suites, default builds and stock recovery outcomes remain distinct. Original startup deadlines, flow bounds, assertions, materials and cleanup requirements are unchanged."
+}

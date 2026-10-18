@@ -60,3 +60,13 @@ This selection does not qualify installed frontend dependency watch/update/remov
 C pthread scheduling or default socket clients. Those remain separate acceptance
 requirements. The complete existing C authoring and generated-library CI owners
 remain required; this helper does not replace them or their direct SDK controls.
+
+The separate installed C dependency-watch candidate retains each original
+build/trust/signature boundary and three normal workspace shutdowns. Its
+qualifier records a shutdown attempt before dispatch; a confirmed or uncertain
+attempt permanently fences a second `down` for that workspace, including failure
+cleanup. Cleanup can retire its bounded observer process without claiming the
+node was reaped. Callback controls preserve the original failure or confirmed
+receipt and prove one dispatch per workspace. Signed watch execution remains
+pending; the [earlier initial-build failure](evidence/c-dependency-watch-build-failed-2026-10-16.json)
+retains its original unconfirmed cause and zero deployment count.

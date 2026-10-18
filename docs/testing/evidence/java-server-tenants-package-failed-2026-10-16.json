@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "latent.java.server-tenants.failure.v1",
+  "status": "failed-before-package-assembly",
+  "sourceHead": "f7a5f4c0bd343c83ccfd97cf3813abcdc649db79",
+  "testedMerge": "5d5054c93c888169c17657bf8efd9abd27c9cbef",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38841092675/job/116781097014",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38841092675/artifacts/12024603349",
+  "javaToC": "passed",
+  "cToWasm": "passed",
+  "componentEncoding": "passed",
+  "componentValidation": "passed",
+  "authoritativeWitComparison": "passed",
+  "packageBuildExitCode": 1,
+  "retainedFailure": "package failed; inspect the retained bounded compiler diagnostics",
+  "packagerStderrRetained": false,
+  "originalPackagerErrorCode": "unobserved",
+  "scopeMismatchDetectedInFixture": "neutral tenant with examples/qualified service",
+  "existingManifestScopeRule": "tenant-qualified identifier requires metadata.tenant",
+  "correction": "make only the neutral fixture service unqualified; preserve manifest validator",
+  "component": {
+    "sha256": "sha256:023c245bfd685f0c959aaf57a4dbd706fbdd1003b63c1dab047b0ebec8af89db",
+    "bytes": 1942756
+  },
+  "packageSigned": false,
+  "tenantComponentInvocations": 0,
+  "tenantIsolationQualified": false,
+  "correctedExecution": "pending"
+}
