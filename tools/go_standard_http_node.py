@@ -160,9 +160,11 @@ def retire_case(client, probe, target, output, name):
         for key in ACTIVE_COUNTERS), 'standard-go-provider-physical-owners')
 
 
-def entry_probes(client, probe, target, output, address, result):
+def entry_probes(client, probe, target, output, address, result, *, libraries=False):
     result['entryProbes'] = []
-    for name, which, expected in (('entry',25,'entered'), ('request-setup',26,'request-ready')):
+    choices = (('library-entry',200,'library-entered'), ('private-marker',201,'private-marker-ready')) if libraries else (
+        ('entry',25,'entered'), ('request-setup',26,'request-ready'))
+    for name, which, expected in choices:
         row = invoke(client,target,which,address,'standard-probe-'+name)
         # Retain even the first failed probe without counting it as an HTTP case.
         result['entryProbes'].append({'name':name, **row})
@@ -294,9 +296,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                     and denied['response']['data']['consumption']['cpuFuel'] == '0',
                     'standard-go-http-grant-denial')
             target = deploy(client, source/'deployment.json', publication, generation=str(target['generation']), grants=authorized)
-            if suite == 'standard':
-                stage = 'entry-boundary'
-                entry_probes(client,probe,target,output,url+'/conformance/json',result)
+            stage = 'entry-boundary'
+            entry_probes(client,probe,target,output,url+'/conformance/json',result,libraries=suite == 'libraries')
             stage = 'ordinary-http'
             cases = [('json', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('http404', 0, '/conformance/status/404', '404:error:domain-error'),

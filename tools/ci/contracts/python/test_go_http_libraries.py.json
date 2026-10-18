@@ -5,6 +5,7 @@
     "HttpLibraryCapture.test_normal_lock_target_reparse_is_denied_before_capture_or_review",
     "HttpLibraryCapture.test_ordinary_clients_use_normal_reviewable_native_lock_without_wit_source_imports",
     "HttpLibraryCapture.test_private_coordinates_change_application_inputs_without_changing_captured_sdk",
+    "HttpLibraryCapture.test_private_marker_probes_keep_original_cases_and_enforce_zero_effects_and_retirement",
     "HttpLibraryCapture.test_tampered_native_tuple_cannot_start_capture_resolution_compilation_or_node"
   ],
   "guards": {
@@ -68,6 +69,18 @@
       ],
       "skipSites": []
     },
+    "HttpLibraryCapture.test_private_marker_probes_keep_original_cases_and_enforce_zero_effects_and_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "HttpLibraryCapture.test_tampered_native_tuple_cannot_start_capture_resolution_compilation_or_node": {
       "bases": [
         "unittest.TestCase"
@@ -83,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_http_libraries.py",
-  "reviewReason": "Model normal lock transaction target creation, retain accepted source/state, and reject target reparse before capture; all earlier client checks and guards remain",
+  "reviewReason": "Preserve all6 captured-client controls; add separate pre/post private Marker ownership probes with zero effects, originalcase preservation and negative fencing",
   "schemaVersion": "latent.ci.contracts.v1"
 }

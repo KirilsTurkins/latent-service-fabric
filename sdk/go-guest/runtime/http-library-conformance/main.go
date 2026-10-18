@@ -31,7 +31,9 @@ var invocations uint32
 func Run(which uint32, address string) string {
 	invocations++
 	if invocations != 1 { return "stale-state" }
+	if which == 200 { return "library-entered" }
 	if private.Marker() != "captured-private-worker" { return "private-worker-error" }
+	if which == 201 { return "private-marker-ready" }
 	library, mode := which/100, which%100
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -15,6 +15,45 @@ from tools.rust_capsule_project import read_file, snapshot
 
 
 class HttpLibraryCapture(unittest.TestCase):
+    def test_private_marker_probes_keep_original_cases_and_enforce_zero_effects_and_retirement(self):
+        from copy import deepcopy
+        from tools import go_standard_http_node as node
+        from tools.rust_capsule_project import ROOT
+        source = read_file(ROOT/'sdk/go-guest/runtime/http-library-conformance/main.go').decode()
+        self.assertLess(source.index('if which == 200'),source.index('if private.Marker()'))
+        self.assertLess(source.index('if private.Marker()'),source.index('if which == 201'))
+        self.assertLess(source.index('if which == 201'),source.index('library, mode :='))
+        rows = [{'exitCode':0,'decoded':[value],'processReaped':True,
+                 'response':{'data':{'consumption':{'outboundRequests':0,'effectCount':0}}}}
+                for value in ('library-entered','private-marker-ready')]
+        original = node.library_cases({'host':'127.0.0.1','port':1})
+        self.assertEqual(len(original),30)
+        result = {'cases':['original-case-sentinel']}
+        with patch.object(node,'invoke',side_effect=deepcopy(rows)) as invoke, patch.object(node,'retire_case') as retire:
+            node.entry_probes('client','probe',{'name':'target'},Path('output'),'http://fixture/json',result,libraries=True)
+        self.assertEqual(result['cases'],['original-case-sentinel'])
+        self.assertEqual([row['name'] for row in result['entryProbes']],['library-entry','private-marker'])
+        self.assertEqual([call.args[2] for call in invoke.call_args_list],[200,201])
+        self.assertEqual([call.args[-1] for call in retire.call_args_list],['probe-library-entry','probe-private-marker'])
+        self.assertEqual(node.library_cases({'host':'127.0.0.1','port':1}),original)
+        for changed in ({'exitCode':4}, {'decoded':['wrong']}, {'processReaped':False},
+                        {'outboundRequests':1}, {'effectCount':1}):
+            trial = deepcopy(rows)
+            for key,value in changed.items():
+                if key in {'outboundRequests','effectCount'}:
+                    trial[1]['response']['data']['consumption'][key] = value
+                else:
+                    trial[1][key] = value
+            result = {'cases':[]}
+            with self.subTest(changed=changed), patch.object(node,'invoke',side_effect=trial) as invoke, \
+                    patch.object(node,'retire_case') as retire:
+                with self.assertRaisesRegex(WorkflowError,'standard-go-probe-'):
+                    node.entry_probes('client','probe',{'name':'target'},Path('output'),'http://fixture/json',result,libraries=True)
+                self.assertEqual(invoke.call_count,2)
+                self.assertEqual(retire.call_count,1)
+                self.assertEqual(len(result['entryProbes']),2)
+                self.assertEqual(result['cases'],[])
+
     def test_normal_lock_target_reparse_is_denied_before_capture_or_review(self):
         from types import SimpleNamespace
         from tools import go_http_library_fixture as fixture
