@@ -37,6 +37,18 @@ pub(super) enum Stage {
     StateManagement,
     NodeStart,
     NodeShutdown,
+    StateKernelPrecondition,
+    ProtectedStoreOpen,
+    ProtectedStoreInitializerAdmission,
+    ProtectedStoreInitializerCompletion,
+    ProtectedStoreInitializerDeadline,
+    NamespaceCatalog,
+    StateModeAdmission,
+    StateModeCompletion,
+    StateModeDeadline,
+    AdapterClockBinding,
+    StateKernelReadiness,
+    NamespaceNativeCapacity,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]

@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "RuntimeOwnerRefusalTests.test_exact_accounting_buckets_are_bounded_unqualified_observations",
+    "RuntimeOwnerRefusalTests.test_failed_retention_preserves_original_failure_identity",
+    "RuntimeOwnerRefusalTests.test_only_owned_reaped_node_stderr_can_supply_records",
+    "RuntimeOwnerRefusalTests.test_unknown_malformed_overflow_and_private_fields_are_rejected"
+  ],
+  "guards": {
+    "RuntimeOwnerRefusalTests.test_exact_accounting_buckets_are_bounded_unqualified_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:259afe212f867ef1f8e5662dea32767bd52f038d5e49b25f2791341d37567e50",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOwnerRefusalTests.test_failed_retention_preserves_original_failure_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:259afe212f867ef1f8e5662dea32767bd52f038d5e49b25f2791341d37567e50",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOwnerRefusalTests.test_only_owned_reaped_node_stderr_can_supply_records": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:259afe212f867ef1f8e5662dea32767bd52f038d5e49b25f2791341d37567e50",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOwnerRefusalTests.test_unknown_malformed_overflow_and_private_fields_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:259afe212f867ef1f8e5662dea32767bd52f038d5e49b25f2791341d37567e50",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_runtime_owner_refusal_diagnostic.py",
+  "reviewReason": "Register bounded host-only runtime owner refusal projection controls; no native qualification credit.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

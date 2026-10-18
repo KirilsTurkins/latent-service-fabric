@@ -13,8 +13,8 @@ pub struct Timer {
     work: RefCell<Option<Work>>,
     elapsed: Cell<bool>,
     failure: Cell<Option<runtime::Error>>,
-    _owner: Owner,
-    _slot: Slot,
+    owner: Option<Owner>,
+    slot: Option<Slot>,
 }
 impl Timer {
     pub fn new(nanos: u64) -> Rc<Self> {
@@ -25,8 +25,8 @@ impl Timer {
             work: RefCell::new(Some(Box::pin(runtime::wait_for(nanos, None)))),
             elapsed: Cell::new(false),
             failure: Cell::new(None),
-            _owner: owner,
-            _slot: slot,
+            owner: Some(owner),
+            slot: Some(slot),
         });
         let operation: Rc<dyn pump::Progress> = timer.clone();
         pump::Pump::track(&operation);
@@ -56,8 +56,14 @@ impl pump::Readiness for Timer {
 }
 impl Drop for Timer {
     fn drop(&mut self) {
-        pump::Pump::current().enter(|| {
-            self.work.get_mut().take();
-        });
+        if let Some(work) = self.work.get_mut().take() {
+            let owner = self.owner.take();
+            let slot = self.slot.take();
+            pump::Pump::retire(move || {
+                drop(work);
+                drop(owner);
+                drop(slot);
+            });
+        }
     }
 }

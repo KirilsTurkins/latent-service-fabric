@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/intellij.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review direct Python module-SDK run configuration generation and remove duplicate Windows XML; preserve dispatcher, SDK pins and build ownership.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a7c2c6fbe9279abb62310f4e3bc1b73b140be83d4c047b21079c42b6095edb44"
+}

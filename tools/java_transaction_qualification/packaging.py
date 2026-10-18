@@ -236,6 +236,26 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
 def current_signing_mode(items):
     actual = {item.name: digest(read_file(item.directory / 'report.json', 262144)) for item in items}
     require(len(items) == 5 and len(actual) == len(items), 'five-distinct-current-capture-reports')
+    refreshed = {
+        'aggregate': 'sha256:57bfdd02d2c68837149b912695d42c623ae9f1e1418526e0f01a9ac68c3f180f',
+        'put-once-legacy-v1': 'sha256:a820889c9dee457cb39819f468dcba572019a723babbf5864bd2b73ed73a0ebb',
+        'put-once-compatible-v2': 'sha256:d8cb174b150e64f382b9e0cd05c0d86a38afc1d3b3ef9f03dd75f27fb39b9159',
+        'put-once-writer-v2': 'sha256:5f0f0e61b528137b4707158e70813f53e87f3ccb24e1cc2542b6cdbda7c8fa77',
+        'put-once-diagnostics': 'sha256:4739b167d4bb9f647e6f9b85086979680b2344383aa2cb9ce17ebcee8796226f',
+    }
+    if actual == refreshed:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] /
+            'docs/testing/evidence/java-current-http-refreshed-capture-2026-10-16.json'))['captures']
+        require(packet['sourceCommit'] == 'eba0d96e9439028aacd6c1f9a85d4ce0118a19bc'
+                and packet['nativeIdempotencyProfile'] ==
+                    'qualified-http-v1:bb85705ae221db0b883cf8253e00ef1091b7ea70e768299bb14a2175286c4391',
+                'refreshed-current-custody-source-and-profile')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        require(actual == expected and all(item.compiler_source == packet['sourceCommit']
+                and item.component_digest == packet['variants'][item.name]['materials']['component']['sha256']
+                for item in items), 'refreshed-current-captured-report-component-and-source')
+        return 'fixture-sign-refreshed-current-java-inputs'
     reconstructed = {
         'aggregate': 'sha256:e5cbc55017e1b833d231400cd80c9f9ccb49c285908f0a6cd9ec36e67fb864fd',
         'put-once-legacy-v1': 'sha256:f44162b5e510d4af32d0395e9ead6eef2f9eb9b358d1b6906b3434940202ba01',
