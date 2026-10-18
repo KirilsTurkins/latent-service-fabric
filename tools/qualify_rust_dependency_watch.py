@@ -46,6 +46,7 @@ def public_events(values):
         'code': {'success', 'composition-checks-failed', 'required-tests-failed',
                  'interrupted-inspect-workspace-status', 'invalid-or-unavailable-input-inspect-doctor',
                  'source-unavailable-during-edit', 'guest-build-superseded',
+                 'dependency-native-lock-drift',
                  'workspace-stopped-before-deployment', 'workspace-recipe-trust-required',
                  'signed-test-build-changed-use-new-workspace',
                  'guest-build-failed-last-deployment-retained', 'guest-build-cleanup-unconfirmed',
