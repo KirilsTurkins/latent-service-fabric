@@ -8454,7 +8454,8 @@
         "runtime::native_threads::signed_canonical_children_use_distinct_original_tasks_and_physical_stack_retirement",
         "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
         "runtime::signed_java_published_libraries_use_unchanged_default_workers",
-        "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
+        "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers",
+        "runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners"
       ],
       "expectedIgnored": [
         "runtime::signed_java_completable_futures_use_default_activation_executor",
@@ -8468,7 +8469,8 @@
         "runtime::native_threads::signed_canonical_children_use_distinct_original_tasks_and_physical_stack_retirement",
         "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
         "runtime::signed_java_published_libraries_use_unchanged_default_workers",
-        "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
+        "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers",
+        "runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners"
       ],
       "id": "latent-wasmtime.test.local-service",
       "ignoredLeaves": [
@@ -8483,11 +8485,12 @@
         "signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "signed_java_host_imports_suspend_only_their_owned_callers",
         "signed_java_published_libraries_use_unchanged_default_workers",
-        "signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
+        "signed_java_standard_timers_recur_cancel_and_drain_owned_workers",
+        "signed_standard_timers_contexts_and_rearm_keep_original_heap_owners"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 43,
+      "minimumCases": 44,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

@@ -44,6 +44,7 @@
           "tools/probe_go_authoring.py",
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
+          "tools/diagnose_go_timer_failure.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -99,6 +100,7 @@
           "tools/probe_go_authoring.py",
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
+          "tools/diagnose_go_timer_failure.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -133,7 +135,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Trigger unchanged Go qualification on new captured library recovery helpers",
+  "reviewReason": "Compose actual merged timer runtime with normal Go dependency authoring, scalar cancellation recovery and signed library gate. Retain both parent command/artifact/trigger sets, exact permissions/environment/runner, all existing guards and the unchanged45-minute bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain pinned scheduler source validation and add explicitly selected v2 checkpoint bridge overlay without changing v1 runtime or default authority",
+  "reviewReason": "Integrate authenticated Go zero-delay clock-only netpoll repair from b8d858d84; preserve descriptor/blocking polls, closed WASI authority, all profiles and existing bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fd5f9dda2e4643cc664691d69304efb7bdb782c4f823fe89e3d41452bfcaf15f"
+  "sha256": "df69797c68062628ba37fd9ef4115c4aa66373187e0e792d0bc8f0c7f2612976"
 }
