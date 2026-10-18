@@ -1,10 +1,15 @@
 {
   "cases": [
     "NpmDependencies.test_conditions_are_bound_without_forcing_browser_or_enabling_async",
+    "NpmDependencies.test_incomplete_native_install_preserves_prior_capture_and_emits_no_candidate",
+    "NpmDependencies.test_lock_only_optional_rows_cannot_satisfy_required_or_peer_edges",
     "NpmDependencies.test_native_declarations_extend_project_only_with_a_reviewed_capture",
     "NpmDependencies.test_native_graph_uses_nearest_nested_package_and_peer_identity",
+    "NpmDependencies.test_native_lock_optional_flags_and_peer_metadata_are_explicit_booleans",
     "NpmDependencies.test_native_lock_requires_exact_supported_graph_and_no_url_credentials",
     "NpmDependencies.test_offline_module_lookup_consumes_captured_bytes_with_owned_paths",
+    "NpmDependencies.test_omitted_nested_package_does_not_hide_an_installed_ancestor",
+    "NpmDependencies.test_optional_overrides_and_peer_omissions_have_no_phantom_selected_target",
     "NpmDependencies.test_optional_platform_absence_is_explicit_and_does_not_hide_required_edges",
     "NpmDependencies.test_original_archive_is_required_even_when_expanded_cache_exists",
     "NpmDependencies.test_original_native_archive_sri_and_all_entries_are_rechecked",
@@ -16,6 +21,30 @@
   ],
   "guards": {
     "NpmDependencies.test_conditions_are_bound_without_forcing_browser_or_enabling_async": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_incomplete_native_install_preserves_prior_capture_and_emits_no_candidate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_lock_only_optional_rows_cannot_satisfy_required_or_peer_edges": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -51,6 +80,18 @@
       ],
       "skipSites": []
     },
+    "NpmDependencies.test_native_lock_optional_flags_and_peer_metadata_are_explicit_booleans": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
     "NpmDependencies.test_native_lock_requires_exact_supported_graph_and_no_url_credentials": {
       "bases": [
         "unittest.TestCase"
@@ -64,6 +105,30 @@
       "skipSites": []
     },
     "NpmDependencies.test_offline_module_lookup_consumes_captured_bytes_with_owned_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_omitted_nested_package_does_not_hide_an_installed_ancestor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_optional_overrides_and_peer_omissions_have_no_phantom_selected_target": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -174,6 +239,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_application_dependencies.py",
-  "reviewReason": "Retain all original npm graph/capture/selection cases and guards; four new cases reject stale or incomplete prepared source qualification, changed native bytes and inexact native product sets before the emitted-library gate.",
+  "reviewReason": "Require observed installed npm dependency closure, preserve optional omission and nearest ancestor selection, and retain failed-capture atomicity.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

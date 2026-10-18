@@ -64,19 +64,27 @@ def native_lock(data: bytes) -> dict:
                 raise DependencyError('npm-native-source-credentials-denied')
             if parsed.scheme != 'https' or parsed.fragment and not re.fullmatch(r'[a-fA-F0-9]{40,64}', parsed.fragment):
                 raise DependencyError('npm-native-source-not-locked-https')
+        if any(field in row and type(row[field]) is not bool for field in ('optional', 'peer', 'link')):
+            raise DependencyError('npm-native-flags-invalid')
+        peers = row.get('peerDependenciesMeta', {})
+        if (not isinstance(peers, dict) or any(not isinstance(metadata, dict)
+                or 'optional' in metadata and type(metadata['optional']) is not bool
+                for metadata in peers.values())):
+            raise DependencyError('npm-native-peer-metadata-invalid')
         for field in FIELDS:
             if not isinstance(row.get(field, {}), dict) or any(not isinstance(value, str) for value in row.get(field, {}).values()):
                 raise DependencyError('npm-native-declarations-invalid')
     return value
 
 
-def edge_location(location: str, name: str, packages: dict) -> str | None:
+def edge_location(location: str, name: str, packages: dict, *, installed: dict | None = None) -> str | None:
+    """Walk native package ancestors, optionally requiring observed installation."""
     if not re.fullmatch(r'(?:@[a-zA-Z0-9._-]+/)?[a-zA-Z0-9._-]+', name):
         raise DependencyError('npm-native-dependency-name-invalid')
     candidate = location
     while True:
         selected = (candidate + '/' if candidate else '') + 'node_modules/' + name
-        if selected in packages:
+        if selected in packages and (installed is None or selected in installed):
             return selected
         if not candidate:
             return None
@@ -91,7 +99,7 @@ def graph(lock: dict, installed: dict[str, dict], platform: dict) -> dict:
             continue  # Link targets are attributed by their installed Node path.
         row = packages.get(declaration.get('resolved'), {}) if declaration.get('link') else declaration
         present = not location or location in installed
-        if not present and not row.get('optional'):
+        if not present and row.get('optional') is not True:
             raise DependencyError('npm-required-selected-package-missing')
         actual = installed.get(location, {})
         if present and location and actual.get('version') != row.get('version'):
@@ -99,9 +107,11 @@ def graph(lock: dict, installed: dict[str, dict], platform: dict) -> dict:
         dependencies = []
         for kind in FIELDS:
             for name, specification in sorted(row.get(kind, {}).items()):
-                selected = edge_location(location, name, packages)
+                if kind == 'dependencies' and name in row.get('optionalDependencies', {}):
+                    continue  # npm's optional declaration replaces the regular edge.
+                selected = edge_location(location, name, packages, installed=installed) if present else None
                 optional = kind == 'optionalDependencies' or (kind == 'peerDependencies' and
-                    row.get('peerDependenciesMeta', {}).get(name, {}).get('optional', False))
+                    row.get('peerDependenciesMeta', {}).get(name, {}).get('optional') is True)
                 if selected is None and not optional and present:
                     raise DependencyError('npm-native-graph-not-closed')
                 dependencies.append({'name': name, 'kind': kind, 'specification': specification,
