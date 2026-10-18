@@ -4120,14 +4120,18 @@
         "semantics::web::tests::public_contract_is_async_and_a_profile_name_never_substitutes_for_a_component",
         "semantics::web::tests::sync_or_modified_public_interface_is_rejected_before_guest_execution",
         "semantics::host::tests::native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation",
-        "semantics::wasm::tests::canonical_creator_without_proof_never_opens_descriptive_threading_parser"
+        "semantics::wasm::tests::canonical_creator_without_proof_never_opens_descriptive_threading_parser",
+        "semantics::wasm::tests::data::data_segments_still_consume_the_original_aggregate_budget_across_modules",
+        "semantics::wasm::tests::data::excess_and_truncated_data_vectors_remain_rejected_before_execution",
+        "semantics::wasm::tests::data::lowering_function_slots_does_not_reclassify_data_segments_as_functions",
+        "semantics::wasm::tests::data::valid_data_segments_at_the_pinned_parser_ceiling_validate_without_execution"
       ],
       "expectedIgnored": [],
       "id": "latent-packaging.lib.latent-packaging",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 82,
+      "minimumCases": 86,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
