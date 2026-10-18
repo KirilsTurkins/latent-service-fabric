@@ -53,6 +53,26 @@ class StandardHttpSourceTests(unittest.TestCase):
             self.assertIn('if t.DialContext != nil || t.Dial != nil', backend)
             self.assertEqual((goroot/'src/net/http/transport.go').read_text(encoding='utf-8'), original)
 
+    def test_clone_keeps_explicit_configuration_without_automatic_wire_http2_setup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            goroot = self.fixture(root)
+            original = (goroot/'src/net/http/transport.go').read_text(encoding='utf-8')
+            selected = http.prepare(goroot, ROOT/'sdk/go-guest', root/'out', 'outside.test/client')
+            changed = Path(selected[str(goroot/'src/net/http/transport.go')]).read_text(encoding='utf-8')
+            before = original.split('func (t *Transport) Clone() *Transport {', 1)[1].split('\n\treturn t2\n}', 1)[0]
+            after = changed.split('func (t *Transport) Clone() *Transport {', 1)[1].split('\n\treturn t2\n}', 1)[0]
+            automatic = '\tt.nextProtoOnce.Do(t.onceSetNextProtoDefaults)'
+            finite = '\tt.nextProtoOnce.Do(func() {\n\t\tt.tlsNextProtoWasNil = t.TLSNextProto == nil\n\t})'
+            self.assertEqual(after, before.replace(automatic, finite))
+            self.assertNotIn('onceSetNextProtoDefaults', after)
+            for field in ('HTTP2', 'Protocols', 'TLSClientConfig', 'DialContext'):
+                self.assertIn('t.'+field, after)
+            backend = Path(selected[str(goroot/'src/net/http/roundtrip.go')]).read_text(encoding='utf-8')
+            self.assertIn('t.DialContext != nil || t.Dial != nil', backend)
+            self.assertIn('t.Protocols != nil || t.HTTP2 != nil', backend)
+            self.assertEqual((goroot/'src/net/http/transport.go').read_text(encoding='utf-8'), original)
+
     def test_module_names_are_literal_and_cannot_inject_imports_or_paths(self):
         for module in ('../escape', 'example.com//bad', 'quote"injection', 'bad\npath', 'C:\\source', '', 'x'*257):
             with self.subTest(module=module), tempfile.TemporaryDirectory() as temporary:

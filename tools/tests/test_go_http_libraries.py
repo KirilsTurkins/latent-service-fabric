@@ -15,7 +15,99 @@ from tools.rust_capsule_project import read_file, snapshot
 
 
 class HttpLibraryCapture(unittest.TestCase):
+    def test_truncated_oracle_requires_actual_native_observation_and_keeps_other_cases(self):
+        def reference_rows():
+            return {'schemaVersion':'latent.go.http-client.native-reference.v1','status':'passed','guestExecution':False,
+                    'clients':[{'client':name,'result':result,'requests':1,'invalidRequest':False,'bodyBytes':5,'declaredBytes':32}
+                               for name,result in (('sling','invalid-json'),('requests','transport-error'))]}
+        from copy import deepcopy
+        from tools import go_standard_http_node as node
+        from tools.go_http_library_reference import outcomes
+        observed = reference_rows()
+        self.assertEqual(outcomes(observed), {'sling':'invalid-json','requests':'transport-error'})
+        cases = node.library_cases({'host':'127.0.0.1','port':1},observed)
+        self.assertEqual(len(cases),30)
+        self.assertEqual({row[0]:row[3] for row in cases if row[0].endswith('-truncated')},
+                         {'sling-truncated':'invalid-json','requests-truncated':'transport-error'})
+        other = deepcopy(observed); other['clients'][0]['result'] = 'transport-error'
+        changed = node.library_cases({'host':'127.0.0.1','port':1},other)
+        self.assertEqual([row for row in cases if row[0] != 'sling-truncated'],
+                         [row for row in changed if row[0] != 'sling-truncated'])
+        for bad in (None, {**observed,'status':'failed'}, {**observed,'guestExecution':True}):
+            with self.subTest(bad=bad), self.assertRaisesRegex(WorkflowError,'native-reference-required'):
+                outcomes(bad)
+        for change in ({'requests':True},{'requests':0},{'requests':2},{'invalidRequest':True},
+                       {'bodyBytes':True},{'declaredBytes':31},{'result':'invented'},{'client':'requests'}):
+            bad = deepcopy(observed); bad['clients'][0].update(change)
+            with self.subTest(change=change), self.assertRaisesRegex(WorkflowError,'native-reference-client-result'):
+                outcomes(bad)
+
+    def test_native_reference_uses_captured_sources_offline_and_persists_before_refusal(self):
+        def reference_rows():
+            return {'schemaVersion':'latent.go.http-client.native-reference.v1','status':'passed','guestExecution':False,
+                    'clients':[{'client':name,'result':result,'requests':1,'invalidRequest':False,'bodyBytes':5,'declaredBytes':32}
+                               for name,result in (('sling','invalid-json'),('requests','transport-error'))]}
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools import go_http_library_reference as reference
+        for fail in (False,True):
+            with self.subTest(fail=fail), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); app = root/'application'; (app/'src').mkdir(parents=True)
+                source = b'package export_example\nfunc Run(uint32,string) string { return "original" }\n'
+                (app/'src/main.go').write_bytes(source)
+                sdk = app/'vendor/lsf/sdk/go-guest'; sdk.mkdir(parents=True)
+                (sdk/'toolchain.lock.json').write_text(json.dumps({'go':{'version':'go1.27.2'}}))
+                go = root/'go'; go.write_bytes(b'original-pinned-go')
+                cache = root/'captured-downloads'; cache.mkdir()
+                captured = SimpleNamespace(files={'src/main.go':source},dependency_root=app,check_unchanged=Mock())
+                closure = SimpleNamespace(identity='sha256:'+'a'*64,check_unchanged=Mock())
+                rows = reference_rows()['clients']; calls = []
+                if fail: rows[0]['requests'] = 2
+                output = root/'native-reference.json'
+                def run(arguments, work, environment, seconds, maximum):
+                    calls.append(arguments)
+                    self.assertEqual(read_file(work/'src/main.go'),source)
+                    self.assertEqual(environment['GOPROXY'],'off')
+                    self.assertEqual(environment['GOSUMDB'],'off')
+                    self.assertEqual(environment['GOWORK'],'off')
+                    self.assertEqual(environment['GOFLAGS'],'-mod=readonly')
+                    self.assertEqual((environment['GOOS'],environment['GOARCH']),('linux','amd64'))
+                    self.assertLessEqual(seconds,120)
+                    self.assertEqual(maximum,65536)
+                    if arguments[1] == 'version': return SimpleNamespace(stdout=b'go version go1.27.2 linux/amd64')
+                    if arguments[1] == 'build':
+                        self.assertNotIn('-overlay',arguments)
+                        harness = read_file(Path(arguments[-1]))
+                        self.assertIn(b'app "outside.test/application/src"',harness)
+                        self.assertIn(b'app.Run(which,',harness)
+                        self.assertNotIn(b'RoundTripper',harness)
+                        Path(arguments[arguments.index('-o')+1]).write_bytes(b'native-reference-binary')
+                        return SimpleNamespace(stdout=b'')
+                    return SimpleNamespace(stdout=json.dumps(next(row for row in rows if row['client']==arguments[1])).encode())
+                with patch.object(reference.sys,'platform','linux'), patch.object(reference,'capture_source',return_value=captured), \
+                        patch.object(reference,'prepare',return_value=closure), \
+                        patch.object(reference,'configure',return_value={'module':'outside.test/application','downloadCache':str(cache)}), \
+                        patch.object(reference,'run_bounded',side_effect=run):
+                    if fail:
+                        with self.assertRaisesRegex(WorkflowError,'native-reference-client-result'):
+                            reference.observe(app,go,output,deadline=reference.time.monotonic()+120)
+                    else:
+                        result = reference.observe(app,go,output,deadline=reference.time.monotonic()+120)
+                        self.assertEqual(reference.outcomes(result),{'sling':'invalid-json','requests':'transport-error'})
+                        captured.check_unchanged.assert_called_once(); closure.check_unchanged.assert_called_once()
+                saved = json.loads(read_file(output))
+                self.assertEqual(saved['status'],'failed' if fail else 'passed')
+                self.assertEqual(len(saved['clients']),1 if fail else 2)
+                self.assertEqual(json.loads(read_file(root/'native-reference-sling.json')),rows[0])
+                self.assertEqual(len(calls),3 if fail else 4)
+                self.assertFalse(saved['guestExecution'])
+                self.assertEqual(read_file(app/'src/main.go'),source)
+
     def test_private_marker_probes_keep_original_cases_and_enforce_zero_effects_and_retirement(self):
+        def reference_rows():
+            return {'schemaVersion':'latent.go.http-client.native-reference.v1','status':'passed','guestExecution':False,
+                    'clients':[{'client':name,'result':result,'requests':1,'invalidRequest':False,'bodyBytes':5,'declaredBytes':32}
+                               for name,result in (('sling','invalid-json'),('requests','transport-error'))]}
         from copy import deepcopy
         from tools import go_standard_http_node as node
         from tools.rust_capsule_project import ROOT
@@ -26,7 +118,7 @@ class HttpLibraryCapture(unittest.TestCase):
         rows = [{'exitCode':0,'decoded':[value],'processReaped':True,
                  'response':{'data':{'consumption':{'outboundRequests':0,'effectCount':0}}}}
                 for value in ('library-entered','private-marker-ready')]
-        original = node.library_cases({'host':'127.0.0.1','port':1})
+        original = node.library_cases({'host':'127.0.0.1','port':1},reference_rows())
         self.assertEqual(len(original),30)
         result = {'cases':['original-case-sentinel']}
         with patch.object(node,'invoke',side_effect=deepcopy(rows)) as invoke, patch.object(node,'retire_case') as retire:
@@ -35,7 +127,7 @@ class HttpLibraryCapture(unittest.TestCase):
         self.assertEqual([row['name'] for row in result['entryProbes']],['library-entry','private-marker'])
         self.assertEqual([call.args[2] for call in invoke.call_args_list],[200,201])
         self.assertEqual([call.args[-1] for call in retire.call_args_list],['probe-library-entry','probe-private-marker'])
-        self.assertEqual(node.library_cases({'host':'127.0.0.1','port':1}),original)
+        self.assertEqual(node.library_cases({'host':'127.0.0.1','port':1},reference_rows()),original)
         for changed in ({'exitCode':4}, {'decoded':['wrong']}, {'processReaped':False},
                         {'outboundRequests':1}, {'effectCount':1}):
             trial = deepcopy(rows)

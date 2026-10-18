@@ -48,6 +48,21 @@ cancellation in its response callback. The existing independent 33-case standard
 HTTP gate remains responsible for concrete transports, early close and separately
 labelled custom transports, including its after-header body cancellation case.
 
+Before each signed library variant, a native reference compiles the unchanged
+captured application's ordinary Run function against the reviewed offline module
+closure. The private origin remains unavailable. One native binary is invoked
+in a fresh process per client against a local short-body response (five bytes,
+declared Content-Length32); each must make exactly one GET. Sling streams its
+JSON decoder and can report syntax before body truncation, while Requests reads
+the entire response before decoding. Only the two truncated-body expectations
+come from these observed native results; the other28 signed cases are unchanged.
+A missing, failed, malformed, repeated-request or wrong-source reference cannot
+supply an oracle. Native control rows are retained separately, never counted as
+guest execution or among the24 signed peer contacts. No transport is injected,
+and source, module closure and Go executable identities are checked unchanged.
+The reference has a120-second sub-bound inside the unchanged1,200-second total;
+capture/component/node limits and the45-minute job are unchanged.
+
 The original Go workflow commands, timer/GC regression and 45-minute job limit
 remain. Native module capture, compilation and signed results for these clients
 are pending. No complete Go runtime, TLS/socket profile, catalogue-removal proof,

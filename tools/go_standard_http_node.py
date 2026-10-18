@@ -179,7 +179,9 @@ def entry_probes(client, probe, target, output, address, result, *, libraries=Fa
         retire_case(client,probe,target,output,'probe-'+name)
 
 
-def library_cases(secondary: dict) -> list[tuple]:
+def library_cases(secondary: dict, native_reference: dict | None = None) -> list[tuple]:
+    from tools.go_http_library_reference import outcomes
+    truncated = outcomes(native_reference)
     cases = []
     for index,name in enumerate(('sling','requests')):
         # Sling's original streaming JSON decoder can reject malformed bytes
@@ -189,7 +191,7 @@ def library_cases(secondary: dict) -> list[tuple]:
             ('json',0,'/conformance/json','200:domain:7:caf\u00e9:first|\u03bb'),
             ('http404',0,'/conformance/status/404','404:error:domain-error'),
             ('http500',0,'/conformance/status/500','500:error:domain-error'),
-            ('truncated',0,'/conformance/body/truncated','transport-error'),
+            ('truncated',0,'/conformance/body/truncated',truncated[name]),
             ('oversized',0,'/conformance/body/oversized',oversized),
             ('malformed-json',0,'/conformance/body/malformed-json','invalid-json'),
             ('forbidden',3,'/conformance/json','transport-error'),
@@ -206,7 +208,7 @@ def library_cases(secondary: dict) -> list[tuple]:
 
 
 def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
-        suite: str = 'standard'):
+        suite: str = 'standard', native_reference: dict | None = None):
     require(suite in {'standard','libraries'},'standard-go-unknown-fixture-suite')
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-go-original-deadline-expired')
@@ -337,7 +339,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('noncanonical-user-agent-denied', 24, '/conformance/json', 'transport-error'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
             if suite == 'libraries':
-                cases = library_cases(secondary)
+                result['nativeReference'] = native_reference
+                cases = library_cases(secondary,native_reference)
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
                 require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-go-'+name+'-result')

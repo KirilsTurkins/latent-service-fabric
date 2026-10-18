@@ -119,6 +119,14 @@ headers fail before contact. Content-Type and Idempotency-Key are structured
 typed request fields. No source-level credential or raw-header exception is
 introduced for any library.
 
+Cloning a supported Transport preserves its explicit field copies and the
+original Once/nil-map distinction, but the compiler-owned profile does not
+initialize an unused wire HTTP/2 implementation during Clone. Upstream
+Go1.27.2 otherwise creates an HTTP2Config as that side effect, which the finite
+backend correctly rejects as unsupported configuration. Explicit application
+HTTP2, Protocols and dialer selections remain rejected; the clone correction
+does not erase them or make an HTTP/2/TLS claim.
+
 The guest Transport owns no connection pool. Guest idle-pool bounds therefore
 cover zero retained connections; CloseIdleConnections has no guest connection
 to close. Host provider reuse, if any, belongs to its separately approved typed

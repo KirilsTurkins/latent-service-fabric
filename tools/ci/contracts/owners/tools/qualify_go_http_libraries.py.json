@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_http_libraries.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Freeze byte-exact normal native products, all source owners and strictly bounded capture/build/node stages under one original deadline",
+  "reviewReason": "Require bounded offline original native-client truncation observations before signed client comparison",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f9af79acf597f14c1b2d6dabfeee1c30d4eef70212fe0bbff864d086b75743df"
+  "sha256": "8f5c20aa4ee5aea5ad49a70465e994cdfb70f1f0f744ccede8169405efab31b7"
 }

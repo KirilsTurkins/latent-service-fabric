@@ -51,6 +51,13 @@ def prepare(goroot: Path, sdk: Path, output: Path, module: str) -> dict[str, str
         '\t\tTimeout:   30 * time.Second,\n'
         '\t\tKeepAlive: 30 * time.Second,\n'
         '\t}),\n', '\tDialContext: nil,\n')
+    # Clone must copy explicit options, not initialize an unused wire HTTP/2
+    # transport that then looks like an application-supplied HTTP2Config.
+    # Preserve Once and the nil-map distinction used by the original clone.
+    selected['net/http/transport.go'] = replace_once(selected['net/http/transport.go'],
+        'func (t *Transport) Clone() *Transport {\n\tt.nextProtoOnce.Do(t.onceSetNextProtoDefaults)',
+        'func (t *Transport) Clone() *Transport {\n\tt.nextProtoOnce.Do(func() {\n'
+        '\t\tt.tlsNextProtoWasNil = t.TLSNextProto == nil\n\t})')
     output.mkdir()
     replacements = {}
     for name, text in selected.items():

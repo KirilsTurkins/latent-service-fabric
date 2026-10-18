@@ -12,6 +12,7 @@ if __package__ in {None,''}: sys.path.insert(0,str(Path(__file__).resolve().pare
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.go_http_library_fixture import capture_source
+from tools.go_http_library_reference import observe as native_reference
 from tools.go_standard_http_node import run
 from tools.phase2_operator_process import read_json, require, write_json
 from tools.phase3_resource_identity import file_identity
@@ -24,10 +25,11 @@ def qualify(output: Path, native_qualification: Path):
     deadline = time.monotonic()+1200
     record = {'schemaVersion':'latent.go.http-libraries.qualification.v1','status':'in-progress',
         'scope':'two-default-clients-captured-private-worker-and-signed-provider-subset',
-        'commandLimits':{'overallSeconds':1200,'captureEachSeconds':300,'buildEachSeconds':300,'nodeEachSeconds':300},
+        'commandLimits':{'overallSeconds':1200,'captureEachSeconds':300,'buildEachSeconds':300,'nodeEachSeconds':300,'nativeReferenceEachSeconds':120},
         'transportInjection':False,'catalogueDispatch':False,'fullTicketQualification':False,'variants':[]}
     source_paths = ('tools/qualify_go_http_libraries.py','tools/go_http_library_fixture.py',
-        'tools/go_standard_http_node.py','sdk/go-guest/runtime/http-library-conformance/main.go')
+        'tools/go_standard_http_node.py','sdk/go-guest/runtime/http-library-conformance/main.go',
+        'tools/go_http_library_reference.py')
     record['sources'] = {name:file_identity(ROOT/name) for name in source_paths}
     stage = 'normal-native-products'
     try:
@@ -59,6 +61,9 @@ def qualify(output: Path, native_qualification: Path):
             for name in ('stdout','stderr'): (owned/('capture.'+name+'.txt')).write_bytes(getattr(result,name))
             require(result.returncode == 0,'go-http-libraries-native-capture-failed')
             captured = read_json(owned/'capture.json')
+            stage = variant+'-native-truncated-reference'
+            reference = native_reference(app,go,owned/'native-reference.json',deadline=deadline)
+            require(reference['sourceDigest'] == captured['sourceDigest'],'go-http-libraries-native-reference-source')
             stage = variant+'-normal-component-build'
             command = [sys.executable,str(ROOT/'tools/go_capsule.py'),'build',str(app),
                 '--output',str(owned/'build'),'--repository','https://github.com/KirilsTurkins/latent-service-fabric',
@@ -71,8 +76,8 @@ def qualify(output: Path, native_qualification: Path):
             require(result.returncode == 0,'go-http-libraries-component-build-failed')
             stage = variant+'-signed-node'
             node = run(owned/'build',{name:binaries[name] for name in ('latent','latentd','capsule_authoring')},
-                       owned/'node',deadline=deadline,suite='libraries')
-            record['variants'].append({'identity':identity,'capture':captured,'node':node,
+                       owned/'node',deadline=deadline,suite='libraries',native_reference=reference)
+            record['variants'].append({'identity':identity,'capture':captured,'nativeReference':reference,'node':node,
                 'component':file_identity(owned/'build/component.wasm',64*1024**2)})
             require(original_go == file_identity(go),'go-http-libraries-native-resolver-changed')
         require(original_receipt == file_identity(receipt_path)

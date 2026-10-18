@@ -36,6 +36,7 @@ on:
       - tools/qualify_go_standard_http.py
       - tools/qualify_go_http_libraries.py
       - tools/go_http_library_fixture.py
+      - tools/go_http_library_reference.py
       - tools/tests/test_go_http_libraries.py
       - tools/tests/test_go_standard_http_gate.py
       - tools/tests/fixtures/go-standard-http/**
@@ -107,6 +108,7 @@ on:
       - tools/qualify_go_standard_http.py
       - tools/qualify_go_http_libraries.py
       - tools/go_http_library_fixture.py
+      - tools/go_http_library_reference.py
       - tools/tests/test_go_http_libraries.py
       - tools/tests/test_go_standard_http_gate.py
       - tools/tests/fixtures/go-standard-http/**
@@ -339,6 +341,9 @@ jobs:
             ${{ runner.temp }}/go-http-libraries/qualification.json
             ${{ runner.temp }}/go-http-libraries/FAILED.json
             ${{ runner.temp }}/go-http-libraries/*/capture.json
+            ${{ runner.temp }}/go-http-libraries/*/native-reference.json
+            ${{ runner.temp }}/go-http-libraries/*/native-reference-sling.json
+            ${{ runner.temp }}/go-http-libraries/*/native-reference-requests.json
             ${{ runner.temp }}/go-http-libraries/*/capture-command.json
             ${{ runner.temp }}/go-http-libraries/*/capture.*.txt
             ${{ runner.temp }}/go-http-libraries/*/application/src/**
