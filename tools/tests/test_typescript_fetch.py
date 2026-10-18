@@ -12,6 +12,76 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class TypeScriptFetchTests(unittest.TestCase):
+    def test_replacement_body_does_not_consume_or_reuse_inherited_bytes(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+for (const Request of [target.Request, globalThis.Request]) {
+  const source = new Request('https://example.test', {method: 'POST', body: 'original'});
+  const backing = new Uint8Array([9, 1, 2, 9]);
+  const replaced = new Request(source, {body: backing.subarray(1, 3)});
+  backing.fill(0);
+  assert.equal(source.bodyUsed, false);
+  assert.deepEqual(new Uint8Array(await replaced.arrayBuffer()), new Uint8Array([1, 2]));
+  assert.equal(replaced.bodyUsed, true);
+  assert.equal(await source.text(), 'original');
+  const emptyReplacement = new Request(source, {body: ''});
+  assert.equal(emptyReplacement.bodyUsed, false);
+  assert.equal(await emptyReplacement.text(), '');
+  assert.equal(emptyReplacement.bodyUsed, true);
+  assert.equal(source.bodyUsed, true);
+  assert.throws(() => new Request(source), TypeError);
+  assert.throws(() => new Request(source, {body: null}), TypeError);
+  assert.throws(() => source.clone(), TypeError);
+}
+""")
+
+    def test_failed_get_head_construction_preserves_inherited_body(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+for (const Request of [target.Request, globalThis.Request]) {
+  for (const method of ['GET', 'HEAD']) {
+    const source = new Request('https://example.test', {method: 'POST', body: 'still-owned'});
+    assert.throws(() => new Request(source, {method}), TypeError);
+    assert.equal(source.bodyUsed, false);
+    assert.throws(() => new Request(source, {method, body: 'replacement'}), TypeError);
+    assert.equal(source.bodyUsed, false);
+    const transferred = new Request(source);
+    assert.equal(source.bodyUsed, true);
+    assert.equal(await transferred.text(), 'still-owned');
+    await assert.rejects(source.text(), TypeError);
+  }
+}
+""")
+
+    def test_fetch_replacement_body_uses_normal_typed_adapter_once(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+const requests = [], writes = [], events = [];
+const owner = name => ({[Symbol.dispose]() {events.push('drop:' + name);}});
+const upload = owner('upload'), body = owner('body');
+installFetch({
+  async open(request) {requests.push(request); return upload;},
+  async write(value, bytes) {assert.equal(value, upload); writes.push(new TextDecoder().decode(bytes));},
+  async finish(value) {assert.equal(value, upload); events.push('finish:upload'); return {status: 200, headers: [], body};},
+  async read(value, maximum) {assert.equal(value, body); assert.equal(maximum, 65536); return undefined;}
+}, () => false, target);
+const source = new target.Request('https://example.test', {method: 'POST', body: 'already-consumed'});
+assert.equal(await source.text(), 'already-consumed');
+const response = await target.fetch(source, {body: 'fresh'});
+assert.equal(response.status, 200);
+assert.deepEqual(requests, [{method: 'post', url: 'https://example.test/', headers: [],
+  bodyLength: 5n, bodyMediaType: 'text/plain;charset=UTF-8', idempotencyKey: undefined, timeoutMillis: undefined}]);
+assert.deepEqual(writes, ['fresh']);
+assert.deepEqual(events, ['finish:upload', 'drop:body']);
+assert.equal(source.bodyUsed, true);
+await assert.rejects(target.fetch(source), /body-already-used/);
+await assert.rejects(target.fetch(source, {body: 'x'.repeat(1024 * 1024 + 1)}), /fetch-body-limit/);
+assert.equal(requests.length, 1);
+assert.deepEqual(events, ['finish:upload', 'drop:body']);
+""")
+
     def test_only_exact_async_import_runtime_with_declared_typed_http_selects_backend(self):
         for profile in (SYNC_PROFILE, *NATIVE_PROFILES):
             for imports in ([], ['latent:http/client@0.2.0'], [fetch_profile.INTERFACE]):
