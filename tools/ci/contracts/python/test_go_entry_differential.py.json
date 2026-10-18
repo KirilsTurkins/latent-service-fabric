@@ -1,13 +1,27 @@
 {
   "cases": [
     "EntryDifferential.test_diagnostic_is_failure_only_and_neither_original_signed_gate_is_optional",
+    "EntryDifferential.test_integer_control_rejects_coerced_or_inexact_decoded_results",
     "EntryDifferential.test_normal_build_frozen_products_and_both_observations_keep_original_deadline",
     "EntryDifferential.test_only_http_import_changes_same_v4_public_string_contract",
     "EntryDifferential.test_public_rows_require_reaping_and_zero_effects_without_turning_traps_into_qualification",
-    "EntryDifferential.test_runtime_only_grants_and_failure_row_survive_unconfirmed_retirement"
+    "EntryDifferential.test_runtime_only_grants_and_failure_row_survive_unconfirmed_retirement",
+    "EntryDifferential.test_signature_exports_use_the_ordinary_cli_and_original_deadline"
   ],
   "guards": {
     "EntryDifferential.test_diagnostic_is_failure_only_and_neither_original_signed_gate_is_optional": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a7d758606b1b586f90143db984dc657d3b49298c4baf648346d3979281312d5c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EntryDifferential.test_integer_control_rejects_coerced_or_inexact_decoded_results": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -66,10 +80,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "EntryDifferential.test_signature_exports_use_the_ordinary_cli_and_original_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a7d758606b1b586f90143db984dc657d3b49298c4baf648346d3979281312d5c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_entry_differential.py",
-  "reviewReason": "Review unchanged case names, decorators and skip guards; added Mock and ExitStack imports change only module setup fingerprint. Verify exact runtime-only diagnostic surface and row checkpoint before failed retirement.",
+  "reviewReason": "Keep all five original cases and guards, add exact signature CLI/receipt/deadline and integer result regressions",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -30,6 +30,17 @@ native products, ordinary compiler/signing/admission and original owner fences.
 Both diagnostic worlds declare only their four reachable runtime imports and use
 runtime-only grants; the final component-surface check remains strict. The
 required HTTP fixtures keep their full HTTP world and original grants.
+The diagnostic also invokes three separate signatures before the original
+string-in/string-out export: no-input `u32`, string-input `u32`, and no-input
+string output. Each gets its own public row, exact result check and original
+retirement fence, including when it traps. This distinguishes argument and
+result handling without asserting that a trap occurs inside the Go handler.
+The pinned GoPkg allocator uses pre-init `runtime.sbrk` until its deferred
+initializer enables GC allocation, and refuses nonzero old pointer/size. These
+are source hypotheses to inspect if string input alone fails; actual allocator
+arguments are not observed by this diagnostic. Both minimal projects omit the
+streaming import, so they do not select the finite HTTP overlay and cannot
+qualify that backend.
 Their public rows are retained even if an entry traps; they never count among the
 original 33 standard or 30 library cases. This failure-only observation is bounded
 to 600 seconds, with 180-second compiles and 90-second node scenarios, under the

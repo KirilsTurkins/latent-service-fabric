@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from contextlib import ExitStack
 import json
 from pathlib import Path
@@ -24,6 +25,12 @@ from tools.qualify_go_standard_http import NATIVE_NAMES
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file
 
 VARIANTS = ('without-http', 'with-http-import')
+SIGNATURES = (('integer-control', [], 42), ('input-string', ['entry-input'], 42),
+              ('output-string', [], 'entered'))
+STRING_RUN = b'    run: async func(which: u32, url: string) -> string;\n'
+SIGNATURE_WIT = (b'    integer-control: async func() -> u32;\n'
+                 b'    input-string: async func(value: string) -> u32;\n'
+                 b'    output-string: async func() -> string;\n')
 
 
 def capture(directory: Path, variant: str) -> Path:
@@ -31,14 +38,18 @@ def capture(directory: Path, variant: str) -> Path:
     app = project(directory)
     source = ('package export_examples_go_standard_http_api\n\n'
               + ('import _ "net/http"\n\n' if variant == 'with-http-import' else '')
-              + 'func Run(which uint32, address string) string { return "entered" }\n').encode()
+              + 'func Run(which uint32, address string) string { return "entered" }\n'
+              + 'func IntegerControl() uint32 { return 42 }\n'
+              + 'func InputString(value string) uint32 { return 42 }\n'
+              + 'func OutputString() string { return "entered" }\n').encode()
     (app/'src/main.go').write_bytes(source)
     wit = read_file(app/'wit/world.wit')
     unused = b'    import latent:http/streaming@0.3.0;\n'
-    require(wit.count(unused) == 1, 'go-entry-diagnostic-world-preimage')
+    require(wit.count(unused) == 1 and wit.count(STRING_RUN) == 1,
+            'go-entry-diagnostic-world-preimage')
     # No diagnostic calls HTTP: retain the exact public API and only the four
     # actual runtime imports, rather than relaxing final-surface validation.
-    (app/'wit/world.wit').write_bytes(wit.replace(unused, b''))
+    (app/'wit/world.wit').write_bytes(wit.replace(unused, b'').replace(STRING_RUN, STRING_RUN+SIGNATURE_WIT))
     lock = read_json(app/'sdk-lock.json')
     lock['template'] = {'name': 'go-entry-'+variant, 'sourceDigest': digest(source),
                         'witDigest': digest(read_file(app/'wit/world.wit'))}
@@ -46,7 +57,7 @@ def capture(directory: Path, variant: str) -> Path:
     return app
 
 
-def outcome(row: dict) -> str:
+def outcome(row: dict, expected: str | int = 'entered') -> str:
     require(row['processReaped'] is True and type(row['exitCode']) is int
             and row['exitCode'] in {0, 4}, 'go-entry-cli-outcome')
     consumption = row['response']['data']['consumption']
@@ -54,11 +65,37 @@ def outcome(row: dict) -> str:
                 for key in ('outboundRequests', 'childCalls', 'effectCount')),
             'go-entry-external-effect')
     if row['exitCode'] == 0:
-        require(row['decoded'] == ['entered'], 'go-entry-constant-result')
+        require(row['decoded'] == [expected] and type(row['decoded'][0]) is type(expected),
+                'go-entry-constant-result')
         return 'returned'
     require(row['decoded'] is None and row['response']['data']['terminalState'] == 'guest_trap',
             'go-entry-not-a-guest-trap')
     return 'trapped'
+
+
+def invoke_signature(client, target, function: str, values: list, activation: str) -> dict:
+    """Use the same ordinary CLI/process bounds for diagnostic-only exports."""
+    require(any(function == name and values == arguments for name, arguments, _ in SIGNATURES),
+            'go-entry-unknown-signature')
+    path, budget = client.directory/(activation+'.json'), client.directory/(activation+'-budget.json')
+    write_json(path, values)
+    write_json(budget, target['budget'])
+    process = Process([client.executable, '--output', 'json', '--config', str(client.config), '--profile', 'operator',
+        '--rpc-timeout-ms', '120000', 'invoke', '--service', node.SERVICE, '--route', target['name'],
+        '--contract', 'examples:go-standard-http/api@1.0.0', '--function', function, '--activation-id', activation,
+        '--input', str(path), '--budget', str(budget), '--budget-profile', 'phase3'],
+        client.directory, client.environment, client.cancellation, maximum=65536)
+    try:
+        completed = process.complete(min(client.deadline, time.monotonic()+123))
+    finally:
+        process.close()
+    value = json.loads(completed.stdout)
+    payload = value['data'].get('payload')
+    decoded = json.loads(base64.b64decode(payload['data'], validate=True)) if payload else None
+    row = {'exitCode': completed.returncode, 'response': value, 'decoded': decoded,
+           'processReaped': process.owner.finished}
+    write_json(client.evidence/(activation+'.json'), row)
+    return row
 
 
 def observe(artifact: Path, binaries: dict, output: Path, deadline: float) -> dict:
@@ -99,6 +136,18 @@ def observe(artifact: Path, binaries: dict, output: Path, deadline: float) -> di
             origin = startup['origins']['primary']
             runtime, _authorized = node.grants(client, service, publication, origin)
             target = node.deploy(client, source/'deployment.json', publication, grants=runtime)
+            record['signatures'] = []
+            for function, values, expected in SIGNATURES:
+                record['stage'] = function
+                activation = 'entry-'+function
+                row = {'function': function, 'qualification': False,
+                       'entry': invoke_signature(client, target, function, values, activation)}
+                record['signatures'].append(row)
+                # Preserve each public result even if its predicate/fence fails.
+                write_json(output/(function+'.json'), row)
+                row['outcome'] = outcome(row['entry'], expected)
+                record['stage'] = function+'-retirement'
+                node.retire_case(client, probe, target, output, activation)
             record['stage'] = 'entry'
             record['entry'] = node.invoke(client, target, 25,
                 f"http://{origin['host']}:{origin['port']}/conformance/json", 'entry-differential')

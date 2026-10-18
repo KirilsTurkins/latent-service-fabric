@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_entry.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Align only diagnostic WIT and runtime grants with the actually emitted four-import surface; retain strict compatibility and original HTTP gates",
+  "reviewReason": "Split diagnostic-only integer control, string input and string output through normal signed CLI and original retirement fences; retain original gates and finite deadlines",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a17a0171ba909005aa83e0bd44e045f34e5b3afb7d228b780dd1cc6e91d2b879"
+  "sha256": "c6acf7f5e41f38fa347c3fbca08a2460789b6dc42053dad40f374c59622679cd"
 }

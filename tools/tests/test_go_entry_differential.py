@@ -46,10 +46,17 @@ class EntryDifferential(unittest.TestCase):
             self.assertNotIn(b'net/http', sources[0])
             self.assertEqual(sources[0], sources[1].replace(b'import _ "net/http"\n\n', b''))
             self.assertIn(b'func Run(which uint32, address string) string { return "entered" }', sources[0])
+            for declaration in (b'func IntegerControl() uint32 { return 42 }',
+                                b'func InputString(value string) uint32 { return 42 }',
+                                b'func OutputString() string { return "entered" }'):
+                self.assertIn(declaration, sources[0])
             self.assertEqual(worlds[0], worlds[1])
             original = read_file(ROOT/'sdk/go-guest/runtime/standard-http-conformance/world.wit')
-            self.assertEqual(worlds[0], original.replace(b'    import latent:http/streaming@0.3.0;\n', b''))
+            self.assertEqual(worlds[0], original.replace(b'    import latent:http/streaming@0.3.0;\n', b'')
+                             .replace(diagnostic.STRING_RUN, diagnostic.STRING_RUN+diagnostic.SIGNATURE_WIT))
             self.assertNotIn(b'latent:http/', worlds[0])
+            self.assertEqual(diagnostic.SIGNATURES, (('integer-control', [], 42),
+                             ('input-string', ['entry-input'], 42), ('output-string', [], 'entered')))
 
     def test_runtime_only_grants_and_failure_row_survive_unconfirmed_retirement(self):
         with tempfile.TemporaryDirectory() as directory, ExitStack() as patches:
@@ -73,6 +80,10 @@ class EntryDifferential(unittest.TestCase):
                 path.write_text('{}')
                 return path
             def fence(*args):
+                if args[-1] != 'entry-differential':
+                    name = args[-1].removeprefix('entry-')
+                    self.assertEqual(json.loads(read_file(output/(name+'.json')))['entry'], row)
+                    return
                 self.assertEqual(json.loads(read_file(output/'entry.json'))['entry'], row)
                 self.assertEqual(args[-1], 'entry-differential')
                 raise WorkflowError('unconfirmed-retirement-control')
@@ -84,6 +95,7 @@ class EntryDifferential(unittest.TestCase):
                 patches.enter_context(patch.object(diagnostic.node, name, value))
             patches.enter_context(patch.object(diagnostic, 'Process', return_value=peer))
             patches.enter_context(patch.object(diagnostic, 'run_bounded_result', return_value=SimpleNamespace(returncode=0)))
+            invoke_signature = patches.enter_context(patch.object(diagnostic, 'invoke_signature', return_value=row))
             with self.assertRaisesRegex(WorkflowError, 'unconfirmed-retirement-control'):
                 diagnostic.observe(root/'artifact', binaries, output, diagnostic.time.monotonic()+90)
             self.assertIs(replacements['deploy'].call_args.kwargs['grants'], runtime)
@@ -93,8 +105,53 @@ class EntryDifferential(unittest.TestCase):
             self.assertEqual(saved['stage'], 'retirement')
             self.assertEqual(saved['status'], 'incomplete')
             self.assertFalse(saved['qualification'])
+            self.assertEqual([item['function'] for item in saved['signatures']],
+                             [item[0] for item in diagnostic.SIGNATURES])
+            self.assertTrue(all(item['outcome'] == 'trapped' for item in saved['signatures']))
+            self.assertEqual(invoke_signature.call_count, 3)
             service.close.assert_called_once()
             peer.close.assert_called_once()
+
+    def test_signature_exports_use_the_ordinary_cli_and_original_deadline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'controls').mkdir()
+            client = SimpleNamespace(directory=root, evidence=root/'controls', executable='latent',
+                config=root/'config.json', environment={}, cancellation=Mock(), deadline=diagnostic.time.monotonic()+9)
+            target = {'name': 'route', 'budget': {'cpuFuel': '1000'}}
+            for function, values, expected in diagnostic.SIGNATURES:
+                payload = diagnostic.base64.b64encode(json.dumps([expected]).encode()).decode()
+                process = Mock()
+                process.complete.return_value = SimpleNamespace(returncode=0,
+                    stdout=json.dumps({'data': {'payload': {'data': payload}}}).encode())
+                process.owner.finished = True
+                with patch.object(diagnostic, 'Process', return_value=process) as owned:
+                    row = diagnostic.invoke_signature(client, target, function, values, 'entry-'+function)
+                command = owned.call_args.args[0]
+                self.assertEqual(command[command.index('--function')+1], function)
+                self.assertEqual(command[command.index('--contract')+1], 'examples:go-standard-http/api@1.0.0')
+                self.assertEqual(command[command.index('--budget-profile')+1], 'phase3')
+                self.assertEqual(json.loads(read_file(root/('entry-'+function+'.json'))), values)
+                self.assertEqual(json.loads(read_file(root/('entry-'+function+'-budget.json'))), target['budget'])
+                self.assertEqual(owned.call_args.kwargs['maximum'], 65536)
+                self.assertLessEqual(process.complete.call_args.args[0], client.deadline)
+                process.close.assert_called_once()
+                self.assertIs(row['processReaped'], True)
+                self.assertEqual(row['decoded'], [expected])
+                self.assertEqual(json.loads(read_file(root/'controls'/('entry-'+function+'.json'))), row)
+            with patch.object(diagnostic, 'Process') as owned:
+                with self.assertRaisesRegex(WorkflowError, 'unknown-signature'):
+                    diagnostic.invoke_signature(client, target, 'input-string', [], 'wrong')
+                owned.assert_not_called()
+
+    def test_integer_control_rejects_coerced_or_inexact_decoded_results(self):
+        row = {'exitCode': 0, 'processReaped': True, 'decoded': [42],
+               'response': {'data': {'consumption': {'outboundRequests': 0, 'childCalls': 0, 'effectCount': 0}}}}
+        self.assertEqual(diagnostic.outcome(row, 42), 'returned')
+        for value in (42.0, '42', True, 41):
+            row['decoded'] = [value]
+            with self.subTest(value=value), self.assertRaisesRegex(WorkflowError, 'constant-result'):
+                diagnostic.outcome(row, 42)
 
     def test_public_rows_require_reaping_and_zero_effects_without_turning_traps_into_qualification(self):
         row = {'exitCode': 0, 'processReaped': True, 'decoded': ['entered'],
