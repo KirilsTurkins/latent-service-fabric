@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_go_entry_frames.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bounded failure-only numeric observer: same signed control, two readonly source overlays, last diagnostic-only target, no public raw output or binary",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9bcdd1383f9c2090bb9ed6ec4f6edd5dfc3a44b08b4776cfa49293066de7b0cf"
+}

@@ -41,12 +41,24 @@ are source hypotheses to inspect if string input alone fails; actual allocator
 arguments are not observed by this diagnostic. Both minimal projects omit the
 streaming import, so they do not select the finite HTTP overlay and cannot
 qualify that backend.
+If the no-input control also traps, one failure-only private node replay can
+capture at most 32 numeric Wasm function indices and offsets before the public
+sanitizer. It reuses the unchanged signed no-HTTP package, runtime grants,
+activation budget, integer-control call and owner fences. Its two read-only
+source overlays enable only bounded frame capture and numeric stderr emission;
+DWARF details stay disabled. No names, source paths or raw native output are
+retained, and the private binary is excluded from artifacts. The offline build
+and replay share a 600-second diagnostic bound, with 450 seconds for the build
+and 90 seconds for the node. This is the last native command after every
+acceptance command; the ephemeral target is diagnostic-only afterwards and
+cache saving remains disabled. Neither successful capture nor clean retirement
+qualifies the still-required original HTTP programmes.
 Their public rows are retained even if an entry traps; they never count among the
 original 33 standard or 30 library cases. This failure-only observation is bounded
 to 600 seconds, with 180-second compiles and 90-second node scenarios, under the
 unchanged 45-minute job. A difference can narrow the reachable initialization
 graph; it does not identify a specific initializer or prove an ABI defect by
-itself. No private runtime error or native backtrace is made public.
+itself. No raw private runtime error or named native backtrace is made public.
 
 ## Finite API contract
 

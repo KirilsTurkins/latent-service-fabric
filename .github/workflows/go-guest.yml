@@ -44,6 +44,8 @@ on:
       - tools/diagnose_go_timer_failure.py
       - tools/diagnose_go_entry.py
       - tools/tests/test_go_entry_differential.py
+      - tools/diagnose_go_entry_frames.py
+      - tools/tests/test_go_entry_frames.py
       - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
@@ -113,6 +115,8 @@ on:
       - tools/diagnose_go_timer_failure.py
       - tools/diagnose_go_entry.py
       - tools/tests/test_go_entry_differential.py
+      - tools/diagnose_go_entry_frames.py
+      - tools/tests/test_go_entry_frames.py
       - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
@@ -292,6 +296,7 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_go_standard_http_gate -v
           python3 -m unittest tools.tests.test_go_entry_differential -v
+          python3 -m unittest tools.tests.test_go_entry_frames -v
       - name: Qualify ordinary net/http contexts and disposal on the signed node
         run: python3 tools/qualify_go_standard_http.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-http-signed"
       - name: Check third-party client capture and frozen native product boundaries
@@ -320,6 +325,11 @@ jobs:
           if test -f "$RUNNER_TEMP/go-standard-timers/GO-ACTIVATION-COMPILE.json"; then
             python3 tools/diagnose_go_timer_failure.py --fixture "$RUNNER_TEMP/go-standard-timers" --output "$RUNNER_TEMP/go-timer-diagnostic"
           fi
+      - name: Observe private numeric frames for the unchanged Go integer entry
+        if: ${{ !cancelled() && failure() && steps.normal_go_qualification.outcome == 'success' }}
+        # Last native command: this target is diagnostic-only afterwards and
+        # the existing Rust cache has save-if:false. No acceptance reuses it.
+        run: python3 tools/diagnose_go_entry_frames.py --diagnostic "$RUNNER_TEMP/go-entry-differential" --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-entry-private-frames"
       - name: Retain successful and failed upstream observations
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -478,6 +488,9 @@ jobs:
             ${{ runner.temp }}/go-entry-differential/*/build/logs/**
             ${{ runner.temp }}/go-entry-differential/*/node/*.json
             ${{ runner.temp }}/go-entry-differential/*/node/controls/**
+            ${{ runner.temp }}/go-entry-private-frames/observation.json
+            ${{ runner.temp }}/go-entry-private-frames/node/observation.json
+            ${{ runner.temp }}/go-entry-private-frames/node/entry.json
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

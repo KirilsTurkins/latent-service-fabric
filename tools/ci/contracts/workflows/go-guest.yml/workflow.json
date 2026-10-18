@@ -60,6 +60,8 @@
           "tools/diagnose_go_timer_failure.py",
           "tools/diagnose_go_entry.py",
           "tools/tests/test_go_entry_differential.py",
+          "tools/diagnose_go_entry_frames.py",
+          "tools/tests/test_go_entry_frames.py",
           "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
@@ -133,6 +135,8 @@
           "tools/diagnose_go_timer_failure.py",
           "tools/diagnose_go_entry.py",
           "tools/tests/test_go_entry_differential.py",
+          "tools/diagnose_go_entry_frames.py",
+          "tools/tests/test_go_entry_frames.py",
           "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
@@ -169,7 +173,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Add bounded failure-only normal signed Go v4 import differential, preserving every existing HTTP/client case, authority, deadline and redaction boundary",
+  "reviewReason": "Add two private observer source trigger paths only; preserve runner, permissions, original triggers, required job and 45 minute budget",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
