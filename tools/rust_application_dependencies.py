@@ -273,14 +273,13 @@ def native_graph(metadata: dict, *, filtered=False) -> tuple[dict, dict]:
         return (isinstance(value, str) and 0 < len(value) <= 32768
                 and not any(ord(char) < 32 or ord(char) == 127 for char in value))
 
-    def rows(value):
-        if not isinstance(value, list) or len(value) > 1024:
+    def rows(value, maximum=1024):
+        if not isinstance(value, list) or len(value) > maximum:
             raise DependencyError('cargo-native-graph-invalid')
         return value
 
     def strings(value, maximum=1024):
-        if (not isinstance(value, list) or len(value) > maximum
-                or any(not token(item) for item in value) or len(set(value)) != len(value)):
+        if not isinstance(value, list) or any(not token(item) for item in rows(value, maximum)) or len(set(value)) != len(value):
             raise DependencyError('cargo-native-graph-invalid')
         return value
 
@@ -302,9 +301,9 @@ def native_graph(metadata: dict, *, filtered=False) -> tuple[dict, dict]:
         raise DependencyError('cargo-native-graph-root-invalid')
     count = 0
     for node in nodes.values():
-        # Native all-features vectors are not package/edge collections. Keep
-        # their existing aggregate capacity without expanding structural rows.
-        count += len(strings(node.get('features'), maximum=MAX_GRAPH_ROWS))
+        # Cargo all-features observations share the aggregate graph allowance;
+        # structural package/node/edge/dependency lists keep their smaller cap.
+        count += len(strings(node.get('features'), MAX_GRAPH_ROWS))
         identities = set()
         for edge in rows(node.get('deps')):
             if (not isinstance(edge, dict) or not token(edge.get('pkg')) or edge['pkg'] not in nodes
