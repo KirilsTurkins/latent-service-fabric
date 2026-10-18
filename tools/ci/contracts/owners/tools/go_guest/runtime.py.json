@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve explicit v4 initializer routing and all profiles while integrating authenticated GC empty-poll repair from the parent.",
+  "reviewReason": "Preserve authenticated existing empty GC readiness poll correction together with standard HTTP context instrumentation; production bodies unchanged by common regression integration.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "359b15c50988f86a601e097745f899bd285ae68713eaa4bb9789ce00ad9f15eb"
+  "sha256": "0185bd10ad54a6e265b4e273819b8313afa1997c022a6f241e4c8c0e3be0c116"
 }

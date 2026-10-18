@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "GoHttpContextTests.test_all_original_calls_and_resource_owners_remain_byte_identical",
+    "GoHttpContextTests.test_collected_timer_drain_retires_exact_slot_before_original_fence",
+    "GoHttpContextTests.test_context_facade_requires_explicit_selection_and_actual_streaming_import",
+    "GoHttpContextTests.test_every_pinned_call_rejects_marshalling_or_ownership_drift",
+    "GoHttpContextTests.test_exact_dispatcher_profiles_preserve_timers_checkpoints_and_initializer_edges",
+    "GoHttpContextTests.test_own_finish_restores_only_untransferred_argument_and_reads_only_returned_results",
+    "GoHttpContextTests.test_wrong_identity_duplicate_call_and_repeated_derivation_fail_closed"
+  ],
+  "guards": {
+    "GoHttpContextTests.test_all_original_calls_and_resource_owners_remain_byte_identical": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    },
+    "GoHttpContextTests.test_collected_timer_drain_retires_exact_slot_before_original_fence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    },
+    "GoHttpContextTests.test_context_facade_requires_explicit_selection_and_actual_streaming_import": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    },
+    "GoHttpContextTests.test_every_pinned_call_rejects_marshalling_or_ownership_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    },
+    "GoHttpContextTests.test_exact_dispatcher_profiles_preserve_timers_checkpoints_and_initializer_edges": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    },
+    "GoHttpContextTests.test_own_finish_restores_only_untransferred_argument_and_reads_only_returned_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    },
+    "GoHttpContextTests.test_wrong_identity_duplicate_call_and_repeated_derivation_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_http_context.py",
+  "reviewReason": "Preserve all six existing generated HTTP and dispatcher source controls and their exact execution guards. Add one non-skipped collected-timer drain prerequisite checking exact-token retirement before the original fence, stale-token and unconfirmed-stop refusals, and unchanged live-callback restrictions. Source controls do not establish signed execution or net/http qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

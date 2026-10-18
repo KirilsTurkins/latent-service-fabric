@@ -194,7 +194,7 @@ class Compiler:
         if any('panic("not implemented")' in path.read_text() for path in generated.glob("export_*/*.go")):
             raise ValueError("unimplemented-Go-WIT-export")
         binding_before = {path: path.read_bytes() for path in generated.glob("*/wit_bindings.go")}
-        install(self.sdk, generated)
+        http_context = install(self.sdk, generated, http_context=activation)
         transforms = entry_transform
         for path, before in sorted(binding_before.items()):
             after = path.read_bytes()
@@ -223,7 +223,8 @@ class Compiler:
             self.run("vendor-locked-module", "go", "mod", "vendor")
             overlay_path = overlay(self.goroot, output / "runtime-overlay",
                                    generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
-                                   activation=activation, checkpoints=checkpoints, timers=timers, initializers=initializers)
+                                   activation=activation, checkpoints=checkpoints, timers=timers, initializers=initializers,
+                                   http_context=http_context)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
             if selected_module is not None and selected_module["tags"]:
                 self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
