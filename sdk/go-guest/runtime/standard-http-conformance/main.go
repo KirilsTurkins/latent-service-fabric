@@ -31,7 +31,7 @@ func (localTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 func Run(which uint32, address string) string {
 	invocations++
 	if invocations != 1 { return "stale-state" }
-	if which >= 25 { return valueRequest(which, address) }
+	if which >= valueModeBase { return valueRequest(which, address) }
 	client := &http.Client{Timeout:time.Second}
 	defer client.CloseIdleConnections()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -90,6 +90,8 @@ func Run(which uint32, address string) string {
 	return strconv.Itoa(response.StatusCode)+":domain:"+strconv.Itoa(value.ID)+":"+value.Name+":"+value.Items[0]+"|"+value.Items[1]
 }
 
+const valueModeBase uint32 = 1000
+
 //go:embed values.json
 var valueInputs []byte
 
@@ -110,8 +112,8 @@ func (reader *valueReader) Read(target []byte) (int, error) { return reader.sour
 func valueRequest(which uint32, address string) string {
 	var inputs struct { Profile string `json:"schemaVersion"`; Cases []valueCase `json:"cases"` }
 	if json.Unmarshal(valueInputs, &inputs) != nil || inputs.Profile != "latent.standard-http.values.v1" ||
-		len(inputs.Cases) > 9 || which < 25 || which-25 >= uint32(len(inputs.Cases)) { return "value-input-error" }
-	selected := inputs.Cases[which-25]
+		len(inputs.Cases) > 9 || which < valueModeBase || which-valueModeBase >= uint32(len(inputs.Cases)) { return "value-input-error" }
+	selected := inputs.Cases[which-valueModeBase]
 	payload, err := base64.StdEncoding.DecodeString(selected.Body)
 	if err != nil || len(payload) > 64 { return "value-input-error" }
 	var body io.Reader = bytes.NewReader(payload)

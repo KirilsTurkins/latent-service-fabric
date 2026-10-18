@@ -12,7 +12,7 @@ from .vectors import json_bytes
 
 SOURCE = Path(__file__).with_name('values.json')
 PROFILE = 'latent.standard-http.values.v1'
-GO_MODE_BASE = 25
+GO_MODE_BASE = 1000
 
 
 def load() -> list[dict]:

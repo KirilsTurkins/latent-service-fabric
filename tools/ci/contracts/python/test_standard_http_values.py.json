@@ -3,7 +3,8 @@
     "StandardHttpValues.test_head_requires_status_exact_declared_length_and_no_response_bytes",
     "StandardHttpValues.test_peer_oracle_rejects_forged_success_replay_wrong_order_and_changed_transfer",
     "StandardHttpValues.test_public_cases_cover_all_methods_binary_utf8_and_optional_metadata",
-    "StandardHttpValues.test_result_oracle_rejects_wrong_bytes_missing_empty_metadata_and_boolean_integers"
+    "StandardHttpValues.test_result_oracle_rejects_wrong_bytes_missing_empty_metadata_and_boolean_integers",
+    "StandardHttpValues.test_value_dispatch_cannot_intercept_standard_or_entry_probe_modes"
   ],
   "guards": {
     "StandardHttpValues.test_head_requires_status_exact_declared_length_and_no_response_bytes": {
@@ -53,10 +54,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "StandardHttpValues.test_value_dispatch_cannot_intercept_standard_or_entry_probe_modes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7466c2532d3e99f0affe7611ab76f875c7767083ffbd22074b786f0c8061181",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_standard_http_values.py",
-  "reviewReason": "Append nine shared method, byte and optional-metadata controls to the existing default Go HTTP campaign; preserve all original cases, execution guards, budgets and command limits, with no local native qualification claim.",
+  "reviewReason": "Reserve shared value modes beyond the existing standard and entry-probe ranges; retain all prior oracle cases and guards and add a source boundary regression.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

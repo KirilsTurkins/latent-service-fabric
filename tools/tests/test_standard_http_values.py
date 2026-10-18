@@ -10,6 +10,18 @@ from tools.standard_http.protocol import FixtureError
 
 
 class StandardHttpValues(unittest.TestCase):
+    def test_value_dispatch_cannot_intercept_standard_or_entry_probe_modes(self):
+        import re
+        from tools.rust_capsule_project import ROOT
+        source = (ROOT/'sdk/go-guest/runtime/standard-http-conformance/main.go').read_text(encoding='utf-8')
+        selected = re.search(r'const valueModeBase uint32 = ([0-9]+)', source)
+        self.assertIsNotNone(selected)
+        self.assertEqual(int(selected[1]), values.GO_MODE_BASE)
+        self.assertGreater(values.GO_MODE_BASE, 26)
+        self.assertIn('if which >= valueModeBase { return valueRequest(which, address) }', source)
+        self.assertIn('which-valueModeBase >= uint32(len(inputs.Cases))', source)
+        self.assertIn('selected := inputs.Cases[which-valueModeBase]', source)
+
     def test_public_cases_cover_all_methods_binary_utf8_and_optional_metadata(self):
         cases = values.load()
         self.assertEqual({case['method'] for case in cases}, {'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'})
