@@ -14,6 +14,45 @@ from tools.rust_capsule_project import ROOT, read_file, snapshot
 
 
 class StandardHttpGate(unittest.TestCase):
+    def test_entry_probes_keep_original_http_cases_separate_and_retire_without_external_effects(self):
+        from tools import go_standard_http_node as node
+        source = read_file(ROOT/'sdk/go-guest/runtime/standard-http-conformance/main.go').decode()
+        self.assertLess(source.index('if which == 25'),source.index('client := &http.Client'))
+        self.assertLess(source.index('http.NewRequestWithContext'),source.index('if which == 26'))
+        self.assertLess(source.index('if which == 26'),source.index('client.Do(request)'))
+        rows = [{'exitCode':0,'decoded':[value],'processReaped':True,
+                 'response':{'data':{'consumption':{'outboundRequests':0,'effectCount':0}}}}
+                for value in ('entered','request-ready')]
+        result = {'cases':[]}
+        with patch.object(node,'invoke',side_effect=rows) as invoke, patch.object(node,'retire_case') as retire:
+            node.entry_probes('client','probe',{'name':'target'},Path('output'),'http://fixture/json',result)
+        self.assertEqual(result['cases'],[])
+        self.assertEqual([row['name'] for row in result['entryProbes']],['entry','request-setup'])
+        self.assertEqual([call.args[2] for call in invoke.call_args_list],[25,26])
+        self.assertEqual([call.args[-1] for call in retire.call_args_list],['probe-entry','probe-request-setup'])
+        self.assertTrue(all(call.args[3] == 'http://fixture/json' for call in invoke.call_args_list))
+
+    def test_failed_or_effectful_entry_probe_is_retained_and_cannot_qualify_or_continue(self):
+        from tools import go_standard_http_node as node
+        for changed in ({'exitCode':4}, {'decoded':['wrong']}, {'processReaped':False},
+                        {'outboundRequests':1}, {'effectCount':1}):
+            row = {'exitCode':0,'decoded':['entered'],'processReaped':True,
+                   'response':{'data':{'consumption':{'outboundRequests':0,'effectCount':0}}}}
+            for key,value in changed.items():
+                if key in {'outboundRequests','effectCount'}:
+                    row['response']['data']['consumption'][key] = value
+                else:
+                    row[key] = value
+            result = {'cases':[]}
+            with self.subTest(changed=changed), patch.object(node,'invoke',return_value=row) as invoke, \
+                    patch.object(node,'retire_case') as retire:
+                with self.assertRaisesRegex(WorkflowError,'standard-go-probe-'):
+                    node.entry_probes('client','probe',{'name':'target'},Path('output'),'http://fixture/json',result)
+                self.assertEqual(invoke.call_count,1)
+                retire.assert_not_called()
+                self.assertEqual(len(result['entryProbes']),1)
+                self.assertEqual(result['cases'],[])
+
     def test_compile_qualifier_selects_the_actual_captured_world_for_both_fixtures(self):
         from tools import qualify_go_http_context
         for fixture in ('http-context-conformance','standard-http-conformance'):

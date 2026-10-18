@@ -148,6 +148,32 @@ def invoke(client, target, which, url, activation):
     return row
 
 
+def retire_case(client, probe, target, output, name):
+    # These same original owner fences apply to probes and ordinary cases.
+    retired = sample(client, probe, 'after-'+name, 1)
+    slots = next(row for row in retired['inventory']['topology']['entries']
+                 if row['name'] == 'invocation-cleanup-slots')
+    require(slots['activeCount'] == '0', 'standard-go-cleanup-slots-retired')
+    write_json(output/('after-'+name+'.json'), retired)
+    usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
+    require(not usage['unavailable'] and all(key in usage['counters'] and int(usage['counters'][key]) == 0
+        for key in ACTIVE_COUNTERS), 'standard-go-provider-physical-owners')
+
+
+def entry_probes(client, probe, target, output, address, result):
+    result['entryProbes'] = []
+    for name, which, expected in (('entry',25,'entered'), ('request-setup',26,'request-ready')):
+        row = invoke(client,target,which,address,'standard-probe-'+name)
+        # Retain even the first failed probe without counting it as an HTTP case.
+        result['entryProbes'].append({'name':name, **row})
+        require(row['exitCode'] == 0 and row['decoded'] == [expected] and row['processReaped'],
+                'standard-go-probe-'+name+'-result')
+        consumption = row['response']['data']['consumption']
+        require(all(type(consumption[key]) is int and consumption[key] == 0
+                    for key in ('outboundRequests','effectCount')), 'standard-go-probe-external-effect')
+        retire_case(client,probe,target,output,'probe-'+name)
+
+
 def library_cases(secondary: dict) -> list[tuple]:
     cases = []
     for index,name in enumerate(('sling','requests')):
@@ -268,6 +294,9 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                     and denied['response']['data']['consumption']['cpuFuel'] == '0',
                     'standard-go-http-grant-denial')
             target = deploy(client, source/'deployment.json', publication, generation=str(target['generation']), grants=authorized)
+            if suite == 'standard':
+                stage = 'entry-boundary'
+                entry_probes(client,probe,target,output,url+'/conformance/json',result)
             stage = 'ordinary-http'
             cases = [('json', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('http404', 0, '/conformance/status/404', '404:error:domain-error'),
@@ -312,14 +341,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 # The shared outbound owner checks every activation-scoped and
                 # service-resident row. Ingress-only exchange rows are absent on
                 # this node, which has no HTTP listener installation.
-                retired = sample(client, probe, 'after-'+name, 1)
-                slots = next(row for row in retired['inventory']['topology']['entries']
-                             if row['name'] == 'invocation-cleanup-slots')
-                require(slots['activeCount'] == '0', 'standard-go-cleanup-slots-retired')
-                write_json(output/('after-'+name+'.json'), retired)
-                usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
-                require(not usage['unavailable'] and all(key in usage['counters'] and int(usage['counters'][key]) == 0
-                    for key in ACTIVE_COUNTERS), 'standard-go-provider-physical-owners')
+                retire_case(client,probe,target,output,name)
             result['finalOs'] = probe.sample()
             delete_all(client, [target['name']])
             stop(client, node)

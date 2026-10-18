@@ -15,6 +15,7 @@ if __package__ in {None,''}: sys.path.insert(0,str(Path(__file__).resolve().pare
 
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded
+from tools.application_dependency_store import regular_path
 from tools.go_application_dependencies import resolve
 from tools.go_dependency_authoring import review
 from tools.go_dependency_fixture import direct_libraries
@@ -87,7 +88,9 @@ def install(app: Path, library: Path, identity: str, go: Path) -> dict:
         environment = build_environment(Path(temporary))
         environment.update(GOTOOLCHAIN='local',GOWORK='off',GOENV='off',GOPROXY='off',GOSUMDB='off',GOFLAGS='')
         declaration = json.loads(run_bounded([str(go),'mod','edit','-json'],app,environment,10,1024**2).stdout)
-    candidate = app/'target/http-libraries.candidate.json'; candidate.parent.mkdir()
+    target = regular_path(app/'target')
+    target.mkdir(exist_ok=True)
+    candidate = regular_path(target/'http-libraries.candidate.json')
     captured = resolve(app,candidate,go=go)
     review(app,candidate,digest(read_file(candidate)))
     selected = direct_libraries(declaration,json.loads(read_file(app/'go-resolved.lock.json')),

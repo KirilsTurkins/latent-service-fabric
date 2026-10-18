@@ -15,6 +15,27 @@ from tools.rust_capsule_project import read_file, snapshot
 
 
 class HttpLibraryCapture(unittest.TestCase):
+    def test_normal_lock_target_reparse_is_denied_before_capture_or_review(self):
+        from types import SimpleNamespace
+        from tools import go_http_library_fixture as fixture
+        from tools.application_dependency_store import DependencyError
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            identity = 'outside.example.test/http-library/linked'
+            app, library = capture_source(root/'application',root/'outside',identity)
+            def lock(project, *, go):
+                (project/'target/go-dependency-authoring').mkdir(parents=True)
+                return {'status':'locked'}
+            with patch.object(fixture,'run_bounded',return_value=SimpleNamespace(stdout=b'{}')), \
+                    patch.object(fixture,'create_lock',side_effect=lock), \
+                    patch('tools.application_dependency_store.is_reparse',side_effect=lambda path: path == app/'target'), \
+                    patch.object(fixture,'resolve') as capture, patch.object(fixture,'review') as review:
+                with self.assertRaisesRegex(DependencyError,'dependency-link-denied'):
+                    fixture.install(app,library,identity,root/'pinned-go')
+                capture.assert_not_called(); review.assert_not_called()
+            self.assertFalse((app/'target/http-libraries.candidate.json').exists())
+            self.assertTrue(library.exists())
+
     def test_ordinary_clients_use_normal_reviewable_native_lock_without_wit_source_imports(self):
         from types import SimpleNamespace
         from tools import go_http_library_fixture as fixture
@@ -31,6 +52,8 @@ class HttpLibraryCapture(unittest.TestCase):
             def lock(project, *, go):
                 self.assertEqual(project,app); order.append('lock')
                 self.assertEqual(read_file(project/'src/main.go'),source)
+                (project/'target/go-dependency-authoring').mkdir(parents=True)
+                (project/'target/normal-authoring-state.txt').write_bytes(b'retained normal lock state')
                 return {'status':'locked','captureRequired':True,'reviewRequired':True}
             def capture(project, _candidate, *, go):
                 self.assertEqual(order,['lock']); order.append('capture')
@@ -49,6 +72,7 @@ class HttpLibraryCapture(unittest.TestCase):
             self.assertTrue(record['nativeLock']['captureRequired'])
             self.assertTrue(record['nativeLock']['reviewRequired'])
             self.assertEqual(read_file(app/'src/main.go'),source)
+            self.assertEqual(read_file(app/'target/normal-authoring-state.txt'),b'retained normal lock state')
 
     def test_client_ci_gate_requires_normal_native_and_own_boundaries_without_waiving_shared_failure(self):
         from tools import ci_lane_inventory
