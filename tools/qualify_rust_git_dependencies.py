@@ -15,7 +15,7 @@ from tools import application_dependencies as dependencies
 from tools import cargo_native_authoring as authoring
 from tools import rust_application_dependencies as native
 from tools import rust_dependency_authoring as review
-from tools.application_dependency_store import DependencyError
+from tools.application_dependency_store import DependencyError, read_bytes, regular_path
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
@@ -26,6 +26,9 @@ REPOSITORY = 'https://github.com/unicode-rs/unicode-xid'
 # Original upstream annotated release tags, resolved to their exact commits.
 REVISIONS = (('0.2.5', '705256be0288a2d15ffb832ed3d8f25e8c14f49f'),
              ('0.2.6', '5d50587f19713cd35f1f48e5d4d011aa9c54dbff'))
+CACHE_TAG = (b'Signature: 8a477f597d28d172789f06886806bc55\n'
+             b'# This file is a cache directory tag created by cargo.\n'
+             b'# For information about cache directory tags see https://bford.info/cachedir/\n')
 MATERIALS = ('tools/qualify_rust_git_dependencies.py', 'tools/cargo_native_authoring.py',
              'tools/rust_application_dependencies.py', 'tools/rust_dependency_authoring.py',
              'tools/application_dependencies.py', 'tools/application_dependency_store.py',
@@ -35,6 +38,28 @@ MATERIALS = ('tools/qualify_rust_git_dependencies.py', 'tools/cargo_native_autho
 def require(condition, reason):
     if not condition:
         raise ValueError(reason)
+
+
+def cache_bookkeeping(home: Path) -> list[dict]:
+    """Cargo may create directories/tags; no package, index or Git payloads."""
+    observed = []
+    try:
+        for kind in ('git', 'registry'):
+            directory = home / kind
+            if not os.path.lexists(directory):
+                continue
+            regular_path(directory)
+            require(directory.is_dir(), 'Git-offline-cache-was-populated')
+            # At most one known file, with bounded exact contents. Stop on the
+            # first additional entry; never walk an untrusted cache tree.
+            for index, entry in enumerate(directory.iterdir()):
+                require(index == 0 and entry.name == 'CACHEDIR.TAG', 'Git-offline-cache-was-populated')
+                raw = read_bytes(entry, len(CACHE_TAG))
+                require(raw == CACHE_TAG, 'Git-offline-cache-was-populated')
+                observed.append({'path': kind + '/CACHEDIR.TAG', 'digest': digest(raw), 'size': len(raw)})
+    except (OSError, DependencyError):
+        raise ValueError('Git-offline-cache-was-populated') from None
+    return observed
 
 
 def offline(project: Path, output: Path, cargo: Path, version: str, revision: str) -> dict:
@@ -65,14 +90,14 @@ def offline(project: Path, output: Path, cargo: Path, version: str, revision: st
                           '--filter-platform', 'wasm32-unknown-unknown'],
                          work, environment, 120, native.MAX_METADATA_BYTES)
     source = authoring.selected_git(result.stdout, work, PACKAGE, version, REPOSITORY, revision)
-    require(not (home / 'git').exists() and not (home / 'registry').exists(), 'Git-offline-cache-was-populated')
+    bookkeeping = cache_bookkeeping(home)
     require(snapshot(project) == before, 'Git-offline-original-project-mutated')
     closure.check_unchanged()
     return {'status': 'passed', 'inputIdentity': closure.identity, 'package': PACKAGE,
             'version': version, 'revision': revision, 'nativeSourceDigest': digest(source.encode()),
             'nativeMetadataDigest': digest(result.stdout), 'nativeMetadataSize': len(result.stdout),
             'selectedManifestDigest': digest(configured), 'configuration': configuration,
-            'freshCargoHome': True, 'gitAndRegistryCachesAbsent': True,
+            'freshCargoHome': True, 'sourceCachePayloadsAbsent': True, 'cargoCacheBookkeeping': bookkeeping,
             'networkResolution': False, 'applicationCompilation': False}
 
 

@@ -88,7 +88,9 @@ absent from the initial SDK lock and needs no catalogue registration. A revision
 update must reject the old accepted closure without replacing its bytes; the new
 candidate requires an exact digest review. Each phase then materializes verified
 objects into a fresh source directory and Cargo home, runs only locked offline
-native metadata, and requires no Git or registry cache. Receipts bind the actual
+native metadata, and rejects Git/registry source-cache payloads. Empty directories
+and Cargo's exact bounded `CACHEDIR.TAG` bookkeeping file are permitted; a tag
+does not establish a cached package. Receipts bind the actual
 lock, graph, candidate, object tree, Cargo/rustc and owning source identities.
 The two existing signed Rust jobs keep their original commands and deadlines.
 This campaign establishes source/offline observations when it passes; it does

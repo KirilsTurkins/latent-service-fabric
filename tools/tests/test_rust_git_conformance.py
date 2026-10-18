@@ -65,14 +65,50 @@ class GitOfflineMetadata(unittest.TestCase):
         self.assertEqual(result['status'], 'passed')
         self.assertFalse(result['applicationCompilation'])
         self.assertFalse(result['networkResolution'])
-        self.assertTrue(result['freshCargoHome'] and result['gitAndRegistryCachesAbsent'])
+        self.assertTrue(result['freshCargoHome'] and result['sourceCachePayloadsAbsent'])
         self.closure.check_unchanged.assert_called_once_with()
 
     def test_a_git_or_registry_cache_cannot_satisfy_the_fresh_home_gate(self):
         for cache in ('git', 'registry'):
-            self.mutate = lambda work, environment, cache=cache: (Path(environment['CARGO_HOME']) / cache).mkdir()
+            def populate(work, environment, cache=cache):
+                directory = Path(environment['CARGO_HOME']) / cache
+                directory.mkdir()
+                (directory / 'cached-source.rs').write_bytes(b'unreviewed source cache')
+            self.mutate = populate
             with self.subTest(cache=cache), self.assertRaisesRegex(ValueError, '^Git-offline-cache-was-populated$'):
                 self.invoke(cache)
+
+    def test_native_cargo_cache_tags_and_empty_directories_are_bookkeeping_only(self):
+        for cache in ('git', 'registry'):
+            for tag in (False, True):
+                def initialize(work, environment, cache=cache, tag=tag):
+                    directory = Path(environment['CARGO_HOME']) / cache
+                    directory.mkdir()
+                    if tag:
+                        (directory / 'CACHEDIR.TAG').write_bytes(campaign.CACHE_TAG)
+                self.mutate = initialize
+                with self.subTest(cache=cache, tag=tag):
+                    result = self.invoke(f'{cache}-{tag}')
+                    self.assertTrue(result['sourceCachePayloadsAbsent'])
+                    self.assertEqual([row['path'] for row in result['cargoCacheBookkeeping']],
+                                     [cache + '/CACHEDIR.TAG'] if tag else [])
+
+    def test_cache_tags_have_exact_bounded_contents_and_no_extra_entries(self):
+        for index, mutation in enumerate(('wrong-tag', 'over-bound', 'extra-entry', 'tag-directory')):
+            def initialize(work, environment, mutation=mutation):
+                directory = Path(environment['CARGO_HOME']) / 'registry'
+                directory.mkdir()
+                tag = directory / 'CACHEDIR.TAG'
+                if mutation == 'tag-directory':
+                    tag.mkdir()
+                else:
+                    tag.write_bytes(b'private unknown tag' if mutation == 'wrong-tag' else
+                                    campaign.CACHE_TAG + (b'x' if mutation == 'over-bound' else b''))
+                if mutation == 'extra-entry':
+                    (directory / 'source.rs').write_bytes(b'unreviewed source cache')
+            self.mutate = initialize
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, '^Git-offline-cache-was-populated$'):
+                self.invoke(f'invalid-{index}')
 
     def test_offline_observation_cannot_mutate_the_original_application(self):
         self.mutate = lambda work, environment: (self.project / 'Cargo.toml').write_bytes(b'changed input')
