@@ -20,7 +20,8 @@ MAX_DOCUMENT = 256 * 1024
 RECIPE = ("tools/guest_resources.py",)
 SHA = re.compile(r"sha256:[0-9a-f]{64}\Z")
 MEDIA = re.compile(r"[A-Za-z0-9!#$&^_.+-]{1,127}/[A-Za-z0-9!#$&^_.+-]{1,127}\Z")
-RESERVED = re.compile(r"(?:con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\..*)?\Z", re.I)
+# Win32 also treats Latin-1 superscript 1, 2 and 3 as COM/LPT device digits.
+RESERVED = re.compile(r"(?:con|prn|aux|nul|(?:com|lpt)[0-9\u00b9\u00b2\u00b3])(?:\..*)?\Z", re.I)
 
 
 class ResourceError(ValueError):
