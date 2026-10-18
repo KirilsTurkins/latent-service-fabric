@@ -76,6 +76,27 @@ constraint must also equal the requested version. Repeat capture and exact revie
 after a revision update; authoring does not certify signed component execution,
 private Git authentication or catalogue-removal qualification.
 
+The Rust workflow also has a separate, bounded Git source campaign:
+
+```powershell
+python tools/qualify_rust_git_dependencies.py --cargo ./reviewed-rust/bin/cargo --output ./target/git-closure
+```
+
+It uses the normal project creator and authoring/capture/review functions for
+the published `unicode-xid` 0.2.5 and 0.2.6 release commits. The selected crate is
+absent from the initial SDK lock and needs no catalogue registration. A revision
+update must reject the old accepted closure without replacing its bytes; the new
+candidate requires an exact digest review. Each phase then materializes verified
+objects into a fresh source directory and Cargo home, runs only locked offline
+native metadata, and rejects Git/registry source-cache payloads. Empty directories
+and Cargo's exact bounded `CACHEDIR.TAG` bookkeeping file are permitted; a tag
+does not establish a cached package. Receipts bind the actual
+lock, graph, candidate, object tree, Cargo/rustc and owning source identities.
+The two existing signed Rust jobs keep their original commands and deadlines.
+This campaign establishes source/offline observations when it passes; it does
+not compile an application, run build hooks, invoke a signed component, remove
+catalogue data or claim a hermetic build host.
+
 The pinned Cargo `remove` command also prunes unused workspace dependencies.
 Authoring retains the original immutable SDK workspace sections when Cargo
 only deletes unchanged entries. It verifies the complete restored TOML meaning
