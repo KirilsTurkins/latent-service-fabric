@@ -18,6 +18,7 @@ from tools.build_process import run_bounded
 from tools.go_application_dependencies import resolve
 from tools.go_dependency_authoring import review
 from tools.go_dependency_fixture import direct_libraries
+from tools.go_native_authoring import create_lock
 from tools.go_standard_http_project import project
 from tools.rust_capsule_project import ROOT, digest, read_file
 
@@ -36,7 +37,7 @@ def capture_source(directory: Path, outside: Path, identity: str) -> tuple[Path,
         raise ValueError('go-http-private-source-independent-outside-checkout-required')
     outside.mkdir(mode=0o700)
     library = outside/'source'; library.mkdir()
-    (library/'go.mod').write_text('module '+identity+'\n\ngo 1.27.2\n',encoding='ascii')
+    (library/'go.mod').write_text('module '+identity+'\n\ngo 1.27.2\n',encoding='ascii',newline='\n')
     (library/'marker.txt').write_text('captured-private-worker',encoding='ascii')
     (library/'marker.go').write_text('''package private
 
@@ -81,9 +82,11 @@ def install(app: Path, library: Path, identity: str, go: Path) -> dict:
         for module,(version,_api) in {**LIBRARIES,identity:('v0.0.0','private.Marker')}.items():
             run_bounded([str(go),'mod','edit','-require='+module+'@'+version],app,environment,10,65536)
         run_bounded([str(go),'mod','edit','-replace='+identity+'='+str(library)],app,environment,10,65536)
-        run_bounded([str(go),'mod','tidy'],app,environment,120,2*1024**2)
+    locked = create_lock(app,go=go)
+    with tempfile.TemporaryDirectory(prefix='lsf-go-http-library-declaration-') as temporary:
+        environment = build_environment(Path(temporary))
+        environment.update(GOTOOLCHAIN='local',GOWORK='off',GOENV='off',GOPROXY='off',GOSUMDB='off',GOFLAGS='')
         declaration = json.loads(run_bounded([str(go),'mod','edit','-json'],app,environment,10,1024**2).stdout)
-        run_bounded([str(go),'mod','download','all'],app,environment,120,2*1024**2)
     candidate = app/'target/http-libraries.candidate.json'; candidate.parent.mkdir()
     captured = resolve(app,candidate,go=go)
     review(app,candidate,digest(read_file(candidate)))
@@ -100,6 +103,7 @@ def install(app: Path, library: Path, identity: str, go: Path) -> dict:
         raise ValueError('go-http-library-original-source-retention-boundary')
     library.rename(sealed)
     return {'schemaVersion':'latent.go.http-library.capture.v1','libraries':selected,
+        'nativeLock':locked,
         'privateModule':identity,'privateOriginUnavailable':not library.exists(),
         'originalPrivateSource':'retained-at-owned-sibling-path','originalLibrarySourcesChanged':False,
         'sourceDigest':digest(source_before),'nativeGraphDigest':digest(read_file(app/'go-resolved.lock.json')),

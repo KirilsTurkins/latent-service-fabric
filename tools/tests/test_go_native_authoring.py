@@ -26,6 +26,9 @@ class GoNativeAuthoring(unittest.TestCase):
         self.commands = []
         self.after = None
         self.fail_download = False
+        self.tidy_unused_runtime = False
+        self.selected_runtime_version = 'v0.2.3'
+        self.runtime_sum = self.original['vendor/lsf/sdk/go-guest/runtime-deps/go.sum']
 
     def parse(self, path):
         value = {'Require': [], 'Replace': [], 'Exclude': []}
@@ -103,10 +106,21 @@ class GoNativeAuthoring(unittest.TestCase):
                 self.assertTrue((source / 'go.mod').is_file())
             if self.fail_download and arguments[1] == 'download':
                 raise RuntimeError('private download failure')
+            if arguments[1] == 'tidy' and self.tidy_unused_runtime:
+                value['Require'] = [row for row in value['Require'] if row['Path'] != 'go.bytecodealliance.org/pkg']
+                self.render(work / 'go.mod', value)
             if self.after:
                 self.after(work)
-            (work / 'go.sum').write_bytes(b'example.test/public v1.2.3 h1:' + b'A' * 43 + b'=\n')
+            (work / 'go.sum').write_bytes(b'example.test/public v1.2.3 h1:' + b'A' * 43 + b'=\n'
+                                         + (self.runtime_sum if arguments[1] == 'download' else b''))
             raw = b''
+        elif arguments == ['list', '-m', '-json', 'all']:
+            value = self.parse(work / 'go.mod')
+            rows = [{'Path': value['Module']['Path'], 'Main': True}]
+            rows += [{'Path': row['Path'], 'Version': self.selected_runtime_version
+                      if row['Path'] == 'go.bytecodealliance.org/pkg' else row['Version']}
+                     for row in value['Require']]
+            raw = b'\n'.join(canonical(row) for row in rows)
         else:
             self.fail('unexpected native invocation ' + repr(arguments))
         return subprocess.CompletedProcess(command, 0, raw, b'')
@@ -153,6 +167,7 @@ class GoNativeAuthoring(unittest.TestCase):
         (self.app / 'latent.dependencies.lock.json').write_bytes(b'previous accepted')
         declaration = self.parse(self.app / 'go.mod')
         result = self.lock(tags=['selected', 'selected'])
+        declaration['Require'].append({'Path': 'go.bytecodealliance.org/pkg', 'Version': 'v0.2.3'})
         self.assertEqual(self.parse(self.app / 'go.mod'), declaration)
         self.assertEqual((self.app / 'latent.dependencies.lock.json').read_bytes(), b'previous accepted')
         self.assertTrue(result['captureRequired']); self.assertTrue(result['reviewRequired'])
@@ -160,6 +175,83 @@ class GoNativeAuthoring(unittest.TestCase):
         self.assertFalse(result['compilerExecution'])
         self.assertEqual(result['generators'], 'never-executed')
         self.assertNotIn(str(self.library), json.dumps(result))
+
+    def test_native_lock_retains_reviewable_sdk_build_input_for_source_without_wit_imports(self):
+        source = b'package developer\nimport ("net/http"; "outside.example.test/developer-module")\n'
+        (self.app / 'src/main.go').write_bytes(source)
+        self.tidy_unused_runtime = True
+        accepted = self.app / 'latent.dependencies.lock.json'
+        accepted.write_bytes(b'old reviewed capture')
+        result = self.lock()
+        requirements = self.parse(self.app / 'go.mod')['Require']
+        self.assertEqual([row for row in requirements if row['Path'] == 'go.bytecodealliance.org/pkg'],
+                         [{'Path': 'go.bytecodealliance.org/pkg', 'Version': 'v0.2.3'}])
+        self.assertEqual((self.app / 'src/main.go').read_bytes(), source)
+        self.assertTrue((self.app / 'go.sum').read_bytes().endswith(self.runtime_sum))
+        self.assertEqual(result['sdkRuntimeBuildDependencies'], locking.runtime_build_dependencies(self.original))
+        self.assertTrue(result['captureRequired']); self.assertTrue(result['reviewRequired'])
+        self.assertEqual(accepted.read_bytes(), b'old reviewed capture')
+        operations = [row[0][1:] for row in self.commands]
+        self.assertLess(operations.index(['mod', 'tidy']),
+                        operations.index(['mod', 'edit', '-require=go.bytecodealliance.org/pkg@v0.2.3']))
+        self.assertLess(operations.index(['mod', 'edit', '-require=go.bytecodealliance.org/pkg@v0.2.3']),
+                        operations.index(['mod', 'download', 'all']))
+
+    def test_sdk_build_requirement_cannot_hide_an_override_replacement_or_exclusion(self):
+        original = (self.app / 'go.mod').read_bytes()
+        for field, row in (
+                ('Require', {'Path': 'go.bytecodealliance.org/pkg', 'Version': 'v0.2.4'}),
+                ('Replace', {'Old': {'Path': 'go.bytecodealliance.org/pkg'}, 'New': {'Path': '../outside'}}),
+                ('Exclude', {'Path': 'go.bytecodealliance.org/pkg', 'Version': 'v0.2.3'})):
+            (self.app / 'go.mod').write_bytes(original)
+            value = self.parse(self.app / 'go.mod'); value[field].append(row)
+            self.render(self.app / 'go.mod', value)
+            before = authoring.source_files(self.app)
+            self.commands.clear()
+            with self.subTest(field=field), self.assertRaisesRegex(DependencyError, 'overrides-immutable-sdk'):
+                self.lock()
+            self.assertEqual(authoring.source_files(self.app), before)
+            self.assertFalse(any(command[1:3] == ['mod', 'tidy'] for command, _work, _env in self.commands))
+
+    def test_sdk_selected_version_and_both_checksums_are_verified_before_native_publication(self):
+        (self.app / 'latent.dependencies.json').write_bytes(b'old capture manifest')
+        (self.app / 'latent.dependencies.lock.json').write_bytes(b'old accepted capture')
+        original = authoring.source_files(self.app)
+        bad_sums = [b'', self.runtime_sum.replace(b'So9z', b'To9z'),
+                    self.runtime_sum.replace(b'OjA+', b'PjA+')]
+        for version, raw in [('v0.2.4', self.runtime_sum), *[('v0.2.3', raw) for raw in bad_sums]]:
+            self.selected_runtime_version, self.runtime_sum = version, raw
+            with self.subTest(version=version, sums=raw), self.assertRaisesRegex(DependencyError, 'selection-or-checksum-drift'):
+                self.lock()
+            self.assertEqual(authoring.source_files(self.app), original)
+
+    def test_sdk_runtime_override_introduced_during_tidy_is_not_silently_replaced(self):
+        before = authoring.source_files(self.app)
+        def introduce_override(work):
+            value = self.parse(work / 'go.mod')
+            value['Replace'].append({'Old': {'Path': 'go.bytecodealliance.org/pkg'},
+                                     'New': {'Path': '../outside'}})
+            self.render(work / 'go.mod', value)
+        self.after = introduce_override
+        with self.assertRaisesRegex(DependencyError, 'overrides-immutable-sdk'):
+            self.lock()
+        self.assertEqual(authoring.source_files(self.app), before)
+        self.assertFalse(any(command[1:3] == ['mod', 'download'] for command, _work, _env in self.commands))
+
+    def test_sdk_runtime_selection_requires_one_unreplaced_module(self):
+        modules = locking.runtime_build_dependencies(self.original)
+        selected = [{'Path': row['path'], 'Version': row['version']} for row in modules]
+        locking.runtime_selection(selected, self.runtime_sum, modules)
+        for rows in ([], selected + selected, [{**selected[0], 'Replace': {'Path': 'outside.test/other'}}]):
+            with self.subTest(rows=rows), self.assertRaisesRegex(DependencyError, 'selection-or-checksum-drift'):
+                locking.runtime_selection(rows,self.runtime_sum,modules)
+
+    def test_sdk_runtime_lock_binds_manifest_and_original_checksum_bytes(self):
+        for name in ('go.mod', 'go.sum'):
+            files = dict(self.original)
+            files['vendor/lsf/sdk/go-guest/runtime-deps/' + name] += b'changed'
+            with self.subTest(name=name), self.assertRaisesRegex(DependencyError, 'runtime-lock-identity'):
+                locking.runtime_build_dependencies(files)
 
     def test_native_failure_preserves_both_native_files_and_accepted_capture(self):
         before = authoring.source_files(self.app)

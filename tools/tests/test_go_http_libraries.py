@@ -15,6 +15,41 @@ from tools.rust_capsule_project import read_file, snapshot
 
 
 class HttpLibraryCapture(unittest.TestCase):
+    def test_ordinary_clients_use_normal_reviewable_native_lock_without_wit_source_imports(self):
+        from types import SimpleNamespace
+        from tools import go_http_library_fixture as fixture
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            identity = 'outside.example.test/http-library/ordinary'
+            app, library = capture_source(root/'application',root/'outside',identity)
+            source = read_file(app/'src/main.go')
+            self.assertNotIn(b'go.bytecodealliance.org',source)
+            order = []
+            def native_command(arguments, _work, _environment, _seconds, _maximum):
+                self.assertEqual(arguments[1:3],['mod','edit'])
+                return SimpleNamespace(stdout=b'{}' if arguments[-1] == '-json' else b'')
+            def lock(project, *, go):
+                self.assertEqual(project,app); order.append('lock')
+                self.assertEqual(read_file(project/'src/main.go'),source)
+                return {'status':'locked','captureRequired':True,'reviewRequired':True}
+            def capture(project, _candidate, *, go):
+                self.assertEqual(order,['lock']); order.append('capture')
+                (project/'go-resolved.lock.json').write_text('{}')
+                _candidate.write_text('{}')
+                return {'selection':{},'artifacts':[]}
+            with patch.object(fixture,'run_bounded',side_effect=native_command), \
+                    patch.object(fixture,'create_lock',side_effect=lock) as normal_lock, \
+                    patch.object(fixture,'resolve',side_effect=capture), \
+                    patch.object(fixture,'review') as review, \
+                    patch.object(fixture,'direct_libraries',return_value=[]):
+                record = fixture.install(app,library,identity,root/'pinned-go')
+            normal_lock.assert_called_once_with(app,go=root/'pinned-go')
+            review.assert_called_once()
+            self.assertEqual(order,['lock','capture'])
+            self.assertTrue(record['nativeLock']['captureRequired'])
+            self.assertTrue(record['nativeLock']['reviewRequired'])
+            self.assertEqual(read_file(app/'src/main.go'),source)
+
     def test_client_ci_gate_requires_normal_native_and_own_boundaries_without_waiving_shared_failure(self):
         from tools import ci_lane_inventory
         from tools.rust_capsule_project import ROOT
