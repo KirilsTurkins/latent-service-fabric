@@ -120,6 +120,45 @@ class CargoMetadata(unittest.TestCase):
             with self.subTest(field=field), self.assertRaisesRegex(DependencyError, '^cargo-native-edge-(kind-)?duplicate$'):
                 native.selected_graph(value, self.selected, self.root)
 
+    def test_feature_lists_use_the_existing_aggregate_bound_without_losing_duplicate_checks(self):
+        value = copy.deepcopy(self.full)
+        nodes = value['resolve']['nodes']
+        for node in nodes:
+            node.update(features=[], deps=[], dependencies=[])
+        features = [f'feature-{index}' for index in range(native.MAX_GRAPH_ROWS)]
+        nodes[0]['features'] = features
+        _, observed = native.native_graph(value)
+        self.assertIs(observed['root']['features'], features)
+        for mutation in ('list-limit', 'aggregate-limit', 'duplicate'):
+            with self.subTest(mutation=mutation):
+                nodes[0]['features'] = features.copy()
+                nodes[1]['features'] = []
+                if mutation == 'list-limit':
+                    nodes[0]['features'].append('one-too-many')
+                elif mutation == 'aggregate-limit':
+                    nodes[1]['features'] = ['one-too-many']
+                else:
+                    nodes[0]['features'][-1] = features[0]
+                error = 'cargo-native-metadata-limit' if mutation == 'aggregate-limit' else 'cargo-native-graph-invalid'
+                with self.assertRaisesRegex(DependencyError, '^' + error + '$'):
+                    native.native_graph(value)
+
+    def test_structural_lists_keep_their_original_1024_row_bound(self):
+        for field in ('packages', 'nodes', 'deps', 'dep_kinds', 'dependencies'):
+            value = copy.deepcopy(self.full)
+            if field == 'packages':
+                value['packages'] = [value['packages'][0]] * 1025
+            elif field == 'nodes':
+                value['resolve']['nodes'] = [value['resolve']['nodes'][0]] * 1025
+            elif field == 'deps':
+                value['resolve']['nodes'][0]['deps'] = [value['resolve']['nodes'][0]['deps'][0]] * 1025
+            elif field == 'dep_kinds':
+                value['resolve']['nodes'][0]['deps'][0]['dep_kinds'] = [{'kind': None, 'target': None}] * 1025
+            else:
+                value['resolve']['nodes'][0]['dependencies'] = [f'id-{index}' for index in range(1025)]
+            with self.subTest(field=field), self.assertRaisesRegex(DependencyError, '^cargo-native-graph-invalid$'):
+                native.native_graph(value)
+
     def test_json_duplicate_fields_invalid_constants_and_finite_limits_fail_closed(self):
         with self.assertRaisesRegex(DependencyError, '^cargo-native-metadata-duplicate-field$'):
             native.native_metadata(b'{"version":1,"version":1}')
