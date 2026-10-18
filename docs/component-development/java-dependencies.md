@@ -226,9 +226,12 @@ and aggregate bytes have fixed limits; ambiguous names and duplicate lookup
 resources fail. The index preserves opaque bytes and grants no filesystem or
 scratch access. The [maintained ingestion control](../testing/java-library-ingestion.md)
 also compiles and signs a JAR resource fixture, then invokes its actual
-`Class.getResourceAsStream` lookup on the ordinary node. This establishes that
-selected resource path; other lookup APIs, including
-`ClassLoader.getResourceAsStream`, require their own emitted-component controls.
+`Class.getResourceAsStream` and `ClassLoader.getResourceAsStream` lookups on the
+ordinary node. The direct classloader case checks a missing name, two independent
+stream owners, a partial read and the exact UTF-8 result from the captured JAR.
+These controls establish only their selected resource paths after the current
+signed-node job passes; other lookup APIs require their own emitted-component
+evidence.
 
 This delivers captured JAR ingestion; it does not independently qualify every
 Java library API. The maintained controls cover their selected signed-node
