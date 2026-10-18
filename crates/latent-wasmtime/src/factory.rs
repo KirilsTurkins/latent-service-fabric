@@ -5,11 +5,11 @@ use std::time::Duration;
 
 use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey};
-use wasmtime::{Config, Engine};
+use wasmtime::Engine;
 
 use crate::backend::{SharedRuntime, WasmtimeBackend};
 use crate::config::{DispatchMode, WasmtimeConfig};
-use crate::containment::{bounded_text, platform_error, EpochTicker, MAX_DIAGNOSTIC_BYTES};
+use crate::containment::{platform_error, EpochTicker};
 use crate::{BoundedLogSink, WasmtimeEngineFactory, WasmtimeEngineProfile, WasmtimeHostServices};
 
 pub struct WasmtimeComponentEngineFactory {
@@ -205,23 +205,18 @@ impl WasmtimeComponentEngineFactory {
                 false,
             ));
         }
-        let mut engine_config = Config::new();
-        config.apply_engine(&mut engine_config)?;
-        let engine = Engine::new(&engine_config).map_err(|error| {
-            platform_error(
-                PlatformErrorCode::Internal,
-                &format!(
-                    "failed to construct Wasmtime engine: {}",
-                    bounded_text(&error.to_string(), MAX_DIAGNOSTIC_BYTES)
-                ),
-                false,
-            )
-        })?;
-        let native = native
-            .map(|(catalog, settings)| {
-                crate::aot::cache::NativeAotService::new(&config, &engine, catalog, settings)
-            })
-            .transpose()?;
+        let (engine, native) = match native {
+            Some((catalog, settings)) => {
+                let (engine, profile) = crate::ValidatedAotProfile::with_runtime_engine(
+                    &config,
+                    settings.process.compiler,
+                )?;
+                let native =
+                    crate::aot::cache::NativeAotService::new(profile, &engine, catalog, settings)?;
+                (engine, Some(native))
+            }
+            None => (config.runtime_engine()?, None),
+        };
         let epoch_ticker = EpochTicker::start(
             &engine,
             Duration::from_millis(config.epoch_tick_interval_millis),

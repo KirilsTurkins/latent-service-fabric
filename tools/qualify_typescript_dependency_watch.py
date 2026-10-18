@@ -13,6 +13,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -32,6 +33,31 @@ def require(value, reason):
 
 def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
+
+
+def write_dependency_tests(application: Path, expected: str) -> None:
+    from tools.dev_workflow import paths, scenarios
+    from tools.dev_workflow.common import MAX_DOCUMENT, decode
+    original = scenarios.validate(decode(paths.read(application, 'tests/scenarios.json', MAX_DOCUMENT)), 'node')
+    cases = original['scenarios']
+    require(all(case['service'] == 'examples/my-greeting'
+                and case['contract'] == 'examples:greeting/api@1.0.0' and case['function'] == 'greet'
+                for case in cases), 'maintained-greeting-scenarios-required')
+    require(all(case['timeoutMillis'] == 5000 and 'nodeTimeoutMillis' in case for case in cases),
+            'maintained-portable-and-node-timeouts-required')
+    timeouts = {case['nodeTimeoutMillis'] for case in cases}
+    require(len(timeouts) == 1, 'maintained-node-timeout-ambiguous')
+    node_timeout = timeouts.pop()
+    location = application / 'tests'
+    (location / 'library-input.json').write_bytes(b'["SDK"]')
+    (location / 'library-expected.json').write_bytes(json.dumps([{'ok': expected}], separators=(',', ':')).encode())
+    write(location / 'scenarios.json', {'schemaVersion': 'latent.dev.scenarios.v1', 'scenarios': [{
+        'id': 'dependency-output', 'service': 'examples/my-greeting',
+        'contract': 'examples:greeting/api@1.0.0', 'function': 'greet',
+        'input': 'tests/library-input.json', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
+        'expect': {'category': 'success', 'payload': 'tests/library-expected.json'},
+        'requires': [], 'timeoutMillis': 5000, 'nodeTimeoutMillis': node_timeout,
+        'required': True, 'fixtures': []}]})
 
 
 def public_failed_test_report(value):
@@ -65,6 +91,17 @@ def public_failed_test_report(value):
         for key in ('required', 'outcomeKnown', 'targetMatches'):
             if type(item.get(key)) is bool:
                 row[key] = item[key]
+        consumption = item.get('consumption')
+        if item.get('status') == 'failed' and isinstance(consumption, dict):
+            from tools.dev_workflow.node_diagnostics import U64_FIELDS, U32_FIELDS
+            retained = {}
+            for name, bits in [(name, 64) for name in U64_FIELDS] + [(name, 32) for name in U32_FIELDS]:
+                selected = consumption.get(name)
+                if (type(selected) is str and re.fullmatch(r'0|[1-9][0-9]{0,19}', selected)
+                        and int(selected) < 1 << bits):
+                    retained[name] = selected
+            if retained:
+                row['consumption'] = retained
         result['results'].append(row)
     return result
 
@@ -239,15 +276,7 @@ def main() -> int:
         raise ValueError('watch-event-deadline-' + label)
 
     def tests(expected):
-        location = application / 'tests'
-        (location / 'library-input.json').write_bytes(b'["SDK"]')
-        (location / 'library-expected.json').write_bytes(json.dumps([{'ok': expected}], separators=(',', ':')).encode())
-        write(location / 'scenarios.json', {'schemaVersion': 'latent.dev.scenarios.v1', 'scenarios': [{
-            'id': 'dependency-output', 'service': 'examples/my-greeting',
-            'contract': 'examples:greeting/api@1.0.0', 'function': 'greet',
-            'input': 'tests/library-input.json', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
-            'expect': {'category': 'success', 'payload': 'tests/library-expected.json'},
-            'requires': [], 'timeoutMillis': 5000, 'required': True, 'fixtures': []}]})
+        write_dependency_tests(application, expected)
 
     def review(label):
         candidate = root / (label + '-candidate.json')
