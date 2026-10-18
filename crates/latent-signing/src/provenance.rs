@@ -59,3 +59,6 @@ pub fn decode_build_observation(
     validate_observation(&value, limits)?;
     Ok(value)
 }
+
+#[cfg(test)]
+mod tests;

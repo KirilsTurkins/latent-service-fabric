@@ -55,6 +55,15 @@ def validate(value: dict) -> None:
                 and row.get("role") in {"primary", "secondary"} and row.get("state") in STATES
                 and ("closeReason" in row) == (row["state"] == "closed") for row in rows),
             "fixture-observation-request")
+    for row in rows:
+        if "userAgent" in row:
+            agent = row["userAgent"]
+            require(isinstance(agent, dict) and set(agent) == {"present", "bytes", "sha256"}
+                    and type(agent["present"]) is bool and type(agent["bytes"]) is int
+                    and 0 <= agent["bytes"] <= 8192
+                    and (isinstance(agent["sha256"], str) and re.fullmatch(r"sha256:[a-f0-9]{64}", agent["sha256"])
+                         if agent["present"] else agent["sha256"] is None and agent["bytes"] == 0),
+                    "fixture-observation-user-agent")
     require(all(item.get("kind") in EVENTS and type(item.get("request")) is int
                 and 1 <= item["request"] <= len(rows) for item in events), "fixture-observation-event")
     require(value["openConnections"] == sum(row["state"] != "closed" for row in rows)
@@ -82,7 +91,7 @@ def delta(before: dict, after: dict) -> dict:
         require(old["request"] == new["request"] and old["role"] == new["role"]
                 and old["responseBytesWritten"] <= new["responseBytesWritten"],
                 "fixture-observation-owner-changed")
-        for field in ("vector", "method", "requestFraming", "bodyBytes", "bodySha256", "mutationCommitted"):
+        for field in ("vector", "method", "requestFraming", "bodyBytes", "bodySha256", "mutationCommitted", "userAgent"):
             require(field not in old or old[field] == new.get(field), "fixture-observation-request-changed")
         require(old["state"] != "closed" or old == new, "fixture-observation-closed-owner-changed")
     return {**{key: after[key] - before[key] for key in COUNTS},

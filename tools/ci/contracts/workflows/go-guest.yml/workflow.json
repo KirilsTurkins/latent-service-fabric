@@ -1,6 +1,20 @@
 {
   "kind": "workflow",
   "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-guest-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": "Go guest qualification",
     "on": {
       "pull_request": {
@@ -32,6 +46,12 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_http_context.py",
           "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_standard_http.py",
+          "tools/go_standard_http_node.py",
+          "tools/go_standard_http_project.py",
+          "tools/qualify_go_standard_http.py",
+          "tools/tests/test_go_standard_http_gate.py",
+          "tools/tests/fixtures/go-standard-http/**",
           "tools/tests/fixtures/go-http-context/**",
           "tools/qualify_go_runtime_dependencies.py",
           "tools/diagnose_go_timer_failure.py",
@@ -94,6 +114,12 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_http_context.py",
           "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_standard_http.py",
+          "tools/go_standard_http_node.py",
+          "tools/go_standard_http_project.py",
+          "tools/qualify_go_standard_http.py",
+          "tools/tests/test_go_standard_http_gate.py",
+          "tools/tests/fixtures/go-standard-http/**",
           "tools/tests/fixtures/go-http-context/**",
           "tools/qualify_go_runtime_dependencies.py",
           "tools/diagnose_go_timer_failure.py",
@@ -128,26 +154,12 @@
     },
     "permissions": {
       "contents": "read"
-    },
-    "concurrency": {
-      "group": "go-guest-${{ github.ref }}",
-      "cancel-in-progress": true
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Preserve all parent controls and artifacts, incoming strict profile/native authoring guards and original HTTP context compiler/runtime hooks; additive composition only, no gate or limit removal.",
+  "reviewReason": "Compose admitted initializer and published worker gates with original typed context/default HTTP qualification; preserve all parent steps, commands, artifacts, runners, permissions, environment and45-minute bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

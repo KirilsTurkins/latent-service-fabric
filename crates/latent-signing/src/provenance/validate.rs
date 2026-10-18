@@ -301,7 +301,14 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 })
                 && p.compiler == "componentize-go"
                 && p.target == "wasm32-wasip1"
-                && p.runtime == "go-component-async-v1"
+                && matches!(
+                    p.runtime.as_str(),
+                    "go-component-async-v1"
+                        | "go-component-activation-v1"
+                        | "go-component-activation-v2"
+                        | "go-component-activation-v3"
+                        | "go-component-activation-v4"
+                )
                 && p.locked
                 && !p.ambient_wasi
         }
