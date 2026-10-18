@@ -13,6 +13,7 @@ they do not turn a historical test into qualification of the current checkout.
 - [Website publication](website-publication.md): building and deploying the reviewed site.
 - [Roadmap](../roadmap.md): remaining work and dependency order.
 - [NativeAOT standard HTTP](dotnet-standard-http.md): source profiles, ownership and component qualification.
+- [Bounded outbound contract acceptance](../runtime/outbound-stream-acceptance-2026-10-16.md): exact owner decision, literal design criteria and separate implementation gates.
 - [Installed recovery qualification](../testing/installed-transaction-recovery.md): current native action and custody contracts.
 - [Post-alpha.5 documentation audit](documentation-audit-2026-10-14.md): release baseline, merged-change inventory and guide maintenance.
 
