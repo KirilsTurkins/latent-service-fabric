@@ -7,6 +7,7 @@ import re
 import shutil
 import tempfile
 import tomllib
+from urllib.parse import parse_qs, urlsplit
 
 from tools import rust_application_dependencies as native, rust_dependency_authoring as authoring
 from tools.application_dependency_store import DependencyError, directory_files, read_bytes, regular_path
@@ -16,6 +17,42 @@ from tools.build_snapshot import digest
 from tools.rust_capsule_project import snapshot
 
 SECTIONS = ('dependencies', 'dev-dependencies', 'build-dependencies')
+
+
+def git_url(value: str):
+    if (not isinstance(value, str) or not 0 < len(value) <= 4096
+            or any(ord(char) < 33 or ord(char) == 127 for char in value)):
+        raise DependencyError('cargo-native-authoring-git-selection-invalid')
+    try:
+        parsed = urlsplit(value)
+        if (parsed.scheme != 'https' or not parsed.hostname or parsed.username is not None
+                or parsed.password is not None or parsed.query or parsed.fragment):
+            raise ValueError()
+        return parsed.hostname, 443 if parsed.port is None else parsed.port, parsed.path or '/'
+    except ValueError:
+        raise DependencyError('cargo-native-authoring-git-selection-invalid') from None
+
+
+def selected_git(metadata: bytes, work: Path, identity: str, version: str, git: str, revision: str) -> str:
+    observed = native.native_metadata(metadata)
+    graph = native.selected_graph(observed, observed, work)
+    root = next(node for node in graph['nodes'] if node['id'] == graph['root'])
+    direct = {edge['pkg'] for edge in root['deps']}
+    matches = [row for row in observed['packages'] if row['id'] in direct
+               and row.get('name') == identity and row.get('version') == version]
+    if len(matches) != 1:
+        raise DependencyError('cargo-native-authoring-native-selection-mismatch')
+    source = matches[0].get('source')
+    try:
+        if not isinstance(source, str) or not source.startswith('git+'):
+            raise ValueError()
+        parsed = urlsplit(source[4:])
+        if (parsed.fragment != revision or parse_qs(parsed.query, strict_parsing=True) != {'rev': [revision]}
+                or git_url(parsed._replace(query='', fragment='').geturl()) != git_url(git)):
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise DependencyError('cargo-native-authoring-native-selection-mismatch') from None
+    return source
 
 
 def mirror(source: Path, owned: Path) -> Path:
@@ -160,7 +197,8 @@ def preserve_workspace_recipe(original: bytes, selected: bytes) -> bytes:
 def author(project: Path, operation: str, *, identity: str | None = None, version: str | None = None,
            local: Path | None = None, section='dependencies', target: str | None = None,
            features: list[str] | None = None, no_default_features=False, optional=False,
-           registry: str | None = None, cargo: Path | None = None, registry_config: Path | None = None) -> dict:
+           registry: str | None = None, cargo: Path | None = None, registry_config: Path | None = None,
+           git: str | None = None, revision: str | None = None) -> dict:
     if operation not in {'add', 'update', 'remove', 'lock'} or section not in SECTIONS:
         raise DependencyError('cargo-native-authoring-operation-or-section-invalid')
     if operation != 'lock' and (not isinstance(identity, str) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]{0,127}', identity)):
@@ -177,6 +215,11 @@ def author(project: Path, operation: str, *, identity: str | None = None, versio
         raise DependencyError('cargo-native-authoring-selection-invalid')
     if registry is not None and (not isinstance(registry, str) or not re.fullmatch(r'[a-z][a-z0-9_-]{0,63}', registry)):
         raise DependencyError('cargo-native-authoring-registry-invalid')
+    if git is not None or revision is not None:
+        if (operation not in {'add', 'update'} or git is None or local is not None or registry is not None
+                or not isinstance(revision, str) or not re.fullmatch(r'[0-9a-f]{40}', revision)):
+            raise DependencyError('cargo-native-authoring-git-selection-invalid')
+        git_url(git)
     with authoring.transaction(project) as (owner, app, private, sdk):
         before = snapshot(app)
         if any(Path(name).name in {'config', 'config.toml'} and '.cargo' in Path(name).parts for name in before):
@@ -241,9 +284,11 @@ def author(project: Path, operation: str, *, identity: str | None = None, versio
             staged = {source: snapshot(mirror(source, owned)) for source in observed}
             manifest = ['--manifest-path', str(work / 'Cargo.toml')]
             if operation != 'lock':
-                arguments = ['remove', identity] if operation == 'remove' else ['add', identity if local is not None else identity + '@=' + version]
+                arguments = ['remove', identity] if operation == 'remove' else ['add', identity if local is not None or git is not None else identity + '@=' + version]
                 if local is not None:
                     arguments += ['--path', str(mirror(local, owned))]
+                if git is not None:
+                    arguments += ['--git', git, '--rev', revision]
                 if section != 'dependencies':
                     arguments.append('--dev' if section == 'dev-dependencies' else '--build')
                 if target is not None:
@@ -260,8 +305,9 @@ def author(project: Path, operation: str, *, identity: str | None = None, versio
                 run_bounded([str(cargo), *arguments, *manifest], owned, environment, 600, 4 * 1024 * 1024)
             # Resolve changed declarations against the copied lock. Regenerating
             # it would also refresh every unrelated SDK/compiler dependency.
-            run_bounded([str(cargo), 'metadata', '--format-version', '1', *manifest],
-                        owned, environment, 600, 4 * 1024 * 1024)
+            metadata = run_bounded([str(cargo), 'metadata', '--format-version', '1', *manifest],
+                                   owned, environment, 600, 4 * 1024 * 1024).stdout
+            git_source = selected_git(metadata, work, identity, version, git, revision) if git is not None else None
             reverse = {mapped: source for source, mapped in mappings.items()}
             raw_manifest = native.selected_manifest(read_bytes(work / 'Cargo.toml'), work / 'Cargo.toml', app / 'Cargo.toml', reverse)
             if operation == 'remove':
@@ -277,7 +323,12 @@ def author(project: Path, operation: str, *, identity: str | None = None, versio
                 selected_row = {'version': selected_row} if isinstance(selected_row, str) else selected_row
                 if not isinstance(selected_row, dict):
                     raise DependencyError('cargo-native-authoring-native-selection-mismatch')
-                if local is not None:
+                if git is not None:
+                    if (selected_row.get('git') != git or selected_row.get('rev') != revision
+                            or selected_row.get('version', version) not in (version, '=' + version)
+                            or any(key in selected_row for key in ('path', 'registry', 'branch', 'tag'))):
+                        raise DependencyError('cargo-native-authoring-native-selection-mismatch')
+                elif local is not None:
                     if (not isinstance(selected_row.get('path'), str)
                             or (app / selected_row['path']).resolve(strict=False) != local
                             or selected_row.get('version', version).removeprefix('=') != version):
@@ -289,6 +340,9 @@ def author(project: Path, operation: str, *, identity: str | None = None, versio
             locked = tomllib.loads(outputs['Cargo.lock'].decode())
             if type(locked.get('version')) is not int or not isinstance(locked.get('package'), list) or len(locked['package']) > 1024:
                 raise DependencyError('cargo-native-authoring-native-lock-invalid')
+            if git_source is not None and len([row for row in locked['package'] if isinstance(row, dict)
+                    and row.get('name') == identity and row.get('version') == version and row.get('source') == git_source]) != 1:
+                raise DependencyError('cargo-native-authoring-native-selection-mismatch')
             for source, files in staged.items():
                 after = snapshot(mirror(source, owned))
                 for name in ('Cargo.toml', 'Cargo.lock') if source == app else ():

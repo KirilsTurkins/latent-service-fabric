@@ -33,7 +33,8 @@ digest and application/dependency origin. Equal byte sequences share an object.
 Its identity binds the source snapshot, declaration manifest, reviewed dependency
 lock, component and selected resource inventory. The ordinary signed package
 and build observation cover the index and objects as assets. Missing, changed,
-unlisted or incorrectly attributed bytes fail verification.
+unlisted or incorrectly attributed bytes fail verification. Index rows are in
+logical-path order; verification rejects a rehashed index with a different order.
 
 The developer workflow derives a `resourceInputs` manifest binding and includes
 the manifest and its declared source files in trust/watch snapshots. Changing
