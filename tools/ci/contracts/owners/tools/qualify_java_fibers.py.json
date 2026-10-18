@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original fiber controls and add managed-start admission rollback witness",
+  "reviewReason": "Compose reviewed timer and fiber controls with unchanged worker library identity, source/reference, classpath and ownership fences.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d7b1b8864ebef78a9261c6885b7b404ef0b72d137e6d7964f1d8e3edc5a7b951"
+  "sha256": "1288e71f8de3fadf6c0249bd1870af55b761b769e827a7c14ca115f3dff22f34"
 }

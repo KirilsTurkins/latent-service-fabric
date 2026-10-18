@@ -1,0 +1,325 @@
+{
+  "schemaVersion": "latent.component-threading.source-extraction.v1",
+  "status": "source-controls-passed",
+  "date": "2026-10-16",
+  "sourceCheckpoint": "eef8b6e8eec9731c1cbb90dbe73e7d466a236cec",
+  "acceptedProfile": "existing explicit Rust context/layout source profile only",
+  "source": {
+    "Cargo.lock": {
+      "digest": "sha256:121cb1dd7161b7ae78ab39650e215b375d979d4d50d6913fd68f17df9b19ba4c",
+      "normalization": "UTF-8 LF source"
+    },
+    "Cargo.toml": {
+      "digest": "sha256:1e1b228ef3dea9694a15229a37104b06731c6dbd2296e88439561a080c500fbe",
+      "normalization": "UTF-8 LF source"
+    },
+    "crates/latent-component-threading/Cargo.toml": {
+      "digest": "sha256:a4d0f4b1407aa130ab6e33706537a3d0029ce6ade56c7154323a93cf43459d19",
+      "normalization": "UTF-8 LF source"
+    },
+    "crates/latent-component-threading/src/admission.rs": {
+      "digest": "sha256:be29bfc801e0db0758daf0037d68961341ae16886b4c636a7aa0344f74065f11",
+      "normalization": "UTF-8 LF source"
+    },
+    "crates/latent-component-threading/src/component.rs": {
+      "digest": "sha256:290d2c1957dec766b6142a363d1d83f5af4f8bcac4eabbd830afe35394e4db04",
+      "normalization": "UTF-8 LF source"
+    },
+    "crates/latent-component-threading/src/lib.rs": {
+      "digest": "sha256:85deb20f8781ef4a00f0e4c5c0a006d703dd89a0ae6ccdaa20e2661d7a11d858",
+      "normalization": "UTF-8 LF source"
+    },
+    "crates/latent-component-threading/src/root.rs": {
+      "digest": "sha256:8bcf0aa62b8b19a3df21009cd51e29829f77898161fa5ae69da45aedb557aef3",
+      "normalization": "UTF-8 LF source"
+    },
+    "crates/latent-component-threading/src/thread_entry.rs": {
+      "digest": "sha256:ffc471bbfaab5e5fabf5d98444d5a96b2f31442191323f9744c648dbecda7e5b",
+      "normalization": "UTF-8 LF source"
+    },
+    "sdk/rust-standard-runtime/routing-fixture/core.wat": {
+      "digest": "sha256:f113c109a69dba8e2c6a9d78b19b747b44f40f0ea69cdebd1bcfbbfc71524431",
+      "normalization": "UTF-8 LF source"
+    },
+    "sdk/rust-standard-runtime/routing-fixture/interface.wit": {
+      "digest": "sha256:6f023fcd82204299090f3c88c1cf9fe051be86157bae9f1dbe5104e3ec505345",
+      "normalization": "UTF-8 LF source"
+    },
+    "sdk/rust-standard-runtime/routing-fixture/world.wit": {
+      "digest": "sha256:19598df6110d0b8b874f610e1065d200d99ba00a458bec1f93df94d93d0d2386",
+      "normalization": "UTF-8 LF source"
+    },
+    "sdk/rust-standard-runtime/stack-transform/Cargo.lock": {
+      "digest": "sha256:b9f6d2f9ae7e3571380e6db4b8e4dc2469e85cdd19a1aa6316f1ba398dd7967c",
+      "normalization": "UTF-8 LF source"
+    },
+    "sdk/rust-standard-runtime/stack-transform/Cargo.toml": {
+      "digest": "sha256:e826ae7bf938714a00d35134981eed60b2f814b88a34d30c240911eaac879e0d",
+      "normalization": "UTF-8 LF source"
+    },
+    "sdk/rust-standard-runtime/stack-transform/src/lib.rs": {
+      "digest": "sha256:aa129ff1366ac7dffb15d74f4483cb132f5e9241aa3c094d4ef5952b287147a4",
+      "normalization": "UTF-8 LF source"
+    },
+    "sdk/rust-standard-runtime/stack-transform/src/main.rs": {
+      "digest": "sha256:9a9017b8e037d2e831f92f8f672da3b79d9c2fd5603cbb578f793772b9ec2ea1",
+      "normalization": "UTF-8 LF source"
+    },
+    "tools/ci/suites.d/component-threading.json": {
+      "digest": "sha256:aee17a8c76edd10640e7f82d9592fca6f7cff57b0fa98610c372e07af4343d1f",
+      "normalization": "UTF-8 LF source"
+    },
+    "tools/qualify_rust_thread_routing.py": {
+      "digest": "sha256:88d137e14154d27c585c757046f3e421b61e65b29961fef0dc992cf46bc11f29",
+      "normalization": "UTF-8 LF source"
+    },
+    "wit/platform/activation-runtime/package.wit": {
+      "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+      "normalization": "UTF-8 LF source"
+    },
+    "wit/platform/native-runtime/package.wit": {
+      "digest": "sha256:2433ec06c033be01474fd5bf3275c921622eb6720aac344f1307736d09325eb6",
+      "normalization": "UTF-8 LF source"
+    }
+  },
+  "dependencyPins": {
+    "wasmparser": "0.259.0",
+    "wasm-encoder": "0.259.0",
+    "sha2": "0.10.9"
+  },
+  "preservedUnitControls": {
+    "passed": 20,
+    "failed": 0,
+    "ignored": 0,
+    "cases": [
+      "admission::tests::a_changed_shim_body_cannot_pass_fixed_body_authentication",
+      "admission::tests::calls_exports_tables_and_constant_references_reach_only_the_fixed_admission_body",
+      "admission::tests::missing_or_wrong_native_support_import_is_rejected_before_rewriting",
+      "admission::tests::old_preimage_and_unwrapped_raw_call_are_not_authenticated",
+      "root::tests::missing_linker_range_or_aliased_support_hooks_never_emit_bootstrap",
+      "root::tests::root_and_child_admission_transform_chain_validates_without_enabling_component_threads",
+      "root::tests::root_attach_finish_detach_and_reap_preserve_original_index_and_numeric_values",
+      "root::tests::shared_stack_fallback_is_confined_to_pre_root_and_final_system_reaper",
+      "root::tests::stale_chain_and_forged_stack_layout_receipts_are_rejected",
+      "tests::absent_or_wrong_canonical_context_import_is_not_a_shared_stack_fallback",
+      "tests::data_and_original_custom_bytes_are_not_scanned_as_instructions",
+      "tests::every_actual_stack_get_set_is_replaced_and_output_validates",
+      "tests::helpers_have_no_shadow_stack_or_allocator_prologue_and_trap_without_context",
+      "tests::immutable_stack_or_shared_memory_are_named_profile_rejections",
+      "tests::malformed_and_over_bound_inputs_fail_before_reencode",
+      "tests::wrong_preimage_rejects_without_touching_input",
+      "thread_entry::tests::absent_or_wrong_canonical_set_and_thread_new_never_fall_back_to_shared_state",
+      "thread_entry::tests::real_table_callback_index_is_preserved_and_context_surrounds_original_rust_body",
+      "thread_entry::tests::stale_preimage_and_missing_owned_entry_cannot_qualify_a_callback",
+      "thread_entry::tests::wrong_entry_or_missing_original_table_target_rejects_without_rebinding_a_function"
+    ],
+    "execution": "offline locked SDK manifest selecting the actual shared path package"
+  },
+  "preservedCliControls": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "clippy": {
+    "status": "passed",
+    "warningsDenied": true,
+    "allTargets": true,
+    "execution": "offline locked SDK manifest selecting the actual shared path package"
+  },
+  "actualEncodedRouting": {
+    "passedCampaign": true,
+    "cases": [
+      {
+        "case": "normal-encoder-owned-routing",
+        "status": "passed",
+        "component": {
+          "digest": "sha256:09092e7acb2d0846607704e4eeda1c3a3c9dbc1425960fcf6233f272a85367c8",
+          "size": 2913
+        }
+      },
+      {
+        "case": "normal-nested-interface-export",
+        "status": "passed",
+        "component": {
+          "digest": "sha256:5f0ceafbd68d8ca357292f954a5378def3f8bfca8285786ae6387bd25bab10f3",
+          "size": 3245
+        }
+      },
+      {
+        "case": "unwrapped-main",
+        "status": "rejected",
+        "component": {
+          "digest": "sha256:36e8faedabf4565330a70bc1020358c94247d0896df0a02f8119520a867b7572",
+          "size": 2237
+        }
+      },
+      {
+        "case": "unbounded-main-table",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-main-finite-original-table",
+        "component": {
+          "digest": "sha256:c3465e4b8de54b83d91f9d7d24e592b5c7cd36598bfcfeb84971b9d6644cfbc8",
+          "size": 2908
+        }
+      },
+      {
+        "case": "modified-shim",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-private-shim-body",
+        "component": {
+          "digest": "sha256:ce7de871778527882c363eb4a0a8e32fb37a180f89dbdaf3c08ee881fe855496",
+          "size": 2910
+        }
+      },
+      {
+        "case": "raw-creator-lift",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-raw-or-thunk-lift-escape",
+        "component": {
+          "digest": "sha256:3d980329d14c373ae245bada294a95dacc38703a7d1d4ba0220cfe44418ab428",
+          "size": 2969
+        }
+      },
+      {
+        "case": "raw-thunk-lift",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-raw-or-thunk-lift-escape",
+        "component": {
+          "digest": "sha256:22d6e2250a11a00efb8cfb7bdb2aae2909437d204cd92eca486b3770aa2b8840",
+          "size": 2969
+        }
+      },
+      {
+        "case": "private-table-container",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-private-raw-or-table-escape",
+        "component": {
+          "digest": "sha256:4602f00cd56a79f5e6f8c9415442b4011181cbfb4f3bc843c0dda2858dd487ea",
+          "size": 2937
+        }
+      },
+      {
+        "case": "reused-fixup",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-creator-provider-or-instance-fence",
+        "component": {
+          "digest": "sha256:4fd84ed34057278dee5a5f18b740e803f7b623d847542af91321fb2b7909823a",
+          "size": 2932
+        }
+      },
+      {
+        "case": "second-creator",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-duplicate-creation",
+        "component": {
+          "digest": "sha256:826c999b238e1ede471a77141e194cdaf42fd98f56aace6bcc572ade0646fa58",
+          "size": 2931
+        }
+      },
+      {
+        "case": "parallel-spawn",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-parallel-spawn-denied",
+        "component": {
+          "digest": "sha256:0140ed2df4942860b5ebb9ad4f53eb46374f5783a8c465b8f32032f6d85f2e07",
+          "size": 2947
+        }
+      },
+      {
+        "case": "extra-module",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-finite-three-module-profile",
+        "component": {
+          "digest": "sha256:3304d6ceed21b9fa46cca28719527ae43cd7397235eb97cf2ee0fd46971d05a8",
+          "size": 2965
+        }
+      },
+      {
+        "case": "dynamic-module-alias",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-dynamic-code-alias-denied",
+        "component": {
+          "digest": "sha256:996b8b6a78553a4aa7c12e59030172a66d3142ba13a8135ae74da9702367069a",
+          "size": 3015
+        }
+      },
+      {
+        "case": "repeated-main",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-main-instantiated-twice",
+        "component": {
+          "digest": "sha256:727f45c8b3a1c2de48070b7f8463d1930efec42a5b2d447d60e929219c746f50",
+          "size": 2973
+        }
+      },
+      {
+        "case": "component-start",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-start-before-owned-root-denied",
+        "component": {
+          "digest": "sha256:fdf78660aed343598c926be0a3eaef7f8a4f1523b700ea1a91bc46917e20e87d",
+          "size": 2964
+        }
+      },
+      {
+        "case": "main-private-table-import",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-main-nonfunction-import-denied",
+        "component": {
+          "digest": "sha256:e1c8816a7cb0d6b1723abd02554958dd23e66d476514d0e926cc88d1b8acde9f",
+          "size": 2952
+        }
+      },
+      {
+        "case": "guest-admission-provider",
+        "status": "rejected",
+        "wasmValidated": true,
+        "reason": "rust-component-creator-provider-or-instance-fence",
+        "component": {
+          "digest": "sha256:a695037919acf42e9c74c7d07cff72e6718913ea14c04fe0b5ce51b612bda94b",
+          "size": 3047
+        }
+      }
+    ],
+    "tools": {
+      "transformer": {
+        "digest": "sha256:b796d8de31fc150b348ea166d5c9072177a12f00de6d63a8cd968e75cb688b42",
+        "size": 5014016
+      },
+      "wasmTools": {
+        "digest": "sha256:3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
+        "size": 16783360
+      }
+    }
+  },
+  "qualification": {
+    "canonicalThreadCreationEnabled": false,
+    "standardRuntimeQualified": false,
+    "rustOrStdExecuted": false,
+    "cRuntimeQualified": false,
+    "signedNativeInvocations": 0,
+    "hostedCurrentHeadCi": "pending",
+    "rootWorkspaceOfflineBuild": "not-run: pre-existing pinned rustls0.23.46 is absent from local offline index",
+    "workspaceMsrv": "hosted verification pending",
+    "publisherAuthenticated": false,
+    "releaseQualified": false
+  },
+  "boundaries": [
+    "Original host ledger and physical stack retirement remain separate runtime owners.",
+    "No C profile is accepted through renaming the Rust profile.",
+    "A captured compiler must include the full shared source closure before selecting this implementation."
+  ]
+}

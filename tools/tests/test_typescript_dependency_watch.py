@@ -1,0 +1,674 @@
+"""Owned original TypeScript package fixtures retain exact source/resource/version scope."""
+from pathlib import Path
+import tempfile
+import json
+import unittest
+
+from tools import typescript_dependency_watch_fixture as fixture
+
+
+class TypescriptDependencyWatchFixture(unittest.TestCase):
+    def test_two_real_packages_preserve_primary_api_and_resource_across_update(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            application = Path(temporary) / 'application'; application.mkdir()
+            observed = fixture.create(application)
+            primary, child = Path(observed['primary']), Path(observed['child'])
+            v1 = json.loads((primary / 'package.json').read_text())
+            self.assertEqual(v1['name'], fixture.PRIMARY)
+            self.assertEqual(v1['dependencies'][fixture.CHILD], 'file:../child-v1')
+            self.assertEqual((primary / 'badge.txt').read_bytes(), fixture.RESOURCE)
+            original_api = (primary / 'index.mjs').read_bytes()
+            self.assertIn(b'value + 39', (child / 'index.mjs').read_bytes())
+            fixture.remove_original(observed, 'primary'); fixture.remove_original(observed, 'child')
+            self.assertFalse(primary.exists() or child.exists())
+            fixture.restore_revision(observed, 2)
+            primary, child = Path(observed['primary']), Path(observed['child'])
+            self.assertEqual(json.loads((primary / 'package.json').read_text())['version'], '1.0.1')
+            self.assertEqual((primary / 'index.mjs').read_bytes(), original_api)
+            self.assertIn(b'value + 40', (child / 'index.mjs').read_bytes())
+            self.assertNotEqual(observed['inputDigests']['child-v1'], observed['inputDigests']['child-v2'])
+            self.assertFalse((application / 'app').exists())
+
+    def test_cleanup_and_restore_refuse_unknown_roots_without_mutation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            application = Path(temporary) / 'application'; application.mkdir()
+            observed = fixture.create(application)
+            primary = Path(observed['primary'])
+            before = (primary / 'package.json').read_bytes()
+            with self.assertRaisesRegex(ValueError, 'fresh'):
+                fixture.restore_revision(observed, 2)
+            with self.assertRaisesRegex(ValueError, 'unknown'):
+                fixture.remove_original(observed, '../application')
+            changed = {**observed, 'ownedRoot': str(application.resolve())}
+            with self.assertRaisesRegex(ValueError, 'escaped'):
+                fixture.remove_original(changed, 'primary')
+            self.assertEqual((primary / 'package.json').read_bytes(), before)
+            self.assertTrue(application.is_dir())
+
+    def test_removal_entry_has_no_library_reference_and_keeps_normal_wit(self):
+        selected = fixture.application_source()
+        removed = fixture.application_source(removed=True)
+        self.assertIn('answer()', selected)
+        self.assertNotIn('outside-watch-primary', removed)
+        self.assertIn('removed/${clean}', removed)
+        for source in (selected, removed):
+            self.assertIn('export const api: typeof Contract', source)
+            self.assertIn('calls++ !== 0', source)
+            self.assertNotIn('unsafe', source)
+
+    def test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved(self):
+        from tools.qualify_typescript_dependency_watch import ShutdownOnce
+        fence = ShutdownOnce()
+        calls = []
+        original = RuntimeError('unknown external shutdown result')
+        def uncertain():
+            calls.append('down')
+            self.assertTrue(fence.attempted)
+            raise original
+        with self.assertRaises(RuntimeError) as observed:
+            fence.call(uncertain)
+        self.assertIs(observed.exception, original)
+        with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
+            fence.call(lambda: calls.append('replayed'))
+        self.assertEqual(calls, ['down'])
+
+    def test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed(self):
+        from tools.qualify_typescript_dependency_watch import ShutdownOnce
+        fence = ShutdownOnce()
+        receipt = {'state': 'stopped', 'reaped': True, 'cleanShutdown': True}
+        self.assertIs(fence.call(lambda: receipt), receipt)
+        with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
+            fence.call(lambda: self.fail('replayed confirmed mutation'))
+
+    def test_watch_delegation_operations_exist_in_maintained_frontend(self):
+        import argparse
+        import ast
+        import inspect
+        from tools import qualify_typescript_dependency_watch as programme
+        from tools.dev_workflow.cli import parser
+        root = parser()
+        groups = next(row for row in root._actions if isinstance(row, argparse._SubParsersAction))
+        commands = next(row for row in groups.choices['dev']._actions
+            if isinstance(row, argparse._SubParsersAction)).choices
+        tree = ast.parse(inspect.getsource(programme))
+        operations = [row.args[1].value for row in ast.walk(tree)
+            if isinstance(row, ast.Call) and isinstance(row.func, ast.Name) and row.func.id == 'front'
+            and len(row.args) > 1 and isinstance(row.args[1], ast.Constant)]
+        self.assertTrue(operations)
+        self.assertLessEqual(set(operations), set(commands))
+        self.assertIn('trust', operations)
+        codes = {row.value for row in ast.walk(tree) if isinstance(row, ast.Constant)
+            and isinstance(row.value, str) and row.value.startswith('workspace-recipe-')}
+        self.assertEqual(codes, {'workspace-recipe-trust-required'})
+
+class FrontendRuntime(unittest.TestCase):
+    def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
+        import ast
+        import json
+        import hashlib
+        import os
+        import subprocess
+        import sys
+        from types import SimpleNamespace
+        import zipfile
+        from tools import qualify_typescript_dependency_watch as qualifier
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            helper = root / 'helper.pyz'
+            with zipfile.ZipFile(helper, 'w') as archive:
+                archive.writestr('tools/__init__.py', '')
+                archive.writestr('tools/dev_workflow/__init__.py', '')
+                archive.writestr('tools/dev_workflow/cli.py',
+                    'import json,sys\n'
+                    'def main():\n'
+                    ' print(json.dumps({"isolated":sys.flags.isolated,'
+                    '"ignoreEnvironment":sys.flags.ignore_environment,'
+                    '"noBytecode":sys.dont_write_bytecode,"cachePrefix":sys.pycache_prefix}))\n'
+                    ' return 0\n')
+            frontend, events = root / 'frontend.py', root / 'events.jsonl'
+            python = Path(sys.executable)
+            args = SimpleNamespace(helper=helper,
+                helper_sha256='sha256:' + hashlib.sha256(helper.read_bytes()).hexdigest())
+            qualifier.write_frontend(frontend, python, args, events)
+            header = frontend.read_text().splitlines()[0]
+            self.assertTrue(header.startswith('#!' + str(python)))
+            argument = header[len('#!' + str(python)):].strip()
+            environment = {'PATH': os.defpath, 'HOME': temporary, 'TEMP': temporary, 'TMP': temporary,
+                'PYTHONPATH': str(root / 'ambient-imports'),
+                'PYTHONPYCACHEPREFIX': str(root / 'ambient-bytecode')}
+            if sys.platform == 'win32':
+                environment['SystemRoot'] = os.environ['SystemRoot']
+            result = subprocess.run([str(python), *([argument] if argument else []), str(frontend)],
+                cwd=root, env=environment, capture_output=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace'))
+            self.assertEqual(json.loads(result.stdout), {'isolated': 1, 'ignoreEnvironment': 1,
+                'noBytecode': True, 'cachePrefix': None})
+            self.assertEqual(events.read_bytes(), result.stdout)
+            self.assertFalse((root / 'ambient-bytecode').exists())
+
+
+class DeliveredResolverOwner(unittest.TestCase):
+    def layout(self, root, *, recorded=True):
+        import shutil
+        import stat
+        import zipfile
+        from tools import build_dev_frontend
+        from tools.dev_workflow.common import HOST_ABI, digest, encode
+
+        helper = root / 'actual-helper.pyz'
+        helper_identity = build_dev_frontend.helper(helper)
+        installed = root / 'relocated installed'
+        sdk = installed / 'sdk'; sdk.mkdir(parents=True)
+        owner = installed / 'recipe/tools/dev_managed_tools.py'
+        owner.parent.mkdir(parents=True)
+        source = Path(__file__).resolve().parents[1] / 'dev_managed_tools.py'
+        shutil.copyfile(source, owner)
+        files = []
+        expected = {'node/bin/node': b'explicit fixture node bytes',
+                    'node/lib/node_modules/npm/bin/npm-cli.js': b'explicit fixture npm bytes'}
+        with zipfile.ZipFile(sdk / 'managed.zip', 'x') as archive:
+            for name, raw in expected.items():
+                entry = zipfile.ZipInfo(name)
+                entry.create_system = 3
+                entry.external_attr = (stat.S_IFREG | 0o700) << 16
+                archive.writestr(entry, raw)
+                files.append({'path': name, 'size': len(raw), 'sha256': digest(raw), 'executable': True})
+        manifest = {'schemaVersion': 'latent.dev.managed-tools.v1', 'files': files}
+        manifest['identity'] = digest(encode(manifest))
+        (sdk / 'managed-inputs.json').write_bytes(encode(manifest))
+        inventory = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': 'typescript',
+            'ownerIssue': 546, 'sourceCommit': 'a' * 40, 'hostAbi': HOST_ABI, 'host': 'linux-x86_64',
+            'files': [{'path': path.relative_to(installed).as_posix(), 'size': path.stat().st_size,
+                       'sha256': digest(path.read_bytes())}
+                      for path in sorted(installed.rglob('*')) if path.is_file()
+                      and (recorded or path != owner)]}
+        inventory['identity'] = digest(encode(inventory))
+        raw = encode(inventory)
+        (installed / 'guest-tools.json').write_bytes(raw)
+        descriptor = {'language': 'typescript', 'hostAbi': HOST_ABI,
+            'template': {'ownerIssue': 546, 'revision': 'a' * 40},
+            'build': {'inventory': {'path': 'guest-tools.json', 'sha256': digest(raw)}, 'tools': []}}
+        (root / 'descriptor.json').write_bytes(encode(descriptor))
+        shutil.copyfile(Path(__file__).resolve().parents[1] / 'qualify_typescript_dependency_watch.py',
+                        root / 'qualifier.py')
+        return installed, owner, expected, helper_identity, inventory['identity']
+
+    def run_delivered(self, root):
+        import os
+        import subprocess
+        import sys
+
+        runner = root / 'outside-checkout.py'
+        runner.write_text('''import importlib.util,json,pathlib,sys
+root=pathlib.Path(__file__).resolve().parent
+sys.path.insert(0,str(root/'actual-helper.pyz'))
+try:
+ from tools.dev_managed_tools import unpack
+except ModuleNotFoundError as error:
+ assert error.name=='tools.dev_managed_tools',error.name
+else:
+ raise AssertionError('actual helper unexpectedly contains recipe-only owner')
+import tools
+assert str(root/'actual-helper.pyz') in tools.__file__,tools.__file__
+spec=importlib.util.spec_from_file_location('watch_qualifier',root/'qualifier.py')
+qualifier=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(qualifier)
+try:
+ managed,owner=qualifier.unpack_resolver(root/'relocated installed',root/'resolver-managed',
+     json.loads((root/'descriptor.json').read_bytes()))
+ result={'passed':True,'owner':owner,'files':{
+     path.relative_to(managed).as_posix():path.read_text()
+     for path in managed.rglob('*') if path.is_file()}}
+except (ValueError,FileNotFoundError) as error:
+ result={'passed':False,'error':str(error),'errorType':type(error).__name__}
+result.update(isolated=sys.flags.isolated,noBytecode=sys.dont_write_bytecode,
+              cachePrefix=sys.pycache_prefix,missingFromActualHelper=True)
+print(json.dumps(result))
+''', encoding='utf-8')
+        environment = {'PATH': os.defpath, 'HOME': str(root), 'TEMP': str(root), 'TMP': str(root),
+            'PYTHONPATH': str(root / 'ambient-imports'), 'PYTHONPYCACHEPREFIX': str(root / 'ambient-bytecode')}
+        if sys.platform == 'win32':
+            environment['SystemRoot'] = os.environ['SystemRoot']
+        result = subprocess.run([sys.executable, '-I', '-B', str(runner)], cwd=root,
+            env=environment, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace'))
+        value = json.loads(result.stdout)
+        self.assertEqual((value['isolated'], value['noBytecode'], value['cachePrefix']), (1, True, None))
+        self.assertTrue(value['missingFromActualHelper'])
+        self.assertFalse(list(root.rglob('__pycache__')))
+        self.assertFalse((root / 'ambient-bytecode').exists())
+        self.assertFalse((root / 'recipe-canary').exists())
+        return value
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes(self):
+        from tools.dev_workflow.common import digest
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            installed, owner, expected, helper_identity, inventory_identity = self.layout(root)
+            before = {path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                      for path in installed.rglob('*') if path.is_file()}
+            value = self.run_delivered(root)
+            self.assertTrue(value['passed'], value)
+            self.assertEqual(value['files'], {name: raw.decode() for name, raw in expected.items()})
+            self.assertEqual(value['owner'], {'path': 'recipe/tools/dev_managed_tools.py',
+                'sha256': digest(owner.read_bytes()), 'inventoryIdentity': inventory_identity})
+            self.assertEqual(digest((root / 'actual-helper.pyz').read_bytes()), helper_identity)
+            self.assertEqual({path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                              for path in installed.rglob('*') if path.is_file()}, before)
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, owner, _, _, _ = self.layout(root)
+            owner.write_text('from pathlib import Path\nPath(' + repr(str(root / 'recipe-canary'))
+                             + ').write_text("executed")\n', encoding='utf-8')
+            value = self.run_delivered(root)
+            self.assertFalse(value['passed'])
+            self.assertEqual(value['error'], 'guest-tool-companion-modified')
+            self.assertFalse((root / 'resolver-managed').exists())
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_missing_recipe_is_rejected_before_creating_resolver_state(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, owner, _, _, _ = self.layout(root)
+            owner.unlink()
+            value = self.run_delivered(root)
+            self.assertFalse(value['passed'])
+            self.assertEqual(value['errorType'], 'FileNotFoundError')
+            self.assertFalse((root / 'resolver-managed').exists())
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.layout(root, recorded=False)
+            value = self.run_delivered(root)
+            self.assertFalse(value['passed'])
+            self.assertEqual(value['error'], 'delivered-managed-owner-outside-inventory')
+            self.assertFalse((root / 'resolver-managed').exists())
+
+    def test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation(self):
+        import sys
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        from tools.dev_workflow.common import digest
+        original_no_bytecode = sys.dont_write_bytecode
+        for mode in ('valid', 'altered', 'missing', 'unrecorded'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                installed, owner, expected, _, inventory_identity = self.layout(root, recorded=mode != 'unrecorded')
+                descriptor = json.loads((root / 'descriptor.json').read_bytes())
+                destination = root / 'resolver-managed'
+                if mode == 'altered':
+                    owner.write_text('from pathlib import Path\nPath(' + repr(str(root / 'recipe-canary'))
+                                     + ').write_text("executed")\n', encoding='utf-8')
+                elif mode == 'missing':
+                    owner.unlink()
+                if mode == 'valid':
+                    before = {path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                              for path in installed.rglob('*') if path.is_file()}
+                    # The maintained runuser command starts the delivered qualifier
+                    # with -I -B; ordinary unittest discovery itself does not.
+                    with patch.object(sys, 'dont_write_bytecode', True):
+                        managed, observed = qualifier.unpack_resolver(installed, destination, descriptor)
+                    self.assertEqual(managed, destination)
+                    self.assertEqual(observed, {'path': 'recipe/tools/dev_managed_tools.py',
+                        'sha256': digest(owner.read_bytes()), 'inventoryIdentity': inventory_identity})
+                    self.assertEqual({path.relative_to(managed).as_posix(): path.read_bytes()
+                                      for path in managed.rglob('*') if path.is_file()}, expected)
+                    self.assertEqual({path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                                      for path in installed.rglob('*') if path.is_file()}, before)
+                else:
+                    with patch.object(sys, 'dont_write_bytecode', True):
+                        with self.assertRaises((ValueError, FileNotFoundError)):
+                            qualifier.unpack_resolver(installed, destination, descriptor)
+                    self.assertFalse(destination.exists())
+                self.assertFalse((root / 'recipe-canary').exists())
+                self.assertFalse(list(installed.rglob('__pycache__')))
+                self.assertIs(sys.dont_write_bytecode, original_no_bytecode)
+
+class DeliveredTemplateCaller(unittest.TestCase):
+    def run_actual_main_to_resolver_boundary(self, root, *, flat=False):
+        import sys
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import dev_tool_distribution as distribution
+        from tools import qualify_typescript_dependency_watch as qualifier
+        from tools.dev_workflow import project
+        from tools.dev_workflow.common import decode, digest, encode
+
+        installed, _, _, helper_identity, _ = DeliveredResolverOwner().layout(root)
+        for name in ('sdk/bin/python', 'sdk/bin/capsule-contracts', 'sdk/bin/capsule-test-signer',
+                     'sdk/bin/wasm-tools', 'sdk/bin/wit-bindgen', 'recipe/tools/dev_guest_recipe.py',
+                     'recipe/tools/typescript_capsule.py'):
+            selected = installed / name
+            selected.parent.mkdir(parents=True, exist_ok=True)
+            selected.write_bytes(b'explicit source-fixture bytes; never executed')
+        distribution.compiler_inventory(installed, 'a' * 40, 'typescript')
+        def minimal_source_application(destination, name):
+            destination.mkdir()
+            (destination / 'capsule-project.json').write_bytes(encode({
+                'name': name, 'tenant': 'examples', 'service': 'examples/my-' + name}))
+            return destination
+        with patch.object(distribution.typescript_project, 'create', side_effect=minimal_source_application):
+            catalogue = distribution.templates(installed, 'a' * 40, 'typescript')
+        entry = catalogue['greeting']
+        template = installed / entry['path']
+        manifest = decode((template / 'template.json').read_bytes())
+        self.assertEqual(set(manifest), {'schemaVersion', 'project', 'snapshot'})
+        self.assertNotIn('build', manifest)
+        self.assertIn('inventory', manifest['project']['build'])
+        # Exercise the real producer and consumer schema/identity boundary with
+        # tiny source bytes, before any resolver, compiler or guest execution.
+        project.scaffold(template, root / 'verified-scaffold', manifest, entry['identity'])
+        if flat:
+            (template / 'template.json').write_bytes(encode(manifest['project']))
+        probe, fixture = root / 'probe.py', root / 'fixture.py'
+        probe.write_text('# explicit source-fixture module; no process work\n')
+        fixture.write_text('# explicit source-fixture module; no process work\n')
+        node = root / 'source-node'; node.mkdir()
+        (node / 'source-node.json').write_bytes(b'{}')
+        args = SimpleNamespace(installed=installed, helper=root / 'actual-helper.pyz',
+            helper_sha256=helper_identity, source_probe=probe, source_probe_sha256=digest(probe.read_bytes()),
+            source_node=node, fixture_source=fixture, fixture_sha256=digest(fixture.read_bytes()),
+            output=root / 'observation')
+        before = {path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                  for path in installed.rglob('*') if path.is_file()}
+        observed = []
+        def before_resolver(selected, destination, descriptor):
+            observed.append(descriptor)
+            self.assertEqual(descriptor, manifest['project'])
+            self.assertEqual((selected, destination), (installed, args.output / 'resolver-managed'))
+            raise RuntimeError('intentional-before-resolver-native-boundary')
+        original_path = sys.path[:]
+        try:
+            with patch.object(qualifier.argparse.ArgumentParser, 'parse_args', return_value=args), \
+                    patch.object(qualifier.sys, 'platform', 'linux'), \
+                    patch.object(qualifier.os, 'geteuid', return_value=1000, create=True), \
+                    patch.object(qualifier, 'unpack_resolver', side_effect=before_resolver) as unpack, \
+                    patch.object(qualifier.subprocess, 'run', side_effect=AssertionError('native process forbidden')), \
+                    patch.object(qualifier.subprocess, 'Popen', side_effect=AssertionError('native process forbidden')):
+                if flat:
+                    with self.assertRaises(KeyError):
+                        qualifier.main()
+                    unpack.assert_not_called()
+                else:
+                    with self.assertRaisesRegex(RuntimeError, 'intentional-before-resolver-native-boundary'):
+                        qualifier.main()
+                    unpack.assert_called_once()
+                    self.assertEqual(observed, [manifest['project']])
+        finally:
+            sys.path[:] = original_path
+        self.assertFalse((args.output / 'resolver-managed').exists())
+        self.assertEqual({path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                          for path in installed.rglob('*') if path.is_file()}, before)
+        report = json.loads((args.output / 'public-qualification.json').read_bytes())
+        self.assertFalse(report['passed'])
+        self.assertEqual((report['phase'], report['deploymentCount'], report['stages']), ('prepare', 0, []))
+
+    def test_actual_template_wrapper_selects_its_project_at_main_resolver_call(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.run_actual_main_to_resolver_boundary(Path(temporary))
+
+    def test_flat_project_cannot_substitute_for_the_actual_template_wrapper(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.run_actual_main_to_resolver_boundary(Path(temporary), flat=True)
+
+
+class MaintainedScenarioBudget(unittest.TestCase):
+    def delivered_application(self, root):
+        from unittest.mock import patch
+        from tools import dev_tool_distribution as distribution
+        from tools.dev_workflow import project
+        from tools.dev_workflow.common import decode
+        installed = root / 'installed'
+        for name in ('sdk/bin/python', 'sdk/bin/capsule-contracts', 'sdk/bin/capsule-test-signer',
+                     'sdk/bin/wasm-tools', 'sdk/bin/wit-bindgen', 'recipe/tools/dev_guest_recipe.py'):
+            selected = installed / name
+            selected.parent.mkdir(parents=True, exist_ok=True)
+            selected.write_bytes(b'explicit source-fixture bytes; never executed')
+        distribution.compiler_inventory(installed, 'a' * 40, 'typescript')
+        with patch.object(distribution, 'TUTORIAL_CASES', {'greeting': distribution.TUTORIAL_CASES['greeting']}):
+            catalogue = distribution.templates(installed, 'a' * 40, 'typescript')
+        entry = catalogue['greeting']
+        template = installed / entry['path']
+        manifest = decode((template / 'template.json').read_bytes())
+        application = root / 'application'
+        project.scaffold(template, application, manifest, entry['identity'])
+        return application, template
+
+    def test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget(self):
+        import base64
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        from tools.dev_workflow import scenarios
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(qualifier.subprocess, 'run', side_effect=AssertionError('process forbidden')), \
+                patch.object(qualifier.subprocess, 'Popen', side_effect=AssertionError('process forbidden')):
+            application, template = self.delivered_application(Path(temporary))
+            original = (template / 'tests/scenarios.json').read_bytes()
+            original_cases = json.loads(original)['scenarios']
+            self.assertEqual({(case['timeoutMillis'], case['nodeTimeoutMillis']) for case in original_cases},
+                             {(5000, 120000)})
+            sdk_lock = (application / 'app/sdk-lock.json').read_bytes()
+            for expected in ('42/SDK/captured watch data', '43/SDK/captured watch data', 'removed/SDK'):
+                qualifier.write_dependency_tests(application, expected)
+                document = json.loads((application / 'tests/scenarios.json').read_bytes())
+                case, = document['scenarios']
+                self.assertEqual((case['timeoutMillis'], case['nodeTimeoutMillis'], case['required']),
+                                 (5000, 120000, True))
+                self.assertEqual(case['expect']['category'], 'success')
+                seen = []
+                def adapter(selected, raw):
+                    seen.append((selected['timeoutMillis'], raw))
+                    if selected['timeoutMillis'] == 120000:
+                        return {'category': 'platform-failure', 'outcomeKnown': True,
+                                'error': {'code': 'deadline-exceeded'}, 'data': {}}
+                    payload = (application / 'tests/library-expected.json').read_bytes()
+                    return {'category': 'success', 'outcomeKnown': True, 'data': {'payload': {
+                        'encoding': 'base64', 'data': base64.b64encode(payload).decode(),
+                        'byteLength': str(len(payload)), 'mediaType': case['mediaType']}}}
+                node = scenarios.run(document, application, 'node', ['dependency-output'], adapter, {}, supported=set())
+                portable = scenarios.run(document, application, 'portable', ['dependency-output'], adapter, {}, supported=set())
+                self.assertEqual(seen, [(120000, b'["SDK"]'), (5000, b'["SDK"]')])
+                self.assertFalse(node['passed'])
+                self.assertEqual(node['results'][0]['platformCode'], 'deadline-exceeded')
+                self.assertTrue(portable['passed'])
+                self.assertEqual((application / 'app/sdk-lock.json').read_bytes(), sdk_lock)
+                self.assertEqual((template / 'tests/scenarios.json').read_bytes(), original)
+
+    def test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs(self):
+        import copy
+        from tools import qualify_typescript_dependency_watch as qualifier
+        with tempfile.TemporaryDirectory() as temporary:
+            application, _template = self.delivered_application(Path(temporary))
+            selected = application / 'tests/scenarios.json'
+            original = json.loads(selected.read_bytes())
+            alternatives = [None, b'{', b'{"schemaVersion":NaN}', b'{}']
+            for value in (None, True, '120000', 0, -1, 120001):
+                changed = copy.deepcopy(original)
+                for case in changed['scenarios']:
+                    if value is None:
+                        del case['nodeTimeoutMillis']
+                    else:
+                        case['nodeTimeoutMillis'] = value
+                alternatives.append(json.dumps(changed).encode())
+            changed = copy.deepcopy(original)
+            changed['scenarios'][0]['nodeTimeoutMillis'] = 60000
+            alternatives.append(json.dumps(changed).encode())
+            changed = copy.deepcopy(original)
+            changed['scenarios'][0]['timeoutMillis'] = 6000
+            alternatives.append(json.dumps(changed).encode())
+            changed = copy.deepcopy(original)
+            changed['scenarios'][0]['service'] = 'examples/foreign-service'
+            alternatives.append(json.dumps(changed).encode())
+            for ordinal, raw in enumerate(alternatives):
+                with self.subTest(ordinal=ordinal):
+                    if selected.exists():
+                        selected.unlink()
+                    if raw is not None:
+                        selected.write_bytes(raw)
+                    before = {path.relative_to(application).as_posix(): path.read_bytes()
+                              for path in application.rglob('*') if path.is_file()}
+                    with self.assertRaises(ValueError):
+                        qualifier.write_dependency_tests(application, '42/SDK/captured watch data')
+                    self.assertEqual({path.relative_to(application).as_posix(): path.read_bytes()
+                                      for path in application.rglob('*') if path.is_file()}, before)
+
+
+class PostDeployFailureProjection(unittest.TestCase):
+    def producer_report(self):
+        from tools.dev_workflow import scenarios
+        case = {'id': 'private-case-name', 'required': True, 'timeoutMillis': 5000,
+            'expect': {'category': 'success'}, 'fixtures': []}
+        return scenarios.run_prepared([(case, b'private raw input', None)], {}, 'node',
+            lambda _case, _raw: {'outcomeKnown': True, 'category': 'platform-failure',
+                                'error': {'code': 'permission-denied'}, 'data': {}}, {})
+
+    def test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        value = self.producer_report()
+        self.assertFalse(value['passed'])
+        target = {}
+        with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$'):
+            qualifier.check_post_deploy_test({'passed': False, 'report': value}, target, 'initial')
+        projected = target['postDeployTestFailure']
+        self.assertEqual(projected, {'qualification': False, 'passed': False, 'results': [{
+            'ordinal': 0, 'status': 'failed', 'category': 'platform-failure', 'platformCode': 'permission-denied',
+            'required': True, 'outcomeKnown': True, 'targetMatches': True}]})
+        self.assertNotIn('private', json.dumps(projected))
+        self.assertNotIn('Sha256', json.dumps(projected))
+
+    def test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure(self):
+        from unittest.mock import patch
+        from tools.dev_workflow import scenarios
+        from tools import qualify_typescript_dependency_watch as qualifier
+        case = {'id': 'private-case-name', 'required': True, 'timeoutMillis': 5000,
+            'expect': {'category': 'success'}, 'fixtures': []}
+        observed = []
+        def original_result(selected, raw):
+            observed.append((selected['timeoutMillis'], raw))
+            return {'outcomeKnown': True, 'category': 'platform-failure',
+                'error': {'code': 'deadline-exceeded', 'message': 'private-error'},
+                'data': {'consumption': {'cpuFuel': '18446744073709551615', 'wallTimeMicros': '5000000',
+                    'peakMemoryBytes': '134217728', 'childCalls': 0, 'secret': 'private-token'},
+                    'payload': {'data': 'private-body'}}}
+        value = scenarios.run_prepared([(case, b'private input', None)], {}, 'node', original_result, {})
+        target = {}
+        with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$'):
+            qualifier.check_post_deploy_test({'passed': False, 'report': value}, target, 'initial')
+        self.assertEqual(observed, [(5000, b'private input')])
+        projected = target['postDeployTestFailure']
+        self.assertFalse(projected['qualification'])
+        self.assertEqual(projected['results'][0]['platformCode'], 'deadline-exceeded')
+        self.assertEqual(projected['results'][0]['consumption'], {
+            'cpuFuel': '18446744073709551615', 'wallTimeMicros': '5000000',
+            'peakMemoryBytes': '134217728', 'childCalls': '0'})
+        self.assertNotIn('private', json.dumps(projected))
+        self.assertLess(len(json.dumps(projected).encode()), 4096)
+        real_require = qualifier.require
+        for error in (RecursionError('private parser detail'), RuntimeError('private observer detail')):
+            originals = []
+            def keep_original(selected, reason):
+                try:
+                    real_require(selected, reason)
+                except ValueError as original:
+                    originals.append(original)
+                    raise
+            with patch.object(qualifier, 'require', side_effect=keep_original), \
+                    patch.object(qualifier.re, 'fullmatch', side_effect=error):
+                with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$') as observed_error:
+                    qualifier.check_post_deploy_test({'passed': False, 'report': value}, {}, 'initial')
+            self.assertEqual(len(originals), 1)
+            self.assertIs(observed_error.exception, originals[0])
+
+    def test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        value = self.producer_report()
+        item = value['results'][0]
+        invalid_u64 = (True, -1, 1, 1.5, float('nan'), float('inf'), '00', '+1', '1e3', '-1',
+                       str(1 << 64), 'token-secret', '9' * 10000, {'nested': 'token-secret'})
+        invalid_u32 = (*invalid_u64, str(1 << 32))
+        for name, invalid in (('cpuFuel', invalid_u64), ('childCalls', invalid_u32)):
+            for selected in invalid:
+                with self.subTest(name=name, selected=type(selected).__name__):
+                    item['consumption'] = {name: selected, 'wallTimeMicros': '5', 'secret': 'token-secret'}
+                    original = json.dumps(value, sort_keys=True)
+                    result = qualifier.public_failed_test_report(value)
+                    self.assertEqual(result['results'][0]['consumption'], {'wallTimeMicros': '5'})
+                    self.assertNotIn('token-secret', json.dumps(result))
+                    self.assertEqual(json.dumps(value, sort_keys=True), original)
+                    self.assertIs(value['results'][0]['consumption'][name], selected)
+        item['consumption'] = {'cpuFuel': '0', 'childCalls': str((1 << 32) - 1),
+                               'outboundRequests': '0', 'effectCount': '1'}
+        expected = dict(item['consumption'])
+        self.assertEqual(qualifier.public_failed_test_report(value)['results'][0]['consumption'], expected)
+        item['status'] = 'passed'
+        self.assertNotIn('consumption', qualifier.public_failed_test_report(value)['results'][0])
+        from tools.dev_workflow.node_diagnostics import U64_FIELDS, U32_FIELDS
+        item['status'] = 'failed'
+        item['consumption'] = {**{name: str((1 << 64) - 1) for name in U64_FIELDS},
+                               **{name: str((1 << 32) - 1) for name in U32_FIELDS}}
+        value['results'] = [item] * 32
+        result = qualifier.public_failed_test_report(value)
+        self.assertEqual(len(result['results']), 8)
+        self.assertTrue(all(row['consumption'] == item['consumption'] for row in result['results']))
+        self.assertLess(len(json.dumps(result).encode()), 8192)
+
+    def test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        secret = 'token-secret'
+        item = {key: secret for key in ('id', 'name', 'status', 'category', 'platformCode', 'reason',
+                                      'activationId', 'path', 'payloadSha256', 'inputSha256', 'error')}
+        item.update(required=1, outcomeKnown='false', targetMatches=0, payload={'nested': secret})
+        value = {'schemaVersion': 'latent.dev.test-report.v1', 'environment': 'node', 'passed': False,
+                 'identity': {'secret': secret}, 'results': [item]}
+        result = qualifier.public_failed_test_report(value)
+        self.assertEqual(result, {'qualification': False, 'passed': False, 'results': [{'ordinal': 0}]})
+        self.assertNotIn(secret, json.dumps(result))
+        for wrong in (None, {}, [], {**value, 'passed': 0}, {**value, 'environment': secret},
+                      {**value, 'schemaVersion': secret}, {**value, 'results': secret}):
+            with self.subTest(wrong=type(wrong)):
+                self.assertIsNone(qualifier.public_failed_test_report(wrong))
+
+    def test_only_first_eight_original_ordinals_and_exact_flags_are_retained(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        value = self.producer_report()
+        value['results'] = [None] + [{'status': 'failed', 'required': True, 'outcomeKnown': False,
+            'targetMatches': False, 'platformCode': 'guest-trap', 'reason': 'earlier-adapter-failure'}] * 32
+        result = qualifier.public_failed_test_report(value)
+        self.assertEqual([row['ordinal'] for row in result['results']], list(range(1, 8)))
+        self.assertTrue(all(row['required'] is True and row['outcomeKnown'] is False
+                            and row['targetMatches'] is False for row in result['results']))
+        self.assertLess(len(json.dumps(result).encode()), 4096)
+
+    def test_success_never_invokes_diagnostic_or_retains_a_failure(self):
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        target = {}
+        with patch.object(qualifier, 'public_failed_test_report', side_effect=AssertionError('success observed')):
+            qualifier.check_post_deploy_test({'passed': True, 'report': {'passed': True}}, target, 'initial')
+        self.assertEqual(target, {})
+
+    def test_observer_recursion_and_runtime_errors_preserve_actual_original_exception_identity(self):
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        real_require = qualifier.require
+        for error in (RecursionError('private parser detail'), RuntimeError('private observer detail')):
+            originals = []
+            def keep_original(value, reason):
+                try:
+                    real_require(value, reason)
+                except ValueError as original:
+                    originals.append(original)
+                    raise
+            with patch.object(qualifier, 'require', side_effect=keep_original), \
+                    patch.object(qualifier, 'public_failed_test_report', side_effect=error):
+                with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$') as observed:
+                    qualifier.check_post_deploy_test({'passed': False, 'report': self.producer_report()}, {}, 'initial')
+            self.assertEqual(len(originals), 1)
+            self.assertIs(observed.exception, originals[0])

@@ -51,12 +51,16 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
 
     def test_policy_operation_table_matches_each_frozen_wit_interface(self):
         matrix = json.loads((ROOT / "wit/host-abi-phase3-v5.json").read_text(encoding="utf-8"))
+        native = json.loads((ROOT / "wit/host-abi-phase3-v6.json").read_text(encoding="utf-8"))
         transactions = json.loads((ROOT / "wit/host-abi-phase4-v1.json").read_text(encoding="utf-8"))
+        native_threads = "latent:runtime-native/threads@0.1.0"
+        self.assertNotIn(native_threads, {entry["interface"] for entry in matrix["interfaces"]})
+        self.assertIn(native_threads, {entry["interface"] for entry in native["interfaces"]})
         rust = (ROOT / "crates/latent-policy/src/capability.rs").read_text(encoding="utf-8")
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))
                   for cap, operations in re.findall(r'"(latent:[^\"]+)"\s*=>\s*&\[(.*?)\]', rust, re.S)}
         expected = {}
-        for entry in matrix["interfaces"] + transactions["interfaces"]:
+        for entry in matrix["interfaces"] + native["interfaces"] + transactions["interfaces"]:
             interface = entry["interface"].split("/")[1].split("@")[0]
             text = (ROOT / entry["source"]).read_text(encoding="utf-8")
             active = False
@@ -77,6 +81,8 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
                 if depth == 0:
                     break
             self.assertTrue(operations, entry["interface"])
+            if entry["interface"] in expected:
+                self.assertEqual(operations, expected[entry["interface"]], entry["interface"])
             expected[entry["interface"]] = operations
         # These independently enumerated host-domain labels are current policy
         # operations, never extra guest WIT imports or guest commit authority.
@@ -97,6 +103,38 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:
                           set(v["then"]["properties"]["restriction"]["properties"]["operations"]["items"]["enum"])
                           for v in bindings}, expected)
+
+    def test_native_threads_require_exact_start_operation_and_context_resource(self):
+        rule = {"id": "native-start", "effect": "allow",
+                "principals": [{"kind": "user", "subject": "alice"}],
+                "services": ["thread-fixture"], "publications": ["publication:sha256:" + "1" * 64],
+                "capability": "latent:runtime-native/threads@0.1.0", "operations": ["start"],
+                "resources": {"kind": "context"},
+                "ceiling": {"operations": 1, "inputBytes": 128, "outputBytes": 128, "wallTimeMillis": 100}}
+        policy = self.validator("capability-policy")
+        binding = self.validator("capability-provider-binding")
+        provider = {"formatVersion": 1, "tenant": "a", "capability": rule["capability"],
+                    "providerProfile": "native-fixture", "configurationDigest": "sha256:" + "2" * 64,
+                    "configurationEpoch": 1,
+                    "restriction": {key: copy.deepcopy(rule[key]) for key in ("operations", "resources", "ceiling")}}
+        policy.validate({"formatVersion": 1, "tenant": "a", "rules": [rule]})
+        binding.validate(provider)
+        for changed in (["observe"], ["start", "observe"], ["start", "start"], ["thread-new"]):
+            with self.subTest(operations=changed):
+                self.assertFalse(policy.is_valid({"formatVersion": 1, "tenant": "a",
+                                                 "rules": [{**rule, "operations": changed}]}))
+                self.assertFalse(binding.is_valid({**provider, "restriction": {
+                    **provider["restriction"], "operations": changed}}))
+        for changed in ({"kind": "clock"}, {"kind": "random"}, {"kind": "context", "extra": True}):
+            with self.subTest(resources=changed):
+                self.assertFalse(policy.is_valid({"formatVersion": 1, "tenant": "a",
+                                                 "rules": [{**rule, "resources": changed}]}))
+                self.assertFalse(binding.is_valid({**provider, "restriction": {
+                    **provider["restriction"], "resources": changed}}))
+        unknown = "latent:runtime-native/threads@0.2.0"
+        self.assertFalse(policy.is_valid({"formatVersion": 1, "tenant": "a",
+                                         "rules": [{**rule, "capability": unknown}]}))
+        self.assertFalse(binding.is_valid({**provider, "capability": unknown}))
 
     def test_state_scopes_require_explicit_entity_and_bounded_exact_policy_tuple(self):
         scope = {"namespace": "orders", "incarnation": 1, "entity": None,

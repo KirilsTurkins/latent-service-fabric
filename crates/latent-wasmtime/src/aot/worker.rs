@@ -65,8 +65,9 @@ fn run(options: WorkerOptions, clean: bool) -> Result<(), &'static str> {
         maximum_output_bytes: options.maximum_output_bytes,
         ..AotCompilerLimits::default()
     };
-    let (engine, compatibility) = profile::engine_from_bootstrap(&bootstrap, limits)
-        .map_err(|_| "invalid engine bootstrap")?;
+    let (engine, compatibility, owned_native_threads) =
+        profile::engine_from_bootstrap_with_threading(&bootstrap, limits)
+            .map_err(|_| "invalid engine bootstrap")?;
     drop(bootstrap);
     let enforced = prepared
         .enter()
@@ -78,13 +79,21 @@ fn run(options: WorkerOptions, clean: bool) -> Result<(), &'static str> {
         .write_all(&protocol::readiness(&compatibility))
         .map_err(|_| "readiness pipe failed")?;
     output.flush().map_err(|_| "readiness pipe failed")?;
-    compile(&enforced, &engine, options, &mut input, &mut output)
+    compile(
+        &enforced,
+        &engine,
+        owned_native_threads,
+        options,
+        &mut input,
+        &mut output,
+    )
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn compile(
     _enforced: &super::sandbox::EnforcedSandbox,
     engine: &wasmtime::Engine,
+    owned_native_threads: bool,
     options: WorkerOptions,
     input: &mut Input,
     output: &mut Output,
@@ -96,6 +105,8 @@ fn compile(
         .map_err(|_| "invalid component length")?;
     let bytes = protocol::body(input, length).map_err(|_| "invalid component body")?;
     protocol::end_of_input(input).map_err(|_| "trailing component input")?;
+    crate::component_threading::Authentication::verify(owned_native_threads, &bytes)
+        .map_err(|_| "component thread authentication failed")?;
     let native = engine
         .precompile_component(&bytes)
         .map_err(|_| "component compilation failed")?;

@@ -76,7 +76,8 @@
       "fail-fast": false,
       "matrix": {
         "mode": [
-          "private"
+          "private",
+          "recovery"
         ]
       }
     },
@@ -84,7 +85,7 @@
   },
   "jobId": "dependency-ingestion",
   "kind": "job",
-  "reviewReason": "Add an independent bounded Java dependency matrix programme using the maintained default native builder, normal pinned compiler acquisition, verified read-only cache and existing private/recovery controls; preserve every original Java command and its55-minute job deadline.",
+  "reviewReason": "Compose both independently bounded private and recovery matrix modes after private-feed squash; preserve every original command, artifact, source guard and35-minute per-mode deadline.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

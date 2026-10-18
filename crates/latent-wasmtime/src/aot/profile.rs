@@ -38,6 +38,24 @@ impl ValidatedAotProfile {
         config: &WasmtimeConfig,
         limits: AotCompilerLimits,
     ) -> Result<Self, PlatformError> {
+        let (engine, profile) = Self::with_engine(config, limits, compiler_engine)?;
+        drop(engine);
+        Ok(profile)
+    }
+
+    /// Derives both owners from the same configuration without a spare Engine.
+    pub(crate) fn with_runtime_engine(
+        config: &WasmtimeConfig,
+        limits: AotCompilerLimits,
+    ) -> Result<(Engine, Self), PlatformError> {
+        Self::with_engine(config, limits, |_| config.runtime_engine())
+    }
+
+    fn with_engine(
+        config: &WasmtimeConfig,
+        limits: AotCompilerLimits,
+        build: impl FnOnce(&CompilerEngineSettings) -> Result<Engine, PlatformError>,
+    ) -> Result<(Engine, Self), PlatformError> {
         let limits = limits.validate()?;
         config.validate()?;
         limits.identity(&config.target_triple)?;
@@ -46,16 +64,16 @@ impl ValidatedAotProfile {
         let declared = config.profile_with_runtime(DispatchMode::Generic, Some(&runtime));
         let policy = declared_digest(&declared, limits)?;
         let settings = CompilerEngineSettings::from_config(config);
-        let engine = compiler_engine(&settings)?;
+        settings.validate_compiler()?;
+        let engine = build(&settings)?;
         let engine_identity = hash::engine(&engine);
-        drop(engine);
         let capabilities = capabilities(config);
         let mut digest = Sha256::new();
         digest.update(b"lsf-validated-aot-profile-v1\0");
         for value in [&policy, &engine_identity, &capabilities, runtime.digest()] {
             frame(&mut digest, value);
         }
-        Ok(Self {
+        let profile = Self {
             identity: digest.finalize().into(),
             engine: engine_identity,
             policy,
@@ -66,7 +84,8 @@ impl ValidatedAotProfile {
                 engine_compatibility: blob(engine_identity).into_string(),
                 settings,
             },
-        })
+        };
+        Ok((engine, profile))
     }
     #[must_use]
     pub const fn digest(&self) -> &[u8; 32] {
@@ -93,6 +112,14 @@ impl ValidatedAotProfile {
         Ok(())
     }
 
+    pub(crate) fn authenticate_component(&self, bytes: &[u8]) -> Result<(), PlatformError> {
+        crate::component_threading::Authentication::verify(
+            self.bootstrap.settings.owned_native_threads(),
+            bytes,
+        )?;
+        Ok(())
+    }
+
     /// Closed, bounded trusted-child input; decoding alone grants no authority.
     pub fn bootstrap(&self) -> Result<Vec<u8>, PlatformError> {
         // Private fields have fixed-size numbers and at most a native target and
@@ -105,10 +132,19 @@ impl ValidatedAotProfile {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn engine_from_bootstrap(
     bytes: &[u8],
     limits: AotCompilerLimits,
 ) -> Result<(Engine, [u8; 32]), PlatformError> {
+    let (engine, identity, _) = engine_from_bootstrap_with_threading(bytes, limits)?;
+    Ok((engine, identity))
+}
+
+pub(crate) fn engine_from_bootstrap_with_threading(
+    bytes: &[u8],
+    limits: AotCompilerLimits,
+) -> Result<(Engine, [u8; 32], bool), PlatformError> {
     let limits = limits.validate()?;
     if bytes.len() > MAX_BOOTSTRAP_BYTES {
         return Err(exhausted());
@@ -127,7 +163,7 @@ pub(crate) fn engine_from_bootstrap(
     if blob(actual) != expected {
         return Err(mismatch());
     }
-    Ok((engine, actual))
+    Ok((engine, actual, value.settings.owned_native_threads()))
 }
 
 fn compiler_engine(settings: &CompilerEngineSettings) -> Result<Engine, PlatformError> {
@@ -181,6 +217,9 @@ fn declared_digest(
 }
 
 fn capabilities(config: &WasmtimeConfig) -> [u8; 32] {
+    if config.owned_native_threads {
+        return crate::bindings::host_abi_digest_for(latent_core::PHASE3_HOST_ABI_V6);
+    }
     if !config.transactional_state {
         return crate::bindings::host_abi_digest();
     }

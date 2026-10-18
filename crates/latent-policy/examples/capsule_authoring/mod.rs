@@ -72,6 +72,11 @@ pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
     sign(output, paths, false)
 }
 
+pub(super) fn sign_shared_server(output: &Path, input: &Path) -> Result<()> {
+    let build = inputs::load_shared_server(input)?;
+    sign_checked_scoped(output, vec![build], false, None, true)
+}
+
 pub(super) fn sign_demo_separated(output: &Path, paths: &[OsString]) -> Result<()> {
     sign(output, paths, true)
 }
@@ -97,6 +102,16 @@ fn sign_checked(
     builds: Vec<inputs::Build>,
     separate_builders: bool,
     compiler_source: Option<&str>,
+) -> Result<()> {
+    sign_checked_scoped(output, builds, separate_builders, compiler_source, false)
+}
+
+fn sign_checked_scoped(
+    output: &Path,
+    builds: Vec<inputs::Build>,
+    separate_builders: bool,
+    compiler_source: Option<&str>,
+    shared_server: bool,
 ) -> Result<()> {
     if !output.is_absolute() || output.exists() || builds.is_empty() || builds.len() > 16 {
         return Err("choose a fresh absolute fixture output and bounded checked builds".into());
@@ -136,8 +151,18 @@ fn sign_checked(
             (builder.0.as_str(), &builder.1, &build.observation)
         })
         .collect::<Vec<_>>();
-    let (policy, policy_document) =
+    let (mut policy, mut policy_document) =
         policy::create_for_builders(now, &publisher_public, &assignments)?;
+    if shared_server {
+        let mut value: serde_json::Value = serde_json::from_slice(&policy_document)?;
+        value["tenants"]
+            .as_array_mut()
+            .ok_or("fixture tenant policy")?
+            .push(json!({"tenant":"foreign","publishers":[PUBLISHER]}));
+        policy_document = serde_json::to_vec(&value)?;
+        policy = latent_policy::supply_chain::SupplyChainPolicy::from_json(&policy_document)
+            .map_err(|error| error.message)?;
+    }
     directory(output)?;
     write(&output.join("policy.json"), &policy_document)?;
     let mut releases = Vec::new();
@@ -179,6 +204,18 @@ fn sign_checked(
             },
         )
         .map_err(|error| error.message)?;
+        if shared_server {
+            verify_package_once(
+                &policy,
+                PackageVerificationRequest {
+                    tenant: &TenantId("foreign".into()),
+                    package: &build.bundle,
+                    evidence: &evidence,
+                    unix_seconds: now,
+                },
+            )
+            .map_err(|error| error.message)?;
+        }
         let name = &build.bundle.layout().config().name;
         let destination = output.join(name);
         directory(&destination)?;
@@ -212,6 +249,11 @@ fn sign_checked(
     let mut record = json!({"schemaVersion":"latent.capsule.demo.v1", "tenant":TENANT,
         "trust":"isolated-short-lived-demo-only", "expiresAtUnixSeconds": validity.expires_at,
         "policyDigest": artifact_blob_digest(&policy_document).to_string(), "releases": releases});
+    if shared_server {
+        record["tenant"] = serde_json::Value::Null;
+        record["tenants"] = json!([TENANT, "foreign"]);
+        record["trust"] = json!("isolated-neutral-server-two-tenant-test-only");
+    }
     if let Some(source) = compiler_source {
         record["schemaVersion"] = json!("latent.component.signing-fixture.v1");
         record["trust"] = json!("ephemeral-native-package-test-only");

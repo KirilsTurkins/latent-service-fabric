@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build nine actual Java SDK components; execution is a separate required gate."""
+"""Build actual Java SDK components; execution is a separate required gate."""
 from __future__ import annotations
 import argparse
 import json
@@ -15,15 +15,18 @@ from tools.java_capsule_build import build
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import checked_path, fresh, read_file, write_json
 
-NAMES = ("http", "streaming", "blob", "secrets", "events", "random", "metrics", "service", "callee")
+NAMES = ("http", "streaming", "blob", "secrets", "events", "random", "metrics", "service", "callee", "logging")
 
 
 def project(directory: Path, name: str) -> Path:
     if name not in NAMES: raise ValueError("unknown Java SDK fixture")
     source = ROOT / "tools/toolchain-smoke/examples" / ("guest_" + name)
-    profile = json.loads(read_file(source / "profile.json"))
+    profile = ({"world": "tests:logging/service@1.0.0"} if name == "logging" else
+               json.loads(read_file(source / "profile.json")))
     directory = create(directory, "greeting", "guest-" + name)
-    (directory / "wit/world.wit").write_bytes(runtime_wit(read_file(source / "world.wit"), "service"))
+    original_wit = (ROOT / "sdk/java-guest/facilities/conformance/logging.wit"
+                    if name == "logging" else source / "world.wit")
+    (directory / "wit/world.wit").write_bytes(runtime_wit(read_file(original_wit), "service"))
     (directory / "src/dev/latent/app/Capsule.java").write_bytes(read_file(ROOT / "sdk/java-guest/examples" / (name + ".java")))
     path = directory / "capsule-project.json"
     value = json.loads(read_file(path))
@@ -32,6 +35,7 @@ def project(directory: Path, name: str) -> Path:
     value["limits"].update(cpuFuel=10_000_000_000, childCalls=16 if name == "service" else 0,
         outboundRequests=8 if name in {"http", "streaming", "blob", "secrets", "events"} else 0,
         blobReadBytes=65536 if name == "blob" else 0, blobWriteBytes=65536 if name == "blob" else 0)
+    if name == "logging": value["limits"]["logBytes"] = 8192
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
     return directory
 
