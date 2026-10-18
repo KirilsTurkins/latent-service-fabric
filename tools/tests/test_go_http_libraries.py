@@ -15,6 +15,35 @@ from tools.rust_capsule_project import read_file, snapshot
 
 
 class HttpLibraryCapture(unittest.TestCase):
+    def test_client_ci_gate_requires_normal_native_and_own_boundaries_without_waiving_shared_failure(self):
+        from tools import ci_lane_inventory
+        from tools.rust_capsule_project import ROOT
+        workflow = ci_lane_inventory.structural_workflow(ci_lane_inventory.workflow_model(
+            read_file(ROOT/'.github/workflows/go-guest.yml').decode()))
+        job = workflow['jobs']['upstream-probe']
+        steps = job['steps']
+        normal = next(step for step in steps if step.get('id') == 'normal_go_qualification')
+        boundaries = next(step for step in steps if step.get('id') == 'http_library_boundaries')
+        clients = next(step for step in steps if step.get('name') ==
+            'Qualify two captured default clients and renamed private transitive workers')
+        shared = next(step for step in steps if step.get('name') ==
+            'Qualify ordinary net/http contexts and disposal on the signed node')
+        self.assertEqual(normal['run'],
+            'python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"\n')
+        self.assertNotIn('if',normal)
+        self.assertEqual(boundaries['run'],'python3 -m unittest tools.tests.test_go_http_libraries -v')
+        self.assertEqual(boundaries['if'],
+            "${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' }}")
+        self.assertEqual(clients['if'],
+            "${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' && steps.http_library_boundaries.outcome == 'success' }}")
+        self.assertLess(steps.index(normal),steps.index(shared))
+        self.assertLess(steps.index(shared),steps.index(boundaries))
+        self.assertLess(steps.index(boundaries),steps.index(clients))
+        self.assertNotIn('if',shared)
+        for value in (job,normal,shared,boundaries,clients):
+            self.assertFalse(value.get('continue-on-error',False))
+        self.assertEqual(job['timeout-minutes'],45)
+
     def test_private_coordinates_change_application_inputs_without_changing_captured_sdk(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); snapshots = []

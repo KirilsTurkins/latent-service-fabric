@@ -134,6 +134,7 @@
       },
       {
         "name": "Qualify editable projects, all SDK owners, enforced node and printed guide",
+        "id": "normal_go_qualification",
         "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\"\n"
       },
       {
@@ -146,10 +147,13 @@
       },
       {
         "name": "Check third-party client capture and frozen native product boundaries",
+        "id": "http_library_boundaries",
+        "if": "${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' }}",
         "run": "python3 -m unittest tools.tests.test_go_http_libraries -v"
       },
       {
         "name": "Qualify two captured default clients and renamed private transitive workers",
+        "if": "${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' && steps.http_library_boundaries.outcome == 'success' }}",
         "run": "python3 tools/qualify_go_http_libraries.py --native-qualification \"$RUNNER_TEMP/go-capsule-authoring\" --output \"$RUNNER_TEMP/go-http-libraries\""
       },
       {
@@ -180,7 +184,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Compose exact current runtime and owned networking gates; preserve every original command, artifact, trigger, runner, environment, case and original45-minute deadline.",
+  "reviewReason": "Explicit lossless display-name to stable-ID mapping for two unchanged commands; client source and native gates run after their own successful prerequisites despite shared HTTP failure; retain every command, artifact and required failure, no continue-on-error, original45min budget",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
