@@ -237,6 +237,8 @@ def renderer(run: TestRun, manifest: Path, data: dict, part: str = "both") -> tu
         run.artifact("angular-package-assembler", assembler, 1024 * 1024 * 1024)
         angular_root = Path(os.environ["RUNNER_TEMP"]) / "angular-build"
         build = angular_root / "actual"
+        _command(run, ["cargo", "fetch", "--locked", "--target", "wasm32-unknown-unknown"],
+                 stage="renderer-angular-dependencies", timeout=300)
         _command(run, [sys.executable, "tools/build_angular_package.py",
                        "--input-root", "examples/angular-application",
                        "--toolchain-root", "examples/renderer-profile",

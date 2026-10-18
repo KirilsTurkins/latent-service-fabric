@@ -3,6 +3,8 @@ mod native_memory;
 pub(crate) use native_memory::sign_native_memory_current_java;
 mod reconstructed;
 pub(crate) use reconstructed::sign_reconstructed_current_java;
+mod refreshed;
+pub(crate) use refreshed::sign_refreshed_current_java;
 
 use std::{collections::BTreeSet, ffi::OsString, path::Path};
 

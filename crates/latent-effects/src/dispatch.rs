@@ -497,7 +497,7 @@ impl EffectRecord {
             RetryProof::KnownNonexecution
                 if self.disposition == Disposition::KnownFailed && !self.send_started =>
             {
-                None
+                self.retry_horizon_millis
             }
             RetryProof::QualifiedDeduplication {
                 valid_until_millis,

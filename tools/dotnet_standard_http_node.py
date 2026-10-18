@@ -25,6 +25,7 @@ from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_os import Probe
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
 from tools.rust_capsule_node import RecordingClient, deploy, delete_all, sample
+from tools.runtime_owner_refusal_diagnostic import retain as retain_runtime_owner_refusals
 from tools.rust_capsule_project import ROOT, fresh
 from tools.standard_http.observations import validate as validate_peer
 from tools.static_api.node import policy
@@ -291,6 +292,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         'BUILD-COMPLETE.json', 'component.wasm', 'build-observation.json', 'source-inputs.json',
         'recipe-inputs.json', 'runtime-profile.json', 'closed-runtime-coverage.json', 'bindings.json')}
     source_paths = ('tools/dotnet_standard_http_project.py', 'tools/dotnet_standard_http_node.py',
+        'tools/runtime_owner_refusal_diagnostic.py',
         'tools/qualify_dotnet_standard_http.py', 'examples/dotnet-standard-http/Main.cs',
         'examples/dotnet-standard-http/world.wit', 'tools/standard_http/process_peer.py',
         'tools/standard_http/peer.py', 'tools/standard_http/protocol.py', 'tools/standard_http/vectors.py',
@@ -324,7 +326,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             config = configuration(work/'node', signed, startup, credential)
             result['configurationIdentity'] = file_identity(config)
             stage = 'node'
-            node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1)
+            node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1,
+                           control_refusal_diagnostic=True)
             cleanup.callback(node.close)
             probe = Probe(node, before['latentd'])
             result['baselineOs'] = probe.sample()
@@ -380,6 +383,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             stop(client, node)
             result['shutdown'] = stopped_record(node)
             require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'], 'standard-dotnet-node-clean-shutdown')
+            retain_runtime_owner_refusals(node, output)
             node = None
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
@@ -405,7 +409,11 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         write_json(output/'FAILED.json', result)
         raise
     finally:
-        if node is not None: node.close()
+        if node is not None:
+            try:
+                node.close()
+            finally:
+                retain_runtime_owner_refusals(node, output)
         if peer is not None: peer.close()
 
 

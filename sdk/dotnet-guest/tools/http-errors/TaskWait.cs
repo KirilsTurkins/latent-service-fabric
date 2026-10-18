@@ -40,7 +40,7 @@ internal static class TaskWait
         Require(code is not null && code.Length == bytes && Hash(code) == digest);
     }
 
-    private static string BodyIdentity(MethodDefinition method, int skip = 0)
+    internal static string BodyIdentity(MethodDefinition method, int skip = 0)
     {
         if (!method.HasBody) return "no-body";
         var instructions = method.Body.Instructions.Skip(skip).ToList();

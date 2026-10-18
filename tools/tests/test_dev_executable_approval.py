@@ -285,8 +285,10 @@ class DetachedConsumer(unittest.TestCase):
     def test_watch_keeps_explicit_identity_and_stale_edit_refuses_without_deployment_or_promotion(self):
         from tools.dev_workflow import watch
         project_root, work, _output, verified, isolation = approval_tests.ExecutionApproval.fixture(self)
-        controller = project_root.parent / 'controller'
-        paths.new_directory(controller)
+        # The source fixture is not private controller state. Keep real locking
+        # and ownership checks active in a separate, correctly created workspace.
+        workspace = project_root.parent / 'controller'
+        paths.new_directory(workspace)
         source = project_root / 'main.rs'
         source.write_bytes(b'first source')
         explicit = common.digest(canonical(consumer.request(verified, isolation, common.digest(source.read_bytes()))))
@@ -313,13 +315,19 @@ class DetachedConsumer(unittest.TestCase):
             events.append(event)
             if event['event'] == 'deployed':
                 source.write_bytes(b'new source invalidates request')
+        cycles = 0
+        def check_session():
+            nonlocal cycles
+            cycles += 1
+            self.assertLessEqual(cycles, 4, f'watch fixture did not stop: {events}')
         with patch.object(project, 'load', return_value=(maintained(), A)), \
              patch.object(build_client, 'selection', side_effect=lambda _root: (A, common.digest(source.read_bytes()))), \
              patch.object(watch.time, 'sleep'):
-            result = watch.run(controller, connection, project_root, '/tools', build=execute, emit=emit,
-                               executable_approval=explicit)
+            result = watch.run(workspace, connection, project_root, '/tools', build=execute, emit=emit,
+                               executable_approval=explicit, check_session=check_session)
         self.assertEqual(result, {'state': 'stopped'})
         self.assertEqual(passed, [explicit, explicit])
+        self.assertEqual(cycles, 3)
         self.assertEqual(sum(event['event'] == 'deployed' for event in events), 1)
         self.assertEqual([event['code'] for event in events if event['event'] == 'edit-failed'],
                          ['dependency-execution-approval-mismatch'])

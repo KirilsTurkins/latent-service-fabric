@@ -357,5 +357,253 @@ class RawCompilerRetentionTests(unittest.TestCase):
             self.assertTrue((evidence / "native-aot-raw.wasm").is_file())
 
 
+
+class HttpSyncReadPortTests(unittest.TestCase):
+    """Ownership controls only; real BCL and signed-node execution stay mandatory."""
+
+    def setUp(self):
+        from tools.tests.test_dotnet_task_wait import TaskWaitPortTests
+        self.http = HttpErrorPortTests()
+        self.http.setUp()
+        self.addCleanup(self.http.doCleanups)
+        self.core = TaskWaitPortTests()
+        self.core.setUp()
+        self.addCleanup(self.core.doCleanups)
+        # Both independent ports must own inputs for this exact compiler build.
+        self.core.project = self.http.project
+        self.core.output = self.http.output
+        self.core.evidence = self.http.evidence
+        self.core.receipt["cecilDigest"] = http_errors.CECIL_DIGEST
+        self.core_port = self.core.prepare()
+        self.arguments = []
+        original_run = self.http.run_tool
+        def run(stage, *arguments):
+            self.arguments.append(arguments)
+            original_run(stage, *arguments)
+            if "--sync-read" in arguments:
+                result = json.loads(read_file(arguments[-1]))
+                result["synchronousRead"] = self.receipt()
+                arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        self.http.run_tool = run
+
+    def receipt(self):
+        return {**http_errors.SYNC_READ, "originalReadBodyDigest": "sha256:" + "a" * 64,
+            "originalAsyncBodyDigest": "sha256:" + "b" * 64, "unchangedOriginalMethods": 1400}
+
+    def prepare(self, **keywords):
+        return self.http.prepare(task_wait_port=self.core_port, **keywords)
+
+    def references(self, port):
+        values = [str(port.assembly), str(self.core_port.assembly)]
+        path = self.http.reference_files(port, references=values)
+        self.core_port.references.write_text("\n".join(values) + "\n")
+        return path
+
+    def test_selected_bridge_retains_both_immutable_inputs_and_joint_ilc_identity(self):
+        protected = []
+        port = self.prepare(protect_inputs=lambda *paths: protected.extend(paths))
+        self.assertEqual(self.arguments[0][2], "--sync-read")
+        self.assertEqual(protected, [port.assembly, port.targets])
+        self.assertIs(port.task_wait_port, self.core_port)
+        path = self.references(port)
+        http_result = port.finish(self.http.project, self.http.evidence)
+        core_result = self.core_port.finish(self.http.project, self.http.evidence)
+        self.assertEqual(http_result["synchronousRead"]["taskWaitDerivedDigest"], self.core_port.identity["digest"])
+        self.assertEqual(http_result["nativeAotReferenceBinding"]["responseFiles"][0]["digest"], digest(path.read_bytes()))
+        self.assertEqual(core_result["nativeAotReferenceBinding"]["responseFiles"][0]["digest"], digest(path.read_bytes()))
+        self.assertFalse(http_result["defaultClientComponentQualified"])
+        self.assertFalse(http_result["synchronousRead"]["defaultClientComponentQualified"])
+
+    def test_error_only_profile_does_not_install_or_claim_a_sync_read_bridge(self):
+        port = self.http.prepare()
+        self.assertNotIn("--sync-read", self.arguments[0])
+        self.assertIsNone(port.task_wait_port)
+        self.assertNotIn("synchronousRead", port.evidence)
+
+    def test_source_only_or_forged_corelib_port_denies_before_tool_or_project_mutation(self):
+        original = snapshot(self.http.project)
+        for value in (True, {}, SimpleNamespace(recheck=lambda: None)):
+            with self.subTest(value=type(value).__name__), self.assertRaisesRegex(ValueError, "authenticated-task-wait-required"):
+                self.http.prepare(task_wait_port=value)
+            self.assertEqual(snapshot(self.http.project), original)
+            self.assertEqual(self.arguments, [])
+
+    def test_changed_corelib_denies_before_transform_and_again_after_preparation(self):
+        original = self.core_port.assembly.read_bytes()
+        self.core_port.assembly.write_bytes(b"changed-corelib")
+        with self.assertRaisesRegex(ValueError, "derived"):
+            self.prepare()
+        self.assertEqual(self.arguments, [])
+        self.core_port.assembly.write_bytes(original)
+        port = self.prepare()
+        self.references(port)
+        self.core_port.assembly.write_bytes(b"changed-after-preparation")
+        with self.assertRaisesRegex(ValueError, "derived"):
+            port.finish(self.http.project, self.http.evidence)
+        self.assertFalse((self.http.evidence / "http-error-port.json").exists())
+
+    def test_different_source_capture_denies_before_http_tool_execution(self):
+        self.core_port.source_identity += b"different-source"
+        with self.assertRaisesRegex(ValueError, "source"):
+            self.prepare()
+        self.assertEqual(self.arguments, [])
+
+    def test_missing_original_foreign_or_duplicate_corelib_in_http_rsp_cannot_qualify(self):
+        port = self.prepare()
+        response = self.references(port)
+        for values in ([], [str(self.core.original)],
+                       [str(self.http.root / "foreign/System.Private.CoreLib.dll")],
+                       [str(self.core_port.assembly)] * 2):
+            response.write_text("-r:" + str(port.assembly) + "\n" + "\n".join("-r:" + value for value in values))
+            with self.subTest(values=values), self.assertRaisesRegex(ValueError, "joined-CoreLib-reference-drift"):
+                port.finish(self.http.project, self.http.evidence)
+            self.assertFalse((self.http.evidence / "http-error-port.json").exists())
+
+    def test_corelib_in_a_different_rsp_is_not_joint_native_aot_evidence(self):
+        port = self.prepare()
+        response = self.references(port)
+        response.write_text("-r:" + str(port.assembly) + "\n")
+        response.with_name("unrelated.rsp").write_text("-r:" + str(self.core_port.assembly) + "\n")
+        with self.assertRaisesRegex(ValueError, "joined-CoreLib-reference-drift"):
+            port.finish(self.http.project, self.http.evidence)
+
+    def test_changed_join_identity_does_not_reuse_old_http_evidence(self):
+        port = self.prepare()
+        self.references(port)
+        port.evidence["synchronousRead"]["taskWaitDerivedDigest"] = "sha256:" + "0" * 64
+        with self.assertRaisesRegex(ValueError, "CoreLib-identity-drift"):
+            port.finish(self.http.project, self.http.evidence)
+
+    def test_sync_receipt_rejects_expanded_methods_imports_false_qualification_and_shapes(self):
+        original = self.receipt()
+        http_errors.validate_sync_read(original)
+        changes = {"completion": "completed-task-shim", "bufferValidation": "none",
+            "emptyRead": "contact-provider", "disposal": "ignore", "generatedHelpers": 1,
+            "newHostImports": 1, "modifiedOriginalMethods": 2, "defaultClientComponentQualified": True,
+            "originalReadBodyDigest": "unknown", "originalAsyncBodyDigest": "sha256:" + "Z" * 64,
+            "unchangedOriginalMethods": 0, "unknown": "new-authority"}
+        for key, value in changes.items():
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "sync-read-rewrite-receipt"):
+                http_errors.validate_sync_read({**original, key: value})
+        for key in ("modifiedOriginalMethods", "generatedHelpers", "newHostImports", "unchangedOriginalMethods"):
+            with self.subTest(boolean=key), self.assertRaisesRegex(ValueError, "sync-read-rewrite-receipt"):
+                http_errors.validate_sync_read({**original, key: bool(original[key])})
+        for key in original:
+            with self.subTest(missing=key), self.assertRaisesRegex(ValueError, "sync-read-rewrite-receipt"):
+                http_errors.validate_sync_read({name: value for name, value in original.items() if name != key})
+
+    def test_missing_sync_receipt_cannot_modify_project_or_publish_derived_evidence(self):
+        original_run = self.http.run_tool
+        def incomplete(stage, *arguments):
+            original_run(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result["synchronousRead"]
+            arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        self.http.run_tool = incomplete
+        original = snapshot(self.http.project)
+        with self.assertRaisesRegex(ValueError, "rewrite-receipt"):
+            self.prepare()
+        self.assertEqual(snapshot(self.http.project), original)
+        self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
+
+
+    def test_response_read_error_mapping_is_retained_with_the_joint_ilc_receipt(self):
+        port = self.prepare()
+        self.references(port)
+        result = port.finish(self.http.project, self.http.evidence)
+        self.assertEqual(result["synchronousRead"]["responseReadErrors"], http_errors.RESPONSE_READ_ERRORS)
+        self.assertFalse(result["synchronousRead"]["responseReadErrors"]["pendingGuestIoQualified"])
+        self.assertEqual(result["synchronousRead"]["responseReadErrors"]["nativeErrorOwnership"], "dispose-before-throw")
+
+    def test_response_error_receipt_cannot_expand_scope_or_claim_native_drop_qualification(self):
+        original = http_errors.RESPONSE_READ_ERRORS
+        http_errors.validate_response_read_errors(dict(original))
+        for key in original:
+            with self.subTest(missing=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_response_read_errors({name: value for name, value in original.items() if name != key})
+        changes = {"method": "arbitrary-library::Read", "originalIlDigest": "sha256:" + "0" * 64,
+            "originalIlBytes": 445, "exceptionType": "WasiHttpWorld.WitException", "message": "raw-payload",
+            "nativeErrorOwnership": "discard", "closed": "throw-io-error", "cancellation": "swallow",
+            "unknownError": "return-eof", "modifiedOriginalMethods": 2, "generatedHelpers": 0,
+            "newHostImports": 1, "pendingGuestIoQualified": True, "unknown": "authority"}
+        for key, value in changes.items():
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_response_read_errors({**original, key: value})
+        for key in ("originalIlBytes", "modifiedOriginalMethods", "generatedHelpers", "newHostImports"):
+            with self.subTest(boolean=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_response_read_errors({**original, key: bool(original[key])})
+
+    def test_nested_response_error_receipt_rejects_boolean_counts_despite_dictionary_equality(self):
+        for key in ("modifiedOriginalMethods", "generatedHelpers", "newHostImports"):
+            forged = {**self.receipt(), "responseReadErrors": {
+                **http_errors.RESPONSE_READ_ERRORS, key: bool(http_errors.RESPONSE_READ_ERRORS[key])}}
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_sync_read(forged)
+
+    def test_missing_response_error_mapping_denies_before_project_or_evidence_publication(self):
+        original_run = self.http.run_tool
+        def incomplete(stage, *arguments):
+            original_run(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result["synchronousRead"]["responseReadErrors"]
+            arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        self.http.run_tool = incomplete
+        original = snapshot(self.http.project)
+        with self.assertRaisesRegex(ValueError, "rewrite-receipt"):
+            self.prepare()
+        self.assertEqual(snapshot(self.http.project), original)
+        self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
+
+    def test_request_content_headers_are_retained_with_the_joint_ilc_receipt(self):
+        port = self.prepare()
+        response = self.references(port)
+        result = port.finish(self.http.project, self.http.evidence)
+        headers = result["synchronousRead"]["requestContentHeaders"]
+        self.assertEqual(headers, http_errors.REQUEST_CONTENT_HEADERS)
+        self.assertFalse(headers["serializesContent"])
+        self.assertFalse(headers["buffersContent"])
+        self.assertFalse(headers["defaultClientComponentQualified"])
+        self.assertEqual(result["nativeAotReferenceBinding"]["responseFiles"],
+                         [{"digest": digest(response.read_bytes()), "size": response.stat().st_size}])
+
+    def test_request_content_headers_receipt_rejects_unknown_preimages_and_semantics(self):
+        original = http_errors.REQUEST_CONTENT_HEADERS
+        http_errors.validate_request_content_headers(dict(original))
+        for key in original:
+            with self.subTest(missing=key), self.assertRaisesRegex(ValueError, "request-content-headers-rewrite-receipt"):
+                http_errors.validate_request_content_headers({name: value for name, value in original.items() if name != key})
+        changes = {"method": "arbitrary-library::Send", "originalIlDigest": "sha256:" + "0" * 64,
+            "originalIlBytes": 296, "getter": "host-CLR-getter", "getterIlDigest": "sha256:" + "1" * 64,
+            "getterIlBytes": 103, "noContent": "invent-empty-body", "explicitLength": "overwrite",
+            "unknownLength": "buffer-content", "modifiedOriginalMethods": 2, "generatedHelpers": 0,
+            "newHostImports": 1, "serializesContent": True, "buffersContent": True,
+            "defaultClientComponentQualified": True, "unknown": "authority"}
+        for key, value in changes.items():
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "request-content-headers-rewrite-receipt"):
+                http_errors.validate_request_content_headers({**original, key: value})
+
+    def test_nested_request_content_headers_receipt_requires_exact_field_types(self):
+        original = http_errors.REQUEST_CONTENT_HEADERS
+        for key in ("modifiedOriginalMethods", "generatedHelpers", "newHostImports",
+                    "serializesContent", "buffersContent", "defaultClientComponentQualified"):
+            value = bool(original[key]) if type(original[key]) is int else int(original[key])
+            forged = {**self.receipt(), "requestContentHeaders": {**original, key: value}}
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "request-content-headers-rewrite-receipt"):
+                http_errors.validate_sync_read(forged)
+
+    def test_missing_request_content_headers_mapping_denies_before_project_or_evidence_publication(self):
+        original_run = self.http.run_tool
+        def incomplete(stage, *arguments):
+            original_run(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result["synchronousRead"]["requestContentHeaders"]
+            arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        self.http.run_tool = incomplete
+        original = snapshot(self.http.project)
+        with self.assertRaisesRegex(ValueError, "rewrite-receipt"):
+            self.prepare()
+        self.assertEqual(snapshot(self.http.project), original)
+        self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
+
 if __name__ == "__main__":
     unittest.main()

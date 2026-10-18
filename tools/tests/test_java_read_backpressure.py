@@ -240,6 +240,7 @@ class ReadBackpressureControls(unittest.TestCase):
                 fault.staging_witness(changed, claimed)
 
     def test_recording_client_preserves_raw_busy_and_reaps_with_absolute_read_cutoff(self):
+        import hashlib
         clock = Clock()
         raw = encoded(busy('dispatcher inspect'))
         completed = []
@@ -266,7 +267,10 @@ class ReadBackpressureControls(unittest.TestCase):
             self.assertEqual(completed, [110])
             self.assertEqual((client.evidence.directory / 'cli-001.stdout').read_bytes(), raw)
             self.assertEqual((client.evidence.directory / 'cli-001-process.json').read_bytes(),
-                             encoded({'exitStatus': 5, 'reaped': True}))
+                encoded({'exitStatus': 5, 'reaped': True,
+                    'stdout': {'path': 'cli-001.stdout', 'bytes': len(raw), 'digest': 'sha256:' + hashlib.sha256(raw).hexdigest()},
+                    'stderr': {'empty': True, 'bytes': 0, 'digest': 'sha256:' + hashlib.sha256(b'').hexdigest()}}))
+            self.assertFalse((client.evidence.directory / 'cli-001.stderr').exists())
             self.assertFalse(value['outcomeKnown'])
             self.assertEqual(client.calls, 1)
 
