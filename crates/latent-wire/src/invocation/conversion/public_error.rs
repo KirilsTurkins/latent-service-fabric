@@ -182,7 +182,13 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("consumed", Unsigned),
             ("requested", Unsigned),
         ],
-        "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
+        "activation.guest-trap-kind" => &[
+            ("kind", Value::GuestTrapKind),
+            (
+                "phase",
+                Known(&["instantiate", "export-lookup", "call-and-postreturn"]),
+            ),
+        ],
         "activation.guest-host-failure" => &[("code", Value::PlatformCode)],
         "activation.guest-trap" => &[(
             "code",
@@ -214,6 +220,11 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
 }
 
 fn public_detail(mut detail: ErrorDetail, limits: &InvocationLimits) -> Option<ErrorDetail> {
+    if detail.kind == "activation.guest-trap-kind"
+        && detail.fields.get("kind").map(String::as_str) != Some("runtime-error")
+    {
+        detail.fields.remove("phase");
+    }
     let allowed = fields(&detail.kind)?;
     let mut public = latent_core::Metadata::new();
     for (key, kind) in allowed.iter().take(limits.max_platform_error_fields) {

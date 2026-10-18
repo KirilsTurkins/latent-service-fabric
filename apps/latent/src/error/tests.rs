@@ -2,6 +2,69 @@ use super::*;
 use latent_core::ErrorDetail;
 
 #[test]
+fn runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certainty() {
+    let detail = |kind: &str, phase: &str| ErrorDetail {
+        kind: "activation.guest-trap-kind".into(),
+        fields: [
+            ("kind".into(), kind.into()),
+            ("phase".into(), phase.into()),
+            ("provider".into(), "private-fixture-text".into()),
+        ]
+        .into(),
+    };
+    let error = |item| PlatformError {
+        code: PlatformErrorCode::GuestTrap,
+        message: "private-fixture-text".into(),
+        retryable: false,
+        details: vec![item],
+    };
+    for phase in ["instantiate", "export-lookup", "call-and-postreturn"] {
+        let public = platform_value(&error(detail("runtime-error", phase)));
+        assert_eq!(public["code"], "guest-trap");
+        assert_eq!(public["retryable"], false);
+        assert_eq!(
+            public["details"],
+            json!([{"kind":"activation.guest-trap-kind",
+                "fields":{"kind":"runtime-error", "phase":phase}}])
+        );
+        assert!(!public.to_string().contains("private-fixture-text"));
+    }
+    for (kind, phase) in [
+        ("runtime-error", "Instantiate"),
+        ("runtime-error", " instantiate"),
+        ("runtime-error", "instantiate\n"),
+        ("runtime-error", "private-fixture-text"),
+        ("unreachable-code", "instantiate"),
+    ] {
+        let public = platform_value(&error(detail(kind, phase)));
+        assert_eq!(
+            public["details"],
+            json!([{"kind":"activation.guest-trap-kind", "fields":{"kind":kind}}])
+        );
+    }
+    let response = proto::PlatformError {
+        code: "guest-trap".into(),
+        message: "private-fixture-text".into(),
+        retryable: false,
+        detail_items: vec![proto::ErrorDetail {
+            kind: "activation.guest-trap-kind".into(),
+            fields: [
+                ("kind".into(), "runtime-error".into()),
+                ("phase".into(), "instantiate".into()),
+            ]
+            .into(),
+        }],
+    };
+    let status = Status::with_details(Code::Internal, "private", response.encode_to_vec().into());
+    let failure = Failure::from_status(&status);
+    assert!(!failure.outcome_known);
+    assert!(failure.request_dispatched);
+    assert_eq!(failure.error["code"], "guest-trap");
+    assert_eq!(failure.error["retryable"], false);
+    assert_eq!(failure.error["details"][0]["fields"]["phase"], "instantiate");
+}
+
+#[test]
 fn guest_host_failure_projects_only_closed_code_without_changing_known_outcome() {
     for code in [
         PlatformErrorCode::Unavailable,

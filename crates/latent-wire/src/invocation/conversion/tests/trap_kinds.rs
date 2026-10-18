@@ -418,3 +418,95 @@ fn host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds()
     let public = sanitize_platform_error(error.into(), &InvocationLimits::default()).unwrap();
     assert!(public.detail_items.is_empty());
 }
+
+#[test]
+fn runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics() {
+    let limits = InvocationLimits::default();
+    let detail = |kind: &str, phase: &str| ErrorDetail {
+        kind: "activation.guest-trap-kind".into(),
+        fields: Metadata::from([
+            ("kind".into(), kind.into()),
+            ("phase".into(), phase.into()),
+            ("provider".into(), "private-fixture-text".into()),
+        ]),
+    };
+    for phase in ["instantiate", "export-lookup", "call-and-postreturn"] {
+        let outcome = trap_failure(vec![detail("runtime-error", phase)]);
+        let mut expected = outcome.clone();
+        let ActivationOutcome::Failed { error, .. } = &mut expected else {
+            unreachable!()
+        };
+        error.message = public_platform_message(error.code).into();
+        error.details[0].fields.remove("provider");
+        let expected_error = error.clone();
+        let encoded = public_invocation_response_to_proto(response(outcome.clone()), &limits)
+            .encode_to_vec();
+        let decoded = proto::InvokeResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            invocation_response_from_proto(decoded).unwrap().outcome,
+            expected
+        );
+        let encoded = public_activation_status_to_proto(status(&outcome), &limits).encode_to_vec();
+        let decoded = proto::ActivationStatus::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            activation_status_from_proto(decoded)
+                .unwrap()
+                .terminal_outcome,
+            Some(expected.retained_terminal_outcome())
+        );
+        let ActivationOutcome::Failed { error, .. } = outcome else {
+            unreachable!()
+        };
+        let public = sanitize_platform_error(error.into(), &limits).unwrap();
+        let expected_proto: proto::PlatformError = expected_error.into();
+        assert_eq!(public, expected_proto);
+        assert!(!format!("{public:?}").contains("private-fixture-text"));
+    }
+    for (kind, phase) in [
+        ("runtime-error", "Instantiate"),
+        ("runtime-error", " instantiate"),
+        ("runtime-error", "instantiate\n"),
+        ("runtime-error", "private-fixture-text"),
+        ("runtime-error", ""),
+        ("unreachable-code", "instantiate"),
+    ] {
+        let ActivationOutcome::Failed { error, .. } = trap_failure(vec![detail(kind, phase)]) else {
+            unreachable!()
+        };
+        let public = sanitize_platform_error(error.into(), &limits).unwrap();
+        assert_eq!(public.detail_items.len(), 1);
+        assert_eq!(
+            public.detail_items[0].fields,
+            Metadata::from([("kind".into(), kind.into())])
+        );
+        assert_eq!(public.code, "guest-trap");
+        assert!(!public.retryable);
+    }
+    let ActivationOutcome::Failed { error, .. } =
+        trap_failure(vec![detail("runtime-error", "call-and-postreturn")])
+    else {
+        unreachable!()
+    };
+    for limits in [
+        InvocationLimits {
+            max_platform_error_fields: 1,
+            ..Default::default()
+        },
+        InvocationLimits {
+            max_platform_error_details: 0,
+            ..Default::default()
+        },
+        InvocationLimits {
+            max_string_bytes: 13,
+            ..Default::default()
+        },
+    ] {
+        let public = sanitize_platform_error(error.clone().into(), &limits).unwrap();
+        assert!(public
+            .detail_items
+            .iter()
+            .all(|item| !item.fields.contains_key("phase")));
+        assert_eq!(public.code, "guest-trap");
+        assert!(!public.retryable);
+    }
+}
