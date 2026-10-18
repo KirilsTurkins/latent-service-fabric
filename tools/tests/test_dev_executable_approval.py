@@ -285,13 +285,22 @@ class DetachedConsumer(unittest.TestCase):
     def test_watch_keeps_explicit_identity_and_stale_edit_refuses_without_deployment_or_promotion(self):
         from tools.dev_workflow import watch
         project_root, work, _output, verified, isolation = approval_tests.ExecutionApproval.fixture(self)
+        controller = project_root.parent / 'controller'
+        paths.new_directory(controller)
         source = project_root / 'main.rs'
         source.write_bytes(b'first source')
         explicit = common.digest(canonical(consumer.request(verified, isolation, common.digest(source.read_bytes()))))
         events, passed = [], []
         connection = Mock()
-        connection.call.side_effect = lambda operation, *args, **kwargs: (
-            {'state': 'stopped' if len(passed) == 2 else 'ready'} if operation == 'status' else {'generation': '1'})
+        status_calls = 0
+        def call(operation, *args, **kwargs):
+            nonlocal status_calls
+            if operation == 'status':
+                status_calls += 1
+                self.assertLessEqual(status_calls, 4, events)
+                return {'state': 'stopped' if len(passed) == 2 else 'ready'}
+            return {'generation': '1'}
+        connection.call.side_effect = call
         def execute(_workspace, _connection, _source, _tool_root, **kwargs):
             passed.append(kwargs['executable_approval'])
             try:
@@ -307,7 +316,7 @@ class DetachedConsumer(unittest.TestCase):
         with patch.object(project, 'load', return_value=(maintained(), A)), \
              patch.object(build_client, 'selection', side_effect=lambda _root: (A, common.digest(source.read_bytes()))), \
              patch.object(watch.time, 'sleep'):
-            result = watch.run(project_root, connection, project_root, '/tools', build=execute, emit=emit,
+            result = watch.run(controller, connection, project_root, '/tools', build=execute, emit=emit,
                                executable_approval=explicit)
         self.assertEqual(result, {'state': 'stopped'})
         self.assertEqual(passed, [explicit, explicit])
