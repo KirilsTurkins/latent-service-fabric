@@ -447,5 +447,125 @@ class IntegrationContractTests(unittest.TestCase):
                 _read_receipt(Path(directory) / "missing.json", lease, data)
 
 
+class AngularTargetPreparationTests(unittest.TestCase):
+    def _renderer(self, part, calls, failure=None):
+        import os
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import ci_lane_worker as worker
+        from tools.owned_test_process import Result
+
+        stage = None
+
+        def mark(value):
+            nonlocal stage
+            stage = value
+
+        def command(args, *, cwd, timeout, maximum, env, check):
+            calls.append({"stage": stage, "args": args, "cwd": cwd,
+                          "timeout": timeout, "maximum": maximum, "check": check})
+            if stage == "renderer-angular-dependencies" and failure is not None:
+                raise failure
+            return Result(1 if stage == "renderer-negative-control" else 0, b"")
+
+        run = SimpleNamespace(mark=mark, command=command, artifact=lambda *args: None)
+        with tempfile.TemporaryDirectory() as directory:
+            component = Path(directory) / "browser-component/application.wasm"
+            component.parent.mkdir()
+            component.write_bytes(b"command-order-fixture")
+            with patch.dict(os.environ, RUNNER_TEMP=directory), patch.object(
+                    worker.shutil, "which", side_effect=lambda name: "/qualified/" + name):
+                return worker.renderer(run, Path(directory) / "inventory.jsonl",
+                                       ci_suite_inventory.load(), part)
+
+    def test_angular_and_combined_workers_fetch_locked_target_before_offline_package(self):
+        from tools import ci_lane_worker as worker
+
+        for part, lane in (("angular", "renderer-angular"), ("both", "renderer")):
+            with self.subTest(part=part):
+                calls = []
+                steps, cases = self._renderer(part, calls)
+                fetches = [index for index, call in enumerate(calls)
+                           if call["stage"] == "renderer-angular-dependencies"]
+                self.assertEqual(len(fetches), 1)
+                fetch = calls[fetches[0]]
+                self.assertEqual(fetch, {
+                    "stage": "renderer-angular-dependencies",
+                    "args": ["cargo", "fetch", "--locked", "--target", "wasm32-unknown-unknown"],
+                    "cwd": worker.ROOT, "timeout": 300, "maximum": 8 * 1024 * 1024,
+                    "check": True,
+                })
+                package = calls[fetches[0] + 1]
+                self.assertEqual(package["stage"], "renderer-angular-package")
+                self.assertEqual(package["args"][1], "tools/build_angular_package.py")
+                self.assertEqual(package["timeout"], 780)
+                self.assertEqual(steps, worker.RENDERER_STEPS[5:] if part == "angular"
+                                 else worker.RENDERER_STEPS)
+                self.assertEqual(tuple(cases), _expected_cases(ci_suite_inventory.load(), lane))
+
+    def test_target_fetch_failure_propagates_without_starting_package_or_runtime(self):
+        from tools.owned_test_process import ProcessFailure
+
+        for part in ("angular", "both"):
+            with self.subTest(part=part):
+                calls = []
+                failure = ProcessFailure("assertion-failure", "child-exit-failure")
+                with self.assertRaises(ProcessFailure) as caught:
+                    self._renderer(part, calls, failure)
+                self.assertIs(caught.exception, failure)
+                self.assertEqual(calls[-1]["stage"], "renderer-angular-dependencies")
+                self.assertEqual(sum(call["stage"] == "renderer-angular-dependencies"
+                                     for call in calls), 1)
+                self.assertFalse({"renderer-angular-package", "renderer-angular-runtime",
+                                  "renderer-angular-hydration"}
+                                 & {call["stage"] for call in calls})
+
+    def test_public_worker_keeps_its_original_commands_without_the_new_fetch(self):
+        from tools import ci_lane_worker as worker
+
+        calls = []
+        steps, cases = self._renderer("public", calls)
+        self.assertEqual([call["stage"] for call in calls], [
+            "renderer-npm-prepare", "renderer-profile-build", "renderer-node-candidate",
+            "renderer-ssr", "renderer-profile-hydration", "renderer-browser-unit",
+            "renderer-browser-build", "renderer-browser-boundary", "renderer-http-response-policy",
+            "renderer-public-fixture", "renderer-generic-cells", "renderer-negative-control",
+            "renderer-negative-control-proof",
+        ])
+        self.assertFalse(any(call["args"][:2] == ["cargo", "fetch"] for call in calls))
+        self.assertEqual(steps, worker.RENDERER_STEPS[:5])
+        self.assertEqual(tuple(cases), _expected_cases(ci_suite_inventory.load(), "renderer-public"))
+
+    def test_t1_workflow_fetch_is_bounded_to_the_original_angular_condition_and_order(self):
+        import yaml
+        from tools import ci_lane_worker as worker
+
+        workflow = yaml.safe_load((worker.ROOT / ".github/workflows/ci.yml").read_text())
+        steps = workflow["jobs"]["rust"]["steps"]
+        positions = [index for index, step in enumerate(steps)
+                     if step.get("name") == "Fetch locked Angular target dependencies"]
+        self.assertEqual(len(positions), 1)
+        fetch = steps[positions[0]]
+        self.assertEqual(fetch, {
+            "name": "Fetch locked Angular target dependencies",
+            "if": "matrix.lane == 'angular-t1' && needs.profile.outputs.renderer == 'true'",
+            "timeout-minutes": 5,
+            "run": "cargo fetch --locked --target wasm32-unknown-unknown",
+        })
+        package = steps[positions[0] + 1]
+        self.assertEqual(package["name"], "Prepare fresh actual Angular package for T1")
+        self.assertEqual(fetch["if"], package["if"])
+        self.assertNotIn("continue-on-error", fetch)
+        self.assertEqual(package["run"].splitlines(), [
+            "npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund",
+            'mkdir -p "$RUNNER_TEMP/phase2-gate"',
+            'objcopy --strip-debug "$PWD/target/debug/latent" "$RUNNER_TEMP/lsf-angular-package-assembler"',
+            'python3 tools/build_angular_package.py --input-root examples/angular-application '
+            '--toolchain-root examples/renderer-profile --cli "$RUNNER_TEMP/lsf-angular-package-assembler" '
+            '--target-root "$RUNNER_TEMP/angular-build" --output "$RUNNER_TEMP/angular-build/actual" '
+            '--cargo-target-dir "$PWD/target" --repository https://example.com/source',
+        ])
+
+
 if __name__ == "__main__":
     unittest.main()

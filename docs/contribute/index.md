@@ -27,6 +27,10 @@ their declared Linux x86_64 environment. Metadata planning and documentation
 checks can run on Windows; [portable component tests](../component-development/portable-tests.md)
 cover a smaller boundary and do not qualify the Linux node.
 
+For IntelliJ IDEA 2026, open the repository root and follow the
+[IDE setup guide](../development/intellij-idea.md) for shared modules, run
+configurations and local SDK selection.
+
 For a new checkout:
 
 ```bash

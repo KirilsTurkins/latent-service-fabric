@@ -1,0 +1,111 @@
+{
+  "schema": "recovery-evidence-file-bound-followup.v1",
+  "recordedAtUtc": "2026-10-16T07:26:20.344836+00:00",
+  "pullRequest": "https://github.com/KirilsTurkins/latent-service-fabric/pull/1047",
+  "status": "FILE_COUNT_FAILURE_FIXED_PYTHON_CONTROLS_PASS_ORDINARY_REQUALIFICATION_PENDING",
+  "closedFailure": {
+    "nativeAndConductorCommit": "536acdd9c1f1ed2df73e41f44a68258e14057484",
+    "privateNodeBaseSameCommit": true,
+    "privateNodeOnlyTwoHttpRefusalObservationOverlays": true,
+    "privateNodeSHA256": "c72e0d48fc2b4692eff8dd0c82ae63c9e74bc87dba389c309cc6e542d5d14b7e",
+    "outerReceiptSHA256": "61fed47cc166dd0c9e6363d8803c5d1791861c0add6722ab4b433062cab6b137",
+    "seconds": 356.831104,
+    "primaryExitCode": 1,
+    "wrapperExitCode": 125,
+    "outerExitCode": 1,
+    "trackedProcesses": 133,
+    "forcedCleanup": true,
+    "ownedProcessesRemaining": 0,
+    "allElevenSourceAndProductPostguardsPassed": true,
+    "fixedFailureReason": "original-evidence-byte-bound",
+    "reportedFailureFrames": [
+      "terminal run finally inventory publication",
+      "Evidence.record",
+      "Evidence.write",
+      "Evidence._write original file and byte bounds"
+    ],
+    "regularEvidenceFiles": 1024,
+    "evidenceBytes": 1215221,
+    "maximumFileBytes": 17988,
+    "caseFiles": 46,
+    "cliOutputAndProcessTriplets": 207,
+    "maximumHttpOrdinal": 65,
+    "maximumNodeOrdinal": 19,
+    "campaignAndInventoryReceiptsWritten": false,
+    "originalClosedFreezerRefusalPreserved": true,
+    "httpRefusalMarkersAccepted": false,
+    "metadataOnlyCustodySHA256": "6854b0d46517bad1f62fe65f08ec3ab95ca7caf5173b5dc8466e102ec8362aee",
+    "fileBoundMetadataSHA256": "81f1021cca023e3f268c633045beabcfb46acaa5c72e744e13412318b44643e8"
+  },
+  "repair": {
+    "implementationParentCommit": "536acdd9c1f1ed2df73e41f44a68258e14057484",
+    "sourceFilesSHA256": {
+      "tools/java_transaction_qualification/evidence.py": "aab4c32860200525780292eff1f853586a9aa544f23969d030a959864ea04d28",
+      "tools/java_transaction_qualification/lifecycle.py": "e8f0d83720aaf0cfc35bd842fc2e82f04624edd102787d805bd5917da294b207",
+      "tools/run_java_transaction_http_qualification.py": "47810a92f7d423eee40e6c9d85d1a1b17872bfa2ae054091f2ac28e48827cfd4",
+      "tools/run_java_pending_recovery_qualification.py": "5216621113637a8c5ff96ccbab5ac93fb9e3a6dcde9ac3a5b188829289453b13",
+      "tools/run_java_early_http_qualification.py": "a7d274c443d7f6661f1164c27d48d25b471309ab69cc9c0eadfd062d4b4ad0ee"
+    },
+    "changes": [
+      "Retain exact captured empty CLI and helper streams as explicit zero-byte digest descriptors in each exclusive process record; keep every nonempty stream in its original raw file.",
+      "Attempt each original node and recipient close independently under the original cancellation deferral; preserve body failures and original pending-signal delivery.",
+      "Clear the startup process pointer before closing an owner whose started-evidence publication failed.",
+      "Write a failed campaign receipt even when inventory publication reaches its original bound; retain primary diagnostics and never invent an inventory or successful qualification.",
+      "Apply the same failed-receipt and owner-close rules to terminal, retained resume, pending and EARLY entrypoints."
+    ],
+    "unchangedBounds": {
+      "evidenceFiles": 1024,
+      "individualEvidenceBytes": 1048576,
+      "totalEvidenceBytes": 33554432,
+      "cliCalls": 256,
+      "httpRequests": 128,
+      "measuredCases": 64,
+      "programmeInnerSeconds": 1200,
+      "programmeOuterSeconds": 1250
+    },
+    "nodeAndRecipientRawStreamCapturePathsUnchanged": true,
+    "programmeCommandsOrderAndAssertionsUnchanged": true
+  },
+  "pythonValidation": {
+    "existingFullModules": 16,
+    "existingTestsPassed": 250,
+    "existingReceiptSHA256": "6527dd2d94921f6f097ccf0e1546292b91ab55186bb4863ef6be817b812380f9",
+    "newRegressionTestsPassed": 24,
+    "newReceiptSHA256": "3a09512bb27e3f5501a57fb96ff6178a8765bf0d686efdf1544b059599d24b25",
+    "totalPassed": 274,
+    "strictNewCaseContractPassed": 24,
+    "testModule": "tools/tests/test_java_transaction_evidence_cleanup.py",
+    "testModuleSHA256": "bc15e012d3edcf15ff3226d3aac44c87c59b756351d76956cda3a9d4d990b12e",
+    "strictFragmentSHA256": "c972bb50aeaf3e752b94ba89297319212c468dbfe659733692fdabe39cb95efa",
+    "rootCombinedReviewSHA256": "cc27b4996d6825fbf1dbe9bd4635f3489a691b4a3aea6af3f037127b9a62ec11",
+    "observed207CliAnd403OtherFilesAfterCompaction": 817,
+    "observedFixtureWithPublishedInventory": 818,
+    "allTestedWorkingBytesEqualCanonicalStagedGitBytes": true,
+    "ciCoverage": {
+      "passed": true,
+      "baselineRunBlocks": 88,
+      "currentRequiredRunBlocks": 285,
+      "delegatedScriptOwners": 151,
+      "receiptSHA256": "597c4237f3adca559aa59d5e29534638e3630f3fb459d6e71b78fba0192e64dc"
+    },
+    "productionFivePathIndependentReviewSHA256": "38bbf6386ab0dc19b12bac3abc825801553358da056f52c01deb1b29b80d3cd7"
+  },
+  "priorNativeValidation": {
+    "sourceCommit": "536acdd9c1f1ed2df73e41f44a68258e14057484",
+    "activePassed": 702,
+    "originalIgnored": 30,
+    "closedReceiptSHA256": "af551bebe9c46a3f0165aac4655e1b0466bb8ce4a0f7bbd5bdf903a60c5db5a9",
+    "boundary": "These native results and six default builds remain attributed to their actual536 source; they are not new runtime qualification of this Python follow-up."
+  },
+  "qualification": {
+    "ordinaryTerminalOnThisFollowup": false,
+    "ordinaryPendingOnThisFollowup": false,
+    "ordinaryEarlyOnThisFollowup": false,
+    "originalHttp044CauseEstablished": false,
+    "historicalStartupCauseEstablished": false,
+    "wholeHead": false,
+    "allLinkedIssueAcceptance": false,
+    "ticketClosures": []
+  },
+  "next": "Build the coherent current-source roles and run the original ordinary terminal, pending and EARLY programmes. Preserve the consumed failed private attempt and original limits."
+}

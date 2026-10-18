@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.ci.contracts.v2",
   "kind": "python",
-  "reviewReason": "Retain every original case/decorator/skip. The shared graph fixture adds callable wall-clock symbols for the two exact clock interfaces; all new named-facet denial and tamper cases are reviewed.",
+  "reviewReason": "Add six exact compiler-selected private retirement primary-edge, signature, marker, provider and no-selection byte-preservation controls while retaining all eleven earlier cases and guards.",
   "module": "tools/tests/test_dotnet_exact_composition.py",
   "cases": [
     "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution",
@@ -10,6 +10,12 @@
     "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough",
     "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source",
     "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt",
+    "RetirementCompositionTests.test_member_coverage_checks_the_private_consumer_and_primary_signature",
+    "RetirementCompositionTests.test_private_port_receipt_cannot_enable_or_hide_an_unselected_edge",
+    "RetirementCompositionTests.test_private_port_requires_selected_compiler_profile_and_exact_primary_provider",
+    "RetirementCompositionTests.test_selected_private_owner_has_one_primary_edge_and_no_new_host_authority",
+    "RetirementCompositionTests.test_sync_parameter_result_or_renamed_private_drain_is_rejected_on_either_side",
+    "RetirementCompositionTests.test_unselected_composition_source_and_host_edges_are_byte_identical",
     "WallFacetCompositionTests.test_changed_wall_facet_bytes_fail_before_composer_execution",
     "WallFacetCompositionTests.test_duplicate_clock_export_requires_exact_named_wall_facet",
     "WallFacetCompositionTests.test_member_coverage_accepts_only_the_same_named_wall_override",
@@ -27,7 +33,13 @@
     "WallFacetCompositionTests.test_wall_name_does_not_authorize_different_ports_versions_or_extra_authority": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
     "WallFacetCompositionTests.test_duplicate_clock_export_requires_exact_named_wall_facet": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
     "WallFacetCompositionTests.test_member_coverage_accepts_only_the_same_named_wall_override": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
-    "WallFacetCompositionTests.test_changed_wall_facet_bytes_fail_before_composer_execution": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5"
+    "WallFacetCompositionTests.test_changed_wall_facet_bytes_fail_before_composer_execution": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
+    "RetirementCompositionTests.test_member_coverage_checks_the_private_consumer_and_primary_signature": "086a785242ee1da2039339d1031debdfcd518bbd4b4e9b130f7ea94971f7b384",
+    "RetirementCompositionTests.test_private_port_receipt_cannot_enable_or_hide_an_unselected_edge": "086a785242ee1da2039339d1031debdfcd518bbd4b4e9b130f7ea94971f7b384",
+    "RetirementCompositionTests.test_private_port_requires_selected_compiler_profile_and_exact_primary_provider": "086a785242ee1da2039339d1031debdfcd518bbd4b4e9b130f7ea94971f7b384",
+    "RetirementCompositionTests.test_selected_private_owner_has_one_primary_edge_and_no_new_host_authority": "086a785242ee1da2039339d1031debdfcd518bbd4b4e9b130f7ea94971f7b384",
+    "RetirementCompositionTests.test_sync_parameter_result_or_renamed_private_drain_is_rejected_on_either_side": "086a785242ee1da2039339d1031debdfcd518bbd4b4e9b130f7ea94971f7b384",
+    "RetirementCompositionTests.test_unselected_composition_source_and_host_edges_are_byte_identical": "086a785242ee1da2039339d1031debdfcd518bbd4b4e9b130f7ea94971f7b384"
   },
   "guardDefinitions": {
     "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471": {
@@ -52,6 +64,18 @@
       "fixtureGuards": [
         "module:setup-sha256:e6f9fb638b45ed80dc12295e725ad5ebb5acb20aedac52f4c87aadcb95bbbb71",
         "class:setup-sha256:49c4fbc4189c9d72236491a93c6e80c64fe712430640c69d6fd0f5dcb93b712b"
+      ]
+    },
+    "086a785242ee1da2039339d1031debdfcd518bbd4b4e9b130f7ea94971f7b384": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e6f9fb638b45ed80dc12295e725ad5ebb5acb20aedac52f4c87aadcb95bbbb71",
+        "class:setup-sha256:c44bee6a2fc9afc5b670ed2985d46512c6ee88476db0ccdccf4067d9730b4d85"
       ]
     }
   }

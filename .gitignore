@@ -1,7 +1,20 @@
 /target/
 /.zig-cache/
 __pycache__/
-/.idea/
+# Share only the reviewed IntelliJ project model. Workspace, SDK paths,
+# caches, tasks, shelves and other personal settings remain untracked.
+/.idea/*
+!/.idea/encodings.xml
+!/.idea/externalDependencies.xml
+!/.idea/misc.xml
+!/.idea/modules.xml
+!/.idea/vcs.xml
+!/.idea/modules/
+/.idea/modules/*
+!/.idea/modules/lsf*.iml
+/.run/*
+!/.run/LSF-*.run.xml
+/.venv/
 /.vscode/
 *.swp
 *.swo

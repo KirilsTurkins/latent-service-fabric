@@ -192,6 +192,7 @@ class NamespaceReadBackpressureControls(unittest.TestCase):
         observed.call.assert_not_called()
 
     def test_real_recording_client_retains_busy_bytes_and_reaps_same_request(self):
+        import hashlib
         clock = Clock()
         responses = [busy('state inspect'), inspected()]
         with tempfile.TemporaryDirectory() as temporary:
@@ -202,9 +203,14 @@ class NamespaceReadBackpressureControls(unittest.TestCase):
             self.assertEqual(completed, [125., 125.])
             self.assertEqual(observed.calls, 2)
             for index, response in enumerate(responses, 1):
-                self.assertEqual((observed.evidence.directory / f'cli-{index:03d}.stdout').read_bytes(), encoded(response))
+                raw = encoded(response)
+                name = f'cli-{index:03d}.stdout'
+                self.assertEqual((observed.evidence.directory / name).read_bytes(), raw)
                 self.assertEqual((observed.evidence.directory / f'cli-{index:03d}-process.json').read_bytes(),
-                                 encoded({'exitStatus': 5 if index == 1 else 0, 'reaped': True}))
+                    encoded({'exitStatus': 5 if index == 1 else 0, 'reaped': True,
+                        'stdout': {'path': name, 'bytes': len(raw), 'digest': 'sha256:' + hashlib.sha256(raw).hexdigest()},
+                        'stderr': {'empty': True, 'bytes': 0, 'digest': 'sha256:' + hashlib.sha256(b'').hexdigest()}}))
+                self.assertFalse((observed.evidence.directory / f'cli-{index:03d}.stderr').exists())
 
     def test_original_256_call_limit_still_blocks_the_next_busy_observation(self):
         clock = Clock()

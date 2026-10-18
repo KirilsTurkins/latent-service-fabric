@@ -57,7 +57,8 @@ def install(directory: Path, sdk: Path, commands) -> Path:
     return observed(directory, sdk)
 
 
-def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, additional_adapters=()) -> dict:
+def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, additional_adapters=(),
+                  owned_retirement: bool = False) -> dict:
     """Wire each observed WASI import once, using its complete interface name.
 
     The pinned WAC plug command also semver-matches exports. An adapter which
@@ -85,6 +86,11 @@ def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, addit
     raw_names = observe(raw, 'native-aot-raw.wit.json', coverage['rawComponentDigest'], coverage['rawWitDigest'])
     graphs.append(observe(compiler.runtime, 'closed-runtime-adapter.wit.json',
                           coverage['runtimeAdapterDigest'], coverage['runtimeWitDigest']))
+    from tools.dotnet_guest.retirement import composition_edges
+    private_edges = composition_edges(decode(inputs[0][3], maximum_graph),
+        decode(inputs[1][3], maximum_graph), owned_retirement)
+    require(coverage.get('compilerPrivateImports', []) == list(private_edges),
+            'dotnet-retirement-composition-receipt')
     extra = coverage.get('additionalAdapters')
     require(isinstance(extra, list) and len(extra) == len(additional_adapters), 'dotnet-composition-adapter-receipt')
     adapters = [('primary', compiler.runtime)]
@@ -110,10 +116,12 @@ def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, addit
     lines.append('let application = new lsf:application {')
     edges = []
     for name in raw_names['imports']:
-        if not name.startswith('wasi:'):
+        if not name.startswith('wasi:') and name not in private_edges:
             continue  # Original application authority stays an explicit host import.
         require(name in supplied, 'dotnet-composition-exact-export-missing')
         ordinal, literal = supplied[name], json.dumps(name)
+        if name in private_edges:
+            require(ordinal == 0, 'dotnet-retirement-primary-provider')
         lines.append('    ' + literal + ': runtime' + str(ordinal) + '[' + literal + '],')
         edges.append({'interface': name, 'adapter': adapters[ordinal][0]})
     lines.extend(('    ...', '};', 'export application...;'))
@@ -142,7 +150,8 @@ def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, addit
         'sourceDigest': digest(source), 'sourceSize': len(source), 'rawComponentDigest': coverage['rawComponentDigest'],
         'adapters': [{'name': name, 'componentDigest': digest(body)}
                      for (name, _path), (_original, body, _graph, _graph_body) in zip(adapters, inputs[1:])],
-        'edges': edges, 'unmodifiedHostImports': [name for name in raw_names['imports'] if not name.startswith('wasi:')],
+        'edges': edges, 'unmodifiedHostImports': [name for name in raw_names['imports']
+            if not name.startswith('wasi:') and name not in private_edges],
         'composer': file_identity(compiler.wac, 'component-composer', SIZE),
         'component': file_identity(component, 'exact-runtime-composition', 64 * 1024 * 1024),
         'ordinaryLibraryExecutionQualified': False}
