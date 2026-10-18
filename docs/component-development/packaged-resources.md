@@ -21,6 +21,12 @@ per file and 32 MiB across declared logical resources. Media types contain no
 parameters. Bytes are retained exactly; assembly does not decode text, repair
 invalid text or infer an encoding.
 
+The device-name restriction also covers COM/LPT names containing superscript
+digits ¹, ² and ³, including names with extensions and directory segments.
+[Windows reserves these aliases](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
+even though they are normalized Unicode. Other valid Unicode resource names
+remain supported. Undeclared files are not selected or packaged.
+
 The package contains `resource-index.json` and digest-named objects under
 `resources/objects/`. The index records each logical name, media type, size,
 digest and application/dependency origin. Equal byte sequences share an object.

@@ -34,6 +34,47 @@ def check(packaged, *, source=SOURCE, component=COMPONENT, dependency=None):
 
 
 class ResourceCapture(unittest.TestCase):
+    def test_windows_superscript_device_aliases_are_rejected_in_paths_and_sources(self):
+        for prefix in ("COM", "com", "LPT", "lPt"):
+            for digit in ("\u00b9", "\u00b2", "\u00b3"):
+                alias = prefix + digit
+                for name in (alias, alias + ".txt", "data/" + alias + ".txt", "data/" + alias + "/file.txt"):
+                    for field in ("path", "source"):
+                        files = captured()
+                        declaration = {**row(), field: name}
+                        files[resources.MANIFEST] = manifest([declaration])
+                        if field == "source":
+                            files[name] = files["assets/greeting.txt"]
+                        original = copy.deepcopy(files)
+                        with self.subTest(name=name, field=field):
+                            with self.assertRaises(resources.ResourceError) as raised:
+                                resources.capture(files, COMPONENT, SOURCE)
+                            self.assertEqual((raised.exception.category, raised.exception.code),
+                                             ("denied", "resource-name-alias-or-traversal"))
+                            self.assertEqual(files, original)
+
+    def test_rehashed_resource_indexes_cannot_adopt_superscript_device_aliases(self):
+        packaged = resources.capture(captured(), COMPONENT, SOURCE)
+        for name in ("COM\u00b9.txt", "LPT\u00b2", "data/COM\u00b3/file.txt"):
+            changed = copy.deepcopy(packaged.index)
+            changed["resources"][0]["path"] = name
+            changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
+            with self.subTest(name=name), self.assertRaisesRegex(resources.ResourceError, "alias-or-traversal"):
+                resources.verify(encode(changed), packaged.objects, source_digest=digest(SOURCE),
+                    component_digest=digest(COMPONENT), manifest_digest=packaged.index["manifestDigest"])
+
+    def test_valid_unicode_and_undeclared_device_names_keep_the_original_selection_rules(self):
+        names = ("data/caf\u00e9.txt", "data/document\u00b9.txt", "data/COM\u00b9note.txt", "data/COM10.txt")
+        source = "assets/caf\u00e9\u00b2.txt"
+        payload = b"\x00\xffexact immutable bytes\n"
+        files = {resources.MANIFEST: manifest([row(path=name, source=source) for name in names]), source: payload,
+                 "COM\u00b9.txt": b"undeclared bytes must not be packaged"}
+        packaged = resources.capture(files, COMPONENT, SOURCE)
+        self.assertEqual([row["path"] for row in check(packaged)["resources"]], sorted(names))
+        self.assertEqual(list(packaged.objects.values()), [payload])
+        self.assertIsNone(resources.select({"COM\u00b9.txt": b"undeclared"}))
+        self.assertIsNone(resources.capture({"LPT\u00b2": b"undeclared"}, COMPONENT, SOURCE))
+
     def test_declared_utf8_and_binary_bytes_preserve_content_and_metadata(self):
         files = captured()
         files[resources.MANIFEST] = manifest([row(), row("binary/data.bin", "assets/data.bin", "application/octet-stream")])

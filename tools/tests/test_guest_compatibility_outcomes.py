@@ -198,4 +198,91 @@ class OutcomePresentation(unittest.TestCase):
             with self.assertRaisesRegex(DevError, 'requires-text'): compatibility.main()
 
 
+class NodeDiagnosticPresentation(unittest.TestCase):
+    def test_display_labels_match_the_producer_owned_numeric_vocabulary(self):
+        import re
+        source = (Path(__file__).resolve().parents[2] / 'crates/latent-core/src/diagnostic.rs').read_text()
+        for field, owner in (('stage', 'DiagnosticStage'), ('reason', 'DiagnosticReason'),
+                             ('profile', 'DiagnosticProfile')):
+            body = re.search(r'vocabulary!\(' + owner + r' \{(.*?)\}\);', source, re.S).group(1)
+            expected = {int(number): re.sub(r'(?<!^)(?=[A-Z])', '-', name).lower()
+                        for name, number in re.findall(r'([A-Za-z][A-Za-z0-9]+)\s*=\s*([0-9]+)', body)}
+            self.assertEqual(outcomes.DIAGNOSTIC_LABELS[field], expected)
+
+    def test_all_closed_labels_present_original_observations_for_every_language(self):
+        for language in compatibility.LANGUAGES:
+            report = compatibility.report(language, digest(b'source'), digest(b'component'),
+                'lsf-host-abi-phase3-v4', [], [])
+            for field, vocabulary in outcomes.DIAGNOSTIC_LABELS.items():
+                for number, label in vocabulary.items():
+                    with self.subTest(language=language, field=field, number=number):
+                        collector = outcomes.Capture(digest(b'frontend'), report['componentDigest'])
+                        result = observation(4, 'failed-precondition')
+                        result['error']['details'][0]['fields'][field] = str(number)
+                        original = copy.deepcopy(result)
+                        collector.observe('original-diagnostic', result, True)
+                        value = outcomes.read(encode(collector.snapshot()), report=report)
+                        text = outcomes.present(value)
+                        self.assertIn(f'{field} {label} ({number})', text)
+                        self.assertIn('Observed node diagnostic:', text)
+                        self.assertNotIn('private', text)
+                        self.assertEqual(result, original)
+                        self.assertEqual((value['authority'], value['libraryReachability'],
+                            value['workerDrain'], value['retrySafety']), ('none', 'unknown', 'unproven', 'unknown'))
+
+    def test_numeric_measurements_preserve_zero_maximum_and_unknown_dimensions(self):
+        collector = outcomes.Capture(digest(b'frontend'), digest(b'component'))
+        result = observation(1, 'resource-exhausted')
+        result['error']['details'][0]['fields'].update(profile='1', profile_digest='a'*64,
+            configured_bound='0', calculated_requirement=str(2**64-1), fixed_bytes='3',
+            lifting_fuel='4', lift_multiplier='5')
+        collector.observe('allocation', result, False)
+        value = outcomes.read(encode(collector.snapshot()))
+        row, text = value['cases'][0], outcomes.present(value)
+        self.assertIn('Observed node measurements: configured_bound 0; calculated_requirement '
+            '18446744073709551615; fixed_bytes 3; lifting_fuel 4; lift_multiplier 5.', text)
+        self.assertIn('profile wasmtime-service-values-v1 (1)', text)
+        self.assertEqual((row['cause'], row['resourceDimension'], row['physicalRetirement']),
+                         ('unknown', 'unknown', 'unproven'))
+        self.assertNotIn('private', text)
+
+    def test_absent_measurements_are_not_invented_and_missing_diagnostics_stay_distinct(self):
+        for fields in (None, {'stage': '3', 'reason': '4'}, {'stage': '3', 'reason': '17'}):
+            with self.subTest(fields=fields):
+                result = observation()
+                result['error']['details'] = ([] if fields is None else
+                    [{'kind': 'activation.diagnostic.v1', 'fields': fields}])
+                collector = outcomes.Capture(digest(b'frontend'), digest(b'component'))
+                collector.observe('original', result, True)
+                value = outcomes.read(encode(collector.snapshot()))
+                text = outcomes.present(value)
+                self.assertNotIn('Observed node measurements:', text)
+                self.assertNotIn('profile wasmtime', text)
+                self.assertEqual(value['cases'][0]['cause'], 'unknown')
+                expected = ('Node diagnostic: absent.' if fields is None else
+                    'Node diagnostic: invalid-present.' if fields['reason'] == '17' else
+                    'reason unsupported-engine-profile (4)')
+                self.assertIn(expected, text)
+
+    def test_malformed_unknown_duplicate_and_private_details_supply_no_labels(self):
+        valid = {'kind': 'activation.diagnostic.v1', 'fields': {'stage': '3', 'reason': '4'}}
+        malformed = [dict(valid, fields={**valid['fields'], name: value}) for name, value in (
+            ('stage', '9'), ('reason', '17'), ('profile', '3'), ('stage', '03'),
+            ('configured_bound', str(2**64)), ('fixed_bytes', True), ('lifting_fuel', '-1'),
+            ('profile_digest', 'private-key'), ('private-path', '/home/private'))]
+        for details in ([[item] for item in malformed] + [[valid, valid], [valid]*17]):
+            with self.subTest(details=details):
+                collector = outcomes.Capture(digest(b'frontend'), digest(b'component'))
+                result = observation(); result['error']['details'] = details
+                collector.observe('original', result, True)
+                value = outcomes.read(encode(collector.snapshot()))
+                text = outcomes.present(value)
+                self.assertIn('Node diagnostic: invalid-present.', text)
+                self.assertNotIn('Observed node diagnostic:', text)
+                self.assertNotIn('Observed node measurements:', text)
+                self.assertNotIn('private', text)
+                self.assertEqual((value['cases'][0]['cause'], value['cases'][0]['resourceDimension']),
+                                 ('unknown', 'unknown'))
+
+
 if __name__ == '__main__': unittest.main()

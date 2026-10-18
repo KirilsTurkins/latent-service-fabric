@@ -1,5 +1,10 @@
 {
   "cases": [
+    "NodeDiagnosticPresentation.test_absent_measurements_are_not_invented_and_missing_diagnostics_stay_distinct",
+    "NodeDiagnosticPresentation.test_all_closed_labels_present_original_observations_for_every_language",
+    "NodeDiagnosticPresentation.test_display_labels_match_the_producer_owned_numeric_vocabulary",
+    "NodeDiagnosticPresentation.test_malformed_unknown_duplicate_and_private_details_supply_no_labels",
+    "NodeDiagnosticPresentation.test_numeric_measurements_preserve_zero_maximum_and_unknown_dimensions",
     "OutcomePresentation.test_cli_validates_all_sidecars_before_printing_any_output",
     "OutcomePresentation.test_json_output_cannot_silently_ignore_requested_outcome_observations",
     "OutcomePresentation.test_presentation_names_observed_failures_and_omissions_without_success_claims",
@@ -16,6 +21,66 @@
     "OutcomeReader.test_stale_component_report_and_runtime_context_cannot_borrow_outcomes"
   ],
   "guards": {
+    "NodeDiagnosticPresentation.test_absent_measurements_are_not_invented_and_missing_diagnostics_stay_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeDiagnosticPresentation.test_all_closed_labels_present_original_observations_for_every_language": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeDiagnosticPresentation.test_display_labels_match_the_producer_owned_numeric_vocabulary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeDiagnosticPresentation.test_malformed_unknown_duplicate_and_private_details_supply_no_labels": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeDiagnosticPresentation.test_numeric_measurements_preserve_zero_maximum_and_unknown_dimensions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "OutcomePresentation.test_cli_validates_all_sidecars_before_printing_any_output": {
       "bases": [
         "unittest.TestCase"
@@ -187,6 +252,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility_outcomes.py",
-  "reviewReason": "Cover lifecycle-refusal reader and presentation round trips plus hostile evidence controls while retaining all prior cases and guards",
+  "reviewReason": "Add closed node-owned diagnostic labels and bounded measurement presentation controls; preserve all original cases and guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }
