@@ -177,7 +177,7 @@ def fetch_environment(owned: Path, registries: dict) -> dict:
         GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
     (owned / 'empty.npmrc').write_bytes(b'')
     (owned / 'git-empty.config').write_bytes(b'')
-    configuration = []
+    configuration, registry_keys = [], set()
     for ordinal, row in enumerate(registries['registries']):
         if not isinstance(row, dict) or set(row) - {'scope', 'url', 'authorizationEnv'} or 'url' not in row:
             raise DependencyError('npm-registry-configuration-invalid')
@@ -191,7 +191,11 @@ def fetch_environment(owned: Path, registries: dict) -> dict:
         scope = row.get('scope', '')
         if scope and not re.fullmatch(r'@[A-Za-z0-9._-]+', scope):
             raise DependencyError('npm-registry-scope-invalid')
-        configuration.append((scope + ':' if scope else '') + 'registry=' + row['url'])
+        registry_key = (scope + ':' if scope else '') + 'registry'
+        if registry_key in registry_keys:
+            raise DependencyError('npm-registry-scope-ambiguous')
+        registry_keys.add(registry_key)
+        configuration.append(registry_key + '=' + row['url'])
         if 'authorizationEnv' in row:
             variable = row['authorizationEnv']
             if not isinstance(variable, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable):

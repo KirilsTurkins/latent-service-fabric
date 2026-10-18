@@ -30,6 +30,12 @@ Captured builds require the maintained Linux namespace profile. The builder stag
 
 For private registries, pass the same explicit `--registry-config` to `lock` and `resolve` with `{"registries":[{"scope":"@private","url":"https://registry.example.com","authorizationEnv":"LSF_PRIVATE_NPM_AUTH"}]}`. Credentials reach only that explicit resolver; ordinary compilation consumes verified objects and does not read project/home npm configuration. An update, removal, lock edit, selected condition/profile change, missing object or altered dependency invalidates relevant input identities and requires capture/review again.
 
+A registry policy may select one default registry and one entry per explicit
+scope. Repeating either selector fails with `npm-registry-scope-ambiguous` before
+native lock generation or capture dispatch, even when the repeated endpoints
+match. One default plus distinct scopes remains supported; rejected policies
+preserve the accepted closure, native locks and SDK bytes.
+
 The required TypeScript CI qualifier uses these normal add/lock/resolve/review commands and checks that update/removal invalidates the accepted graph until exact reviewed declarations are restored. It adds an external developer-owned conditional ESM/CommonJS module using real `@jridgewell/trace-mapping` transitives and immutable UTF-8 JSON/text/binary resources, removes the original external sources, compiles the reviewed closure, and sends the result through the existing signing/admission/node workflow. Exact-head passing receipts are required before claiming that qualification. Native Node tests are controls; additional async/runtime, generator, private-feed, snapshot-effect and full denial/recovery matrices remain separate acceptance work.
 
 The [native authoring control](../testing/evidence/npm-native-authoring-2026-10-16.json) records exact Windows Node/npm and source inputs for a direct/transitive local graph, exact review and offline verification after the original locations become unavailable. It does not qualify an emitted component or a Linux network namespace. The normal signed component gate remains separate.
