@@ -75,12 +75,41 @@ all = "warn"
                 self.write(f"{boundary.CRATE}/src/extra.rs", addition)
                 self.assertTrue(boundary.validate(self.root))
 
+    def test_native_stack_exception_binds_guard_original_admission_and_physical_retirement(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK).read_text(encoding="utf-8")
+        self.write(boundary.NATIVE_STACK, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for before, after in (
+            ('ProtFlags::empty()', 'ProtFlags::READ | ProtFlags::WRITE'),
+            ('runtime.register(OwnerKind::Native, None)?', 'unrelated_runtime.register(OwnerKind::Native, None)?'),
+            ('drop(self.permit.take());', 'self.permit.take();'),
+            ('#![allow(unsafe_code)]', '#![allow(unsafe_code)]\nunsafe fn extra() {}'),
+        ):
+            with self.subTest(change=before):
+                self.assertIn(before, source)
+                self.write(boundary.NATIVE_STACK, source.replace(before, after))
+                self.assertTrue(boundary.validate(self.root))
+
     def test_file_loader_or_arbitrary_bytes_cannot_replace_proof(self) -> None:
         for replacement in ("Component::deserialize_file(engine, path)",
                             "Component::deserialize(engine, arbitrary_bytes)"):
             with self.subTest(replacement=replacement):
                 self.write(boundary.LOADER, self.loader.replace(
                     "Component::deserialize(engine, proof.bytes())", replacement))
+                self.assertTrue(boundary.validate(self.root))
+
+    def test_child_admission_and_retirement_notification_cannot_be_bypassed(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK_CHILD).read_text(encoding="utf-8")
+        self.write(boundary.NATIVE_STACK_CHILD, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for before, after in (
+            ('self.active.load(Ordering::Acquire) != 0', 'false'),
+            ('register_from_task(OwnerKind::Native, continuation)', 'register_from_task(OwnerKind::Task, continuation)'),
+            ('children.accepted >= children.maximum', 'false'),
+        ):
+            with self.subTest(change=before):
+                self.assertIn(before, source)
+                self.write(boundary.NATIVE_STACK_CHILD, source.replace(before, after))
                 self.assertTrue(boundary.validate(self.root))
 
     def test_allowance_cannot_expand_to_module_or_another_function(self) -> None:

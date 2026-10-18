@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_rust_tls_reference.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve all20 source reference cases and require3additional root drain controls in separate owned processes: pending accepted work retains context/owners, destructor-created work drains before retirement, and foreign/replacement registries reject; no guest/sysroot qualification inferred.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "2f9d76ff177f919d709209227c5e0320b1bdd1682a1a811a8f3049b59b9c83c2"
+}

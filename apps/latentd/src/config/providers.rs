@@ -30,6 +30,9 @@ pub use http_streaming::HttpStreamingInstallation;
 #[path = "providers/activation_runtime.rs"]
 mod activation_runtime;
 pub use activation_runtime::{ActivationRuntimeInstallation, ActivationRuntimeLimits};
+#[path = "providers/scalar_aliases.rs"]
+mod scalar_aliases;
+pub use scalar_aliases::ScalarAlias;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -63,6 +66,8 @@ pub struct ConfiguredProviders {
     pub context: Option<ScalarInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub log: Option<ScalarInstallation>,
+    #[serde(default)]
+    pub scalar_aliases: Vec<ScalarAlias>,
     pub bindings: Vec<HostBinding>,
 }
 
@@ -259,6 +264,7 @@ impl ConfiguredProviders {
     }
 
     pub(crate) fn definitions(&self) -> Result<Vec<BindingDefinition>, PlatformError> {
+        self.validate_scalar_aliases()?;
         self.bindings.iter().enumerate().map(|(index, binding)| {
             if [&binding.name, &binding.tenant, &binding.consumer_service,
                 &binding.provider_service, &binding.provider_binding, &binding.contract]
@@ -286,7 +292,9 @@ impl ConfiguredProviders {
                 "latent:context/context@0.1.0" => self.context.as_ref().map(|v| &v.identity),
                 "latent:log/log@0.1.0" => self.log.as_ref().map(|v| &v.identity),
                 _ => None,
-            }.ok_or_else(|| invalid("providers.bindings.contract"))?;
+            };
+            let installed = self.scalar_alias_binding(binding)?.or(installed)
+                .ok_or_else(|| invalid("providers.bindings.contract"))?;
             if installed.tenant != binding.tenant || installed.service != binding.provider_service {
                 return Err(invalid("providers.bindings.scope"));
             }

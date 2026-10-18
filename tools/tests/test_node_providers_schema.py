@@ -20,6 +20,26 @@ VALIDATOR = jsonschema.Draft202012Validator(SCHEMA, registry=REGISTRY)
 
 
 class NodeProvidersSchema(unittest.TestCase):
+    def test_scalar_aliases_are_closed_bounded_metadata_and_never_a_missing_installation(self):
+        value = {"formatVersion": 1,
+            "context": {"identity": {"id": "context", "tenant": "examples", "service": "runtime-host", "epoch": 1}},
+            "scalarAliases": [{"source": "context", "identity": {
+                "id": "foreign-context", "tenant": "foreign", "service": "foreign-runtime", "epoch": 1}}],
+            "bindings": [{"name": "foreign-context", "tenant": "foreign", "consumerService": "server",
+                "providerService": "foreign-runtime", "contract": "latent:context/context@0.1.0",
+                "providerBinding": "foreign-installed"}]}
+        VALIDATOR.validate(value)
+        VALIDATOR.validate(dict(value, scalarAliases=value["scalarAliases"] * 13))
+        for aliases in (None, [None], [{}], value["scalarAliases"] * 14,
+                        [dict(value["scalarAliases"][0], grant="implicit")]):
+            self.assertFalse(VALIDATOR.is_valid(dict(value, scalarAliases=aliases)))
+        for source in ("..", "../escape", "", 1, None):
+            changed = copy.deepcopy(value)
+            changed["scalarAliases"][0]["source"] = source
+            self.assertFalse(VALIDATOR.is_valid(changed))
+        del value["context"]
+        self.assertFalse(VALIDATOR.is_valid(value))
+
     def example(self):
         guide = (ROOT / "docs/reference/standalone-providers.md").read_text(encoding="utf-8")
         return json.loads(re.findall(r"```json\n(.*?)\n```", guide, re.S)[0])["providers"]

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_c_dependency_watch_ci.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain only bounded initial build diagnostics from the existing isolated C watch account; preserve all command and runtime limits",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "dcdd580778247ebeeaa11d2fa5c2aeb05904b8672651fc1e501882f707697d2d"
+}

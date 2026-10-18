@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/build_typescript_native_engine.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Select import engine only with explicit completed source compiler identity and preserve ordinary clock engine default",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "280658fa505c148efcf5a0f45d636633c7dd2419aed6d122626b079a5ef7900d"
+}

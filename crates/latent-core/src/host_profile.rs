@@ -34,6 +34,7 @@ impl HostInterfaceSpec {
             "latent:runtime/activation@0.1.0" => {
                 matches!(operation, "wait-for" | "wait-until" | "timer-next")
             }
+            "latent:runtime-native/threads@0.1.0" => false,
             "latent:network/streams@0.1.0" => operation != "inspect",
             _ => self.asynchronous,
         }
@@ -299,6 +300,37 @@ pub const PHASE3_HOST_ABI_V5: HostAbiProfile = HostAbiProfile {
     interfaces: &PHASE3_V5_INTERFACES,
 };
 
+const PHASE3_V6_INTERFACES: [HostInterfaceSpec; 16] = [
+    PHASE3_V5_INTERFACES[0],
+    PHASE3_V5_INTERFACES[1],
+    PHASE3_V5_INTERFACES[2],
+    PHASE3_V5_INTERFACES[3],
+    PHASE3_V5_INTERFACES[4],
+    PHASE3_V5_INTERFACES[5],
+    PHASE3_V5_INTERFACES[6],
+    PHASE3_V5_INTERFACES[7],
+    PHASE3_V5_INTERFACES[8],
+    PHASE3_V5_INTERFACES[9],
+    PHASE3_V5_INTERFACES[10],
+    PHASE3_V5_INTERFACES[11],
+    PHASE3_V5_INTERFACES[12],
+    PHASE3_V5_INTERFACES[13],
+    PHASE3_V5_INTERFACES[14],
+    HostInterfaceSpec {
+        interface: "latent:runtime-native/threads@0.1.0",
+        package: "latent:runtime-native",
+        binding: HostInterfaceBinding::Provider,
+        wit: include_str!("../../../wit/platform/native-runtime/package.wit"),
+        asynchronous: false,
+    },
+];
+/// Explicit native-thread support profile. The ordinary CURRENT profile stays
+/// V5; selecting V6 installs no provider and grants no capability by itself.
+pub const PHASE3_HOST_ABI_V6: HostAbiProfile = HostAbiProfile {
+    id: "lsf-host-abi-phase3-v6",
+    interfaces: &PHASE3_V6_INTERFACES,
+};
+
 /// Explicit transaction definition profile. Selection requires a separately
 /// installed engine and current authority; ordinary Phase3 selection stays separate.
 pub const PHASE4_HOST_ABI_V1: HostAbiProfile = HostAbiProfile {
@@ -373,6 +405,30 @@ mod tests {
             .is_none());
         assert!(PHASE3_HOST_ABI_V5
             .interface("latent:network/streams@0.2.0")
+            .is_none());
+    }
+
+    #[test]
+    fn explicit_v6_adds_only_exact_native_retirement_and_keeps_v5_default() {
+        assert_eq!(PHASE3_HOST_ABI_CURRENT, PHASE3_HOST_ABI_V5);
+        for old in PHASE3_HOST_ABI_V5.interfaces() {
+            assert_eq!(PHASE3_HOST_ABI_V6.interface(old.interface), Some(old));
+        }
+        assert_eq!(
+            PHASE3_HOST_ABI_V6.interfaces().len(),
+            PHASE3_HOST_ABI_V5.interfaces().len() + 1
+        );
+        let native = PHASE3_HOST_ABI_V6
+            .interface("latent:runtime-native/threads@0.1.0")
+            .unwrap();
+        assert_eq!(native.binding, HostInterfaceBinding::Provider);
+        assert!(native.resource_types().is_empty());
+        for (operation, asynchronous) in [("start", false)] {
+            assert_eq!(native.operation_is_asynchronous(operation), asynchronous);
+        }
+        assert!(PHASE3_HOST_ABI_V5.interface(native.interface).is_none());
+        assert!(PHASE3_HOST_ABI_V6
+            .interface("latent:runtime-native/threads@0.2.0")
             .is_none());
     }
 

@@ -19,10 +19,15 @@ MAX_ENTRIES = 65536
 MAX_BYTES = 4 * 1024 * 1024 * 1024
 
 
-def identity(record: dict, descriptor: dict, recipe: str, host: str, packager: str) -> str:
-    return digest(encode({"observationProfile": "compiler-and-controller-v1", "source": record["identity"], "recipe": recipe, "tools": descriptor["build"]["tools"],
+def identity(record: dict, descriptor: dict, recipe: str, host: str, packager: str, *, executable_approval=None) -> str:
+    from .executable_approval import selection
+    selection(descriptor, executable_approval)
+    value = {"observationProfile": "compiler-and-controller-v1", "source": record["identity"], "recipe": recipe, "tools": descriptor["build"]["tools"],
         "hostAbi": descriptor["hostAbi"], "controllerHostAbi": HOST_ABI,
-        "host": host, "target": descriptor["build"]["target"], "packager": packager}))
+        "host": host, "target": descriptor["build"]["target"], "packager": packager}
+    if executable_approval is not None:
+        value['executableApproval'] = executable_approval
+    return digest(encode(value))
 
 
 def owner(directory: Path) -> dict:
@@ -63,11 +68,11 @@ def protected(root: Path) -> tuple[set[str], set[str]]:
 
 
 def allocate(root: Path, source: Path, record: dict, descriptor: dict, recipe: str,
-             host: str, packager: str) -> tuple[Path, Path, dict | None]:
+             host: str, packager: str, *, executable_approval=None) -> tuple[Path, Path, dict | None]:
     directory = root / "builds"
     if not directory.exists():
         paths.new_directory(directory)
-    key = identity(record, descriptor, recipe, host, packager)
+    key = identity(record, descriptor, recipe, host, packager, executable_approval=executable_approval)
     entries = sorted(directory.iterdir(), key=lambda item: item.name)
     require(len(entries) <= MAX_ATTEMPTS, "build-cache-entry-limit")
     owned = [(entry, owner(entry)) for entry in entries]
@@ -77,6 +82,9 @@ def allocate(root: Path, source: Path, record: dict, descriptor: dict, recipe: s
             require(receipt["buildKey"] == key and receipt["attempt"] == entry.name
                     and receipt["source"] == record["identity"] and receipt["recipe"] == recipe,
                     "cached-build-receipt-mismatch")
+            require(receipt.get('executableApproval') == executable_approval
+                    and ('executableApproval' in receipt) == (executable_approval is not None),
+                    'cached-executable-approval-mismatch')
             return entry, entry / "source", receipt
     protected_attempts, protected_sources = protected(root)
     for entry, selected in owned:

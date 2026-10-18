@@ -15,15 +15,18 @@ The [source-bound revision-lifecycle record](https://github.com/KirilsTurkins/la
 adds fresh ordinary-server revision, exact routing and recovery controls on its
 recorded source. Use the maintained lifecycle helper described below for that
 selection. Earlier failures retain their original meaning; they do not override
-later source-bound successes. Broader #728 acceptance and clean packaged frontend
-qualification remain separate. The profile is not a completed milestone gate,
-general JDK networking support or an executor-enabled server profile.
+later source-bound successes. Each qualification record retains its finite-profile,
+tool-bundle and native-tuple scope. The profile does not establish a completed
+milestone gate, general JDK networking support or an executor-enabled server profile.
 
 The [2026-10-15 execution summary](../development/java-runtime-reconciliation/2026-10-15/pr996-evidence.json)
 refreshes the 52 baseline requests and 12 revision-lifecycle cases against the
 recorded ordinary Wasmtime 48.0.6 native tuple. It retains exact source and
 component identities, zero sampled dormant owners, clean reaped shutdown and
-the remaining installed-frontend and cross-tenant acceptance boundaries.
+the acceptance boundaries assessed at that source. The installed-tool receipt
+below records subsequent source-candidate installed observations. Shared-node
+cross-tenant qualification requires the separate
+[tenant programme's original receipts](../testing/java-server-tenants.md).
 
 The current suite includes the accepted 65,536-byte binary body, oversize denial
 and physical cleanup. The earlier
@@ -165,7 +168,8 @@ native kernel cases, 15 real javac AST vectors and seven real JDK reference
 requests. It observes that an application static initializer never executes on
 the compiler host. Those checks do not prove signed component admission, real
 LSF listener dispatch, dormant Store ownership, cancellation, disconnect or
-cross-tenant isolation. Those node-level requirements remain tracked in #728.
+cross-tenant isolation. Each node-level claim requires its corresponding
+source-bound signed-node receipts.
 
 The existing `tools/qualify_java_capsules.py` command retains its source-only,
 direct SDK, signed-node and printed-guide checks and adds ordinary-source shared

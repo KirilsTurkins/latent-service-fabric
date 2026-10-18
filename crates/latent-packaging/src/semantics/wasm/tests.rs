@@ -7,6 +7,20 @@ use wasm_encoder::{Component, Encode, ModuleSection, RawSection};
 mod aliases;
 
 #[test]
+fn canonical_creator_without_proof_never_opens_descriptive_threading_parser() {
+    let mut canonical = wasm_encoder::CanonicalFunctionSection::new();
+    canonical.thread_new_indirect(0, 0);
+    let mut component = Component::new();
+    component.section(&canonical);
+    assert_eq!(
+        validate(&component.finish(), SemanticLimits::default())
+            .unwrap_err()
+            .message,
+        "unverified-native-thread-component"
+    );
+}
+
+#[test]
 fn nonblocking_subtask_cancellation_keeps_other_more_async_operations_closed() {
     use wasm_encoder::{CanonicalFunctionSection, ComponentTypeSection};
     let mut canonical = CanonicalFunctionSection::new();

@@ -235,6 +235,38 @@ impl ActivationRuntime {
         result
     }
 
+    /// Admit support owned by a still-live original Task. Checking its kind
+    /// and reserving the new record share the existing registration lock, so
+    /// a wrong-kind, stale or settled token cannot start native child work.
+    /// This grants no external authority and preserves normal phase/limits.
+    pub fn register_from_task(
+        &self,
+        kind: OwnerKind,
+        continuation: RuntimeToken,
+    ) -> Result<RuntimeOwner, PlatformError> {
+        self.check_live()?;
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let result = if self
+            .record(&state, continuation)
+            .is_some_and(|record| record.kind == OwnerKind::Task)
+        {
+            self.register_locked(&mut state, kind, Some(continuation))
+        } else {
+            Err(error(
+                PlatformErrorCode::InvalidArgument,
+                "runtime-task-continuation",
+            ))
+        };
+        if result.is_err() {
+            state.admission_failures = state.admission_failures.saturating_add(1);
+        }
+        result
+    }
+
     fn register_locked(
         &self,
         state: &mut State,
@@ -255,7 +287,7 @@ impl ActivationRuntime {
                 return Err(error(
                     PlatformErrorCode::Cancelled,
                     "runtime-admission-closed",
-                ))
+                ));
             }
         }
         let index = kind.index();
