@@ -611,6 +611,36 @@ Complete node, guide and final-integrity evidence remains required.
 
 ## Reproduction and delivery boundary
 
+### Captured-library cancellation correction, 18 October 2026
+
+At PR #1035 head `5a728e3db303e0916e7182063aaf8b2fdc179e37`,
+[Go job 117667609685](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39124819704/job/117667609685)
+failed the captured-library gate with `go-library-cancel-unconfirmed-no-replay`.
+Artifact `12135908333`, `go-capsule-dependencies/node/controls/075.json`,
+observed activation `go-library-observed-cancellation` running. The single cancel
+receipt in `076.json` reported `already_terminal` / `resource_exhausted`.
+The original gate correctly refused to count that result as cancellation.
+It did not collect the invocation's final consumption before refusing, so
+those receipts do not establish an exact fuel total for this call.
+
+The workload repeatedly copied 128 KiB. The pinned
+[Go 1.27.2 Wasm memmove](https://github.com/golang/go/blob/go1.27.2/src/runtime/memmove_wasm.s)
+uses `memory.copy`, and the default variable cost in
+[Wasmtime 48.0.6](https://github.com/bytecodealliance/wasmtime/blob/v48.0.6/crates/environ/src/tunables.rs)
+charges one fuel unit per copied byte. This explains a source-level route to
+exhaustion between the separate get and cancel operations; it is not a
+measurement of that failed invocation's final consumption.
+
+The cancellation workload now performs value-dependent scalar byte operations
+over the same two 128 KiB buffers. The fuel workload, original CPU, memory and
+wall limits, runtime selection, polling bounds and capabilities are unchanged.
+No sleep, host import or additional runtime profile is introduced. The gate
+still requires an observed running activation, exactly one accepted cancel for
+that identity, a reaped `cancelled` invocation, retired resource samples and a
+successful fresh activation. A known terminal resource-exhaustion receipt
+remains a failure. Focused source/protocol tests cover these invariants; the
+changed workload still requires a new signed CI result before qualification.
+
 Install the exact Linux tools from the beginner guide, then use a fresh output
 directory outside the checkout:
 

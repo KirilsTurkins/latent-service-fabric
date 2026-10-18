@@ -124,6 +124,14 @@
         "run": "python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend\n"
       },
       {
+        "name": "Test controlled native Go declaration and lock authoring",
+        "run": "python3 -m unittest tools.tests.test_go_native_authoring"
+      },
+      {
+        "name": "Test captured library failure and cancellation observation fences",
+        "run": "python3 -m unittest tools.tests.test_go_dependency_recovery"
+      },
+      {
         "name": "Qualify captured Go libraries in signed components",
         "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
@@ -148,7 +156,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Preserve every existing Go qualification command, bound and artifact; retain three additional bounded terminal panic-family diagnostic records after unchanged acceptance failure.",
+  "reviewReason": "Compose actual merged timer runtime with normal Go dependency authoring, scalar cancellation recovery and signed library gate. Retain both parent command/artifact/trigger sets, exact permissions/environment/runner, all existing guards and the unchanged45-minute bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

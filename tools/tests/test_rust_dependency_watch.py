@@ -232,7 +232,7 @@ class PublicWatchEvents(unittest.TestCase):
         self.assertEqual(len(assignments), 1)
         allowed = ast.literal_eval(assignments[0].value)
         self.assertEqual(set(allowed), {'event', 'phase', 'code'})
-        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 23))
+        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 24))
         root = Path(__file__).resolve().parents[2]
         actual = set()
         for name in ('tools/dev_workflow/cli.py', 'tools/dev_workflow/watch.py',
@@ -776,9 +776,10 @@ class PublicFailureObservation(unittest.TestCase):
 class RustWatchReviewBoundary(unittest.TestCase):
     def test_actual_watcher_keeps_transient_lock_and_trust_refusals_distinct_without_repeating_them(self):
         from unittest.mock import patch
+        from tools.application_dependency_store import DependencyError
         from tools.dev_workflow import build_client, paths, watch
         from tools.dev_workflow.common import DevError
-        from tools.qualify_rust_dependency_watch import unreviewed_lock_refusal
+        from tools.qualify_rust_dependency_watch import public_events, unreviewed_lock_refusal
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             workspace, source = root / 'test-watch', root / 'source'
@@ -795,7 +796,7 @@ class RustWatchReviewBoundary(unittest.TestCase):
                 if phase[0] == 'transient':
                     raise OSError('intermediate editor save')
                 if phase[0] == 'unreviewed':
-                    raise DevError('dependency-native-lock-drift')
+                    raise DependencyError('dependency-native-lock-drift')
                 return ('new-recipe', 'reviewed-source')
             def emit(value):
                 events.append(value)
@@ -817,6 +818,7 @@ class RustWatchReviewBoundary(unittest.TestCase):
             # watcher emits one trust refusal and intentionally does not repeat it.
             self.assertEqual(next(i for i, e in enumerate(events) if e.get('event') == 'edit-failed'), 0)
             self.assertEqual(next(i for i, e in enumerate(events) if unreviewed_lock_refusal(e)), 1)
+            self.assertEqual(public_events(events)[1]['code'], 'dependency-native-lock-drift')
             self.assertEqual(builds, [('new-recipe', 'reviewed-source')])
             self.assertEqual(calls, ['status'] * 6)
 

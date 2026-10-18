@@ -127,9 +127,17 @@ def compile_managed(payload: Path, project: Path, output: Path, check, language:
         (staged / "tools/wasi-sdk.json").write_bytes(encode({"path": str(staged / "wasi-sdk")}))
         build(project, output, sdk / "bin/capsule-contracts", None, repository, tools=staged / "tools", offline=True)
     elif language == "go":
+        from tools import application_dependencies, guest_dependency_inputs
         from tools.go_capsule_build import build
         os.environ["PATH"] = str(staged / "go/bin") + os.pathsep + str(staged / "generator/bin") + os.pathsep + os.environ["PATH"]
-        build(project, output, sdk / "bin/capsule-contracts", None, repository, offline_cache=staged / "go-cache")
+        owner, _application, _descriptor = guest_dependency_inputs.layout(project, "go")
+        captured = any(os.path.lexists(owner / name)
+                       for name in (application_dependencies.MANIFEST, application_dependencies.LOCK))
+        # The observed application closure owns its exact module downloads.
+        # The build still validates it; partial/unreviewed declarations cannot
+        # fall back to the SDK's separate base-project module cache.
+        build(project, output, sdk / "bin/capsule-contracts", None, repository,
+              offline_cache=None if captured else staged / "go-cache")
     else:
         from tools.typescript_guest.build import build
         from tools.typescript_guest.runtime_bundle import compiler_options

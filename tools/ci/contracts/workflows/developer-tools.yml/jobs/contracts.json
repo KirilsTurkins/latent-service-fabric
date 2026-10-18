@@ -40,6 +40,10 @@
         "run": "python -m unittest tools.tests.test_rust_dependency_watch"
       },
       {
+        "name": "Exercise owned Go dependency watch fixture boundaries",
+        "run": "python -m unittest tools.tests.test_go_dependency_watch"
+      },
+      {
         "name": "Exercise explicit captured Java processor boundaries",
         "run": "python -m unittest tools.tests.test_java_annotation_processors"
       }
@@ -57,7 +61,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Preserve the exact detached approval controller module and all Rust/.NET watch and explicit random fixture controls after current development integration.",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
