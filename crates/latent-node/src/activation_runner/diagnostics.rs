@@ -25,9 +25,7 @@ pub(super) fn trap_kind_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
         Some("call-and-postreturn") => Some("call-and-postreturn"),
         _ => None,
     };
-    if kind == GuestTrapKind::RuntimeError
-        && let Some(phase) = phase
-    {
+    if let (GuestTrapKind::RuntimeError, Some(phase)) = (kind, phase) {
         fields.insert("phase".into(), phase.into());
     }
     Some(ErrorDetail {

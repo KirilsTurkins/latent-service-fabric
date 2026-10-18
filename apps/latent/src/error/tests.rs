@@ -61,7 +61,10 @@ fn runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certa
     assert!(failure.request_dispatched);
     assert_eq!(failure.error["code"], "guest-trap");
     assert_eq!(failure.error["retryable"], false);
-    assert_eq!(failure.error["details"][0]["fields"]["phase"], "instantiate");
+    assert_eq!(
+        failure.error["details"][0]["fields"]["phase"],
+        "instantiate"
+    );
 }
 
 #[test]

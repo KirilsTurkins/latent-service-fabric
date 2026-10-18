@@ -363,10 +363,26 @@ fn host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds()
         ("activation.guest-host-failure", "code", "unavailable "),
         ("activation.guest-host-failure", "code", "unavailable\n"),
         ("activation.guest-host-failure", "code", "future-failure"),
-        ("activation.guest-host-failure", "code", "unavail\u{0430}ble"),
-        ("activation.guest-host-failure", "code", "private-fixture-text"),
-        ("activation.guest-host-failure", "capabilityFailure", "unavailable"),
-        ("activation.guest-host-failure/private", "code", "unavailable"),
+        (
+            "activation.guest-host-failure",
+            "code",
+            "unavail\u{0430}ble",
+        ),
+        (
+            "activation.guest-host-failure",
+            "code",
+            "private-fixture-text",
+        ),
+        (
+            "activation.guest-host-failure",
+            "capabilityFailure",
+            "unavailable",
+        ),
+        (
+            "activation.guest-host-failure/private",
+            "code",
+            "unavailable",
+        ),
     ] {
         let outcome = trap_failure(vec![ErrorDetail {
             kind: kind.into(),
@@ -375,8 +391,8 @@ fn host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds()
         let ActivationOutcome::Failed { error, .. } = outcome else {
             unreachable!()
         };
-        let public = sanitize_platform_error(error.clone().into(), &InvocationLimits::default())
-            .unwrap();
+        let public =
+            sanitize_platform_error(error.clone().into(), &InvocationLimits::default()).unwrap();
         assert_eq!(public.code, error.code.wire_code());
         assert_eq!(public.retryable, error.retryable);
         assert_eq!(public.message, public_platform_message(error.code));
@@ -386,8 +402,7 @@ fn host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds()
         kind: "activation.guest-host-failure".into(),
         fields: Metadata::from([("code".into(), value.into())]),
     };
-    let ActivationOutcome::Failed { error, .. } =
-        trap_failure(vec![detail("resource-exhausted")])
+    let ActivationOutcome::Failed { error, .. } = trap_failure(vec![detail("resource-exhausted")])
     else {
         unreachable!()
     };
@@ -439,8 +454,8 @@ fn runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics()
         error.message = public_platform_message(error.code).into();
         error.details[0].fields.remove("provider");
         let expected_error = error.clone();
-        let encoded = public_invocation_response_to_proto(response(outcome.clone()), &limits)
-            .encode_to_vec();
+        let encoded =
+            public_invocation_response_to_proto(response(outcome.clone()), &limits).encode_to_vec();
         let decoded = proto::InvokeResponse::decode(encoded.as_slice()).unwrap();
         assert_eq!(
             invocation_response_from_proto(decoded).unwrap().outcome,
@@ -470,7 +485,8 @@ fn runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics()
         ("runtime-error", ""),
         ("unreachable-code", "instantiate"),
     ] {
-        let ActivationOutcome::Failed { error, .. } = trap_failure(vec![detail(kind, phase)]) else {
+        let ActivationOutcome::Failed { error, .. } = trap_failure(vec![detail(kind, phase)])
+        else {
             unreachable!()
         };
         let public = sanitize_platform_error(error.into(), &limits).unwrap();
