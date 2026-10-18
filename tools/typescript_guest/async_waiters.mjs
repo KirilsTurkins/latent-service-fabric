@@ -23,6 +23,9 @@ export function lazySyncImportWaiters(source) {
 export function retireGeneratedTaskSlots(source) {
   const replacements = [
     ['  #nextTaskPromise = Promise.resolve(true);', '  #nextTaskPromise = null;'],
+    ['      await this.#nextTaskPromise;\n',
+      '      await this.#nextTaskPromise;\n' +
+      "      if (placeholder.completed) throw new Error('selected-runtime-task-exited-before-slot');\n"],
     ['        placeholder.completed = true;\n      }),',
       '        placeholder.completed = true;\n' +
       '        this.#nextTaskQueue = this.#nextTaskQueue.filter(entry => entry !== placeholder);\n' +
