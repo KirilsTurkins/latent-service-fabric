@@ -12,6 +12,47 @@ from tools.go_guest.sdk import install, CAPABILITIES, explicit_resource_owners
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_runtime_transformation_material_captures_all_bytes_above_control_document_size(self):
+        from tools.go_capsule_build import runtime_transformations_material
+        from tools.rust_capsule_project import digest, MAX_FILE
+        value = {'formatVersion': 1, 'profile': 'go-component-activation-v4',
+                 'automaticTransformations': [
+                     {'name': 'compiler-checkpoint/' + str(index),
+                      'upstreamDigest': 'sha256:' + 'a' * 64,
+                      'adaptedDigest': 'sha256:' + 'b' * 64,
+                      'sites': [{'offset': offset, 'suspendable': True} for offset in range(20)]}
+                     for index in range(94)]}
+        raw = (json.dumps(value, indent=2) + '\n').encode()
+        self.assertGreater(len(raw), 65536)
+        self.assertLess(len(raw), MAX_FILE)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            path = output / 'go-runtime-transformations.json'
+            path.write_bytes(raw)
+            self.assertEqual(runtime_transformations_material(output),
+                {'name': 'go-runtime-transformations', 'digest': digest(raw), 'size': len(raw)})
+            # A change beyond the old control-document ceiling remains bound.
+            value['automaticTransformations'][-1]['adaptedDigest'] = 'sha256:' + 'c' * 64
+            changed = (json.dumps(value, indent=2) + '\n').encode()
+            self.assertEqual(changed[:65536], raw[:65536])
+            path.write_bytes(changed)
+            self.assertEqual(runtime_transformations_material(output)['digest'], digest(changed))
+            self.assertNotEqual(digest(changed), digest(raw))
+
+    def test_runtime_transformation_material_still_rejects_oversize_and_nonregular_inputs(self):
+        from tools.go_capsule_build import runtime_transformations_material
+        from tools.rust_capsule_project import MAX_FILE
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            path = output / 'go-runtime-transformations.json'
+            path.write_bytes(b' ' * (MAX_FILE + 1))
+            with self.assertRaisesRegex(ValueError, 'source must be a bounded regular file'):
+                runtime_transformations_material(output)
+            path.unlink()
+            path.mkdir()
+            with self.assertRaisesRegex(ValueError, 'source must be a bounded regular file'):
+                runtime_transformations_material(output)
+
     def test_explicit_runtime_templates_capture_async_api_and_owned_runtime_without_source_edits(self):
         from tools.go_capsule_project import AUTHORING_TEMPLATES, ROOT
         from tools.go_guest.activation import PROFILES
