@@ -121,7 +121,7 @@ Wire-header deadline/limit and socket-buffer options also fail before contact.
 Default, empty and first-value User-Agent behavior has explicit peer assertions;
 noncanonical direct-map spelling is denied without contact.
 Every activation checks actual provider counters,
-cleanup slots and topology. The controlled peer must report exactly 18 primary
+cleanup slots and topology. The original 33-case prefix must account for exactly 18 primary
 contacts, one committed mutation and no secondary contact. These observations
 are distinct from allocator/native/kernel upper-bound qualification.
 
@@ -134,3 +134,13 @@ and authenticate the default backend initializer without admitting custom dialer
 This signed gate has been added and has not yet executed. HTTPS, published
 default-client consumers, the wider matrix and complete #692 acceptance remain
 required; no full-ticket result follows from this candidate.
+
+The [shared value campaign candidate](../testing/standard-http-conformance.md#shared-ordinary-client-value-campaign-candidate)
+adds nine ordinary default-client cases after that unchanged prefix. Its captured
+public inputs exercise all seven methods, binary/UTF-8 values, HEAD, and
+known-empty versus unknown-length empty POST with present/absent metadata.
+The full candidate now has 42 cases and requires exactly 27 primary contacts,
+the original one mutation and no secondary contacts. Original owner checks,
+all old cases, fixture ceilings, provider budgets and workflow limits remain.
+No signed execution is claimed for these additions; the common backend gate
+remains a prerequisite and its failure is not skipped by this extension.

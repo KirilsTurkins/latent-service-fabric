@@ -3,6 +3,7 @@
     "StandardHttpGate.test_compile_qualifier_selects_the_actual_captured_world_for_both_fixtures",
     "StandardHttpGate.test_project_captures_exact_ordinary_fixture_and_immutable_sdk_for_real_build",
     "StandardHttpGate.test_project_world_and_export_package_share_the_declared_tenant",
+    "StandardHttpGate.test_shared_value_inputs_are_captured_for_normal_and_compile_only_fixture",
     "StandardHttpGate.test_signed_peer_carrier_is_an_existing_runnable_shared_owner",
     "StandardHttpGate.test_tampered_frozen_native_product_is_rejected_before_project_or_compiler"
   ],
@@ -43,6 +44,18 @@
       ],
       "skipSites": []
     },
+    "StandardHttpGate.test_shared_value_inputs_are_captured_for_normal_and_compile_only_fixture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47ef97ea0b14f846cf5763901398589faf34d38d989892e9550f4ed9baee369",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "StandardHttpGate.test_signed_peer_carrier_is_an_existing_runnable_shared_owner": {
       "bases": [
         "unittest.TestCase"
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_standard_http_gate.py",
-  "reviewReason": "Keep both captured HTTP fixture world selections aligned with their actual WIT; preserve existing tests and guards and add a mocked compiler-boundary regression without native execution.",
+  "reviewReason": "Append nine shared method, byte and optional-metadata controls to the existing default Go HTTP campaign; preserve all original cases, execution guards, budgets and command limits, with no local native qualification claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

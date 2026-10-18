@@ -35,6 +35,8 @@ on:
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
       - tools/tests/test_go_standard_http_gate.py
+      - tools/tests/test_standard_http_values.py
+      - tools/standard_http/**
       - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
@@ -99,6 +101,8 @@ on:
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
       - tools/tests/test_go_standard_http_gate.py
+      - tools/tests/test_standard_http_values.py
+      - tools/standard_http/**
       - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
@@ -279,6 +283,8 @@ jobs:
           python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
       - name: Check captured ordinary HTTP fixture and frozen native product ownership
         run: python3 -m unittest tools.tests.test_go_standard_http_gate -v
+      - name: Check shared HTTP value and peer observation oracles
+        run: python3 -m unittest tools.tests.test_standard_http_values -v
       - name: Qualify ordinary net/http contexts and disposal on the signed node
         run: python3 tools/qualify_go_standard_http.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-http-signed"
       - name: Test reviewed module lifecycle and selected frontend

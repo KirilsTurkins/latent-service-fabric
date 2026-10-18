@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "latent.standard-http.values.v1",
+  "cases": [
+    {"id":"method-get","method":"GET","bodyBase64":"AP9jYWbDqQ==","length":"known","mediaType":"application/octet-stream","header":"caf\u00e9"},
+    {"id":"method-head","method":"HEAD","bodyBase64":"AP9jYWbDqQ==","length":"known","mediaType":"application/octet-stream","header":"caf\u00e9"},
+    {"id":"method-post","method":"POST","bodyBase64":"AP9jYWbDqQ==","length":"known","mediaType":"application/octet-stream","header":"caf\u00e9"},
+    {"id":"method-put","method":"PUT","bodyBase64":"AP9jYWbDqQ==","length":"known","mediaType":"application/octet-stream","header":"caf\u00e9"},
+    {"id":"method-patch","method":"PATCH","bodyBase64":"AP9jYWbDqQ==","length":"known","mediaType":"application/octet-stream","header":"caf\u00e9"},
+    {"id":"method-delete","method":"DELETE","bodyBase64":"AP9jYWbDqQ==","length":"known","mediaType":"application/octet-stream","header":"caf\u00e9"},
+    {"id":"method-options","method":"OPTIONS","bodyBase64":"AP9jYWbDqQ==","length":"known","mediaType":"application/octet-stream","header":"caf\u00e9"},
+    {"id":"present-empty","method":"POST","bodyBase64":"","length":"known","mediaType":null,"header":""},
+    {"id":"absent-length","method":"POST","bodyBase64":"","length":"unknown","mediaType":null,"header":null}
+  ]
+}

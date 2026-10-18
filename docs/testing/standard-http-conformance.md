@@ -158,6 +158,37 @@ fake successful resources or joining a Promise/Task with a synchronous export
 cannot satisfy the supported profile. Existing synchronous SDK and pure library
 profiles remain separately documented while runtime ports qualify.
 
+## Shared ordinary-client value campaign candidate
+
+[`values.json`](../../tools/standard_http/values.json) freezes nine public
+`latent.standard-http.values.v1` cases independently of library identity. The
+shared [result and peer predicates](../../tools/standard_http/values.py) check
+all seven methods, binary bytes containing NUL and `0xff`, UTF-8 header text,
+known empty versus unknown-length empty POST, empty versus absent custom
+headers, and present versus absent media type. HEAD must return no response body while preserving the
+peer's declared response length. Its actual request bytes are checked separately.
+
+The ordinary Go fixture embeds those exact inputs during normal project capture
+and the separate compile-only control. It constructs a standard `http.Client`
+and uses its default backend, with no custom transport. A plain `io.Reader`
+retains Go's unknown-length path; `bytes.Reader` retains its original known-length
+and `NoBody` handling. These are profile-specific request representations, not
+a claim that all languages normalize empty bodies identically.
+
+The existing signed Go campaign appends these nine cases to its original 33.
+Every case retains original physical-owner, cell, queue, provider, immutable-input
+and clean/reaped shutdown checks. The original prefix still accounts for 18
+primary contacts and the original User-Agent predicates. The new ordered suffix
+must match nine method/body-digest/framing observations, for 27 contacts within
+the peer's unchanged 32-contact ceiling; there is still one committed mutation
+and zero secondary contacts. Only the explicit fixture grant adds the five
+additional tested methods. Provider allowances and campaign deadlines are unchanged.
+
+The added controls have not executed as signed guest components. Pure oracle and
+capture tests are source evidence only; the underlying ordinary Go backend's
+native qualification must pass before these new value cases can be claimed.
+They do not complete #680 or the six-language/client qualification matrix.
+
 Run the bounded peer controls with:
 
 ```sh

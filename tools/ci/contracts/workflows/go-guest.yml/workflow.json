@@ -51,6 +51,8 @@
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
           "tools/tests/test_go_standard_http_gate.py",
+          "tools/tests/test_standard_http_values.py",
+          "tools/standard_http/**",
           "tools/tests/fixtures/go-standard-http/**",
           "tools/tests/fixtures/go-http-context/**",
           "tools/qualify_go_runtime_dependencies.py",
@@ -119,6 +121,8 @@
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
           "tools/tests/test_go_standard_http_gate.py",
+          "tools/tests/test_standard_http_values.py",
+          "tools/standard_http/**",
           "tools/tests/fixtures/go-standard-http/**",
           "tools/tests/fixtures/go-http-context/**",
           "tools/qualify_go_runtime_dependencies.py",
@@ -159,7 +163,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Compose admitted initializer and published worker gates with original typed context/default HTTP qualification; preserve all parent steps, commands, artifacts, runners, permissions, environment and45-minute bound.",
+  "reviewReason": "Append nine shared method, byte and optional-metadata controls to the existing default Go HTTP campaign; preserve all original cases, execution guards, budgets and command limits, with no local native qualification claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

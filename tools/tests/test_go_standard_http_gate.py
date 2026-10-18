@@ -14,6 +14,28 @@ from tools.rust_capsule_project import ROOT, read_file, snapshot
 
 
 class StandardHttpGate(unittest.TestCase):
+    def test_shared_value_inputs_are_captured_for_normal_and_compile_only_fixture(self):
+        from tools import qualify_go_http_context
+        from tools.standard_http.values import SOURCE
+        expected = read_file(SOURCE, 8192)
+        with tempfile.TemporaryDirectory() as directory:
+            app = project(Path(directory)/'application')
+            self.assertEqual(read_file(app/'src/values.json'), expected)
+            with patch.object(qualify_go_http_context,'Commands'), \
+                    patch.object(qualify_go_http_context,'Compiler') as factory:
+                compiler = factory.return_value
+                compiler.materials = []
+                def compile_fixture(source, wit, world, output, **kwargs):
+                    self.assertEqual(read_file(source/'values.json'), expected)
+                    output.mkdir()
+                    component = output/'component.wasm'
+                    component.write_bytes(b'not-executed-component-control')
+                    return component, {}
+                compiler.compile.side_effect = compile_fixture
+                receipt = qualify_go_http_context.qualify(Path(directory)/'compile',fixture_name='standard-http-conformance')
+                self.assertEqual(receipt['qualification'], 'compile-only')
+                self.assertEqual(receipt['signedExecution'], 'not-run')
+
     def test_compile_qualifier_selects_the_actual_captured_world_for_both_fixtures(self):
         from tools import qualify_go_http_context
         for fixture in ('http-context-conformance','standard-http-conformance'):

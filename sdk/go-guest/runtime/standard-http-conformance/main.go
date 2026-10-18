@@ -3,6 +3,8 @@ package export_examples_go_standard_http_api
 import (
 	"bytes"
 	"context"
+	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -29,6 +31,7 @@ func (localTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 func Run(which uint32, address string) string {
 	invocations++
 	if invocations != 1 { return "stale-state" }
+	if which >= 25 { return valueRequest(which, address) }
 	client := &http.Client{Timeout:time.Second}
 	defer client.CloseIdleConnections()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -85,4 +88,49 @@ func Run(which uint32, address string) string {
 	}
 	if value.ID != 7 || len(value.Items) != 2 || value.Empty != "" { return "invalid-domain" }
 	return strconv.Itoa(response.StatusCode)+":domain:"+strconv.Itoa(value.ID)+":"+value.Name+":"+value.Items[0]+"|"+value.Items[1]
+}
+
+//go:embed values.json
+var valueInputs []byte
+
+type valueCase struct {
+	ID string `json:"id"`
+	Method string `json:"method"`
+	Body string `json:"bodyBase64"`
+	Length string `json:"length"`
+	MediaType *string `json:"mediaType"`
+	Header *string `json:"header"`
+}
+
+// A plain io.Reader keeps NewRequest's ordinary unknown-length path. A
+// bytes.Reader instead selects its original known-length/NoBody behavior.
+type valueReader struct { source *bytes.Reader }
+func (reader *valueReader) Read(target []byte) (int, error) { return reader.source.Read(target) }
+
+func valueRequest(which uint32, address string) string {
+	var inputs struct { Profile string `json:"schemaVersion"`; Cases []valueCase `json:"cases"` }
+	if json.Unmarshal(valueInputs, &inputs) != nil || inputs.Profile != "latent.standard-http.values.v1" ||
+		len(inputs.Cases) > 9 || which < 25 || which-25 >= uint32(len(inputs.Cases)) { return "value-input-error" }
+	selected := inputs.Cases[which-25]
+	payload, err := base64.StdEncoding.DecodeString(selected.Body)
+	if err != nil || len(payload) > 64 { return "value-input-error" }
+	var body io.Reader = bytes.NewReader(payload)
+	if selected.Length == "unknown" { body = &valueReader{source:bytes.NewReader(payload)}
+	} else if selected.Length != "known" { return "value-input-error" }
+	request, err := http.NewRequest(selected.Method, address, body)
+	if err != nil { return "value-request-error" }
+	if selected.MediaType != nil { request.Header.Set("Content-Type", *selected.MediaType) }
+	if selected.Header != nil { request.Header.Set("X-Conformance", *selected.Header) }
+	client := &http.Client{Timeout:time.Second}
+	defer client.CloseIdleConnections()
+	response, err := client.Do(request)
+	if err != nil { return "value-transport-error" }
+	defer response.Body.Close()
+	data, err := io.ReadAll(response.Body)
+	if err != nil { return "value-body-error" }
+	if selected.Method == http.MethodHead {
+		return "values-head:"+strconv.Itoa(response.StatusCode)+":"+strconv.FormatInt(response.ContentLength,10)+":"+strconv.Itoa(len(data))
+	}
+	if response.StatusCode != http.StatusOK { return "value-status-error" }
+	return "values:"+string(data)
 }

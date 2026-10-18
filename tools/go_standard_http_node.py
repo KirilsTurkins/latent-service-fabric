@@ -26,6 +26,7 @@ from tools.phase3_resource_profile import ACTIVE_COUNTERS
 from tools.rust_capsule_node import RecordingClient, deploy, delete_all, sample
 from tools.rust_capsule_project import ROOT, fresh
 from tools.standard_http.observations import validate as validate_peer
+from tools.standard_http import values
 from tools.static_api.node import policy
 
 CAPABILITY = 'latent:http/streaming@0.3.0'
@@ -121,7 +122,7 @@ def grants(client, node, publication, origin):
         'id': 'ordinary-http', 'effect': 'allow', 'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
         'services': [SERVICE], 'publications': [publication], 'capability': CAPABILITY,
         'operations': ['open', 'write', 'finish', 'read', 'chunk-bytes', 'trailers', 'abort-upload', 'abort-body'],
-        'resources': {'kind': 'http', 'origins': [origin], 'methods': ['GET', 'POST'], 'paths': [],
+        'resources': {'kind': 'http', 'origins': [origin], 'methods': sorted({case['method'] for case in values.load()}), 'paths': [],
                       'pathPrefixes': ['/conformance/']},
         'ceiling': {'operations': 64, 'inputBytes': 65536, 'outputBytes': 262144, 'wallTimeMillis': 5000}}]})
     result.append({'capability': CAPABILITY, 'policy': 'http-allow'})
@@ -176,6 +177,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         'tools/standard_http/peer.py', 'tools/standard_http/protocol.py', 'tools/standard_http/vectors.py',
         'tools/standard_http/observations.py', 'tools/go_guest/http.py', 'tools/go_guest/http_context.py',
         'sdk/go-guest/runtime/http_async.go.in', 'sdk/go-guest/runtime/http_transport.go.in',
+        'tools/standard_http/values.py', 'tools/standard_http/values.json',
         'tools/static_api/node.py', 'tools/guest_runtime_profiles.py')
     result['sources'] = {name: file_identity(ROOT/name) for name in source_paths}
     result['limitations'] = ['Native process RSS is sampled, not allocator/native/kernel upper-bound proof.',
@@ -266,9 +268,19 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('user-agent-first', 23, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('noncanonical-user-agent-denied', 24, '/conformance/json', 'transport-error'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
+            value_cases = values.load()
+            result['valueProfile'] = values.PROFILE
+            result['valueCases'] = [case['id'] for case in value_cases]
+            cases += [('values-'+case['id'], values.GO_MODE_BASE+index, '/conformance/echo', None)
+                      for index, case in enumerate(value_cases)]
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
-                require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-go-'+name+'-result')
+                if expected is None:
+                    require(row['exitCode'] == 0 and isinstance(row['decoded'], list) and len(row['decoded']) == 1,
+                            'standard-go-'+name+'-result')
+                    values.require_result(value_cases[which-values.GO_MODE_BASE], row['decoded'][0])
+                else:
+                    require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-go-'+name+'-result')
                 result['cases'].append(name)
                 # The shared outbound owner checks every activation-scoped and
                 # service-resident row. Ingress-only exchange rows are absent on
@@ -290,16 +302,18 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
             validate_peer(observation)
-            require(observation['acceptedConnections'] == observation['startedRequests'] == 18 and observation['rejectedRequests'] == 0
+            require(observation['acceptedConnections'] == observation['startedRequests'] == 18+len(value_cases) and observation['rejectedRequests'] == 0
                 and observation['committedMutations'] == 1
                 and all(row['role'] == 'primary' for row in observation['requests']),
                 'standard-go-peer-contact-count')
             expected_agents = (b'Go-http-client/1.1', None, b'fixture-agent/1', b'Go-http-client/1.1')
-            for row, agent in zip(observation['requests'][-4:], expected_agents, strict=True):
+            original_requests = observation['requests'][:18]
+            for row, agent in zip(original_requests[-4:], expected_agents, strict=True):
                 require(row['userAgent'] == {'present':agent is not None,
                     'bytes':len(agent) if agent is not None else 0,
                     'sha256':'sha256:'+hashlib.sha256(agent).hexdigest() if agent is not None else None},
                     'standard-go-user-agent-semantics')
+            values.require_peer(value_cases, observation['requests'][18:])
             result['peer'] = observation
             result['peerReaped'] = peer.owner.finished
             peer = None

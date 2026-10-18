@@ -20,7 +20,8 @@ from tools.stage_runtime_wit import stage
 
 RECIPE = ('tools/qualify_go_http_context.py', 'tools/go_guest/compiler.py', 'tools/go_guest/runtime.py',
           'tools/go_guest/sdk.py', 'tools/go_guest/activation.py', 'tools/go_guest/checkpoints.py',
-          'tools/go_guest/timers.py', 'tools/go_guest/initializers.py', 'tools/go_guest/http_context.py', 'tools/go_guest/http.py')
+          'tools/go_guest/timers.py', 'tools/go_guest/initializers.py', 'tools/go_guest/http_context.py', 'tools/go_guest/http.py',
+          'tools/standard_http/values.json')
 
 
 def qualify(output: Path, *, fixture_name='http-context-conformance'):
@@ -41,6 +42,8 @@ def qualify(output: Path, *, fixture_name='http-context-conformance'):
     try:
         (output / 'src').mkdir()
         (output / 'src/main.go').write_bytes(source['main.go'])
+        if fixture_name == 'standard-http-conformance':
+            (output / 'src/values.json').write_bytes(read_file(ROOT / 'tools/standard_http/values.json', 8192))
         for name in ('go.mod', 'go.sum'):
             (output / name).write_bytes(read_file(ROOT / 'sdk/go-guest/runtime-deps' / name))
         stage(output / 'wit', fixture)

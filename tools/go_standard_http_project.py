@@ -5,6 +5,7 @@ from pathlib import Path
 from tools.go_capsule_project import create
 from tools.go_guest.activation import INITIALIZER_PROFILE
 from tools.rust_capsule_project import ROOT, digest, read_file, snapshot
+from tools.standard_http.values import SOURCE as VALUE_SOURCE
 
 
 def project(directory: Path) -> Path:
@@ -12,6 +13,7 @@ def project(directory: Path) -> Path:
     fixture = ROOT/'sdk/go-guest/runtime/standard-http-conformance'
     source, wit = read_file(fixture/'main.go'), read_file(fixture/'world.wit')
     (app/'src/main.go').write_bytes(source)
+    (app/'src/values.json').write_bytes(read_file(VALUE_SOURCE, 8192))
     (app/'wit/world.wit').write_bytes(wit)
     for name, raw in snapshot(ROOT/'wit/platform/http-v3').items():
         target = app/'wit/deps/http-v3'/name
