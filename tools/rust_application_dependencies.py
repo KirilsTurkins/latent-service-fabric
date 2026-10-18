@@ -19,6 +19,9 @@ from tools.build_snapshot import canonical, digest
 from tools.rust_capsule_project import ROOT, snapshot
 
 MAX_REGISTRY_CA = 2 * 1024 * 1024
+MAX_MANIFEST_BYTES = 1024 * 1024
+MAX_MANIFEST_TOKENS = 131072
+MAX_MANIFEST_DEPTH = 32
 CERTIFICATE = rb'-----BEGIN CERTIFICATE-----\r?\n[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----'
 
 
@@ -43,23 +46,199 @@ def package_identity(package: dict) -> str:
     return package['name'] + '/' + package['version'] + '/' + digest(package['id'].encode())[7:23]
 
 
+def _dependency_path_fields(document: dict) -> dict[tuple[str, ...], str]:
+    """Cargo dependency locations only; metadata and source-file paths are data."""
+    result = {}
+
+    def dependencies(table, prefix):
+        if table is None:
+            return
+        if not isinstance(table, dict):
+            raise DependencyError('cargo-path-relocation-syntax-unsupported')
+        for name, specification in table.items():
+            if not isinstance(specification, (dict, str)):
+                raise DependencyError('cargo-path-relocation-syntax-unsupported')
+            if isinstance(specification, dict) and 'path' in specification:
+                if not isinstance(specification['path'], str) or '\0' in specification['path']:
+                    raise DependencyError('cargo-path-relocation-path-invalid')
+                result[(*prefix, name, 'path')] = specification['path']
+
+    target, workspace, patch = (document.get(name, {}) for name in ('target', 'workspace', 'patch'))
+    if any(not isinstance(table, dict) for table in (target, workspace, patch)):
+        raise DependencyError('cargo-path-relocation-syntax-unsupported')
+    for section in ('dependencies', 'dev-dependencies', 'build-dependencies'):
+        dependencies(document.get(section), (section,))
+        for name, table in target.items():
+            if isinstance(table, dict):
+                dependencies(table.get(section), ('target', name, section))
+            else:
+                raise DependencyError('cargo-path-relocation-syntax-unsupported')
+    dependencies(workspace.get('dependencies'), ('workspace', 'dependencies'))
+    for source, table in patch.items():
+        dependencies(table, ('patch', source))
+    dependencies(document.get('replace'), ('replace',))
+    return result
+
+
+def _manifest_tokens(text: str) -> list[tuple[str, str, int, int]]:
+    """Locate syntax spans after tomllib validation; never interpret user code."""
+    tokens, offset = [], 0
+    while offset < len(text):
+        if len(tokens) >= MAX_MANIFEST_TOKENS:
+            raise DependencyError('cargo-path-relocation-limit')
+        first, character = offset, text[offset]
+        if character in ' \t\r':
+            offset += 1
+            continue
+        if character == '#':
+            offset = text.find('\n', offset)
+            if offset == -1:
+                break
+            continue
+        if character in {'"', "'"}:
+            quote, triple = character, text.startswith(character * 3, offset)
+            offset += 3 if triple else 1
+            while offset < len(text):
+                if quote == '"' and text[offset] == '\\':
+                    offset += 2
+                    continue
+                if triple and text.startswith(quote * 3, offset):
+                    while offset < len(text) and text[offset] == quote:
+                        offset += 1
+                    break
+                if not triple and text[offset] == quote:
+                    offset += 1
+                    break
+                offset += 1
+            else:
+                raise DependencyError('cargo-path-relocation-syntax-unsupported')
+            kind = 'string'
+        elif character in '\n[]=.,{}':
+            kind, offset = character, offset + 1
+        else:
+            kind = 'atom'
+            while offset < len(text) and text[offset] not in ' \t\r\n#"\x27[]=.,{}':
+                offset += 1
+        tokens.append((kind, text[first:offset], first, offset))
+    return tokens
+
+
+def _dependency_path_spans(text: str, fields: dict) -> list[tuple[int, int, str]]:
+    tokens, found, spans = _manifest_tokens(text), set(), []
+
+    def keys(index, stop):
+        names = []
+        while index < len(tokens):
+            kind, raw, _start, _end = tokens[index]
+            if kind == 'string':
+                names.append(tomllib.loads('value = ' + raw)['value'])
+            elif kind == 'atom' and re.fullmatch('[A-Za-z0-9_-]+', raw):
+                names.append(raw)
+            else:
+                break
+            index += 1
+            if index < len(tokens) and tokens[index][0] == stop:
+                return tuple(names), index + 1
+            if index >= len(tokens) or tokens[index][0] != '.':
+                break
+            index += 1
+        raise DependencyError('cargo-path-relocation-syntax-unsupported')
+
+    def value(index, prefix, depth=0):
+        if depth > MAX_MANIFEST_DEPTH or index >= len(tokens):
+            raise DependencyError('cargo-path-relocation-limit')
+        kind, raw, start, end = tokens[index]
+        if kind == 'string':
+            if prefix in fields:
+                if prefix in found or tomllib.loads('value = ' + raw)['value'] != fields[prefix]:
+                    raise DependencyError('cargo-path-relocation-ambiguous')
+                found.add(prefix)
+                spans.append((start, end, fields[prefix]))
+            return index + 1
+        if kind == '{':
+            index += 1
+            while index < len(tokens) and tokens[index][0] != '}':
+                names, index = keys(index, '=')
+                index = value(index, None if prefix is None else prefix + names, depth + 1)
+                if index < len(tokens) and tokens[index][0] == ',':
+                    index += 1
+                elif index >= len(tokens) or tokens[index][0] != '}':
+                    raise DependencyError('cargo-path-relocation-syntax-unsupported')
+            if index >= len(tokens):
+                raise DependencyError('cargo-path-relocation-syntax-unsupported')
+            return index + 1
+        if kind == '[':
+            # Dependency specifications are objects, never array entries.
+            stack, index = [']'], index + 1
+            while stack and index < len(tokens):
+                kind = tokens[index][0]
+                if kind in {'[', '{'}:
+                    stack.append(']' if kind == '[' else '}')
+                elif kind in {']', '}'}:
+                    if stack.pop() != kind:
+                        raise DependencyError('cargo-path-relocation-syntax-unsupported')
+                if len(stack) + depth > MAX_MANIFEST_DEPTH:
+                    raise DependencyError('cargo-path-relocation-limit')
+                index += 1
+            if stack:
+                raise DependencyError('cargo-path-relocation-syntax-unsupported')
+            return index
+        while index < len(tokens) and tokens[index][0] not in {'\n', ',', '}', ']'}:
+            index += 1
+        return index
+
+    table, index = (), 0
+    while index < len(tokens):
+        if tokens[index][0] == '\n':
+            index += 1
+            continue
+        if tokens[index][0] == '[':
+            array = index + 1 < len(tokens) and tokens[index + 1][0] == '['
+            table, index = keys(index + (2 if array else 1), ']')
+            if array:
+                if index >= len(tokens) or tokens[index][0] != ']':
+                    raise DependencyError('cargo-path-relocation-syntax-unsupported')
+                table, index = None, index + 1
+        else:
+            names, index = keys(index, '=')
+            index = value(index, None if table is None else table + names)
+        if index < len(tokens) and tokens[index][0] != '\n':
+            raise DependencyError('cargo-path-relocation-syntax-unsupported')
+    if found != fields.keys():
+        raise DependencyError('cargo-path-relocation-syntax-unsupported')
+    return spans
+
+
 def selected_manifest(data: bytes, original: Path, mapped: Path, mappings: dict[Path, Path]) -> bytes:
-    """Preserve Cargo syntax while relocating only observed path dependencies."""
-    tomllib.loads(data.decode('utf-8'))
-    pattern = re.compile(r'(?<![A-Za-z0-9_-])(?:path|"path"|\x27path\x27)\s*=\s*("(?:[^"\\]|\\.)*"|\x27[^\x27]*\x27)')
-    def replacement(match):
-        value = tomllib.loads('value = ' + match[1])['value']
-        destination = (original.parent / value).resolve(strict=False)
+    """Relocate selected Cargo dependency values, preserving every other byte."""
+    if len(data) > MAX_MANIFEST_BYTES:
+        raise DependencyError('cargo-path-relocation-limit')
+    try:
+        text = data.decode('utf-8')
+        document = tomllib.loads(text)
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError):
+        raise DependencyError('cargo-path-relocation-invalid-toml') from None
+    except RecursionError:
+        raise DependencyError('cargo-path-relocation-limit') from None
+    fields = _dependency_path_fields(document)
+    if not fields:
+        return data
+    for start, end, path in sorted(_dependency_path_spans(text, fields), reverse=True):
+        try:
+            destination = (original.parent / path).resolve(strict=False)
+        except (OSError, ValueError):
+            raise DependencyError('cargo-path-relocation-path-invalid') from None
         selected = mappings.get(destination)
         if selected is None and destination.is_relative_to(original.parent):
-            return match[0]
+            continue
         if selected is None:
-            # Paths to an in-tree file remain valid; all external roots must be
-            # an actual native-resolver selected package.
             raise DependencyError('cargo-path-dependency-not-in-selected-graph')
-        relative = os.path.relpath(selected, mapped.parent).replace('\\', '/')
-        return 'path = ' + json.dumps(relative)
-    return pattern.sub(replacement, data.decode('utf-8')).encode('utf-8')
+        try:
+            relative = os.path.relpath(selected, mapped.parent).replace('\\', '/')
+        except (OSError, ValueError):
+            raise DependencyError('cargo-path-relocation-path-invalid') from None
+        text = text[:start] + json.dumps(relative, ensure_ascii=False) + text[end:]
+    return text.encode('utf-8')
 
 
 def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[dict], dict]:

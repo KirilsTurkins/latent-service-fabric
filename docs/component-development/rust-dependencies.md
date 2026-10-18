@@ -2,6 +2,22 @@
 
 Edit the ordinary application `Cargo.toml` and generate/review its native `Cargo.lock` independently of `sdk-lock.json`. Public registry, exact git revisions and outside-project path crates use Cargo's resolver. Package names identify provenance and do not require LSF catalogue entries. Keep the SDK workspace inheritance and maintained guest/WIT dependency declarations pinned.
 
+Captured path relocation follows parsed Cargo dependency fields: ordinary,
+development, build, workspace and target-specific dependencies, plus patch and
+replace entries. Table, inline and dotted declarations retain their original
+syntax; only selected path string values change. Comments, quoted examples,
+package metadata and source-file paths remain byte-identical. External crate
+paths must still belong to the native resolver's selected graph. This does not
+copy or authorize unrelated paths mentioned by the manifest.
+
+The relocation pass uses the existing original/transformed artifact identities
+and tool receipt. It reads at most 1 MiB of manifest bytes and, when dependency
+paths require inspection, at most 131,072 tokens with nesting depth 32. Invalid
+TOML, unrepresentable paths, unsupported or ambiguous syntax, and exhausted
+inspection bounds fail with closed diagnostics. They do not produce a partial
+transformation or a compatibility verdict. No dependency initializer, Cargo
+build, process or network request runs during this syntax inspection.
+
 Use normal native `add`, `update`, `remove` and `lock` stages for application declarations. These are explicit fetch operations: the pinned Cargo editor and resolver run in an observed private mirror with the same registry/CA policy as capture. Native `cargo metadata --format-version 1` resolves changed declarations against the existing lock, retaining compatible selections instead of refreshing every unrelated SDK/compiler dependency. It also creates a missing lock. Necessary dependency changes still require capture and review; executable inputs still require their separate exact approval. These operations never run application build scripts, proc macros or a compiler build. Select an exact package version; a local package must declare that same name/version. Then capture and review the exact candidate before the existing build/package/admission flow:
 
 ```powershell
