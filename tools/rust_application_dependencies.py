@@ -22,6 +22,8 @@ MAX_REGISTRY_CA = 2 * 1024 * 1024
 MAX_MANIFEST_BYTES = 1024 * 1024
 MAX_MANIFEST_TOKENS = 131072
 MAX_MANIFEST_DEPTH = 32
+MAX_METADATA_BYTES = 16 * 1024 * 1024
+MAX_GRAPH_ROWS = 65536
 CERTIFICATE = rb'-----BEGIN CERTIFICATE-----\r?\n[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----'
 
 
@@ -241,12 +243,129 @@ def selected_manifest(data: bytes, original: Path, mapped: Path, mappings: dict[
     return text.encode('utf-8')
 
 
+def native_metadata(data: bytes) -> dict:
+    """Read bounded native JSON without silently replacing duplicate fields."""
+    if len(data) > MAX_METADATA_BYTES:
+        raise DependencyError('cargo-native-metadata-limit')
+
+    def fields(pairs):
+        result = {}
+        for name, value in pairs:
+            if name in result:
+                raise DependencyError('cargo-native-metadata-duplicate-field')
+            result[name] = value
+        return result
+
+    def invalid_constant(_):
+        raise ValueError()
+
+    try:
+        return json.loads(data, object_pairs_hook=fields, parse_constant=invalid_constant)
+    except DependencyError:
+        raise
+    except (UnicodeError, ValueError, RecursionError):
+        raise DependencyError('cargo-native-metadata-invalid') from None
+
+
+def native_graph(metadata: dict, *, filtered=False) -> tuple[dict, dict]:
+    """Validate observed graph fields; keep opaque IDs and native records intact."""
+    def token(value):
+        return (isinstance(value, str) and 0 < len(value) <= 32768
+                and not any(ord(char) < 32 or ord(char) == 127 for char in value))
+
+    def rows(value):
+        if not isinstance(value, list) or len(value) > 1024:
+            raise DependencyError('cargo-native-graph-invalid')
+        return value
+
+    def strings(value):
+        if not isinstance(value, list) or any(not token(item) for item in rows(value)) or len(set(value)) != len(value):
+            raise DependencyError('cargo-native-graph-invalid')
+        return value
+
+    if (not isinstance(metadata, dict) or type(metadata.get('version')) is not int
+            or metadata['version'] != 1 or not isinstance(metadata.get('resolve'), dict)):
+        raise DependencyError('cargo-native-graph-invalid')
+    packages, nodes = {}, {}
+    for group, selected in ((metadata.get('packages'), packages), (metadata['resolve'].get('nodes'), nodes)):
+        for row in rows(group):
+            if not isinstance(row, dict) or not token(row.get('id')):
+                raise DependencyError('cargo-native-graph-invalid')
+            if row['id'] in selected:
+                raise DependencyError('cargo-native-graph-duplicate-id')
+            selected[row['id']] = row
+    closed = set(nodes) <= set(packages) if filtered else set(nodes) == set(packages)
+    if not packages or not closed:
+        raise DependencyError('cargo-native-graph-not-closed')
+    if not token(metadata['resolve'].get('root')) or metadata['resolve']['root'] not in nodes:
+        raise DependencyError('cargo-native-graph-root-invalid')
+    count = 0
+    for node in nodes.values():
+        count += len(strings(node.get('features')))
+        identities = set()
+        for edge in rows(node.get('deps')):
+            if (not isinstance(edge, dict) or not token(edge.get('pkg')) or edge['pkg'] not in nodes
+                    or 'name' in edge and not token(edge['name'])):
+                raise DependencyError('cargo-native-edge-not-closed')
+            identity = (edge.get('name'), edge['pkg'])
+            if identity in identities:
+                raise DependencyError('cargo-native-edge-duplicate')
+            identities.add(identity)
+            if 'dep_kinds' in edge:
+                kinds = rows(edge['dep_kinds'])
+                seen = set()
+                for kind in kinds:
+                    if (not isinstance(kind, dict) or kind.get('kind') not in (None, 'dev', 'build')
+                            or 'kind' not in kind or 'target' not in kind
+                            or kind['target'] is not None and not token(kind['target'])):
+                        raise DependencyError('cargo-native-edge-kind-invalid')
+                    key = (kind['kind'], kind['target'])
+                    if key in seen:
+                        raise DependencyError('cargo-native-edge-kind-duplicate')
+                    seen.add(key)
+                count += len(kinds)
+            count += 1
+        if 'dependencies' in node and set(strings(node['dependencies'])) != {edge['pkg'] for edge in node['deps']}:
+            raise DependencyError('cargo-native-edge-not-closed')
+        if count > MAX_GRAPH_ROWS:
+            raise DependencyError('cargo-native-metadata-limit')
+    return packages, nodes
+
+
+def selected_graph(metadata: dict, selected: dict, root: Path) -> dict:
+    packages, nodes = native_graph(metadata)
+    selected_packages, selected_nodes = native_graph(selected, filtered=True)
+    if (not set(selected_packages) <= set(packages) or not set(selected_nodes) <= set(nodes)
+            or any(package != packages[identity] for identity, package in selected_packages.items())):
+        raise DependencyError('cargo-selected-graph-package-drift')
+    root_id = metadata['resolve']['root']
+    try:
+        actual = [row['id'] for row in packages.values()
+                  if Path(row['manifest_path']).resolve(strict=False) == (root / 'Cargo.toml').resolve(strict=False)]
+    except (KeyError, TypeError, ValueError, OSError):
+        raise DependencyError('cargo-native-graph-root-invalid') from None
+    if actual != [root_id] or selected['resolve']['root'] != root_id:
+        raise DependencyError('cargo-native-graph-root-invalid')
+    for identity, node in selected_nodes.items():
+        full = nodes[identity]
+        if not set(node['features']) <= set(full['features']):
+            raise DependencyError('cargo-selected-graph-feature-drift')
+        edges = {(edge.get('name'), edge['pkg']): edge for edge in full['deps']}
+        for edge in node['deps']:
+            original = edges.get((edge.get('name'), edge['pkg']))
+            if original is None or ('dep_kinds' in edge) != ('dep_kinds' in original):
+                raise DependencyError('cargo-selected-graph-edge-drift')
+            kinds = {(item['kind'], item['target']) for item in original.get('dep_kinds', [])}
+            if any((kind['kind'], kind['target']) not in kinds for kind in edge.get('dep_kinds', [])):
+                raise DependencyError('cargo-selected-graph-edge-drift')
+    return selected['resolve']
+
+
 def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[dict], dict]:
     if (not isinstance(metadata, dict) or metadata.get('version') != 1 or not isinstance(metadata.get('packages'), list)
             or not isinstance(metadata.get('resolve'), dict) or len(metadata['packages']) > 1024):
         raise DependencyError('cargo-native-graph-invalid')
-    packages = {row['id']: row for row in metadata['packages']}
-    nodes = {row['id']: row for row in metadata['resolve']['nodes']}
+    packages, nodes = native_graph(metadata)
     if set(packages) != set(nodes):
         raise DependencyError('cargo-native-graph-not-closed')
     baseline = {(row['name'], row['version'], row.get('source')): row.get('checksum')
@@ -429,9 +548,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             flags.append('--no-default-features')
         raw = run_bounded([str(cargo), 'metadata', '--manifest-path', str(project / 'Cargo.toml'), '--locked', '--format-version', '1',
                            *flags], temporary, environment, 600, 16 * 1024 * 1024).stdout
-        metadata = json.loads(raw)
+        metadata = native_metadata(raw)
         selected_raw = run_bounded([str(cargo), 'metadata', '--manifest-path', str(project / 'Cargo.toml'), '--locked', '--format-version', '1',
                                     '--filter-platform', selected['target'], *flags], temporary, environment, 600, 16 * 1024 * 1024).stdout
+        selected_resolve = selected_graph(metadata, native_metadata(selected_raw), project)
         vendor = temporary / 'vendor'
         configuration = run_bounded([str(cargo), 'vendor', '--manifest-path', str(project / 'Cargo.toml'), '--locked', '--versioned-dirs', str(vendor)],
                                    temporary, environment, 600, 4 * 1024 * 1024).stdout
@@ -444,7 +564,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             resolver['tlsTrust'] = {'profile': 'cargo-explicit-registry-ca-v1', 'caFile': trust_name,
                                     'digest': digest(trust_raw), 'size': len(trust_raw), 'verification': 'required'}
         artifacts, graph = analyze(metadata, project, vendor, resolver)
-        graph['selectedResolve'] = json.loads(selected_raw)['resolve']
+        graph['selectedResolve'] = selected_resolve
         mappings = {Path(package['manifest_path']).parent.resolve(): Path(row['mount'])
                     for package in metadata['packages'] for row in artifacts if row['metadata']['nativeIdDigest'] == digest(package['id'].encode())}
         mappings.update({project: Path('.'), **{Path(package['manifest_path']).parent.resolve():
