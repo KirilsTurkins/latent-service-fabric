@@ -112,7 +112,6 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       if (init == null) init = {};
       for (const key of Object.keys(init)) if (!allowedInit.has(key)) throw unsupported('RequestInit.' + key);
       const previous = input instanceof Request ? input : null;
-      if (previous?.bodyUsed) throw new TypeError('body-already-used');
       this.url = canonicalUrl(previous ? previous.url : input);
       this.method = method(init.method ?? previous?.method ?? 'GET');
       this.headers = new Headers(init.headers ?? previous?.headers);
@@ -131,18 +130,20 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       // Use the maintained native dependent-signal algorithms, including weak
       // dependency ownership. Request and clone never expose the input signal.
       this.signal = target.AbortSignal.any(sourceSignal == null ? [] : [sourceSignal]);
-      let content;
+      let content, inheritBody = false;
       if (init.body != null) {
         content = bytes(init.body);
         if (typeof init.body === 'string' && !this.headers.has('content-type')) this.headers.set('content-type', 'text/plain;charset=UTF-8');
       } else if (previous) {
+        if (previous.bodyUsed) throw new TypeError('body-already-used');
         content = bytes(records.get(previous).content);
-        if (content !== null) records.get(previous).used = true;
+        inheritBody = content !== null;
       } else content = null;
       if (['GET', 'HEAD'].includes(this.method) && content !== null) throw new TypeError('body-for-get-or-head');
       bodyRecord(this, content);
       readonly(this, {url: this.url, method: this.method, headers: this.headers, signal: this.signal,
         redirect: this.redirect, credentials: this.credentials, mode: this.mode});
+      if (inheritBody) records.get(previous).used = true;
     }
     clone() {
       if (this.bodyUsed) throw new TypeError('body-already-used');
