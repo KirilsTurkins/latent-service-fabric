@@ -285,3 +285,136 @@ fn backend_disposition_rejects_arbitrary_tokens_and_preserves_projection_bounds(
         .details
         .is_empty());
 }
+
+#[test]
+fn known_host_failure_codes_survive_invocation_status_and_foreign_envelopes() {
+    let limits = InvocationLimits::default();
+    for code in [
+        PlatformErrorCode::Unavailable,
+        PlatformErrorCode::DeadlineExceeded,
+        PlatformErrorCode::Cancelled,
+        PlatformErrorCode::ResourceExhausted,
+        PlatformErrorCode::PermissionDenied,
+        PlatformErrorCode::Unauthenticated,
+        PlatformErrorCode::InvalidArgument,
+        PlatformErrorCode::NotFound,
+        PlatformErrorCode::AlreadyExists,
+        PlatformErrorCode::IncompatibleContract,
+        PlatformErrorCode::StateConflict,
+        PlatformErrorCode::DependencyFailed,
+        PlatformErrorCode::GuestTrap,
+        PlatformErrorCode::CorruptArtifact,
+        PlatformErrorCode::RouteUnavailable,
+        PlatformErrorCode::AdmissionRejected,
+        PlatformErrorCode::Internal,
+    ] {
+        let selected = ErrorDetail {
+            kind: "activation.guest-host-failure".into(),
+            fields: Metadata::from([("code".into(), code.wire_code().into())]),
+        };
+        let mut detail = selected.clone();
+        for field in ["cell_id", "provider", "credential", "message", "backtrace"] {
+            detail
+                .fields
+                .insert(field.into(), "private-fixture-text".into());
+        }
+        let outcome = trap_failure(vec![detail]);
+        let mut expected = outcome.clone();
+        let ActivationOutcome::Failed { error, .. } = &mut expected else {
+            unreachable!()
+        };
+        error.message = public_platform_message(error.code).into();
+        error.details = vec![selected];
+        let expected_error = error.clone();
+        let value = response(outcome.clone());
+        validate_runtime_response(&value, &limits).unwrap();
+        let encoded = public_invocation_response_to_proto(value, &limits).encode_to_vec();
+        let decoded = proto::InvokeResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            invocation_response_from_proto(decoded).unwrap().outcome,
+            expected
+        );
+        let retained = status(&outcome);
+        validate_runtime_status(&retained, &retained.activation_id, &limits).unwrap();
+        let encoded = public_activation_status_to_proto(retained, &limits).encode_to_vec();
+        let decoded = proto::ActivationStatus::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            activation_status_from_proto(decoded)
+                .unwrap()
+                .terminal_outcome,
+            Some(expected.retained_terminal_outcome())
+        );
+        let ActivationOutcome::Failed { error, .. } = outcome else {
+            unreachable!()
+        };
+        let foreign = sanitize_platform_error(error.into(), &limits).unwrap();
+        let expected_proto: proto::PlatformError = expected_error.into();
+        assert_eq!(foreign, expected_proto);
+        assert!(!format!("{foreign:?}").contains("private-fixture-text"));
+    }
+}
+
+#[test]
+fn host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds() {
+    for (kind, key, value) in [
+        ("activation.guest-host-failure", "code", ""),
+        ("activation.guest-host-failure", "code", "Unavailable"),
+        ("activation.guest-host-failure", "code", " unavailable"),
+        ("activation.guest-host-failure", "code", "unavailable "),
+        ("activation.guest-host-failure", "code", "unavailable\n"),
+        ("activation.guest-host-failure", "code", "future-failure"),
+        ("activation.guest-host-failure", "code", "unavail\u{0430}ble"),
+        ("activation.guest-host-failure", "code", "private-fixture-text"),
+        ("activation.guest-host-failure", "capabilityFailure", "unavailable"),
+        ("activation.guest-host-failure/private", "code", "unavailable"),
+    ] {
+        let outcome = trap_failure(vec![ErrorDetail {
+            kind: kind.into(),
+            fields: Metadata::from([(key.into(), value.into())]),
+        }]);
+        let ActivationOutcome::Failed { error, .. } = outcome else {
+            unreachable!()
+        };
+        let public = sanitize_platform_error(error.clone().into(), &InvocationLimits::default())
+            .unwrap();
+        assert_eq!(public.code, error.code.wire_code());
+        assert_eq!(public.retryable, error.retryable);
+        assert_eq!(public.message, public_platform_message(error.code));
+        assert!(public.detail_items.is_empty());
+    }
+    let detail = |value: &str| ErrorDetail {
+        kind: "activation.guest-host-failure".into(),
+        fields: Metadata::from([("code".into(), value.into())]),
+    };
+    let ActivationOutcome::Failed { error, .. } =
+        trap_failure(vec![detail("resource-exhausted")])
+    else {
+        unreachable!()
+    };
+    for limits in [
+        InvocationLimits {
+            max_platform_error_fields: 0,
+            ..InvocationLimits::default()
+        },
+        InvocationLimits {
+            max_platform_error_details: 0,
+            ..InvocationLimits::default()
+        },
+        InvocationLimits {
+            max_string_bytes: "resource-exhausted".len() - 1,
+            ..InvocationLimits::default()
+        },
+    ] {
+        let public = sanitize_platform_error(error.clone().into(), &limits).unwrap();
+        assert_eq!(public.code, error.code.wire_code());
+        assert_eq!(public.retryable, error.retryable);
+        assert!(public.detail_items.is_empty());
+    }
+    let ActivationOutcome::Failed { error, .. } =
+        trap_failure(vec![detail(&"private-fixture-text".repeat(1024))])
+    else {
+        unreachable!()
+    };
+    let public = sanitize_platform_error(error.into(), &InvocationLimits::default()).unwrap();
+    assert!(public.detail_items.is_empty());
+}

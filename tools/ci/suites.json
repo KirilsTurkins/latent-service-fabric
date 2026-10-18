@@ -9173,7 +9173,9 @@
         "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
         "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
-        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation"
+        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation",
+        "invocation::conversion::tests::trap_kinds::known_host_failure_codes_survive_invocation_status_and_foreign_envelopes",
+        "invocation::conversion::tests::trap_kinds::host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9240,7 +9242,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 272,
+      "minimumCases": 274,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

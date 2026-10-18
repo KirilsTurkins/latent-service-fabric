@@ -131,6 +131,7 @@ enum Value {
     Unsigned,
     Known(&'static [&'static str]),
     GuestTrapKind,
+    PlatformCode,
 }
 
 pub(super) fn public_platform_error(
@@ -182,6 +183,7 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("requested", Unsigned),
         ],
         "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
+        "activation.guest-host-failure" => &[("code", Value::PlatformCode)],
         "activation.guest-trap" => &[(
             "code",
             Known(&[
@@ -226,6 +228,7 @@ fn public_detail(mut detail: ErrorDetail, limits: &InvocationLimits) -> Option<E
             Value::GuestTrapKind => {
                 latent_core::error::GuestTrapKind::from_wire_name(&value).is_some()
             }
+            Value::PlatformCode => latent_core::PlatformErrorCode::from_wire_code(&value).is_some(),
             Value::Unsigned => {
                 !value.is_empty()
                     && value.len() <= 20
