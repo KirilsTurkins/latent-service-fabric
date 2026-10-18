@@ -566,6 +566,25 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 checkpoints.transform(compiler, source.parent,
                     [{'Dir': str(source.parent), 'GoFiles': [source.name]}], {source}, root)
 
+    def test_collected_timer_drain_retires_exact_slot_before_original_fence(self):
+        import re
+        source = (runtime.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
+        drain = re.search(r'(?ms)^func lsfStopIdleChannelTimers\(\) \{.*?^\}', source)[0]
+        collected = re.search(r'(?ms)^        if pointer == nil \{.*?^        \}', drain)[0]
+        self.assertIn('token := slot.token', collected)
+        self.assertIn('lsfStopTimerSlot(uint32(index + 1), token)', collected)
+        self.assertIn('lsfActivationTimerFence(token[0], token[1])', collected)
+        self.assertLess(collected.index('lsfStopTimerSlot('), collected.index('lsfActivationTimerFence('))
+        self.assertLess(collected.index('lsfActivationTimerFence('), collected.index('continue'))
+        self.assertNotIn('lsfFail(', collected)
+        self.assertNotIn('lsfRetireTimer(', collected)
+        self.assertIn('if !t.isChan { lsfFail("LSF callback timer remains during result seal") }', drain)
+        self.assertIn('token := lsfRetireTimer(t)', drain)
+        self.assertIn('KeepAlive(t)', drain)
+        stop = re.search(r'(?ms)^func lsfStopTimerSlot\(.*?^\}', source)[0]
+        self.assertLess(stop.index('slot.token != token'), stop.index('lsfTimerStop('))
+        self.assertLess(stop.index('result.tag != 0'), stop.index('*slot = lsfTimerSlot{}'))
+
     def fixture(self, root, prepared=True):
         text = sources()
         if prepared:

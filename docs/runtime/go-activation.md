@@ -254,8 +254,8 @@ normal package admission, grant, execution-cell and physical cleanup owners.
 The Go workflow retains both successful and failed artifacts. A prepared command
 or compiler receipt alone is not execution or complete-ticket qualification.
 
-The retained 2026-10-16 v3 failure remains a required acceptance failure: mode 9
-traps while repeatedly collecting unreachable timers. A separate terminal-only
+The retained original 2026-10-16 v3 component failed required mode 9 while
+repeatedly collecting unreachable timers. A separate terminal-only
 component mutation identified `runtime.throw` behind the original closed-stdio
 memory trap. The bounded follow-up compares only 208 reviewed literal reasons
 from hash-checked Go 1.27.2 runtime sources. It authenticates the exact emitted
@@ -300,3 +300,22 @@ read-only; their original bytes and the original component are checked after
 execution. The writable Cargo cache becomes diagnostic-only: the job saves no
 cache and runs no subsequent acceptance. The original 600-second/1-MiB bounds
 still apply. A configured observer alone supplies no frame or execution proof.
+
+The current source integrates the common runtime repairs originally reviewed in
+networking commits `b8d858d84e948bd9955d09e95b56ee39a29d61dc` and
+`b15e30ff6dc468a7676199b888dfe2f10727497e`. The captured Go 1.27.2 WASI poller
+reserves subscription zero for its timeout. GC world restart can ask for
+`netpoll(0)` with no descriptor subscription; that clock-only nonblocking case
+now takes the original locked empty-list return. The entire upstream poller is
+authenticated before transformation. Descriptor subscriptions and positive or
+indefinite waits retain their original code and the closed WASI denial; this
+does not enable sockets or replace timer readiness with an early success.
+
+GC can also clear a timer's weak reference between the preliminary sweep and
+result drain. A nil second lookup retires that exact original host token and
+awaits the existing dispatcher fence. It never dereferences the missing timer
+or refunds pending physical readiness early. Stale-token, unconfirmed-stop and
+live-callback refusals remain. This independent collection-race repair does not
+establish a second cause of the original mode 9 trap. Source regressions and
+existing networking-branch execution retain their own identities; the parent
+timer and initializer PRs still require fresh complete signed qualification.
