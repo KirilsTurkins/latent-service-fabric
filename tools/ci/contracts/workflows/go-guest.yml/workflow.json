@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "go-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "Go guest qualification",
     "on": {
       "pull_request": {
@@ -45,6 +31,7 @@
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
           "tools/diagnose_go_timer_failure.py",
+          "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -101,6 +88,7 @@
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
           "tools/diagnose_go_timer_failure.py",
+          "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -130,12 +118,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "go-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Compose actual merged timer runtime with normal Go dependency authoring, scalar cancellation recovery and signed library gate. Retain both parent command/artifact/trigger sets, exact permissions/environment/runner, all existing guards and the unchanged45-minute bound.",
+  "reviewReason": "Additive final development composition: retain admitted v4 initializer/published gates and every original guard, plus native Go add/update/remove/lock and dependency-recovery controls; no command, timeout, isolation, resource limit or artifact removal.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

@@ -4,11 +4,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import shutil
+import sys
 import time
 import tomllib
 
 from tools.build_observation import build_environment, file_identity, resolve_tools
-from tools.build_process import BuildProcessError, run_bounded
+from tools.build_process import BuildProcessError, run_bounded_result
 from tools.build_snapshot import SnapshotError, canonical, digest, is_reparse
 from tools.angular_build.inputs import decode, read
 
@@ -19,6 +20,24 @@ BUILD_STAGES = frozenset(('tool', 'node-version', 'configure', 'angular-compile'
                          'component-validate', 'assembler'))
 ADAPTER_FILES = ('Cargo.toml', 'src/abi.rs', 'src/lib.rs', 'src/wire.rs', 'src/backend.rs', 'wit/adapter.wit',
                  'runtime/bridge.js', 'runtime/timers.js')
+DIAGNOSTIC_REASONS = frozenset(('command-exit', 'command-deadline', 'command-output-limit', 'process-cleanup',
+                                'process-ownership', 'command-failed', 'build-deadline'))
+
+
+def failure_diagnostic(stage: str, reason: str, exit_kind: str, result=None) -> None:
+    record = {'schemaVersion': 'latent.angular.build-failure.v1', 'qualification': False,
+              'stage': stage, 'reason': reason if reason in DIAGNOSTIC_REASONS else 'other',
+              'exitKind': exit_kind, 'stdout': None, 'stderr': None}
+    if result is not None:
+        for name in ('stdout', 'stderr'):
+            raw = getattr(result, name)
+            record[name] = {'bytes': len(raw), 'digest': digest(raw)}
+    encoded = canonical(record)
+    if len(encoded) <= 1024:
+        try:
+            sys.stderr.write(encoded.decode('ascii') + '\n')
+        except (OSError, ValueError):
+            pass
 
 
 def table(files: list[tuple[str, Path]], name: str) -> tuple[dict, bytes]:
@@ -138,17 +157,23 @@ class BuildTools:
 
     def call(self, command: list[str], cwd: Path, *, node=False, seconds=300, maximum=4 * 1024 * 1024,
              stage='tool') -> bytes:
-        if stage not in BUILD_STAGES:
+        if type(stage) is not str or stage not in BUILD_STAGES:
             raise SnapshotError('unsupported Angular build stage')
         self.cancellation.check()
         remaining = min(seconds, self.deadline - time.monotonic())
         if remaining <= 0:
+            failure_diagnostic(stage, 'build-deadline', 'not-completed')
             raise SnapshotError('Angular build deadline exceeded')
         try:
-            return run_bounded(command, cwd=cwd, env=self.node_environment if node else self.environment,
-                               timeout_seconds=remaining, max_output_bytes=maximum).stdout
+            result = run_bounded_result(command, cwd=cwd, env=self.node_environment if node else self.environment,
+                                        timeout_seconds=remaining, max_output_bytes=maximum)
         except BuildProcessError as error:
+            failure_diagnostic(stage, error.reason, 'not-completed')
             raise BuildProcessError('angular-' + stage + ':' + error.reason) from None
+        if result.returncode != 0:
+            failure_diagnostic(stage, 'command-exit', 'signal' if result.returncode < 0 else 'nonzero', result)
+            raise BuildProcessError('angular-' + stage + ':command-exit') from None
+        return result.stdout
 
     def cli(self, *arguments: str) -> dict:
         result = decode(self.call([str(self.paths['package-assembler']), '--output', 'json', *arguments], ROOT,

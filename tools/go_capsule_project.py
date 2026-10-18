@@ -12,7 +12,12 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
 RUNTIME_IMPORTS = ("latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0")
 
 
-def create(directory: Path, template: str, name: str | None = None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
+    from tools.go_guest.activation import PROFILES
+    if runtime_profile is not None and (not isinstance(runtime_profile, str)
+            or runtime_profile not in {'go-component-async-v1', *PROFILES}):
+        raise ValueError('go-runtime-profile-not-installed')
+    activation = runtime_profile in PROFILES
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown Go capsule template")
     name = name or "my-" + template
@@ -30,14 +35,19 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     world = read_file(source / "world.wit").decode()
     if world.count("world service {") != 1:
         raise ValueError("Go template world drift")
+    runtime_imports = (*RUNTIME_IMPORTS, 'latent:runtime/activation@0.1.0') if activation else RUNTIME_IMPORTS
     world = world.replace("world service {", "world service {\n" +
-                          "\n".join("    import " + value + ";" for value in RUNTIME_IMPORTS))
+                          "\n".join("    import " + value + ";" for value in runtime_imports))
+    if activation:
+        # This is an explicit async template choice, not a rewrite of arbitrary
+        # application WIT. The generated project owns the resulting public ABI.
+        world = re.sub(r'(:\s*)func(\s*\()', r'\1async func\2', world)
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/main.go": read_file(ROOT / "sdk/go-guest/templates" / (template + ".go")),
                   "go.mod": vendor["sdk/go-guest/runtime-deps/go.mod"],
                   "go.sum": vendor["sdk/go-guest/runtime-deps/go.sum"],
                   "wit/world.wit": world.encode(), ".gitignore": b"/target/\n"})
-    for package in ("clock", "random") + (("http-v2",) if template == "http-status" else ()):
+    for package in ("clock", "random") + (("activation-runtime",) if activation else ()) + (("http-v2",) if template == "http-status" else ()):
         files.update({"wit/deps/" + package + "/" + path: data
                       for path, data in snapshot(ROOT / "wit/platform" / package).items()})
     limits = json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"]
@@ -46,6 +56,8 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         limits.update(outboundRequests=1)
     project = {"formatVersion": 1, "name": name, "version": "1.0.0", "tenant": "examples",
                "service": "examples/" + name, "world": f"examples:{template}/service@1.0.0", "limits": limits}
+    if runtime_profile is not None:
+        project['runtimeProfile'] = runtime_profile
     lock = {"formatVersion": 1, "language": "go", "sdk": json.loads(inventory(vendor)),
             "template": {"name": template, "sourceDigest": digest(files["src/main.go"]),
                          "witDigest": digest(files["wit/world.wit"])}}
@@ -74,7 +86,9 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if (not isinstance(project, dict) or set(project) - {"runtimeProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
-    if project.get('runtimeProfile', 'go-component-async-v1') not in {'go-component-async-v1', 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3'}:
+    profile = project.get('runtimeProfile', 'go-component-async-v1')
+    if (not isinstance(profile, str)
+            or profile not in {'go-component-async-v1', 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}):
         raise ValueError('go-runtime-profile-not-installed')
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Go capsule name")

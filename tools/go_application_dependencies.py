@@ -32,6 +32,8 @@ def native_assembly(data: bytes) -> bool:
 
 
 def selection(value: dict | None = None) -> dict:
+    if value is not None and not isinstance(value, dict):
+        raise DependencyError('go-selection-fields-invalid')
     value = dict(value or {})
     if set(value) - {'target', 'runtimeProfile', 'tags'}:
         raise DependencyError('go-selection-fields-invalid')
@@ -40,7 +42,8 @@ def selection(value: dict | None = None) -> dict:
             or not re.fullmatch(r'[A-Za-z0-9_]{1,64}', tag) for tag in tags)):
         raise DependencyError('go-build-tags-invalid')
     profile = value.get('runtimeProfile', PROFILE)
-    if value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3'}:
+    if (value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or not isinstance(profile, str)
+            or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}):
         raise DependencyError('go-runtime-profile-not-installed')
     return {'target': 'wasip1/wasm', 'runtimeProfile': profile, 'tags': sorted(set(tags))}
 
@@ -115,6 +118,37 @@ def verify_download(row: dict, expected: dict) -> tuple[dict[str, bytes], dict[s
     if unpacked != selected:
         raise DependencyError('go-expanded-module-differs-from-original-zip')
     return original, selected
+
+
+def graph_manifests(cache: Path, expected: dict) -> dict[str, bytes]:
+    """Retain checksum-bound graph metadata, including superseded module versions."""
+    allowed = {}
+    for (module, version), checksum in expected.items():
+        if not version.endswith('/go.mod'):
+            continue
+        module_path(module)
+        version = version.removesuffix('/go.mod')
+        if not re.fullmatch(r'v[0-9][A-Za-z0-9.+-]{0,127}', version):
+            raise DependencyError('go-native-module-version-invalid')
+        # cmd/go's cache uses module.EscapePath/EscapeVersion, not URL quoting.
+        escape = lambda text: ''.join('!' + char.lower() if 'A' <= char <= 'Z' else char for char in text)
+        relative = escape(module) + '/@v/' + escape(version) + '.mod'
+        if relative in allowed:
+            raise DependencyError('go-native-manifest-cache-collision')
+        allowed[relative] = checksum
+    result, total = {}, 0
+    for path in sorted(cache.rglob('*.mod')):
+        relative = path.relative_to(cache).as_posix()
+        if relative not in allowed:
+            raise DependencyError('go-graph-manifest-not-in-reviewed-sums')
+        raw = read_bytes(path)
+        if h1({'go.mod': raw}) != allowed[relative]:
+            raise DependencyError('go-graph-manifest-identity')
+        total += len(raw)
+        if len(result) >= 8192 or total > 256 * 1024 * 1024:
+            raise DependencyError('go-graph-manifest-cache-bound')
+        result[relative] = raw
+    return result
 
 
 def graph(modules: list[dict], edges: str, root: dict) -> dict:
@@ -220,6 +254,17 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
     previous_graph = optional(project, 'go-resolved.lock.json')
     source_before = source_files(project)
+    if selected is not None and not isinstance(selected, dict):
+        raise DependencyError('go-selection-fields-invalid')
+    selected = dict(selected or {})
+    project_document = json.loads(source_before['capsule-project.json'])
+    if not isinstance(project_document, dict):
+        raise DependencyError('go-runtime-project-profile-invalid')
+    project_profile = project_document.get('runtimeProfile')
+    if 'runtimeProfile' in project_document:
+        if 'runtimeProfile' in selected and selected['runtimeProfile'] != project_profile:
+            raise DependencyError('go-project-and-captured-runtime-profile-disagree')
+        selected['runtimeProfile'] = project_profile
     selected = selection(selected)
     original = {name: read_bytes(project / name) for name in ('go.mod', 'go.sum')}
     expected_sums = sums(original['go.sum'])
@@ -268,10 +313,13 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         if read_bytes(work / 'go.sum') != original['go.sum'] or read_bytes(work / 'go.mod') != fetch_manifest:
             raise DependencyError('go-native-declarations-or-sums-not-locked')
         edges = run_bounded([str(go), 'mod', 'graph'], work, environment, 60, 2 * 1024 * 1024).stdout.decode()
+        if read_bytes(work / 'go.sum') != original['go.sum'] or read_bytes(work / 'go.mod') != fetch_manifest:
+            raise DependencyError('go-native-declarations-or-sums-not-locked')
         native = graph(modules, edges, root)
         downloads_by_key = {(row['Path'], row['Version']): row for row in downloads}
         store, artifacts = Store(owner / 'dependency-inputs/objects'), []
-        cache, cache_files = owned / 'captured-downloads', {}
+        cache = owned / 'captured-downloads'
+        cache_files = graph_manifests(owned / 'modules/cache/download', expected_sums)
         cache.mkdir()
         selected_local = {}
         for row in sorted(modules, key=lambda item: item['Path']):

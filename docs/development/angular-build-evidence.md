@@ -104,6 +104,15 @@ state under the [generic-cell runtime](../runtime/angular-renderer-runtime.md).
 | Installed npm tree observation | 40,000 entries / 1 GiB file bytes / 8 MiB inventory |
 | SBOM inventory | 1,024 entries / 1 MiB |
 
+Build failures keep the current `angular-<stage>:<reason>` error wrapper and
+closed stage names. A separate diagnostic record contains only the stage,
+allowlisted failure/exit category and completed stdout/stderr byte counts and
+SHA-256 digests. Unknown reasons are redacted in that record; raw output,
+arguments and environment are excluded. Incomplete capture reports null byte
+identities. Diagnostic sink failure cannot replace the original command failure,
+whose exception remains in the adopted wrapper's private context. These records
+neither raise the limits above nor establish a successful build.
+
 Hydration accounting includes every script whose `type`, after trimming ASCII
 whitespace and ignoring case, is `application/json`, and every script whose
 case-sensitive `id` ends with `-state`. State-ID scripts are counted regardless

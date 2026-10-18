@@ -16,6 +16,22 @@ runtime imports and synchronous export shapes. The node operator must install
 and grant the [activation runtime](activation-runtime.md), clocks and entropy
 for the exact publication. Selecting a profile supplies no authority.
 
+The SDK checkout creator can prepare that explicit selection, including its
+async public export shape and captured runtime WIT, without application edits:
+
+```bash
+python3 tools/go_capsule.py new /tmp/my-greeting \
+  --runtime-profile go-component-activation-v4
+```
+
+This selects the current unqualified v4 candidate; it does not install a
+provider or grant. Omitting the flag keeps the ordinary default template's
+existing WIT/profile. Review the explicit async public ABI when choosing an
+activation profile. Native module resolution inherits the project's exact
+runtime profile and records it in the captured graph; an explicitly conflicting
+selection fails before the resolver runs. Captured dependencies need no
+hand-edited runtime selection or application scheduler.
+
 Before allocating a new application goroutine or its stack, `newproc1`
 reserves a task on the original host ledger. A live parent supplies its exact
 generation token for accepted continuations during drain. Channel and sync
@@ -147,6 +163,77 @@ LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE=/tmp/go-checkpoints \
   -- --ignored --exact --nocapture
 ```
 
+The additional source candidate `go-component-activation-v4` moves the original
+linked module initialization graph into the first admitted async root, before
+its ordinary handler. Go runtime bootstrap and GC enablement remain in their
+original startup order. Module variables and `init` functions retain the
+linker's exact dependency order and run once per fresh component Store. An
+initializer can create an ordinary goroutine, block on a condition/channel or
+use a timer after the async dispatcher and original task owner exist. It needs
+no application initialization hook or transitive-source edit. Compiler material
+records `first-admitted-async-root` initialization for captured modules.
+
+This profile preserves logical component initialization; native main-thread
+affinity is unsupported. Reached application `runtime.LockOSThread` or
+`UnlockOSThread` fails explicitly. Application finalizers/cleanup and unknown
+background work keep the same explicit boundaries as the earlier profiles.
+An initializer worker waiting for future work remains accepted work: an hour
+ticker does not make that worker managed idle, and root return must not discard
+it. The original deadline and cancellation apply during initialization too.
+
+The candidate's source transformation has been checked against the exact pinned
+upstream files. It has not yet passed emitted-component or signed-node
+qualification. Its maintained gate requires the unchanged fixture's native Go
+reference and eight signed activations covering blocking variable initialization,
+condition signaling, ordered init functions, an initializer-created ticker
+worker, explicit shutdown, pending cancellation, unretired-work deadline,
+preallocation task exhaustion, unsupported affinity and fresh state. The earlier
+v1, v2 and v3 gates remain required. This candidate does not complete #742's
+runtime-cost, approved networking and unchanged published transitive-module
+acceptance requirements.
+
+```bash
+python3 tools/qualify_go_activation.py --output /tmp/go-owned-initializers \
+  --runtime-profile go-component-activation-v4 --fixture initializers
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_INITIALIZER_FIXTURE=/tmp/go-owned-initializers \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation \
+  -- --ignored --exact --nocapture
+```
+
+The additional published workload captures unchanged RxGo `v2.5.0` and backoff
+`v4.0.0` through the normal native MVS, module zip, `h1` verification and reviewed
+dependency lock. RxGo's ordinary `Defer` producer and `BackOffRetry` worker call
+backoff's `Retry`, whose default timer uses standard `time.NewTimer`, `Reset`
+and `Stop`. The application supplies a normal retry policy, without an LSF
+executor, dispatcher, timer implementation or shutdown adapter. Both modules
+are direct native API requirements; the retained graph also verifies RxGo's
+dependency edge to backoff, without relabeling either selection as indirect.
+Failed attempts in this fixed workload emit an error and have no external
+effect. Its retry policy does not authorize repeating an external operation.
+
+The maintained gate builds the reviewed business source on native Go with the
+same captured graph offline, then builds the component inside the existing
+network-denied compiler namespace. Component checkpoints are recorded as
+derived overlays; the captured published source bytes stay unchanged. Signed
+execution must pass nine successful activations covering repeated timer reuse,
+retry exhaustion and ordinary context cancellation, then original activation
+cancellation, root deadline, preallocation task exhaustion and fresh reuse.
+The receipt binds the graph, original runtime source files, compiler inputs,
+native reference and component separately. This gate has been added as source;
+acquisition, component compilation and signed execution have not yet completed.
+It preserves the existing pure-module and all earlier runtime gates.
+
+```bash
+python3 tools/qualify_go_runtime_dependencies.py --output /tmp/go-published-runtime
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_PUBLISHED_FIXTURE=/tmp/go-published-runtime \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::go::signed_published_retry_workers_and_default_timers_keep_original_activation_owners \
+  -- --ignored --exact --nocapture
+```
+
 Run the maintained emitted-component preparation with the pinned tools on PATH:
 
 ```bash
@@ -232,3 +319,17 @@ live-callback refusals remain. This independent collection-race repair does not
 establish a second cause of the original mode 9 trap. Source regressions and
 existing networking-branch execution retain their own identities; the parent
 timer and initializer PRs still require fresh complete signed qualification.
+
+### Standard weak canonicalization cache
+
+The activation compiler authenticates the complete Go 1.27.2 `unique/canonmap.go`
+source and derives only its private dead-weak-entry cleanup registration and
+unused local/import bindings. `weak.Make`, `Value`, canonical equality, lookup,
+locking and synchronous dead-entry pruning retain their original implementation.
+This permits ordinary `net/netip` package initialization (also reached through
+published libraries) without enabling application cleanup or finalizer callbacks.
+Dead trie metadata may remain until the fresh component Store retires. It remains
+charged to that original Store's finite Wasm heap/memory budget; no persistent
+cache, background callback, new grant or per-task budget is introduced. This is
+source adaptation, not signed-worker qualification: the unchanged published-worker
+assertions, task/wait ceilings and original deadline must still pass actual CI.
