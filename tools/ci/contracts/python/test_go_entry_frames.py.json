@@ -7,7 +7,8 @@
     "PrivateEntryFrames.test_only_two_source_overlays_capture_numbers_and_leave_dwarf_disabled",
     "PrivateEntryFrames.test_private_build_bounds_and_frozen_input_recheck_precede_single_replay",
     "PrivateEntryFrames.test_private_observer_is_last_after_all_acceptance_with_no_binary_or_raw_output_artifact",
-    "PrivateEntryFrames.test_replay_checkpoints_single_integer_control_before_failed_retirement_and_keeps_only_numeric_frames"
+    "PrivateEntryFrames.test_replay_checkpoints_single_integer_control_before_failed_retirement_and_keeps_only_numeric_frames",
+    "PrivateEntryFrames.test_runner_only_workspace_is_entered_after_credentials_and_capabilities_are_dropped"
   ],
   "guards": {
     "PrivateEntryFrames.test_build_command_preserves_user_namespace_and_drops_privileges_before_locked_offline_build": {
@@ -105,10 +106,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "PrivateEntryFrames.test_runner_only_workspace_is_entered_after_credentials_and_capabilities_are_dropped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bd047367012731b65868b81079cbdf41763e084fbeb7ffbeb63d0511c8516096",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_entry_frames.py",
-  "reviewReason": "Add finite failed-launch preflight/family/category projection, reject private unknown malformed and oversized markers while preserving all old cases and guards",
+  "reviewReason": "Red-green restrictive-ancestor command order control: bwrap initialcwd root, setpriv drops capabilities then env enters runner checkout; preserve all old guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }

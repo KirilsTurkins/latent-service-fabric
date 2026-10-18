@@ -49,7 +49,11 @@ source overlays enable only bounded frame capture and numeric stderr emission;
 DWARF details stay disabled. No names, source paths or raw native output are
 retained, and the private binary is excluded from artifacts. A failed launcher
 retains only the existing closed family/category and preflight phase/code fields;
-unknown or private values are refused. The offline build
+unknown or private values are refused. Bubblewrap starts at `/`; only after
+the original credential/capability drop does `env --chdir` enter the runner
+workspace. This avoids root traversal of runner-only ancestors without adding
+DAC privileges. The captured permission refusal alone does not prove that path
+was its actual cause. The offline build
 and replay share a 600-second diagnostic bound, with 450 seconds for the build
 and 90 seconds for the node. This is the last native command after every
 acceptance command; the ephemeral target is diagnostic-only afterwards and

@@ -111,9 +111,12 @@ def build_command(root, overlays, environment, tools, context):
         command += ['--setenv', key, value]
     for private, original in overlays:
         command += ['--ro-bind', str(private), str(original)]
-    return command+['--chdir', str(root), tools['setpriv'], '--reuid', str(context['uid']),
+    # bwrap drops requested capabilities before chdir. Enter the workspace
+    # only after setpriv, without giving root DAC override on runner ancestors.
+    return command+['--chdir', '/', tools['setpriv'], '--reuid', str(context['uid']),
         '--regid', str(context['gid']), '--clear-groups', '--bounding-set=-all', '--inh-caps=-all',
-        '--ambient-caps=-all', '--no-new-privs', str(Path(sys.executable).resolve()), '-I', '-B',
+        '--ambient-caps=-all', '--no-new-privs', tools['env'], '--chdir', str(root),
+        str(Path(sys.executable).resolve()), '-I', '-B',
         str(host.frame_preflight_source(root)), json.dumps(context, separators=(',', ':')),
         tools['cargo'], '--config', '.cargo/managed-guest.toml', 'build', '--offline', '--locked',
         '-p', 'latentd', '--bin', 'latentd']
@@ -240,7 +243,7 @@ def diagnose(diagnostic: Path, native: Path, output: Path) -> dict:
         require(identities == observation['binaries'] and all(identities[name] == receipt['binaries'][key]
             for name, key in entry.NATIVE_NAMES.items()), 'go-entry-frame-frozen-binaries')
         context = host.frame_host_context()
-        tools = {name: shutil.which(name) for name in ('cargo', 'bwrap', 'sudo', 'setpriv')}
+        tools = {name: shutil.which(name) for name in ('cargo', 'bwrap', 'sudo', 'setpriv', 'env')}
         require(all(tools.values()), 'go-entry-frame-existing-tools')
         overlays_root = fresh(output/'source-overlays')
         sources, overlays = overlay_sources(ROOT, overlays_root)

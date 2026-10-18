@@ -66,7 +66,7 @@ class PrivateEntryFrames(unittest.TestCase):
     def test_build_command_preserves_user_namespace_and_drops_privileges_before_locked_offline_build(self):
         with tempfile.TemporaryDirectory() as directory:
             _identities, overlays = frames.overlay_sources(ROOT, Path(directory))
-            tools = {name: '/usr/bin/'+name for name in ('cargo', 'sudo', 'bwrap', 'setpriv')}
+            tools = {name: '/usr/bin/'+name for name in ('cargo', 'sudo', 'bwrap', 'setpriv', 'env')}
             context = {'uid': 1001, 'gid': 1001}
             command = frames.build_command(ROOT, overlays, {'PATH': '/tools', 'TMPDIR': '/private'}, tools, context)
             self.assertNotIn('--unshare-user', command)
@@ -79,6 +79,37 @@ class PrivateEntryFrames(unittest.TestCase):
                 '--offline', '--locked', '-p', 'latentd', '--bin', 'latentd'])
             with self.assertRaisesRegex(WorkflowError, 'source-set'):
                 frames.build_command(ROOT, overlays[:1], {}, tools, context)
+
+    def test_runner_only_workspace_is_entered_after_credentials_and_capabilities_are_dropped(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ancestor = root/'runner-only'
+            ancestor.mkdir(mode=0o700)
+            workspace = ancestor/'checkout'
+            workspace.mkdir(mode=0o700)
+            for relative in (*frames.PATHS, frames.host.FRAME_PREFLIGHT_SOURCE):
+                path = workspace/relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(read_file(ROOT/relative))
+            overlays_root = root/'overlays'; overlays_root.mkdir()
+            _identities, overlays = frames.overlay_sources(workspace, overlays_root)
+            tools = {name: '/usr/bin/'+name for name in ('cargo', 'sudo', 'bwrap', 'setpriv', 'env')}
+            command = frames.build_command(workspace, overlays, {'PATH': '/tools'}, tools, {'uid': 1001, 'gid': 1001})
+            # bwrap drops requested caps before its chdir. UID0 without DAC
+            # override must not traverse a runner-only ancestor before setpriv.
+            initial = command.index('--chdir')
+            self.assertEqual(command[initial+1], '/')
+            drop = command.index('/usr/bin/setpriv')
+            enter = command.index('/usr/bin/env')
+            self.assertLess(initial, drop)
+            self.assertLess(drop, enter)
+            self.assertEqual(command[enter+1:enter+3], ['--chdir', str(workspace)])
+            for option in ('--reuid', '--regid', '--clear-groups', '--bounding-set=-all',
+                           '--inh-caps=-all', '--ambient-caps=-all', '--no-new-privs'):
+                self.assertLess(command.index(option), enter)
+            self.assertEqual(command[command.index('--reuid')+1], '1001')
+            self.assertEqual(command[command.index('--regid')+1], '1001')
+            self.assertNotIn('--unshare-user', command)
 
     def test_replay_checkpoints_single_integer_control_before_failed_retirement_and_keeps_only_numeric_frames(self):
         with tempfile.TemporaryDirectory() as directory, ExitStack() as patches:

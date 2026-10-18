@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_entry_frames.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain only existing finite preflight and launcher categories after a22 setup failed before Cargo; raw output remains discarded, all boundaries unchanged",
+  "reviewReason": "Move workspace traversal after original credential and capability drop; retain all namespace/authority choices, same signed replay and original budgets",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "adb834610522d736097bebc6d2336e094fe44f1f2eccbe569de30ef7413fd6a0"
+  "sha256": "16c34b9bf546ef74b34d9ffb223dd1fda9f0361d79a02936ff87f87e3f022a49"
 }
