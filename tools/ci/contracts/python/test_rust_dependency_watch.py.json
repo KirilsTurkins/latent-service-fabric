@@ -538,6 +538,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_watch.py",
-  "reviewReason": "Add four focused actual-watch, strict refusal and bounded privacy controls; preserve all 37 existing cases and guard bodies.",
+  "reviewReason": "Preserve all 37 original cases and all execution guards; verify four added review/privacy cases and reject build-phase signing witnesses while accepting actual deploy events.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

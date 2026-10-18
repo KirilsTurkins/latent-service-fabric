@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve exact certain native-lock refusal gates and project six fixed matched gate witnesses without private fields; retain all original qualification limits and guards.",
+  "reviewReason": "Require exact certain native-lock refusals and retain six bounded witnesses with the actual deploy-phase signed-workspace boundary; preserve all qualification limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "55bfa4d123f71eba420df0081acdce744634cd6518e84970cee093e7edb83423"
+  "sha256": "0ba79eac55b16ed6e9457a3b7f1bd323cbe3788bbe308e8c2cf3298bb92ac7ac"
 }

@@ -81,10 +81,10 @@ def public_gate_observations(report):
     gates = {
         'updateBeforeReview': ('source', 'dependency-native-lock-drift'),
         'updateBeforeTrust': ('build', 'workspace-recipe-trust-required'),
-        'updateBeforeNewSignedWorkspace': ('build', 'signed-test-build-changed-use-new-workspace'),
+        'updateBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace'),
         'removeBeforeReview': ('source', 'dependency-native-lock-drift'),
         'removeBeforeTrust': ('build', 'workspace-recipe-trust-required'),
-        'removeBeforeNewSignedWorkspace': ('build', 'signed-test-build-changed-use-new-workspace'),
+        'removeBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace'),
     }
     result = {}
     for name, (phase, code) in gates.items():

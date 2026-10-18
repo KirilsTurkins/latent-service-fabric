@@ -839,10 +839,10 @@ class RustWatchReviewBoundary(unittest.TestCase):
         gates = {
             'updateBeforeReview': ('source', 'dependency-native-lock-drift'),
             'updateBeforeTrust': ('build', 'workspace-recipe-trust-required'),
-            'updateBeforeNewSignedWorkspace': ('build', 'signed-test-build-changed-use-new-workspace'),
+            'updateBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace'),
             'removeBeforeReview': ('source', 'dependency-native-lock-drift'),
             'removeBeforeTrust': ('build', 'workspace-recipe-trust-required'),
-            'removeBeforeNewSignedWorkspace': ('build', 'signed-test-build-changed-use-new-workspace')}
+            'removeBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace')}
         raw = {name: {'event': 'edit-failed', 'phase': phase, 'code': code, 'uncertain': False,
                       'source': 'a' * 64, 'diagnostics': '/private/token-secret',
                       'currentDeployment': {'credential': 'token-secret'}}
@@ -867,3 +867,8 @@ class RustWatchReviewBoundary(unittest.TestCase):
             with self.subTest(changed=changed):
                 self.assertEqual(public_gate_observations({'updateBeforeReview': changed}), {})
         self.assertEqual(public_gate_observations({'updateBeforeTrust': event}), {})
+        signed = {**event, 'phase': 'build', 'code': 'signed-test-build-changed-use-new-workspace'}
+        for name in ('updateBeforeNewSignedWorkspace', 'removeBeforeNewSignedWorkspace'):
+            self.assertEqual(public_gate_observations({name: signed}), {})
+            deployed = {**signed, 'phase': 'deploy'}
+            self.assertEqual(public_gate_observations({name: deployed}), {name: deployed})
