@@ -76,6 +76,20 @@ class NugetDependencies(unittest.TestCase):
         self.assertEqual({value['id'] for value in row['dependencies']}, {'transitive.code/3.0.0'})
         self.assertIn('lib/net10.0/Outside.dll', row['targets']['net10.0']['compile'])
 
+    def test_native_json_refuses_nested_duplicate_invalid_and_over_bound_documents(self):
+        from unittest.mock import patch
+        from tools import dotnet_application_dependencies as native
+
+        with self.assertRaisesRegex(DependencyError, '^nuget-native-json-duplicate-field$'):
+            native.native_json(b'{"targets":{"net10.0":{},"net10.0":{}}}')
+        for raw in (b'{', b'\xff', b'{"version":NaN}', b'{"version":Infinity}', b'[]'):
+            with self.subTest(raw=raw), self.assertRaisesRegex(DependencyError,
+                    '^nuget-native-json-invalid$'):
+                native.native_json(raw)
+        with patch.object(native, 'MAX_NATIVE_JSON', 3), self.assertRaisesRegex(DependencyError,
+                '^nuget-native-json-limit$'):
+            native.native_json(b'{}  ')
+
     def test_missing_transitive_and_changed_sdk_hash_fail(self):
         lock, assets, baseline, declared = self.native()
         del assets['targets']['net10.0']['Transitive.Code/3.0.0']
@@ -1050,6 +1064,31 @@ class NugetSelectedNativeAssets(unittest.TestCase):
                     self.assertRaisesRegex(DependencyError, '^nuget-selected-native-asset-runtime-abi-unavailable$'):
                 configure(closure, project, cache)
             original_store.get.assert_not_called()
+            self.assertFalse(cache.exists())
+
+    def test_offline_review_refuses_duplicate_native_json_fields_before_package_cache(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools.build_snapshot import canonical
+        from tools.dotnet_application_dependencies import configure
+
+        for name, duplicate in (('packages.lock.json', 'version'),
+                                ('nuget-resolved.lock.json', 'assets')):
+            files, selected, lock, native, artifacts = self.reviewed_graph()
+            project = self.fixture.root / 'application'
+            for path, raw in files.items():
+                destination = project / path
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(raw)
+            repeated = canonical(lock['version'] if name == 'packages.lock.json' else native['assets'])
+            original = files[name]
+            (project / name).write_bytes(b'{"' + duplicate.encode() + b'":' + repeated + b',' + original[1:])
+            cache = self.fixture.root / ('duplicate-native-' + name)
+            closure = SimpleNamespace(project=project, work=project, store=Mock(),
+                lock={'selection': selected, 'artifacts': artifacts})
+            with self.subTest(name=name), self.assertRaisesRegex(DependencyError,
+                    '^nuget-native-json-duplicate-field$'):
+                configure(closure, project, cache)
             self.assertFalse(cache.exists())
 
 
