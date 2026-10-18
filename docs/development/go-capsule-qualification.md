@@ -666,3 +666,8 @@ hermetic/reproducible build claim. Source repository labels are operator
 assertions. All six authoring tickets, the Phase 3 gate and human newcomer
 review remain separate; runtime release publication stays on hold pending
 explicit maintainer approval.
+
+The separate [standard HTTP candidate](go-standard-http-candidate.md) adds a
+compiler-owned finite Transport backend and ordinary default-client fixture.
+Its source and compile-only controls do not replace signed runtime/provider
+qualification or the two unchanged client-library requirements.

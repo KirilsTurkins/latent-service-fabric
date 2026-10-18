@@ -30,6 +30,12 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_standard_http.py
+      - tools/go_standard_http_node.py
+      - tools/go_standard_http_project.py
+      - tools/qualify_go_standard_http.py
+      - tools/tests/test_go_standard_http_gate.py
+      - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
@@ -88,6 +94,12 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_standard_http.py
+      - tools/go_standard_http_node.py
+      - tools/go_standard_http_project.py
+      - tools/qualify_go_standard_http.py
+      - tools/tests/test_go_standard_http_gate.py
+      - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
@@ -242,6 +254,10 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_go_http_context
           python3 tools/qualify_go_http_context.py --output "$RUNNER_TEMP/go-http-context"
+      - name: Compile ordinary default net/http sources through the finite typed backend
+        run: |
+          python3 -m unittest tools.tests.test_go_standard_http
+          python3 tools/qualify_go_http_context.py --output "$RUNNER_TEMP/go-standard-http" --fixture standard-http-conformance
       - name: Qualify standard timer heap callbacks and physical readiness retirement
         id: standard_timers
         run: |
@@ -261,6 +277,10 @@ jobs:
       - name: Qualify editable projects, all SDK owners, enforced node and printed guide
         run: |
           python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
+      - name: Check captured ordinary HTTP fixture and frozen native product ownership
+        run: python3 -m unittest tools.tests.test_go_standard_http_gate -v
+      - name: Qualify ordinary net/http contexts and disposal on the signed node
+        run: python3 tools/qualify_go_standard_http.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-http-signed"
       - name: Test reviewed module lifecycle and selected frontend
         run: |
           python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend
@@ -376,6 +396,29 @@ jobs:
             ${{ runner.temp }}/go-published-runtime/build/component.wasm
             ${{ runner.temp }}/go-published-runtime/build/component.wit
             ${{ runner.temp }}/go-published-runtime/build/runtime-overlay/
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES.json
+            ${{ runner.temp }}/go-standard-http/qualification.json
+            ${{ runner.temp }}/go-standard-http/FAILED.json
+            ${{ runner.temp }}/go-standard-http/recipe-inputs.json
+            ${{ runner.temp }}/go-standard-http/src/
+            ${{ runner.temp }}/go-standard-http/wit/
+            ${{ runner.temp }}/go-standard-http/logs/
+            ${{ runner.temp }}/go-standard-http/build/component.wasm
+            ${{ runner.temp }}/go-standard-http/build/component.wit
+            ${{ runner.temp }}/go-standard-http/build/standard-http/
+            ${{ runner.temp }}/go-standard-http/build/runtime-overlay/
+            ${{ runner.temp }}/go-standard-http-signed/*.json
+            ${{ runner.temp }}/go-standard-http-signed/*.txt
+            ${{ runner.temp }}/go-standard-http-signed/project/src/**
+            ${{ runner.temp }}/go-standard-http-signed/project/wit/**
+            ${{ runner.temp }}/go-standard-http-signed/project/capsule-project.json
+            ${{ runner.temp }}/go-standard-http-signed/project/sdk-lock.json
+            ${{ runner.temp }}/go-standard-http-signed/build/*.json
+            ${{ runner.temp }}/go-standard-http-signed/build/component.wasm
+            ${{ runner.temp }}/go-standard-http-signed/build/component.wit
+            ${{ runner.temp }}/go-standard-http-signed/build/logs/**
+            ${{ runner.temp }}/go-standard-http-signed/node/*.json
+            ${{ runner.temp }}/go-standard-http-signed/node/controls/**
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

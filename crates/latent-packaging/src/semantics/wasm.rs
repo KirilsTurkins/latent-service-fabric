@@ -15,6 +15,10 @@ use wasmparser::{
 
 type Result<T> = std::result::Result<T, PlatformError>;
 
+// wasmparser 0.261.0's private MAX_WASM_DATA_SEGMENTS has this finite ceiling.
+// Data segments consume aggregate parser work, not core function slots.
+const MAX_CORE_DATA_SEGMENTS: usize = 100_000;
+
 pub(super) fn validate(component: &[u8], limits: SemanticLimits) -> Result<()> {
     limits.validate()?;
     validate_prechecked(component, limits)
@@ -266,7 +270,12 @@ fn core_section(id: u8, reader: &mut BinaryReader<'_>, budget: &mut Budget) -> R
         read(reader.read_var_u32())?;
         return end(reader);
     }
-    let count = Budget::count(reader, budget.limits.max_core_functions)?;
+    let maximum = if matches!(id, 11 | 12) {
+        budget.limits.max_type_nodes.min(MAX_CORE_DATA_SEGMENTS)
+    } else {
+        budget.limits.max_core_functions
+    };
+    let count = Budget::count(reader, maximum)?;
     if id == 12 {
         return end(reader);
     }
