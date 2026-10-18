@@ -319,3 +319,17 @@ live-callback refusals remain. This independent collection-race repair does not
 establish a second cause of the original mode 9 trap. Source regressions and
 existing networking-branch execution retain their own identities; the parent
 timer and initializer PRs still require fresh complete signed qualification.
+
+### Standard weak canonicalization cache
+
+The activation compiler authenticates the complete Go 1.27.2 `unique/canonmap.go`
+source and derives only its private dead-weak-entry cleanup registration and
+unused local/import bindings. `weak.Make`, `Value`, canonical equality, lookup,
+locking and synchronous dead-entry pruning retain their original implementation.
+This permits ordinary `net/netip` package initialization (also reached through
+published libraries) without enabling application cleanup or finalizer callbacks.
+Dead trie metadata may remain until the fresh component Store retires. It remains
+charged to that original Store's finite Wasm heap/memory budget; no persistent
+cache, background callback, new grant or per-task budget is introduced. This is
+source adaptation, not signed-worker qualification: the unchanged published-worker
+assertions, task/wait ceilings and original deadline must still pass actual CI.

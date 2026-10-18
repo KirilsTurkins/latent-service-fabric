@@ -26,8 +26,27 @@ PREIMAGES = {
 ASYNC_SHA256 = '0ab89732e936c9f766ca571e7f56d6406b1fd0a2d28931f5c8d2c86bdedf786b'
 
 
+CANONMAP_SHA256 = 'c2231dbb996483905d256f0c1d8cf64266fd89c63bc339e0530e536bedb5aedb'
+CANONMAP_CLEANUP = '\truntime.AddCleanup(canon, func(_ struct{}) {\n\t\tm.cleanup(hash, wp)\n\t}, struct{}{})\n'
+
+
+def canonical_map_source(goroot: Path) -> str:
+    """Keep weak canonical values; retain only dead trie metadata until Store drop."""
+    text = checked_sources(goroot, {'unique/canonmap.go': CANONMAP_SHA256})['unique/canonmap.go']
+    # This private cache callback only removes dead weak trie entries. Its
+    # metadata remains inside the original limited Wasm heap and fresh Store;
+    # weak.Make/Value, lookup equality and synchronous pruning stay untouched.
+    # Preserve the runtime dependency and ignore only the cleanup's unused copy
+    # of the weak pointer. Application AddCleanup remains denied below.
+    text = replace_once(text, '\t"runtime"\n', '\t_ "runtime"\n')
+    text = replace_once(text, '\tnewEntry, canon, wp := newEntryNode(key, hash)\n',
+                        '\tnewEntry, canon, _ := newEntryNode(key, hash)\n')
+    return replace_once(text, CANONMAP_CLEANUP, '')
+
+
 def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpoints=False, timers=False, initializers=False):
     sources.update(checked_sources(goroot, PREIMAGES))
+    sources['unique/canonmap.go'] = canonical_map_source(goroot)
     sources['runtime/runtime2.go'] = replace_once(sources['runtime/runtime2.go'],
         '\tvalgrindStackID uintptr\n}', '\tvalgrindStackID uintptr\n\tlsfOwner [2]uint64\n\tlsfParked bool\n}')
     text = sources['runtime/proc.go']

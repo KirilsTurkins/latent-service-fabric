@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "GoUniqueCanonicalizationTests.test_activation_installs_cache_derivation_and_still_rejects_application_cleanups",
+    "GoUniqueCanonicalizationTests.test_full_source_drift_including_weak_lookup_and_callback_is_rejected",
+    "GoUniqueCanonicalizationTests.test_only_internal_cleanup_and_its_unused_bindings_change"
+  ],
+  "guards": {
+    "GoUniqueCanonicalizationTests.test_activation_installs_cache_derivation_and_still_rejects_application_cleanups": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e47245b75d711b640b47548b9770ba995582427e07dc986f347129dea08e238",
+        "class:setup-sha256:04b86d6d172a3d70b1d86825bf7ebc71907b57eb643d93e2c3ecde07363c0f7c"
+      ],
+      "skipSites": []
+    },
+    "GoUniqueCanonicalizationTests.test_full_source_drift_including_weak_lookup_and_callback_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e47245b75d711b640b47548b9770ba995582427e07dc986f347129dea08e238",
+        "class:setup-sha256:04b86d6d172a3d70b1d86825bf7ebc71907b57eb643d93e2c3ecde07363c0f7c"
+      ],
+      "skipSites": []
+    },
+    "GoUniqueCanonicalizationTests.test_only_internal_cleanup_and_its_unused_bindings_change": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e47245b75d711b640b47548b9770ba995582427e07dc986f347129dea08e238",
+        "class:setup-sha256:04b86d6d172a3d70b1d86825bf7ebc71907b57eb643d93e2c3ecde07363c0f7c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_unique_canonicalization.py",
+  "reviewReason": "Authenticate and derive only pinned standard unique cache cleanup registration, preserve every weak/canonical operation and keep application cleanup and finalizer refusal; original runtime budgets and assertions unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
