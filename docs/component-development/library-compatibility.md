@@ -133,5 +133,15 @@ library failure. Missing or invalid context and omitted observations remain
 visible. Client reaping does not prove physical retirement, and no outcome grants
 a retry right. These presentation options read existing files and issue no calls.
 
+An observed `activation.guest-trap` detail with the closed
+`runtime-lifecycle-unproven` code is retained in `guestTrapCode` and displayed as
+a runtime disposition. It records the node's lifecycle refusal without
+identifying the outstanding owner, resource dimension or library operation.
+Cause remains unknown without the existing numeric diagnostic evidence;
+physical retirement and worker drain remain unproven even when the invocation
+client was reaped. Unknown, conflicting or oversized trap details do not supply
+a runtime disposition. Messages, cell identifiers and private detail fields are
+excluded from the observation.
+
 Add `--json` to validate and emit the same machine report. This command only
 reads the explicit report; it does not execute library code or grant authority.

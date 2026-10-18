@@ -6,7 +6,7 @@ import re
 from .common import encode
 
 TRAP_CODES = frozenset({"guest-trap", "guest-runtime-error", "budget-accounting-failed",
-                        "result-limit-exceeded", "invalid-component-result"})
+                        "runtime-lifecycle-unproven", "result-limit-exceeded", "invalid-component-result"})
 CURRENTNESS_REASONS = frozenset({
     "admission-authority-busy", "admission-authority-poisoned", "admission-control-busy",
     "admission-clock-lease-uncovered", "admission-clock-regression", "admission-durability-uncertain",
