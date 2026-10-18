@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "latent.ci.contracts.v2",
+  "kind": "python",
+  "reviewReason": "Retain all four original controls, strengthen injected cache negatives to actual payloads, and add exact bounded native Cargo tag initialization positives/negatives. Native results here remain modelled.",
+  "module": "tools/tests/test_rust_git_conformance.py",
+  "cases": [
+    "GitOfflineMetadata.test_a_git_or_registry_cache_cannot_satisfy_the_fresh_home_gate",
+    "GitOfflineMetadata.test_an_absent_reviewed_closure_cannot_reach_native_metadata",
+    "GitOfflineMetadata.test_cache_tags_have_exact_bounded_contents_and_no_extra_entries",
+    "GitOfflineMetadata.test_native_cargo_cache_tags_and_empty_directories_are_bookkeeping_only",
+    "GitOfflineMetadata.test_offline_observation_cannot_mutate_the_original_application",
+    "GitOfflineMetadata.test_only_locked_offline_metadata_uses_verified_objects_and_a_fresh_home"
+  ],
+  "guards": {
+    "GitOfflineMetadata.test_only_locked_offline_metadata_uses_verified_objects_and_a_fresh_home": "ff2d8999d816f79f54d3299b6fc976ae134703876bbc18ea60c26859604292df",
+    "GitOfflineMetadata.test_a_git_or_registry_cache_cannot_satisfy_the_fresh_home_gate": "ff2d8999d816f79f54d3299b6fc976ae134703876bbc18ea60c26859604292df",
+    "GitOfflineMetadata.test_native_cargo_cache_tags_and_empty_directories_are_bookkeeping_only": "ff2d8999d816f79f54d3299b6fc976ae134703876bbc18ea60c26859604292df",
+    "GitOfflineMetadata.test_cache_tags_have_exact_bounded_contents_and_no_extra_entries": "ff2d8999d816f79f54d3299b6fc976ae134703876bbc18ea60c26859604292df",
+    "GitOfflineMetadata.test_offline_observation_cannot_mutate_the_original_application": "ff2d8999d816f79f54d3299b6fc976ae134703876bbc18ea60c26859604292df",
+    "GitOfflineMetadata.test_an_absent_reviewed_closure_cannot_reach_native_metadata": "ff2d8999d816f79f54d3299b6fc976ae134703876bbc18ea60c26859604292df"
+  },
+  "guardDefinitions": {
+    "ff2d8999d816f79f54d3299b6fc976ae134703876bbc18ea60c26859604292df": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:449e7d0d9618e4eca70defd8effcbb92d64943bd32fdbb2ea5cb97ac283365cc",
+        "class:setup-sha256:c732dfad1e7ddef4d0f6f7187bdf3283d06052d519389ee7ac3d714ec9431b1a"
+      ]
+    }
+  }
+}

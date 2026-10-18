@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "owner",
+  "reviewReason": "Bounded normal native Git capture and fresh-home offline metadata campaign; no application compilation or signed execution. Permit only exact bounded Cargo bookkeeping tags/empty cache directories; still reject every source/index/Git payload.",
+  "path": "tools/qualify_rust_git_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "sha256": "49f64ae7a0fbd15952ff405da1d252fde793c2832a682aed5c3e836df339006c"
+}
