@@ -1,11 +1,13 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Add bounded native Cargo full/filtered graph admission, exact record preservation and pre-vendor refusal controls. All existing test modules and contracts remain unchanged; native command outputs are modelled, not executed.",
+  "reviewReason":"Add bounded native Cargo full/filtered graph admission and pre-vendor refusal. Preserve native fields and accept the actual pinned filtered package subset; all prior test modules/contracts remain unchanged. Native command outputs in these controls are modelled.",
   "module":"tools/tests/test_rust_cargo_metadata.py",
-  "cases":["CargoMetadata.test_duplicate_edges_and_kind_observations_are_refused","CargoMetadata.test_duplicate_package_and_node_ids_are_not_silently_collapsed","CargoMetadata.test_filtered_features_aliases_edge_kinds_and_unknown_fields_remain_exact","CargoMetadata.test_filtered_package_feature_and_edge_observations_cannot_appear_from_nowhere","CargoMetadata.test_full_and_filtered_graphs_require_closed_edges_and_consistent_dependency_ids","CargoMetadata.test_json_duplicate_fields_invalid_constants_and_finite_limits_fail_closed","CargoMetadata.test_malformed_fields_fail_with_closed_errors_instead_of_python_type_errors","CargoMetadata.test_native_root_is_shared_and_bound_to_the_actual_application_manifest","CargoMetadataCapture.test_duplicate_full_native_package_cannot_be_collapsed_before_capture","CargoMetadataCapture.test_invalid_filtered_observation_cannot_publish_or_start_vendor"],
+  "cases":["CargoMetadata.test_duplicate_edges_and_kind_observations_are_refused","CargoMetadata.test_duplicate_package_and_node_ids_are_not_silently_collapsed","CargoMetadata.test_filtered_features_aliases_edge_kinds_and_unknown_fields_remain_exact","CargoMetadata.test_filtered_package_feature_and_edge_observations_cannot_appear_from_nowhere","CargoMetadata.test_full_and_filtered_graphs_require_closed_edges_and_consistent_dependency_ids","CargoMetadata.test_json_duplicate_fields_invalid_constants_and_finite_limits_fail_closed","CargoMetadata.test_malformed_fields_fail_with_closed_errors_instead_of_python_type_errors","CargoMetadata.test_native_filter_may_omit_target_only_packages_without_rewriting_shared_records","CargoMetadata.test_native_root_is_shared_and_bound_to_the_actual_application_manifest","CargoMetadataCapture.test_duplicate_full_native_package_cannot_be_collapsed_before_capture","CargoMetadataCapture.test_invalid_filtered_observation_cannot_publish_or_start_vendor"],
   "guards":{
     "CargoMetadata.test_filtered_features_aliases_edge_kinds_and_unknown_fields_remain_exact":
+      "8b3dd6f01ef37f0828b8e43a6eb2ab58a946fe00860f4fadb498ef5178bf8422",
+    "CargoMetadata.test_native_filter_may_omit_target_only_packages_without_rewriting_shared_records":
       "8b3dd6f01ef37f0828b8e43a6eb2ab58a946fe00860f4fadb498ef5178bf8422",
     "CargoMetadata.test_duplicate_package_and_node_ids_are_not_silently_collapsed":
       "8b3dd6f01ef37f0828b8e43a6eb2ab58a946fe00860f4fadb498ef5178bf8422",

@@ -335,7 +335,8 @@ def native_graph(metadata: dict, *, filtered=False) -> tuple[dict, dict]:
 def selected_graph(metadata: dict, selected: dict, root: Path) -> dict:
     packages, nodes = native_graph(metadata)
     selected_packages, selected_nodes = native_graph(selected, filtered=True)
-    if packages != selected_packages or not set(selected_nodes) <= set(nodes):
+    if (not set(selected_packages) <= set(packages) or not set(selected_nodes) <= set(nodes)
+            or any(package != packages[identity] for identity, package in selected_packages.items())):
         raise DependencyError('cargo-selected-graph-package-drift')
     root_id = metadata['resolve']['root']
     try:

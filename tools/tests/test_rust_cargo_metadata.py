@@ -45,6 +45,15 @@ class CargoMetadata(unittest.TestCase):
         self.assertEqual(result['nodes'][0]['deps'][0]['dep_kinds'], [{'kind': None, 'target': None}])
         self.assertEqual(result['nodes'][0]['future-node'], 'filtered')
 
+    def test_native_filter_may_omit_target_only_packages_without_rewriting_shared_records(self):
+        self.selected['packages'].pop()
+        self.assertIs(native.selected_graph(self.full, self.selected, self.root), self.selected['resolve'])
+        self.assertEqual(len(self.full['packages']), 3)
+        self.assertEqual(len(self.selected['packages']), 2)
+        self.selected['packages'].append({'id': 'foreign', 'manifest_path': 'outside/Cargo.toml'})
+        with self.assertRaisesRegex(DependencyError, '^cargo-selected-graph-package-drift$'):
+            native.selected_graph(self.full, self.selected, self.root)
+
     def test_duplicate_package_and_node_ids_are_not_silently_collapsed(self):
         for side in ('full', 'selected'):
             for field in ('packages', 'nodes'):

@@ -35,8 +35,9 @@ The separate fetch stage runs native `cargo metadata` and `cargo vendor --locked
 
 Before vendoring or publishing a candidate, capture checks both native metadata
 documents for unique package/node IDs, closed edges and bounded feature lists.
-The filtered graph must share the actual application root and unchanged package
-records with the full graph. Its enabled features, renamed edges and observed
+The filtered graph must share the actual application root and unchanged common
+package records with the full graph. The pinned native filter may omit target-only
+packages from its package list. Its enabled features, renamed edges and observed
 dependency kinds/target expressions must occur in that full graph. Target
 expressions are retained as Cargo observations; the capture tool does not evaluate
 them or resolve features itself. Validation preserves the input records, including
