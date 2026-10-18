@@ -42,6 +42,8 @@ on:
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
+      - tools/diagnose_go_entry.py
+      - tools/tests/test_go_entry_differential.py
       - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
@@ -109,6 +111,8 @@ on:
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
+      - tools/diagnose_go_entry.py
+      - tools/tests/test_go_entry_differential.py
       - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
@@ -285,7 +289,9 @@ jobs:
         run: |
           python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
       - name: Check captured ordinary HTTP fixture and frozen native product ownership
-        run: python3 -m unittest tools.tests.test_go_standard_http_gate -v
+        run: |
+          python3 -m unittest tools.tests.test_go_standard_http_gate -v
+          python3 -m unittest tools.tests.test_go_entry_differential -v
       - name: Qualify ordinary net/http contexts and disposal on the signed node
         run: python3 tools/qualify_go_standard_http.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-http-signed"
       - name: Check third-party client capture and frozen native product boundaries
@@ -295,6 +301,9 @@ jobs:
       - name: Qualify two captured default clients and renamed private transitive workers
         if: ${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' && steps.http_library_boundaries.outcome == 'success' }}
         run: python3 tools/qualify_go_http_libraries.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-http-libraries"
+      - name: Diagnose signed Go entry with and without net/http initialization
+        if: ${{ !cancelled() && failure() && steps.normal_go_qualification.outcome == 'success' }}
+        run: python3 tools/diagnose_go_entry.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-entry-differential"
       - name: Test reviewed module lifecycle and selected frontend
         run: |
           python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend
@@ -456,6 +465,19 @@ jobs:
             ${{ runner.temp }}/go-standard-http-signed/build/logs/**
             ${{ runner.temp }}/go-standard-http-signed/node/*.json
             ${{ runner.temp }}/go-standard-http-signed/node/controls/**
+            ${{ runner.temp }}/go-entry-differential/observation.json
+            ${{ runner.temp }}/go-entry-differential/*/*.json
+            ${{ runner.temp }}/go-entry-differential/*/*.txt
+            ${{ runner.temp }}/go-entry-differential/*/project/src/main.go
+            ${{ runner.temp }}/go-entry-differential/*/project/wit/**
+            ${{ runner.temp }}/go-entry-differential/*/project/capsule-project.json
+            ${{ runner.temp }}/go-entry-differential/*/project/sdk-lock.json
+            ${{ runner.temp }}/go-entry-differential/*/build/*.json
+            ${{ runner.temp }}/go-entry-differential/*/build/component.wasm
+            ${{ runner.temp }}/go-entry-differential/*/build/component.wit
+            ${{ runner.temp }}/go-entry-differential/*/build/logs/**
+            ${{ runner.temp }}/go-entry-differential/*/node/*.json
+            ${{ runner.temp }}/go-entry-differential/*/node/controls/**
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

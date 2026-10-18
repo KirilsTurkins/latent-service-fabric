@@ -23,6 +23,17 @@ the prior bound; allocator overhead is additional. This is a host-native bound,
 not a claim that table storage is charged as guest linear memory or that the full
 Go cost-accounting acceptance is complete. Fresh signed qualification is required.
 
+The signed entry diagnostics remain separate from HTTP qualification. Two tiny
+ordinary v4 projects keep the same `run(u32, string) -> string` world and constant
+return, differing only by a blank `net/http` import. They use the frozen normal
+native products, ordinary compiler/signing/admission and original owner fences.
+Their public rows are retained even if an entry traps; they never count among the
+original 33 standard or 30 library cases. This failure-only observation is bounded
+to 600 seconds, with 180-second compiles and 90-second node scenarios, under the
+unchanged 45-minute job. A difference can narrow the reachable initialization
+graph; it does not identify a specific initializer or prove an ABI defect by
+itself. No private runtime error or native backtrace is made public.
+
 ## Finite API contract
 
 The candidate supports ordinary default Client calls, DefaultClient,

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_go_entry.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bounded failure-only signed Go v4 import differential; preserve original gates and all redaction/owner/deadline boundaries",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5fe0ec60c73651bd731c36de705f70e119cc77477bb543a87a3f9f7e2a752880"
+}
