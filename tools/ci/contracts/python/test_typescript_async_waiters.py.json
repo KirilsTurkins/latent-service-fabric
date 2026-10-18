@@ -1,12 +1,10 @@
 {
-  "schemaVersion": "latent.ci.contracts.v1",
-  "kind": "python",
-  "reviewReason": "Reviewed one added two-realm Node regression: actual intrinsic application Promises, pending ordering, original rejection identity, receiver and resource constructor identity, unchanged synchronous bindings, name/arity and nonconstructible async functions. Existing cases and every skip/setup/decorator guard remain byte-for-byte equivalent; the new case uses the same Node availability predicate, owned temporary files and30-second subprocess bound.",
-  "module": "tools/tests/test_typescript_async_waiters.py",
   "cases": [
     "TypeScriptAsyncWaiterTests.test_actual_async_imports_use_application_promises_and_preserve_resources",
+    "TypeScriptAsyncWaiterTests.test_exited_middle_waiter_refuses_before_live_successor_exits",
     "TypeScriptAsyncWaiterTests.test_generated_task_slots_retire_after_exit_without_reordering_waiters",
-    "TypeScriptAsyncWaiterTests.test_idle_state_actual_shared_wait_and_successive_imports"
+    "TypeScriptAsyncWaiterTests.test_idle_state_actual_shared_wait_and_successive_imports",
+    "TypeScriptAsyncWaiterTests.test_task_exited_before_first_slot_is_refused_without_granting_entry"
   ],
   "guards": {
     "TypeScriptAsyncWaiterTests.test_actual_async_imports_use_application_promises_and_preserve_resources": {
@@ -17,16 +15,16 @@
       "decorators": [
         "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ],
-      "skipSites": [
-        "skip-control-sha256:63e2d89df4ee2e17b56ed8238ec288259cbb3516975952368f7b4749527f0fea",
-        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
-      ],
       "fixtureGuards": [
         "module:setup-sha256:c9168dd4e71df7aeaad0ff721e2bc22592c4b8e4f38fbd79cf163e3a3ab73122",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:63e2d89df4ee2e17b56ed8238ec288259cbb3516975952368f7b4749527f0fea",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ]
     },
-    "TypeScriptAsyncWaiterTests.test_idle_state_actual_shared_wait_and_successive_imports": {
+    "TypeScriptAsyncWaiterTests.test_exited_middle_waiter_refuses_before_live_successor_exits": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -34,13 +32,13 @@
       "decorators": [
         "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ],
-      "skipSites": [
-        "skip-control-sha256:520e6496df0b9027e47b8ccdefc93b8a8b298d7a1d8139d056d59295c4032b17",
-        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
-      ],
       "fixtureGuards": [
         "module:setup-sha256:c9168dd4e71df7aeaad0ff721e2bc22592c4b8e4f38fbd79cf163e3a3ab73122",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:38982883dcd68f0e6bd72bc85f2fb7daa41004f4932d8d6db61fc36faadec428",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ]
     },
     "TypeScriptAsyncWaiterTests.test_generated_task_slots_retire_after_exit_without_reordering_waiters": {
@@ -51,14 +49,52 @@
       "decorators": [
         "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ],
+      "fixtureGuards": [
+        "module:setup-sha256:c9168dd4e71df7aeaad0ff721e2bc22592c4b8e4f38fbd79cf163e3a3ab73122",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
       "skipSites": [
         "skip-control-sha256:f0625047ba38a53e3948763e17b0ce87ed3c2972e1810d806d5a060e07ed1c17",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    },
+    "TypeScriptAsyncWaiterTests.test_idle_state_actual_shared_wait_and_successive_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
         "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ],
       "fixtureGuards": [
         "module:setup-sha256:c9168dd4e71df7aeaad0ff721e2bc22592c4b8e4f38fbd79cf163e3a3ab73122",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:520e6496df0b9027e47b8ccdefc93b8a8b298d7a1d8139d056d59295c4032b17",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    },
+    "TypeScriptAsyncWaiterTests.test_task_exited_before_first_slot_is_refused_without_granting_entry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:c9168dd4e71df7aeaad0ff721e2bc22592c4b8e4f38fbd79cf163e3a3ab73122",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:728a10e414f1c51305325650b6eea031a09f67e6017d6d39735cdf193169df2e",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ]
     }
-  }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_async_waiters.py",
+  "reviewReason": "Refuse actually exited queued tasks after the original wait without granting entry or waiting for a live successor; retain current ordering and ownership guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
 }

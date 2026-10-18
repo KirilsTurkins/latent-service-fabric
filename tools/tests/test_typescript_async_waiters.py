@@ -10,6 +10,140 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class TypeScriptAsyncWaiterTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "requires Node")
+    def test_task_exited_before_first_slot_is_refused_without_granting_entry(self):
+        source = r"""
+import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
+import {retireGeneratedTaskSlots} from './async_waiters.mjs';
+const generated = `class Slots {
+  #nextTaskPromise = Promise.resolve(true);
+  #nextTaskQueue = [];
+  retained() { return this.#nextTaskQueue.length; }
+  current() { return this.#nextTaskPromise; }
+  async nextTaskExecutionSlot({task}) {
+    const placeholder = {
+      completed: false,
+      task,
+      promise: task.exitPromise().then(() => {
+        placeholder.completed = true;
+      }),
+    };
+    this.#nextTaskQueue.push(placeholder);
+    while (true) {
+      await this.#nextTaskPromise;
+      const next = this.#nextTaskQueue.find(entry => !entry.completed);
+      if (next === undefined || next === placeholder) {
+        this.#nextTaskPromise = next.promise;
+        break;
+      }
+    }
+  }
+};`;
+await writeFile(new URL('./generated.mjs', import.meta.url),
+  retireGeneratedTaskSlots(generated) + '\nexport default Slots;\n');
+const {default:Slots} = await import('./generated.mjs');
+const slots = new Slots();
+let entered = false;
+await assert.rejects(slots.nextTaskExecutionSlot({task:{exitPromise:() => Promise.resolve()}})
+  .then(() => {entered = true;}), /^Error: selected-runtime-task-exited-before-slot$/);
+assert.equal(entered, false);
+assert.equal(slots.retained(), 0);
+assert.equal(slots.current(), null);
+const anchor = '      await this.#nextTaskPromise;\n';
+assert.throws(() => retireGeneratedTaskSlots(generated.replace(anchor, '')), /shape-drift/);
+assert.throws(() => retireGeneratedTaskSlots(generated + anchor), /shape-drift/);
+"""
+        with tempfile.TemporaryDirectory() as owned:
+            root = Path(owned)
+            (root / "async_waiters.mjs").write_bytes(
+                (ROOT / "tools/typescript_guest/async_waiters.mjs").read_bytes()
+            )
+            (root / "test.mjs").write_text(source, encoding="utf-8")
+            result = subprocess.run(
+                [shutil.which("node"), str(root / "test.mjs")],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "requires Node")
+    def test_exited_middle_waiter_refuses_before_live_successor_exits(self):
+        source = r"""
+import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
+import {retireGeneratedTaskSlots} from './async_waiters.mjs';
+const generated = `class Slots {
+  #nextTaskPromise = Promise.resolve(true);
+  #nextTaskQueue = [];
+  retained() { return this.#nextTaskQueue.length; }
+  current() { return this.#nextTaskPromise; }
+  async nextTaskExecutionSlot({task}) {
+    const placeholder = {
+      completed: false,
+      task,
+      promise: task.exitPromise().then(() => {
+        placeholder.completed = true;
+      }),
+    };
+    this.#nextTaskQueue.push(placeholder);
+    while (true) {
+      await this.#nextTaskPromise;
+      const next = this.#nextTaskQueue.find(entry => !entry.completed);
+      if (next === undefined || next === placeholder) {
+        this.#nextTaskPromise = next.promise;
+        break;
+      }
+    }
+  }
+};`;
+await writeFile(new URL('./generated.mjs', import.meta.url),
+  retireGeneratedTaskSlots(generated) + '\nexport default Slots;\n');
+const {default:Slots} = await import('./generated.mjs');
+const slots = new Slots();
+const first = Promise.withResolvers(), middle = Promise.withResolvers(), last = Promise.withResolvers();
+await slots.nextTaskExecutionSlot({task:{exitPromise:() => first.promise}});
+const order = [];
+let middleFailure, middleEntered = false;
+const waitMiddle = slots.nextTaskExecutionSlot({task:{exitPromise:() => middle.promise}})
+  .then(() => {middleEntered = true;}, error => {middleFailure = error; order.push('retired');});
+const waitLast = slots.nextTaskExecutionSlot({task:{exitPromise:() => last.promise}})
+  .then(() => order.push('last'));
+middle.resolve();
+await Promise.resolve();
+assert.equal(slots.retained(), 2);
+assert.equal(middleFailure, undefined); // Original current-task wait still owns this continuation.
+first.resolve();
+await waitLast;
+assert.equal(middleFailure?.message, 'selected-runtime-task-exited-before-slot');
+await waitMiddle;
+assert.equal(middleEntered, false);
+assert.deepEqual(order, ['retired', 'last']);
+assert.equal(slots.retained(), 1);
+assert.notEqual(slots.current(), null);
+last.resolve();
+await Promise.resolve();
+await Promise.resolve();
+assert.equal(slots.retained(), 0);
+assert.equal(slots.current(), null);
+"""
+        with tempfile.TemporaryDirectory() as owned:
+            root = Path(owned)
+            (root / "async_waiters.mjs").write_bytes(
+                (ROOT / "tools/typescript_guest/async_waiters.mjs").read_bytes()
+            )
+            (root / "test.mjs").write_text(source, encoding="utf-8")
+            result = subprocess.run(
+                [shutil.which("node"), str(root / "test.mjs")],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "requires Node")
     def test_actual_async_imports_use_application_promises_and_preserve_resources(self):
         source = r"""
 import assert from 'node:assert/strict';

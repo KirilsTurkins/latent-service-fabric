@@ -24,6 +24,8 @@ source derivations, compiler-tool bytes and build/transpile receipts. Their
 qualification remains `unknown` and API support remains `not-evaluated`.
 An operator-provided compiler input cannot certify runtime support.
 
+The compiler refuses an execution slot when the queued task's actual exit Promise has resolved before its turn. It waits for the original current-task Promise to settle, then reports `selected-runtime-task-exited-before-slot` before choosing another queue entry. An exited middle waiter cannot run or remain waiting for an unrelated live successor. A cancellation request alone does not trigger this refusal, release native owners or grant successful completion. The pinned generator comes from the [ComponentizeJS source lock](https://github.com/bytecodealliance/ComponentizeJS/blob/4b8d6eb465b5cded6b97c67aaf6fdaa8b62001e2/Cargo.lock); focused JavaScript controls cover exited-first and exited-middle ordering. These controls do not qualify emitted-component cancellation or physical cleanup.
+
 The maintained `tools/build_typescript_source_splicer.py` builder captures the
 original ComponentizeJS archive, verifies the selected derivation preimages,
 and uses its original locked Cargo workspace and upstream JCO componentization
