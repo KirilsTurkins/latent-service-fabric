@@ -1,0 +1,769 @@
+{
+  "original": {
+    "worlds": [
+      {
+        "name": "root",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          },
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          },
+          "interface-2": {
+            "interface": {
+              "id": 2
+            }
+          }
+        },
+        "exports": {},
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "poll",
+        "types": {
+          "pollable": 0
+        },
+        "functions": {
+          "[method]pollable.block": {
+            "name": "[method]pollable.block",
+            "kind": {
+              "method": 0
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 1
+              }
+            ]
+          },
+          "poll": {
+            "name": "poll",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "in",
+                "type": 2
+              }
+            ],
+            "result": 3
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "error",
+        "types": {
+          "error": 4
+        },
+        "functions": {},
+        "package": 0
+      },
+      {
+        "name": "streams",
+        "types": {
+          "input-stream": 5,
+          "error": 6,
+          "stream-error": 8,
+          "pollable": 9,
+          "output-stream": 10
+        },
+        "functions": {
+          "[method]input-stream.read": {
+            "name": "[method]input-stream.read",
+            "kind": {
+              "method": 5
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 11
+              },
+              {
+                "name": "len",
+                "type": "u64"
+              }
+            ],
+            "result": 13
+          },
+          "[method]input-stream.blocking-read": {
+            "name": "[method]input-stream.blocking-read",
+            "kind": {
+              "method": 5
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 11
+              },
+              {
+                "name": "len",
+                "type": "u64"
+              }
+            ],
+            "result": 13
+          },
+          "[method]input-stream.subscribe": {
+            "name": "[method]input-stream.subscribe",
+            "kind": {
+              "method": 5
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 11
+              }
+            ],
+            "result": 14
+          },
+          "[method]output-stream.check-write": {
+            "name": "[method]output-stream.check-write",
+            "kind": {
+              "method": 10
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 16
+          },
+          "[method]output-stream.write": {
+            "name": "[method]output-stream.write",
+            "kind": {
+              "method": 10
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              },
+              {
+                "name": "contents",
+                "type": 12
+              }
+            ],
+            "result": 17
+          },
+          "[method]output-stream.flush": {
+            "name": "[method]output-stream.flush",
+            "kind": {
+              "method": 10
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 17
+          },
+          "[method]output-stream.blocking-flush": {
+            "name": "[method]output-stream.blocking-flush",
+            "kind": {
+              "method": 10
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 17
+          },
+          "[method]output-stream.subscribe": {
+            "name": "[method]output-stream.subscribe",
+            "kind": {
+              "method": 10
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 14
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": "pollable",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 0
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u32"
+        },
+        "owner": null
+      },
+      {
+        "name": "error",
+        "kind": "resource",
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": "input-stream",
+        "kind": "resource",
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "error",
+        "kind": {
+          "type": 4
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "stream-error",
+        "kind": {
+          "variant": {
+            "cases": [
+              {
+                "name": "last-operation-failed",
+                "type": 7
+              },
+              {
+                "name": "closed",
+                "type": null
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "pollable",
+        "kind": {
+          "type": 0
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "output-stream",
+        "kind": "resource",
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 5
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 12,
+            "err": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 9
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 10
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 8
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "wasi:io@0.2.6",
+        "interfaces": {
+          "poll": 0,
+          "error": 1,
+          "streams": 2
+        },
+        "worlds": {}
+      },
+      {
+        "name": "root:component",
+        "interfaces": {},
+        "worlds": {
+          "root": 0
+        }
+      }
+    ]
+  },
+  "adapter": {
+    "worlds": [
+      {
+        "name": "root",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          },
+          "interface-2": {
+            "interface": {
+              "id": 2
+            }
+          }
+        },
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "error",
+        "types": {
+          "error": 0
+        },
+        "functions": {},
+        "package": 0
+      },
+      {
+        "name": "poll",
+        "types": {
+          "pollable": 1
+        },
+        "functions": {
+          "[method]pollable.block": {
+            "name": "[method]pollable.block",
+            "kind": {
+              "async-method": 1
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 2
+              }
+            ]
+          },
+          "poll": {
+            "name": "poll",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "in",
+                "type": 3
+              }
+            ],
+            "result": 4
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "streams",
+        "types": {
+          "error": 5,
+          "pollable": 6,
+          "input-stream": 7,
+          "output-stream": 8,
+          "stream-error": 10
+        },
+        "functions": {
+          "[method]input-stream.read": {
+            "name": "[method]input-stream.read",
+            "kind": {
+              "method": 7
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 11
+              },
+              {
+                "name": "len",
+                "type": "u64"
+              }
+            ],
+            "result": 13
+          },
+          "[method]input-stream.blocking-read": {
+            "name": "[method]input-stream.blocking-read",
+            "kind": {
+              "async-method": 7
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 11
+              },
+              {
+                "name": "len",
+                "type": "u64"
+              }
+            ],
+            "result": 13
+          },
+          "[method]input-stream.subscribe": {
+            "name": "[method]input-stream.subscribe",
+            "kind": {
+              "method": 7
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 11
+              }
+            ],
+            "result": 14
+          },
+          "[method]output-stream.check-write": {
+            "name": "[method]output-stream.check-write",
+            "kind": {
+              "method": 8
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 16
+          },
+          "[method]output-stream.write": {
+            "name": "[method]output-stream.write",
+            "kind": {
+              "method": 8
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              },
+              {
+                "name": "contents",
+                "type": 12
+              }
+            ],
+            "result": 17
+          },
+          "[method]output-stream.flush": {
+            "name": "[method]output-stream.flush",
+            "kind": {
+              "method": 8
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 17
+          },
+          "[method]output-stream.blocking-flush": {
+            "name": "[method]output-stream.blocking-flush",
+            "kind": {
+              "async-method": 8
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 17
+          },
+          "[method]output-stream.subscribe": {
+            "name": "[method]output-stream.subscribe",
+            "kind": {
+              "method": 8
+            },
+            "params": [
+              {
+                "name": "self",
+                "type": 15
+              }
+            ],
+            "result": 14
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": "error",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "pollable",
+        "kind": "resource",
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 1
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 2
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u32"
+        },
+        "owner": null
+      },
+      {
+        "name": "error",
+        "kind": {
+          "type": 0
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "pollable",
+        "kind": {
+          "type": 1
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "input-stream",
+        "kind": "resource",
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "output-stream",
+        "kind": "resource",
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 5
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "stream-error",
+        "kind": {
+          "variant": {
+            "cases": [
+              {
+                "name": "last-operation-failed",
+                "type": 9
+              },
+              {
+                "name": "closed",
+                "type": null
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 7
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 12,
+            "err": 10
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 10
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 10
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "wasi:io@0.2.6",
+        "interfaces": {
+          "error": 0,
+          "poll": 1,
+          "streams": 2
+        },
+        "worlds": {}
+      },
+      {
+        "name": "root:component",
+        "interfaces": {},
+        "worlds": {
+          "root": 0
+        }
+      }
+    ]
+  },
+  "wat": "(component\n  (core type $#type0 (;0;) (func (param i32)))\n  (core type $#type1 (;1;) (func (param i32 i32 i32)))\n  (core type $#type2 (;2;) (func (param i32 i64 i32)))\n  (core type $#type3 (;3;) (func (param i32) (result i32)))\n  (core type $#type4 (;4;) (func (param i32 i32)))\n  (core type $#type5 (;5;) (func (param i32 i32 i32 i32)))\n  (core type $#type6 (;6;) (func (param i32 i32 i32 i32) (result i32)))\n  (core type $#type7 (;7;) (func))\n  (core type $#type8 (;8;)\n    (module\n      (alias outer 1 $#type0 (type $#type0 (;0;)))\n      (import \"wasi:io/poll@0.2.6\" \"[method]pollable.block\" (func (type $#type0)))\n      (alias outer 1 $#type1 (type $#type1 (;1;)))\n      (import \"wasi:io/poll@0.2.6\" \"poll\" (func (type $#type1)))\n      (import \"wasi:io/poll@0.2.6\" \"[resource-drop]pollable\" (func (type $#type0)))\n      (import \"wasi:io/error@0.2.6\" \"[resource-drop]error\" (func (type $#type0)))\n      (alias outer 1 $#type2 (type $#type2 (;2;)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]input-stream.read\" (func (type $#type2)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]input-stream.blocking-read\" (func (type $#type2)))\n      (alias outer 1 $#type3 (type $#type3 (;3;)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]input-stream.subscribe\" (func (type $#type3)))\n      (alias outer 1 $#type4 (type $#type4 (;4;)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]output-stream.check-write\" (func (type $#type4)))\n      (alias outer 1 $#type5 (type $#type5 (;5;)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]output-stream.write\" (func (type $#type5)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]output-stream.flush\" (func (type $#type4)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]output-stream.blocking-flush\" (func (type $#type4)))\n      (import \"wasi:io/streams@0.2.6\" \"[method]output-stream.subscribe\" (func (type $#type3)))\n      (import \"wasi:io/streams@0.2.6\" \"[resource-drop]input-stream\" (func (type $#type0)))\n      (import \"wasi:io/streams@0.2.6\" \"[resource-drop]output-stream\" (func (type $#type0)))\n      (export \"memory\" (memory 0))\n      (alias outer 1 $#type6 (type $#type6 (;6;)))\n      (export \"cabi_realloc\" (func (type $#type6)))\n      (alias outer 1 $#type7 (type $#type7 (;7;)))\n      (export \"_initialize\" (func (type $#type7)))\n    )\n  )\n  (core type $#type9 (;9;)\n    (module\n      (alias outer 1 $#type1 (type $#type0 (;0;)))\n      (export \"0\" (func (type $#type0)))\n      (alias outer 1 $#type2 (type $#type1 (;1;)))\n      (export \"1\" (func (type $#type1)))\n      (export \"2\" (func (type $#type1)))\n      (alias outer 1 $#type4 (type $#type2 (;2;)))\n      (export \"3\" (func (type $#type2)))\n      (alias outer 1 $#type5 (type $#type3 (;3;)))\n      (export \"4\" (func (type $#type3)))\n      (export \"5\" (func (type $#type2)))\n      (export \"6\" (func (type $#type2)))\n      (export \"$imports\" (table 7 7 funcref))\n    )\n  )\n  (core type $#type10 (;10;)\n    (module\n      (alias outer 1 $#type1 (type $#type0 (;0;)))\n      (import \"\" \"0\" (func (type $#type0)))\n      (alias outer 1 $#type2 (type $#type1 (;1;)))\n      (import \"\" \"1\" (func (type $#type1)))\n      (import \"\" \"2\" (func (type $#type1)))\n      (alias outer 1 $#type4 (type $#type2 (;2;)))\n      (import \"\" \"3\" (func (type $#type2)))\n      (alias outer 1 $#type5 (type $#type3 (;3;)))\n      (import \"\" \"4\" (func (type $#type3)))\n      (import \"\" \"5\" (func (type $#type2)))\n      (import \"\" \"6\" (func (type $#type2)))\n      (import \"\" \"$imports\" (table 7 7 funcref))\n    )\n  )\n  (core type $#type11 (;11;)\n    (module\n      (alias outer 1 $#type7 (type $#type0 (;0;)))\n      (import \"\" \"\" (func (type $#type0)))\n    )\n  )\n  (import \"unbundled-module0\" (core module $#module0 (;0;) (type $#type8)))\n  (import \"unbundled-module1\" (core module $#module1 (;1;) (type $#type9)))\n  (import \"unbundled-module2\" (core module $#module2 (;2;) (type $#type10)))\n  (import \"unbundled-module3\" (core module $#module3 (;3;) (type $#type11)))\n  (type $ty-wasi:io/poll@0.2.6 (;0;)\n    (instance\n      (export $#type0 (;0;) \"pollable\" (type (sub resource)))\n      (type $#type1 (;1;) (borrow $#type0))\n      (type $#type2 (;2;) (func (param \"self\" $#type1)))\n      (export $#func0 (;0;) \"[method]pollable.block\" (func (type $#type2)))\n      (type $#type3 (;3;) (list $#type1))\n      (type $#type4 (;4;) (list u32))\n      (type $#type5 (;5;) (func (param \"in\" $#type3) (result $#type4)))\n      (export $#func1 (;1;) \"poll\" (func (type $#type5)))\n    )\n  )\n  (import \"wasi:io/poll@0.2.6\" (instance $wasi:io/poll@0.2.6 (;0;) (type $ty-wasi:io/poll@0.2.6)))\n  (type $ty-wasi:io/error@0.2.6 (;1;)\n    (instance\n      (export $#type0 (;0;) \"error\" (type (sub resource)))\n    )\n  )\n  (import \"wasi:io/error@0.2.6\" (instance $wasi:io/error@0.2.6 (;1;) (type $ty-wasi:io/error@0.2.6)))\n  (alias export $wasi:io/error@0.2.6 \"error\" (type $error (;2;)))\n  (alias export $wasi:io/poll@0.2.6 \"pollable\" (type $pollable (;3;)))\n  (type $ty-wasi:io/streams@0.2.6 (;4;)\n    (instance\n      (export $#type0 (;0;) \"input-stream\" (type (sub resource)))\n      (alias outer 1 $error (type $#type1 (;1;)))\n      (export $#type2 (;2;) \"error\" (type (eq $#type1)))\n      (type $#type3 (;3;) (own $#type2))\n      (type $#type4 (;4;) (variant (case \"last-operation-failed\" $#type3) (case \"closed\")))\n      (export $#type5 (;5;) \"stream-error\" (type (eq $#type4)))\n      (alias outer 1 $pollable (type $#type6 (;6;)))\n      (export $#type7 (;7;) \"pollable\" (type (eq $#type6)))\n      (export $#type8 (;8;) \"output-stream\" (type (sub resource)))\n      (type $#type9 (;9;) (borrow $#type0))\n      (type $#type10 (;10;) (list u8))\n      (type $#type11 (;11;) (result $#type10 (error $#type5)))\n      (type $#type12 (;12;) (func (param \"self\" $#type9) (param \"len\" u64) (result $#type11)))\n      (export $#func0 (;0;) \"[method]input-stream.read\" (func (type $#type12)))\n      (export $#func1 (;1;) \"[method]input-stream.blocking-read\" (func (type $#type12)))\n      (type $#type13 (;13;) (own $#type7))\n      (type $#type14 (;14;) (func (param \"self\" $#type9) (result $#type13)))\n      (export $#func2 (;2;) \"[method]input-stream.subscribe\" (func (type $#type14)))\n      (type $#type15 (;15;) (borrow $#type8))\n      (type $#type16 (;16;) (result u64 (error $#type5)))\n      (type $#type17 (;17;) (func (param \"self\" $#type15) (result $#type16)))\n      (export $#func3 (;3;) \"[method]output-stream.check-write\" (func (type $#type17)))\n      (type $#type18 (;18;) (result (error $#type5)))\n      (type $#type19 (;19;) (func (param \"self\" $#type15) (param \"contents\" $#type10) (result $#type18)))\n      (export $#func4 (;4;) \"[method]output-stream.write\" (func (type $#type19)))\n      (type $#type20 (;20;) (func (param \"self\" $#type15) (result $#type18)))\n      (export $#func5 (;5;) \"[method]output-stream.flush\" (func (type $#type20)))\n      (export $#func6 (;6;) \"[method]output-stream.blocking-flush\" (func (type $#type20)))\n      (type $#type21 (;21;) (func (param \"self\" $#type15) (result $#type13)))\n      (export $#func7 (;7;) \"[method]output-stream.subscribe\" (func (type $#type21)))\n    )\n  )\n  (import \"wasi:io/streams@0.2.6\" (instance $wasi:io/streams@0.2.6 (;2;) (type $ty-wasi:io/streams@0.2.6)))\n  (alias outer 0 $#module0 (core module $main (;4;)))\n  (alias outer 0 $#module1 (core module $wit-component-shim-module (;5;)))\n  (alias outer 0 $#module2 (core module $wit-component-fixup (;6;)))\n  (core instance $wit-component-shim-instance (;0;) (instantiate $wit-component-shim-module))\n  (alias export $wasi:io/poll@0.2.6 \"[method]pollable.block\" (func $\"[method]pollable.block\" (;0;)))\n  (core func $\"[method]pollable.block\" (;0;) (canon lower (func $\"[method]pollable.block\")))\n  (alias core export $wit-component-shim-instance \"0\" (core func $indirect-wasi:io/poll@0.2.6-poll (;1;)))\n  (alias export $wasi:io/poll@0.2.6 \"pollable\" (type $\"#type5 pollable\" (@name \"pollable\") (;5;)))\n  (core func $resource.drop (;2;) (canon resource.drop $\"#type5 pollable\"))\n  (core instance $wasi:io/poll@0.2.6 (;1;)\n    (export \"[method]pollable.block\" (func $\"[method]pollable.block\"))\n    (export \"poll\" (func $indirect-wasi:io/poll@0.2.6-poll))\n    (export \"[resource-drop]pollable\" (func $resource.drop))\n  )\n  (alias export $wasi:io/error@0.2.6 \"error\" (type $\"#type6 error\" (@name \"error\") (;6;)))\n  (core func $\"#core-func3 resource.drop\" (@name \"resource.drop\") (;3;) (canon resource.drop $\"#type6 error\"))\n  (core instance $wasi:io/error@0.2.6 (;2;)\n    (export \"[resource-drop]error\" (func $\"#core-func3 resource.drop\"))\n  )\n  (alias core export $wit-component-shim-instance \"1\" (core func $\"indirect-wasi:io/streams@0.2.6-[method]input-stream.read\" (;4;)))\n  (alias core export $wit-component-shim-instance \"2\" (core func $\"indirect-wasi:io/streams@0.2.6-[method]input-stream.blocking-read\" (;5;)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]input-stream.subscribe\" (func $\"[method]input-stream.subscribe\" (;1;)))\n  (core func $\"[method]input-stream.subscribe\" (;6;) (canon lower (func $\"[method]input-stream.subscribe\")))\n  (alias core export $wit-component-shim-instance \"3\" (core func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.check-write\" (;7;)))\n  (alias core export $wit-component-shim-instance \"4\" (core func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.write\" (;8;)))\n  (alias core export $wit-component-shim-instance \"5\" (core func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.flush\" (;9;)))\n  (alias core export $wit-component-shim-instance \"6\" (core func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.blocking-flush\" (;10;)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]output-stream.subscribe\" (func $\"[method]output-stream.subscribe\" (;2;)))\n  (core func $\"[method]output-stream.subscribe\" (;11;) (canon lower (func $\"[method]output-stream.subscribe\")))\n  (alias export $wasi:io/streams@0.2.6 \"input-stream\" (type $input-stream (;7;)))\n  (core func $\"#core-func12 resource.drop\" (@name \"resource.drop\") (;12;) (canon resource.drop $input-stream))\n  (alias export $wasi:io/streams@0.2.6 \"output-stream\" (type $output-stream (;8;)))\n  (core func $\"#core-func13 resource.drop\" (@name \"resource.drop\") (;13;) (canon resource.drop $output-stream))\n  (core instance $wasi:io/streams@0.2.6 (;3;)\n    (export \"[method]input-stream.read\" (func $\"indirect-wasi:io/streams@0.2.6-[method]input-stream.read\"))\n    (export \"[method]input-stream.blocking-read\" (func $\"indirect-wasi:io/streams@0.2.6-[method]input-stream.blocking-read\"))\n    (export \"[method]input-stream.subscribe\" (func $\"[method]input-stream.subscribe\"))\n    (export \"[method]output-stream.check-write\" (func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.check-write\"))\n    (export \"[method]output-stream.write\" (func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.write\"))\n    (export \"[method]output-stream.flush\" (func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.flush\"))\n    (export \"[method]output-stream.blocking-flush\" (func $\"indirect-wasi:io/streams@0.2.6-[method]output-stream.blocking-flush\"))\n    (export \"[method]output-stream.subscribe\" (func $\"[method]output-stream.subscribe\"))\n    (export \"[resource-drop]input-stream\" (func $\"#core-func12 resource.drop\"))\n    (export \"[resource-drop]output-stream\" (func $\"#core-func13 resource.drop\"))\n  )\n  (core instance $main (;4;) (instantiate $main\n      (with \"wasi:io/poll@0.2.6\" (instance $wasi:io/poll@0.2.6))\n      (with \"wasi:io/error@0.2.6\" (instance $wasi:io/error@0.2.6))\n      (with \"wasi:io/streams@0.2.6\" (instance $wasi:io/streams@0.2.6))\n    )\n  )\n  (alias core export $main \"memory\" (core memory $memory (;0;)))\n  (alias core export $wit-component-shim-instance \"$imports\" (core table $\"shim table\" (;0;)))\n  (alias export $wasi:io/poll@0.2.6 \"poll\" (func $poll (;3;)))\n  (alias core export $main \"cabi_realloc\" (core func $realloc (;14;)))\n  (core func $\"#core-func15 indirect-wasi:io/poll@0.2.6-poll\" (@name \"indirect-wasi:io/poll@0.2.6-poll\") (;15;) (canon lower (func $poll) (memory $memory) (realloc $realloc)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]input-stream.read\" (func $\"[method]input-stream.read\" (;4;)))\n  (core func $\"#core-func16 indirect-wasi:io/streams@0.2.6-[method]input-stream.read\" (@name \"indirect-wasi:io/streams@0.2.6-[method]input-stream.read\") (;16;) (canon lower (func $\"[method]input-stream.read\") (memory $memory) (realloc $realloc)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]input-stream.blocking-read\" (func $\"[method]input-stream.blocking-read\" (;5;)))\n  (core func $\"#core-func17 indirect-wasi:io/streams@0.2.6-[method]input-stream.blocking-read\" (@name \"indirect-wasi:io/streams@0.2.6-[method]input-stream.blocking-read\") (;17;) (canon lower (func $\"[method]input-stream.blocking-read\") (memory $memory) (realloc $realloc)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]output-stream.check-write\" (func $\"[method]output-stream.check-write\" (;6;)))\n  (core func $\"#core-func18 indirect-wasi:io/streams@0.2.6-[method]output-stream.check-write\" (@name \"indirect-wasi:io/streams@0.2.6-[method]output-stream.check-write\") (;18;) (canon lower (func $\"[method]output-stream.check-write\") (memory $memory)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]output-stream.write\" (func $\"[method]output-stream.write\" (;7;)))\n  (core func $\"#core-func19 indirect-wasi:io/streams@0.2.6-[method]output-stream.write\" (@name \"indirect-wasi:io/streams@0.2.6-[method]output-stream.write\") (;19;) (canon lower (func $\"[method]output-stream.write\") (memory $memory)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]output-stream.flush\" (func $\"[method]output-stream.flush\" (;8;)))\n  (core func $\"#core-func20 indirect-wasi:io/streams@0.2.6-[method]output-stream.flush\" (@name \"indirect-wasi:io/streams@0.2.6-[method]output-stream.flush\") (;20;) (canon lower (func $\"[method]output-stream.flush\") (memory $memory)))\n  (alias export $wasi:io/streams@0.2.6 \"[method]output-stream.blocking-flush\" (func $\"[method]output-stream.blocking-flush\" (;9;)))\n  (core func $\"#core-func21 indirect-wasi:io/streams@0.2.6-[method]output-stream.blocking-flush\" (@name \"indirect-wasi:io/streams@0.2.6-[method]output-stream.blocking-flush\") (;21;) (canon lower (func $\"[method]output-stream.blocking-flush\") (memory $memory)))\n  (core instance $fixup-args (;5;)\n    (export \"$imports\" (table $\"shim table\"))\n    (export \"0\" (func $\"#core-func15 indirect-wasi:io/poll@0.2.6-poll\"))\n    (export \"1\" (func $\"#core-func16 indirect-wasi:io/streams@0.2.6-[method]input-stream.read\"))\n    (export \"2\" (func $\"#core-func17 indirect-wasi:io/streams@0.2.6-[method]input-stream.blocking-read\"))\n    (export \"3\" (func $\"#core-func18 indirect-wasi:io/streams@0.2.6-[method]output-stream.check-write\"))\n    (export \"4\" (func $\"#core-func19 indirect-wasi:io/streams@0.2.6-[method]output-stream.write\"))\n    (export \"5\" (func $\"#core-func20 indirect-wasi:io/streams@0.2.6-[method]output-stream.flush\"))\n    (export \"6\" (func $\"#core-func21 indirect-wasi:io/streams@0.2.6-[method]output-stream.blocking-flush\"))\n  )\n  (core instance $fixup (;6;) (instantiate $wit-component-fixup\n      (with \"\" (instance $fixup-args))\n    )\n  )\n  (alias core export $main \"_initialize\" (core func $start (;22;)))\n  (alias outer 0 $#module3 (core module $start-shim-module (;7;)))\n  (core instance $start-shim-args (;7;)\n    (export \"\" (func $start))\n  )\n  (core instance $start-shim-instance (;8;) (instantiate $start-shim-module\n      (with \"\" (instance $start-shim-args))\n    )\n  )\n  (@producers\n    (processed-by \"wit-component\" \"0.254.0\")\n  )\n)\n",
+  "unbundled": "0061736d0d00010003f5070c60017f0060037f7f7f0060037f7e7f0060017f017f60027f7f0060047f7f7f7f0060047f7f7f7f017f600000501902100101000012776173693a696f2f706f6c6c40302e322e36165b6d6574686f645d706f6c6c61626c652e626c6f636b000002100101010012776173693a696f2f706f6c6c40302e322e3604706f6c6c00010012776173693a696f2f706f6c6c40302e322e36175b7265736f757263652d64726f705d706f6c6c61626c6500000013776173693a696f2f6572726f7240302e322e36145b7265736f757263652d64726f705d6572726f72000002100101020015776173693a696f2f73747265616d7340302e322e36195b6d6574686f645d696e7075742d73747265616d2e7265616400020015776173693a696f2f73747265616d7340302e322e36225b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d72656164000202100101030015776173693a696f2f73747265616d7340302e322e361e5b6d6574686f645d696e7075742d73747265616d2e737562736372696265000302100101040015776173693a696f2f73747265616d7340302e322e36215b6d6574686f645d6f75747075742d73747265616d2e636865636b2d7772697465000402100101050015776173693a696f2f73747265616d7340302e322e361b5b6d6574686f645d6f75747075742d73747265616d2e777269746500050015776173693a696f2f73747265616d7340302e322e361b5b6d6574686f645d6f75747075742d73747265616d2e666c75736800040015776173693a696f2f73747265616d7340302e322e36245b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c75736800040015776173693a696f2f73747265616d7340302e322e361f5b6d6574686f645d6f75747075742d73747265616d2e73756273637269626500030015776173693a696f2f73747265616d7340302e322e361b5b7265736f757263652d64726f705d696e7075742d73747265616d00000015776173693a696f2f73747265616d7340302e322e361c5b7265736f757263652d64726f705d6f75747075742d73747265616d000003066d656d6f72790200000210010106030c636162695f7265616c6c6f6300060210010107030b5f696e697469616c697a650007500c02100101010301300000021001010203013100010301320001021001010403013300020210010105030134000303013500020301360002030824696d706f7274730170010707500c021001010100000130000002100101020000013100010000013200010210010104000001330002021001010500000134000300000135000200000136000200000824696d706f72747301700107075002021001010700000000000a59040011756e62756e646c65642d6d6f64756c65300011080011756e62756e646c65642d6d6f64756c65310011090011756e62756e646c65642d6d6f64756c653200110a0011756e62756e646c65642d6d6f64756c653300110b0751014208040008706f6c6c61626c6503010168000140010473656c660101000400165b6d6574686f645d706f6c6c61626c652e626c6f636b010201700101707901400102696e030004040004706f6c6c01050a17010012776173693a696f2f706f6c6c40302e322e360500070d0142010400056572726f7203010a18010013776173693a696f2f6572726f7240302e322e360501061602030001056572726f7203000008706f6c6c61626c65078c0401421e04000c696e7075742d73747265616d030102030201020400056572726f72030001016902017102156c6173742d6f7065726174696f6e2d6661696c656401030006636c6f736564000004000c73747265616d2d6572726f720300040203020103040008706f6c6c61626c6503000604000d6f75747075742d73747265616d030101680001707d016a010a01050140020473656c6609036c656e77000b0400195b6d6574686f645d696e7075742d73747265616d2e72656164010c0400225b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d72656164010c0169070140010473656c6609000d04001e5b6d6574686f645d696e7075742d73747265616d2e737562736372696265010e016808016a017701050140010473656c660f00100400215b6d6574686f645d6f75747075742d73747265616d2e636865636b2d77726974650111016a0001050140020473656c660f08636f6e74656e74730a001204001b5b6d6574686f645d6f75747075742d73747265616d2e777269746501130140010473656c660f001204001b5b6d6574686f645d6f75747075742d73747265616d2e666c75736801140400245b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c75736801140140010473656c660f000d04001f5b6d6574686f645d6f75747075742d73747265616d2e73756273637269626501150a1a010015776173693a696f2f73747265616d7340302e322e360504060601001102000006060100110200010606010011020002020401000500061b01010000165b6d6574686f645d706f6c6c61626c652e626c6f636b0805010100000006130200000100013003000008706f6c6c61626c650803010305023d010103165b6d6574686f645d706f6c6c61626c652e626c6f636b000004706f6c6c0001175b7265736f757263652d64726f705d706f6c6c61626c650002060a01030001056572726f720803010306021a010101145b7265736f757263652d64726f705d6572726f720003062f030000010001310000010001320100021e5b6d6574686f645d696e7075742d73747265616d2e73756273637269626508050101000100063c050000010001330000010001340000010001350000010001360100021f5b6d6574686f645d6f75747075742d73747265616d2e737562736372696265080501010002000611010300020c696e7075742d73747265616d08030103070612010300020d6f75747075742d73747265616d080301030802910302010a195b6d6574686f645d696e7075742d73747265616d2e726561640004225b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d7265616400051e5b6d6574686f645d696e7075742d73747265616d2e7375627363726962650006215b6d6574686f645d6f75747075742d73747265616d2e636865636b2d777269746500071b5b6d6574686f645d6f75747075742d73747265616d2e777269746500081b5b6d6574686f645d6f75747075742d73747265616d2e666c7573680009245b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c757368000a1f5b6d6574686f645d6f75747075742d73747265616d2e737562736372696265000b1b5b7265736f757263652d64726f705d696e7075742d73747265616d000c1c5b7265736f757263652d64726f705d6f75747075742d73747265616d000d00040312776173693a696f2f706f6c6c40302e322e36120113776173693a696f2f6572726f7240302e322e36120215776173693a696f2f73747265616d7340302e322e36120306320400020104066d656d6f7279000101000824696d706f72747301000004706f6c6c000001040c636162695f7265616c6c6f63080901010003020300040e061e01010002195b6d6574686f645d696e7075742d73747265616d2e72656164080901010004020300040e062701010002225b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d72656164080901010005020300040e062601010002215b6d6574686f645d6f75747075742d73747265616d2e636865636b2d77726974650807010100060103000620010100021b5b6d6574686f645d6f75747075742d73747265616d2e77726974650807010100070103000620010100021b5b6d6574686f645d6f75747075742d73747265616d2e666c757368080701010008010300062901010002245b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c75736808070101000901030002300201080824696d706f72747301000130000f013100100132001101330012013400130135001401360015000601001205061101000001040b5f696e697469616c697a650606010011020003020c02010100001600070100120700bf0e0e636f6d706f6e656e742d6e616d6501e40700001700165b6d6574686f645d706f6c6c61626c652e626c6f636b0120696e6469726563742d776173693a696f2f706f6c6c40302e322e362d706f6c6c020d7265736f757263652e64726f70030d7265736f757263652e64726f700438696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d696e7075742d73747265616d2e726561640541696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d72656164061e5b6d6574686f645d696e7075742d73747265616d2e7375627363726962650740696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e636865636b2d7772697465083a696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e7772697465093a696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e666c7573680a43696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c7573680b1f5b6d6574686f645d6f75747075742d73747265616d2e7375627363726962650c0d7265736f757263652e64726f700d0d7265736f757263652e64726f700e077265616c6c6f630f20696e6469726563742d776173693a696f2f706f6c6c40302e322e362d706f6c6c1038696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d696e7075742d73747265616d2e726561641141696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d726561641240696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e636865636b2d7772697465133a696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e7772697465143a696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e666c7573681543696e6469726563742d776173693a696f2f73747265616d7340302e322e362d5b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c75736816057374617274010f000101000a7368696d207461626c65010b00020100066d656d6f7279014c00110404046d61696e05197769742d636f6d706f6e656e742d7368696d2d6d6f64756c6506137769742d636f6d706f6e656e742d6669787570071173746172742d7368696d2d6d6f64756c65019f01001209001b7769742d636f6d706f6e656e742d7368696d2d696e7374616e63650112776173693a696f2f706f6c6c40302e322e360213776173693a696f2f6572726f7240302e322e360315776173693a696f2f73747265616d7340302e322e3604046d61696e050a66697875702d6172677306056669787570070f73746172742d7368696d2d61726773081373746172742d7368696d2d696e7374616e6365014205030012776173693a696f2f706f6c6c40302e322e360113776173693a696f2f6572726f7240302e322e360215776173693a696f2f73747265616d7340302e322e3601a302010a00165b6d6574686f645d706f6c6c61626c652e626c6f636b011e5b6d6574686f645d696e7075742d73747265616d2e737562736372696265021f5b6d6574686f645d6f75747075742d73747265616d2e7375627363726962650304706f6c6c04195b6d6574686f645d696e7075742d73747265616d2e7265616405225b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d7265616406215b6d6574686f645d6f75747075742d73747265616d2e636865636b2d7772697465071b5b6d6574686f645d6f75747075742d73747265616d2e7772697465081b5b6d6574686f645d6f75747075742d73747265616d2e666c75736809245b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c757368018a010309001574792d776173693a696f2f706f6c6c40302e322e36011674792d776173693a696f2f6572726f7240302e322e3602056572726f720308706f6c6c61626c65041874792d776173693a696f2f73747265616d7340302e322e360508706f6c6c61626c6506056572726f72070c696e7075742d73747265616d080d6f75747075742d73747265616d014205030012776173693a696f2f706f6c6c40302e322e360113776173693a696f2f6572726f7240302e322e360215776173693a696f2f73747265616d7340302e322e36002f0970726f647563657273010c70726f6365737365642d6279010d7769742d636f6d706f6e656e7407302e3235342e30",
+  "modules": {
+    "unbundled-module0": "0061736d01000000012d0860017f0060037f7f7f0060037f7e7f0060017f017f60027f7f0060047f7f7f7f0060047f7f7f7f017f60000002c3050e12776173693a696f2f706f6c6c40302e322e36165b6d6574686f645d706f6c6c61626c652e626c6f636b000012776173693a696f2f706f6c6c40302e322e3604706f6c6c000112776173693a696f2f706f6c6c40302e322e36175b7265736f757263652d64726f705d706f6c6c61626c65000013776173693a696f2f6572726f7240302e322e36145b7265736f757263652d64726f705d6572726f72000015776173693a696f2f73747265616d7340302e322e36195b6d6574686f645d696e7075742d73747265616d2e72656164000215776173693a696f2f73747265616d7340302e322e36225b6d6574686f645d696e7075742d73747265616d2e626c6f636b696e672d72656164000215776173693a696f2f73747265616d7340302e322e361e5b6d6574686f645d696e7075742d73747265616d2e737562736372696265000315776173693a696f2f73747265616d7340302e322e36215b6d6574686f645d6f75747075742d73747265616d2e636865636b2d7772697465000415776173693a696f2f73747265616d7340302e322e361b5b6d6574686f645d6f75747075742d73747265616d2e7772697465000515776173693a696f2f73747265616d7340302e322e361b5b6d6574686f645d6f75747075742d73747265616d2e666c757368000415776173693a696f2f73747265616d7340302e322e36245b6d6574686f645d6f75747075742d73747265616d2e626c6f636b696e672d666c757368000415776173693a696f2f73747265616d7340302e322e361f5b6d6574686f645d6f75747075742d73747265616d2e737562736372696265000315776173693a696f2f73747265616d7340302e322e361b5b7265736f757263652d64726f705d696e7075742d73747265616d000015776173693a696f2f73747265616d7340302e322e361c5b7265736f757263652d64726f705d6f75747075742d73747265616d000003030206070503010000072703066d656d6f727902000c636162695f7265616c6c6f63000e0b5f696e697469616c697a65000f0a08020300000b02000b002f0970726f647563657273010c70726f6365737365642d6279010d7769742d636f6d706f6e656e7407302e3235342e30",
+    "unbundled-module1": "0061736d0100000001190460037f7f7f0060037f7e7f0060027f7f0060047f7f7f7f000308070001010203020204050170010707072808013000000131000101320002013300030134000401350005013600060824696d706f72747301000a5f070d0020002001200241001100000b0d0020002001200241011101000b0d0020002001200241021101000b0b002000200141031102000b0f00200020012002200341041103000b0b002000200141051102000b0b002000200141061102000b002f0970726f647563657273010c70726f6365737365642d6279010d7769742d636f6d706f6e656e7407302e3235342e30",
+    "unbundled-module2": "0061736d0100000001190460037f7f7f0060037f7e7f0060027f7f0060047f7f7f7f000233080001300000000131000100013200010001330002000134000300013500020001360002000824696d706f7274730170010707090d010041000b0700010203040506002f0970726f647563657273010c70726f6365737365642d6279010d7769742d636f6d706f6e656e7407302e3235342e30",
+    "unbundled-module3": "0061736d0100000001040160000002050100000000080100"
+  }
+}

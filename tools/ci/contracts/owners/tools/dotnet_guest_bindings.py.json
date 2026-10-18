@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/dotnet_guest_bindings.py","reviewBoundary":"committed-fingerprint","reviewReason":"Prove exact selected-world linker metadata against the authoritative nominal types and async signatures; unchanged single-world contracts and physical output ownership remain required","schemaVersion":"latent.ci.contracts.v1","sha256":"d9f5f4e183a39e0cdc3d845dbe4b2b48ca2fd82e6070df9abfbb4000aa4aafb9"}
+{
+  "kind": "owner",
+  "path": "tools/dotnet_guest_bindings.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve original generated marshalling and invoke the exact compiler-private retirement drain before real task return",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "187139280e06ad37e556405cb7db786dcafcaedce0c596e4226219fb5b714087"
+}
