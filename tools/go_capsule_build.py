@@ -29,7 +29,7 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/go_application_dependencies.py",
-           "tools/go_dependency_authoring.py", "tools/captured_compiler_isolation.py")
+           "tools/go_dependency_authoring.py", "tools/go_native_authoring.py", "tools/captured_compiler_isolation.py")
 RECIPE += ("tools/go_generator_authoring.py",)
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE

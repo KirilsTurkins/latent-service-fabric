@@ -87,6 +87,10 @@
           "tools/dotnet_capsule.py",
           "tools/dotnet_guest/**",
           "tools/dotnet_guest_bindings.py",
+          "tools/run_go_dependency_watch_ci.py",
+          "tools/qualify_go_dependency_watch.py",
+          "tools/go_dependency_watch_fixture.py",
+          "tools/tests/test_go_dependency_watch.py",
           "tools/go_capsule*.py",
           "tools/go_guest/**",
           "tools/typescript_capsule.py",
@@ -158,7 +162,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Retain the union of C, Rust, TypeScript and .NET watch triggers and every prior job while preserving controller executable approval coverage.",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

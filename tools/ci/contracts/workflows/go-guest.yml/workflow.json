@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "go-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "Go guest qualification",
     "on": {
       "pull_request": {
@@ -32,9 +18,13 @@
           "tools/go_capsule*.py",
           "tools/go_application_dependencies.py",
           "tools/go_dependency_authoring.py",
+          "tools/go_native_authoring.py",
+          "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/go_dependency_fixture.py",
+          "tools/go_dependency_recovery.py",
+          "tools/tests/test_go_dependency_recovery.py",
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/probe_go_authoring.py",
@@ -50,6 +40,7 @@
           "tools/tests/test_build_provenance_schemas.py",
           "schemas/**",
           "docs/component-development/go-authoring.md",
+          "docs/component-development/go-dependencies.md",
           "docs/development/go-capsule-qualification.md",
           "crates/latent-wasmtime/**",
           "crates/latent-control-store/**",
@@ -84,9 +75,13 @@
           "tools/go_capsule*.py",
           "tools/go_application_dependencies.py",
           "tools/go_dependency_authoring.py",
+          "tools/go_native_authoring.py",
+          "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/go_dependency_fixture.py",
+          "tools/go_dependency_recovery.py",
+          "tools/tests/test_go_dependency_recovery.py",
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/probe_go_authoring.py",
@@ -102,6 +97,7 @@
           "tools/tests/test_build_provenance_schemas.py",
           "schemas/**",
           "docs/component-development/go-authoring.md",
+          "docs/component-development/go-dependencies.md",
           "docs/development/go-capsule-qualification.md",
           "crates/latent-wasmtime/**",
           "crates/latent-control-store/**",
@@ -122,12 +118,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "go-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Preserve all prior Go workflow paths, including timer failure-only observer, and add published runtime dependency qualifier trigger.",
+  "reviewReason": "Additive final development composition: retain admitted v4 initializer/published gates and every original guard, plus native Go add/update/remove/lock and dependency-recovery controls; no command, timeout, isolation, resource limit or artifact removal.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
