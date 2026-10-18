@@ -915,5 +915,143 @@ class RelocatedCompilerPython(unittest.TestCase):
                 self.isolation.python_shared_library()
 
 
+class NugetSelectedNativeAssets(unittest.TestCase):
+    def setUp(self):
+        self.fixture = NugetDependencies('test_native_transitive_closure_is_selected_without_catalogue')
+        self.fixture.setUp()
+        self.addCleanup(self.fixture.doCleanups)
+
+    def selected_graph(self, kind='native', target='net10.0/wasi-wasm', owner='Outside.Library/2.0.0'):
+        lock, assets, baseline, declared = self.fixture.native()
+        assets['targets'] = {name: copy.deepcopy(packages) for name, packages in assets['targets'].items()}
+        asset = 'runtimes/wasi-wasm/native/selected.a'
+        assets['libraries'][owner]['files'].append(asset)
+        metadata = {'assetType': 'native', 'rid': 'wasi-wasm'} if kind == 'runtimeTargets' else {}
+        assets['targets'][target][owner][kind] = {asset: metadata}
+        return lock, assets, baseline, declared
+
+    def reviewed_graph(self, kind=None):
+        from tools.build_snapshot import canonical, digest
+        lock, assets, baseline, declared = self.fixture.native()
+        assets['targets'] = {name: copy.deepcopy(packages) for name, packages in assets['targets'].items()}
+        native = analyze(lock, assets, baseline, declared)
+        if kind:
+            _lock, selected, _baseline, _declared = self.selected_graph(kind)
+            assets = selected
+            row = next(row for row in native['packages'] if row['package'] == 'outside.library')
+            row['files'] = list(assets['libraries']['Outside.Library/2.0.0']['files'])
+            row['targets']['net10.0/wasi-wasm'][kind] = copy.deepcopy(
+                assets['targets']['net10.0/wasi-wasm']['Outside.Library/2.0.0'][kind])
+        native['assets'] = assets
+        artifacts = []
+        for row in native['packages']:
+            if row['sdk']:
+                continue
+            identity = row['package'] + '/' + row['version']
+            row.update(originalDigest=digest(identity.encode()), originalSize=len(identity))
+            artifacts.append({'id': identity, 'format': 'zip', 'mount': 'dependencies/nuget/' + identity,
+                'role': 'application', 'metadata': {'ecosystem': 'nuget', **row},
+                'original': {'digest': row['originalDigest'], 'size': row['originalSize']},
+                'dependencies': sorted({edge['id'] for edge in row['dependencies']})})
+        files = {**self.fixture.files, 'packages.lock.json': canonical(lock),
+            'nuget-resolved.lock.json': canonical(native),
+            'vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json': canonical(baseline)}
+        return files, declared['selection'], lock, native, artifacts
+
+    def test_direct_and_transitive_native_assets_are_refused_in_each_selected_target(self):
+        for kind in ('native', 'runtimeTargets'):
+            for target in ('net10.0', 'net10.0/wasi-wasm'):
+                for owner in ('Outside.Library/2.0.0', 'Transitive.Code/3.0.0'):
+                    with self.subTest(kind=kind, target=target, owner=owner), \
+                            self.assertRaisesRegex(DependencyError, '^nuget-selected-native-asset-runtime-abi-unavailable$'):
+                        analyze(*self.selected_graph(kind, target, owner))
+
+    def test_immutable_sdk_native_assets_remain_compiler_owned(self):
+        for kind in ('native', 'runtimeTargets'):
+            with self.subTest(kind=kind):
+                inputs = self.selected_graph(kind, owner='Maintained.Compiler/1.0.0')
+                result = analyze(*inputs)
+                sdk = next(row for row in result['packages'] if row['sdk'])
+                self.assertEqual(sdk['targets']['net10.0/wasi-wasm'][kind],
+                    inputs[1]['targets']['net10.0/wasi-wasm']['Maintained.Compiler/1.0.0'][kind])
+
+    def test_application_identity_rename_does_not_change_selected_native_refusal(self):
+        for kind in ('native', 'runtimeTargets'):
+            lock, assets, baseline, declared = self.selected_graph(kind)
+            lock['dependencies']['net10.0']['Unregistered.Developer.Package'] = \
+                lock['dependencies']['net10.0'].pop('Outside.Library')
+            library = assets['libraries'].pop('Outside.Library/2.0.0')
+            library['path'] = 'unregistered.developer.package/2.0.0'
+            assets['libraries']['Unregistered.Developer.Package/2.0.0'] = library
+            for target in assets['targets'].values():
+                target['Unregistered.Developer.Package/2.0.0'] = target.pop('Outside.Library/2.0.0')
+            with self.subTest(kind=kind), \
+                    self.assertRaisesRegex(DependencyError, '^nuget-selected-native-asset-runtime-abi-unavailable$'):
+                analyze(lock, assets, baseline, declared)
+
+    def test_unselected_native_files_and_selected_managed_runtime_targets_are_allowed(self):
+        lock, assets, baseline, declared = self.fixture.native()
+        assets['libraries']['Outside.Library/2.0.0']['files'].append('runtimes/other/native/unselected.so')
+        metadata = {'assetType': 'runtime', 'rid': 'wasi-wasm'}
+        assets['targets']['net10.0/wasi-wasm']['Outside.Library/2.0.0']['runtimeTargets'] = {
+            'lib/net10.0/Outside.dll': metadata}
+        row = next(row for row in analyze(lock, assets, baseline, declared)['packages'] if not row['sdk'])
+        self.assertIn('runtimes/other/native/unselected.so', row['files'])
+        self.assertEqual(row['targets']['net10.0/wasi-wasm']['runtimeTargets'], {'lib/net10.0/Outside.dll': metadata})
+
+    def test_every_selected_asset_metadata_object_is_validated_before_native_interpretation(self):
+        for kind in ('compile', 'runtime', 'native', 'runtimeTargets', 'build', 'buildMultiTargeting', 'contentFiles'):
+            for metadata in (None, False, 7, [], 'private-native-path'):
+                inputs = self.selected_graph(kind)
+                selected = inputs[1]['targets']['net10.0/wasi-wasm']['Outside.Library/2.0.0'][kind]
+                selected[next(iter(selected))] = metadata
+                with self.subTest(kind=kind, metadata=metadata), \
+                        self.assertRaisesRegex(DependencyError, '^nuget-native-asset-metadata-invalid$'):
+                    analyze(*inputs)
+
+    def test_native_nuget_metadata_objects_and_framework_assembly_lists_are_preserved(self):
+        for kind in ('compile', 'runtime', 'build', 'buildMultiTargeting', 'contentFiles'):
+            for metadata in ({}, {'buildAction': 'None', 'copyToOutput': 'false', 'related': '.xml'}):
+                inputs = self.fixture.native()
+                target = inputs[1]['targets']['net10.0/wasi-wasm']['Outside.Library/2.0.0']
+                target[kind] = {'lib/net10.0/Outside.dll': metadata}
+                target['frameworkAssemblies'] = ['System.Runtime', 'System.Collections']
+                with self.subTest(kind=kind, metadata=metadata):
+                    row = next(row for row in analyze(*inputs)['packages'] if row['package'] == 'outside.library')
+                    self.assertEqual(row['targets']['net10.0/wasi-wasm'][kind], target[kind])
+                    self.assertEqual(row['targets']['net10.0/wasi-wasm']['frameworkAssemblies'],
+                                     ['System.Runtime', 'System.Collections'])
+
+    def test_exact_review_refuses_consistent_native_metadata_and_preserves_inputs(self):
+        from tools.dotnet_application_dependencies import validate_selection
+        for kind in ('native', 'runtimeTargets'):
+            inputs = self.reviewed_graph(kind)
+            before = copy.deepcopy(inputs)
+            with self.subTest(kind=kind), \
+                    self.assertRaisesRegex(DependencyError, '^nuget-selected-native-asset-runtime-abi-unavailable$'):
+                validate_selection(*inputs)
+            self.assertEqual(inputs, before)
+        self.assertEqual(validate_selection(*self.reviewed_graph())[0]['selection'], selection())
+
+    def test_offline_refusal_precedes_package_cache_writes_and_original_archive_reads(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools.dotnet_application_dependencies import configure
+        for kind in ('native', 'runtimeTargets'):
+            files, selected, _lock, _native, artifacts = self.reviewed_graph(kind)
+            project = self.fixture.root / 'application'
+            for name, raw in files.items():
+                (project / name).write_bytes(raw)
+            cache = self.fixture.root / ('offline-cache-' + kind)
+            original_store = Mock()
+            closure = SimpleNamespace(project=project, work=project, store=original_store,
+                lock={'selection': selected, 'artifacts': artifacts})
+            with self.subTest(kind=kind), \
+                    self.assertRaisesRegex(DependencyError, '^nuget-selected-native-asset-runtime-abi-unavailable$'):
+                configure(closure, project, cache)
+            original_store.get.assert_not_called()
+            self.assertFalse(cache.exists())
+
+
 if __name__ == '__main__':
     unittest.main()

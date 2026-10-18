@@ -248,6 +248,8 @@ def analyze(lock: dict, assets: dict, baseline: dict, declared: dict) -> dict:
                     path_name(asset)
                     if asset not in rows[identity]['files']:
                         raise DependencyError('nuget-selected-asset-missing-from-original-package')
+                    if not isinstance(selected[asset], dict):
+                        raise DependencyError('nuget-native-asset-metadata-invalid')
                     if kind in {'build', 'buildMultiTargeting'} or (kind == 'contentFiles'
                             and selected[asset].get('buildAction') == 'EmbeddedResource' and asset.lower().endswith('.resx')):
                         rows[identity]['executableAssets'].append(asset)
@@ -258,6 +260,13 @@ def analyze(lock: dict, assets: dict, baseline: dict, declared: dict) -> dict:
                     raise DependencyError('nuget-native-selected-graph-not-closed')
                 rows[identity]['dependencies'].append({'target': target, 'id': child, 'requested': requested})
     for identity, row in rows.items():
+        # The same selected graph is checked during resolution, exact review
+        # and offline compilation. SDK-native inputs remain compiler-owned;
+        # merely shipping an unselected native file does not ban a package.
+        if not row['sdk'] and any(target.get('native') or any(
+                asset.get('assetType') == 'native' for asset in target.get('runtimeTargets', {}).values())
+                for target in row['targets'].values()):
+            raise DependencyError('nuget-selected-native-asset-runtime-abi-unavailable')
         direct = next((item['attributes'] for item in declared['packages'] if item['active'] and package_name(item['attributes']['Include']) == row['package']), {})
         include = set(direct.get('IncludeAssets', 'all').lower().split(';'))
         exclude = set(direct.get('ExcludeAssets', 'none').lower().split(';'))
@@ -411,8 +420,6 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                             if name not in entries:
                                 raise DependencyError('nuget-selected-asset-missing-from-original-package')
                             managed_image(entries[name])
-                if target.get('native') or any(value.get('assetType') == 'native' for value in target.get('runtimeTargets', {}).values()):
-                    raise DependencyError('nuget-selected-native-asset-runtime-abi-unavailable')
             row['originalDigest'] = digest(original)
             row['originalSize'] = len(original)
             dependencies = sorted({edge['id'] for edge in row['dependencies'] if not next(item for item in native['packages'] if item['package'] + '/' + item['version'] == edge['id'])['sdk']})
