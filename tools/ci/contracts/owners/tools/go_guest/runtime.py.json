@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Integrate authenticated Go zero-delay clock-only netpoll repair from b8d858d84; preserve descriptor/blocking polls, closed WASI authority, all profiles and existing bounds.",
+  "reviewReason": "Preserve explicit v4 initializer routing and all profiles while integrating authenticated GC empty-poll repair from the parent.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "df69797c68062628ba37fd9ef4115c4aa66373187e0e792d0bc8f0c7f2612976"
+  "sha256": "359b15c50988f86a601e097745f899bd285ae68713eaa4bb9789ce00ad9f15eb"
 }

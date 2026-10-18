@@ -166,6 +166,48 @@ class GoDependencyAuthoring(unittest.TestCase):
         self.assertEqual(selected['generators'], 'never-executed')
         self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
 
+    def test_superseded_graph_manifests_survive_review_and_offline_staging_without_extra_sources(self):
+        raw = b'module example.test/old-requirement\n'
+        identity = native.h1({'go.mod': raw})
+        (self.app / 'go.sum').write_text('example.test/old-requirement v1.3.0/go.mod ' + identity + '\n')
+        original = self.resolver_command
+        def command(arguments, cwd, environment, seconds, maximum):
+            result = original(arguments, cwd, environment, seconds, maximum)
+            if arguments[1:] == ['mod', 'graph']:
+                path = Path(environment['GOMODCACHE']) / 'cache/download/example.test/old-requirement/@v/v1.3.0.mod'
+                path.parent.mkdir(parents=True)
+                path.write_bytes(raw)
+            return result
+        with patch.object(self, 'resolver_command', side_effect=command):
+            _candidate, lock, _result = self.reviewed()
+        self.assertFalse(any(row['metadata'].get('module') == 'example.test/old-requirement'
+                             for row in lock['artifacts']))
+        work, output, generated = self.root / 'work', self.root / 'output', self.root / 'generated'
+        for directory in (work, output, generated):
+            directory.mkdir()
+        for name in ('go.sum', 'go-resolved.lock.json'):
+            (work / name).write_bytes((self.app / name).read_bytes())
+        with patch.object(inputs, 'fetch', side_effect=AssertionError('offline staging contacted upstream')):
+            closure = inputs.prepare(self.owner, work, output, 'go')
+            selected = native.configure(closure, generated)
+            cache = Path(selected['downloadCache'])
+            self.assertEqual((cache / 'example.test/old-requirement/@v/v1.3.0.mod').read_bytes(), raw)
+            self.assertFalse(list(cache.rglob('*.zip')))
+            closure.check_unchanged()
+
+    def test_graph_lookup_cannot_mutate_reviewed_sums_after_selected_download_validation(self):
+        original = self.resolver_command
+        def command(arguments, cwd, environment, seconds, maximum):
+            result = original(arguments, cwd, environment, seconds, maximum)
+            if arguments[1:] == ['mod', 'graph']:
+                path = Path(cwd) / 'go.sum'
+                path.write_bytes(path.read_bytes() + b'changed-by-graph\n')
+            return result
+        with patch.object(self, 'resolver_command', side_effect=command):
+            with self.assertRaisesRegex(DependencyError, 'go-native-declarations-or-sums-not-locked'):
+                self.capture()
+        self.assertFalse((self.owner / inputs.LOCK).exists())
+
     def test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review(self):
         _candidate, _lock, _result = self.reviewed()
         previous = (self.owner / inputs.LOCK).read_bytes()
@@ -295,6 +337,29 @@ class GoDependencyAuthoring(unittest.TestCase):
         self.assertEqual(result['selection']['tags'], ['private'])
         self.assertEqual(lock['selection']['runtimeProfile'], 'go-component-async-v1')
         self.assertFalse(result['compilerExecution'])
+
+    def test_resolver_inherits_project_runtime_profile_in_captured_native_graph(self):
+        document = json.loads((self.app / 'capsule-project.json').read_bytes())
+        document['runtimeProfile'] = 'go-component-activation-v4'
+        (self.app / 'capsule-project.json').write_bytes(canonical(document))
+        candidate, lock = self.capture(selected={'tags': ['private']})
+        self.assertEqual(lock['selection']['runtimeProfile'], document['runtimeProfile'])
+        self.assertEqual(lock['selection']['tags'], ['private'])
+        graph = json.loads((self.app / 'go-resolved.lock.json').read_bytes())
+        self.assertEqual(graph['selection'], lock['selection'])
+        result = authoring.review(self.owner, candidate, digest(candidate.read_bytes()))
+        self.assertEqual(result['selection']['runtimeProfile'], document['runtimeProfile'])
+        self.assertFalse(result['compilerExecution'])
+
+    def test_resolver_rejects_explicit_profile_disagreement_before_native_command(self):
+        document = json.loads((self.app / 'capsule-project.json').read_bytes())
+        document['runtimeProfile'] = 'go-component-activation-v4'
+        (self.app / 'capsule-project.json').write_bytes(canonical(document))
+        with self.assertRaisesRegex(DependencyError, 'project-and-captured-runtime-profile-disagree'):
+            self.capture(selected={'runtimeProfile': 'go-component-activation-v1'})
+        self.assertEqual(self.calls, [])
+        self.assertFalse((self.app / 'go-resolved.lock.json').exists())
+        self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
 
     def test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths(self):
         self.nested()

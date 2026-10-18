@@ -1,39 +1,59 @@
 {
-  "cases":["DirectApplicationLibraries.test_arbitrary_direct_module_coordinates_bind_actual_captured_artifacts","DirectApplicationLibraries.test_duplicate_requirement_version_drift_and_sdk_role_do_not_satisfy_the_fixture","DirectApplicationLibraries.test_root_association_and_direct_edges_cannot_be_forged","DirectApplicationLibraries.test_transitive_presence_cannot_count_as_an_independent_application_selection","GoDependencies.test_empty_import_linkage_markers_are_distinct_from_native_assembly_or_preprocessor_reads","GoDependencies.test_expanded_module_tampering_extra_files_or_unsafe_original_archive_fail","GoDependencies.test_go_declarations_require_reviewed_common_capture_and_keep_sdk_bytes_immutable","GoDependencies.test_go_dirhash_matches_the_known_empty_hash_and_binds_names_and_bytes","GoDependencies.test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection","GoDependencies.test_native_json_stream_is_bounded_closed_and_never_accepts_unresolved_records","GoDependencies.test_offline_staging_only_copies_verified_local_sources_and_selected_native_manifest","GoDependencies.test_original_module_zip_and_manifest_are_independently_bound_to_reviewed_go_sums","GoDependencies.test_target_tags_and_runtime_selection_are_exact_without_a_module_catalogue"],
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Retain checksum-bound superseded Go graph manifests in offline capture; test original sums, native cache spelling and unreviewed path rejection without compiler execution.",
+  "module":"tools/tests/test_go_application_dependencies.py",
+  "cases":["DirectApplicationLibraries.test_arbitrary_direct_module_coordinates_bind_actual_captured_artifacts","DirectApplicationLibraries.test_duplicate_requirement_version_drift_and_sdk_role_do_not_satisfy_the_fixture","DirectApplicationLibraries.test_root_association_and_direct_edges_cannot_be_forged","DirectApplicationLibraries.test_transitive_presence_cannot_count_as_an_independent_application_selection","GoDependencies.test_empty_import_linkage_markers_are_distinct_from_native_assembly_or_preprocessor_reads","GoDependencies.test_expanded_module_tampering_extra_files_or_unsafe_original_archive_fail","GoDependencies.test_go_declarations_require_reviewed_common_capture_and_keep_sdk_bytes_immutable","GoDependencies.test_go_dirhash_matches_the_known_empty_hash_and_binds_names_and_bytes","GoDependencies.test_graph_metadata_keeps_superseded_versions_offline_with_original_hashes_and_escaping","GoDependencies.test_graph_metadata_rejects_unreviewed_mislocated_or_traversing_manifests","GoDependencies.test_literal_exclamation_module_files_keep_original_hash_and_expanded_identity","GoDependencies.test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection","GoDependencies.test_native_json_stream_is_bounded_closed_and_never_accepts_unresolved_records","GoDependencies.test_offline_staging_only_copies_verified_local_sources_and_selected_native_manifest","GoDependencies.test_original_module_zip_and_manifest_are_independently_bound_to_reviewed_go_sums","GoDependencies.test_target_tags_and_runtime_selection_are_exact_without_a_module_catalogue","PublishedRuntimeEvidence.test_local_or_replaced_modules_cannot_impersonate_published_runtime_sources","PublishedRuntimeEvidence.test_missing_or_ambiguous_timer_source_cannot_satisfy_runtime_evidence","PublishedRuntimeEvidence.test_published_runtime_keeps_direct_api_selections_and_the_real_library_edge","PublishedRuntimeEvidence.test_root_presence_without_the_published_runtime_edge_is_insufficient","PublishedRuntimePreparation.test_existing_output_and_receipts_remain_exclusive_create","PublishedRuntimePreparation.test_fresh_project_is_configured_before_published_module_capture"],
   "guards":{
-    "DirectApplicationLibraries.test_arbitrary_direct_module_coordinates_bind_actual_captured_artifacts":
-      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
-    "DirectApplicationLibraries.test_duplicate_requirement_version_drift_and_sdk_role_do_not_satisfy_the_fixture":
-      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
-    "DirectApplicationLibraries.test_root_association_and_direct_edges_cannot_be_forged":
-      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
-    "DirectApplicationLibraries.test_transitive_presence_cannot_count_as_an_independent_application_selection":
-      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
     "GoDependencies.test_empty_import_linkage_markers_are_distinct_from_native_assembly_or_preprocessor_reads":
-      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
-    "GoDependencies.test_expanded_module_tampering_extra_files_or_unsafe_original_archive_fail":
-      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
-    "GoDependencies.test_go_declarations_require_reviewed_common_capture_and_keep_sdk_bytes_immutable":
-      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
-    "GoDependencies.test_go_dirhash_matches_the_known_empty_hash_and_binds_names_and_bytes":
-      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
-    "GoDependencies.test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection":
       "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
     "GoDependencies.test_native_json_stream_is_bounded_closed_and_never_accepts_unresolved_records":
       "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
-    "GoDependencies.test_offline_staging_only_copies_verified_local_sources_and_selected_native_manifest":
+    "GoDependencies.test_target_tags_and_runtime_selection_are_exact_without_a_module_catalogue":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "GoDependencies.test_go_dirhash_matches_the_known_empty_hash_and_binds_names_and_bytes":
       "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
     "GoDependencies.test_original_module_zip_and_manifest_are_independently_bound_to_reviewed_go_sums":
       "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
-    "GoDependencies.test_target_tags_and_runtime_selection_are_exact_without_a_module_catalogue":
-      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6"
+    "GoDependencies.test_expanded_module_tampering_extra_files_or_unsafe_original_archive_fail":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "GoDependencies.test_literal_exclamation_module_files_keep_original_hash_and_expanded_identity":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "GoDependencies.test_graph_metadata_keeps_superseded_versions_offline_with_original_hashes_and_escaping":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "GoDependencies.test_graph_metadata_rejects_unreviewed_mislocated_or_traversing_manifests":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "GoDependencies.test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "GoDependencies.test_go_declarations_require_reviewed_common_capture_and_keep_sdk_bytes_immutable":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "GoDependencies.test_offline_staging_only_copies_verified_local_sources_and_selected_native_manifest":
+      "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6",
+    "DirectApplicationLibraries.test_arbitrary_direct_module_coordinates_bind_actual_captured_artifacts":
+      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
+    "DirectApplicationLibraries.test_transitive_presence_cannot_count_as_an_independent_application_selection":
+      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
+    "DirectApplicationLibraries.test_root_association_and_direct_edges_cannot_be_forged":
+      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
+    "DirectApplicationLibraries.test_duplicate_requirement_version_drift_and_sdk_role_do_not_satisfy_the_fixture":
+      "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453",
+    "PublishedRuntimeEvidence.test_published_runtime_keeps_direct_api_selections_and_the_real_library_edge":
+      "9d6c5dd29db7290c2c002225965313b8306ddedfb95fa7d764db3dd51f245fea",
+    "PublishedRuntimeEvidence.test_root_presence_without_the_published_runtime_edge_is_insufficient":
+      "9d6c5dd29db7290c2c002225965313b8306ddedfb95fa7d764db3dd51f245fea",
+    "PublishedRuntimeEvidence.test_local_or_replaced_modules_cannot_impersonate_published_runtime_sources":
+      "9d6c5dd29db7290c2c002225965313b8306ddedfb95fa7d764db3dd51f245fea",
+    "PublishedRuntimeEvidence.test_missing_or_ambiguous_timer_source_cannot_satisfy_runtime_evidence":
+      "9d6c5dd29db7290c2c002225965313b8306ddedfb95fa7d764db3dd51f245fea",
+    "PublishedRuntimePreparation.test_fresh_project_is_configured_before_published_module_capture":
+      "9900df9ac9c4ed4b98685b06e93d585db0c30b5ae7b74ce16cf44539d7bc9420",
+    "PublishedRuntimePreparation.test_existing_output_and_receipts_remain_exclusive_create":
+      "9900df9ac9c4ed4b98685b06e93d585db0c30b5ae7b74ce16cf44539d7bc9420"
   },
-  "kind":"python",
-  "module":"tools/tests/test_go_application_dependencies.py",
-  "reviewReason":"Add four native direct-application-selection controls; transitive presence cannot count as a second independent library, preserving all9 accepted module/hash/offline guards.",
-  "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd","class:setup-sha256:64a0725615684b65be34af91757f6e3c9207c51e021847540e8e16b84e7aaa91"],"skipSites":[]},
-    "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd","class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"],"skipSites":[]}
+    "d8691b1ebf7f8d0d91a6e0b2a8a159cda67bdd900fbda0b511308fb8b94f34e6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd","class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"]},
+    "e67937f1e35ee1b1790419e543709279c28ebab9cafe0da587596e6c3d864453":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd","class:setup-sha256:64a0725615684b65be34af91757f6e3c9207c51e021847540e8e16b84e7aaa91"]},
+    "9d6c5dd29db7290c2c002225965313b8306ddedfb95fa7d764db3dd51f245fea":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd","class:setup-sha256:ba0104cd75c91a02d881b57893f2fbea6fb2ad317fdc909e862b014003f82f1f"]},
+    "9900df9ac9c4ed4b98685b06e93d585db0c30b5ae7b74ce16cf44539d7bc9420":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
   }
 }

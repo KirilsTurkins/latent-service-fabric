@@ -10,6 +10,7 @@
     "GoDependencyAuthoring.test_consistently_recaptured_invalid_native_graph_never_claims_review_success",
     "GoDependencyAuthoring.test_exact_local_graph_and_resource_review_work_after_originals_are_removed",
     "GoDependencyAuthoring.test_go_source_sdk_proxy_and_resolver_drift_stop_before_candidate_acceptance",
+    "GoDependencyAuthoring.test_graph_lookup_cannot_mutate_reviewed_sums_after_selected_download_validation",
     "GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch",
     "GoDependencyAuthoring.test_maintained_test_watch_parser_preserves_unknown_and_interrupted_results",
     "GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths",
@@ -18,7 +19,10 @@
     "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution",
     "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials",
     "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review",
+    "GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph",
+    "GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command",
     "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command",
+    "GoDependencyAuthoring.test_superseded_graph_manifests_survive_review_and_offline_staging_without_extra_sources",
     "GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch",
     "GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority",
     "GoDependencyAuthoring.test_tool_declarations_and_wrong_runtime_profile_require_separate_qualified_stage"
@@ -144,6 +148,18 @@
       ],
       "skipSites": []
     },
+    "GoDependencyAuthoring.test_graph_lookup_cannot_mutate_reviewed_sums_after_selected_download_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
+    },
     "GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch": {
       "bases": [
         "unittest.TestCase"
@@ -204,6 +220,18 @@
       ],
       "skipSites": []
     },
+    "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
+    },
     "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials": {
       "bases": [
         "unittest.TestCase"
@@ -228,7 +256,43 @@
       ],
       "skipSites": []
     },
+    "GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
+    },
     "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_superseded_graph_manifests_survive_review_and_offline_staging_without_extra_sources": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -278,22 +342,10 @@
         "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
       ],
       "skipSites": []
-    },
-    "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
-      ],
-      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_dependency_authoring.py",
-  "reviewReason": "Reject malformed explicit Go proxy authorization and control tokens before native resolver dispatch",
+  "reviewReason": "Exercise actual capture, review and offline staging of superseded graph manifests; reject graph lookup changing reviewed sums; retain every prior case and guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

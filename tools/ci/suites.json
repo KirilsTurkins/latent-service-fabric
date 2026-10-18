@@ -8455,7 +8455,9 @@
         "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
         "runtime::signed_java_published_libraries_use_unchanged_default_workers",
         "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers",
-        "runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners"
+        "runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners",
+        "runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
+        "runtime::go::signed_published_retry_workers_and_default_timers_keep_original_activation_owners"
       ],
       "expectedIgnored": [
         "runtime::signed_java_completable_futures_use_default_activation_executor",
@@ -8470,7 +8472,9 @@
         "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
         "runtime::signed_java_published_libraries_use_unchanged_default_workers",
         "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers",
-        "runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners"
+        "runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners",
+        "runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
+        "runtime::go::signed_published_retry_workers_and_default_timers_keep_original_activation_owners"
       ],
       "id": "latent-wasmtime.test.local-service",
       "ignoredLeaves": [
@@ -8486,11 +8490,13 @@
         "signed_java_host_imports_suspend_only_their_owned_callers",
         "signed_java_published_libraries_use_unchanged_default_workers",
         "signed_java_standard_timers_recur_cancel_and_drain_owned_workers",
-        "signed_standard_timers_contexts_and_rearm_keep_original_heap_owners"
+        "signed_standard_timers_contexts_and_rearm_keep_original_heap_owners",
+        "signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
+        "signed_published_retry_workers_and_default_timers_keep_original_activation_owners"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 44,
+      "minimumCases": 46,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

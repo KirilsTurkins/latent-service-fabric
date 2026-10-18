@@ -29,10 +29,10 @@ def path_name(value: str) -> str:
             or value.startswith("/") or len(value.split("/")) > 32):
         raise DependencyError("dependency-path-invalid")
     for part in value.split("/"):
-        # '$' is a literal filename character, including JVM binary names for
-        # nested and anonymous classes. Consumers use file APIs/argument vectors;
-        # archive names never become shell source or substituted templates.
-        if (not re.fullmatch(r"[A-Za-z0-9_$@+.,() \[\]-]{1,128}", part) or part in {".", ".."}
+        # '$' and '!' are literal filename characters (JVM nested classes and
+        # Go module testdata, respectively). Consumers use file APIs/argument
+        # vectors; names never become shell source or substituted templates.
+        if (not re.fullmatch(r"[A-Za-z0-9_!$@+.,() \[\]-]{1,128}", part) or part in {".", ".."}
                 or part.endswith((".", " ")) or DEVICE.fullmatch(part)):
             raise DependencyError("dependency-path-invalid")
     return value

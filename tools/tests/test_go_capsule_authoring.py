@@ -12,6 +12,85 @@ from tools.go_guest.sdk import install, CAPABILITIES, explicit_resource_owners
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_explicit_runtime_templates_capture_async_api_and_owned_runtime_without_source_edits(self):
+        from tools.go_capsule_project import AUTHORING_TEMPLATES, ROOT
+        from tools.go_guest.activation import PROFILES
+        from tools.rust_capsule_project import digest
+        for profile in sorted(PROFILES):
+            templates = AUTHORING_TEMPLATES if profile == 'go-component-activation-v4' else ('greeting',)
+            for template in templates:
+                with self.subTest(profile=profile, template=template), tempfile.TemporaryDirectory() as temporary:
+                    files = snapshot(create(Path(temporary) / 'app', template, runtime_profile=profile))
+                    value, lock, _ = validate(files)
+                    self.assertEqual(value['runtimeProfile'], profile)
+                    self.assertEqual(files['src/main.go'], (ROOT / 'sdk/go-guest/templates' / (template + '.go')).read_bytes())
+                    self.assertIn(b'import latent:runtime/activation@0.1.0;', files['wit/world.wit'])
+                    self.assertIn(b'async func(', files['wit/world.wit'])
+                    self.assertNotRegex(files['wit/world.wit'].decode(), r':\s*func\s*\(')
+                    self.assertEqual(files['wit/deps/activation-runtime/package.wit'],
+                        files['vendor/lsf/wit/platform/activation-runtime/package.wit'])
+                    self.assertNotIn('grants', value)
+                    self.assertEqual(lock['template']['witDigest'], digest(files['wit/world.wit']))
+
+    def test_cli_runtime_selection_preserves_default_and_rejects_unknown_before_creation(self):
+        import contextlib
+        import io
+        from tools import go_capsule
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ordinary = snapshot(create(root / 'ordinary', 'greeting'))
+            self.assertNotIn('runtimeProfile', json.loads(ordinary['capsule-project.json']))
+            self.assertNotIn(b'latent:runtime/activation', ordinary['wit/world.wit'])
+            self.assertIn(b'greet: func(', ordinary['wit/world.wit'])
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(go_capsule.main(['new', str(root / 'selected'), '--runtime-profile', 'go-component-activation-v4']), 0)
+            self.assertEqual(validate(snapshot(root / 'selected'))[0]['runtimeProfile'], 'go-component-activation-v4')
+            for profile in ('native-go', False, 0, '', [], {}):
+                with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'profile-not-installed'):
+                    create(root / 'invalid', 'greeting', runtime_profile=profile)
+                self.assertFalse((root / 'invalid').exists())
+            for profile in (None, False, 0, '', [], {}, 'native-go'):
+                files = dict(ordinary)
+                document = json.loads(files['capsule-project.json'])
+                document['runtimeProfile'] = profile
+                files['capsule-project.json'] = json.dumps(document).encode()
+                with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'profile-not-installed'):
+                    validate(files)
+
+            from tools import go_application_dependencies as dependencies
+            self.assertEqual(dependencies.selection(None), dependencies.selection({}))
+            for profile in ('go-component-async-v1', 'go-component-activation-v1', 'go-component-activation-v2',
+                            'go-component-activation-v3', 'go-component-activation-v4'):
+                declared = {'runtimeProfile': profile, 'tags': ['other', 'local_feature', 'other']}
+                before = json.loads(json.dumps(declared))
+                self.assertEqual(dependencies.selection(declared),
+                                 {'target': 'wasip1/wasm', 'runtimeProfile': profile,
+                                  'tags': ['local_feature', 'other']})
+                self.assertEqual(declared, before)
+            candidate = root / 'candidate.json'
+            selected_project = root / 'selected'
+            sdk_before = (selected_project / 'sdk-lock.json').read_bytes()
+            with patch.object(dependencies, 'run_bounded', side_effect=AssertionError('unexpected native command')) as native:
+                for selected in (False, 0, 1, '', [], [('runtimeProfile', 'go-component-activation-v4')]):
+                    with self.subTest(selected=selected), self.assertRaisesRegex(dependencies.DependencyError, 'selection-fields-invalid'):
+                        dependencies.selection(selected)
+                    with self.subTest(resolver_selection=selected), self.assertRaisesRegex(dependencies.DependencyError, 'selection-fields-invalid'):
+                        dependencies.resolve(selected_project, candidate, selected=selected)
+                with self.assertRaisesRegex(dependencies.DependencyError, 'project-and-captured-runtime-profile-disagree'):
+                    dependencies.resolve(selected_project, candidate, selected={'runtimeProfile': 'go-component-activation-v1'})
+                for profile in (None, False, 0, '', [], {}, 'native-go'):
+                    with self.subTest(selection_profile=profile), self.assertRaisesRegex(dependencies.DependencyError, 'profile-not-installed'):
+                        dependencies.selection({'runtimeProfile': profile})
+                    document = json.loads((selected_project / 'capsule-project.json').read_bytes())
+                    document['runtimeProfile'] = profile
+                    (selected_project / 'capsule-project.json').write_bytes(json.dumps(document).encode())
+                    with self.subTest(resolver_profile=profile), self.assertRaisesRegex(dependencies.DependencyError, 'profile-not-installed'):
+                        dependencies.resolve(selected_project, candidate, selected={})
+                native.assert_not_called()
+            self.assertFalse(candidate.exists())
+            self.assertFalse((selected_project / 'go-resolved.lock.json').exists())
+            self.assertEqual((selected_project / 'sdk-lock.json').read_bytes(), sdk_before)
+
     def test_generated_business_record_owners_survive_export_stub_replacement(self):
         from tools.go_guest.sdk import export_declarations
         source = ('package export_examples_aggregate_api\n\nimport (\n'
