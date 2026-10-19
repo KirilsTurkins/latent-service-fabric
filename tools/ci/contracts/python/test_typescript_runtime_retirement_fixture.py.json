@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "RetirementFixture.test_actual_library_has_genuinely_pending_promise_clear_and_distinguishable_accepted_callback_error",
+    "RetirementFixture.test_invalid_outside_parent_refuses_before_writing_or_running_native_authoring",
+    "RetirementFixture.test_pending_export_is_declared_async_and_original_sdk_and_limits_are_preserved"
+  ],
+  "guards": {
+    "RetirementFixture.test_actual_library_has_genuinely_pending_promise_clear_and_distinguishable_accepted_callback_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:398bf8d33fd3801339fc0293c8755f49d29d764f0d16e4489946d2db7af0cd53",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RetirementFixture.test_invalid_outside_parent_refuses_before_writing_or_running_native_authoring": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:398bf8d33fd3801339fc0293c8755f49d29d764f0d16e4489946d2db7af0cd53",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RetirementFixture.test_pending_export_is_declared_async_and_original_sdk_and_limits_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:398bf8d33fd3801339fc0293c8755f49d29d764f0d16e4489946d2db7af0cd53",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_runtime_retirement_fixture.py",
+  "reviewReason": "Add three finite source/reference controls for authentic pending ordinary Promise and timer input preparation, SDK/limit preservation and pre-authoring path refusal; actual signed retirement is pending.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

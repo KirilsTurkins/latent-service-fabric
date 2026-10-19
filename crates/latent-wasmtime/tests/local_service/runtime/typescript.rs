@@ -171,3 +171,104 @@ async fn signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_ru
         f.idle().await;
     }
 }
+
+#[tokio::test]
+#[ignore = "requires current maintained TypeScript retirement compiler outputs with actual build observations"]
+async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_before_fresh_state()
+{
+    let root = tempfile::tempdir().unwrap();
+    let f = fixture("typescript-runtime-retirement", root.path()).await;
+    let request = |identity: &str, mode| {
+        let mut request = f.request(identity, mode);
+        request.target.contract =
+            ContractId("examples:typescript-runtime-retirement/ordinary@1.0.0".into());
+        request
+    };
+    for mode in [1, 3] {
+        assert_eq!(
+            super::value(
+                f.manager
+                    .start(request(
+                        &format!("typescript-retirement-reference-{mode}"),
+                        mode
+                    ))
+                    .unwrap()
+                    .await
+            ),
+            42
+        );
+        f.idle().await;
+    }
+    let activation = latent_core::ActivationId("typescript-pending-promise-cancel".into());
+    let mut invocation = Box::pin(f.manager.start(request(&activation.0, 0)).unwrap());
+    // Use the original Store/read-wait/broker barrier. No sleep, yield count,
+    // cancellation request or completed provider call is a retirement witness.
+    super::pending_timer(invocation.as_mut(), &f).await;
+    f.manager
+        .cancel_for(
+            &TenantId("examples".into()),
+            &activation,
+            "typescript-promise-cancel",
+        )
+        .unwrap();
+    assert_eq!(
+        super::failure(invocation.await).code,
+        PlatformErrorCode::Cancelled
+    );
+    f.idle().await;
+    assert_eq!(
+        super::value(
+            f.manager
+                .start(request("typescript-fresh-after-promise-cancel", 1))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
+    let mut deadline = request("typescript-promise-original-root-deadline", 0);
+    deadline.budget.wall_time_limit_millis = Some(100);
+    assert_eq!(
+        super::failure(f.manager.start(deadline).unwrap().await).code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    f.idle().await;
+    assert_eq!(
+        super::value(
+            f.manager
+                .start(request("typescript-fresh-after-promise-deadline", 1))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
+    let mode = 2;
+    assert_eq!(
+        super::failure(
+            f.manager
+                .start(request(
+                    &format!("typescript-accepted-timer-error-{mode}"),
+                    mode
+                ))
+                .unwrap()
+                .await
+        )
+        .code,
+        PlatformErrorCode::GuestTrap
+    );
+    f.idle().await;
+    assert_eq!(
+        super::value(
+            f.manager
+                .start(request(
+                    &format!("typescript-fresh-after-timer-error-{mode}"),
+                    1
+                ))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
+}
