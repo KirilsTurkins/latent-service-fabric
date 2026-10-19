@@ -447,3 +447,167 @@ class RustDeclaredEnvironment(unittest.TestCase):
         failed = json.loads((output / 'BUILD-FAILED.json').read_bytes())
         self.assertEqual(failed['stage'], 'compile')
         self.assertEqual(failed['reason'], 'cargo-execution-environment-mutated')
+
+
+class RustExecutableOutputMaterials(unittest.TestCase):
+    """Approved output provenance controls; native commands remain mocked."""
+    def fixture(self):
+        temporary = tempfile.TemporaryDirectory(prefix='rust-output-control-')
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name).resolve()
+        target, output = root / 'target', root / 'output'
+        target.mkdir(); output.mkdir()
+        files = {'release/build/host/out/generated.rs': b'rs',
+                 'wasm32-unknown-unknown/release/build/guest/out/asset.bin': b'abc',
+                 'release/deps/libcontrolled.so': b'elf!'}
+        for name, data in files.items():
+            path = target / name
+            path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+        return target, output, files
+
+    def test_valid_host_target_and_macro_outputs_keep_exact_bounded_identities(self):
+        target, output, files = self.fixture()
+        expected = {name: {'digest': project.digest(data), 'size': len(data)} for name, data in files.items()}
+        guard = build.RustExecutableOutputs(target, output, project.digest(b'approval'))
+        self.assertEqual(build.executable_output_inventory(target), expected)
+        guard.check_unchanged()
+        receipt = project.read_json(output / 'executable-input-outputs.json')
+        self.assertEqual(receipt['outputs'], expected)
+        self.assertEqual(receipt['approvalIdentity'], project.digest(b'approval'))
+        self.assertFalse(receipt['hermetic'])
+        self.assertNotIn(str(target), json.dumps(receipt))
+        self.assertEqual(build.MAX_EXECUTABLE_OUTPUT_FILES, 8192)
+        self.assertEqual(build.MAX_EXECUTABLE_OUTPUT_BYTES, 64 * 1024 * 1024)
+
+    def test_existing_file_and_byte_caps_apply_jointly_to_all_output_roles(self):
+        from tools.application_dependency_store import DependencyError
+        target, _output, files = self.fixture()
+        for field, maximum in [('MAX_EXECUTABLE_OUTPUT_FILES', 3), ('MAX_EXECUTABLE_OUTPUT_BYTES', 9)]:
+            with self.subTest(field=field), patch.object(build, field, maximum):
+                self.assertEqual(len(build.executable_output_inventory(target)), len(files))
+            with self.subTest(over=field), patch.object(build, field, maximum - 1), \
+                    self.assertRaisesRegex(DependencyError, '^captured build-tool generated output limit exceeded$'):
+                build.executable_output_inventory(target)
+
+    def test_empty_build_tool_output_directories_cannot_expand_discovery_without_bound(self):
+        from tools.application_dependency_store import DependencyError
+        target, _output, _files = self.fixture()
+        (target / 'release/build/empty/out').mkdir(parents=True)
+        with patch.object(build, 'MAX_EXECUTABLE_OUTPUT_FILES', 2), \
+                self.assertRaisesRegex(DependencyError, 'generated output limit exceeded'):
+            build.executable_output_inventory(target)
+
+    def test_changed_removed_or_added_outputs_refuse_after_capture(self):
+        from tools.application_dependency_store import DependencyError
+        for mutation in ('changed', 'removed', 'added'):
+            with self.subTest(mutation=mutation):
+                target, output, _files = self.fixture()
+                guard = build.RustExecutableOutputs(target, output, project.digest(b'approval'))
+                selected = target / 'release/build/host/out/generated.rs'
+                if mutation == 'changed': selected.write_bytes(b'changed')
+                elif mutation == 'removed': selected.unlink()
+                else: selected.with_name('additional.rs').write_bytes(b'added')
+                with self.assertRaisesRegex(DependencyError, '^cargo-executable-outputs-mutated$'):
+                    guard.check_unchanged()
+
+    def test_receipt_rewrite_cannot_promote_changed_outputs(self):
+        from tools.application_dependency_store import DependencyError
+        target, output, _files = self.fixture()
+        guard = build.RustExecutableOutputs(target, output, project.digest(b'approval'))
+        (target / 'release/deps/libcontrolled.so').write_bytes(b'changed macro')
+        receipt = project.read_json(guard.path)
+        receipt['outputs'] = build.executable_output_inventory(target)
+        guard.path.write_bytes(project.canonical(receipt))
+        with self.assertRaisesRegex(DependencyError, '^cargo-executable-outputs-mutated$'):
+            guard.check_unchanged()
+
+    def test_missing_target_and_linked_ancestor_refuse_with_closed_failures(self):
+        from tools import application_dependency_store as store
+        from tools.application_dependency_store import DependencyError
+        target, output, _files = self.fixture()
+        with self.assertRaisesRegex(DependencyError, '^cargo-executable-outputs-unavailable$'):
+            build.executable_output_inventory(target / 'absent')
+        guard = build.RustExecutableOutputs(target, output, project.digest(b'approval'))
+        with patch.object(store, 'is_reparse', side_effect=lambda path: path == target / 'release/build'), \
+                self.assertRaisesRegex(DependencyError, '^cargo-executable-outputs-mutated$'):
+            guard.check_unchanged()
+
+    def test_actual_builder_refuses_late_generated_output_change_before_success(self):
+        self.actual_builder(late_mutation=True)
+
+    def test_actual_builder_preserves_valid_approved_output_and_success_path(self):
+        self.actual_builder(late_mutation=False)
+
+    def actual_builder(self, *, late_mutation):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools import application_dependencies, application_dependency_approval, captured_compiler_isolation
+        from tools import rust_application_dependencies
+        from tools.application_dependency_store import DependencyError
+        workspace, scope, _environment = RustDeclaredEnvironment.fixture(self)
+        source = project.create(workspace.parent / 'source', 'greeting')
+        pins = json.loads((source / 'sdk-lock.json').read_bytes())['toolchain']
+        base_commands, stages, outputs = build.Commands, [], []
+        class ObservedCommands(base_commands):
+            def run(self, stage, *command):
+                stages.append(stage)
+                if stage == 'rust-sysroot': return str(scope.distributions['rust-compiler-and-sysroot']).encode()
+                if stage == 'zig-version': return pins['sdk']['zig'].encode()
+                if stage == 'bindgen-version': return ('wit-bindgen-cli ' + pins['rust']['dependencies']['wit-bindgen']).encode()
+                if stage == 'compile':
+                    selected = Path(self.environment['CARGO_TARGET_DIR']) / 'release/build/controlled/out/generated.rs'
+                    selected.parent.mkdir(parents=True); selected.write_bytes(b'original generated input')
+                    outputs.append(selected)
+                elif stage == 'contracts':
+                    derived = Path(command[-1]); derived.mkdir()
+                    for name in ('contracts.json', 'wit-lock.json'): (derived / name).write_bytes(b'{}')
+                    (derived / 'surface.json').write_bytes(b'{"imports":[],"exports":[]}')
+                elif stage != 'validate': raise AssertionError('unexpected native command: ' + stage)
+                return b''
+        def isolate(owned, tools, distributions):
+            scope.workspace, scope.tools, scope.distributions = owned.resolve(), tools, distributions
+            scope.wrap = Mock(return_value=['controlled native boundary'])
+            scope.check_unchanged = Mock()
+            return scope
+        def prepare(_root, _work, output, _language, **_kwargs):
+            project.write_json(output / 'application-dependencies.json', {'formatVersion': 1})
+            return SimpleNamespace(lock={'selection': {'runtimeProfile': 'wasm32-unknown-unknown-panic-abort-v1'}},
+                                   check_unchanged=Mock())
+        def configure(_closure, work, _home):
+            (work / 'Cargo.toml').write_bytes(b'controlled adapted manifest')
+            return b'controlled adapted manifest', {}
+        def componentize(_commands, _tool, _module, output, _source):
+            (output / 'component.wasm').write_bytes(b'controlled component bytes')
+            if late_mutation: outputs[0].write_bytes(b'changed after output inventory')
+        def package(output, *_args): project.write_json(output / 'package-source.json', {'layers': []})
+        verified = RustDeclaredEnvironment.verified(self)
+        verified.lock['executableInputs'] = [{'id': 'outside/build-script'}]
+        output = workspace.parent / 'output'
+        with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools), [])), \
+                patch.object(build.shutil, 'which', side_effect=lambda name, **_kwargs: str(scope.tools['shell' if name == 'sh' else name])), \
+                patch.object(build, 'Commands', ObservedCommands), \
+                patch.object(build, 'binding_check', return_value=project.digest(b'controlled bindings')), \
+                patch.object(application_dependencies, 'verify_inputs', return_value=verified), \
+                patch.object(application_dependencies, 'prepare', side_effect=prepare), \
+                patch.object(application_dependency_approval, 'approve', return_value=SimpleNamespace(identity=project.digest(b'approval'))), \
+                patch.object(rust_application_dependencies, 'configure', side_effect=configure), \
+                patch.object(captured_compiler_isolation, 'Isolation', side_effect=isolate), \
+                patch.object(build, 'componentize', side_effect=componentize), patch.object(build, 'package_inputs', side_effect=package), \
+                patch.object(build.guest_compatibility_build, 'capture_host_recipe', side_effect=lambda _o, _r, inputs, _s: inputs), \
+                patch.object(build.guest_compatibility_build, 'inspect'), patch.object(build.guest_compatibility_build, 'failure_report'), \
+                patch.object(build.guest_runtime_receipts, 'emit', return_value={'name': 'runtime', 'digest': project.digest(b'runtime'), 'size': 7}), \
+                patch.object(build.guest_compatibility_context_build, 'finish'):
+            if late_mutation:
+                with self.assertRaisesRegex(DependencyError, '^cargo-executable-outputs-mutated$'):
+                    build.build(source, output, scope.tools['shell'], None, 'https://example.invalid/source',
+                                executable_approval=project.digest(b'approval'))
+            else:
+                self.assertEqual(build.build(source, output, scope.tools['shell'], None, 'https://example.invalid/source',
+                                            executable_approval=project.digest(b'approval')), output)
+        self.assertEqual(stages, ['rust-sysroot', 'zig-version', 'bindgen-version', 'compile', 'validate', 'contracts'])
+        self.assertEqual((output / 'BUILD-COMPLETE.json').exists(), not late_mutation)
+        self.assertEqual((output / 'build-observation.json').exists(), not late_mutation)
+        if late_mutation:
+            failure = project.read_json(output / 'BUILD-FAILED.json')
+            self.assertEqual(failure['stage'], 'recheck')
+            self.assertEqual(failure['reason'], 'cargo-executable-outputs-mutated')
