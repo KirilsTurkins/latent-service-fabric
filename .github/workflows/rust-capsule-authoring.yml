@@ -244,6 +244,8 @@ jobs:
         with:
           name: rust-git-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/rust-stdio-prepared
+      - name: Validate explicit Rust entropy profiles and captured backend refusals
+        run: python3 -m unittest tools.tests.test_rust_standard_entropy -v
       - name: Test pinned stdio source and actual PAL host reference
         run: |
           python3 -m unittest tools.tests.test_rust_standard_logging tools.tests.test_rust_standard_logging_campaign

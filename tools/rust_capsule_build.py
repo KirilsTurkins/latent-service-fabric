@@ -58,6 +58,12 @@ STANDARD_RECIPE = (
     'wit/platform/log/package.wit',
     'sdk/rust-standard-stdio/Cargo.toml',
     'sdk/rust-standard-stdio/src/lib.rs',
+    'tools/rust_standard_entropy_profile.py',
+    'sdk/rust-standard-runtime/entropy_core.rs',
+    'sdk/rust-standard-runtime/entropy_std.rs',
+    'sdk/rust-standard-runtime/entropy_getrandom_03.rs',
+    'sdk/rust-standard-runtime/entropy-getrandom-03.json',
+    'wit/platform/random/package.wit',
     'tools/rust_standard_sysroot_build.py',
     'tools/rust_capsule_build.py',
     'tools/build_observation.py',
@@ -328,7 +334,7 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
                 "latent-guest": {"path": "vendor/lsf/sdk/rust-guest"}}
     if pins["template"]["name"] == "transactional-aggregate":
         expected["latent-guest"]["features"] = ["transaction"]
-    if runtime_profile == standard.PROFILE:
+    if standard.has_logging(runtime_profile):
         expected['latent-guest'].setdefault('features', []).append('standard-logging')
     maintained = cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies", {})
     if (not isinstance(maintained, dict) or any(maintained.get(name) != value for name, value in expected.items())
@@ -489,7 +495,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     files = observed.files
     project, pins = validate_project(files)
     runtime_profile = standard.selection(project)
-    if (standard_runtime is not None) != (runtime_profile in {standard.CLOSED, standard.PROFILE}):
+    if (standard_runtime is not None) != (runtime_profile in standard.PREPARED):
         raise ValueError('explicit Rust logging profile requires its owned prepared standard runtime only')
     source_inputs = inventory(files)
     recipe_files = {name: read_file(ROOT / name)
@@ -574,6 +580,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     if executable_approval is None:
                         raise ValueError("captured Cargo build scripts/macros require the exact retained executable-input approval identity")
                     approval = approve_execution(verified, isolation, executable_recipe, executable_approval)
+                from tools.rust_standard_entropy_profile import verify_capture
+                verify_capture(verified, runtime_profile)
                 closure = prepare(observed.dependency_root, work, output, "rust", execution_approval=approval)
                 adapted_manifest, cargo_inputs = configure_application(closure, work, Path(environment["CARGO_HOME"]))
                 isolation.protect_inputs(work)
@@ -618,7 +626,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
-            if runtime_profile == standard.PROFILE and standard.LOG not in surface['imports']:
+            if standard.has_entropy(runtime_profile) and 'latent:random/random@0.1.0' not in surface['imports']:
+                raise ValueError('standard entropy requires explicit original-world RANDOM declaration')
+            if standard.has_logging(runtime_profile) and standard.LOG not in surface['imports']:
                 raise ValueError('standard logging requires explicit original-world LOG declaration')
             recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
             stage = "compatibility"
