@@ -48,6 +48,13 @@ Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="exampl
 
 `TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.
 
+The [descriptor reflection qualification](../testing/dotnet-reflection-qualification.md)
+uses an ordinary captured outside DLL, runtime-selected type/member names and
+the exact descriptor material. Its signed component programme distinguishes a
+caught dynamic-load refusal, an uncaught terminal trap and a fresh successful
+reflection call. Source controls alone do not qualify that runtime behaviour;
+use its successful exact-source hosted receipt before making that claim.
+
 Immediately before locked restore, the captured recipe verifies each active
 trimming descriptor and project-declared embedded resource against its reviewed
 digest and size. A path overwritten by canonical WIT, project generation or
@@ -165,9 +172,12 @@ within the original workflow deadline; an immediate restart refusal is retained
 as a separate observation. Application updates cannot reuse that fixture's
 approval or infer a durable outcome from a timeout.
 
-Supported reflection/trimming, private-feed authentication and identity
-variation, update/remove/watch and broader memory/cancellation/disposal/GC
-qualification remain required by #687. Task/ThreadPool and ordinary HttpClient
+Descriptor-selected reflection and dynamic-load refusal now have a
+[fresh signed result](../testing/dotnet-reflection-qualification.md#recorded-signed-result).
+Private-feed authentication, identity variation and offline update/removal are
+qualified by [PR #1126](https://github.com/KirilsTurkins/latent-service-fabric/pull/1126).
+Broader #687 acceptance must still be reconciled with the retained watch and
+memory/cancellation/disposal/GC evidence. Task/ThreadPool and ordinary HttpClient
 retain their own runtime tickets. The focused signed resource checks establish
 the named standard lookup path, not universal compatibility for NuGet packages.
 
