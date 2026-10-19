@@ -149,6 +149,69 @@ class RustEnvironment:
         return result
 
 
+MAX_EXECUTABLE_OUTPUT_FILES = 8192
+MAX_EXECUTABLE_OUTPUT_BYTES = 64 * 1024 * 1024
+
+
+def executable_output_inventory(target: Path) -> dict:
+    """One aggregate inventory for approved build-script and proc-macro outputs."""
+    from tools.application_dependency_store import DependencyError
+    try:
+        return _observe_executable_outputs(target)
+    except OSError:
+        raise DependencyError('cargo-executable-outputs-unavailable') from None
+
+
+def _observe_executable_outputs(target: Path) -> dict:
+    from tools.application_dependency_store import DependencyError, directory_files, regular_path
+    target = regular_path(target).resolve(strict=True)
+    if not target.is_dir():
+        raise DependencyError('cargo-executable-outputs-unavailable')
+    outputs, total, directories = {}, 0, 0
+    def limit(size):
+        if len(outputs) >= MAX_EXECUTABLE_OUTPUT_FILES or total + size > MAX_EXECUTABLE_OUTPUT_BYTES:
+            raise DependencyError('captured build-tool generated output limit exceeded')
+    for profile in ('release', 'wasm32-unknown-unknown/release'):
+        parent = regular_path(target / profile / 'build')
+        for directory in parent.glob('*/out'):
+            directories += 1
+            if directories > MAX_EXECUTABLE_OUTPUT_FILES:
+                raise DependencyError('captured build-tool generated output limit exceeded')
+            for name, data in directory_files(directory).items():
+                limit(len(data))
+                total += len(data)
+                outputs[directory.relative_to(target).as_posix() + '/' + name] = {
+                    'digest': digest(data), 'size': len(data)}
+    parent = regular_path(target / 'release/deps')
+    for selected in parent.glob('*.so'):
+        path = regular_path(selected)
+        limit(path.stat().st_size)
+        identity = file_identity(path, 'compiled-proc-macro', MAX_EXECUTABLE_OUTPUT_BYTES - total)
+        total += identity['size']
+        outputs[path.relative_to(target).as_posix()] = {'digest': identity['digest'], 'size': identity['size']}
+    return dict(sorted(outputs.items()))
+
+
+class RustExecutableOutputs:
+    def __init__(self, target: Path, output: Path, approval_identity: str):
+        self.target, self.path = target, output / 'executable-input-outputs.json'
+        self.before = canonical({'formatVersion': 1, 'approvalIdentity': approval_identity,
+            'outputs': executable_output_inventory(target),
+            'cleanup': 'namespace-and-owned-process-reaped', 'hermetic': False})
+        write_json(self.path, json.loads(self.before))
+
+    def check_unchanged(self):
+        from tools.application_dependency_store import DependencyError
+        try:
+            before = json.loads(self.before)
+            if (executable_output_inventory(self.target) == before['outputs']
+                    and canonical(read_json(self.path, 8 * 1024 * 1024)) == self.before):
+                return
+        except (OSError, ValueError, TypeError, RecursionError):
+            pass
+        raise DependencyError('cargo-executable-outputs-mutated')
+
+
 class Commands:
     def __init__(self, root: Path, output: Path, environment: dict[str, str], *,
                  deadline_seconds=900, command_seconds=600):
@@ -431,7 +494,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands = Commands(work, output, environment)
             stage = "application-dependencies"
             verified = verify_inputs(observed.dependency_root, "rust")
-            closure, approval = None, None
+            closure, approval, output_guard = None, None, None
             isolation, adapted_manifest, environment_guard = None, None, None
             if verified is not None:
                 environment.update(CARGO_HOME=str(temporary / "cargo-home"), CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
@@ -487,23 +550,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     compile_arguments.append("--no-default-features")
                 environment_guard.compile(commands, paths["cargo"], compile_arguments, work)
                 if approval is not None:
-                    from tools.application_dependency_store import directory_files
-                    generated_outputs = {}
-                    targets = [temporary / "target/release", temporary / "target/wasm32-unknown-unknown/release"]
-                    total = 0
-                    for target in targets:
-                        for directory in sorted((target / "build").glob("*/out")):
-                            for name, data in directory_files(directory).items():
-                                total += len(data)
-                                if len(generated_outputs) >= 8192 or total > 64 * 1024 * 1024:
-                                    raise ValueError("captured build-tool generated output limit exceeded")
-                                generated_outputs[directory.relative_to(temporary / "target").as_posix() + "/" + name] = {
-                                    "digest": digest(data), "size": len(data)}
-                    for path in sorted((targets[0] / "deps").glob("*.so")):
-                        generated_outputs[path.relative_to(temporary / "target").as_posix()] = {
-                            "digest": file_identity(path, "compiled-proc-macro")["digest"], "size": path.stat().st_size}
-                    write_json(output / "executable-input-outputs.json", {"formatVersion": 1, "approvalIdentity": approval.identity,
-                        "outputs": generated_outputs, "cleanup": "namespace-and-owned-process-reaped", "hermetic": False})
+                    output_guard = RustExecutableOutputs(temporary / 'target', output, approval.identity)
             else:
                 commands.run("compile", paths["cargo"], *compile_arguments)
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
@@ -538,6 +585,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 closure.check_unchanged()
                 isolation.check_unchanged()
                 environment_guard.check_unchanged(commands.environment)
+                if output_guard is not None:
+                    output_guard.check_unchanged()
             observed.check_unchanged()
             if captured_files != files:
                 raise ValueError("project changed during the observed build")

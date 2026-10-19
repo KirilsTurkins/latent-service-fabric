@@ -107,6 +107,14 @@ new exact approval, and a mutation before or during compilation cannot publish
 success. This identity fence adds no runtime grant or compiler capability; it
 does not establish hermetic compilation or authenticate a publisher.
 
+Approved build-script output directories for the host and Wasm target, together
+with host procedural-macro objects, share the existing 8,192-file and 64 MiB
+generated-output limits. The builder records their relative names, digests and
+sizes, then rechecks that inventory and its receipt before publishing success.
+Changed, missing or added selected outputs refuse; rewriting the receipt cannot
+promote a changed inventory. These checks bind observed generated materials,
+not their semantic correctness or complete host containment.
+
 ## Build, test and watch
 
 Use the existing build command with a fresh output directory and `--offline`.
