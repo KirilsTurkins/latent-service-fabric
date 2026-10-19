@@ -373,3 +373,9 @@ requires checking the deployment grant, provider binding and allowed destination
 
 
 For separately approved source generation, follow the [Go generator workflow](go-generators.md).
+
+The [ordinary standard entropy campaign](go-standard-entropy.md) captures outside
+`crypto/rand` and `syscall.RandomGet` callers beneath the existing default
+runtime. Its source controls do not establish a signed component pass; explicit
+random authority, unchanged policy bounds and fresh physical retirement remain
+required.

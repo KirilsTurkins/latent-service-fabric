@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all qualified TypeScript generator/private npm and merged private NuGet helper identities; no native or compiler behavior change.",
+  "reviewReason": "Preserve C and TypeScript generators and Console selectors while adding explicit Go generator source/results; all defaults remain false.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "74794ffcc4d22a9a6ba65d44f95e7374a7dcaaa8605bf668540081146c3179cf"
+  "sha256": "7636fe5ca55f47dfde5938808637f06ef5879fdbb6f8fbe6c94688347204e185"
 }

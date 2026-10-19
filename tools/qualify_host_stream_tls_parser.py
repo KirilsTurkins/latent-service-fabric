@@ -53,22 +53,32 @@ def observations(raw: bytes, *, original: bool) -> list[dict]:
     return rows
 
 
-def qualify(archive: Path, output: Path, cargo: Path, rustc: Path) -> dict:
+def profile(version: str):
+    if version == "0.23.45":
+        return captured.PATCH_ROOT, captured.apply
+    if version == "0.23.46":
+        return captured.CURRENT_PATCH_ROOT, captured.apply_current
+    raise ValueError("tls-parser-reference-profile")
+
+
+def qualify(archive: Path, output: Path, cargo: Path, rustc: Path,
+            *, parser_version: str = "0.23.45") -> dict:
+    patch_root, apply = profile(parser_version)
     output = fresh(output)
     compiler = subprocess.run([str(rustc), "--version"], capture_output=True, check=True,
                               timeout=30).stdout.decode().strip()
     if not compiler.startswith("rustc 1.97.1 "):
         raise ValueError("tls-parser-reference-compiler-pin")
-    provenance = captured.apply(archive, output / "bounded-rustls")
+    provenance = apply(archive, output / "bounded-rustls")
     original = output / "original-rustls"
     shutil.copytree(output / "bounded-rustls", original)
     with tarfile.open(archive, "r:gz") as source:
         for row in provenance["patch"]["files"]:
-            data = source.extractfile("rustls-0.23.45/" + row["path"]).read()
+            data = source.extractfile(f"rustls-{parser_version}/" + row["path"]).read()
             if hashlib.sha256(data).hexdigest() != row["beforeSha256"]:
                 raise ValueError("tls-parser-reference-original-preimage")
             (original / row["path"]).write_bytes(data)
-    reference = read_file(captured.PATCH_ROOT / "allocation-reference.rs", 65536)
+    reference = read_file(patch_root / "allocation-reference.rs", 65536)
     packets = {}
     for mode, dependency in (("old", "original-rustls"), ("new", "bounded-rustls")):
         project = output / mode
@@ -113,8 +123,10 @@ def main():
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--cargo", required=True, type=Path)
     parser.add_argument("--rustc", required=True, type=Path)
+    parser.add_argument("--parser-version", choices=("0.23.45", "0.23.46"), default="0.23.45")
     arguments = parser.parse_args()
-    result = qualify(arguments.archive, arguments.output, arguments.cargo, arguments.rustc)
+    result = qualify(arguments.archive, arguments.output, arguments.cargo, arguments.rustc,
+                     parser_version=arguments.parser_version)
     print(json.dumps({"parserReferenceExecuted": result["parserReferenceExecuted"],
                       "accountingQualified": False, "hostTlsInstalled": False}))
 

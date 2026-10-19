@@ -55,6 +55,36 @@ def repository(root: Path) -> str:
 
 
 class BuildSnapshotTests(unittest.TestCase):
+    def test_current_workspace_members_are_all_in_the_exact_capture_selection(self) -> None:
+        from tools import build_snapshot
+        import tomllib
+        root = Path(__file__).resolve().parents[2]
+        members = tomllib.loads((root / 'Cargo.toml').read_text(encoding='utf-8'))['workspace']['members']
+        self.assertEqual([member for member in members if not build_snapshot._selected(member)], [])
+        self.assertTrue(all((root / member / 'Cargo.toml').is_file() for member in members))
+
+    def test_standard_stdio_workspace_member_and_its_source_survive_real_committed_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            repo = parent / 'repo'
+            repository(repo)
+            member = repo / 'sdk/rust-standard-stdio'
+            (member / 'src').mkdir(parents=True)
+            manifest = b'[package]\nname="latent-rust-standard-stdio"\nversion="0.1.0"\nedition="2024"\n'
+            source = b'pub fn captured_standard_stdio() {}\n'
+            (member / 'Cargo.toml').write_bytes(manifest)
+            (member / 'src/lib.rs').write_bytes(source)
+            (repo / 'Cargo.toml').write_bytes(b'[workspace]\nmembers=["crates/demo","sdk/rust-standard-stdio"]\n')
+            git(repo, 'add', '.')
+            git(repo, 'commit', '--quiet', '-m', 'standard stdio workspace member')
+            revision = git(repo, 'rev-parse', 'HEAD')
+            target = parent / 'target'
+            target.mkdir()
+            with capture_source(repo, revision, target) as captured:
+                self.assertEqual((captured.root / 'sdk/rust-standard-stdio/Cargo.toml').read_bytes(), manifest)
+                self.assertEqual((captured.root / 'sdk/rust-standard-stdio/src/lib.rs').read_bytes(), source)
+                self.assertFalse((captured.root / 'benchmarks').exists())
+
     def test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             parent = Path(temporary)

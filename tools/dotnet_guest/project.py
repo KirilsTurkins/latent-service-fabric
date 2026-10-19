@@ -41,6 +41,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     for path in ("Cargo.toml", "Cargo.lock", "tools/toolchain.toml", "LICENSE", "NOTICE",
                  "tools/toolchain-smoke/Cargo.toml", *EXAMPLES, "tools/dotnet_guest_bindings.py",
                  "tools/dotnet_guest/async_exports.py",
+                 "tools/dotnet_guest/closed_io.py",
                  "sdk/dotnet-guest/component-composer.json",
                  "sdk/dotnet-guest/global.json", "sdk/dotnet-guest/nuget.config",
                  "sdk/dotnet-guest/probes/smoke/Smoke.csproj", "sdk/dotnet-guest/probes/smoke/packages.lock.json"):

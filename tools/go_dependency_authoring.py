@@ -135,10 +135,13 @@ def public(owner: Path, sdk) -> dict:
 
 def current_application(app: Path, lock: dict) -> None:
     from tools.go_application_dependencies import selection, sums
+    from tools.go_proxy_tls import validate as validate_proxy_trust
     declaration = read_bytes(app / 'go.mod')
     native_bytes = read_bytes(app / 'go.sum')
     sums(native_bytes)
     graph = decode_json(read_bytes(app / 'go-resolved.lock.json', inputs.MAX_LOCK))
+    if isinstance(graph, dict):
+        validate_proxy_trust(app, graph.get('fetchTrust'))
     selected = selection(lock['selection'])
     roots = [row for row in lock['artifacts'] if row['metadata'].get('assetType') == 'selected-root-module']
     caches = [row for row in lock['artifacts'] if row['metadata'].get('assetType') == 'selected-module-downloads']

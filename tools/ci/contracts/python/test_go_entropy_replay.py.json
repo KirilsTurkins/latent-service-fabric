@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "EntropyReplay.test_changed_native_compiler_helper_sdk_or_extra_runner_edit_refuses",
+    "EntropyReplay.test_explicit_replay_preserves_original_45_minute_default_programme",
+    "EntropyReplay.test_fixed_range_reader_enforces_512_read_bound_before_an_extra_http_request",
+    "EntropyReplay.test_fixed_source_allowlist_excludes_compiler_cache_private_material_and_other_component",
+    "EntropyReplay.test_only_exact_reviewed_authority_call_may_differ_from_historical_compiled_source"
+  ],
+  "guards": {
+    "EntropyReplay.test_changed_native_compiler_helper_sdk_or_extra_runner_edit_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:56c18a3d5f607ae513039febac82fcd5bc3e53505e6c127a629b2ee917305afe",
+        "class:setup-sha256:0ddc7c1c30bedda17dd94f2a488654a2610608ab8563a46950574de16cd5d035"
+      ],
+      "skipSites": []
+    },
+    "EntropyReplay.test_explicit_replay_preserves_original_45_minute_default_programme": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:56c18a3d5f607ae513039febac82fcd5bc3e53505e6c127a629b2ee917305afe",
+        "class:setup-sha256:0ddc7c1c30bedda17dd94f2a488654a2610608ab8563a46950574de16cd5d035"
+      ],
+      "skipSites": []
+    },
+    "EntropyReplay.test_fixed_range_reader_enforces_512_read_bound_before_an_extra_http_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:56c18a3d5f607ae513039febac82fcd5bc3e53505e6c127a629b2ee917305afe",
+        "class:setup-sha256:0ddc7c1c30bedda17dd94f2a488654a2610608ab8563a46950574de16cd5d035"
+      ],
+      "skipSites": []
+    },
+    "EntropyReplay.test_fixed_source_allowlist_excludes_compiler_cache_private_material_and_other_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:56c18a3d5f607ae513039febac82fcd5bc3e53505e6c127a629b2ee917305afe",
+        "class:setup-sha256:0ddc7c1c30bedda17dd94f2a488654a2610608ab8563a46950574de16cd5d035"
+      ],
+      "skipSites": []
+    },
+    "EntropyReplay.test_only_exact_reviewed_authority_call_may_differ_from_historical_compiled_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:56c18a3d5f607ae513039febac82fcd5bc3e53505e6c127a629b2ee917305afe",
+        "class:setup-sha256:0ddc7c1c30bedda17dd94f2a488654a2610608ab8563a46950574de16cd5d035"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_entropy_replay.py",
+  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

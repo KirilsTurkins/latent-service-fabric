@@ -1,0 +1,194 @@
+{
+  "schemaVersion": "lsf.compatibility.catalogue.v1",
+  "authority": "none",
+  "packageEligibility": "independent-of-catalogue",
+  "documents": {
+    "qualification": {
+      "path": "evidence/java-http-request-qualification.json",
+      "sha256": "sha256:10ce3688924bb12f435acf84ae6ed19f27c5fb2fab7cf5db3aecf32fdc91d5eb",
+      "bytes": 26984,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/qualification.json"
+      }
+    },
+    "observation": {
+      "path": "evidence/java-http-request-observation.json",
+      "sha256": "sha256:a6bebc2aa2b960932d3c4edf3991ba685da0f79e2d35f3c414a99e523b6ea978",
+      "bytes": 3469,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/build-observation.json"
+      }
+    },
+    "dependencies": {
+      "path": "evidence/java-http-request-dependencies.json",
+      "sha256": "sha256:5aba70ca917f234024da710f47c9835245f09f2b618499d292bc38a3089b8130",
+      "bytes": 6066,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/application-dependencies.json"
+      }
+    },
+    "profile": {
+      "path": "evidence/java-http-request-profile.json",
+      "sha256": "sha256:5f7a405f56110ecd5e36a31f958f6dbf2019675c7ec985b0c1af557d9556cad2",
+      "bytes": 2568,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/http-client-profile.json"
+      }
+    },
+    "bindings": {
+      "path": "evidence/java-http-request-bindings.json",
+      "sha256": "sha256:a511d34904affed4b9cef193c99d626436cfe0e681128f23c44070b78e263e3e",
+      "bytes": 7728,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/bindings.json"
+      }
+    },
+    "compatibility": {
+      "path": "evidence/java-http-request-compatibility.json",
+      "sha256": "sha256:c50591efc7e51f23655af0adfbd73b119e64b99755a92beb7db2c6d1c73a0438",
+      "bytes": 1252,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/compatibility-report.json"
+      }
+    }
+  },
+  "entries": [
+    {
+      "language": "java",
+      "package": {
+        "coordinate": "com.github.kevinsawicki:http-request:6.0",
+        "version": "6.0",
+        "artifactDigest": "sha256:673dd02ade4196ab511e812a6857dacaeb5716dea83aa217dba654824b5d5476"
+      },
+      "packageBindings": {
+        "coordinate": {
+          "document": "dependencies",
+          "pointer": "/artifacts/0/id",
+          "valueDigest": "sha256:35bc1e25edde0c0976c5716c0d46f2364be00cd813bc967be01d390987e94c02"
+        },
+        "version": {
+          "document": "dependencies",
+          "pointer": "/artifacts/0/metadata/resolution/version",
+          "valueDigest": "sha256:77eac2dd6000501d0d7d1324f16d72d6aaa6f789756e3675e01611183f48a04f"
+        },
+        "artifactDigest": {
+          "document": "dependencies",
+          "pointer": "/artifacts/0/files/0/digest",
+          "valueDigest": "sha256:2dfed22486cb54fa2e63c7732436efc7472a4e59eb392e1873f98c9c8c5dd3ce"
+        }
+      },
+      "status": "tested-default-path",
+      "surface": "Plain HTTP URLConnection default factories, parsed bodies and finite owner retirement",
+      "construction": "ordinary-default",
+      "bindings": {
+        "source": {
+          "document": "observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:b4f3c342fe037e5d59b89600623b2e09cb1e7b23d566ee7b5a3e67bef05a1cfc"
+        },
+        "component": {
+          "document": "observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:12ad8624e3bc09e9880be9f713f09c8ad4be7364c249e0309e6b9daab0d4d93a"
+        },
+        "graph": {
+          "document": "dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:5aba70ca917f234024da710f47c9835245f09f2b618499d292bc38a3089b8130"
+        },
+        "configuration": {
+          "document": "dependencies",
+          "pointer": "/selection",
+          "valueDigest": "sha256:799a1a3514ca53933ffe311553e3c40f55378e95190b8f318d2d9d8eac55ed9a"
+        },
+        "compiler": {
+          "document": "observation",
+          "pointer": "/materials",
+          "valueDigest": "sha256:6942bbc0ecc31f12032f58c2241a1fccd29d8f91b0af8fc1ed6e27cf02c8c0e9"
+        },
+        "engine": {
+          "document": "qualification",
+          "pointer": "/nativeProducts/latentd",
+          "valueDigest": "sha256:dd6eb78d2d509afa3fff17d1fa791c061db43e2f86895d6c0b2629fc3d8bd870"
+        },
+        "runtime": {
+          "document": "profile",
+          "pointer": "/runtimeAdapterDigest",
+          "valueDigest": "sha256:920827902401fd3e9919d1183d490cb1a620c91960a3ecc5162c9b0745962aff"
+        },
+        "backend": {
+          "document": "profile",
+          "pointer": "",
+          "valueDigest": "sha256:3b2c1d1b9cebdcf0207a406e7a0c908dd5e45aa567476f716165319862cef822"
+        },
+        "automaticPatches": {
+          "document": "profile",
+          "pointer": "/inputs",
+          "valueDigest": "sha256:d20da8294764d81a45bac09cbe6dfe1bb067150608debf5d192783b79706811a"
+        },
+        "wit": {
+          "document": "bindings",
+          "pointer": "",
+          "valueDigest": "sha256:a86f316ce700918841f80f8071167280041a5da18ded87991fe5eef5ef49d420"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "claims": [
+          "Thirteen signed/admitted cases passed through ordinary client factories and the typed HTTP provider.",
+          "Eleven primary peer contacts, one mutation and no secondary contact; node and peer cleanup retained.",
+          "The exact original JAR is captured; deterministic classpath selection and compiler-owned platform substitutions are recorded separately."
+        ],
+        "source": {
+          "document": "qualification",
+          "pointer": "/sourceInputs/sha256",
+          "valueDigest": "sha256:b4f3c342fe037e5d59b89600623b2e09cb1e7b23d566ee7b5a3e67bef05a1cfc"
+        },
+        "component": {
+          "document": "qualification",
+          "pointer": "/component/sha256",
+          "valueDigest": "sha256:12ad8624e3bc09e9880be9f713f09c8ad4be7364c249e0309e6b9daab0d4d93a"
+        }
+      },
+      "limitations": [
+        "One published client; no two-client or private-client acceptance.",
+        "Plain HTTP synchronous factory/body/early-close subset; full async/cancel/HTTPS matrix pending.",
+        "Native RSS is sampled; no allocator/native/kernel upper-bound claim.",
+        "This historical observation does not qualify current development, HTTPS, a second independent client or all runtime APIs.",
+        "The compiler profile receipt retains qualification=pending; the separate signed receipt supplies only the thirteen listed outcomes.",
+        "The native node binary identifies the tested engine closure; this catalogue does not infer a standalone engine hash or allocator bound."
+      ],
+      "identity": "sha256:4cd2469985028d78b670f2c88e6625b3a85493a43a562a0cb1941bf9353990ec",
+      "documentsIdentity": "sha256:8cf70405ef92f3bbaa131f9eec2d059ea5b260b633ec946fa1fbf7e7c7bb1667"
+    }
+  ]
+}

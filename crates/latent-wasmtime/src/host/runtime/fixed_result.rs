@@ -1,7 +1,8 @@
 //! Own the original call through the actual canonical result-lowering boundary.
 //!
 //! This is deliberately restricted to the four resource-free runtime result
-//! shapes. Strings, lists, resources and detached native work keep their own
+//! shapes and the random interface's resource-free u64 result. Strings, lists,
+//! resources and detached native work keep their own
 //! existing physical owners; they cannot use this completion wrapper.
 use super::wit;
 use latent_capabilities::broker::ProviderCall;
@@ -26,6 +27,13 @@ macro_rules! fixed_values {
     };
 }
 fixed_values!((), u64, wit::Token, wit::Observation);
+
+// The approved random scalar has a distinct generated error enum but the same
+// resource-free u64 result boundary. Variable-length random bytes stay excluded.
+type RandomScalar =
+    Result<u64, latent_component_bindings::host::phase3::latent::random::random::RandomError>;
+impl FixedValue for RandomScalar {}
+const _: () = assert!(!<RandomScalar as ComponentType>::MAY_REQUIRE_REALLOC);
 
 pub(in crate::host) struct Completion<R: FixedValue> {
     value: R,
