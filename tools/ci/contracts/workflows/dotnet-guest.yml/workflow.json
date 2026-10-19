@@ -47,6 +47,10 @@
           "tools/dotnet_dependency_authoring.py",
           "tools/dotnet_dependency_fixture.py",
           "tools/dotnet_dependency_recovery.py",
+          "tools/dotnet_reflection_fixture.py",
+          "tools/qualify_dotnet_reflection.py",
+          "tools/tests/test_dotnet_reflection.py",
+          "docs/testing/dotnet-reflection-qualification.md",
           "tools/tests/test_dotnet_dependency_recovery.py",
           "tools/dotnet_compiler_isolation.py",
           "tools/application_dependenc*.py",
@@ -83,7 +87,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Preserve ordinary NuGet gates and bind explicit public trust plus authenticated offline lifecycle qualification",
+  "reviewReason": "Add descriptor-selected reflection qualification after merged private NuGet; preserve all original commands and finite limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

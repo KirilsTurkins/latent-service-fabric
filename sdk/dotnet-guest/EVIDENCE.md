@@ -25,12 +25,24 @@ WIT inspection or exact-head signed-node qualification. Member names alone do
 not establish type compatibility, reachable behavior, resource retirement,
 reflection support or ordinary HttpClient operation. Issue #687 remains open.
 
-The next source qualification selects MemoryPack 1.21.4 with its actual
-MemoryPack.Core and MemoryPack.Generator graph, alongside an independently
-declared developer assembly. Ordinary generated serialization must round-trip
-the assembly's embedded resource. The qualifier requires an initial unapproved
-generator denial, an exact fresh approval and retained generated payload bytes.
-Generated source is captured immediately after the owned NativeAOT process
-exits, with a receipt distinguishing successful and failed compiler commands.
-These source checks do not establish that the new fixture compiles or runs:
-NativeAOT, final composition and signed-node receipts remain pending.
+Subsequent qualification supersedes the pending MemoryPack plan, while retaining
+that failed SmartFormat attempt as historical evidence. [PR #1028](https://github.com/KirilsTurkins/latent-service-fabric/pull/1028)
+qualifies the captured MemoryPack 1.21.4 generated serialization path and developer
+assembly resources. [PR #1054](https://github.com/KirilsTurkins/latent-service-fabric/pull/1054)
+adds selected native/PInvoke asset refusal. [PR #1126](https://github.com/KirilsTurkins/latent-service-fabric/pull/1126)
+qualifies authenticated private-feed capture, offline builds, identity variation,
+update/removal and signed execution without retaining feed credentials.
+
+The [descriptor reflection run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39307965194)
+passed on fixture `37aff00e5fe850c2f4058f2485ab1591dcee2931`.
+Its fresh offline NativeAOT component executed 31 signed calls: the original 27
+node cases and four descriptor/refusal/fresh-state cases. The descriptor is 142
+bytes, SHA-256 `9616165318c375ecc16ffabfeffa0026183a1ce9bfe9cd3752faa7af4c21f445`.
+Every invocation was known and reaped; the node stopped cleanly and all three
+peer holds closed. This replay authenticated and reused the five native products
+compiled at `03a3f74598f2abfd0224169ae2871818f6c8419d`; it did not recompile them
+or rerun their complete language matrix. Production fixture and qualifier bytes
+match the tested source, and the shared runner's exercised path is unchanged.
+See [the programme](../../docs/testing/dotnet-reflection-qualification.md) for the
+explicit noncrypto entropy grant and supported/refused boundary. These results
+do not establish a complete CLR, arbitrary reflection or default HttpClient.

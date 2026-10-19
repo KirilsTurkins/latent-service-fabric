@@ -19,6 +19,10 @@ on:
       - 'tools/typescript*dependencies.py'
       - 'tools/typescript_dependency_authoring.py'
       - 'tools/npm_lock_authoring.py'
+      - 'tools/typescript_generator_authoring.py'
+      - 'tools/typescript_generator_fixture.py'
+      - 'tools/tests/test_typescript_generator_authoring.py'
+      - 'tools/tests/test_typescript_generator_fixture.py'
       - 'tools/typescript_registry_tls.py'
       - 'tools/npm_private_registry_fixture.py'
       - 'tools/qualify_npm_private_dependencies.py'
@@ -74,6 +78,10 @@ on:
       - 'tools/typescript*dependencies.py'
       - 'tools/typescript_dependency_authoring.py'
       - 'tools/npm_lock_authoring.py'
+      - 'tools/typescript_generator_authoring.py'
+      - 'tools/typescript_generator_fixture.py'
+      - 'tools/tests/test_typescript_generator_authoring.py'
+      - 'tools/tests/test_typescript_generator_fixture.py'
       - 'tools/typescript_registry_tls.py'
       - 'tools/npm_private_registry_fixture.py'
       - 'tools/qualify_npm_private_dependencies.py'
@@ -428,9 +436,11 @@ jobs:
       - name: Test reviewed npm lifecycle and selected frontend
         run: |
           python3 -m unittest tools.tests.test_typescript_dependency_authoring tools.tests.test_guest_authoring_frontend
+      - name: Test exact approved TypeScript generator containment and signed probes
+        run: LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_typescript_generator_authoring tools.tests.test_typescript_generator_fixture
       - name: Qualify captured npm libraries and resource lookups
         run: |
-          python3 tools/qualify_typescript_capsules.py --application-dependencies --output "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools"
+          python3 tools/qualify_typescript_capsules.py --application-dependencies --approved-generator --output "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Rebuild the verified npm closure and test library integrity and fresh state
         run: |
           python3 tools/qualify_typescript_dependencies.py --resolve-only --output "$RUNNER_TEMP/typescript-library-integrity"
@@ -482,6 +492,9 @@ jobs:
             ${{ runner.temp }}/typescript-guest-probe/
             ${{ runner.temp }}/typescript-capsule-authoring/
             ${{ runner.temp }}/typescript-capsule-dependencies/
+            ${{ runner.temp }}/typescript-capsule-dependencies/outside-project-generator/GENERATOR-COMPLETE.json
+            ${{ runner.temp }}/typescript-capsule-dependencies/projects/greeting/typescript-generated-inputs.json
+            ${{ runner.temp }}/typescript-capsule-dependencies/projects/greeting/src/generated/**
             ${{ runner.temp }}/npm-private-dependencies/capture.json
             ${{ runner.temp }}/npm-private-dependencies/qualification.json
             ${{ runner.temp }}/npm-private-dependencies/FAILED.json

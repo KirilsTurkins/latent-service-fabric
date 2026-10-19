@@ -31,6 +31,10 @@ on:
       - 'tools/dotnet_dependency_authoring.py'
       - 'tools/dotnet_dependency_fixture.py'
       - 'tools/dotnet_dependency_recovery.py'
+      - 'tools/dotnet_reflection_fixture.py'
+      - 'tools/qualify_dotnet_reflection.py'
+      - 'tools/tests/test_dotnet_reflection.py'
+      - 'docs/testing/dotnet-reflection-qualification.md'
       - 'tools/tests/test_dotnet_dependency_recovery.py'
       - 'tools/dotnet_compiler_isolation.py'
       - 'tools/application_dependenc*.py'
@@ -241,6 +245,11 @@ jobs:
       - name: Qualify signed asynchronous HttpClient pre-cancellation without dispatch
         run: |
           python3 tools/qualify_dotnet_standard_http.py --pre-cancelled-async --output "$RUNNER_TEMP/dotnet-standard-http-async-cancel" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Test descriptor-selected reflection and closed signed failure boundaries
+        run: python3 -m unittest tools.tests.test_dotnet_reflection -v
+      - name: Qualify ordinary captured descriptor reflection and dynamic loading refusal
+        run: |
+          python3 tools/qualify_dotnet_reflection.py --prepared-qualification "$RUNNER_TEMP/dotnet-capsule-dependencies" --output "$RUNNER_TEMP/dotnet-reflection" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
       - name: Test private NuGet trust and bounded lifecycle controls
         run: python3 -m unittest tools.tests.test_dotnet_private_feeds tools.tests.test_dotnet_private_lifecycle
       - name: Qualify authenticated private NuGet capture and signed offline lifecycle
@@ -252,6 +261,17 @@ jobs:
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/dotnet-reflection/qualification.json
+            ${{ runner.temp }}/dotnet-reflection/FAILED.json
+            ${{ runner.temp }}/dotnet-reflection/capture.json
+            ${{ runner.temp }}/dotnet-reflection/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-reflection/build/BUILD-FAILED.json
+            ${{ runner.temp }}/dotnet-reflection/build/source-inputs.json
+            ${{ runner.temp }}/dotnet-reflection/build/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-reflection/build/build-observation.json
+            ${{ runner.temp }}/dotnet-reflection/build/nuget-build-inputs.json
+            ${{ runner.temp }}/dotnet-reflection/build/compiler-containment.json
+            ${{ runner.temp }}/dotnet-reflection/node/workflow.json
             ${{ runner.temp }}/dotnet-private-dependencies/qualification.json
             ${{ runner.temp }}/dotnet-private-dependencies/FAILED.json
             ${{ runner.temp }}/dotnet-private-dependencies/capture.json
