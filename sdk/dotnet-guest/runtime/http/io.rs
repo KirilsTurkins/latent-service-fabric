@@ -1,10 +1,10 @@
 //! WASI resource identities shared by the BCL and this HTTP backend.
 use super::{
-    ClosedError,
     exports::wasi::io,
     poll::Pollable,
     pump::{self, Readiness},
-    state::{CHUNK, Exchange, Slot},
+    state::{Exchange, Slot, CHUNK},
+    ClosedError,
 };
 use std::{cell::Cell, rc::Rc};
 
