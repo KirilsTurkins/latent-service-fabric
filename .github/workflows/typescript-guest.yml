@@ -209,7 +209,7 @@ jobs:
       - name: Link the actual source-owned Promise and clock engine
         run: python3 tools/build_typescript_native_engine.py --library "$RUNNER_TEMP/typescript-promise-library" --output "$RUNNER_TEMP/typescript-native-engine" --wit-bindgen "$RUNNER_TEMP/typescript-promise-tools/wit-bindgen"
       - name: Read the completed source compiler products from this exact run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-source-splicer-input
@@ -293,12 +293,12 @@ jobs:
       - name: Install the original locked compiler namespace
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-fetch-tools"
       - name: Read the source compiler from this exact run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-fetch-splicer
       - name: Read the actual import engine from this exact run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-fetch-engine-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-fetch-engine
