@@ -1,6 +1,6 @@
 """Explicit log admission and synchronous ordinary Console lifecycle controls."""
 from tools.dotnet_guest.runtime import CLOCK, LOG
-from tools.dotnet_standard_console_fixture import CASES, EXPECTED
+from tools.dotnet_standard_console_fixture import CASES, EXPECTED, PHASES, PHASE_EXPECTED
 from tools.phase2_operator_process import require, write_json
 
 
@@ -60,15 +60,28 @@ def grant(client, node, fixture, targets, publications, result):
 
 def probe(client, target, accounting, result, population):
     from tools.rust_capsule_node import assert_value, call, provider_idle, sample
-    def completed(row):
+    def completed(row, *, logged=True):
         require(row['processReaped'], 'dotnet-console-invocation-process')
         consumption = row['response']['data']['consumption']
-        require(0 < int(consumption['logBytes']) <= target['budget']['logBytes']
+        actual_log = int(consumption['logBytes'])
+        require((0 < actual_log <= target['budget']['logBytes'] if logged else actual_log == 0)
                 and int(consumption['outboundRequests']) == 0
                 and int(consumption['peakMemoryBytes']) <= target['budget']['memoryBytes'],
                 'dotnet-console-charged-log-and-no-network')
         return consumption
     rows, recovery, baseline = [], [], None
+    phases = []
+    for mode in PHASES:
+        row = call(client, target, 'greeting', 'greet', ['console-phase:' + mode], 'dotnet-console-phase-' + mode)
+        result['invocations'].append(row)
+        # A caught closed exception label still fails this original positive
+        # expectation. Diagnostic observations never become acceptance skips.
+        assert_value(client, row, [{'ok': PHASE_EXPECTED[mode]}])
+        completed(row, logged=mode == 'write')
+        result['providerIdle'].append(provider_idle(client))
+        result['samples'].append(sample(client, accounting, 'dotnet-console-phase-' + mode + '-retired', population))
+        phases.append({'case': mode, 'invocation': row})
+    result['dotnetStandardConsolePhases'] = phases
     for ordinal, mode in enumerate(CASES):
         row = call(client, target, 'greeting', 'greet', ['console:' + mode], 'dotnet-console-' + str(ordinal))
         result['invocations'].append(row)

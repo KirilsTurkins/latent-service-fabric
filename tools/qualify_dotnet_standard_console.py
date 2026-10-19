@@ -14,7 +14,7 @@ if __package__ in {None, ''}:
 from tools.build_observation import build_environment
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
-from tools.dotnet_standard_console_fixture import CASES, prepare
+from tools.dotnet_standard_console_fixture import CASES, PHASES, prepare
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_capsules import inputs
@@ -100,12 +100,15 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         observed = run(binaries['latent'], binaries['latentd'], output / 'releases', output / 'node',
                        language='dotnet', dotnet_standard_logging=True)
         require(observed['status'] == 'passed' and len(observed['dotnetStandardConsoleCases']) == len(CASES)
+                and len(observed['dotnetStandardConsolePhases']) == len(PHASES)
+                and len(observed['invocations']) == 44
                 and len(observed['dotnetStandardConsoleRecovery']) == 2
                 and observed['nodeShutdown']['reaped'] and observed['nodeShutdown']['record']['clean'],
                 'dotnet-Console-original-and-new-signed-gates-required')
         # Keep the public result bounded and exclude private node configuration.
         fields = ('schemaVersion', 'status', 'scope', 'limits', 'invocations', 'samples', 'providerIdle',
-                  'dotnetStandardConsoleAuthority', 'dotnetStandardConsoleCases', 'dotnetStandardConsoleRecovery',
+                  'dotnetStandardConsoleAuthority', 'dotnetStandardConsolePhases',
+                  'dotnetStandardConsoleCases', 'dotnetStandardConsoleRecovery',
                   'nodeShutdown', 'peerShutdown', 'cliCalls')
         write_json(output / 'node/public-workflow.json', {name: observed[name] for name in fields})
         stage = 'final-integrity'

@@ -135,8 +135,9 @@ class StandardConsole(unittest.TestCase):
     def test_all_eight_console_cases_require_charged_logs_and_trap_fuel_physical_recovery(self):
         def observe(*, reaped=True, success_reaped=True, fault_fuel=110_000_000, logged=32, baseline=55_000_000):
             def invoke(_client, target, _template, _function, args, activation):
-                mode = args[0].removeprefix('console:')
-                consumed = {'logBytes': str(logged), 'outboundRequests': '0',
+                phase = args[0].startswith('console-phase:')
+                mode = args[0].removeprefix('console-phase:' if phase else 'console:')
+                consumed = {'logBytes': str(0 if phase and mode != 'write' else logged), 'outboundRequests': '0',
                     'peakMemoryBytes': '10', 'cpuFuel': str(baseline)}
                 if mode in {'trap', 'fuel'}:
                     code = 'guest-trap' if mode == 'trap' else 'resource-exhausted'
@@ -144,7 +145,7 @@ class StandardConsole(unittest.TestCase):
                     return {'exitCode': 4, 'processReaped': reaped, 'response': {'outcomeKnown': True,
                         'error': {'code': code}, 'data': {'terminalState': code.replace('-', '_'), 'consumption': consumed}}}
                 return {'exitCode': 0, 'processReaped': success_reaped, 'activation': activation,
-                    'decoded': [{'ok': fixture.EXPECTED[mode]}], 'response': {'outcomeKnown': True,
+                    'decoded': [{'ok': (fixture.PHASE_EXPECTED if phase else fixture.EXPECTED)[mode]}], 'response': {'outcomeKnown': True,
                     'data': {'consumption': consumed}}}
             result = {'invocations': [], 'providerIdle': [], 'samples': []}
             with patch('tools.rust_capsule_node.call', side_effect=invoke) as calls, \
@@ -156,14 +157,29 @@ class StandardConsole(unittest.TestCase):
         result, calls, samples = observe()
         self.assertEqual([row['case'] for row in result['dotnetStandardConsoleCases']], list(fixture.CASES))
         self.assertEqual([row['case'] for row in result['dotnetStandardConsoleRecovery']], ['trap', 'fuel'])
-        self.assertEqual(len(result['invocations']), 12); self.assertEqual(samples.call_count, 12)
-        self.assertEqual(calls.call_args_list[8].args[1]['budget']['cpuFuel'], 1_000_000_000)
-        self.assertEqual(calls.call_args_list[10].args[1]['budget']['cpuFuel'], 110_000_000)
+        self.assertEqual([row['case'] for row in result['dotnetStandardConsolePhases']], list(fixture.PHASES))
+        self.assertEqual(len(result['invocations']), 15); self.assertEqual(samples.call_count, 15)
+        self.assertEqual(calls.call_args_list[11].args[1]['budget']['cpuFuel'], 1_000_000_000)
+        self.assertEqual(calls.call_args_list[13].args[1]['budget']['cpuFuel'], 110_000_000)
         with self.assertRaisesRegex(RuntimeError, 'failure-shape'): observe(reaped=False)
         with self.assertRaisesRegex(RuntimeError, 'invocation-process'): observe(success_reaped=False)
         with self.assertRaisesRegex(RuntimeError, 'original-fuel-bound'): observe(fault_fuel=109_999_999)
         with self.assertRaisesRegex(RuntimeError, 'charged-log'): observe(logged=0)
         with self.assertRaisesRegex(RuntimeError, 'startup-fuel-margin'): observe(baseline=500_000_000)
+
+    def test_additive_entry_phases_do_not_enter_original_initializer_or_publish_exception_messages(self):
+        prefix, original = fixture.LIBRARY_SOURCE.split('public static class Library {', 1)
+        self.assertIn('public static class Entry {', prefix)
+        self.assertIn('static Entry() { }', prefix)
+        self.assertNotIn('Library.', prefix)
+        self.assertNotIn('.Message', prefix)
+        self.assertNotIn('.StackTrace', prefix)
+        self.assertNotIn('GetType(', prefix)
+        self.assertIn('private static readonly int Initialized = Initialize();', original)
+        self.assertIn('System.Console.Write("outside initializer: {0}", Resource.Read());', original)
+        self.assertEqual(fixture.PHASES, ('entry', 'resource', 'write'))
+        self.assertEqual(set(fixture.PHASE_EXPECTED), set(fixture.PHASES))
+        self.assertEqual(fixture.CASES, ('initializer', 'formatted', 'stderr', 'utf8', 'invalid', 'incomplete', 'budget', 'empty'))
 
     def test_console_execution_selector_rejects_foreign_language_and_bool_alias_before_creating_output(self):
         from tools.run_rust_capsule_workflow import run

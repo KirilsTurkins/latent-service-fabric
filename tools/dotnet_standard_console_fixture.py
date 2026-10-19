@@ -22,6 +22,9 @@ PARENT = 'Outside.Console.Library'
 CHILD = 'Outside.Console.Resource'
 RESOURCE = 'Gr\u00fc\u00dfe'.encode('utf-8')
 CASES = ('initializer', 'formatted', 'stderr', 'utf8', 'invalid', 'incomplete', 'budget', 'empty')
+PHASES = ('entry', 'resource', 'write')
+PHASE_EXPECTED = {'entry': 'console-phase:entry', 'resource': 'console-phase:resource:Gr\u00fc\u00dfe',
+                  'write': 'console-phase:write'}
 
 CHILD_SOURCE = '''namespace OutsideConsole;
 public static class Resource {
@@ -34,6 +37,34 @@ public static class Resource {
 }
 '''
 LIBRARY_SOURCE = r'''namespace OutsideConsole;
+// A separate class avoids entering Library's beforefieldinit initializer.
+public static class Entry {
+    static Entry() { }
+    public static string Run(string mode) {
+        try {
+            switch (mode) {
+            case "entry": return "console-phase:entry";
+            case "resource": return "console-phase:resource:" + Resource.Read();
+            case "write":
+                System.Console.Write("outside plain Console phase");
+                return "console-phase:write";
+            default: return "console-phase:unknown-mode";
+            }
+        }
+        catch (System.TypeInitializationException error) {
+            return "console-phase:type-initialization:" + Kind(error.InnerException);
+        }
+        catch (System.Exception error) { return "console-phase:exception:" + Kind(error); }
+    }
+    private static string Kind(System.Exception? error) {
+        if (error is System.PlatformNotSupportedException) return "platform-not-supported";
+        if (error is System.IO.IOException) return "io";
+        if (error is System.NotSupportedException) return "not-supported";
+        if (error is System.ArgumentException) return "argument";
+        if (error is System.InvalidOperationException) return "invalid-operation";
+        return "other";
+    }
+}
 public static class Library {
     private static readonly int Initialized = Initialize();
     private static int calls;
@@ -175,7 +206,9 @@ def prepare(output: Path, outside: Path, tools: Path) -> tuple[Path, dict]:
     before = source.read_text(encoding='utf-8')
     opening = '    public static Result<string, string> Greet(string name)\n    {'
     require(before.count(opening) == 1, 'dotnet-Console-greeting-preimage')
-    source.write_text(before.replace(opening, opening + '\n        if (name.StartsWith("console:", '
+    source.write_text(before.replace(opening, opening + '\n        if (name.StartsWith("console-phase:", '
+        'System.StringComparison.Ordinal))\n            return Result<string, string>.Ok('
+        'OutsideConsole.Entry.Run(name.Substring(14)));\n        if (name.StartsWith("console:", '
         'System.StringComparison.Ordinal))\n            return Result<string, string>.Ok('
         'OutsideConsole.Library.Run(name.Substring(8)));'), encoding='utf-8', newline='\n')
     authoring.edit(project, 'add', identity=PARENT, version='1.0.0')
@@ -196,4 +229,5 @@ def prepare(output: Path, outside: Path, tools: Path) -> tuple[Path, dict]:
         'originalLibraryAndFeedRemoved': not library.exists() and not feed.exists(),
         'resourceDigest': digest(RESOURCE), 'declaredLog': LOG, 'ordinaryCalls': [
             'Console.Write', 'Console.WriteLine', 'Console.Error.WriteLine', 'Console.Out.Flush',
-            'Console.OpenStandardOutput', 'Stream.Write', 'Stream.Flush'], 'cases': list(CASES)}
+            'Console.OpenStandardOutput', 'Stream.Write', 'Stream.Flush'],
+        'phases': list(PHASES), 'cases': list(CASES)}

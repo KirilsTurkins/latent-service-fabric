@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_standard_console.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind prepared .NET inventory to its recorded sourceIdentityDigest and current actual inputs before reusing original native tuple and four companion builds.",
+  "reviewReason": "Retain the original eight signed Console cases and add three separately named entry/resource/plain-write diagnostic calls with closed exception labels; preserve all existing test guards and budgets.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8c2a0933dbe1da3a47aed656dde0bd99f59ea26df118dc0a53372321926981fd"
+  "sha256": "f4f40c87b4b38a4b2bddad1e655049cb470da9a16f487f634e6d300103aa2be6"
 }
