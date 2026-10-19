@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_boundaries.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add a fixed invalid-URL typed async HTTP discriminator only to the older-SDK diagnostic application; require exact typed refusal and original zero-effects/idle checks before unchanged real JSON, preserve all budgets and production fixture bytes.",
+  "reviewReason": "After preserving the original known failed JSON result and strict cleanup, isolate one legal typed open/abort under the original one-outbound grant only in the older-SDK diagnostic app; original real gate, peer assertions, SDK source and limits unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e9151bed65ab0f84a519aee0e2945e10c1652efa2a3f23cfb019ada2e3cccfcd"
+  "sha256": "9cd7f4bccee06847bc26e27c2c75d5153e55e678d85041c212f9f7b85543df3b"
 }

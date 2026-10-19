@@ -36,9 +36,21 @@ async function typedInvalidUrl() {
       ? 'typed-invalid-url-ready' : 'typed-invalid-url-other';
   }
 }
+async function typedOpen(url: string) {
+  let stage = 'open';
+  try {
+    const upload = await diagnosticHttp.open({method: 'get', url,
+      headers: [{name: 'x-client', value: 'ordinary-global'}], bodyLength: 0n,
+      bodyMediaType: undefined, idempotencyKey: undefined, timeoutMillis: undefined});
+    stage = 'abort';
+    await diagnosticHttp.abortUpload(upload);
+    return 'typed-open-ready';
+  } catch { return stage === 'open' ? 'typed-open-refused' : 'typed-abort-refused'; }
+}
 '''
     return {**source, 'main.ts': probe + source['main.ts'].replace(marker,
-        marker + b'\n    if (mode === 5) return await typedInvalidUrl();', 1)}
+        marker + b'\n    if (mode === 5) return await typedInvalidUrl();'
+                 b'\n    if (mode === 6) return await typedOpen(url);', 1)}
 
 
 def numeric_fields(path: Path, fields: set[str]) -> dict:
@@ -60,7 +72,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
     record['probeSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)}
                             for name, raw in original_source.items()}
     record['applicationSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)} for name, raw in source.items()}
-    record['applicationDerivation'] = 'fixed-typed-invalid-url-import-probe-only'
+    record['applicationDerivation'] = 'private-typed-error-and-success-resource-import-probes-only'
     original_project, original_call, original_connect = fetch.project, fetch.call, fetch.connect
     services = []
 
@@ -89,7 +101,8 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
     def invoke(client, target, template, function, arguments, activation, **kwargs):
         require(activation in {'fetch-runtime-denied', 'fetch-http-denied', 'fetch-entry',
             'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
-            'fetch-typed-invalid-url', 'fetch-json', 'fetch-http404', 'fetch-fresh'}, 'fetch-boundary-activation-name')
+            'fetch-typed-invalid-url', 'fetch-typed-open', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
+            'fetch-boundary-activation-name')
         row = original_call(client, target, template, function, arguments, activation, **kwargs)
         fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
         record['actualInvocationBudgets'][activation] = numeric_fields(
@@ -108,7 +121,22 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
                 write_json(output/('probe-'+name+'.json'), record['probes'][-1])
                 fetch.require_result(row, expected, 0)
                 fetch.retire(client, probe, target, output, name)
-        return invoke(client, target, template, function, arguments, activation, **kwargs)
+        row = invoke(client, target, template, function, arguments, activation, **kwargs)
+        if (activation == 'fetch-json' and row['exitCode'] == 4 and row['processReaped'] is True
+                and row['response']['outcomeKnown'] is True
+                and row['response']['error']['code'] == 'guest-trap'):
+            # Preserve the original failed JSON row and its mandatory assertion.
+            # Only after actual failed-activation cleanup, one legal diagnostic
+            # open/abort may charge the original one-outbound grant. It never
+            # substitutes for JSON success or changes the real peer assertions.
+            record['originalJsonFailure'] = row
+            fetch.retire(client, probe, target, output, 'failed-json')
+            opened = invoke(client, target, template, function, [6, arguments[1]], 'fetch-typed-open')
+            record['probes'].append({'name': 'typed-open', 'mode': 6, 'entry': opened})
+            write_json(output/'probe-typed-open.json', record['probes'][-1])
+            fetch.require_result(opened, 'typed-open-ready', 1)
+            fetch.retire(client, probe, target, output, 'typed-open')
+        return row
 
     try:
         head = run_bounded_result(['git', 'rev-parse', 'HEAD'], ROOT, build_environment(output), 10, 4096)

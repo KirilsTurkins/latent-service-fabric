@@ -44,6 +44,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch_boundaries.py",
-  "reviewReason": "Add fixed invalid-URL native import discriminator controls with exact typed error and no original fixture or budget mutation; retain all original setup/skip guards.",
+  "reviewReason": "After preserving the original known failed JSON result and strict cleanup, isolate one legal typed open/abort under the original one-outbound grant only in the older-SDK diagnostic app; original real gate, peer assertions, SDK source and limits unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
