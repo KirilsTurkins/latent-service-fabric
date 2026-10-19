@@ -44,7 +44,7 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False, captured_dotnet_private=False, captured_npm_private=False, standard_typescript_console=False,
+        captured_rust_matrix=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
         go_standard_logging=False, rust_standard_stdio=False):
     require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
             'authoring-typescript-console-language')
@@ -81,6 +81,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(rust_standard_stdio) is bool and (not rust_standard_stdio or language == 'rust')
             and not (rust_standard_stdio and (captured_rust_matrix or rust_compatibility or captured_git_component
                                              or captured_dependency_recovery)), 'authoring-Rust-stdio-language')
+    require(type(approved_typescript_generator) is bool and (not approved_typescript_generator or language == 'typescript'),
+            'authoring-TypeScript-generator-language')
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -205,6 +207,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if rust_compatibility:
                         from tools.rust_compatibility_probe import probe as probe_compatibility
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))
+                    if approved_typescript_generator:
+                        from tools.typescript_generator_fixture import probe as generator_probe
+                        generator_probe(client, targets['greeting'], probe, result, len(names),
+                                        read_json(fixture / 'typescript-generator-probe.json'))
                     if captured_npm_private:
                         from tools.npm_private_registry_fixture import probe as probe_npm_private
                         probe_npm_private(client, targets['greeting'], probe, result, len(names),
