@@ -26,3 +26,9 @@ extra peer contacts, forwarded credentials, excess consumption or an unreaped
 owner fail. This programme supplies a finite historical-compiler/current-fixture
 observation; it does not requalify all current native or SDK sources, the two
 published clients, all Go runtime semantics or whole-ticket completion.
+
+For the root-return and root-panic cases, the client timeout is disabled and no
+user cancellation or child join runs. The accepted body remains pending until
+the activation owner retires it; the original host/root deadline and physical
+owner fences remain. A guest timer or explicit application cleanup cannot supply
+the retirement result.
