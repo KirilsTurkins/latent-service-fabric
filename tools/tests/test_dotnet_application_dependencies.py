@@ -160,7 +160,7 @@ class NugetDependencies(unittest.TestCase):
 
     def test_bounded_private_feed_credentials_preserve_xml_values_and_public_redaction(self):
         from unittest.mock import patch
-        username, secret = 'selected&<ÃƒÂ©', 'opaque<&" token ÃƒÂ©' + 'x' * 16000
+        username, secret = 'selected&<é', 'opaque<&" token é' + 'x' * 16000
         with patch('tools.dotnet_application_dependencies.os.environ', {'LSF_SELECTED_FEED': secret}):
             config, receipt = feed_config({'sources': [{'name': 'private',
                 'url': 'https://feed.example.test/index.json', 'authorizationEnv': 'LSF_SELECTED_FEED',
