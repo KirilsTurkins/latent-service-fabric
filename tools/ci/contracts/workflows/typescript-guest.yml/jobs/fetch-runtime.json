@@ -56,6 +56,10 @@
         "run": "python3 -m unittest tools.tests.test_typescript_idle_tasks tools.tests.test_typescript_async_waiters -v"
       },
       {
+        "name": "Check actual native import carrier and typed await retirement",
+        "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-signed-fetch-tools\" python3 -m unittest tools.tests.test_typescript_native_await -v"
+      },
+      {
         "name": "Read the existing native qualification from this exact run",
         "uses": "actions/download-artifact",
         "with": {
@@ -99,7 +103,7 @@
   },
   "jobId": "fetch-runtime",
   "kind": "job",
-  "reviewReason": "Avoid only the actual first idle private Task await-null, preserving closed/current/contended entry and all existing waiter controls; mandatory authentic generated source, retirement-gap, race and finite Node-reference allocation checks.",
+  "reviewReason": "Combine the exact reviewed native carrier await/lift fusion with idle-only private Task entry; preserve every old waiter and add both mandatory source controls before the unchanged signed Fetch programme.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
