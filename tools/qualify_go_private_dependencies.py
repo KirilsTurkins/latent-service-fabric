@@ -406,8 +406,12 @@ def qualify(prepared, output):
         write_json(output / 'qualification.json', result)
         return result
     except BaseException as error:
-        write_json(output / 'FAILED.json', {'status': 'failed', 'stage': stage, 'errorCategory': type(error).__name__,
-                                          'materials': materials, 'fullTicketQualification': False})
+        try:
+            write_json(output / 'FAILED.json', {'status': 'failed', 'stage': stage, 'errorCategory': type(error).__name__,
+                                              'materials': materials, 'fullTicketQualification': False})
+        except Exception:
+            # A diagnostic failure cannot replace acquisition, execution or cleanup failure.
+            pass
         raise
 
 

@@ -181,6 +181,17 @@ class PrivateProxy(unittest.TestCase):
                 self.assertEqual(ca.read_bytes(), b'original-public-ca')
                 self.assertEqual(gate.accepted(app), before)
 
+    def test_failed_receipt_error_preserves_the_original_failure_identity(self):
+        for diagnostic in (RuntimeError('observer unavailable'), RecursionError('observer exhausted')):
+            with self.subTest(diagnostic=type(diagnostic).__name__), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original = ValueError('owned-original-failure')
+                with patch.object(gate, 'frozen', side_effect=original), \
+                     patch.object(gate, 'write_json', side_effect=diagnostic):
+                    with self.assertRaises(ValueError) as raised:
+                        gate.qualify(root/'prepared', root/'output')
+                self.assertIs(raised.exception, original)
+
     def test_campaign_rejects_stale_baseline_before_native_acquisition(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

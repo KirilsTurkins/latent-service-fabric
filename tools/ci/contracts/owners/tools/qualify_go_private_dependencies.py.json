@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add bounded authenticated Go proxy capture and signed offline lifecycle; retain every existing command, case and guard.",
+  "reviewReason": "Preserve original capture/compiler/cleanup failure when bounded FAILED observer itself errors; add original exception identity controls without changing positive campaign.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "258f41f980070f1dd3f2bb754af2feb565bff6c377dfcfc2ee0dd3ca6a911aa3"
+  "sha256": "982fc5dfc8fbf442c607701e3401d97c71afc029662dca0af123413237930b9a"
 }

@@ -2,6 +2,7 @@
   "cases": [
     "PrivateProxy.test_authority_is_child_only_and_previous_environment_restored",
     "PrivateProxy.test_campaign_rejects_stale_baseline_before_native_acquisition",
+    "PrivateProxy.test_failed_receipt_error_preserves_the_original_failure_identity",
     "PrivateProxy.test_integrity_controls_restore_exact_owned_objects_and_ca_even_on_refusal_failure",
     "PrivateProxy.test_invalid_module_selection_refuses_before_archive_generation",
     "PrivateProxy.test_native_failure_and_confidential_streams_cannot_be_mistaken_for_success",
@@ -26,6 +27,18 @@
       "skipSites": []
     },
     "PrivateProxy.test_campaign_rejects_stale_baseline_before_native_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_failed_receipt_error_preserves_the_original_failure_identity": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -148,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_private_proxy.py",
-  "reviewReason": "Add bounded authenticated Go proxy capture and signed offline lifecycle; retain every existing command, case and guard.",
+  "reviewReason": "Preserve original capture/compiler/cleanup failure when bounded FAILED observer itself errors; add original exception identity controls without changing positive campaign.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
