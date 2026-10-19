@@ -260,6 +260,7 @@ def execute(artifact, native, output):
             target = deploy(client, source/'deployment.json', publication,
                 generation=str(target['generation']), grants=authorized)
             vectors = [('entry', 1, '/conformance/json', 'entered', 0),
+                ('request-ready', 2, '/conformance/json', 'request-ready', 0),
                 ('json', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1),
                 ('http404', 0, '/conformance/status/404',
                     '1:404:'+json_bytes({'status':404, 'message':'domain-error'}).decode()+':used', 1),

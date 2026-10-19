@@ -1,5 +1,16 @@
 # Compiler-owned buffered fetch candidate
 
+The first signed-runner attempt on head `b951ef8184c4c40bef55f3d69247d58bcd71fff4`
+passed enforced runtime/HTTP grant denials and its no-I/O async entry, then failed
+the first JSON invocation with a known, reaped `unreachable-code` guest trap and
+zero outbound/child/mutation effects. This does not identify its source cause or
+qualify HTTP behavior. The runner now adds a no-HTTP Request-construction control.
+Its fixture can return only fixed Request/fetch/body-stage and error-class tokens
+when a JavaScript operation throws; it never serializes the exception, message,
+URL or credentials. Every diagnostic value still fails the original exact signed
+success assertion. A hard native trap remains a trap, and all provider, body-use,
+effect, idle-owner and cleanup checks remain required.
+
 The source candidate `lsf-fetch-buffered-v1` installs `fetch`, `Request`,
 `Response` and `Headers` before application and dependency module initialization.
 It is selected automatically when the project explicitly selects

@@ -229,6 +229,7 @@ const main=pathToFileURL(output+'/main.mjs');
 const {api}=await import(main);
 assert.equal(contacts,0);
 assert.equal(await api.run(1,'https://fixture.invalid/conformance/json'),'entered');
+assert.equal(await api.run(2,'https://fixture.invalid/conformance/json'),'request-ready');
 assert.equal(contacts,0);
 assert.equal(await api.run(0,'https://fixture.invalid/conformance/json'),'1:200:{"message":"fixture"}:used');
 assert.equal(await api.run(0,'https://fixture.invalid/conformance/status/404'),'2:404:{"message":"fixture"}:used');
@@ -237,10 +238,69 @@ assert.equal(await fresh.run(0,'https://fixture.invalid/conformance/json'),'1:20
 assert.equal(contacts,3);assert.equal(drops,6);
 const original=Response.prototype.json;
 Response.prototype.json=async()=>({message:'fabricated-without-consuming'});
-await assert.rejects(api.run(0,'https://fixture.invalid/conformance/json'),/body-not-consumed/);
+assert.equal(await api.run(0,'https://fixture.invalid/conformance/json'),'3:diagnostic:body-after:Error');
 Response.prototype.json=original;
 await assert.rejects(api.run(99,'https://fixture.invalid/conformance/json'),/unsupported-fetch-runtime-mode/);
 assert.equal(contacts,4);
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE),
+                str(root), str(fetch.ROOT/'tools/typescript_guest/fetch.mjs')], capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_closed_guest_diagnostics_cannot_replace_signed_success(self):
+        for stage in ('request', 'fetch', 'body-before', 'body-json', 'body-after', 'body-repeat', 'serialize'):
+            for kind in ('TypeError', 'RangeError', 'Error', 'other'):
+                row = self.row()
+                row['decoded'] = ['1:diagnostic:'+stage+':'+kind]
+                with self.subTest(stage=stage, kind=kind), self.assertRaisesRegex(WorkflowError, 'typed-result'):
+                    fetch.require_result(row, '1:200:used', 1)
+
+    def test_actual_fixture_diagnostics_keep_closed_stages_and_never_observe_private_error_fields(self):
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, output, backend] = process.argv.slice(2);
+const {installFetch} = await import(pathToFileURL(backend));
+let contacts=0;
+installFetch({async open() {contacts++; throw new Error('unexpected contact');}},()=>false);
+await writeFile(output+'/client.mjs',stripTypeScriptTypes(await readFile(fixture+'/default-client.ts','utf8')));
+const client=await import(pathToFileURL(output+'/client.mjs'));
+assert.equal(client.requestReady('https://fixture.invalid/'),'request-ready');
+assert.equal(contacts,0);
+const originalRequest=Request, originalFetch=fetch;
+const privateValue='https://credential-fixture.invalid/private?token=never-export';
+globalThis.Request=class {constructor() {throw new RangeError(privateValue);}};
+assert.equal(client.requestReady(privateValue),'diagnostic:request:RangeError');
+assert.equal(await client.request(privateValue),'diagnostic:request:RangeError');
+globalThis.Request=originalRequest;
+globalThis.fetch=async()=>{throw new TypeError(privateValue);};
+assert.equal(await client.request('https://fixture.invalid/'),'diagnostic:fetch:TypeError');
+globalThis.fetch=async()=>({bodyUsed:true});
+assert.equal(await client.request('https://fixture.invalid/'),'diagnostic:body-before:Error');
+let observed=0;
+const privateError={get name() {observed++;throw 1;},get message() {observed++;throw 1;},
+  toString() {observed++;throw 1;}};
+globalThis.fetch=async()=>({bodyUsed:false,async json() {throw privateError;}});
+assert.equal(await client.request('https://fixture.invalid/'),'diagnostic:body-json:other');
+assert.equal(observed,0);
+globalThis.fetch=async()=>({bodyUsed:false,async json() {return {};}});
+assert.equal(await client.request('https://fixture.invalid/'),'diagnostic:body-after:Error');
+globalThis.fetch=async()=>({bodyUsed:false,async json() {this.bodyUsed=true;return {};}});
+assert.equal(await client.request('https://fixture.invalid/'),'diagnostic:body-repeat:Error');
+const circular={};circular.self=circular;
+globalThis.fetch=async()=>({bodyUsed:false,async json() {
+  if(this.bodyUsed)throw new TypeError('used');this.bodyUsed=true;return circular;
+}});
+assert.equal(await client.request('https://fixture.invalid/'),'diagnostic:serialize:TypeError');
+assert.equal(contacts,0);
+globalThis.fetch=originalFetch;
 """
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

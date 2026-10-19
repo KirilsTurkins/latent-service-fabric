@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_fetch_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve known denial outcome and exact signed Fetch runner source fingerprint; no authority or qualification promotion.",
+  "reviewReason": "Add closed fixture-only Request/fetch/body failure-stage diagnostics after observed signed JSON trap; every diagnostic remains a failing exact-value gate, with no error messages or authority change.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "30c26506dd2cb9e92c4805eff701ab2ef77bbe47b430c0cef4984d697aee2662"
+  "sha256": "ea6c0aeb56b298d718dc28d4524000471950f9fa685976b5389aef71d6c5afa0"
 }
