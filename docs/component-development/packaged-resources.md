@@ -41,6 +41,23 @@ index cannot replace either missing input binding by relabelling the origin.
 Application-only, dependency-only and mixed selections retain the same exact
 byte/object inventory rules.
 
+Verification of an application selection requires the actual declaration bytes
+through the explicit `manifest` input, including a declared-empty selection. The
+bytes must match both the externally supplied manifest digest and the index
+binding before decoding, within the existing 256 KiB document bound. The verifier
+uses the capture schema, path, collision and count checks, then requires the exact
+set of application logical names and their declared media types. Rehashing an
+index cannot rename, omit or add an application resource, change its media type,
+or replace declaration membership by changing its origin. The manifest is decoded
+once; verification opens no host files. Dependency-only indexes without a bound
+manifest keep their existing lock-only verification path.
+
+This proves declaration membership, not an independent reconstruction of the
+original source files. The caller still authenticates the source snapshot and
+component identities; object digests and exact bytes, captured compiler inputs
+and the ordinary signed package retain their existing roles. Manifest source
+paths are validated but never resolved against a host filesystem by verification.
+
 Verification of a dependency-origin row also requires the actual reviewed lock
 bytes through the explicit `dependency_lock` input, bounded at 8 MiB. The bytes
 must match the externally supplied lock digest and the index binding before the
