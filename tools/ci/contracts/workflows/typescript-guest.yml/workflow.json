@@ -126,7 +126,15 @@
           ".github/workflows/typescript-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "observe-failed-fetch": {
+            "default": false,
+            "description": "Replay the authenticated d412 Fetch failure with bounded private frames",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -135,11 +143,12 @@
   "requiredJobs": [
     "boundary",
     "fetch-component",
+    "fetch-failure-frames",
     "fetch-runtime",
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Add a finite signed default-Fetch/provider runner using exact existing same-run native and source-owned engine inputs, strict ordinary build evidence and one-shot body/retirement controls; no full ticket claim.",
+  "reviewReason": "Review a manual failure-only exact-d412 artifact replay; preserve all normal signed Fetch gates and retain only bounded numeric frames.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
