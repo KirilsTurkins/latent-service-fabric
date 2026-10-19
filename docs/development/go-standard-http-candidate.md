@@ -232,8 +232,9 @@ rebuilt. Its nine cases cover client-level redirect refusal, an
 ordinary `CheckRedirect` stop, cookie-jar refusal, explicit proxy destination refusal,
 two sequential default-client requests, root return and root panic with an
 accepted child response body, fresh invocation after the panic, and an explicitly
-authorised redirect. Every case must retire activation and physical provider
-owners before the next call. The panic must be a certain guest trap; timeout,
+authorised redirect. The pending-child cases disable the client timer and run no user cancellation
+or child join. Every case must retire activation and physical provider owners
+before the next call. The panic must be a certain guest trap; timeout,
 cancellation, excess consumption or an unknown result cannot qualify it.
 
 The redirect fixture installs `referer` only for its two controlled origins,
