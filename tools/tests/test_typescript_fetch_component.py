@@ -53,6 +53,8 @@ class TypeScriptFetchComponentTests(unittest.TestCase):
             engine, _selected, _compiler, _bundle = self.evidence(root)
             result = fetch.compilation_evidence(root, engine)
             self.assertEqual(result['component']['bytes'], 8)
+            self.assertEqual(result['directAndTransitiveInitialization'],
+                'source-selected; execution-not-observed')
             for field in ('asyncFunctionRuntimeExecution', 'signedExecution',
                     'providerExecution', 'unchangedPublishedClients'):
                 self.assertEqual(result[field], 'not-run')

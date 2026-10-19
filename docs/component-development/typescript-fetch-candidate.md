@@ -137,9 +137,10 @@ The `Actual source-owned Fetch component construction` workflow job now consumes
 the exact same-run source-built import engine and compiler splicer. It runs the
 maintained compiler on an outside-checkout project with ordinary global lookup
 in direct and transitive module initializers and a real async typed HTTP import.
-Successful componentization includes the fixture's snapshot-time constructor
-assertions, generated-declaration typechecking, component validation and decoded
-public-type comparison. It retains the actual component, selected backend and
+The fixture includes snapshot-time constructor assertions, but its report does
+not observe whether those initializers executed inside the componentizer. The
+compiler performs generated-declaration typechecking, component validation and
+decoded public-type comparison. It retains the actual component, selected backend and
 bootstrap digests, exact engine/splicer inputs, and before/after source/compiler
 identities. It builds no second engine or native node and preserves the existing
 job deadlines and guards.

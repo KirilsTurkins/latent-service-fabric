@@ -81,7 +81,7 @@ def compilation_evidence(output: Path, engine: dict) -> dict:
         'selectedEngine': expected, 'standardFetchProfile': PROFILE,
         'backendDigest': bundled['standardFetchBackendDigest'],
         'snapshotGuardDigest': bundled['snapshotGuardDigest'],
-        'directAndTransitiveInitialization': 'completed-during-componentization',
+        'directAndTransitiveInitialization': 'source-selected; execution-not-observed',
         'asyncFunctionRuntimeExecution': 'not-run', 'signedExecution': 'not-run',
         'providerExecution': 'not-run', 'unchangedPublishedClients': 'not-run'}
 
