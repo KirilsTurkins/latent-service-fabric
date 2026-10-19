@@ -301,7 +301,8 @@ class JavaResourceArtifacts(unittest.TestCase):
         index = json.loads((output / guest_resources.INDEX).read_bytes())
         objects = {item["object"]: (output / item["object"]).read_bytes() for item in index["resources"]}
         verified = guest_resources.verify((output / guest_resources.INDEX).read_bytes(), objects,
-            source_digest=digest(source), component_digest=digest(component), dependency_lock_digest=digest(closure.lock_bytes))
+            source_digest=digest(source), component_digest=digest(component), dependency_lock_digest=digest(closure.lock_bytes),
+            dependency_lock=closure.lock_bytes)
         self.assertEqual(verified["count"], 2)
         self.assertEqual({item["owner"] for item in verified["resources"]}, {row["owner"] for row in rows})
         self.assertEqual(set(objects.values()), {b"\0\xff", "hello \u2603\n".encode()})
