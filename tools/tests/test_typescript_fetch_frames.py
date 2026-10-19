@@ -299,12 +299,13 @@ class FetchFailureFrames(unittest.TestCase):
                 candidate.candidate_bytes(source)
 
     def test_candidate_adapters_require_exact_complete_source_without_extra_files(self):
+        import subprocess
         from tools import diagnose_typescript_fetch_candidate as candidate
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             expected = {}
             for name in candidate.ADAPTERS:
-                raw = read_file(fetch.ROOT/'tools/typescript_guest'/name)
+                raw = subprocess.check_output(['git', 'show', candidate.CANDIDATE_SOURCE+':tools/typescript_guest/'+name], cwd=fetch.ROOT)
                 (root/name).write_bytes(raw)
                 expected['tools/typescript_guest/'+name] = raw
             self.assertEqual(candidate.candidate_adapters(root), expected)

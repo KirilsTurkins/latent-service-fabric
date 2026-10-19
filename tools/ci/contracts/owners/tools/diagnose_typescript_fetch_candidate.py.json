@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_candidate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Private replay validates original prepared source before/after four reviewed overlays, rehashes five native products on every use, and loads exact compiler bytes without stale module or bytecode reuse; drift and closed-source-location controls preserve private error suppression.",
+  "reviewReason": "Privately select immutable idle-only candidate c08 with exact original compiler and two changed adapter sources, leaving experimental fusion unselected; full native/source guards and finite original signed gate retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0b4206bf8a1f8558512eed46654eec1cd2ea21b24fa63982c938814a0c530239"
+  "sha256": "38d5787688f674c7e43263d1e3cea3cbdea431c655a2231eeec1784c5aa59b82"
 }

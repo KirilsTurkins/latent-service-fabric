@@ -27,10 +27,11 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file
 
 TESTED = '0754391a20027a539f1d5b7c0426719a4bd6c3c1'
+CANDIDATE_SOURCE = 'c08a610561c701c8d41879850d4b9bdca16c5eeb'
 BACKEND = 'tools/typescript_guest/fetch.mjs'
 CANDIDATE = {'sha256': 'sha256:cfd5f8986e20312ec931dd5da912387c07da1bee3b3ca47415912aebca82dafe',
              'bytes': 19183}
-ADAPTERS = {'async_waiters.mjs': {'sha256': 'sha256:2cfc286f2b3b90d46ea35c9904b7836504c6e3c8933f0fad9fcbc6a7c5aa08c3', 'bytes': 9767}, 'compiler.py': {'sha256': 'sha256:603478e39ad76dad677bbff9767aa48230c3963e9b28e9deeee853e7926c79af', 'bytes': 27677}, 'componentize.mjs': {'sha256': 'sha256:cc62cd3bb040a1cf4d7cb6c6041c7da2fe36c61b638f4f69ac8e686840bfb4b1', 'bytes': 6956}}
+ADAPTERS = {'async_waiters.mjs': {'sha256': 'sha256:7c371c3dd5deea79c998492f20f1ba36101e53b28aa4e725a6af278096290818', 'bytes': 5872}, 'compiler.py': {'sha256': 'sha256:ec4d08d00ea09c7f7a8c7f7bd1714162e1a235dc60c1fea923d8c46b935202ac', 'bytes': 27597}, 'componentize.mjs': {'sha256': 'sha256:5cce83fa595627563fa18e578a3eef157f1958c9f676dba7ef66759231546d19', 'bytes': 6624}}
 PRIVATE_IDENTITY = {'sha256': 'sha256:f38101edfefcc81a1e42e0f91e73ce16f5b82a6c30c915b8e133a7133a2335bd',
                     'bytes': 2109}
 
@@ -137,7 +138,7 @@ def run(candidate: Path, adapters: Path, native: Path, engine: Path, splicer: Pa
     originals_source = {name: read_file(ROOT/name, 131072) for name in replacements}
     original = originals_source[BACKEND]
     record = {'schemaVersion': 'latent.typescript.fetch-backend-candidate.v1',
-              'sdkTestedCommit': TESTED, 'candidateBackend': CANDIDATE, 'candidateCompilerAdapters': ADAPTERS,
+              'sdkTestedCommit': TESTED, 'candidateSourceCommit': CANDIDATE_SOURCE, 'candidateBackend': CANDIDATE, 'candidateCompilerAdapters': ADAPTERS,
               'originalBackend': {'sha256': digest(original), 'bytes': len(original)},
               'nativeTuple': identity, 'compilerOrEngineRebuilt': False,
               'currentPrHeadQualification': False, 'privateObserverQualification': False,
@@ -147,8 +148,10 @@ def run(candidate: Path, adapters: Path, native: Path, engine: Path, splicer: Pa
     try:
         for name, raw in replacements.items():
             (ROOT/name).write_bytes(raw)
-        require(sorted(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()) == sorted(replacements),
+        changed = sorted(name for name, raw in replacements.items() if raw != originals_source[name])
+        require(changed and sorted(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()) == changed,
                 'fetch-candidate-only-reviewed-source-delta')
+        record['candidateChangedSources'] = changed
         try:
             with selected_candidate(native, originals, identity, replacements):
                 result = fetch.qualify(output/'attempt', tools, engine, splicer, prepared=native)
