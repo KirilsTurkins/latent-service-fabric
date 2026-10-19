@@ -333,7 +333,16 @@ class DotnetRuntimeDistribution(unittest.TestCase):
                 self.assertEqual((source / filename).read_bytes(), filename.encode())
             self.assertIn("tools/component-composer/input", {row["path"] for row in record["files"]})
             self.assertEqual((target / "tools/component-composer/input").read_bytes(), b"component-composer")
-            self.assertEqual(len(ADAPTERS), 5)
+            self.assertEqual(ADAPTERS, {
+                "closed": ("dotnet-closed-runtime", "runtime.wasm"),
+                "runtime": ("dotnet-activation-runtime", "activation-runtime.wasm"),
+                "http": ("dotnet-http-runtime", "http-runtime.wasm"),
+                "entropy": ("dotnet-noncrypto-entropy", "noncrypto-entropy.wasm"),
+                "wall": ("dotnet-wall-clock-runtime", "wall-clock-runtime.wasm"),
+                "closed-logging": ("dotnet-closed-logging-runtime", "closed-logging-runtime.wasm"),
+                "runtime-logging": ("dotnet-activation-logging-runtime", "activation-logging-runtime.wasm"),
+                "http-logging": ("dotnet-http-logging-runtime", "http-logging-runtime.wasm"),
+            })
 
     def test_missing_selected_composer_fails_before_a_distribution_can_be_published(self):
         from tools.dev_managed_distribution import retain_dotnet_support

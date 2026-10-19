@@ -100,11 +100,15 @@ resource call. These ten calls are additional to the original 27 authoring,
 fault and peer outcomes. Original deadlines, limits, cleanup and signed
 admission remain required.
 
-Focused source tests cover projection and command/ownership guard wiring.
-**The new C23 compiled-component and signed-node campaign is pending.** Earlier
-individual and combined facility receipts retain their original scope and do
-not qualify this new path. C concurrency, writable scratch and complete
-six-language resource/facility acceptance in issue #681 remain open.
+The [retained signed observation](../testing/evidence/c23-resources-passed-2026-10-19.json)
+binds the actual 37-outcome C23 pass to tested source, exact helper inputs and
+the ordinary-default native tuple. Four logical resources / three objects,
+six exact resource results and trap/fuel followed by fresh calls passed after
+the originals were removed. The same run retained all original 38 clock/entropy,
+41 stdio and 37 combined outcomes. All invocation processes were reaped; 32 idle
+topology samples and 12 provider-idle checks passed, with clean node shutdown.
+C concurrency, writable scratch and complete six-language resource/facility
+acceptance in issue #681 remain open.
 
 Related: [C authoring](c-authoring.md), [captured dependencies](application-dependencies.md),
 and [standard C facilities](c-standard-facilities.md).
