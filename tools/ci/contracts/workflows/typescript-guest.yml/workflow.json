@@ -39,6 +39,11 @@
           "tools/typescript_generator_fixture.py",
           "tools/tests/test_typescript_generator_authoring.py",
           "tools/tests/test_typescript_generator_fixture.py",
+          "tools/typescript_registry_tls.py",
+          "tools/npm_private_registry_fixture.py",
+          "tools/qualify_npm_private_dependencies.py",
+          "tools/tests/test_typescript_registry_tls.py",
+          "tools/tests/test_npm_private_registry.py",
           "tools/tests/test_typescript_dependency_authoring.py",
           "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -97,6 +102,11 @@
           "tools/typescript_generator_fixture.py",
           "tools/tests/test_typescript_generator_authoring.py",
           "tools/tests/test_typescript_generator_fixture.py",
+          "tools/typescript_registry_tls.py",
+          "tools/npm_private_registry_fixture.py",
+          "tools/qualify_npm_private_dependencies.py",
+          "tools/tests/test_typescript_registry_tls.py",
+          "tools/tests/test_npm_private_registry.py",
           "tools/tests/test_typescript_dependency_authoring.py",
           "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -142,7 +152,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Explicit TypeScript generator qualification preserves the original normal programme and limits, adds exact source approval and signed request-dependent values; existing C generator acceptance remains required.",
+  "reviewReason": "Union approved generator and merged private npm lifecycle. Preserve all commands, captured-input ownership, default-off probes and retained evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
