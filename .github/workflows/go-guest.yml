@@ -40,6 +40,10 @@ on:
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/go_http_adversarial.py
+      - tools/fixtures/go-http-adversarial/**
+      - tools/qualify_go_http_adversarial.py
+      - tools/tests/test_go_http_adversarial.py
       - tools/qualify_go_standard_logging.py
       - tools/go_standard_logging_probe.py
       - tools/tests/test_go_standard_logging.py
@@ -123,6 +127,10 @@ on:
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/go_http_adversarial.py
+      - tools/fixtures/go-http-adversarial/**
+      - tools/qualify_go_http_adversarial.py
+      - tools/tests/test_go_http_adversarial.py
       - tools/qualify_go_standard_logging.py
       - tools/go_standard_logging_probe.py
       - tools/tests/test_go_standard_logging.py
@@ -345,6 +353,10 @@ jobs:
           python3 -m unittest tools.tests.test_go_entry_frames -v
       - name: Qualify ordinary net/http contexts and disposal on the signed node
         run: python3 tools/qualify_go_standard_http.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-http-signed"
+      - name: Check exact redirect authority and negative lifecycle evidence
+        run: python3 -m unittest tools.tests.test_go_http_adversarial -v
+      - name: Qualify client redirects repeats and pending-child termination with the same component
+        run: python3 tools/qualify_go_http_adversarial.py --prepared "$RUNNER_TEMP/go-standard-http-signed" --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-http-adversarial"
       - name: Check third-party client capture and frozen native product boundaries
         id: http_library_boundaries
         if: ${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' }}
@@ -565,6 +577,9 @@ jobs:
             ${{ runner.temp }}/go-standard-http-signed/build/logs/**
             ${{ runner.temp }}/go-standard-http-signed/node/*.json
             ${{ runner.temp }}/go-standard-http-signed/node/controls/**
+            ${{ runner.temp }}/go-http-adversarial/*.json
+            ${{ runner.temp }}/go-http-adversarial/node/*.json
+            ${{ runner.temp }}/go-http-adversarial/node/controls/**
             ${{ runner.temp }}/go-entry-differential/observation.json
             ${{ runner.temp }}/go-entry-differential/*/*.json
             ${{ runner.temp }}/go-entry-differential/*/*.txt
