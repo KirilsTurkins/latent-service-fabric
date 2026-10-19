@@ -325,9 +325,12 @@ The guest runs in an activation-owned SpiderMonkey heap in WebAssembly. It is
 not Node, a browser, or an application-owned JavaScript event loop. There is no
 ambient filesystem, process, clock, entropy, network, timer, worker or DOM
 authority. Disabled compiler features do not necessarily remove JavaScript
-symbols: `Math.random()` has a deterministic fallback, not approved entropy,
-and timer functions such as `setTimeout` trap. Use the declared LSF randomness
-wrapper for real random values and a configured LSF import for every host effect.
+symbols: timer functions such as `setTimeout` trap. Ordinary `Math.random()`
+uses the [standard entropy profile](typescript-standard-entropy.md): without the
+exact RANDOM declaration it throws concrete Unsupported; with that declaration,
+it still requires a separately configured, authorized and granted approved source.
+Application snapshot-time draws are refused. No deterministic placeholder is
+returned, and this standard API is not a cryptographic interface.
 
 The compiler generates a synchronous JavaScript calling convention, then the
 builder restores the original typed async WIT metadata. Wasmtime suspends the

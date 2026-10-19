@@ -12,6 +12,12 @@ const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
 const configuration = configurationPath ? JSON.parse(await readFile(configurationPath, 'utf8')) : {};
 const captured = !!configuration.moduleRoot;
 const standardFetch = configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
+const entropyProfile = configuration.standardEntropyProfile ?? 'lsf-math-random-unsupported-v1';
+const standardEntropy = entropyProfile === 'lsf-math-random-approved-v1';
+if ((!standardEntropy && entropyProfile !== 'lsf-math-random-unsupported-v1') ||
+    standardEntropy !== imports.has('latent:random/random@0.1.0')) {
+  throw new Error('standard-entropy-requires-exact-profile-and-declared-random');
+}
 const standardConsole = configuration.standardConsoleProfile === 'lsf-console-strict-v1';
 if (configuration.standardConsoleProfile !== undefined && (!standardConsole ||
     !imports.has('latent:log/log@0.1.0') || !parserPath)) {
@@ -30,13 +36,11 @@ const insideProject = path => {
 // Initializers run during component snapshot creation. Reject caller-dependent
 // clock/entropy observations before any library initializer. The wrapper also
 // checks when a module captures an intrinsic by reference.
-let guard = captured || standardFetch || standardConsole ? `
-var __lsfSnapshotActive = true;
-var __lsfOriginalRandom = Math.random, __lsfOriginalDate = Date;
-Math.random = function() {
-  if (__lsfSnapshotActive) throw new Error('snapshot-time-entropy-observation-unsupported');
-  return __lsfOriginalRandom();
-};
+// This code runs in the application realm after engine bootstrap, not in
+// the compiler host. No standard-engine initialization source is replaced.
+let guard = 'var __lsfSnapshotActive = true;\n';
+guard += captured || standardFetch || standardConsole || standardEntropy ? `
+var __lsfOriginalDate = Date;
 globalThis.Date = new Proxy(__lsfOriginalDate, {
   apply(target, self, args) {
     if (__lsfSnapshotActive) throw new Error('snapshot-time-clock-observation-unsupported');
@@ -55,6 +59,15 @@ globalThis.Date = new Proxy(__lsfOriginalDate, {
   }
 });
 ` : '';
+const entropySource = await readFile(new URL('./entropy.mjs', import.meta.url), 'utf8');
+const entropyAnchor = 'export function installMathRandom(';
+if (entropySource.split(entropyAnchor).length !== 2) throw new Error('compiler-owned-entropy-install-shape');
+const entropyBackend = (standardEntropy ?
+  "import * as __lsfEntropySource from 'latent:random/random@0.1.0';\n" : '') +
+  entropySource.replace(entropyAnchor, 'function __lsfInstallMathRandom(') +
+  '\n__lsfInstallMathRandom(' + (standardEntropy ? '__lsfEntropySource' : 'null') +
+  ', () => __lsfSnapshotActive);\n';
+guard += entropyBackend;
 let backend = '';
 let consoleBackend = '';
 if (standardFetch) {
@@ -75,7 +88,7 @@ if (standardConsole) {
     '\n__lsfInstallConsole(__lsfConsoleLog, () => __lsfSnapshotActive);\n';
   guard += consoleBackend;
 }
-const footer = captured || standardFetch || standardConsole ? '__lsfSnapshotActive = false;' : '';
+const footer = '__lsfSnapshotActive = false;';
 const result = await build({
   absWorkingDir: project, entryPoints: [input], outfile: output,
   bundle: true, format: 'esm', platform: 'neutral', target: 'es2022',
@@ -177,6 +190,8 @@ for (const file of result.outputFiles) {
 await writeFile(output + '.inputs.json', JSON.stringify({
   ...result.metafile, capturedInputs: inputs, selection: configuration,
   snapshotGuardDigest: 'sha256:' + createHash('sha256').update(guard).digest('hex'),
+  standardEntropyProfile: entropyProfile,
+  standardEntropyBackendDigest: 'sha256:' + createHash('sha256').update(entropyBackend).digest('hex'),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,
     standardFetchBackendDigest: 'sha256:' + createHash('sha256').update(backend).digest('hex')} : {}),
   ...(standardConsole ? {standardConsoleProfile: configuration.standardConsoleProfile,

@@ -23,11 +23,16 @@
       },
       {
         "name": "Check fixed source, lock and observation refusal controls",
-        "run": "python3 -m unittest tools.tests.test_host_stream_tls_current_patch tools.tests.test_host_stream_tls_patch tools.tests.test_host_stream_tls_reference tools.tests.test_host_stream_tls_reference_lock tools.tests.test_host_stream_tls_allocation -v\n"
+        "run": "python3 -m unittest tools.tests.test_host_stream_tls_current_patch tools.tests.test_host_stream_tls_patch tools.tests.test_host_stream_tls_reference tools.tests.test_host_stream_tls_reference_lock tools.tests.test_host_stream_tls_allocation tools.tests.test_host_stream_tls_provider tools.tests.test_native_runtime.ManifestTests.test_dependency_inventory_retains_lowercase_published_license_files tools.tests.test_native_runtime.ManifestTests.test_shared_license_requires_reviewed_exact_monorepo_source_and_digest -v\n"
       },
       {
         "name": "Fetch only the checksum-pinned current source archive",
         "run": "curl --disable --fail --location --proto '=https' --proto-redir '=https' --max-time 60 --max-filesize 8388608 \\\n  https://static.crates.io/crates/rustls/rustls-0.23.46.crate \\\n  --output \"$RUNNER_TEMP/rustls-0.23.46.crate\"\necho \"48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf  $RUNNER_TEMP/rustls-0.23.46.crate\" | sha256sum --check\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Reproduce the distinct selected provider source closure",
+        "run": "python3 tools/host_stream_tls_provider.py \\\n  --archive \"$RUNNER_TEMP/rustls-0.23.46.crate\" \\\n  --output \"$RUNNER_TEMP/bounded-provider-source\" \\\n  > \"$RUNNER_TEMP/host-tls-provider-source.json\"\n",
         "shell": "bash"
       },
       {
@@ -42,7 +47,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "host-tls-parser-reference-${{ github.sha }}",
-          "path": "${{ runner.temp }}/host-tls-parser-reference/receipt.json\n${{ runner.temp }}/host-tls-parser-reference/*-stdout.jsonl\n${{ runner.temp }}/host-tls-parser-reference/*-stderr.log\n${{ runner.temp }}/host-tls-parser-reference/*-build.log\n${{ runner.temp }}/host-tls-parser-reference/old/Cargo.lock\n${{ runner.temp }}/host-tls-parser-reference/new/Cargo.lock\n",
+          "path": "${{ runner.temp }}/host-tls-provider-source.json\n${{ runner.temp }}/host-tls-parser-reference/receipt.json\n${{ runner.temp }}/host-tls-parser-reference/*-stdout.jsonl\n${{ runner.temp }}/host-tls-parser-reference/*-stderr.log\n${{ runner.temp }}/host-tls-parser-reference/*-build.log\n${{ runner.temp }}/host-tls-parser-reference/old/Cargo.lock\n${{ runner.temp }}/host-tls-parser-reference/new/Cargo.lock\n",
           "retention-days": 7
         }
       }
@@ -51,7 +56,7 @@
   },
   "jobId": "parser",
   "kind": "job",
-  "reviewReason": "Qualify only the exact current rustls parser with fixed maintained dependency closure and unchanged amplification/refusal vectors; host TLS accounting stays disabled",
+  "reviewReason": "Select only the authenticated excluded bounded TLS dependency with full source/license provenance; preserve all parser and CI controls and keep production accounting disabled",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-tls-parser.yml"
 }
