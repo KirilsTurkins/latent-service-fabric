@@ -144,6 +144,35 @@ impl StreamLifecycle {
         new_epoch: u64,
         config: StreamProviderConfig,
     ) -> Result<ProviderReference, StreamError> {
+        self.rotate_with_installer(
+            expected_epoch,
+            new_epoch,
+            config,
+            StreamProvider::install_for_qualification,
+        )
+    }
+    #[cfg(test)]
+    pub(crate) fn rotate_tls_for_accounting_reference(
+        &self,
+        expected_epoch: u64,
+        new_epoch: u64,
+        config: StreamProviderConfig,
+    ) -> Result<ProviderReference, StreamError> {
+        self.rotate_with_installer(
+            expected_epoch,
+            new_epoch,
+            config,
+            StreamProvider::install_tls_for_accounting_reference,
+        )
+    }
+    #[cfg(any(test, feature = "development-outbound"))]
+    fn rotate_with_installer(
+        &self,
+        expected_epoch: u64,
+        new_epoch: u64,
+        config: StreamProviderConfig,
+        install: crate::provider::ProviderInstaller,
+    ) -> Result<ProviderReference, StreamError> {
         let mut state = self.state.lock().map_err(|_| unavailable())?;
         if state.stopped
             || state.current.reference().configuration_epoch() != expected_epoch
@@ -164,7 +193,7 @@ impl StreamLifecycle {
             .iter()
             .position(Option::is_none)
             .ok_or_else(|| StreamError::new(StreamErrorCode::Exhausted))?;
-        let replacement = StreamProvider::install_for_qualification(
+        let replacement = install(
             Arc::clone(&self.pools),
             &self.id,
             new_epoch,

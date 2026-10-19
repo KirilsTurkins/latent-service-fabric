@@ -1,4 +1,4 @@
-"""Private, exact-preimage CLR hash entropy with separately declared authority."""
+"""Exact-preimage CLR hash and secure entropy with explicitly declared authority."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,9 +11,12 @@ from tools.build_observation import file_identity
 from tools.dotnet_guest import runtime
 from tools.rust_capsule_project import digest, inventory, read_file, snapshot, write_json
 
-PROFILE = "dotnet-hash-entropy-v1"
+PROFILE = "dotnet-native-entropy-v2"
 ENTRYPOINT = "SystemNative_GetNonCryptographicallySecureRandomBytes"
+SECURE_ENTRYPOINT = "SystemNative_GetCryptographicallySecureRandomBytes"
 WRAP = "-Wl,--wrap=" + ENTRYPOINT
+SECURE_WRAP = "-Wl,--wrap=" + SECURE_ENTRYPOINT
+WRAPS = frozenset({WRAP, SECURE_WRAP})
 MAX_SOURCE = 64 * 1024
 MAX_OBJECT = 128 * 1024
 MAX_RESPONSE = 1024 * 1024
@@ -26,6 +29,9 @@ UPSTREAM = {
     "archiveSize": 254498, "member": "pal_random.c.obj",
     "memberDigest": "sha256:5012866cd28f6e0e7eb173cf764d77b7fdefc4b4198eeb7fd26a9db716fa0093",
     "memberSize": 2325, "entrypoint": ENTRYPOINT, "profile": PROFILE,
+    "secureEntrypoint": SECURE_ENTRYPOINT,
+    "secureAbi": {"returnSuccess": 0, "returnFailure": -1, "maximumLength": 65536,
+                  "interface": runtime.RANDOM, "operation": "u64-value", "resultBytes": 16, "payloadOffset": 8},
 }
 
 
@@ -80,11 +86,11 @@ class NativeEntropyPort:
         body = read_file(responses[0], MAX_RESPONSE)
         arguments = shlex.split(body.decode("utf-8-sig"))
         if (len(arguments) > 8192 or arguments.count(str(self.object)) != 1
-                or arguments.count(WRAP) != 1
-                or any("--wrap=" in argument and argument != WRAP for argument in arguments)):
+                or any(arguments.count(wrap) != 1 for wrap in WRAPS)
+                or any("--wrap=" in argument and argument not in WRAPS for argument in arguments)):
             raise ValueError("noncrypto-entropy-native-link-binding")
         result = {**self.evidence, "nativeLinkBinding": {"responseDigest": digest(body), "responseSize": len(body),
-            "objectOccurrences": 1, "wrapOccurrences": 1}, "ordinaryLibraryExecutionQualified": False}
+            "objectOccurrences": 1, "wrapOccurrences": 1, "secureWrapOccurrences": 1}, "ordinaryLibraryExecutionQualified": False}
         write_json(evidence / "noncrypto-entropy-port.json", result)
         return result
 
@@ -126,7 +132,8 @@ def prepare(compiler, declared: list[str], project: Path, output: Path) -> Nativ
     XML.SubElement(document, "Import", Project=msbuild_literal(targets))
     (project / "Capsule.csproj").write_bytes(XML.tostring(document, encoding="utf-8", xml_declaration=True))
     value = {"schemaVersion": "lsf.dotnet.noncrypto-entropy.v1", "profile": PROFILE,
-        "entrypoint": ENTRYPOINT, "requiredDeclaration": runtime.RANDOM, "secureRandom": "unchanged-denial",
+        "entrypoint": ENTRYPOINT, "requiredDeclaration": runtime.RANDOM, "secureRandom": "declared-provider-u64",
+        "secureEntrypoint": SECURE_ENTRYPOINT, "secureAbi": UPSTREAM["secureAbi"],
         "original": original, "originalMember": {"digest": digest(member), "size": len(member)},
         "sourceDigest": digest(source_identity), "targetsDigest": digest(target_identity), "derived": identity,
         "upstream": descriptor, "nativeLinkBinding": None, "ordinaryLibraryExecutionQualified": False}

@@ -159,6 +159,14 @@ class DotnetResourceTests(unittest.TestCase):
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         compiler, work, output = fixture.application(fixture.root)
+        compiler.compiler_patches, compiler.generated_materials = [], []
+        # This test uses synthetic compiler output. The real typed adapter
+        # derivation is exercised separately by test_dotnet_closed_io.
+        def closed_projection(actual, adapter, directory, profile):
+            self.assertIs(actual, compiler)
+            self.assertEqual(profile, 'closed')
+            (fixture.evidence/'closed-io-port.json').write_bytes(b'{"fixture":"closed-io"}')
+            return adapter, {'fixture': 'closed-io'}
         files = inputs([declaration("data.bin")])
         for name, payload in files.items():
             destination = work / name
@@ -172,9 +180,12 @@ class DotnetResourceTests(unittest.TestCase):
             return None
 
         with patch("tools.dotnet_application_dependencies.configure", fixture.configure), patch(
-                "tools.dotnet_guest.entropy.prepare", side_effect=prepare_sdk_port):
+                "tools.dotnet_guest.entropy.prepare", side_effect=prepare_sdk_port), patch(
+                "tools.dotnet_guest.closed_io.prepare", side_effect=closed_projection) as projected:
             component, receipt = compiler.compile(work, "examples:greeting/service@1.0.0", output)
         self.assertTrue(component.is_file())
+        projected.assert_called_once()
+        self.assertEqual(receipt['runtimeProfile']['closedIoPort'], {'fixture': 'closed-io'})
         generated = (output / "project/Capsule.csproj").read_bytes()
         self.assertEqual(receipt["embeddedResourceInputs"]["projectDigest"], digest(generated))
         self.assertEqual(ET.fromstring(generated).find("Import").attrib, {"Project": "sdk-owned-port.targets"})
@@ -189,6 +200,14 @@ class DotnetResourceTests(unittest.TestCase):
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         compiler, work, output = fixture.application(fixture.root)
+        compiler.compiler_patches, compiler.generated_materials = [], []
+        # This test uses synthetic compiler output. The real typed adapter
+        # derivation is exercised separately by test_dotnet_closed_io.
+        def closed_projection(actual, adapter, directory, profile):
+            self.assertIs(actual, compiler)
+            self.assertEqual(profile, 'closed')
+            (fixture.evidence/'closed-io-port.json').write_bytes(b'{"fixture":"closed-io"}')
+            return adapter, {'fixture': 'closed-io'}
         for name, payload in inputs([declaration("data.bin")]).items():
             destination = work / name
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -200,9 +219,11 @@ class DotnetResourceTests(unittest.TestCase):
             next((project / "resources").iterdir()).write_bytes(b"changed during build")
 
         compiler.native_aot = mutated_native_command
-        with patch("tools.dotnet_application_dependencies.configure", fixture.configure), self.assertRaisesRegex(
+        with patch("tools.dotnet_application_dependencies.configure", fixture.configure), patch(
+                "tools.dotnet_guest.closed_io.prepare", side_effect=closed_projection) as projected, self.assertRaisesRegex(
                 ValueError, "generated embedded resource bytes changed during compilation"):
             compiler.compile(work, "examples:greeting/service@1.0.0", output)
+        projected.assert_called_once()
         self.assertIn("native-aot", fixture.stages)
         self.assertIn("closed-runtime-composition", fixture.stages)
 

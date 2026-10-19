@@ -5,6 +5,8 @@ use latent_capabilities::broker::network::{
     OutboundStreamInvoker, StreamConnectRequest, StreamShutdown,
 };
 use latent_policy::capability::StreamTransport;
+// Peer fixtures keep the ordinary upstream TLS type; only the provider is bounded.
+use rustls_upstream as rustls;
 use sha2::{Digest, Sha256};
 use std::{
     sync::Arc,
@@ -107,13 +109,10 @@ async fn unqualified_tls_installation_fails_before_contact_and_leaves_no_owner()
     fixture.clean().await;
 }
 
-#[expect(
-    dead_code,
-    reason = "prepared actual TLS controls held until the unchanged parser accounting gate is proved"
-)]
+#[tokio::test]
 async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges() {
     let peer = Peer::new().await;
-    let fixture = Fixture::new(peer.config());
+    let fixture = Fixture::for_tls_accounting(peer.config());
     let original = fixture.provider.reference();
     let server = tokio::spawn(async move {
         let (socket, _) = peer.listener.accept().await.unwrap();
@@ -162,10 +161,7 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
     fixture.clean().await;
 }
 
-#[expect(
-    dead_code,
-    reason = "prepared actual TLS controls held until the unchanged parser accounting gate is proved"
-)]
+#[tokio::test]
 async fn wrong_tls_hostname_fails_closed_without_cleartext_fallback() {
     let peer = Peer::new().await;
     let mut configuration = peer.config();
@@ -175,7 +171,7 @@ async fn wrong_tls_hostname_fails_closed_without_cleartext_fallback() {
         .as_mut()
         .unwrap()
         .server_name = "wrong.stream.test".into();
-    let fixture = Fixture::new(configuration);
+    let fixture = Fixture::for_tls_accounting(configuration);
     let server = tokio::spawn(async move {
         let (socket, _) = peer.listener.accept().await.unwrap();
         assert!(peer.acceptor.accept(socket).await.is_err());
@@ -229,13 +225,10 @@ async fn protected_root_replacement_digest_and_link_denials_precede_contact() {
     );
 }
 
-#[expect(
-    dead_code,
-    reason = "prepared actual TLS controls held until the unchanged parser accounting gate is proved"
-)]
+#[tokio::test]
 async fn stalled_tls_handshake_uses_original_deadline_and_physical_owner() {
     let peer = Peer::new().await;
-    let fixture = Fixture::new(peer.config());
+    let fixture = Fixture::for_tls_accounting(peer.config());
     let server = tokio::spawn(async move {
         let (mut socket, _) = peer.listener.accept().await.unwrap();
         let mut bytes = Vec::new();
@@ -263,15 +256,12 @@ async fn stalled_tls_handshake_uses_original_deadline_and_physical_owner() {
     fixture.clean().await;
 }
 
-#[expect(
-    dead_code,
-    reason = "prepared actual TLS controls held until the unchanged parser accounting gate is proved"
-)]
+#[tokio::test]
 async fn tls_rotation_preserves_pending_original_owner_until_peer_socket_retires() {
     use crate::StreamLifecycle;
     let peer = Peer::new().await;
     let configuration = peer.config();
-    let fixture = Fixture::new(configuration.clone());
+    let fixture = Fixture::for_tls_accounting(configuration.clone());
     let lifecycle =
         StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
             .unwrap();
@@ -292,7 +282,9 @@ async fn tls_rotation_preserves_pending_original_owner_until_peer_socket_retires
     acknowledged.await.unwrap();
     let pending = stream.read(4096, None).unwrap();
     assert_eq!(lifecycle.status().unwrap().usage.pending_operations, 1);
-    let replacement = lifecycle.rotate(1, 2, configuration).unwrap();
+    let replacement = lifecycle
+        .rotate_tls_for_accounting_reference(1, 2, configuration)
+        .unwrap();
     assert_eq!(replacement.configuration_epoch(), 2);
     assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
     assert!(control.budget.host_memory_bytes() >= 256 * 1024);

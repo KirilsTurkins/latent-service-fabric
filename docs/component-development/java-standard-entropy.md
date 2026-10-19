@@ -37,8 +37,8 @@ component execution. The existing signed Java SDK gate additionally selects
 12 real component invocations against the system entropy provider, checking its
 original generated-byte counters, per-call and per-activation limits, failed
 buffer preservation, fresh statics and original-owner retirement. Its existing
-direct-binding cases remain unchanged. Actual compilation and that signed gate
-are pending; this candidate does not complete #681 or the concurrent #741 matrix.
+direct-binding cases remain unchanged. The corrected finite signed programme
+passed as recorded below; this does not complete #681 or the concurrent #741 matrix.
 
 The [first signed attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38857653138/job/116832770215)
 on immutable `5ec238dd` compiled the component and passed eleven SDK cases. The
@@ -48,8 +48,15 @@ assertion: 27 bytes were generated, while the test expected 24. The pinned TeaVM
 The complete sequence consumes exactly 4 + 8 + 4 + 3 + 8 = 27 bytes. The corrected
 assertion retains that exact total, and the locked model control verifies the
 inherited method's delegation. The JDK reference establishes numeric behavior,
-not an identical entropy byte cost. Fresh hosted execution of the correction
-remains required.
+not an identical entropy byte cost.
+
+The corrected source `f2a6d762680f713051b3bb359ddf7727e6532cfe` passed the
+[full native Java job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38925592063/job/117056182241),
+including all 12 signed standard-entropy invocations. PR #1042 merged as
+`4f8ac14b82ebdfc52f3cd683a4a0706de99accfc`. This records that exact historical
+source and programme; it does not rebind the native result to the current
+integrated head or establish the remaining six-language, concurrent or
+cross-tenant lifecycle matrix.
 
 The supported and narrowed API behavior is described against the
 [JDK SecureRandom contract](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/security/SecureRandom.html)

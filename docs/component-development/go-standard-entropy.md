@@ -5,8 +5,8 @@ Go 1.27.2 runtime/syscall source and routes `random_get` to the explicitly
 declared `latent:random/random@0.1.0` provider. It fills each requested buffer
 from bounded `u64-value` calls. Missing authority cannot fall back to a clock,
 fixed seed or ambient WASI source. No provider or grant is installed by adding
-a package. This page describes a new qualification campaign; it is not yet a
-signed execution result.
+a package. The finite ordinary API campaign has actual signed execution evidence
+from source `e97d44ddc7`, as recorded below; broader concurrency is not qualified.
 
 The campaign preserves the compiler and routes fixed-size host results through
 the existing canonical-lowering owner wrapper. It captures an outside
@@ -42,10 +42,11 @@ terminate at the original 65536-byte provider activation ceiling; if every reque
 it returns a distinct value and fails the required terminal assertion. A
 generic public guest trap alone does not classify its private cause.
 
-The same current normal qualification supplies five exact native products and
-four unchanged companion builds. The helper verifies actual source-inventory
-bytes against the receipt and current source, as well as every selected product
-and companion component. It signs the five-project set and retains all original
+The normal campaign consumes five exact current native products and four
+unchanged companion builds. The independent retained lane instead authenticates
+explicitly historical CLI/compiler/companion products and builds only the current
+host; it never relabels that historical normal receipt. Both bind every selected
+product and companion component before signing the five-project set and require all original
 27 node outcomes. Eight standard API/resource/fresh-state calls and three
 terminal/fresh pairs (policy exhaustion, explicit panic and original fuel
 exhaustion), plus the two denials, require 43 outcomes in total. Every added
@@ -55,7 +56,7 @@ clean and reaped. No random payload is exported in a receipt.
 The Go workflow appends source controls and this single greeting build/campaign
 after normal captured-library qualification. Existing commands, the 45-minute
 job limit, invocation budgets and runtime selection remain unchanged. Actual
-component results are pending. Concurrent Reader use, cancellation callbacks,
+component results for the retained lane passed. Concurrent Reader use, cancellation callbacks,
 fresh cross-tenant execution, strict transactional facility behavior and the
 remaining six-language resource/clock/entropy matrix remain separate #681/#736
 requirements. This adds no scratch or filesystem support.
@@ -86,8 +87,8 @@ normal 27-call receipt, native products, companion bytes and package layers,
 then freshly package/sign the same component. That component contains the old
 nine-buffer terminal probe and cannot qualify the current seventeen-buffer
 provider-exhaustion case. Current host and guest changes require fresh owning
-native and signed execution; those results are pending. Neither historical
-receipt is rewritten or promoted to a current-source qualification.
+native and signed execution; the current results below supply that finite proof.
+Neither historical receipt is rewritten or promoted to a current-source qualification.
 
 
 The first scalar-owner repair run at source `79ba084b95` did not reach the
@@ -108,3 +109,29 @@ only the current entropy greeting offline and requires all 43 outcomes. Its
 receipt distinguishes historical compiler/CLI source, current native host
 source and the fresh component source. Pending jobs establish no acceptance.
 The original complete 45-minute workflow remains mandatory and unchanged.
+
+## Retained signed observation
+
+[Run39320463437 / job118292873857](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39320463437/job/118292873857)
+passed normal27 and fresh entropy43. The
+[compact source-bound observation](../testing/evidence/go-standard-entropy-signed-2026-10-19.json)
+binds [artifact12220651992](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39320463437/artifacts/12220651992),
+source `e97d44ddc744c9bd738d9b3b7a7d8b7234133e36`, the original42a compiler/CLI,
+the fresh 184,227,152-byte debug0 host and the 2,878,057-byte offline component
+`a5f366344a7b3074da60cb93bfb9ad2f7d837914e41f1f41dc3998766693cbc9`.
+The outside library/transitive resource originals were removed before compilation.
+All70 outcomes were known/processes reaped; topology samples24/38 and provider-idle
+observations6/19 passed, both nodes shut down clean/reaped and peer holds closed.
+The two missing-RANDOM denials used zero guest fuel/memory/effects. All eight API
+cases and three terminal/fresh pairs passed. The budget fixture's public error
+is `guest-trap`; no private cause or new typed error is inferred from that code.
+The original provider/activation limits and per-call policy remain unchanged.
+
+[Run39315822073](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39315822073)
+separately passed all fifteen native random ownership/lowering/error controls and
+the complete signed CPU checkpoint case. A subsequent replay setup failed because
+its sanitized environment omitted debug0 and produced a binary over the existing
+512 MiB bound. The repaired helper restores the normal explicit profile and checks
+the actual emitted profile without increasing that bound; the passing result above
+supersedes that setup failure only for this finite lane. No repeat CPU/native15 or
+statistical/FIPS, concurrent-reader or six-language completion is claimed.

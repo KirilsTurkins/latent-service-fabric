@@ -1,0 +1,116 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "graph": {
+    "worlds": [
+      {
+        "name": "abi",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {},
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "random",
+        "types": {
+          "random-error": 0
+        },
+        "functions": {
+          "bytes": {
+            "name": "bytes",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "length",
+                "type": "u32"
+              }
+            ],
+            "result": 2
+          },
+          "u64-value": {
+            "name": "u64-value",
+            "kind": "freestanding",
+            "params": [],
+            "result": 3
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": "random-error",
+        "kind": {
+          "variant": {
+            "cases": [
+              {
+                "name": "invalid-length",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 1,
+            "err": 0
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 0
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:random@0.1.0",
+        "interfaces": {
+          "random": 0
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:typescript-random-abi@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "abi": 0
+        }
+      }
+    ]
+  }
+}

@@ -241,6 +241,10 @@ class Compiler:
         facades = install_sdk(self.sdk, generated, project / "lsf")
         from tools.dotnet_guest.entropy import prepare as prepare_entropy
         self.noncrypto_port = prepare_entropy(self, declared, project, output)
+        self.managed_entropy_port = None
+        if self.noncrypto_port is not None:
+            from tools.dotnet_guest.managed_entropy import prepare as prepare_managed_entropy
+            self.managed_entropy_port = prepare_managed_entropy(self, project, output)
         if self.application_closure is not None:
             selected = configure(self.application_closure, work, self.package_cache)
             self.cache_before = tree_identity({'nuget-packages': self.package_cache})
@@ -327,6 +331,14 @@ class Compiler:
                     "secureRandom": port["secureRandom"]}}]
             self.generated_materials.extend((port["derived"],
                 file_identity(command.output / "noncrypto-entropy-port.json", "noncrypto-entropy-port")))
+        if self.managed_entropy_port is not None:
+            managed = self.managed_entropy_port.finish(project, command.output)
+            self.compiler_patches.append({"name": managed["patch"], "profile": managed["profile"],
+                "original": managed["frameworkInputs"][0], "selected": managed["derived"],
+                "selection": {key: managed[key] for key in ("sourceCaptureDigest", "targetsDigest", "helper",
+                    "replaced", "unchangedMethods", "nativeAotReferenceBinding", "namedAlgorithmFactorySupported")}})
+            self.generated_materials.extend((managed["helper"], managed["derived"],
+                file_identity(command.output / "managed-entropy-port.json", "standard-rng-managed-port")))
         actual = list((project / "obj").rglob("bindings.json"))
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
@@ -443,6 +455,8 @@ class Compiler:
         return component, generated_receipt
 
     def check_unchanged(self):
+        if getattr(self, "managed_entropy_port", None) is not None:
+            self.managed_entropy_port.recheck()
         if self.noncrypto_port:
             self.noncrypto_port.recheck()
         if self.http_error_port:

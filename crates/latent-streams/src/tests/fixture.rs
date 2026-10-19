@@ -128,11 +128,20 @@ impl Fixture {
         )
     }
 
+    pub fn new(config: StreamProviderConfig) -> Self {
+        Self::with_installer(config, StreamProvider::install_for_qualification)
+    }
+    pub fn for_tls_accounting(config: StreamProviderConfig) -> Self {
+        Self::with_installer(config, StreamProvider::install_tls_for_accounting_reference)
+    }
     #[expect(
         clippy::too_many_lines,
         reason = "explicit real broker and sealed policy composition"
     )]
-    pub fn new(config: StreamProviderConfig) -> Self {
+    fn with_installer(
+        config: StreamProviderConfig,
+        install: crate::provider::ProviderInstaller,
+    ) -> Self {
         let endpoints: Vec<_> = config
             .destinations
             .iter()
@@ -189,9 +198,7 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let provider =
-            StreamProvider::install_for_qualification(pools.clone(), "streams", 1, 0, config)
-                .unwrap();
+        let provider = install(pools.clone(), "streams", 1, 0, config).unwrap();
         let reference = provider.reference();
         let policy = json!({"formatVersion":1,"tenant":"a","rules":[{
             "id":"allow","effect":"allow","principals":[{"kind":"user","subject":"alice"}],

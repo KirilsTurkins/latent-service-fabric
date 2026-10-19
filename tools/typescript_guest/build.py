@@ -55,6 +55,7 @@ RECIPE += ('tools/typescript_guest/import_engine.py','tools/typescript_guest/imp
 RECIPE += ('tools/typescript_guest/runtime_bundle.py',)
 RECIPE += ('tools/typescript_guest/text_codec_engine.py',)
 RECIPE += ("tools/typescript_generator_authoring.py",)
+RECIPE += ('tools/typescript_guest/entropy.mjs', 'tools/typescript_guest/entropy_profile.py')
 RECIPE += ('tools/typescript_guest/fetch.mjs', 'tools/typescript_guest/fetch_profile.py',
            'sdk/typescript-guest/activation/fetch-globals.d.ts')
 RECIPE += ('tools/typescript_guest/console.mjs', 'tools/typescript_guest/console_profile.py',
@@ -194,6 +195,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             (output / "component.wasm").write_bytes(component)
             (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
             write_json(output / "bindings.json", generated)
+            entropy_selection = read_file(temporary / 'compiled/typescript-entropy-selection.json', 65536)
+            (output / 'typescript-entropy-selection.json').write_bytes(entropy_selection)
+            runtime_materials.append({'name': 'typescript-standard-entropy',
+                                      'digest': digest(entropy_selection), 'size': len(entropy_selection)})
+            runtime_assets += (('typescript-entropy-selection.json', 'asset',
+                                'application/vnd.latent.typescript.entropy-selection.v1+json'),)
             if closure is not None:
                 (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
                 (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))

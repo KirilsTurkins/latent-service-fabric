@@ -15,9 +15,15 @@
           ".github/workflows/host-stream-tls-parser.yml",
           "sdk/host-stream-tls/rustls-0.23.46-bounds/**",
           "tools/host_stream_tls_patch.py",
+          "tools/host_stream_tls_provider.py",
+          "tools/native_runtime_build.py",
+          "tools/ci_suite_inventory.py",
+          "crates/vendor/rustls-outbound/**",
           "tools/qualify_host_stream_tls_parser.py",
+          "tools/qualify_host_stream_tls_provider.py",
           "tools/tests/test_host_stream_tls*.py",
-          "crates/latent-streams/Cargo.toml",
+          "crates/latent-streams/**",
+          "Cargo.toml",
           "Cargo.lock",
           "rust-toolchain.toml"
         ]
@@ -30,9 +36,15 @@
           ".github/workflows/host-stream-tls-parser.yml",
           "sdk/host-stream-tls/rustls-0.23.46-bounds/**",
           "tools/host_stream_tls_patch.py",
+          "tools/host_stream_tls_provider.py",
+          "tools/native_runtime_build.py",
+          "tools/ci_suite_inventory.py",
+          "crates/vendor/rustls-outbound/**",
           "tools/qualify_host_stream_tls_parser.py",
+          "tools/qualify_host_stream_tls_provider.py",
           "tools/tests/test_host_stream_tls*.py",
-          "crates/latent-streams/Cargo.toml",
+          "crates/latent-streams/**",
+          "Cargo.toml",
           "Cargo.lock",
           "rust-toolchain.toml"
         ]
@@ -44,9 +56,10 @@
     }
   },
   "requiredJobs": [
-    "parser"
+    "parser",
+    "provider"
   ],
-  "reviewReason": "Qualify only the exact current rustls parser with fixed maintained dependency closure and unchanged amplification/refusal vectors; host TLS accounting stays disabled",
+  "reviewReason": "Add test-only actual bounded TLS provider real-peer controls with unchanged public refusal, original23-case ownership catalogue and finite source-bound witness; accounting remains unqualified",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-tls-parser.yml"
 }
