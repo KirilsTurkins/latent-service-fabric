@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "latent.go.http-adversarial.observation.v1",
+  "status": "passed",
+  "run": 39319792864,
+  "job": 118290595886,
+  "fixtureSource": "86b722e240d2445cbb9a78fcb5644dc016b2570e",
+  "compiledNativeSource": {
+    "head": "3050cd9d33d74eed5d746f13fbb0e9125376a3b3",
+    "tree": "ce9f21e17b983bd4c008221cf2976599c9b5d700",
+    "run": 39298177972,
+    "job": 118216070006
+  },
+  "artifact": {
+    "id": 12218474780,
+    "bytes": 4067028,
+    "digest": "sha256:afc3bdae947abbdb7596f751c83804018ea9ca5ac6aa82ff99e5ca9e2b3dc320"
+  },
+  "component": {
+    "sha256": "sha256:2e04331ddf6f6ef5d573896bae2c8a9b73df8a61567c0c6847e261bfe2283d1f",
+    "bytes": 12276820
+  },
+  "sourceInventoryDigest": "sha256:c7633eddb50ed305f7c161f6a4bd26434494f2aa7a07330e281f32ad90f18af2",
+  "sdkBindingDigest": "sha256:357b683d2874de3dc34cba35fd9bf3d4f5cb8a533087ed138c700f48d3bcd889",
+  "sdkGoTree": "d068c6127cdf2e5cfe3493c194e914989aa5ad2a",
+  "productionFixtureAndRunner": {
+    "tools/fixtures/go-http-adversarial/main.go": {
+      "sha256": "sha256:8adf312627571088043e6523464b2a019ba6f77062027845a9da82891a0f1794",
+      "bytes": 6797
+    },
+    "tools/go_http_adversarial.py": {
+      "sha256": "sha256:16603521c1bc80d9b25241afab1642e03b7153fc18a17cea40c30b5240ea12c0",
+      "bytes": 6290
+    },
+    "tools/go_standard_http_node.py": {
+      "sha256": "sha256:514b86c66511ae3f7916c6c613cb04c5354e4179df9490d3cccc8893e37523b2",
+      "bytes": 28861
+    },
+    "tools/go_standard_http_project.py": {
+      "sha256": "sha256:4f6796d52721ab309c73b51ebeaff86338be78fca431e82b8220c3f6f0549d17",
+      "bytes": 1434
+    },
+    "tools/qualify_go_http_adversarial.py": {
+      "sha256": "sha256:fd1701af280ffb81798861bb645d4ae3ff48c8937bc8c6f7cbe0a5960cfdcd45",
+      "bytes": 5449
+    }
+  },
+  "normalCalls": 27,
+  "originalStandardCases": 33,
+  "additionalCases": [
+    {
+      "name": "redirect-denied",
+      "outbound": 1,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "4474495",
+      "peakMemoryBytes": "7867304",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "redirect-stopped",
+      "outbound": 1,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "4341984",
+      "peakMemoryBytes": "7867304",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "cookie-jar-denied",
+      "outbound": 0,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "4052127",
+      "peakMemoryBytes": "7867304",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "proxy-destination-denied",
+      "outbound": 0,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "3977667",
+      "peakMemoryBytes": "7867304",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "repeat-requests",
+      "outbound": 2,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "5664199",
+      "peakMemoryBytes": "7867304",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "root-return-pending",
+      "outbound": 1,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "4327030",
+      "peakMemoryBytes": "7867120",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "root-trap-pending",
+      "outbound": 1,
+      "knownAndReaped": true,
+      "terminal": "guest_trap",
+      "cpuFuel": "4733259",
+      "peakMemoryBytes": "7867120",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "fresh-after-trap",
+      "outbound": 1,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "5318027",
+      "peakMemoryBytes": "7867304",
+      "cleanupSlots": 0
+    },
+    {
+      "name": "redirect-authorized",
+      "outbound": 2,
+      "knownAndReaped": true,
+      "terminal": null,
+      "cpuFuel": "4939252",
+      "peakMemoryBytes": "7867304",
+      "cleanupSlots": 0
+    }
+  ],
+  "additionalEntryProbes": 4,
+  "countedCases": 69,
+  "nativeProductsCompiled": false,
+  "freshApplicationComponentCompiled": true,
+  "compilerRecipeReference": {
+    "artifact": 12211733679,
+    "member": "go-standard-http-signed/build/recipe-inputs.json",
+    "digest": "sha256:e326a9535ba29295382b667ff64108fd436684ccdd606cf60675962205acbb1f",
+    "size": 7688
+  },
+  "threeNodesClean": true,
+  "secondaryCredentialIsolation": true,
+  "limitations": [
+    "Historical compiler and native five products are source3050; this is not a newly compiled current native or compiler receipt.",
+    "The runtime profile is v4; the distinct declared host ABI manifest is frozen v5.",
+    "No whole692/742, cross-tenant, catalogue-removal, TLS, all-client or physical allocator/kernel bound claim."
+  ],
+  "retainedQualificationDocuments": {
+    "go-dependency-replay-baseline/qualification.json": {
+      "sha256": "sha256:667ccd6989458ba8811ecf4402408583df6305173f01b74eca27a159c3d48991",
+      "bytes": 21447
+    },
+    "go-http-adversarial-replay/qualification.json": {
+      "sha256": "sha256:a9888833ad08f5f0a2317a51525270b65038a722878e4f2270aa7fc2aeb67504",
+      "bytes": 27848
+    },
+    "go-http-adversarial-replay/standard-node/qualification.json": {
+      "sha256": "sha256:87e4b406ce0f2eb98b478cb1e8b8104ca5d7a9664776a52da380a328f91f9ccd",
+      "bytes": 28871
+    },
+    "go-http-adversarial-replay/adversarial-node/qualification.json": {
+      "sha256": "sha256:985d073a9b113936e1eb834c77d72122eab6174b1431ac775c5638bbaf18ca29",
+      "bytes": 24114
+    }
+  }
+}

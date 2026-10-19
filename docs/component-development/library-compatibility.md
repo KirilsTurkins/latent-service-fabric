@@ -197,3 +197,9 @@ same source bindings, redaction, retirement and retry limitations.
 
 Add `--json` to validate and emit the same machine report. This command only
 reads the explicit report; it does not execute library code or grant authority.
+
+The optional [versioned compatibility catalogue](../compatibility-catalogue/README.md)
+indexes retained package observations separately from these API diagnostics. Its
+content keys bind exact package graphs, configurations, compiler/runtime/backend
+inputs and original evidence. Catalogue membership grants no authority and is not
+a dependency resolution, build or admission input.

@@ -215,9 +215,9 @@ command limits. The new gate bounds the node/peer to 300 seconds under a
 and retains every previous command and the original 45-minute workflow limit.
 Source controls reject changed vendored SDK/native products before execution,
 and authenticate the default backend initializer without admitting custom dialers.
-This signed gate has been added and has not yet executed. HTTPS, published
-default-client consumers, the wider matrix and complete #692 acceptance remain
-required; no full-ticket result follows from this candidate.
+The retained signed observation below passes the original 33 cases on the new
+ordinary fixture. HTTPS, the wider default-client/runtime matrix and complete
+#692 acceptance remain separate; no full-ticket result follows from this slice.
 
 The [two published client capture gate](go-default-http-libraries.md) adds
 ordinary library request/JSON paths and private transitive workers as a separate
@@ -247,8 +247,27 @@ exactly nine contacts, eight primary and one secondary, with no secondary
 authorization, cookies or proxy authorization, no denied-target contact, no
 replayed mutation and no open connection at shutdown.
 
-This additive programme is pending its own signed result. Source controls test
-the evidence/authority consumers; they do not establish guest execution. The
-original 33 standard cases and two captured-client programmes retain their own
-receipts and bounds. Cross-tenant isolation, catalogue-removal qualification and
-the remaining #692/#742 runtime requirements are separate acceptance surfaces.
+[Actual run 39319792864/job 118290595886](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39319792864/job/118290595886)
+passed a fresh normal 27, all original 33 standard cases and all nine additional
+cases. [The retained observation](../testing/evidence/go-http-adversarial-2026-10-19.json)
+binds the actual component, frozen native/compiler source, immutable original
+HTTP recipe, fixture/runner sources and public qualification documents. All three
+nodes shut down cleanly. The adversarial peer observed eight primary contacts and
+one separately authorized secondary contact, no forwarded credentials, no mutation
+and zero open connections. Root-return and root-trap cases retired the accepted
+body without a user cancellation, timer or join; the fresh invocation passed.
+
+The first 661 replay stopped before HTTP execution because it compared the new
+HTTP recipe with the old greeting recipe. The new bytes equal the original HTTP
+recipe exactly; that distinct recipe adds only the frozen declared v5 host
+manifest. The next 8cba replay caught encoding drift in the copied custom-transport
+payload before additional cases. Its correction restores that line byte for byte
+from the maintained fixture; the old-source regression is RED and corrected
+source GREEN. Neither failure is passing qualification.
+
+No native products were rebuilt. Original source 3050 compiler/SDK identities,
+new fixture source 86b and current production source stay distinct. The Go SDK tree
+and five fixture/runner files match the passed replay exactly. This is not a fresh
+current-native or current-compiler observation. The two captured-client programmes
+retain their own receipts and bounds. Cross-tenant isolation, catalogue-removal
+qualification and the remaining #692/#742 requirements remain separate.

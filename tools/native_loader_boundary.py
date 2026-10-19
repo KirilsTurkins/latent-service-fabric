@@ -37,13 +37,13 @@ use super::Adapter;
 export!(Adapter);'''
 LOADER = f"{CRATE}/src/aot/loader.rs"
 # This separate exception implements only the pinned ComponentType/Lower
-# delegation for four resource-free results. It never deserializes code, reads
+# delegation for five resource-free results. It never deserializes code, reads
 # raw memory, changes canonical storage, or releases an accepted native owner
 # before actual result lowering completes. Its whole normalized source is
 # reviewed; another unsafe site, result shape, allowance or implementation
 # requires a new review. The engine version is checked above both exceptions.
 FIXED_RESULT = f"{CRATE}/src/host/runtime/fixed_result.rs"
-FIXED_RESULT_SHA256 = "c8ff0fd34ad8fe30cd5098e1c23265712285067625b48ed1a7e1a2543e74b7ee"
+FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b423626f3f"
 # This third exception only allocates and unmaps guarded root stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.

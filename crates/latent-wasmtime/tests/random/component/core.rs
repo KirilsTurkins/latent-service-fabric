@@ -82,6 +82,20 @@ pub(super) fn caller() -> Module {
     module.section(&exports);
     // locals 3=index, 4=u64 mode, 5=last value.
     let mut f = Function::new([(2, ValType::I32), (1, ValType::I64)]);
+    // Mode three passes the caller's exact result destination to canonical
+    // lowering, exercising destination rejection after an admitted scalar call.
+    for i in [
+        Instruction::LocalGet(0),
+        Instruction::I32Const(3),
+        Instruction::I32Eq,
+        Instruction::If(BlockType::Empty),
+        Instruction::LocalGet(1),
+        Instruction::Call(1),
+        Instruction::Unreachable,
+        Instruction::End,
+    ] {
+        f.instruction(&i);
+    }
     for i in [
         Instruction::Block(BlockType::Empty),
         Instruction::Loop(BlockType::Empty),
