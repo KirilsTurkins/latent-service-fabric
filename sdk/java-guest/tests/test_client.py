@@ -49,5 +49,19 @@ class HttpClient(unittest.TestCase):
             self.assertIn("NATIVE_MODEL_CONTROLS=15; COMPONENT_QUALIFICATION=pending", result.stdout)
 
 
+    @unittest.skipUnless(shutil.which("javac") and shutil.which("java"), "native JDK controls")
+    def test_native_response_headers_coalesce_casing_in_wire_order_and_stay_owned(self):
+        sdk = ROOT / "sdk/java-guest"
+        sources = list((sdk / "client/dev").rglob("*.java"))
+        sources += list((sdk / "tests/client").glob("*.java"))
+        sources += [sdk / "runtime/dev/latent/guest" / name for name in ("Option.java", "Result.java", "Unit.java", "Unsigned64.java")]
+        with tempfile.TemporaryDirectory() as temporary:
+            subprocess.run(["javac", "-proc:none", "-encoding", "UTF-8", "-d", temporary, *map(str, sources)],
+                           check=True, capture_output=True, timeout=30)
+            result = subprocess.run(["java", "-cp", temporary, "dev.latent.guest.client.HeaderFields"],
+                                    check=True, capture_output=True, text=True, timeout=15)
+            self.assertIn("HEADER_MODEL_CONTROLS=4; COMPONENT_QUALIFICATION=pending", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

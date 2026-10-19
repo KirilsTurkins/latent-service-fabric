@@ -31,9 +31,11 @@ public final class Bindings {
     public static int opens, finishes, writes, reads, trailers, uploadsDropped, bodiesDropped, chunksDropped;
     public static int status, finishError, readError;
     public static LatentHttpStreamingRequest requested;
+    public static List<LatentHttpStreamingHeader> responseHeaders;
     public static void reset() {
         opens=finishes=writes=reads=trailers=uploadsDropped=bodiesDropped=chunksDropped=0;
         finishError=readError=-1; status=200; requested=null;
+        responseHeaders=List.of(new LatentHttpStreamingHeader("X-Many", "a"), new LatentHttpStreamingHeader("X-Many", "b"));
     }
     public static final class LatentHttpStreaming {
         public static Result<LatentHttpStreamingUpload, LatentHttpStreamingHttpError> open(LatentHttpStreamingRequest request) {
@@ -48,7 +50,7 @@ public final class Bindings {
             upload.retired=true; finishes++;
             if (finishError>=0) return Result.err(new LatentHttpStreamingHttpError(finishError));
             return Result.ok(new LatentHttpStreamingResponse(status,
-                List.of(new LatentHttpStreamingHeader("X-Many", "a"), new LatentHttpStreamingHeader("X-Many", "b")),
+                responseHeaders,
                 Option.some("application/octet-stream"), new LatentHttpStreamingBody()));
         }
         public static Result<Option<LatentHttpStreamingChunk>, LatentHttpStreamingHttpError> read(LatentHttpStreamingBody body, Long maximum) {

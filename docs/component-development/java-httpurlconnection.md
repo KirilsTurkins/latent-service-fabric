@@ -39,8 +39,13 @@ Provider failures are catchable `HttpFailure` IOExceptions with a closed `code()
 `uncertain` retains uncertainty and grants no retry. Failure freezes the operation:
 another getter does not open or finish another request. The header methods that
 cannot declare IOException wrap the same error in `UncheckedIOException` rather
-than returning invented empty metadata. Repeated raw header values and binary
-response bytes are preserved. EOF is returned only after the provider verifies
+than returning invented empty metadata. Response field names are grouped without
+regard to case under their first observed spelling. Repeated values retain wire
+order, and a named getter returns the last value. The response map and value lists
+are immutable copies. Focused host JDK controls cover mixed and interleaved casing,
+media metadata, retained copies and owner release; signed component evidence for
+this header correction remains separate. Binary response bytes are preserved.
+EOF is returned only after the provider verifies
 EOF and trailers. A failed or truncated read remains a failure.
 
 The compiler adds the missing standard declarations for the long fixed-length

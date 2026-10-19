@@ -167,8 +167,10 @@ public final class Connection extends HttpURLConnection {
         var result = completed.value();
         responseCode = result.status();
         var fields = new LinkedHashMap<String, List<String>>();
+        var fieldNames = new LinkedHashMap<String, String>();
         for (var header : result.headers()) {
-            fields.computeIfAbsent(header.name(), key -> new ArrayList<>()).add(header.value());
+            String name = fieldNames.computeIfAbsent(header.name().toLowerCase(Locale.ROOT), key -> header.name());
+            fields.computeIfAbsent(name, key -> new ArrayList<>()).add(header.value());
         }
         if (result.bodyMediaType().isSome()
                 && fields.keySet().stream().noneMatch(key -> key.equalsIgnoreCase("Content-Type"))) {
