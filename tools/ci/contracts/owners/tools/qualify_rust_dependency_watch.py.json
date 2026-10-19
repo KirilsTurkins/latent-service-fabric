@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Cap each late command by the unchanged 2400-second programme deadline and retain numeric elapsed/duration observations under bounded hashed labels without changing signed stages or expanding authority.",
+  "reviewReason": "Use the bounded 3550-second programme with 50 seconds of wrapper headroom under the unchanged shared process limit",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3e7e97cb40beb8f33ecd2f2d88d61c94e8f1c10ed73633d868aaa401bf386ff6"
+  "sha256": "4b95815c3d0c8b38c5fb45399cc5466962ae05a0904b0259a7ecb7e1f9fb65a7"
 }

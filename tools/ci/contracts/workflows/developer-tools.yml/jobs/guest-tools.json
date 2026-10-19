@@ -417,11 +417,11 @@
         ]
       }
     },
-    "timeout-minutes": 60
+    "timeout-minutes": 90
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
+  "reviewReason": "Raise the guest-tools job wall-clock ceiling so the unchanged three-build Rust watch may finish after pinned compiler assembly; keep all language steps and authority unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

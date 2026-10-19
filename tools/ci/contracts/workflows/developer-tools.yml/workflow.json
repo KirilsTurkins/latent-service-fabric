@@ -162,7 +162,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
+  "reviewReason": "Retain workflow ownership of the measured guest-tools timeout adjustment without changing workflow triggers or job selection.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

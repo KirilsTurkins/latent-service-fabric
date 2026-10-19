@@ -70,7 +70,7 @@ def run(payload: Path, supplied: Path, output: Path, *, qualifier: Path, fixture
         # Fetch is an explicit native Cargo authoring phase. Ordinary compiler
         # calls retain the maintained captured network-none namespace; no ambient
         # Cargo home/config/credentials are supplied by this fixture.
-        result = process.run(command, home, timeout=2450, graceful=15, maximum=262144)
+        result = process.run(command, home, timeout=3600, graceful=15, maximum=262144)
     finally:
         output.mkdir(mode=0o755)
         public = observed / 'public-qualification.json'

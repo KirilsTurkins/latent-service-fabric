@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_rust_dependency_watch_ci.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reuse the exact closed checkpoint validator for bounded numeric timing fields; preserve the 2450-second private-account ceiling and all existing cleanup/refusal requirements.",
+  "reviewReason": "Keep the wrapper within the existing 3600-second shared process limit while retaining all signed watch and cleanup checks",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6cb31ab61a38d99969d835bd8dc929b8a5d77dfa4e25d01ede21f76e7040bc45"
+  "sha256": "4e0dc69cc7f4bd3742afbeca0e79bf7279b9d098563d489db40c91346a7b1e8c"
 }

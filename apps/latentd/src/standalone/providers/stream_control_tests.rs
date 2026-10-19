@@ -596,7 +596,7 @@ fn busy_status_observation_preserves_the_committed_result_without_republishing()
             })
             .await
             .unwrap();
-        assert!(std::ptr::eq(observed, &committed));
+        assert!(std::ptr::eq(observed, &raw const committed));
         assert_eq!(probes, 3);
         assert_eq!(started.elapsed(), Duration::from_millis(2));
         assert_eq!(observed.0, "reload");
