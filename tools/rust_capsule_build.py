@@ -39,8 +39,205 @@ RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += ('tools/dev_workflow/executable_approval.py',)
 RECIPE += guest_resources.RECIPE
+STANDARD_RECIPE = (
+    'tools/rust_standard_logging_inputs.py',
+    'tools/rust_standard_sysroot_source.py',
+    'tools/rust_standard_clock_profile.py',
+    'sdk/rust-standard-runtime/clock.rs',
+    'wit/platform/clock/package.wit',
+    'rust-toolchain.toml',
+    'tools/rust_standard_tls_profile.py',
+    'sdk/rust-standard-runtime/tls.rs',
+    'sdk/rust-standard-runtime/activation-abi.json',
+    'sdk/rust-standard-runtime/thread-abi.json',
+    'wit/platform/activation-runtime/package.wit',
+    'rust-toolchain.toml',
+    'tools/rust_standard_logging_profile.py',
+    'sdk/rust-standard-runtime/stdio_closed.rs',
+    'sdk/rust-standard-runtime/stdio_logging.rs',
+    'wit/platform/log/package.wit',
+    'sdk/rust-standard-stdio/Cargo.toml',
+    'sdk/rust-standard-stdio/src/lib.rs',
+    'tools/rust_standard_sysroot_build.py',
+    'tools/rust_capsule_build.py',
+    'tools/build_observation.py',
+    'tools/build_process.py',
+    'tools/build_process_linux.py',
+    'tools/build_process_signals.py',
+    'tools/captured_compiler_isolation.py',
+)
+RECIPE += STANDARD_RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+
+
+RUST_ENVIRONMENT_SCALARS = ('LC_ALL', 'LANG', 'TZ', 'CARGO_NET_OFFLINE', 'CARGO_INCREMENTAL',
+                            'CARGO_BUILD_JOBS', 'RUSTUP_AUTO_INSTALL', 'RUSTUP_TOOLCHAIN')
+RUST_ENVIRONMENT_PATHS = {'ZIG_GLOBAL_CACHE_DIR': None, 'ZIG_LOCAL_CACHE_DIR': None,
+    'CARGO_HOME': None, 'CARGO_TARGET_DIR': None, 'RUSTC': 'rustc', 'RUSTDOC': 'rustdoc',
+    'CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER': 'linker', 'LSF_CAPTURED_ZIG': 'zig'}
+
+
+def validate_environment_material(value: dict) -> dict:
+    """Bounded digest-only shape accepted by explicit private request inspection."""
+    from tools.application_dependency_store import DependencyError
+    def require(condition):
+        if not condition:
+            raise DependencyError('cargo-execution-environment-invalid')
+    def sha(identity):
+        return isinstance(identity, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', identity) is not None
+    require(isinstance(value, dict) and set(value) == {'formatVersion', 'profile', 'scalars', 'paths'})
+    require(type(value['formatVersion']) is int and value['formatVersion'] == 1
+            and value['profile'] == 'rust-captured-environment-v1')
+    require(isinstance(value['scalars'], dict) and set(value['scalars']) == set(RUST_ENVIRONMENT_SCALARS))
+    require(isinstance(value['paths'], dict) and value['paths'].keys() == RUST_ENVIRONMENT_PATHS.keys())
+    for key, row in value['scalars'].items():
+        if row is None:
+            require(key == 'LANG')
+        else:
+            require(isinstance(row, dict) and set(row) == {'digest', 'size'})
+            require(sha(row['digest']) and type(row['size']) is int and 0 <= row['size'] <= 4096)
+    for key, row in value['paths'].items():
+        if row is None:
+            require(key == 'RUSTDOC')
+        elif owner := RUST_ENVIRONMENT_PATHS[key]:
+            require(isinstance(row, dict) and row == {'tool': owner})
+        else:
+            require(isinstance(row, dict) and set(row) == {'owner', 'relativeDigest'}
+                    and row['owner'] == 'owned-workspace' and sha(row['relativeDigest']))
+    return value
+
+
+def environment_material(environment: dict, isolation) -> dict:
+    """Observe only actual Rust child selections; never retain private values."""
+    from tools.application_dependency_store import DependencyError, regular_path
+    try:
+        if (not isinstance(environment, dict) or isolation.receipt.get('profile') != 'linux-captured-compiler-namespaces-v1'
+                or isolation.child_path is not None or isolation.loader_directories):
+            raise ValueError()
+        scalars, paths = {}, {}
+        for key in (*RUST_ENVIRONMENT_SCALARS, *RUST_ENVIRONMENT_PATHS):
+            if key not in environment:
+                if key not in {'LANG', 'RUSTDOC'}:
+                    raise ValueError()
+                (scalars if key in RUST_ENVIRONMENT_SCALARS else paths)[key] = None
+                continue
+            value = environment[key]
+            if (not isinstance(value, str) or len(value.encode('utf-8')) > 4096
+                    or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+                raise ValueError()
+            if key in RUST_ENVIRONMENT_SCALARS:
+                scalars[key] = {'digest': digest(value.encode('utf-8')), 'size': len(value.encode('utf-8'))}
+                continue
+            path = Path(value)
+            if not path.is_absolute():
+                raise ValueError()
+            selected = regular_path(path).resolve(strict=False)
+            if owner := RUST_ENVIRONMENT_PATHS[key]:
+                if owner not in isolation.tools or selected != isolation.tools[owner] or not selected.is_file():
+                    raise ValueError()
+                paths[key] = {'tool': owner}
+            else:
+                if (selected == isolation.workspace or not selected.is_relative_to(isolation.workspace)
+                        or selected.exists() and not selected.is_dir()):
+                    raise ValueError()
+                paths[key] = {'owner': 'owned-workspace',
+                              'relativeDigest': digest(selected.relative_to(isolation.workspace).as_posix().encode('utf-8'))}
+        return validate_environment_material({'formatVersion': 1, 'profile': 'rust-captured-environment-v1',
+                                              'scalars': scalars, 'paths': paths})
+    except (OSError, TypeError, ValueError, AttributeError):
+        raise DependencyError('cargo-execution-environment-invalid') from None
+
+
+class RustEnvironment:
+    def __init__(self, environment: dict, isolation):
+        from tools.application_dependency_store import DependencyError
+        if 'declaredEnvironment' in isolation.receipt:
+            raise DependencyError('cargo-execution-environment-already-bound')
+        self.isolation = isolation
+        self.before = canonical(environment_material(environment, isolation))
+        isolation.receipt['declaredEnvironment'] = json.loads(self.before)
+
+    def check_unchanged(self, environment: dict):
+        from tools.application_dependency_store import DependencyError
+        try:
+            if (canonical(environment_material(environment, self.isolation)) == self.before
+                    and canonical(self.isolation.receipt.get('declaredEnvironment')) == self.before):
+                return
+        except (OSError, TypeError, ValueError, RecursionError, AttributeError):
+            pass
+        raise DependencyError('cargo-execution-environment-mutated')
+
+    def compile(self, commands, tool: Path, arguments: list[str], work: Path) -> bytes:
+        self.check_unchanged(commands.environment)
+        wrapped = self.isolation.wrap(tool, arguments, work, commands.environment)
+        self.check_unchanged(commands.environment)
+        result = commands.run('compile', *wrapped)
+        self.check_unchanged(commands.environment)
+        return result
+
+
+MAX_EXECUTABLE_OUTPUT_FILES = 8192
+MAX_EXECUTABLE_OUTPUT_BYTES = 64 * 1024 * 1024
+
+
+def executable_output_inventory(target: Path) -> dict:
+    """One aggregate inventory for approved build-script and proc-macro outputs."""
+    from tools.application_dependency_store import DependencyError
+    try:
+        return _observe_executable_outputs(target)
+    except OSError:
+        raise DependencyError('cargo-executable-outputs-unavailable') from None
+
+
+def _observe_executable_outputs(target: Path) -> dict:
+    from tools.application_dependency_store import DependencyError, directory_files, regular_path
+    target = regular_path(target).resolve(strict=True)
+    if not target.is_dir():
+        raise DependencyError('cargo-executable-outputs-unavailable')
+    outputs, total, directories = {}, 0, 0
+    def limit(size):
+        if len(outputs) >= MAX_EXECUTABLE_OUTPUT_FILES or total + size > MAX_EXECUTABLE_OUTPUT_BYTES:
+            raise DependencyError('captured build-tool generated output limit exceeded')
+    for profile in ('release', 'wasm32-unknown-unknown/release'):
+        parent = regular_path(target / profile / 'build')
+        for directory in parent.glob('*/out'):
+            directories += 1
+            if directories > MAX_EXECUTABLE_OUTPUT_FILES:
+                raise DependencyError('captured build-tool generated output limit exceeded')
+            for name, data in directory_files(directory).items():
+                limit(len(data))
+                total += len(data)
+                outputs[directory.relative_to(target).as_posix() + '/' + name] = {
+                    'digest': digest(data), 'size': len(data)}
+    parent = regular_path(target / 'release/deps')
+    for selected in parent.glob('*.so'):
+        path = regular_path(selected)
+        limit(path.stat().st_size)
+        identity = file_identity(path, 'compiled-proc-macro', MAX_EXECUTABLE_OUTPUT_BYTES - total)
+        total += identity['size']
+        outputs[path.relative_to(target).as_posix()] = {'digest': identity['digest'], 'size': identity['size']}
+    return dict(sorted(outputs.items()))
+
+
+class RustExecutableOutputs:
+    def __init__(self, target: Path, output: Path, approval_identity: str):
+        self.target, self.path = target, output / 'executable-input-outputs.json'
+        self.before = canonical({'formatVersion': 1, 'approvalIdentity': approval_identity,
+            'outputs': executable_output_inventory(target),
+            'cleanup': 'namespace-and-owned-process-reaped', 'hermetic': False})
+        write_json(self.path, json.loads(self.before))
+
+    def check_unchanged(self):
+        from tools.application_dependency_store import DependencyError
+        try:
+            before = json.loads(self.before)
+            if (executable_output_inventory(self.target) == before['outputs']
+                    and canonical(read_json(self.path, 8 * 1024 * 1024)) == self.before):
+                return
+        except (OSError, ValueError, TypeError, RecursionError):
+            pass
+        raise DependencyError('cargo-executable-outputs-mutated')
 
 
 class Commands:
@@ -94,13 +291,16 @@ def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict[str, bytes]
 
 
 def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
+    from tools import rust_standard_logging_inputs as standard
     required = {"Cargo.toml", "Cargo.lock", "capsule-project.json", "sdk-lock.json", "src/lib.rs", "rust-toolchain.toml"}
     if not required <= files.keys():
         raise ValueError("incomplete standalone capsule project")
     project = decode_json(files["capsule-project.json"])
-    if (not isinstance(project, dict) or set(project) != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    required_project = {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or not required_project <= set(project) <= required_project | {'runtimeProfile'}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
+    runtime_profile = standard.selection(project)
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Cargo capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "tenant", "service", "world")):
@@ -128,6 +328,8 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
                 "latent-guest": {"path": "vendor/lsf/sdk/rust-guest"}}
     if pins["template"]["name"] == "transactional-aggregate":
         expected["latent-guest"]["features"] = ["transaction"]
+    if runtime_profile == standard.PROFILE:
+        expected['latent-guest'].setdefault('features', []).append('standard-logging')
     maintained = cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies", {})
     if (not isinstance(maintained, dict) or any(maintained.get(name) != value for name, value in expected.items())
             or not captured and maintained != expected):
@@ -264,9 +466,13 @@ def componentize(commands, wasm_tools: Path, module: Path, output: Path, source_
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, *, offline: bool = False, host_linker: Path | None = None,
-          rust_bin: Path | None = None, executable_approval: str | None = None) -> Path:
+          rust_bin: Path | None = None, executable_approval: str | None = None,
+          standard_runtime: Path | None = None) -> Path:
     # Commands/package_inputs are shared by every language. Only this recipe
     # loads the Rust application graph and executable-input approval consumer.
+    from tools import rust_standard_logging_inputs as standard
+    if standard.RECIPE != STANDARD_RECIPE:
+        raise ValueError('Rust standard recipe input catalogue drift')
     from tools.application_dependencies import prepare, verify_inputs
     from tools.application_dependency_approval import approve as approve_execution, request as execution_request
     from tools.rust_application_dependencies import configure as configure_application
@@ -282,8 +488,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     observed = capture_source(project_path, 'rust')
     files = observed.files
     project, pins = validate_project(files)
+    runtime_profile = standard.selection(project)
+    if (standard_runtime is not None) != (runtime_profile in {standard.CLOSED, standard.PROFILE}):
+        raise ValueError('explicit Rust logging profile requires its owned prepared standard runtime only')
     source_inputs = inventory(files)
-    recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+    recipe_files = {name: read_file(ROOT / name)
+                    for name in dict.fromkeys((*RECIPE, *standard.source_build_inputs(runtime_profile)))}
     # The manifest/deployment seed is also an actual recipe input, not an
     # implicit dependency hidden outside the observation.
     for name in ("examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"):
@@ -308,6 +518,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if offline:
                 environment.update(CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
             paths, materials = resolve_tools(pins["toolchain"], work, environment, installed=rust_bin)
+            prepared_runtime = standard.Prepared(standard_runtime, paths['rustc'], runtime_profile) if standard_runtime is not None else None
             bindgen_path = shutil.which("wit-bindgen", path=environment.get("PATH"))
             if bindgen_path is None:
                 raise ValueError("install the pinned wit-bindgen CLI")
@@ -325,9 +536,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands = Commands(work, output, environment)
             stage = "application-dependencies"
             verified = verify_inputs(observed.dependency_root, "rust")
-            closure, approval = None, None
-            isolation, adapted_manifest = None, None
+            closure, approval, output_guard = None, None, None
+            isolation, adapted_manifest, environment_guard = None, None, None
             if verified is not None:
+                if verified.lock['selection']['runtimeProfile'] != runtime_profile:
+                    raise ValueError('captured Rust runtime profile differs from the project')
                 environment.update(CARGO_HOME=str(temporary / "cargo-home"), CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
                 sysroot = Path(commands.run("rust-sysroot", paths["rustc"], "--print", "sysroot").decode().strip()).resolve(strict=True)
                 zig = shutil.which("zig", path=environment.get("PATH"))
@@ -346,8 +559,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    LSF_CAPTURED_ZIG=str(zig))
                 selected_tools = {name: paths[name] for name in ("cargo", "rustc", "wasm-tools", "wit-bindgen")}
                 selected_tools.update(zig=zig, shell=shell, linker=linker)
-                isolation = Isolation(temporary, selected_tools, {"rust-compiler-and-sysroot": sysroot,
-                                      "zig-host-linker-and-sysroot": zig.parent})
+                distributions = {"rust-compiler-and-sysroot": sysroot, "zig-host-linker-and-sysroot": zig.parent}
+                if prepared_runtime is not None:
+                    distributions['rust-standard-stdio-sysroot'] = prepared_runtime.root
+                isolation = Isolation(temporary, selected_tools, distributions)
+                environment_guard = RustEnvironment(environment, isolation)
                 write_json(output / "rust-compiler-inputs.json", isolation.receipt)
                 if verified.lock["executableInputs"]:
                     stage = "executable-input-approval"
@@ -370,6 +586,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compile"
             diagnostics = ["--message-format=json"] if packager is None else []
             compile_arguments = ["build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics]
+            if prepared_runtime is not None:
+                prepared_runtime.check()
+                compile_arguments.extend(prepared_runtime.arguments())
             if closure is not None:
                 selection = closure.lock["selection"]
                 if selection.get("features"):
@@ -378,27 +597,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     compile_arguments.append("--all-features")
                 if selection.get("noDefaultFeatures"):
                     compile_arguments.append("--no-default-features")
-                commands.run("compile", *isolation.wrap(paths["cargo"], compile_arguments, work, environment))
+                environment_guard.compile(commands, paths["cargo"], compile_arguments, work)
                 if approval is not None:
-                    from tools.application_dependency_store import directory_files
-                    generated_outputs = {}
-                    targets = [temporary / "target/release", temporary / "target/wasm32-unknown-unknown/release"]
-                    total = 0
-                    for target in targets:
-                        for directory in sorted((target / "build").glob("*/out")):
-                            for name, data in directory_files(directory).items():
-                                total += len(data)
-                                if len(generated_outputs) >= 8192 or total > 64 * 1024 * 1024:
-                                    raise ValueError("captured build-tool generated output limit exceeded")
-                                generated_outputs[directory.relative_to(temporary / "target").as_posix() + "/" + name] = {
-                                    "digest": digest(data), "size": len(data)}
-                    for path in sorted((targets[0] / "deps").glob("*.so")):
-                        generated_outputs[path.relative_to(temporary / "target").as_posix()] = {
-                            "digest": file_identity(path, "compiled-proc-macro")["digest"], "size": path.stat().st_size}
-                    write_json(output / "executable-input-outputs.json", {"formatVersion": 1, "approvalIdentity": approval.identity,
-                        "outputs": generated_outputs, "cleanup": "namespace-and-owned-process-reaped", "hermetic": False})
+                    output_guard = RustExecutableOutputs(temporary / 'target', output, approval.identity)
             else:
                 commands.run("compile", paths["cargo"], *compile_arguments)
+            if prepared_runtime is not None:
+                prepared_runtime.check()
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
             stage = "component"
             componentize(commands, paths["wasm-tools"], module, output, digest(source_inputs))
@@ -413,6 +618,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
+            if runtime_profile == standard.PROFILE and standard.LOG not in surface['imports']:
+                raise ValueError('standard logging requires explicit original-world LOG declaration')
             recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
             stage = "compatibility"
             guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface,
@@ -430,6 +637,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 captured_files["Cargo.toml"] = files["Cargo.toml"]
                 closure.check_unchanged()
                 isolation.check_unchanged()
+                environment_guard.check_unchanged(commands.environment)
+                if output_guard is not None:
+                    output_guard.check_unchanged()
             observed.check_unchanged()
             if captured_files != files:
                 raise ValueError("project changed during the observed build")
@@ -438,6 +648,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for material in materials:
                 if file_identity(paths[material["name"]], material["name"]) != material:
                     raise ValueError("tool binary changed during the build")
+            if prepared_runtime is not None:
+                prepared_runtime.check()
+                standard_inputs = prepared_runtime.material()
+                (output / 'rust-standard-runtime.json').write_bytes(standard_inputs)
+                materials.append({'name': 'rust-standard-runtime', 'digest': digest(standard_inputs), 'size': len(standard_inputs)})
             package_files = {"package-source.json": read_file(output / "package-source.json")}
             for layer in read_json(output / "package-source.json")["layers"]:
                 package_files[layer["source"]] = read_file(output / layer["source"], 64 * 1024 * 1024)
@@ -454,7 +669,6 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for name in ("executable-input-approval-request.json", "executable-input-outputs.json"):
                         data = read_file(output / name, 8 * 1024 * 1024)
                         materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
-            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'wasm32-unknown-unknown-panic-abort-v1'
             materials.append(guest_runtime_receipts.emit(output, 'rust', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],

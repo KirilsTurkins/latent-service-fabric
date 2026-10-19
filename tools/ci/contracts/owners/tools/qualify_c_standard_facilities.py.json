@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_standard_facilities.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add isolated stdio logging profile and actual signed negative cases with every existing C check, execution guard and budget retained",
+  "reviewReason": "Add explicit C23 captured raw resources and signed trap/fuel retirement while preserving all original C programmes and limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "35201903cffdd3162d08baf57f7f88f67196755c48491a59bac3ecb8fc51b20e"
+  "sha256": "7fe9a686c861b529f44d81890ea94c60cda7db0a374c18a6b867f1e1325273f7"
 }

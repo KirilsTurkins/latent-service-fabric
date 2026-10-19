@@ -53,7 +53,7 @@ typed provider failure, with no socket fallback.
 | --- | --- |
 | `fetch` | Real Promise over async typed open/write/finish/read calls. Resolves after the complete bounded body, including for HTTP 4xx/5xx. |
 | `Request` | Absolute HTTP(S) URLs without embedded credentials; fragments removed; GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS. A body is forbidden on GET/HEAD. |
-| Bodies | Null, UTF-8 strings, ArrayBuffer and ArrayBuffer views; input bytes copied, including view offsets. Null bodies stay unused; non-null bodies are one-shot. |
+| Bodies | Null, UTF-8 strings, ArrayBuffer, ArrayBuffer views and native URLSearchParams; input bytes copied, including view offsets. Null bodies stay unused; non-null bodies are one-shot. |
 | Consumption | Buffered `text`, `json`, `arrayBuffer` and independent buffered clones. JSON parsing errors stay parsing errors. |
 | `Headers` | Records or iterable pairs, case normalization, validated names/values, duplicate combination, sorted iteration, get/set/append/delete/forEach. Fetched response headers are immutable. |
 | Media/idempotency | Content-Type and Idempotency-Key map to the existing dedicated typed metadata. An idempotency key grants no retry. |
@@ -62,6 +62,10 @@ typed provider failure, with no socket fallback.
 | Abort | Each Request and clone owns a native dependent signal, preserving the original reason without sharing signal identity. An already-aborted signal makes zero calls. Later abort rejects and prevents further transfers after the pending call settles; accepted work retains capacity until cleanup. |
 
 Request body replacement follows the [Fetch Standard's constructor order](https://fetch.spec.whatwg.org/#dom-request): an explicit non-null body supplies fresh bytes even when the input Request was consumed. It leaves the input body unchanged. Without a replacement, a successful construction transfers the unused input body exactly once. Rejected construction, including a GET/HEAD body, does not consume an otherwise unused input. A null or omitted replacement cannot revive a consumed body. Cloning still rejects a used body.
+
+Native `URLSearchParams` bodies use the [Fetch Standard's body extraction](https://fetch.spec.whatwg.org/#concept-bodyinit-extract): the existing runtime's native URL-encoded serializer supplies the bytes, with duplicate/order, space/plus and UTF-8 encoding retained. Request and Response constructors copy the encoded bytes immediately; later parameter mutation cannot change a request or clone. An absent Content-Type becomes `application/x-www-form-urlencoded;charset=UTF-8`; explicit media types are preserved. The original 1-MiB ceiling applies to the encoded bytes, and upload chunks remain at most 64 KiB. GET/HEAD still reject even an empty non-null form body. Body extraction does not call an overridden per-object stringifier/iterator or accept a forged tag, and adds no method/destination authority, retry or replay. This is a finite body-type source/reference control, not emitted-component, native URL implementation or signed POST qualification. Streaming, FormData and Blob remain unsupported.
+
+Ordinary encoding, copied-body consumption and media types have Node reference controls. The internal-list control follows the Fetch Standard separately: Node 24.19.0 calls an overridden per-object stringifier, while this profile uses the captured native serializer.
 
 `Headers` accepts two-item iterable pairs as well as arrays and records. Omitted
 or undefined initialization creates empty headers; null and other primitive
@@ -273,11 +277,11 @@ experiment (16 tasks, 2 executors, 16 queued work, 8 waits/timers/results and
 64 native owners). These are finite experimental limits, not new platform
 defaults or native allocator/kernel upper-bound evidence.
 
-The runner is prepared source, not a signed qualification result. Its local
-controls exercise the actual JavaScript adapter and bounded real peer plus
-failure/evidence predicates; they do not execute a Wasm component. Until the
-hosted signed job passes, emitted exports, provider execution and retirement
-remain unqualified. Even a passing finite run does not qualify two unchanged
+The selected-source programme below has actual finite signed execution. Local
+controls alone exercise the JavaScript adapter and peer/evidence predicates;
+they do not execute a Wasm component. The recorded run uses its explicitly
+historical native/engine tuple, rather than qualifying the final integration
+head or every current product. A finite run does not qualify two unchanged
 published clients, a private consumer, top-level `Request`, streaming/tee,
 Abort/timeout races, reaction/timer/memory limits or cross-tenant reuse. The
 engine metadata remains `unknown` / `not-evaluated`; #691 remains open.
@@ -288,9 +292,9 @@ graph. This removes a redundant compiler Promise while preserving task entry,
 canonical argument/result handling, application-realm Promise projection and
 actual import retirement in the existing finally path. Local controls use an
 actual retained generated `open` binding, including pending work, original native
-rejection, typed `uncertain` and lift failure. They do not establish that the
-finite signed Fetch programme passes; the previous Task-owner refusal remains a
-real failure until the corrected component succeeds under the same owner limits.
+rejection, typed `uncertain` and lift failure. These controls alone establish no signed result. The historical Task-owner
+refusals remain real failures; the separate recorded candidate below succeeds
+under those same owner limits.
 
 The selected source-splicer adapter avoids an idle `await null` only when the
 actual private `AsyncTask` is first in the queue. Other callers and contended
@@ -307,8 +311,27 @@ The same finite adapter also inlines only the authenticated native task-metadata
 wrapper at its existing typed import await. It retains argument validation,
 real contention wait/relock, error propagation and finally-clear, while avoiding
 a second private async Promise around work already awaited by the public async
-binding. The two generated callback uses stay unchanged. Unknown wrapper text,
+binding. Framework callbacks and application-export wrappers stay unchanged. Unknown wrapper text,
 call shapes and captured local names reject. Actual generated-source controls
 cover pending success, native rejection, typed/lift failure and contention.
-These controls do not establish signed Fetch success; the unchanged finite
-ordinary-host gate remains mandatory.
+These controls alone establish no signed result. The unchanged finite
+ordinary-host gate remains mandatory and has the source-bound result below.
+
+## Actual selected-source signed result
+
+[Run 39322249065, job 118298975151](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39322249065/job/118298975151)
+passed the ordinary signed gate with candidate source
+`819791f66b2d2fcbe38f2f04259af249f98cfacb`. Entry, Request readiness, the
+Promise chain, Request copy, JSON, HTTP 404 and fresh-activation controls passed.
+Missing runtime and HTTP grants both refused with zero guest fuel/outbound work.
+The peer saw exactly three requests, every post-call retirement check passed,
+and the node shut down cleanly. No private observer replay ran.
+
+The [bounded receipt](../testing/evidence/typescript-fetch-signed-owner-slots-2026-10-19.json)
+binds the actual 12,398,840-byte component, generated bindings, source overlays
+and original five native products. Its SDK/native-engine source is
+`0754391a20027a539f1d5b7c0426719a4bd6c3c1`; the four compiler/backend overlays
+are identified separately and all original source/products were rechecked
+before and after restoration. This is a real finite positive under unchanged
+bounds, not a new qualification of the final development integration. The
+remaining #691 criteria and engine `unknown` / `not-evaluated` metadata remain.

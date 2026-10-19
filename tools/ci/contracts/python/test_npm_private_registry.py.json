@@ -1,0 +1,244 @@
+{
+  "cases": [
+    "PrivateRegistry.test_actual_https_peer_requires_selected_ca_and_bearer_then_reaps_listener",
+    "PrivateRegistry.test_authority_is_child_only_and_previous_environment_restored",
+    "PrivateRegistry.test_campaign_rejects_stale_baseline_before_native_acquisition",
+    "PrivateRegistry.test_failed_receipt_error_preserves_the_original_failure_identity",
+    "PrivateRegistry.test_integrity_controls_restore_exact_owned_objects_and_ca_even_on_refusal_failure",
+    "PrivateRegistry.test_native_failure_and_confidential_streams_cannot_be_mistaken_for_success",
+    "PrivateRegistry.test_native_packuments_integrity_archives_conditions_and_resources_are_consistent",
+    "PrivateRegistry.test_offline_rebuild_keeps_exact_inputs_and_separately_requires_both_outputs_to_run",
+    "PrivateRegistry.test_open_or_invalid_coordinates_are_refused_before_archive_generation",
+    "PrivateRegistry.test_peer_authentication_exact_asset_allowlist_and_redacted_observations",
+    "PrivateRegistry.test_peer_total_request_bound_is_finite",
+    "PrivateRegistry.test_peers_and_platform_optional_sources_are_observable_and_native_metadata_is_exact",
+    "PrivateRegistry.test_private_module_hook_preserves_actual_template_trim_and_input_limits",
+    "PrivateRegistry.test_private_probe_cannot_run_in_another_language_or_via_truthy_selection",
+    "PrivateRegistry.test_probe_metadata_is_closed_and_validated_before_any_invocation",
+    "PrivateRegistry.test_signed_values_use_full_route_tuple_and_original_physical_idle",
+    "PrivateRegistry.test_unexpected_native_failure_also_redacts_retained_confidential_streams",
+    "PrivateRegistry.test_wrong_revision_unreaped_or_effectful_calls_never_qualify"
+  ],
+  "guards": {
+    "PrivateRegistry.test_actual_https_peer_requires_selected_ca_and_bearer_then_reaps_listener": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_authority_is_child_only_and_previous_environment_restored": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_campaign_rejects_stale_baseline_before_native_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_failed_receipt_error_preserves_the_original_failure_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_integrity_controls_restore_exact_owned_objects_and_ca_even_on_refusal_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_native_failure_and_confidential_streams_cannot_be_mistaken_for_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_native_packuments_integrity_archives_conditions_and_resources_are_consistent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_offline_rebuild_keeps_exact_inputs_and_separately_requires_both_outputs_to_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_open_or_invalid_coordinates_are_refused_before_archive_generation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_peer_authentication_exact_asset_allowlist_and_redacted_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_peer_total_request_bound_is_finite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_peers_and_platform_optional_sources_are_observable_and_native_metadata_is_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_private_module_hook_preserves_actual_template_trim_and_input_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_private_probe_cannot_run_in_another_language_or_via_truthy_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_probe_metadata_is_closed_and_validated_before_any_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_signed_values_use_full_route_tuple_and_original_physical_idle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_unexpected_native_failure_also_redacts_retained_confidential_streams": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateRegistry.test_wrong_revision_unreaped_or_effectful_calls_never_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_npm_private_registry.py",
+  "reviewReason": "Retain all18controls and exact offline source/recipe/compiler/selected-module identity; independently sign/execute both offline outputs because maintained Wizer binary reproducibility is not claimed.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

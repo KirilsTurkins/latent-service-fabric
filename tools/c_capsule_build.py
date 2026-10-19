@@ -13,6 +13,8 @@ from tools.build_observation import build_environment, file_identity, public_rep
 from tools.build_process import BuildProcessError
 from tools.c_guest.compiler import Compiler
 from tools.c_guest import standard_facilities
+from tools.c_guest import language
+from tools import c_resource_inputs
 from tools.c_capsule_project import validate
 from tools.application_dependencies import prepare
 from tools.c_application_dependencies import selected
@@ -45,6 +47,7 @@ RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/c_generator_authoring.py",)
 RECIPE += standard_facilities.RECIPE
+RECIPE += language.RECIPE + c_resource_inputs.RECIPE
 
 
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:
@@ -91,6 +94,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "application-dependencies"
             closure = prepare(dependency_root, work, output, "c")
             runtime_profile = standard_facilities.selected_profile(project, closure.lock if closure is not None else None)
+            language_standard = language.selected_standard(project, closure.lock if closure is not None else None)
+            resources = c_resource_inputs.selected(closure, files)
+            write_json(output / 'c-resources.json', resources.observation)
             if packager is None:
                 write_json(output / "diagnostic-source.json", {"capturedSource": str(work), "requestedSource": str(project_path)})
             compiler = Compiler(temporary / "compiler", 900, sdk=work / "vendor/lsf/sdk/c-guest",
@@ -116,9 +122,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             sources.extend(application.sources)
             compile_wit, defines = work / "wit", application.defines
             if runtime_profile in standard_facilities.PROFILE_IMPORTS:
-                adapter = ('standard-clock-entropy.c' if runtime_profile == standard_facilities.PROFILE
-                           else 'standard-stdio.c')
-                sources.append(work / "vendor/lsf/sdk/c-guest/src" / adapter)
+                sources.extend(work / "vendor/lsf/sdk/c-guest/src" / adapter
+                               for adapter in standard_facilities.PROFILE_SOURCES[runtime_profile])
                 compile_wit = standard_facilities.stage(compile_wit, project["world"], temporary / "standard-wit",
                                                        work / "vendor/lsf/wit/platform", profile=runtime_profile)
                 profile_defines = ('_POSIX_C_SOURCE=200809L', '_DEFAULT_SOURCE')
@@ -128,7 +133,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                                           memory_bytes=64 * 1024 * 1024,
                                                           include_directories=application.includes,
                                                           static_libraries=application.archives, defines=defines,
-                                                          runtime_profile=runtime_profile)
+                                                          runtime_profile=runtime_profile, language_standard=language_standard,
+                                                          embed_directories=resources.directories if language_standard == 'c23' else ())
             if closure is not None:
                 write_json(output / "compiler-inputs.json", isolated_inputs)
             component = read_file(component_path, 64 * 1024 * 1024)
@@ -149,7 +155,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compatibility"
             guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
-            package_inputs(output, project, surface, package_files, component)
+            package_inputs(output, project, surface, {**package_files, **resources.sources}, component,
+                           additional_resources=resources.rows)
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
@@ -174,7 +181,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
             if closure is not None:
-                for name in ("application-dependencies.json", "c-libraries.json"):
+                for name in ("application-dependencies.json", "c-libraries.json", "c-resources.json"):
                     data = read_file(output / name, 8 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
                 data = read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)
@@ -188,7 +195,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             materials.append(guest_runtime_receipts.emit(output, 'c', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=runtime_bindings, configuration={"profile": runtime_profile, "world": project['world'],
-                    "target": "wasm32-wasi", "selection": closure.lock['selection'] if closure is not None else {}}))
+                    "target": "wasm32-wasi", "languageStandard": language_standard,
+                    "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("C build clock or overall deadline invalid")

@@ -122,7 +122,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "fetch.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -300,12 +300,25 @@ class Compiler:
                         read_file(ROOT/'sdk/typescript-guest/activation/clock-globals.d.ts'))
         imports = import_identities(binding_graph, binding_world)
         from tools.typescript_guest import fetch_profile
+        from tools.typescript_guest import console_profile
         if fetch_profile.selected(self.runtime_profile, imports):
             declaration = read_file(ROOT/'sdk/typescript-guest/activation/fetch-globals.d.ts')
             if read_file(work/'vendor/lsf/sdk/typescript-guest/activation/fetch-globals.d.ts') != declaration:
                 raise ValueError('captured TypeScript fetch declarations differ from the selected backend')
             for directory in (generated, second):
                 (directory/'fetch-runtime-globals.d.ts').write_bytes(declaration)
+        console_configuration = None
+        if console_profile.selected(imports):
+            declaration = read_file(ROOT/'sdk/typescript-guest/capabilities/console-globals.d.ts')
+            if read_file(work/'vendor/lsf/sdk/typescript-guest/capabilities/console-globals.d.ts') != declaration:
+                raise ValueError('captured TypeScript console declarations differ from the selected backend')
+            if read_file(work/'vendor/lsf/wit/platform/log/package.wit') != read_file(ROOT/'wit/platform/log/package.wit'):
+                raise ValueError('captured TypeScript log interface differs from the selected backend')
+            standard = semantic(json.loads(command.run('standard-console-types', wasm, 'component', 'wit',
+                work/'vendor/lsf/wit/platform/log', '--json')))
+            console_configuration = console_profile.configuration({}, application_graph, application_world, standard)
+            for directory in (generated, second):
+                (directory/'console-runtime-globals.d.ts').write_bytes(declaration)
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
@@ -331,8 +344,10 @@ class Compiler:
         write_json(allowed, imports)
         bundle = output / "application.mjs"
         bundle_configuration = output / "bundle-configuration.json"
-        write_json(bundle_configuration, fetch_profile.bundle_configuration(
-            application_modules or {}, self.runtime_profile, imports))
+        configured = fetch_profile.bundle_configuration(application_modules or {}, self.runtime_profile, imports)
+        if {'standardConsoleProfile', 'activationExports'} & configured.keys():
+            raise ValueError('application-cannot-override-standard-console-backend')
+        write_json(bundle_configuration, {**configured, **(console_configuration or {})})
         if self.isolation is not None:
             self.isolation.protect_inputs(work)
         command.run("bundle", self.node, self.recipe / "bundle.mjs", self.esbuild,

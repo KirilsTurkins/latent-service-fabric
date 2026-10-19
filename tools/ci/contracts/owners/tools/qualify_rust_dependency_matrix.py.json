@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_dependency_matrix.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind reviewed varied Cargo campaign with exact-source minimal recipe and prepared native tuple, four signed offline selections and original-error-preserving closed failure evidence.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "946cf0e5ed63cdbeb3ba82a0cccbd4fc55781f89fb4d33ea40abbc6e5dd2f651"
+}

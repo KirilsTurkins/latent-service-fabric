@@ -3,6 +3,8 @@
 export function installFetch(http, snapshotActive, target = globalThis) {
   const maxBody = 1024 * 1024, maxHeaders = 64, maxHeaderBytes = 32768;
   const encoder = new target.TextEncoder(), decoder = new target.TextDecoder();
+  const SearchParams = target.URLSearchParams;
+  const serializeParams = typeof SearchParams === 'function' ? SearchParams.prototype.toString : null;
   const unsupported = member => new TypeError('lsf-fetch-buffered-v1:unsupported:' + member);
   const records = new WeakMap();
   const immutableHeaders = new WeakSet();
@@ -24,6 +26,15 @@ export function installFetch(http, snapshotActive, target = globalThis) {
     else throw unsupported('body-type');
     if (result.byteLength > maxBody) throw new RangeError('fetch-body-limit');
     return result.slice();
+  }
+  function extractBody(value) {
+    let type = null;
+    if (serializeParams !== null && value instanceof SearchParams) {
+      // Serialize the native list, never a user-supplied stringifier/iterator.
+      value = Reflect.apply(serializeParams, value, []);
+      type = 'application/x-www-form-urlencoded;charset=UTF-8';
+    } else if (typeof value === 'string') type = 'text/plain;charset=UTF-8';
+    return {content: bytes(value), type};
   }
   function name(value) {
     const result = String(value).toLowerCase();
@@ -146,8 +157,9 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       this.signal = target.AbortSignal.any(sourceSignal == null ? [] : [sourceSignal]);
       let content, inheritBody = false;
       if (init.body != null) {
-        content = bytes(init.body);
-        if (typeof init.body === 'string' && !this.headers.has('content-type')) this.headers.set('content-type', 'text/plain;charset=UTF-8');
+        const extracted = extractBody(init.body);
+        content = extracted.content;
+        if (extracted.type !== null && !this.headers.has('content-type')) this.headers.set('content-type', extracted.type);
       } else if (previous) {
         if (previous.bodyUsed) throw new TypeError('body-already-used');
         content = bytes(records.get(previous).content);
@@ -171,12 +183,12 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       super();
       const status = init.status === undefined ? 200 : Number(init.status);
       if (!Number.isInteger(status) || status < 200 || status > 599) throw new RangeError('invalid-response-status');
-      const content = bytes(body);
+      const {content, type} = extractBody(body);
       if ([204, 205, 304].includes(status) && content !== null) throw new TypeError('body-for-null-body-status');
       this.status = status;
       this.statusText = init.statusText === undefined ? '' : headerValue(init.statusText);
       this.headers = new Headers(init.headers);
-      if (typeof body === 'string' && !this.headers.has('content-type')) this.headers.set('content-type', 'text/plain;charset=UTF-8');
+      if (type !== null && !this.headers.has('content-type')) this.headers.set('content-type', type);
       this.url = '';
       this.redirected = false;
       this.type = 'default';

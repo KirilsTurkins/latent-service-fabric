@@ -169,6 +169,21 @@ def deploy(client, source, publication, *, name=None, grants=None, generation="0
             "generation": result["data"]["receipt"]["objectGeneration"], "publication": publication}
 
 
+def selected_revision(client, target):
+    """Read the global published snapshot, separate from object CAS generation."""
+    snapshot = client.call('route', 'get')['data']['snapshot']
+    rows = [row for row in snapshot['services'] if row['routeId'] == target['name']]
+    require(len(rows) == 1 and len(rows[0]['revisions']) == 1, 'authoring-exact-published-route-required')
+    revision = rows[0]['revisions'][0]
+    generation = snapshot['generation']
+    require(isinstance(generation, str) and generation.isascii() and generation.isdecimal()
+            and 0 < int(generation) < 2**64
+            and all(isinstance(revision.get(key), str) and revision[key]
+                    for key in ('releaseDigest', 'revisionId')), 'authoring-published-revision-invalid')
+    return {'publicationId': target['publication'], 'routeGeneration': generation,
+            'releaseDigest': revision['releaseDigest'], 'revisionId': revision['revisionId']}
+
+
 def grant_http(client, node, fixture, publication, target, port):
     descriptors = [row for row in node.startup_record["providers"] if row["capability"] == "latent:http/client@0.2.0"]
     require(len(descriptors) == 1, "authoring-provider-count")

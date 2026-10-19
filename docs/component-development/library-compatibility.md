@@ -96,6 +96,23 @@ certificate of general library compatibility. Compiler elimination requires a
 source identity and compiler evidence. A scan for an API name cannot prove
 reachability or elimination.
 
+The additive Rust diagnostics programme uses an outside captured crate and its
+transitive callback crate through the ordinary Cargo authoring and lock-review
+workflow. It removes the original sources before the network-disabled build,
+then signs the component with the same run's existing native products. Native
+reference processes exercise ordinary thread creation; the selected closed Wasm
+profile must return the catchable `Builder::spawn` unsupported error, retain an
+explicit application fallback, expose an uncaught `thread::spawn` as a terminal
+failure, and pass a separate fresh invocation with reset library state. Each call
+is reaped and followed by actual node/provider idle observations.
+
+Only an exact successful decoded fallback can create the source-bound
+`unsupported-reached` observation. A generic terminal trap remains unresolved;
+the report does not infer its cause, retry safety or general worker quiescence.
+The fixture's target-selected branch checks are not promoted to arbitrary API
+elimination. The new hosted signed result remains pending until its receipt
+passes; this Rust programme does not complete the six-language diagnostics matrix.
+
 `unsupported-reached` requires an initialization, invocation or retirement
 observation labelled `actual-component` or `native-reference`. Compile/link,
 static, model and unevaluated evidence cannot claim that execution reached the
@@ -180,3 +197,9 @@ same source bindings, redaction, retirement and retry limitations.
 
 Add `--json` to validate and emit the same machine report. This command only
 reads the explicit report; it does not execute library code or grant authority.
+
+The optional [versioned compatibility catalogue](../compatibility-catalogue/README.md)
+indexes retained package observations separately from these API diagnostics. Its
+content keys bind exact package graphs, configurations, compiler/runtime/backend
+inputs and original evidence. Catalogue membership grants no authority and is not
+a dependency resolution, build or admission input.

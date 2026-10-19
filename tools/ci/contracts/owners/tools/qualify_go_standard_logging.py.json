@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_standard_logging.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Read the actual normal node workflow bound by its summary digest; retain fourteen cases and every prior native/source/companion assertion, strengthen one fixture with digest/status/call-count negatives.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "4a73039820c67e7cf8ac40cc774ce2d9b6c0c28c2b9eda89b268b2b461eaa858"
+}

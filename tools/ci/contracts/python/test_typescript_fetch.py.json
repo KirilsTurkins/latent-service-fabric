@@ -3,6 +3,7 @@
     "TypeScriptFetchTests.test_abort_rejects_before_contact_and_retains_capacity_until_actual_completion",
     "TypeScriptFetchTests.test_application_metadata_cannot_install_or_override_backend",
     "TypeScriptFetchTests.test_completed_exchange_releases_capacity_before_its_consumer_admits_successor",
+    "TypeScriptFetchTests.test_default_fetch_urlencoded_upload_preserves_exact_typed_metadata_chunks_and_ownership",
     "TypeScriptFetchTests.test_failed_get_head_construction_preserves_inherited_body",
     "TypeScriptFetchTests.test_fetch_iterable_headers_use_the_typed_boundary_once_and_refuse_before_contact",
     "TypeScriptFetchTests.test_fetch_replacement_body_uses_normal_typed_adapter_once",
@@ -19,7 +20,10 @@
     "TypeScriptFetchTests.test_response_redirect_factory_matches_reference_location_status_and_clone",
     "TypeScriptFetchTests.test_response_redirect_preserves_conversion_errors_and_finite_url_profile",
     "TypeScriptFetchTests.test_standard_headers_buffered_body_clone_and_one_shot_request",
-    "TypeScriptFetchTests.test_synthetic_responses_do_not_contact_provider_or_convert_fetch_failure"
+    "TypeScriptFetchTests.test_synthetic_responses_do_not_contact_provider_or_convert_fetch_failure",
+    "TypeScriptFetchTests.test_urlencoded_bodies_match_reference_bytes_media_type_and_construction_snapshot",
+    "TypeScriptFetchTests.test_urlencoded_body_uses_native_brand_and_serializer_without_user_stringification",
+    "TypeScriptFetchTests.test_urlencoded_size_limit_applies_to_encoded_bytes_before_provider_contact"
   ],
   "guards": {
     "TypeScriptFetchTests.test_abort_rejects_before_contact_and_retains_capacity_until_actual_completion": {
@@ -49,6 +53,19 @@
       "skipSites": []
     },
     "TypeScriptFetchTests.test_completed_exchange_releases_capacity_before_its_consumer_admits_successor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchTests.test_default_fetch_urlencoded_upload_preserves_exact_typed_metadata_chunks_and_ownership": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -281,10 +298,49 @@
         "class:skip:self.skipTest('requires Node')"
       ],
       "skipSites": []
+    },
+    "TypeScriptFetchTests.test_urlencoded_bodies_match_reference_bytes_media_type_and_construction_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchTests.test_urlencoded_body_uses_native_brand_and_serializer_without_user_stringification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchTests.test_urlencoded_size_limit_applies_to_encoded_bytes_before_provider_contact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch.py",
-  "reviewReason": "Keep all eighteen original Fetch semantic, abort, ownership, redirect and bounds controls; add actual-adapter successor admission after real successful or rejected exchange cleanup.",
+  "reviewReason": "Union current development and signed Fetch source; preserve every parent case, guard, workflow setting and required command",
   "schemaVersion": "latent.ci.contracts.v1"
 }

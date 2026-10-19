@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "latent.c-combined.signed-observation.v1",
+  "pr": 1113,
+  "head": "4d7923a4bf213667a120ba4aca4c1ed6c2f6bfb8",
+  "squash": "3729075037cf296ecf46b220c5adeb521f0dc68d",
+  "runId": 39246895672,
+  "jobId": 118040888467,
+  "artifactId": 12184053795,
+  "qualificationDigest": "sha256:aa024ce124772a817dce780c7d071a00aa415bfb22442a74eb2705a709768439",
+  "workflowDigest": "sha256:8130e3d6bc86bd0aef59dc64e3bf46ec3f0f55893bbd93979596863741975844",
+  "testedSourceHead": "1cc15f39f2477784fe435b96a3398df72ab1e857",
+  "testedSourceTree": "1ec832c87933e2cf626bb077ec65d77d7bd218e0",
+  "matchedHelperFiles": 60,
+  "nativeTupleIdenticalAcrossProfiles": true,
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:3031c6b310a494cc0ba315a44ca82382e76638ae03ba37247d6dec63dc4f8f11",
+      "bytes": 1494
+    },
+    "sourceHead": "1cc15f39f2477784fe435b96a3398df72ab1e857",
+    "sourceTree": "1ec832c87933e2cf626bb077ec65d77d7bd218e0",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.6",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:5df438c53eed7fe2c56d05b0d9d7502b8a32c95689c77d299f425b453f082f0c",
+        "bytes": 71459976,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:4bd0c377b6c9488484454497b43072842efb5590b1d39b78436a41161c3ce788",
+        "bytes": 184272664,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:04fb6b4c782cfb289610ba118d70b4f27497069b95190a022d0e1690c23e5fc1",
+        "bytes": 20465792,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:ec6c9e629da7ae6f1503bec81ec4889e1cfb745c93e0db68fe7dcb5e7044bcaf",
+        "bytes": 8030384,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:256fef2053774207493ac0f3552e9571dac688bed42a47a53d5416ea4c2aeafd",
+        "bytes": 26401272,
+        "actualFeatures": []
+      }
+    }
+  },
+  "components": {
+    "greeting": "sha256:cab42d8463c99babf2e44b0f71a6cf0e8e5e55ca797fd96fa1a922904c6bb493",
+    "word-count": "sha256:4efb3f4b274164126ee9fe2fe2589843831c19965e0237c7118ae10412fb2f9f",
+    "shipping": "sha256:6f2238c19f93ec505fc7f6be7e212224afa7a5eb76a551f0b100022eb64a5acb",
+    "http-status": "sha256:094c6891d7d589f0daac74e806b218bc6b908af29d6fe31638de82a26747c6df",
+    "recovery": "sha256:f3413d0bd2037d1cbd2ecd12f22721b832118ddb1e0c33a4a51f58d352f6fb6b"
+  },
+  "originalLibraryRemoved": true,
+  "totalInvocations": 37,
+  "independentGrantDenials": 4,
+  "combinedCalls": [
+    {
+      "activation": "c-combined-0",
+      "decoded": [
+        {
+          "ok": "1"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "8504",
+        "effectCount": 0,
+        "logBytes": "448",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "262144",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7029"
+      }
+    },
+    {
+      "activation": "c-combined-1",
+      "decoded": [
+        {
+          "ok": "1"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "8248",
+        "effectCount": 0,
+        "logBytes": "448",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "262144",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "6741"
+      }
+    },
+    {
+      "activation": "c-combined-2",
+      "decoded": [
+        {
+          "ok": "1"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "8388",
+        "effectCount": 0,
+        "logBytes": "448",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "262144",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "6316"
+      }
+    },
+    {
+      "activation": "c-combined-3",
+      "decoded": [
+        {
+          "ok": "1"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "10564",
+        "effectCount": 0,
+        "logBytes": "672",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "262144",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "6257"
+      }
+    },
+    {
+      "activation": "c-combined-4",
+      "decoded": [
+        {
+          "ok": "1"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "8379",
+        "effectCount": 0,
+        "logBytes": "448",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "262144",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "5956"
+      }
+    },
+    {
+      "activation": "c-combined-5",
+      "decoded": [
+        {
+          "ok": "1"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "8563",
+        "effectCount": 0,
+        "logBytes": "448",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "262144",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "5772"
+      }
+    }
+  ],
+  "originalOutcomes": 27,
+  "allInvocationProcessesReaped": true,
+  "providerIdleSamples": 16,
+  "allProviderIdleCountersZero": true,
+  "nodeCleanAndReaped": true,
+  "peerShutdown": {
+    "requests": 8,
+    "authorized": 8,
+    "unexpected": 0,
+    "holds": 3,
+    "closedHolds": 3
+  },
+  "publisherAuthenticated": false,
+  "releasePublished": false,
+  "status": "passed",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39246895672/job/118040888467",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39246895672/artifacts/12184053795",
+  "scope": "isolated-local-experimental-node-with-enforced-package-admission",
+  "qualification": "combined-profile-only-at-recorded-source"
+}

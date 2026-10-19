@@ -1,0 +1,24 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Add combined C libc profile controls, each independently missing grant, captured closure and unchanged original profile boundaries.",
+  "module":"tools/tests/test_c_standard_combined.py",
+  "cases":["StandardCombined.test_combined_compiler_uses_existing_stdio_adapter_and_other_profiles_stay_separate","StandardCombined.test_combined_import_authority_and_graph_profile_cannot_be_borrowed","StandardCombined.test_combined_profile_derives_exact_union_without_mutating_inputs_or_default","StandardCombined.test_combined_selection_requires_explicit_bool_c_and_exclusive_profile","StandardCombined.test_each_grant_is_independently_required_with_zero_execution_and_idle_samples","StandardCombined.test_outside_combined_library_is_offline_captured_with_original_sdk_and_limits"],
+  "guards":{
+    "StandardCombined.test_combined_profile_derives_exact_union_without_mutating_inputs_or_default":
+      "5dfcce561a5bd79d004c4a81660b59d0b25ab05a411d731653afbaeb97d9aea8",
+    "StandardCombined.test_combined_import_authority_and_graph_profile_cannot_be_borrowed":
+      "5dfcce561a5bd79d004c4a81660b59d0b25ab05a411d731653afbaeb97d9aea8",
+    "StandardCombined.test_outside_combined_library_is_offline_captured_with_original_sdk_and_limits":
+      "5dfcce561a5bd79d004c4a81660b59d0b25ab05a411d731653afbaeb97d9aea8",
+    "StandardCombined.test_combined_compiler_uses_existing_stdio_adapter_and_other_profiles_stay_separate":
+      "5dfcce561a5bd79d004c4a81660b59d0b25ab05a411d731653afbaeb97d9aea8",
+    "StandardCombined.test_combined_selection_requires_explicit_bool_c_and_exclusive_profile":
+      "5dfcce561a5bd79d004c4a81660b59d0b25ab05a411d731653afbaeb97d9aea8",
+    "StandardCombined.test_each_grant_is_independently_required_with_zero_execution_and_idle_samples":
+      "5dfcce561a5bd79d004c4a81660b59d0b25ab05a411d731653afbaeb97d9aea8"
+  },
+  "guardDefinitions":{
+    "5dfcce561a5bd79d004c4a81660b59d0b25ab05a411d731653afbaeb97d9aea8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:6ef27c3cbf570f52d0545d5373830e4620c7cb8f71aefc0b79b7eaae9435044a","class:setup-sha256:986d7d6d460134e3ac3d0ab229456ef35b4a728f66c07f7cd176e068b6cbbaf0"]}
+  }
+}

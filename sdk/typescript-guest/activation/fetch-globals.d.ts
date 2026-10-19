@@ -1,7 +1,25 @@
 // Candidate buffered API only; the compiler adds these declarations only with
 // the exact async-import runtime and declared typed streaming HTTP capability.
 type HeadersInit = Headers | Iterable<readonly [string, string]> | Record<string, string>;
-type BodyInit = string | ArrayBuffer | ArrayBufferView;
+declare class URLSearchParams implements Iterable<[string, string]> {
+    constructor(init?: string | Iterable<readonly [string, string]> | Record<string, string>);
+    readonly size: number;
+    append(name: string, value: string): void;
+    delete(name: string, value?: string): void;
+    get(name: string): string | null;
+    getAll(name: string): string[];
+    has(name: string, value?: string): boolean;
+    set(name: string, value: string): void;
+    sort(): void;
+    toString(): string;
+    entries(): IterableIterator<[string, string]>;
+    keys(): IterableIterator<string>;
+    values(): IterableIterator<string>;
+    [Symbol.iterator](): IterableIterator<[string, string]>;
+    forEach(callback: (value: string, name: string, parent: URLSearchParams) => void, thisArg?: unknown): void;
+}
+
+type BodyInit = string | ArrayBuffer | ArrayBufferView | URLSearchParams;
 interface RequestInit {
     method?: string;
     headers?: HeadersInit;

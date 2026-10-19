@@ -506,7 +506,15 @@ name = "latent-guest"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-component-bindings",
+ "latent-standard-stdio",
  "zeroize",
+]
+
+[[package]]
+name = "latent-standard-stdio"
+version = "0.1.0-alpha.5"
+dependencies = [
+ "latent-component-bindings",
 ]
 
 [[package]]

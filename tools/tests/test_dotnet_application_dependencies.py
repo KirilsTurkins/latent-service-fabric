@@ -760,12 +760,22 @@ class CapturedCompilerSelection(unittest.TestCase):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory(dir=self.root) as temporary:
             compiler, work, output = self.application(Path(temporary))
-            with patch('tools.dotnet_application_dependencies.configure', self.configure):
+            compiler.compiler_patches, compiler.generated_materials = [], []
+            # This seam mocks the toolchain; the real closed-IO graph/byte
+            # derivation is separately exercised by test_dotnet_closed_io.
+            def closed_projection(actual, adapter, directory, profile):
+                self.assertIs(actual, compiler)
+                self.assertEqual(profile, 'closed')
+                (self.evidence / 'closed-io-port.json').write_bytes(b'{"fixture":"closed-io"}')
+                return adapter, {'fixture': 'closed-io'}
+            with patch('tools.dotnet_application_dependencies.configure', self.configure), \
+                    patch('tools.dotnet_guest.closed_io.prepare', side_effect=closed_projection) as projected:
                 component, receipt = compiler.compile(work, 'examples:greeting/service@1.0.0', output)
             self.configure.assert_called_once_with(compiler.application_closure, work, compiler.package_cache)
             self.assertTrue(component.is_file())
             self.assertEqual(receipt['runtimeProfile']['declaredImports'], [self.runtime_profiles.CLOCK])
             self.assertEqual(receipt['runtimeProfile']['profile'], 'closed')
+            projected.assert_called_once()
             self.assertIn('closed-runtime-composition', self.stages)
             self.assertEqual(json.loads((self.evidence / 'nuget-build-inputs.json').read_bytes())['packages'],
                              self.configure.return_value['packages'])
@@ -788,9 +798,19 @@ class CapturedCompilerSelection(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=self.root) as temporary:
             compiler, work, output = self.application(Path(temporary),
                 final=[self.runtime_profiles.CLOCK, 'latent:secrets/reader@0.1.0'])
-            with patch('tools.dotnet_application_dependencies.configure', self.configure):
+            compiler.compiler_patches, compiler.generated_materials = [], []
+            # This seam mocks the toolchain; the real closed-IO graph/byte
+            # derivation is separately exercised by test_dotnet_closed_io.
+            def closed_projection(actual, adapter, directory, profile):
+                self.assertIs(actual, compiler)
+                self.assertEqual(profile, 'closed')
+                (self.evidence / 'closed-io-port.json').write_bytes(b'{"fixture":"closed-io"}')
+                return adapter, {'fixture': 'closed-io'}
+            with patch('tools.dotnet_application_dependencies.configure', self.configure), \
+                    patch('tools.dotnet_guest.closed_io.prepare', side_effect=closed_projection) as projected:
                 with self.assertRaisesRegex(ValueError, 'runtime adapter introduced undeclared authority:latent:secrets/reader@0.1.0'):
                     compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+            projected.assert_called_once()
             self.assertIn('closed-runtime-composition', self.stages)
             self.assertFalse((output / 'component.wit').exists())
 

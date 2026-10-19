@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "StandardEntropy.test_compiler_observation_requires_real_standard_api_and_transitive_embed_selection",
+    "StandardEntropy.test_eight_values_and_three_failure_fresh_pairs_keep_original_bounds",
+    "StandardEntropy.test_explicit_buffer_authority_is_greeting_only_and_preserves_other_bounds_and_policies",
+    "StandardEntropy.test_foreign_profile_refuses_before_outside_or_application_mutation",
+    "StandardEntropy.test_omitting_random_keeps_both_clocks_then_restores_exact_original_grants",
+    "StandardEntropy.test_outside_capture_retains_original_sdk_and_exact_review_then_removes_both_modules",
+    "StandardEntropy.test_qualified_products_require_current_source_and_actual_companion_bytes",
+    "StandardEntropy.test_selector_rejects_foreign_language_bool_alias_and_competing_campaign_before_output",
+    "StandardEntropy.test_unmodified_standard_apis_have_no_reader_injection_or_recorded_entropy_payload"
+  ],
+  "guards": {
+    "StandardEntropy.test_compiler_observation_requires_real_standard_api_and_transitive_embed_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_eight_values_and_three_failure_fresh_pairs_keep_original_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_explicit_buffer_authority_is_greeting_only_and_preserves_other_bounds_and_policies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_foreign_profile_refuses_before_outside_or_application_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_omitting_random_keeps_both_clocks_then_restores_exact_original_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_outside_capture_retains_original_sdk_and_exact_review_then_removes_both_modules": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_qualified_products_require_current_source_and_actual_companion_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_selector_rejects_foreign_language_bool_alias_and_competing_campaign_before_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_unmodified_standard_apis_have_no_reader_injection_or_recorded_entropy_payload": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47c247b1fe6c48ae08db32edd4ae84386c7167b5de9e061e6a2f79eefd3e7f8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_standard_entropy.py",
+  "reviewReason": "Refund only fixed scalar random calls through existing canonical Completion; preserve original per-call policy and native/list/cancel controls, qualify real 33-call ownership and fresh provider exhaustion.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

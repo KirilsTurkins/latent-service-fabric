@@ -89,6 +89,13 @@ bound lock; the caller must still authenticate the captured graph and the source
 component and lock digests, and the ordinary signed package authenticates the
 selected index. It does not qualify a language's runtime resource API.
 
+A matching dependency file record must use an integer byte size. Boolean and
+floating-point values cannot authenticate empty or one-byte resources merely
+because their numeric equality matches the payload length. Capture and index
+verification apply the same rule, including after a lock/index rehash. Valid
+integer sizes and unselected records retain their existing behavior; this local
+membership check does not replace validation or authentication of the full graph.
+
 The developer workflow derives a `resourceInputs` manifest binding and includes
 the manifest and its declared source files in trust/watch snapshots. Changing
 resource selection invalidates approval; changing resource bytes changes the
@@ -105,7 +112,7 @@ A package name alone cannot make an unobserved file a trusted resource.
 | Language | Compile-time data path | Standard runtime lookup qualification |
 | --- | --- | --- |
 | Rust | Captured data selected by `include_bytes!` / `include_str!` | No general runtime filesystem lookup advertised |
-| C | Captured constant data / selected compiler resource inputs | Runtime resource facade still requires component evidence |
+| C | Captured constant data; explicit [C23 `#embed`](c-compiled-resources.md) and declared dependency resource objects | Signed C23 exact bytes/aliases/empty/missing and trap/fuel fresh-state controls; no runtime filesystem lookup |
 | TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
 | Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
 | Java | Captured selected classpath resource bytes | Selected `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` signed-node cases; broader lookup APIs pending |

@@ -100,6 +100,48 @@ The separate [standard stdio logging profile](c-standard-logging.md) selects
 only the bounded log contract; it does not implicitly select these clocks or
 entropy providers.
 
+## Combined ordinary libc facilities
+
+The explicit `c-standard-facilities-v1` profile selects the union of the clock,
+entropy and [standard stdio](c-standard-logging.md) ports. An ordinary captured
+library can use `clock_gettime`, `getentropy`, `printf` and `fprintf(stderr, ...)`
+in the same component, including during its activation-local initializer.
+The compiler selects both existing bridge sources and the existing closed stdio
+adapter; it derives exactly the monotonic, wall, random and log imports. The
+individual profiles and default closed profile keep their existing selections.
+
+Select this profile in both `capsule-project.json` and the application dependency
+selection, then resolve and review changed dependency inputs. Each of the four
+typed capabilities still needs its own installed provider, binding and explicit
+grant. Profile selection supplies no authority and installs no ambient WASI host.
+All existing clock, entropy, log encoding, byte and operation bounds apply.
+
+The contributor qualifier accepts `--combined-profile` alongside the same native
+tuple and compiler arguments above. It captures an outside library, deletes its
+original sources, and builds and signs the five original authoring controls.
+Four activations, each omitting exactly one grant while retaining the other three,
+must be rejected before guest execution
+with zero guest fuel and memory. Six combined cases then check initializer state,
+ordered calls, wall time, stderr and existing entropy/clock errors; ordinary
+tutorial calls also use the combined library. Provider idle samples follow the
+denials and successful combined cases. The original 27 authoring, fault and peer
+outcomes remain required, with clean node and peer shutdown.
+
+The C workflow adds this programme after the original clock/entropy and stdio
+programmes, reusing their exact native tuple within the unchanged job and node
+deadlines. The [combined-profile signed receipt](../testing/evidence/c-standard-combined-passed-2026-10-19.json)
+records the actual 37 successful outcomes: four independent pre-admission grant
+denials, six combined calls and the 27 original outcomes. All invocation
+processes retired, all 16 sampled provider inventories were idle, and the node
+and three held peer connections shut down cleanly. The compiler library's
+original files were removed before compilation. The original clock/entropy
+38-case and stdio 41-case campaigns also passed on the same ordinary native
+tuple. This evidence retains its exact historical source and component identities;
+it does not qualify later recipe changes or the separate C23 resource campaign.
+This finite slice advances facility composition in issue #681; concurrency,
+pthreads, asynchronous initialization, full six-language parity and production
+publisher authentication remain separate requirements.
+
 ## Derived WIT source handling
 
 The maintained C standard-profile derivation identifies the selected world and

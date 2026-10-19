@@ -1,6 +1,9 @@
 //! Ordinary compiler-built Go APIs through signed V5 node admission.
 use super::*;
 
+#[path = "go/managed_idle.rs"]
+mod managed_idle;
+
 fn checkpoint_component(
     variable: &str,
     profile: &str,
@@ -11,8 +14,11 @@ fn checkpoint_component(
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
     let timers = profile == "go-component-activation-v3";
     let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
+    let managed = profile == "go-component-activation-v5";
     let initializers = profile == "go-component-activation-v4" && !published;
-    let expected: &[u8] = if published {
+    let expected: &[u8] = if managed {
+        include_bytes!("../../../../../sdk/go-guest/runtime/managed-idle-conformance/main.go")
+    } else if published {
         include_bytes!("../../../../../sdk/go-guest/runtime/published-conformance/main.go")
     } else if initializers {
         include_bytes!("../../../../../sdk/go-guest/runtime/initializers-conformance/main.go")
@@ -29,7 +35,9 @@ fn checkpoint_component(
     assert_eq!(record["profile"], profile);
     assert_eq!(
         record["fixture"],
-        if published {
+        if managed {
+            "managed-idle"
+        } else if published {
             "published"
         } else if initializers {
             "initializers"
@@ -44,10 +52,12 @@ fn checkpoint_component(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    if profile == "go-component-activation-v2" || timers || initializers || published {
+    if profile == "go-component-activation-v2" || timers || initializers || published || managed {
         assert_eq!(
             record["nativeReference"]["modes"],
-            if published {
+            if managed {
+                serde_json::json!([0, 1, 2])
+            } else if published {
                 serde_json::json!([0, 2, 3])
             } else if initializers {
                 serde_json::json!([0])
@@ -489,13 +499,23 @@ async fn signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_a
         Duration::from_secs(5),
         std::future::poll_fn(|context| match invocation.as_mut().poll(context) {
             Poll::Ready(receipt) => panic!("CPU checkpoint should yield: {:?}", receipt.outcome),
-            Poll::Pending
-                if f.backend.resource_snapshot().live_stores == 1
-                    && f.broker.snapshot().calls != 0 =>
-            {
-                Poll::Ready(())
+            Poll::Pending => {
+                // A CPU checkpoint yields through the canonical dispatcher, with
+                // no pending provider operation. Completed calls must be free to
+                // retire; they are not a witness that this original root is live.
+                let owners = f.backend.resource_snapshot();
+                if owners.active_invocations == 1
+                    && owners.live_stores == 1
+                    && owners.live_host_states == 1
+                    && owners.live_component_instances == 1
+                    && owners.live_cancellation_probes == 1
+                    && f.read_wait.active.load(Ordering::Acquire) == 0
+                {
+                    Poll::Ready(())
+                } else {
+                    Poll::Pending
+                }
             }
-            Poll::Pending => Poll::Pending,
         }),
     )
     .await

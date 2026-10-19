@@ -15,6 +15,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import c_capsule_build, c_capsule_project
+from tools.c_guest.standard_facilities import COMBINED_PROFILE, DEFAULT, LOGGING_PROFILE, PROFILE
 from tools.c_standard_facilities_probe import prepare
 from tools.build_observation import build_environment
 from tools.phase2_operator_process import require
@@ -23,15 +24,18 @@ from tools.qualify_java_server_lifecycle import ordinary_tuple
 from tools.qualify_java_server_lifecycle_suite import native as build_native
 from tools.run_rust_capsule_workflow import run
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, read_json, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, read_file, read_json, write_json
 
 HELPERS = ('tools/c_standard_facilities_probe.py', 'tools/qualify_c_standard_facilities.py',
-           'tools/c_standard_logging_probe.py',
+           'tools/c_standard_logging_probe.py', 'tools/c_standard_combined_probe.py',
+           'tools/c_compiled_resource_fixture.py',
            'tools/run_rust_capsule_workflow.py', 'tools/rust_capsule_node.py',
            'tools/guest_runtime_profiles.py', 'tools/guest_runtime_grants.py',
            'tools/qualify_java_server_lifecycle.py', 'tools/qualify_java_server_lifecycle_suite.py')
 PUBLIC_FIELDS = ('schemaVersion', 'status', 'scope', 'invocations', 'samples', 'providerIdle',
-                 'cStandardGrantSteps', 'cStandardLoggingGrant', 'limits', 'nodeShutdown', 'peerShutdown',
+                 'cStandardGrantSteps', 'cStandardLoggingGrant', 'cStandardCombinedGrantSteps',
+                 'cCompiledResourceCases', 'cCompiledResourceRecovery',
+                 'limits', 'nodeShutdown', 'peerShutdown',
                  'cliCalls', 'reason', 'peerFailure')
 
 
@@ -45,6 +49,33 @@ def identity():
         name: file_identity(ROOT / name, 1048576) for name in sorted(set((*c_capsule_build.RECIPE, *HELPERS)))}}
 
 
+def verify_compiled_resources(build, project, prepared):
+    from tools import guest_resources
+    from tools.build_snapshot import digest
+    identities = {row['digest'] for row in prepared['resources']}
+    objects = {'resources/objects/' + identity[7:]: read_file(build / 'resources/objects' / identity[7:], guest_resources.MAX_FILE)
+               for identity in identities}
+    lock = read_file(project / 'latent.dependencies.lock.json', guest_resources.MAX_DEPENDENCY_LOCK)
+    verified = guest_resources.verify(read_file(build / guest_resources.INDEX, guest_resources.MAX_DOCUMENT), objects,
+        source_digest=digest(read_file(build / 'source-inputs.json')),
+        component_digest=digest(read_file(build / 'component.wasm', 64 * 1024 * 1024)),
+        dependency_lock_digest=digest(lock), dependency_lock=lock)
+    expected = {row['path']: (row['digest'], row['size'], row['mediaType']) for row in prepared['resources']}
+    require({row['path']: (row['digest'], row['size'], row['mediaType']) for row in verified['resources']} == expected
+            and all(row['origin'] == 'dependency' and row['owner'] == 'outside-owner/raw-resource/1'
+                    for row in verified['resources']), 'c-compiled-resource-exact-package-bytes')
+    require(verified['count'] == 4 and len(objects) == 3 and prepared['originalsRemoved'],
+            'c-compiled-resource-alias-empty-offline-capture')
+    compiler = read_json(build / 'compiler-inputs.json')
+    resources = read_json(build / 'c-resources.json')
+    for row in resources['resources']:
+        require(any(item['path'].replace('\\', '/').endswith('/' + row['source'])
+                    and item['digest'] == row['digest'] and item['size'] == row['size']
+                    for item in compiler['preprocessorInputs']), 'c-compiled-resource-preprocessor-membership')
+    return {'index': file_identity(build / guest_resources.INDEX), 'selection': file_identity(build / 'c-resources.json'),
+            'count': 4, 'objects': 3, 'preprocessorMembership': True, 'sourceOriginalsRemoved': True}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('zig', 'wit-bindgen', 'wasm-tools', 'output'):
@@ -52,7 +83,10 @@ def main(argv=None):
     parser.add_argument('--native-directory', type=Path)
     parser.add_argument('--native-tuple', type=Path)
     parser.add_argument('--build-native', action='store_true')
-    parser.add_argument('--standard-logging', action='store_true')
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument('--standard-logging', action='store_true')
+    profile.add_argument('--combined-profile', action='store_true')
+    profile.add_argument('--compiled-resources', action='store_true')
     args = parser.parse_args(argv)
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-standard-unprivileged-linux-python313-required')
@@ -84,7 +118,8 @@ def main(argv=None):
     installed = {'zig': args.zig.resolve(strict=True), 'wit-bindgen': args.wit_bindgen.resolve(strict=True),
                  'wasm-tools': args.wasm_tools.resolve(strict=True)}
     result = {'schemaVersion': 'latent.c-standard-facilities.qualification.v1', 'status': 'in-progress',
-              'profile': 'c-standard-stdio-v1' if args.standard_logging else 'c-standard-clock-entropy-v1',
+              'profile': DEFAULT if args.compiled_resources else COMBINED_PROFILE if args.combined_profile
+                         else LOGGING_PROFILE if args.standard_logging else PROFILE,
               'source': source, 'nativeTuple': native, 'publisherAuthenticated': False,
               'releasePublished': False, 'builds': {}}
     stage = 'build'
@@ -95,7 +130,13 @@ def main(argv=None):
         for template in TEMPLATES:
             project = c_capsule_project.create(output / 'projects' / template, template)
             if template == 'greeting':
-                if args.standard_logging:
+                if args.compiled_resources:
+                    from tools.c_compiled_resource_fixture import prepare as prepare_resources
+                    result['capturedCompiledResources'] = prepare_resources(project)
+                elif args.combined_profile:
+                    from tools.c_standard_combined_probe import prepare as prepare_combined
+                    result['capturedStandardLibrary'] = prepare_combined(project)
+                elif args.standard_logging:
                     from tools.c_standard_logging_probe import prepare as prepare_logging
                     result['capturedStandardLibrary'] = prepare_logging(project)
                 else:
@@ -104,16 +145,22 @@ def main(argv=None):
                 owned['capsule_contracts'], owned['package'],
                 'https://github.com/KirilsTurkins/latent-service-fabric', installed=installed)
             result['builds'][template] = read_json(build / 'BUILD-COMPLETE.json')
+            if template == 'greeting' and args.compiled_resources:
+                result['compiledResources'] = verify_compiled_resources(build, project, result['capturedCompiledResources'])
             builds.append(build)
         stage = 'sign'
         commands.run('demo-sign', owned['capsule_authoring'], 'demo-sign', output / 'releases', *builds)
         stage = 'node'
         observed = run(owned['latent'], owned['latentd'], output / 'releases', output / 'node',
-                       language='c', c_standard_facilities=not args.standard_logging,
-                       c_standard_logging=args.standard_logging)
+                       language='c', c_standard_facilities=not (args.standard_logging or args.combined_profile or args.compiled_resources),
+                       c_standard_logging=args.standard_logging, c_standard_combined=args.combined_profile,
+                       c_compiled_resources=args.compiled_resources)
         public = {name: observed[name] for name in PUBLIC_FIELDS if name in observed}
         write_json(output / 'node/public-workflow.json', public)
-        grant_verified = (observed.get('cStandardLoggingGrant', {}).get('capability') == 'latent:log/log@0.1.0'
+        grant_verified = (len(observed.get('cCompiledResourceCases', [])) == 6
+                          and len(observed.get('cCompiledResourceRecovery', [])) == 2 if args.compiled_resources else
+                          len(observed.get('cStandardCombinedGrantSteps', [])) == 4 if args.combined_profile else
+                          observed.get('cStandardLoggingGrant', {}).get('capability') == 'latent:log/log@0.1.0'
                           if args.standard_logging else len(observed.get('cStandardGrantSteps', [])) == 3)
         require(observed['status'] == 'passed' and grant_verified,
                 'c-standard-original-authoring-and-grant-matrix-must-pass')

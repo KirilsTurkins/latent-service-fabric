@@ -18,6 +18,7 @@ from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.rust_capsule_project import snapshot
+from tools import go_proxy_tls
 
 PROFILE = 'go-component-async-v1'
 
@@ -43,7 +44,7 @@ def selection(value: dict | None = None) -> dict:
         raise DependencyError('go-build-tags-invalid')
     profile = value.get('runtimeProfile', PROFILE)
     if (value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or not isinstance(profile, str)
-            or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}):
+            or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4', 'go-component-activation-v5'}):
         raise DependencyError('go-runtime-profile-not-installed')
     return {'target': 'wasip1/wasm', 'runtimeProfile': profile, 'tags': sorted(set(tags))}
 
@@ -193,7 +194,7 @@ def _mirror(source: Path, owned: Path) -> Path:
     return owned / 'mirror' / (source.drive.replace(':', '') or 'posix') / Path(*source.parts[1:])
 
 
-def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None) -> tuple[dict, dict, bytes | None]:
+def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None, *, project: Path | None = None) -> tuple[dict, dict, bytes | None]:
     """One explicit proxy/checksum policy for native module selection and locking."""
     proxy_bytes = None
     if proxy_config is not None:
@@ -202,11 +203,11 @@ def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None
             raise DependencyError('go-proxy-configuration-must-stay-outside-project')
         proxy_bytes = read_bytes(proxy_config)
     policy = json.loads(proxy_bytes) if proxy_bytes is not None else {'proxy': 'https://proxy.golang.org', 'sumdb': 'sum.golang.org'}
-    if (not isinstance(policy, dict) or set(policy) - {'proxy', 'sumdb', 'private', 'authorizationEnv', 'username'}
+    if (not isinstance(policy, dict) or set(policy) - {'proxy', 'sumdb', 'private', 'authorizationEnv', 'username', 'tlsTrust'}
             or not {'proxy', 'sumdb'} <= set(policy)):
         raise DependencyError('go-proxy-policy-invalid')
     proxy = urlsplit(policy['proxy'])
-    if proxy.scheme != 'https' or not proxy.hostname or proxy.username or proxy.password or proxy.query or proxy.fragment:
+    if proxy.scheme != 'https' or not proxy.hostname or proxy.username is not None or proxy.password is not None or proxy.query or proxy.fragment:
         raise DependencyError('go-proxy-endpoint-invalid')
     if not isinstance(policy['sumdb'], str) or not re.fullmatch(r'(?:off|[a-zA-Z0-9.+/_=-]{1,512})', policy['sumdb']):
         raise DependencyError('go-checksum-policy-invalid')
@@ -231,9 +232,10 @@ def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None
         if not re.fullmatch(r'[^\s]{1,8192}', secret) or any(ord(char) < 32 or ord(char) == 127 for char in secret):
             raise DependencyError('go-proxy-authorization-format')
         netrc = owned / 'resolver.netrc'
-        netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\n')
+        netrc.write_text('machine ' + proxy.netloc + ' login ' + username + ' password ' + secret + '\n')
         netrc.chmod(0o600)
         environment['NETRC'] = str(netrc)
+    go_proxy_tls.prepare(project or owner, owned, policy, environment)
     return environment, policy, proxy_bytes
 
 
@@ -271,11 +273,12 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     pins = json.loads(read_bytes(project / 'vendor/lsf/sdk/go-guest/toolchain.lock.json'))
     sdk_lock = json.loads(read_bytes(project / 'vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json'))
     recipe_before = file_identity(Path(__file__), 'go-module-capture-recipe')
+    trust_recipe = file_identity(Path(go_proxy_tls.__file__), 'go-proxy-public-trust-recipe')
     go = regular_path(go or Path(shutil.which('go') or 'missing-go')).resolve(strict=True)
     go_before = file_identity(go, 'native-module-resolver')
     with tempfile.TemporaryDirectory(prefix='lsf-go-module-resolve-') as temporary:
         owned = Path(temporary)
-        environment, policy, proxy_bytes = fetch_environment(owner, owned, proxy_config)
+        environment, policy, proxy_bytes = fetch_environment(owner, owned, proxy_config, project=project)
         version = run_bounded([str(go), 'version'], owned, environment, 10, 16384).stdout.decode().strip()
         if version.split()[2:3] != [pins['go']['version']]:
             raise DependencyError('go-module-resolver-version-not-pinned')
@@ -409,27 +412,37 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                 'files': [{'path': 'go.mod', 'inputDigest': digest(original['go.mod']), 'source': str(store.path(reference['digest'])),
                            'outputDigest': reference['digest']}], 'tool': file_identity(go, 'go-mod-edit'), 'selection': selected})
         native.update(selection=selected, resolverGo=go_before, resolverVersion=version,
-            recipe=recipe_before, policyDigest=digest(canonical(policy)), originalManifestDigest=digest(original['go.mod']),
+            recipe=recipe_before, proxyTrustRecipe=trust_recipe, policyDigest=digest(canonical(policy)), originalManifestDigest=digest(original['go.mod']),
             fetchManifestDigest=digest(fetch_manifest), selectedManifestDigest=digest(transformed),
             nativeSumDigest=digest(original['go.sum']), generatedCommands='never-executed',
             downloadSourceIdentityDigest=digest(canonical([{key: row.get(key) for key in ('Path', 'Version', 'Sum', 'GoModSum', 'Origin')}
                 for row in downloads])))
+        trust = go_proxy_tls.check(project, owned, policy, environment)
+        if trust is not None:
+            native['fetchTrust'] = trust
         native_bytes = canonical(native) + b'\n'
         prefix = project.relative_to(owner).as_posix() + '/' if owner != project else ''
         manifest = {'formatVersion': 1, 'language': 'go', 'selection': selected,
-            'nativeLocks': [prefix + name for name in ('go.mod', 'go.sum', 'go-resolved.lock.json')],
+            'nativeLocks': [prefix + name for name in ('go.mod', 'go.sum', 'go-resolved.lock.json')]
+                + ([prefix + trust['caFile']] if trust is not None else []),
             'artifacts': artifacts, 'transformations': transforms}
         validate_manifest(manifest, 'go')
         manifest_bytes = canonical(manifest) + b'\n'
         check = owned / 'capture-inputs'
         check.mkdir(mode=0o700)
         (check / MANIFEST).write_bytes(manifest_bytes)
-        for name, raw in {**original, 'go-resolved.lock.json': native_bytes}.items():
+        captured_native = {**original, 'go-resolved.lock.json': native_bytes}
+        if trust is not None:
+            captured_native[trust['caFile']] = source_before[trust['caFile']]
+        for name, raw in captured_native.items():
             target = check / (prefix + name)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
         result = capture(check, cache=owner / 'dependency-inputs/objects')
+        if go_proxy_tls.check(project, owned, policy, environment) != trust:
+            raise DependencyError('go-proxy-public-trust-mutated')
         if (source_files(project) != source_before or file_identity(Path(__file__), 'go-module-capture-recipe') != recipe_before
+                or file_identity(Path(go_proxy_tls.__file__), 'go-proxy-public-trust-recipe') != trust_recipe
                 or file_identity(go, 'native-module-resolver') != go_before
                 or (proxy_config is not None and read_bytes(proxy_config) != proxy_bytes)
                 or optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock):

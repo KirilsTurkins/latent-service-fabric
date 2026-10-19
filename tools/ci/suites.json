@@ -8449,6 +8449,7 @@
         "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
         "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
         "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+        "runtime::go::managed_idle::signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain",
         "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
         "runtime::go::signed_published_retry_workers_and_default_timers_keep_original_activation_owners",
@@ -8474,6 +8475,7 @@
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
+        "runtime::go::managed_idle::signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain",
         "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
         "runtime::go::signed_published_retry_workers_and_default_timers_keep_original_activation_owners",
@@ -8495,6 +8497,7 @@
         "signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
         "signed_canonical_children_use_distinct_original_tasks_and_physical_stack_retirement",
         "signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
+        "signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain",
         "signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
         "signed_java_completable_futures_use_default_activation_executor",
         "signed_java_host_imports_suspend_only_their_owned_callers",
@@ -8510,7 +8513,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 46,
+      "minimumCases": 47,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8769,7 +8772,10 @@
         "ownership::abandoned_pending_calls_refund_aggregate_but_started_failures_spend_it",
         "ownership::fuel_and_buffer_capacity_are_reserved_before_entropy_or_result_allocation",
         "ownership::original_output_owner_outlives_closed_session_and_cancelled_pending_work_skips_entropy",
+        "ownership::scalar_lowering_destination_errors_and_provider_errors_reclaim_original_calls",
+        "ownership::sequential_u64_results_retire_after_lowering_before_the_next_call",
         "ownership::uninstalled_random_import_is_rejected_before_any_store",
+        "ownership::variable_list_results_keep_the_original_store_owned_lowering_limit",
         "revocation_after_one_guest_call_denies_the_next_without_reusing_cached_authority",
         "zero_max_overflow_and_shared_aggregate_return_exact_typed_results"
       ],
@@ -8778,7 +8784,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 12,
+      "minimumCases": 15,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

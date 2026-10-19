@@ -12,6 +12,123 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class TypeScriptFetchTests(unittest.TestCase):
+    def test_urlencoded_bodies_match_reference_bytes_media_type_and_construction_snapshot(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, URLSearchParams, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+for (const [Request, Response] of [[globalThis.Request, globalThis.Response], [target.Request, target.Response]]) {
+  for (const input of ['', 'a=1&a=2', 'space=one+two&plus=%2B&unicode=caf%C3%A9']) {
+    const params = new URLSearchParams(input), expected = params.toString();
+    const request = new Request('https://example.test/', {method:'POST', body:params});
+    const response = new Response(params);
+    params.set('late', 'must-not-change-captured-bytes');
+    for (const value of [request, response]) {
+      assert.equal(value.headers.get('content-type'), 'application/x-www-form-urlencoded;charset=UTF-8');
+      assert.equal(value.bodyUsed, false);
+      const clone = value.clone();
+      assert.equal(await value.text(), expected);
+      assert.equal(value.bodyUsed, true);
+      await assert.rejects(value.arrayBuffer(), TypeError);
+      assert.equal(await clone.text(), expected);
+      assert.equal(clone.bodyUsed, true);
+    }
+    assert.equal(new Request('https://example.test/', {method:'POST', body:params,
+      headers:{'content-type':'application/custom'}}).headers.get('content-type'), 'application/custom');
+    assert.equal(new Response(params, {headers:{'content-type':'application/custom'}})
+      .headers.get('content-type'), 'application/custom');
+  }
+  const params = new URLSearchParams([['a', 'space + &='], ['a', '\u03bb'], ['empty', ''], ['surrogate', '\ud800']]);
+  const expected = 'a=space+%2B+%26%3D&a=%CE%BB&empty=&surrogate=%EF%BF%BD';
+  assert.equal(await new Response(params).text(), expected);
+  const source = new Request('https://example.test/', {method:'POST', body:'used'});
+  await source.text();
+  assert.equal(await new Request(source, {body:params}).text(), expected);
+  for (const method of ['GET', 'HEAD']) {
+    assert.throws(() => new Request('https://example.test/', {method, body:new URLSearchParams('')}), TypeError);
+  }
+}
+""")
+
+    def test_urlencoded_body_uses_native_brand_and_serializer_without_user_stringification(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, URLSearchParams, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+// Internal-list serialization is normative; Node's override behavior differs.
+for (const Response of [target.Response]) {
+  let observed = 0;
+  const params = new URLSearchParams('x=one+two&x=three');
+  params.toString = () => {observed++; throw new Error('must-not-call-user-stringifier');};
+  Object.defineProperty(params, Symbol.iterator, {get() {observed++; throw new Error('must-not-iterate-body');}});
+  assert.equal(await new Response(params).text(), 'x=one+two&x=three');
+  assert.equal(observed, 0);
+  assert.throws(() => new Response(Object.create(URLSearchParams.prototype)), TypeError);
+}
+let observed = 0;
+const forged = {[Symbol.toStringTag]:'URLSearchParams', toString() {observed++; return 'forged=bytes';}};
+assert.throws(() => new target.Response(forged), /unsupported:body-type/);
+assert.equal(observed, 0);
+const original = URLSearchParams.prototype.toString;
+try {
+  URLSearchParams.prototype.toString = () => {observed++; throw new Error('late-prototype-replacement');};
+  assert.equal(await new target.Response(new URLSearchParams('x=retained')).text(), 'x=retained');
+  assert.equal(observed, 0);
+} finally {URLSearchParams.prototype.toString = original;}
+""")
+
+    def test_urlencoded_size_limit_applies_to_encoded_bytes_before_provider_contact(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, URLSearchParams, AbortController, AbortSignal};
+let calls = 0;
+installFetch({async open() {calls++; throw new Error('unexpected-contact');}}, () => false, target);
+const exact = new URLSearchParams([['x', 'a'.repeat(1024*1024-2)]]);
+assert.equal((await new target.Response(exact).arrayBuffer()).byteLength, 1024*1024);
+const over = new URLSearchParams([['x', 'a'.repeat(1024*1024-1)]]);
+for (const construct of [body => new target.Response(body),
+  body => new target.Request('https://example.test/', {method:'POST', body})]) {
+  assert.throws(() => construct(over), /fetch-body-limit/);
+  assert.throws(() => construct(new URLSearchParams([['x', '\u03bb'.repeat(174763)]])), /fetch-body-limit/);
+}
+await assert.rejects(target.fetch('https://example.test/', {method:'POST', body:over}), /fetch-body-limit/);
+await assert.rejects(target.fetch('https://example.test/', {method:'POST', body:exact,
+  headers:{authorization:'must-not-send'}}), /unsupported:reserved-header/);
+const controller = new AbortController(), reason = {original:true};controller.abort(reason);
+await assert.rejects(target.fetch('https://example.test/', {method:'POST', body:exact,
+  signal:controller.signal}), error => error === reason);
+assert.equal(calls, 0);
+""")
+
+    def test_default_fetch_urlencoded_upload_preserves_exact_typed_metadata_chunks_and_ownership(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, URLSearchParams, AbortController, AbortSignal};
+const params = new URLSearchParams([['value', '\u03bb'.repeat(11000)], ['value', 'a b+']]);
+const expected = new TextEncoder().encode(params.toString()), requests = [], writes = [], events = [];
+const upload = {[Symbol.dispose]() {events.push('drop-upload');}};
+const body = {[Symbol.dispose]() {events.push('drop-body');}};
+installFetch({
+  async open(request) {requests.push(request);return upload;},
+  async write(owner, chunk) {assert.equal(owner,upload);assert.ok(chunk.byteLength<=65536);writes.push(chunk.slice());},
+  async finish(owner) {assert.equal(owner,upload);events.push('consume-upload');return {status:204,headers:[],body};},
+  async read(owner, maximum) {assert.equal(owner,body);assert.equal(maximum,65536);return undefined;}
+}, () => false, target);
+const request = new target.Request('https://example.test/form', {method:'POST', body:params,
+  headers:{'x-trace':'ordinary'}});
+params.set('value', 'mutation-after-construction');
+assert.equal(request.bodyUsed,false);
+const response = await target.fetch(request);
+assert.equal(request.bodyUsed,true);
+assert.deepEqual(requests,[{method:'post',url:'https://example.test/form',headers:[{name:'x-trace',value:'ordinary'}],
+  bodyLength:BigInt(expected.byteLength),bodyMediaType:'application/x-www-form-urlencoded;charset=UTF-8',
+  idempotencyKey:undefined,timeoutMillis:undefined}]);
+assert.equal(writes.length,2);
+const sent = new Uint8Array(writes.reduce((size,chunk)=>size+chunk.byteLength,0));
+let offset=0;for(const chunk of writes){sent.set(chunk,offset);offset+=chunk.byteLength;}
+assert.deepEqual(sent,expected);
+assert.deepEqual(events,['consume-upload','drop-body']);
+assert.equal(response.status,204);assert.equal(await response.text(),'');assert.equal(response.bodyUsed,false);
+await assert.rejects(target.fetch(request),/body-already-used/);
+assert.equal(requests.length,1);
+""")
+
     def test_response_error_factory_preserves_null_body_immutable_headers_and_clone(self):
         self.run_javascript(r"""
 const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};

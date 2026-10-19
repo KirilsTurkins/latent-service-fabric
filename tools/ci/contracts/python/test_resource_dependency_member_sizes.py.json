@@ -1,0 +1,24 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Require strict integer byte counts for selected dependency resource membership; retain valid sizes, unselected records and existing negative controls.",
+  "module":"tools/tests/test_resource_dependency_member_sizes.py",
+  "cases":["DependencyMemberSizes.test_capture_refuses_boolean_metadata_matching_empty_and_one_byte_payloads","DependencyMemberSizes.test_capture_refuses_floating_point_metadata_equal_to_actual_byte_counts","DependencyMemberSizes.test_integer_zero_one_binary_and_shared_bytes_keep_exact_inventory","DependencyMemberSizes.test_other_noninteger_and_wrong_size_records_keep_existing_denial","DependencyMemberSizes.test_rehashed_lock_and_index_cannot_adopt_boolean_or_float_member_sizes","DependencyMemberSizes.test_unselected_malformed_records_do_not_shadow_a_valid_captured_member"],
+  "guards":{
+    "DependencyMemberSizes.test_capture_refuses_boolean_metadata_matching_empty_and_one_byte_payloads":
+      "7fa8c0b3afa7cbad4c2cb8664c009f52b6397237a7b0603280c15a551f157457",
+    "DependencyMemberSizes.test_capture_refuses_floating_point_metadata_equal_to_actual_byte_counts":
+      "7fa8c0b3afa7cbad4c2cb8664c009f52b6397237a7b0603280c15a551f157457",
+    "DependencyMemberSizes.test_rehashed_lock_and_index_cannot_adopt_boolean_or_float_member_sizes":
+      "7fa8c0b3afa7cbad4c2cb8664c009f52b6397237a7b0603280c15a551f157457",
+    "DependencyMemberSizes.test_integer_zero_one_binary_and_shared_bytes_keep_exact_inventory":
+      "7fa8c0b3afa7cbad4c2cb8664c009f52b6397237a7b0603280c15a551f157457",
+    "DependencyMemberSizes.test_unselected_malformed_records_do_not_shadow_a_valid_captured_member":
+      "7fa8c0b3afa7cbad4c2cb8664c009f52b6397237a7b0603280c15a551f157457",
+    "DependencyMemberSizes.test_other_noninteger_and_wrong_size_records_keep_existing_denial":
+      "7fa8c0b3afa7cbad4c2cb8664c009f52b6397237a7b0603280c15a551f157457"
+  },
+  "guardDefinitions":{
+    "7fa8c0b3afa7cbad4c2cb8664c009f52b6397237a7b0603280c15a551f157457":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:9257efcaf4f7d08cbb61ae50c6c5b2cfa12b86794e3dc6278bfeb1024d5d0687","class:setup-sha256:4de43fa31b9074984151cd8fefccf0c6f149f3271a33a2367d20a1cc2451bb74"]}
+  }
+}

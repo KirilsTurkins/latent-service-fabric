@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_private_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind both offline outputs to immutable inputs and separately execute both before update/removal; no byte reproducibility claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "479c61c75523228ca899dce4ce9a0fab3cbb985f2330a70745398f7842ea0d88"
+}

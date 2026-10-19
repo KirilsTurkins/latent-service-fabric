@@ -1,9 +1,16 @@
 # Go compiler and runtime profile
 
+For ordinary `fmt`, `log` and `os` writes with explicit typed log authority, see
+[Go standard logging](go-standard-logging.md). Its signed campaign is pending.
+
 The optional [Go activation profile](../runtime/go-activation.md) adds bounded
 ordinary goroutines, channel/sync ownership, result drain and `time.Sleep` beneath
 unchanged source. This tutorial keeps the existing explicit clock/random profile;
 activation selection requires its own captured WIT import and operator grants.
+
+The optional [maintenance worker profile](../development/go-managed-idle.md)
+adds original-ledger reservations for source-pinned Go runtime workers. Its
+actual signed-node qualification remains a separate gate.
 
 For reviewed module updates and frontend test/watch, use
 [Go application module inputs](go-library-authoring.md).
@@ -366,3 +373,9 @@ requires checking the deployment grant, provider binding and allowed destination
 
 
 For separately approved source generation, follow the [Go generator workflow](go-generators.md).
+
+The [ordinary standard entropy campaign](go-standard-entropy.md) captures outside
+`crypto/rand` and `syscall.RandomGet` callers beneath the existing default
+runtime. Its source controls do not establish a signed component pass; explicit
+random authority, unchanged policy bounds and fresh physical retirement remain
+required.

@@ -133,7 +133,8 @@ def dependency_owner(artifacts: list, owner: str) -> dict:
 
 
 def dependency_member(artifact: dict, identity: str, size: int) -> None:
-    require(any(isinstance(item, dict) and item.get("digest") == identity and item.get("size") == size
+    require(any(isinstance(item, dict) and item.get("digest") == identity
+                and type(item.get("size")) is int and item["size"] == size
                 for item in artifact["files"]), "resource-dependency-bytes-not-captured", "denied")
 
 

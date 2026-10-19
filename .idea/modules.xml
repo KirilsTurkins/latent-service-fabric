@@ -67,6 +67,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-guest.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-guest.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-standard-runtime.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-standard-runtime.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-standard-runtime.stack-transform.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-standard-runtime.stack-transform.iml" group="LSF/sdk" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-standard-stdio.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-standard-stdio.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.transaction-contract.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.transaction-contract.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-client.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-client.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-guest.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-guest.iml" group="LSF/sdk" />
