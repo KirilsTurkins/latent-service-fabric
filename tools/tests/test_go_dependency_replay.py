@@ -219,6 +219,98 @@ class ReplayBoundaries(unittest.TestCase):
                 replay.compiler_materials({'materials': changed})
 
 
+class FreshRuntimeBindings(unittest.TestCase):
+    """Real receipt producers over modeled bytes; no Wasm execution is claimed."""
+    def produce(self, root, name, *, source=b'fresh application', component=b'modeled component', sdk=b'original SDK'):
+        from tools import guest_runtime_receipts as runtime
+        from tools.rust_capsule_project import inventory
+        project, built, prepared = root / ('project-' + name), root / ('build-' + name), root / 'prepared'
+        files = {'src/main.go': source, 'vendor/lsf/sdk/go-guest/runtime.go': sdk,
+                 'wit/world.wit': b'package examples:modeled; world service {}',
+                 'capsule-project.json': canonical({'world': 'examples:modeled/service'})}
+        for path, raw in files.items():
+            target = project / path; target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(raw)
+        original = {**files, 'src/main.go': b'original application',
+                    'vendor/lsf/sdk/go-guest/runtime.go': b'original SDK'}
+        original_build = prepared / 'builds/greeting'; original_build.mkdir(parents=True, exist_ok=True)
+        (original_build / 'source-inputs.json').write_bytes(inventory(original))
+        built.mkdir(); source_inputs = inventory(files)
+        (built / 'source-inputs.json').write_bytes(source_inputs)
+        (built / 'component.wasm').write_bytes(component)
+        bindings = {'modeledBindings': name}
+        (built / 'bindings.json').write_bytes(canonical(bindings))
+        binding_digest = digest(json.dumps(bindings, sort_keys=True, separators=(',', ':')).encode())
+        materials = [{'name': name, 'digest': digest(name.encode()), 'size': 1} for name in replay.COMPILER_MATERIALS]
+        materials += [{'name': 'build-recipe', 'digest': digest(b'actual selected recipe'), 'size': 22},
+                     {'name': 'source-snapshot', 'digest': digest(source_inputs), 'size': len(source_inputs)}]
+        profile = 'go-component-async-v1'
+        selected = runtime.emit(built, 'go', profile, files, source_inputs, component, materials,
+            graph=None, binding_digest=binding_digest,
+            configuration={'profile': profile, 'world': 'examples:modeled/service', 'target': 'wasip1/wasm', 'selection': {}})
+        observation = {'materials': [*materials, selected], 'source': {'snapshotDigest': digest(source_inputs)},
+                       'componentDigest': digest(component), 'parameters': {'runtime': profile}}
+        (built / 'build-observation.json').write_bytes(canonical(observation))
+        marker = {'sourceDigest': digest(source_inputs), 'componentDigest': digest(component),
+                  'observationDigest': digest(canonical(observation)), 'sdkBindingDigest': binding_digest}
+        (built / 'BUILD-COMPLETE.json').write_bytes(canonical(marker))
+        return prepared, built, project
+
+    def test_actual_producer_accepts_different_fresh_source_component_and_binding_identities(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first = self.produce(root, 'first')
+            second = self.produce(root, 'second', source=b'updated application', component=b'other modeled component')
+            observed = [replay.check_runtime_selection(*selection) for selection in (first, second)]
+            self.assertNotEqual(observed[0]['sourceDigest'], observed[1]['sourceDigest'])
+            self.assertNotEqual(observed[0]['componentDigest'], observed[1]['componentDigest'])
+            self.assertNotEqual(observed[0]['runtimeMaterial'], observed[1]['runtimeMaterial'])
+            self.assertTrue(all(value['originalSDKInputsEqual'] for value in observed))
+            self.assertNotIn('standard-runtime-selection', replay.COMPILER_MATERIALS)
+            observations = [json.loads((selection[1] / 'build-observation.json').read_bytes()) for selection in (first, second)]
+            self.assertEqual(*(replay.compiler_materials(value) for value in observations))
+
+    def test_new_component_or_source_cannot_reuse_an_old_runtime_observation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for mode in ('source', 'component'):
+                with self.subTest(mode=mode):
+                    prepared, built, project = self.produce(root, mode)
+                    if mode == 'source':
+                        (project / 'src/main.go').write_bytes(b'changed after receipt')
+                    else:
+                        (built / 'component.wasm').write_bytes(b'changed after receipt')
+                    with self.assertRaisesRegex(Exception, 'fresh-(source-inventory-drift|observation-binding)'):
+                        replay.check_runtime_selection(prepared, built, project)
+
+    def test_self_consistent_new_receipts_cannot_replace_the_original_sdk_sources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            prepared, built, project = self.produce(Path(temporary), 'changed-sdk', sdk=b'unreviewed SDK')
+            with self.assertRaisesRegex(Exception, 'original-sdk-source-drift'):
+                replay.check_runtime_selection(prepared, built, project)
+
+    def test_rehashed_wrong_profile_and_unbound_runtime_material_still_refuse(self):
+        from tools.dev_workflow.common import encode
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for mode in ('profile', 'material'):
+                with self.subTest(mode=mode):
+                    prepared, built, project = self.produce(root, mode)
+                    path = built / 'standard-runtime-selection.json'
+                    value = json.loads(path.read_bytes())
+                    value['profile'] = 'go-component-activation-v1'
+                    value['identity'] = digest(encode({key: item for key, item in value.items() if key != 'identity'}))
+                    raw = canonical(value); path.write_bytes(raw)
+                    if mode == 'profile':
+                        observation = json.loads((built / 'build-observation.json').read_bytes())
+                        observation['materials'][-1] = {'name': 'standard-runtime-selection', 'digest': digest(raw), 'size': len(raw)}
+                        (built / 'build-observation.json').write_bytes(canonical(observation))
+                        marker = json.loads((built / 'BUILD-COMPLETE.json').read_bytes())
+                        marker['observationDigest'] = digest(canonical(observation))
+                        (built / 'BUILD-COMPLETE.json').write_bytes(canonical(marker))
+                    with self.assertRaisesRegex(Exception, 'runtime-selection-stale-profile|fresh-runtime-material'):
+                        replay.check_runtime_selection(prepared, built, project)
+
+
 class ClosedNativeFailure(unittest.TestCase):
     def test_actual_authoring_producer_reason_survives_but_credential_shaped_values_do_not(self):
         with tempfile.TemporaryDirectory() as temporary:

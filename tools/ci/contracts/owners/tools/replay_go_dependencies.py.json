@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_go_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit two-line reviewed NETRC authority/userinfo material delta; all native SDK and compiler-tool bytes remain original.",
+  "reviewReason": "Compare seven immutable tool/SDK materials and independently validate each fresh source/component/graph-bound runtime receipt.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "64cfb0ff2ef26224d88fcf712022bfdc5a7b58ff57e0f5f84950138318482c89"
+  "sha256": "f829040080660c2915ed1649b36c3531f5c49f2136956bc075d7d942fd7b2a63"
 }

@@ -14,7 +14,7 @@
       {
         "uses": "actions/checkout",
         "with": {
-          "fetch-depth": 5,
+          "fetch-depth": 1,
           "persist-credentials": false
         }
       },
@@ -40,7 +40,7 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Retrieve only original qualified products and pinned reproduction tools",
-        "run": "python3 tools/replay_go_dependencies.py --output \"$RUNNER_TEMP/go-dependency-replay-inputs\""
+        "run": "git fetch --no-tags --depth=1 origin 3050cd9d33d74eed5d746f13fbb0e9125376a3b3\npython3 tools/replay_go_dependencies.py --output \"$RUNNER_TEMP/go-dependency-replay-inputs\"\n"
       },
       {
         "name": "Prepare the exact retained Go compiler without rebuilding native products",
@@ -78,7 +78,7 @@
   },
   "jobId": "dependency-replay",
   "kind": "job",
-  "reviewReason": "Retain full original namespace prerequisite and required native generator controls before the bounded fixed-source replay.",
+  "reviewReason": "Fetch immutable compiled source directly; retain exact namespace prerequisites, mandatory generator controls and all replay bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

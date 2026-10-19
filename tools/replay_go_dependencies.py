@@ -18,7 +18,7 @@ if __package__ in {None, ''}:
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_capsules import inputs
-from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_json, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_file, read_json, write_json
 ORIGINAL_HEAD = '3050cd9d33d74eed5d746f13fbb0e9125376a3b3'
 ORIGINAL_RUN = 39298177972
 ORIGINAL_JOB = 118216070006
@@ -366,7 +366,7 @@ def prepare(output):
 
 
 COMPILER_MATERIALS = frozenset(('go', 'componentize-go', 'wasm-tools', 'contracts-tool', 'packager',
-                              'toolchain-config', 'dependency-lock', 'standard-runtime-selection'))
+                              'toolchain-config', 'dependency-lock'))
 FIXTURE_MATERIALS = ('tools/replay_go_dependencies.py', 'tools/qualify_go_private_dependencies.py',
     'tools/go_private_proxy_fixture.py', 'tools/go_generator_fixture.py', 'tools/go_dependency_fixture.py',
     'tools/run_rust_capsule_workflow.py')
@@ -462,6 +462,44 @@ def check_compilation(prepared, built, original_materials):
             'go-replay-offline-component-required')
 
 
+def check_runtime_selection(prepared, built, project):
+    from tools import guest_dependency_inputs, guest_runtime_receipts as runtime
+    captured = guest_dependency_inputs.capture_source(project, 'go')
+    source = read_file(built / 'source-inputs.json', 4 * 1024**2)
+    require(source == inventory(captured.files), 'go-replay-fresh-source-inventory-drift')
+    prefix = 'vendor/lsf/sdk/go-guest/'
+    original = read_json(prepared / 'builds/greeting/source-inputs.json')
+    sdk = {name: row for name, row in json.loads(source).items() if name.startswith(prefix)}
+    require(sdk and sdk == {name: row for name, row in original.items() if name.startswith(prefix)},
+            'go-replay-original-sdk-source-drift')
+    component = read_file(built / 'component.wasm', 64 * 1024**2)
+    observation = read_json(built / 'build-observation.json')
+    marker = read_json(built / 'BUILD-COMPLETE.json')
+    require(marker['sourceDigest'] == observation['source']['snapshotDigest'] == digest(source)
+            and marker['componentDigest'] == observation['componentDigest'] == digest(component)
+            and marker['observationDigest'] == digest(read_file(built / 'build-observation.json')),
+            'go-replay-fresh-observation-binding')
+    raw = read_file(built / 'standard-runtime-selection.json', runtime.MAX_BYTES)
+    material = {'name': 'standard-runtime-selection', 'digest': digest(raw), 'size': len(raw)}
+    require([row for row in observation['materials'] if row['name'] == material['name']] == [material],
+            'go-replay-fresh-runtime-material')
+    materials = [row for row in observation['materials'] if row['name'] != material['name']]
+    value = runtime.read(raw)
+    runtime.verify_build(value, 'go', captured.files, source, component, materials)
+    bindings = read_json(built / 'bindings.json', 16 * 1024**2)
+    bound = digest(json.dumps(bindings, sort_keys=True, separators=(',', ':')).encode())
+    require(marker['sdkBindingDigest'] == bound, 'go-replay-fresh-binding-output')
+    graph = runtime.captured_graph(captured.files)
+    document = json.loads(captured.files['capsule-project.json'])
+    runtime.validate(value, result=bound, configuration={'profile': value['profile'],
+        'world': document['world'], 'target': 'wasip1/wasm', 'selection': graph['selection'] if graph is not None else {}})
+    require(observation['parameters']['runtime'] == value['profile'], 'go-replay-fresh-profile-binding')
+    captured.check_unchanged()
+    return {'status': 'passed', 'profile': value['profile'], 'sourceDigest': value['sourceDigest'],
+            'componentDigest': value['componentDigest'], 'graphDigest': value['graphDigest'],
+            'runtimeMaterial': material, 'bindingDigest': bound, 'originalSDKInputsEqual': True}
+
+
 def sign_node(commands, prepared, products, built, output, label, *, generator=None, private=None):
     from tools.run_rust_capsule_workflow import run
     require(not (generator is not None and private is not None), 'go-replay-probe-selection')
@@ -536,11 +574,12 @@ def generated_steps(prepared, selected_baseline, output):
     captured = libraries(project, output / 'outside-libraries', go)
     generated = generate(project, output / 'outside-generator')
     source = inventory(source_files(project))
-    builds, nodes = [], []
+    builds, nodes, runtime_bindings = [], [], []
     for label in ('initial', 'rebuilt'):
         artifact = build(project, output / ('build-' + label), products['examples/capsule_contracts'],
                          products['examples/package'], 'https://github.com/' + REPOSITORY)
         check_compilation(prepared, artifact, compiler)
+        runtime_bindings.append(check_runtime_selection(prepared, artifact, project))
         raw = (project / 'go-generated-inputs.json').read_bytes()
         material = {'name': 'go-generator-inputs', 'digest': digest(raw), 'size': len(raw)}
         require([row for row in read_json(artifact / 'build-observation.json')['materials']
@@ -556,6 +595,7 @@ def generated_steps(prepared, selected_baseline, output):
     result = {'schemaVersion': 'latent.go.generator-replay.v1', 'status': 'passed', 'originalBaseline': original,
               'libraries': captured, 'generator': generated, 'nodes': nodes,
               'builds': [read_json(p / 'BUILD-COMPLETE.json') for p in builds],
+              'freshRuntimeBindings': runtime_bindings,
               'fixtureMaterials': driver, 'nativeProductsCompiled': False, 'freshGeneratedComponentsCompiled': True,
               'componentReproducibility': 'not-claimed', 'fullTicketQualification': False}
     write_json(output / 'qualification.json', result)
@@ -740,13 +780,14 @@ def private(prepared, selected_baseline, output):
         stage = 'actual-authenticated-native-acquisition'
         phases, captured = maintained.capture(output, commands, go)
         write_json(output / 'capture.json', captured)
-        builds, nodes = [], []
+        builds, nodes, runtime_bindings = [], [], []
         for ordinal, (project, lock, version, removed) in enumerate(phases):
             stage = 'offline-build-' + str(ordinal)
             source = inventory(source_files(project))
             artifact = build(project, output / ('build-' + str(ordinal)), products['examples/capsule_contracts'],
                              products['examples/package'], 'https://github.com/' + REPOSITORY)
             check_compilation(prepared, artifact, compiler)
+            runtime_bindings.append(check_runtime_selection(prepared, artifact, project))
             require(source == inventory(source_files(project))
                     and maintained.dependencies.verify_inputs(project, 'go').lock == lock,
                     'private-Go-offline-build-mutated-inputs')
@@ -754,6 +795,7 @@ def private(prepared, selected_baseline, output):
                 rebuilt = build(project, output / 'offline-rebuild', products['examples/capsule_contracts'],
                                 products['examples/package'], 'https://github.com/' + REPOSITORY)
                 check_compilation(prepared, rebuilt, compiler)
+                runtime_bindings.append(check_runtime_selection(prepared, rebuilt, project))
                 require(read_json(artifact / 'BUILD-COMPLETE.json')['componentDigest']
                         == read_json(rebuilt / 'BUILD-COMPLETE.json')['componentDigest'],
                         'private-Go-offline-component-not-identical')
@@ -768,6 +810,7 @@ def private(prepared, selected_baseline, output):
         result = {'schemaVersion': 'latent.go.private-replay.v1', 'status': 'passed',
                   'originalBaseline': original, 'capture': captured, 'builds': builds, 'nodes': nodes,
                   'materials': materials, 'fixtureMaterials': driver,
+                  'freshRuntimeBindings': runtime_bindings,
                   'nativeProductsCompiled': False, 'freshPrivateComponentsCompiled': True,
                   'cleanHost': False, 'hermetic': False, 'publisherAuthenticated': False,
                   'fullTicketQualification': False}

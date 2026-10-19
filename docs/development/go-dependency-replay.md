@@ -25,6 +25,14 @@ before any authoring or compilation. Fixed-range extraction selects only these p
 the original public Go/compiler tool artifacts; no signing keys are retrieved.
 No Cargo/native product compilation or compiler bootstrap is performed.
 
+The source tree is fetched by its immutable original commit, independently of
+diagnostic-branch history depth. Seven fixed tool/SDK materials remain equal to
+the original observation, including the SDK's runtime dependency lock. The new
+`standard-runtime-selection` receipt is application-bound and must not equal the
+old greeting's receipt: its own source, component, graph, profile, generated WIT
+bindings and complete material set are validated instead. Original SDK source
+inventory still must match exactly, and each fresh runtime binding is recorded.
+
 A fresh normal27-call signed node must pass first. The private campaign then uses
 the maintained HTTPS authentication, CA capture, native authoring, refusal and
 original-removal fixture unchanged. It builds its actual offline components and

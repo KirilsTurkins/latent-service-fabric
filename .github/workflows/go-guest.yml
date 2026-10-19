@@ -605,7 +605,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 5
+          fetch-depth: 1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
@@ -623,7 +623,9 @@ jobs:
       - name: Retrieve only original qualified products and pinned reproduction tools
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 tools/replay_go_dependencies.py --output "$RUNNER_TEMP/go-dependency-replay-inputs"
+        run: |
+          git fetch --no-tags --depth=1 origin 3050cd9d33d74eed5d746f13fbb0e9125376a3b3
+          python3 tools/replay_go_dependencies.py --output "$RUNNER_TEMP/go-dependency-replay-inputs"
       - name: Prepare the exact retained Go compiler without rebuilding native products
         shell: bash
         run: |
