@@ -45,7 +45,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, dotnet_standard_logging=False, go_standard_entropy=False):
+        go_standard_logging=False, rust_standard_stdio=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False):
     require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
             'authoring-typescript-console-language')
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
@@ -71,6 +71,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(captured_rust_matrix) is bool and (not captured_rust_matrix or language == "rust")
             and not (captured_rust_matrix and (rust_compatibility or captured_git_component or captured_dependency_recovery)),
             "authoring-Rust-matrix-language")
+    require(type(captured_go_private) is bool and (not captured_go_private or language == 'go')
+            and not (captured_go_private and captured_dependency_recovery), 'authoring-Go-private-language')
+    require(type(approved_go_generator) is bool and (not approved_go_generator or language == 'go'),
+            'authoring-Go-generator-language')
     require(type(go_standard_entropy) is bool and (not go_standard_entropy or language == 'go')
             and not (go_standard_entropy and (captured_dependency_recovery or go_standard_logging)), 'authoring-go-standard-entropy-language')
     require(type(dotnet_standard_logging) is bool and (not dotnet_standard_logging or language == 'dotnet'),
@@ -222,6 +226,14 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if go_standard_logging:
                         from tools.go_standard_logging_probe import probe as probe_go_logging
                         probe_go_logging(client, targets['greeting'], probe, result, len(names))
+                    if captured_go_private:
+                        from tools.go_private_proxy_fixture import probe as probe_private_go
+                        probe_private_go(client, targets['greeting'], probe, result, len(names),
+                                         read_json(fixture / 'private-Go-probe.json'))
+                    if approved_go_generator:
+                        from tools.go_generator_fixture import probe as generator_probe
+                        generator_probe(client, targets['greeting'], probe, result, len(names),
+                                        read_json(fixture / 'go-generator-probe.json'))
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import probe as entropy_probe
                         entropy_probe(client, targets['greeting'], probe, result, len(names))

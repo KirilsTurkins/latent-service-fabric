@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "GeneratedGoFixture.test_changed_template_stops_before_any_generator_request",
+    "GeneratedGoFixture.test_generator_program_is_valid_and_uses_only_selected_inputs_for_outputs",
+    "GeneratedGoFixture.test_real_cli_exact_request_negatives_adoption_and_offline_validation",
+    "SignedGeneratedResults.test_exact_generated_utf8_dependent_values_and_identity_are_observed_with_normal_idle",
+    "SignedGeneratedResults.test_malformed_or_unknown_selection_refuses_before_any_node_call",
+    "SignedGeneratedResults.test_new_runner_selector_is_default_off_strict_boolean_and_go_only_before_effects",
+    "SignedGeneratedResults.test_qualification_requires_explicit_c_or_go_captured_selection_before_dispatch",
+    "SignedGeneratedResults.test_stale_route_unreaped_or_effectful_results_refuse",
+    "SignedGeneratedResults.test_wrong_values_or_rune_counts_cannot_replace_generated_byte_length_results"
+  ],
+  "guards": {
+    "GeneratedGoFixture.test_changed_template_stops_before_any_generator_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GeneratedGoFixture.test_generator_program_is_valid_and_uses_only_selected_inputs_for_outputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GeneratedGoFixture.test_real_cli_exact_request_negatives_adoption_and_offline_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_exact_generated_utf8_dependent_values_and_identity_are_observed_with_normal_idle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:1e16990e6722dd66657da5cee380e07c196ad116b262e5f1f5e906056fb406f3"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_malformed_or_unknown_selection_refuses_before_any_node_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:1e16990e6722dd66657da5cee380e07c196ad116b262e5f1f5e906056fb406f3"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_new_runner_selector_is_default_off_strict_boolean_and_go_only_before_effects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:1e16990e6722dd66657da5cee380e07c196ad116b262e5f1f5e906056fb406f3"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_qualification_requires_explicit_c_or_go_captured_selection_before_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:1e16990e6722dd66657da5cee380e07c196ad116b262e5f1f5e906056fb406f3"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_stale_route_unreaped_or_effectful_results_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:1e16990e6722dd66657da5cee380e07c196ad116b262e5f1f5e906056fb406f3"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_wrong_values_or_rune_counts_cannot_replace_generated_byte_length_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e4511d0d585a7ca5774212d04f366f272314d8dd49592a995b765ae2a8719c4",
+        "class:setup-sha256:1e16990e6722dd66657da5cee380e07c196ad116b262e5f1f5e906056fb406f3"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_generator_fixture.py",
+  "reviewReason": "Add explicit generated Go value, exact approval, source adoption and signed probe controls without removing earlier cases or skips.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
