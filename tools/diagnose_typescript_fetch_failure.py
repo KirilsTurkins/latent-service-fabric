@@ -26,17 +26,104 @@ from tools.phase2_operator_process import Process, WorkflowError, require, write
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file
 
-TESTED = 'ba62bf8f266e589971a03e496b18b8f2cb5e5d85'
-COMPONENT = {'sha256': 'sha256:1ec1e87b2262e20b2b00139f2e29bf89f2fa922b056cb0b5dc84cc1ef1e2f755',
-             'bytes': 12341403}
-PACKAGE_INPUTS = 'sha256:d55a397c3998e283356c0da054037e075194bae60d2dcc8c2830826baf8c1c89'
-FAILED = 'sha256:d3fe0cc024f4da295af558923ecf547204ee46d36f200a7f47a813d6e369b684'
+TESTED = '0754391a20027a539f1d5b7c0426719a4bd6c3c1'
+COMPONENT = {'sha256': 'sha256:467e52be57ded5ed89a0f63bbaa72f0b7e5d4921dd70168859ee326b1d9d59a9',
+             'bytes': 12350291}
+PACKAGE_INPUTS = 'sha256:f49ba2474ab58f5ba5186cf4303f62d03c84aaf14acddd6bd2a8f0bb094aef25'
+FAILED = 'sha256:2ee91078f9d0b52f625a50e6a3c3e46b9d33f17e4e0fc85011b91a5bb9d51489'
 WIT_INPUTS = {
     'wit/deps/activation/package.wit': 'wit/platform/activation-runtime/package.wit',
     'wit/deps/application/world.wit': fetch.FIXTURE+'/world.wit',
     'wit/deps/clock/package.wit': 'wit/platform/clock/package.wit',
     'wit/deps/http-v3/package.wit': 'wit/platform/http-v3/package.wit',
 }
+
+
+REGISTER_PATH = 'crates/latent-wasmtime/src/host/runtime.rs'
+REGISTER_PREFIX = b'LSF_FETCH_REGISTER_FAILURE '
+OWNER_KINDS = frozenset({'task', 'managed-idle-worker', 'executor', 'queued-work', 'wait', 'timer', 'result', 'native'})
+ERROR_CODES = frozenset({'unavailable', 'permission-denied', 'resource-exhausted', 'cancelled',
+                         'deadline', 'invalid-token', 'invalid-state'})
+REGISTER_BEFORE = """            let owner = table
+                .runtime
+                .register(owner_kind(kind), continuation.map(token))?;
+"""
+REGISTER_AFTER = """            let kind_label = match &kind {
+                wit::OwnerKind::Task => "task",
+                wit::OwnerKind::ManagedIdleWorker => "managed-idle-worker",
+                wit::OwnerKind::Executor => "executor",
+                wit::OwnerKind::QueuedWork => "queued-work",
+                wit::OwnerKind::Wait => "wait",
+                wit::OwnerKind::Timer => "timer",
+                wit::OwnerKind::Result => "result",
+                wit::OwnerKind::Native => "native",
+            };
+            let registered = table.runtime.register(owner_kind(kind), continuation.map(token));
+            if let Err(error) = &registered {
+                // Private observer only. register returned and released its lock.
+                // Read only the existing bounded counters; retain no token/text.
+                let owners = table.runtime.snapshot().owners;
+                static RECORDS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+                if owners.iter().all(|count| *count <= 8192)
+                    && owners.iter().map(|count| u64::from(*count)).sum::<u64>() <= 8192
+                    && RECORDS.fetch_update(std::sync::atomic::Ordering::Relaxed,
+                        std::sync::atomic::Ordering::Relaxed,
+                        |seen| if seen < 16 { Some(seen + 1) } else { None }).is_ok()
+                {
+                    let code = match &error.code {
+                        PlatformErrorCode::Unavailable => "unavailable",
+                        PlatformErrorCode::PermissionDenied | PlatformErrorCode::AdmissionRejected => "permission-denied",
+                        PlatformErrorCode::ResourceExhausted => "resource-exhausted",
+                        PlatformErrorCode::Cancelled => "cancelled",
+                        PlatformErrorCode::DeadlineExceeded => "deadline",
+                        PlatformErrorCode::InvalidArgument => "invalid-token",
+                        _ => "invalid-state",
+                    };
+                    eprintln!("LSF_FETCH_REGISTER_FAILURE {}", serde_json::json!({
+                        "ownerKind": kind_label, "errorCode": code, "owners": owners
+                    }));
+                }
+            }
+            let owner = registered?;
+"""
+
+
+def registration_overlay(root: Path, output: Path) -> tuple[dict, tuple[Path, Path]]:
+    original = read_file(root/REGISTER_PATH)
+    text = original.decode()
+    require(text.count(REGISTER_BEFORE) == 1, 'fetch-frame-registration-preimage')
+    derived = text.replace(REGISTER_BEFORE, REGISTER_AFTER, 1).encode()
+    private = output/'runtime-registration.rs'
+    private.write_bytes(derived)
+    return {REGISTER_PATH: {'original': digest(original), 'private': digest(derived)}}, (private, root/REGISTER_PATH)
+
+
+def registration_failures(data: bytes) -> dict:
+    require(type(data) is bytes and len(data) <= 262144, 'fetch-register-capture-limit')
+    rows = [line[len(REGISTER_PREFIX):] for line in data.splitlines() if line.startswith(REGISTER_PREFIX)]
+    require(len(rows) <= 16 and all(len(row) <= 512 for row in rows), 'fetch-register-record-limit')
+    records = []
+    for row in rows:
+        value = json.loads(row)
+        require(isinstance(value, dict) and set(value) == {'ownerKind', 'errorCode', 'owners'}
+            and value['ownerKind'] in OWNER_KINDS and value['errorCode'] in ERROR_CODES
+            and isinstance(value['owners'], list) and len(value['owners']) == 7
+            and all(type(n) is int and 0 <= n <= 8192 for n in value['owners'])
+            and sum(value['owners']) <= 8192, 'fetch-register-closed-record')
+        records.append(value)
+    return {'scope': 'private-host-registration-refusals-only', 'records': records,
+            'qualification': False, 'causeInferredFromAbsence': False}
+
+
+def private_build_command(root, overlays, environment, tools, context):
+    require(len(overlays) == 3 and [original.relative_to(root).as_posix() for _, original in overlays]
+            == [*frames.PATHS, REGISTER_PATH], 'fetch-frame-three-overlay-set')
+    command = frames.build_command(root, overlays[:2], environment, tools, context)
+    # Keep the reviewed host boundary and all ordinary build/preflight arguments.
+    # The sole addition is the exact third read-only source overlay.
+    index = command.index('--chdir')
+    private, original = overlays[2]
+    return command[:index] + ['--ro-bind', str(private), str(original)] + command[index:]
 
 
 def package_materials(artifact: Path) -> dict[str, bytes]:
@@ -107,6 +194,11 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
             cleanup.callback(peer.close)
             startup = peer.line(min(expires, time.monotonic()+10))
             config = fetch.configuration(work/'node', signed, startup, credential)
+            configured = json.loads(read_file(config))['providers']['activationRuntime']['limits']
+            require(isinstance(configured, dict) and set(configured) == set(fetch.OWNER_LIMITS)
+                    and all(type(value) is int and 0 <= value <= 8192 for value in configured.values()),
+                    'fetch-frame-actual-runtime-owner-limits')
+            record['runtimeOwnerLimits'] = configured
             service = fetch.connect(client, binaries['latentd'], work/'node', config, 'examples', 1)
             cleanup.callback(service.close)
             source = signed/'typescript-fetch'
@@ -123,6 +215,10 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
     finally:
         if service is not None:
             record['nodeReaped'] = service.owner.finished
+            try:
+                record['registrationFailures'] = registration_failures(bytes(service.buffers[1]))
+            except (ValueError, TypeError, KeyError, WorkflowError):
+                record['registrationCapture'] = 'unavailable-or-refused'
             # Only the existing strict numeric parser observes private stderr.
             # No raw buffer is written to any artifact, including failures.
             try:
@@ -140,7 +236,7 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         'qualification': False, 'status': 'incomplete', 'stage': 'inputs', 'testedCommit': TESTED,
         'component': COMPONENT, 'rawNativeOutputRetained': False, 'privateBinaryPublished': False,
         'helper': file_identity(Path(__file__)),
-        'limits': {'overallSeconds': 600, 'buildSeconds': 450, 'frames': 32}}
+        'limits': {'overallSeconds': 600, 'buildSeconds': 450, 'frames': 32, 'registrationFailures': 16, 'ownerCount': 8192}}
     try:
         head = run_bounded_result(['git', 'rev-parse', 'HEAD'], ROOT, build_environment(output), 10, 4096)
         require(head.returncode == 0 and head.stdout.decode().strip() == TESTED,
@@ -154,7 +250,11 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         context = host.frame_host_context()
         tools = {name: shutil.which(name) for name in ('cargo', 'bwrap', 'sudo', 'setpriv', 'env')}
         require(all(tools.values()), 'fetch-frame-existing-host-tools')
-        sources, overlays = frames.overlay_sources(ROOT, fresh(output/'source-overlays'))
+        overlay_root = fresh(output/'source-overlays')
+        sources, overlays = frames.overlay_sources(ROOT, overlay_root)
+        registration_sources, registration = registration_overlay(ROOT, overlay_root)
+        sources.update(registration_sources)
+        overlays.append(registration)
         record['sourceOverlays'] = sources
         record['stage'] = 'private-build'
         environment = build_environment(output)
@@ -164,7 +264,7 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
             CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
             CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true', CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
             CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
-        built = run_bounded_result(frames.build_command(ROOT, overlays, environment, tools, context),
+        built = run_bounded_result(private_build_command(ROOT, overlays, environment, tools, context),
             ROOT, environment, min(450, deadline-time.monotonic()), 1048576)
         record.update(frames.private_build_observation(built))
         require(built.returncode == 0 and record['hostPreflight'] is not None,
