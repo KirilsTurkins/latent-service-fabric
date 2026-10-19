@@ -335,8 +335,10 @@ class Closure:
         for row in self.lock["nativeLocks"]:
             if read_bytes(self.project / row["path"]) != self.store.get(row["digest"], row["size"]):
                 raise DependencyError("dependency-native-lock-mutated")
+        manifest = decode_json(self.manifest)
+        declared = {item["id"]: item for item in manifest["artifacts"]}
         for item in self.lock["artifacts"]:
-            self.store.get(**item["original"])
+            verify_artifact(item, declared[item["id"]], manifest["transformations"], self.store)
             destination = self.work / item["mount"]
             for row in item["files"]:
                 target = destination if item["format"] == "file" else destination / row["path"]

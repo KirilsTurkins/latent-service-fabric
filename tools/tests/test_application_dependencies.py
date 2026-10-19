@@ -289,5 +289,90 @@ class Archives(unittest.TestCase):
                 archive_files(self.zip([("a", b"x" * 11)]), "zip")
 
 
+class TransformedClosureRechecks(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        self.project, source = root / "project", root / "original-library"
+        self.project.mkdir(); source.mkdir()
+        (source / "pure.c").write_bytes(b"int value(void) { return 1; }\n")
+        (self.project / "native.lock").write_bytes(b"unknown-library/1.0.0")
+        manifest = {"formatVersion": 1, "language": "c", "selection": {"target": "wasm32"},
+                    "nativeLocks": ["native.lock"], "artifacts": [{"id": "unknown-library/1.0.0",
+                    "role": "application", "format": "directory", "mount": "dependencies/library",
+                    "source": {"path": "../original-library"}, "dependencies": [], "metadata": {}}],
+                    "transformations": []}
+        (self.project / MANIFEST).write_bytes(canonical(manifest))
+        initial = capture(self.project)["artifacts"][0]
+        self.original = initial["files"][0]
+        self.store = Store(self.project / "dependency-inputs/objects")
+        before = initial
+        for ordinal in (2, 3):
+            payload = f"int value(void) {{ return {ordinal}; }}\n".encode()
+            replacement = self.project / f"runtime-port-{ordinal}.c"
+            replacement.write_bytes(payload)
+            after = {"path": "pure.c", **self.store.put(payload)}
+            manifest["transformations"].append({"id": f"runtime-port/v{ordinal}",
+                "artifact": "unknown-library/1.0.0", "inputDigest": before["treeDigest"],
+                "outputDigest": tree_identity([after]), "files": [{"path": "pure.c",
+                "inputDigest": before["files"][0]["digest"], "source": replacement.name,
+                "outputDigest": after["digest"]}], "tool": {"name": "captured-replacement", "version": "1"},
+                "selection": {"target": "wasm32"}})
+            before = {"treeDigest": tree_identity([after]), "files": [after]}
+            if ordinal == 2:
+                self.intermediate = after
+        (self.project / MANIFEST).write_bytes(canonical(manifest))
+        (self.project / LOCK).write_bytes(canonical(capture(self.project)))
+        self.documents = {name: (self.project / name).read_bytes() for name in (MANIFEST, LOCK, "native.lock")}
+        (source / "pure.c").unlink(); source.rmdir()
+        self.assertFalse(source.exists())
+        work, output = root / "work", root / "output"
+        work.mkdir(); output.mkdir()
+        with patch("tools.application_dependencies.fetch", side_effect=AssertionError("offline build fetched")):
+            self.closure = prepare(self.project, work, output, "c")
+        self.receipt_path = output / "application-dependencies.json"
+        self.receipt_bytes = self.receipt_path.read_bytes()
+        self.selected = before["files"][0]
+
+    def unchanged_selection(self):
+        self.assertEqual((self.closure.work / "dependencies/library/pure.c").read_bytes(),
+                         b"int value(void) { return 3; }\n")
+        self.assertEqual(self.receipt_path.read_bytes(), self.receipt_bytes)
+        self.assertEqual({name: (self.project / name).read_bytes() for name in self.documents}, self.documents)
+
+    def test_changed_original_directory_preimage_refuses_post_build_success(self):
+        self.store.path(self.original["digest"]).write_bytes(b"changed original preimage")
+        with self.assertRaisesRegex(DependencyError, "dependency-artifact-integrity"):
+            self.closure.check_unchanged()
+        self.unchanged_selection()
+
+    def test_missing_original_directory_preimage_refuses_post_build_success(self):
+        self.store.path(self.original["digest"]).unlink()
+        with self.assertRaisesRegex(DependencyError, "dependency-artifact-missing-resolve-explicitly"):
+            self.closure.check_unchanged()
+        self.unchanged_selection()
+
+    def test_changed_intermediate_transform_refuses_post_build_success(self):
+        self.store.path(self.intermediate["digest"]).write_bytes(b"changed intermediate output")
+        with self.assertRaisesRegex(DependencyError, "dependency-patch-output-mismatch"):
+            self.closure.check_unchanged()
+        self.unchanged_selection()
+
+    def test_valid_transformation_chain_stays_offline_without_original_sources(self):
+        with patch("tools.application_dependencies.fetch", side_effect=AssertionError("offline recheck fetched")):
+            self.closure.check_unchanged()
+        self.assertEqual(self.store.get(self.original["digest"], self.original["size"]),
+                         b"int value(void) { return 1; }\n")
+        self.assertEqual(self.store.get(self.intermediate["digest"], self.intermediate["size"]),
+                         b"int value(void) { return 2; }\n")
+        receipt = json.loads(self.receipt_bytes)
+        self.assertEqual(len(receipt["transformations"]), 2)
+        self.assertEqual(receipt["artifacts"][0]["files"], [self.selected])
+        self.assertFalse(receipt["networkResolution"])
+        self.assertFalse(receipt["hermetic"])
+        self.unchanged_selection()
+
+
 if __name__ == "__main__":
     unittest.main()
