@@ -36,6 +36,7 @@ BLOCKERS = frozenset(CLASSIFICATIONS) - {
 PHASES = ("resolution", "compile", "link", "initialization", "invocation", "retirement")
 EVIDENCE = ("final-component", "compiler", "actual-component", "native-reference", "model", "not-evaluated")
 RESOURCES = ("tasks", "threads", "frames", "queues", "timers", "guest-memory", "native-memory", "provider", "fuel")
+OBSERVED_OUTCOMES = frozenset({"denied-grant", "resource-exhausted", "deadline", "cancelled", "external-uncertain"})
 TOKEN = re.compile(r"[A-Za-z0-9_.:/@+\[\]-]{1,192}")
 
 
@@ -91,6 +92,10 @@ def validate_finding(value: dict) -> None:
         require(value["evidence"] in {"actual-component", "native-reference"}
                 and value["phase"] in {"initialization", "invocation", "retirement"},
                 "compatibility-reached-evidence")
+    if value["classification"] in OBSERVED_OUTCOMES:
+        require(value["evidence"] in {"actual-component", "native-reference"}
+                and value["phase"] in {"initialization", "invocation", "retirement"},
+                "compatibility-observed-outcome-evidence")
 
 
 def status(findings: list[dict], omitted: int) -> str:

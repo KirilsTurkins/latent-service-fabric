@@ -106,6 +106,14 @@ limit; readers and text presentation also reject unbound claims. These checks
 validate the report's evidence labels and identity, not the truth of an execution
 receipt or the all-language compatibility matrix.
 
+Observed grant denial, resource exhaustion, deadline, cancellation and uncertain
+external completion also require initialization, invocation or retirement evidence
+labelled `actual-component` or `native-reference`. Compiler, final-import, model
+and unevaluated observations cannot assert those runtime outcomes. A native
+reference remains a reference, not proof that the emitted component behaved the
+same way. Missing grants, unqualified profiles and unproven lifecycle remain
+separate conservative findings when execution evidence is unavailable.
+
 The current package report inspects the final interface names. It conservatively
 leaves runtime initialization, transitive callbacks, actual provider/grant
 configuration and retirement unproven. Successful compilation does not qualify

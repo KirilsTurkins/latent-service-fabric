@@ -522,5 +522,35 @@ class ReachedEvidenceFence(unittest.TestCase):
         self.assertEqual(unknown['status'], 'incomplete')
 
 
+class ObservedOutcomeEvidenceFence(unittest.TestCase):
+    def test_static_and_unevaluated_evidence_cannot_claim_runtime_outcomes(self):
+        for classification in c.OBSERVED_OUTCOMES:
+            for phase, evidence in (('compile', 'compiler'), ('link', 'final-component'),
+                                    ('initialization', 'model'), ('invocation', 'not-evaluated')):
+                with self.subTest(classification=classification, phase=phase, evidence=evidence), \
+                        self.assertRaisesRegex(DevError, '^compatibility-observed-outcome-evidence$'):
+                    c.finding(classification, phase, evidence)
+
+    def test_rehashed_static_outcome_claims_fail_reader_and_presentation(self):
+        for classification in c.OBSERVED_OUTCOMES:
+            value = sample([c.finding(classification, 'invocation', 'actual-component')])
+            value['findings'][0]['evidence'] = 'model'
+            value['identity'] = digest(encode({key: item for key, item in value.items() if key != 'identity'}))
+            for read in (lambda: c.read(encode(value)), lambda: c.present(value)):
+                with self.subTest(classification=classification), \
+                        self.assertRaisesRegex(DevError, '^compatibility-observed-outcome-evidence$'):
+                    read()
+
+    def test_actual_and_native_outcomes_keep_distinct_component_provenance(self):
+        for classification in c.OBSERVED_OUTCOMES:
+            for evidence, component in (('actual-component', DIGEST), ('native-reference', None)):
+                with self.subTest(classification=classification, evidence=evidence):
+                    row = c.finding(classification, 'retirement', evidence)
+                    value = c.report('rust', DIGEST, component, PROFILE, [], [row])
+                    self.assertEqual(c.read(encode(value)), value)
+                    self.assertIn(evidence, c.present(value))
+                    self.assertEqual(value['componentDigest'], component)
+
+
 if __name__ == "__main__":
     unittest.main()
