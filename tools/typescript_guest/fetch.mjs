@@ -263,61 +263,58 @@ export function installFetch(http, snapshotActive, target = globalThis) {
     Object.defineProperty(result, 'uncertain', {value: tag === 'uncertain'});
     return result;
   }
-  async function exchange(request, cancelled) {
-    let upload, body;
-    try {
-      upload = await http.open(metadata(request));
-      if (cancelled()) throw request.signal.reason;
-      const content = records.get(request).content;
-      if (content !== null) {
-        for (let offset = 0; offset < content.byteLength; offset += 65536) {
-          await http.write(upload, content.subarray(offset, offset + 65536));
-          if (cancelled()) throw request.signal.reason;
-        }
-      }
-      const consumed = upload; upload = undefined;
-      const response = await http.finish(consumed);
-      body = response.body;
-      const parts = [];
-      let total = 0;
-      while (true) {
-        if (cancelled()) throw request.signal.reason;
-        const chunk = await http.read(body, 65536);
-        if (chunk === undefined) break;
-        try {
-          const part = await http.chunkBytes(chunk);
-          if (!ArrayBuffer.isView(part) || part.BYTES_PER_ELEMENT !== 1 || !part.byteLength || part.byteLength > 65536) throw new TypeError('invalid-http-chunk');
-          total += part.byteLength;
-          if (total > maxBody) throw new RangeError('fetch-body-limit');
-          // A canonical chunk may own the materialized view's storage. Retain
-          // only our independently owned bytes before invoking its destructor.
-          const owned = new Uint8Array(part.byteLength);
-          owned.set(part);
-          parts.push(owned);
-        } finally { drop(chunk); }
-      }
-      const contentBytes = new Uint8Array(total);
-      let offset = 0;
-      for (const part of parts) { contentBytes.set(part, offset); offset += part.byteLength; }
-      const headers = new Headers(response.headers.map(({name, value}) => [name, value]));
-      if (response.bodyMediaType && !headers.has('content-type')) headers.set('content-type', response.bodyMediaType);
-      const result = new Response(request.method === 'HEAD' || [204, 205, 304].includes(response.status) ? null : contentBytes,
-        {status: response.status, headers});
-      readonly(result, {url: request.url, type: 'basic'});
-      // The typed contract has no reason phrase. It must not fabricate one.
-      Object.defineProperty(result, 'statusText', {get() { throw unsupported('response-status-text'); }, configurable: true});
-      immutableHeaders.add(result.headers);
-      return result;
-    } finally {
-      // These are actual canonical destructors, after every outstanding borrow
-      // settled. Promise rejection or abort acknowledgement releases no owner.
-      try { if (body !== undefined) drop(body); }
-      finally { if (upload !== undefined) drop(upload); }
-    }
-  }
   async function perform(request, cancelled) {
     for (let hop = 0; hop <= 5; hop++) {
-      const response = await exchange(request, cancelled);
+      let upload, body, response;
+      try {
+        upload = await http.open(metadata(request));
+        if (cancelled()) throw request.signal.reason;
+        const content = records.get(request).content;
+        if (content !== null) {
+          for (let offset = 0; offset < content.byteLength; offset += 65536) {
+            await http.write(upload, content.subarray(offset, offset + 65536));
+            if (cancelled()) throw request.signal.reason;
+          }
+        }
+        const consumed = upload; upload = undefined;
+        const received = await http.finish(consumed);
+        body = received.body;
+        const parts = [];
+        let total = 0;
+        while (true) {
+          if (cancelled()) throw request.signal.reason;
+          const chunk = await http.read(body, 65536);
+          if (chunk === undefined) break;
+          try {
+            const part = await http.chunkBytes(chunk);
+            if (!ArrayBuffer.isView(part) || part.BYTES_PER_ELEMENT !== 1 || !part.byteLength || part.byteLength > 65536) throw new TypeError('invalid-http-chunk');
+            total += part.byteLength;
+            if (total > maxBody) throw new RangeError('fetch-body-limit');
+            // A canonical chunk may own the materialized view's storage. Retain
+            // only our independently owned bytes before invoking its destructor.
+            const owned = new Uint8Array(part.byteLength);
+            owned.set(part);
+            parts.push(owned);
+          } finally { drop(chunk); }
+        }
+        const contentBytes = new Uint8Array(total);
+        let offset = 0;
+        for (const part of parts) { contentBytes.set(part, offset); offset += part.byteLength; }
+        const headers = new Headers(received.headers.map(({name, value}) => [name, value]));
+        if (received.bodyMediaType && !headers.has('content-type')) headers.set('content-type', received.bodyMediaType);
+        const result = new Response(request.method === 'HEAD' || [204, 205, 304].includes(received.status) ? null : contentBytes,
+          {status: received.status, headers});
+        readonly(result, {url: request.url, type: 'basic'});
+        // The typed contract has no reason phrase. It must not fabricate one.
+        Object.defineProperty(result, 'statusText', {get() { throw unsupported('response-status-text'); }, configurable: true});
+        immutableHeaders.add(result.headers);
+        response = result;
+      } finally {
+        // These are actual canonical destructors, after every outstanding borrow
+        // settled. Promise rejection or abort acknowledgement releases no owner.
+        try { if (body !== undefined) drop(body); }
+        finally { if (upload !== undefined) drop(upload); }
+      }
       if (cancelled()) throw request.signal.reason;
       const location = response.headers.get('location');
       if (![301, 302, 303, 307, 308].includes(response.status) || location === null) {
@@ -349,9 +346,16 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       request.signal.addEventListener('abort', abort, {once: true});
       // Keep accepted work registered and charged even if the public Promise
       // rejects first. Stop at the next actual import completion; never replay.
-      perform(request, () => cancelled).then(resolve, error => reject(failure(error))).finally(() => {
+      const completed = () => {
         request.signal.removeEventListener('abort', abort);
         outstanding--;
+      };
+      perform(request, () => cancelled).then(response => {
+        completed();
+        resolve(response);
+      }, error => {
+        completed();
+        reject(failure(error));
       });
     });
   }

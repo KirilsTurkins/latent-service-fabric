@@ -1,0 +1,118 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-fetch-boundaries }}",
+    "name": "Same-SDK signed Promise and Request-copy boundaries",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Install the existing locked Python dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check actual probe sources and failure-preserving wrapper controls",
+        "run": "python3 -m unittest tools.tests.test_typescript_fetch_runtime tools.tests.test_typescript_fetch_boundaries -v"
+      },
+      {
+        "name": "Preserve the reviewed outside-checkout application and observer",
+        "run": "cp tools/diagnose_typescript_fetch_boundaries.py \"$RUNNER_TEMP/diagnose-typescript-boundaries.py\"\nmkdir \"$RUNNER_TEMP/typescript-boundary-probes\"\ncp sdk/typescript-guest/probes/fetch-runtime/main.ts \"$RUNNER_TEMP/typescript-boundary-probes/main.ts\"\ncp sdk/typescript-guest/probes/fetch-runtime/default-client.ts \"$RUNNER_TEMP/typescript-boundary-probes/default-client.ts\"\n"
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "ba62bf8f266e589971a03e496b18b8f2cb5e5d85"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only the existing isolated compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the original locked compiler namespace",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-boundary-tools\""
+      },
+      {
+        "name": "Read the authenticated original native products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-boundary-native",
+          "run-id": 39247171188
+        }
+      },
+      {
+        "name": "Read the authenticated original source-owned engine",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "typescript-fetch-engine-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-boundary-engine",
+          "run-id": 39247171188
+        }
+      },
+      {
+        "name": "Read the authenticated original source compiler",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "typescript-source-splicer-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-boundary-splicer",
+          "run-id": 39247171188
+        }
+      },
+      {
+        "name": "Compile and sign only the application boundary experiment",
+        "run": "python3 -B \"$RUNNER_TEMP/diagnose-typescript-boundaries.py\" --probes \"$RUNNER_TEMP/typescript-boundary-probes\" --native \"$RUNNER_TEMP/typescript-boundary-native\" --engine \"$RUNNER_TEMP/typescript-boundary-engine\" --splicer \"$RUNNER_TEMP/typescript-boundary-splicer\" --tools \"$RUNNER_TEMP/typescript-boundary-tools\" --output \"$RUNNER_TEMP/typescript-fetch-boundaries\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain closed same-SDK observations and actual application build evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-fetch-boundaries-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fetch-boundaries/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/logs/**\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/component.wasm\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "fetch-boundaries",
+  "kind": "job",
+  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

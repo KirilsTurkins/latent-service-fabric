@@ -1,0 +1,52 @@
+{
+  "cases": [
+    "TypeScriptNativeAwaitTests.test_actual_native_open_fuses_existing_await_without_changing_typed_code",
+    "TypeScriptNativeAwaitTests.test_actual_native_open_preserves_pending_success_and_each_error_retirement",
+    "TypeScriptNativeAwaitTests.test_native_await_fusion_rejects_unknown_or_partial_private_graph"
+  ],
+  "guards": {
+    "TypeScriptNativeAwaitTests.test_actual_native_open_fuses_existing_await_without_changing_typed_code": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:616340840d33ad7517ccfea48b53335640f36114cb611c1e31848bfc9ef6365f",
+        "class:setup-sha256:8be976952a009b8756ac809bac32f1e339dc5fa52022d338cb7c9de5bb4216a8",
+        "class:skip:self.skipTest('Node and captured compiler Acorn are required for native binding controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptNativeAwaitTests.test_actual_native_open_preserves_pending_success_and_each_error_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:616340840d33ad7517ccfea48b53335640f36114cb611c1e31848bfc9ef6365f",
+        "class:setup-sha256:8be976952a009b8756ac809bac32f1e339dc5fa52022d338cb7c9de5bb4216a8",
+        "class:skip:self.skipTest('Node and captured compiler Acorn are required for native binding controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptNativeAwaitTests.test_native_await_fusion_rejects_unknown_or_partial_private_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:616340840d33ad7517ccfea48b53335640f36114cb611c1e31848bfc9ef6365f",
+        "class:setup-sha256:8be976952a009b8756ac809bac32f1e339dc5fa52022d338cb7c9de5bb4216a8",
+        "class:skip:self.skipTest('Node and captured compiler Acorn are required for native binding controls')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_native_await.py",
+  "reviewReason": "Fuse only the source-owned native carrier helper with the existing typed await, preserving task/lift/finally; all original waiter controls remain byte-identical and captured-parser controls are mandatory in signed Fetch.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
