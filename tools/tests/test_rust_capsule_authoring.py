@@ -215,3 +215,235 @@ class RustProjectTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RustDeclaredEnvironment(unittest.TestCase):
+    """Digest/namespace/approval controls; no compiler or namespace is executed."""
+    def fixture(self):
+        from tools.build_observation import file_identity
+        from tools.captured_compiler_isolation import Isolation, distribution
+        from tools.build_snapshot import digest
+        temporary = tempfile.TemporaryDirectory(prefix='rust-environment-control-')
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name).resolve()
+        workspace, compiler, zig = root / 'attempt', root / 'rust', root / 'zig'
+        for path in (workspace, compiler, zig): path.mkdir()
+        tools = {}
+        for name in ('cargo', 'rustc', 'wasm-tools', 'wit-bindgen', 'shell', 'linker', 'zig'):
+            path = (zig if name == 'zig' else compiler) / name
+            path.write_bytes(('captured source-control tool: ' + name).encode())
+            tools[name] = path
+        scope = object.__new__(Isolation)
+        scope.workspace, scope.tools, scope.sandbox = workspace, tools, tools['shell']
+        scope.distributions = {'rust-compiler-and-sysroot': compiler, 'zig-host-linker-and-sysroot': zig}
+        scope.read_only_inputs, scope.child_path, scope.loader_directories, scope.shared = [], None, (), {}
+        scope.before = {name: distribution(path) for name, path in scope.distributions.items()}
+        scope.tool_before = {name: file_identity(path, name) for name, path in tools.items()}
+        scope.sandbox_before = file_identity(scope.sandbox, 'build-sandbox')
+        scope.receipt = {'formatVersion': 1, 'profile': 'linux-captured-compiler-namespaces-v1',
+            'distributions': scope.before, 'tools': scope.tool_before, 'sandbox': scope.sandbox_before,
+            'loaderObserver': file_identity(tools['shell'], 'loader-dependency-observer'), 'hostRuntimeLibraries': {},
+            'network': 'denied', 'ambientHome': 'absent', 'credentials': 'not-inherited',
+            'boundary': 'trusted-single-user-compiler-host-not-hardened-multitenant-vm'}
+        environment = {'LC_ALL': 'C', 'TZ': 'UTC', 'CARGO_BUILD_JOBS': '2', 'CARGO_INCREMENTAL': '0',
+            'CARGO_NET_OFFLINE': 'true', 'RUSTUP_AUTO_INSTALL': '0', 'RUSTUP_TOOLCHAIN': '1.97.1',
+            'RUSTC': str(tools['rustc']), 'CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER': str(tools['linker']),
+            'LSF_CAPTURED_ZIG': str(tools['zig']), 'CARGO_HOME': str(workspace / 'cargo-home'),
+            'CARGO_TARGET_DIR': str(workspace / 'target'), 'ZIG_GLOBAL_CACHE_DIR': str(workspace / 'zig-global'),
+            'ZIG_LOCAL_CACHE_DIR': str(workspace / 'zig-local')}
+        return workspace, scope, environment
+
+    def verified(self):
+        from types import SimpleNamespace
+        return SimpleNamespace(identity=project.digest(b'captured-inputs'), lock={'artifacts': [
+            {'id': 'outside/build-script', 'role': 'build-tool'}], 'selection': {'runtimeProfile': 'closed'}})
+
+    def test_actual_approval_is_stable_across_distinct_owned_build_roots(self):
+        from tools.application_dependency_approval import approve, request
+        first, a, env_a = self.fixture()
+        second, b, env_b = self.fixture()
+        build.RustEnvironment(env_a, a); build.RustEnvironment(env_b, b)
+        recipe, verified = project.digest(b'fixed-recipe'), self.verified()
+        req_a, req_b = request(verified, a, recipe), request(verified, b, recipe)
+        self.assertNotEqual(first, second)
+        self.assertEqual(req_a, req_b)
+        identity = project.digest(project.canonical(req_a))
+        consent = approve(verified, b, recipe, identity)
+        consent.validate(verified, second)
+        raw = project.canonical(req_b)
+        self.assertNotIn(str(first).encode(), raw)
+        self.assertNotIn(str(second).encode(), raw)
+
+    def test_changed_and_new_forwarded_values_refuse_before_any_compile_dispatch(self):
+        from unittest.mock import Mock
+        from tools.application_dependency_store import DependencyError
+        workspace, scope, environment = self.fixture()
+        guard = build.RustEnvironment(environment, scope)
+        original = dict(environment)
+        commands = Mock(environment=environment)
+        for key, changed in [('CARGO_BUILD_JOBS', '3'), ('LANG', 'C.UTF-8'),
+                             ('ZIG_GLOBAL_CACHE_DIR', str(workspace / 'other-cache'))]:
+            with self.subTest(key=key):
+                environment.clear(); environment.update(original); environment[key] = changed
+                with self.assertRaisesRegex(DependencyError, '^cargo-execution-environment-mutated$'):
+                    guard.compile(commands, scope.tools['cargo'], ['build', '--locked'], workspace)
+                commands.run.assert_not_called()
+        environment.clear(); environment.update(original)
+        commands.run.return_value = b'controlled result'
+        self.assertEqual(guard.compile(commands, scope.tools['cargo'], ['build', '--locked'], workspace), b'controlled result')
+        commands.run.assert_called_once()
+
+    def test_new_valid_selection_changes_the_actual_request_and_refuses_old_consent(self):
+        from tools.application_dependency_approval import approve, request
+        from tools.application_dependency_store import DependencyError
+        _first, a, env_a = self.fixture(); second, b, env_b = self.fixture()
+        env_b['CARGO_BUILD_JOBS'] = '3'; env_b['ZIG_GLOBAL_CACHE_DIR'] = str(second / 'different-cache')
+        build.RustEnvironment(env_a, a); build.RustEnvironment(env_b, b)
+        recipe, verified = project.digest(b'fixed-recipe'), self.verified()
+        old = project.digest(project.canonical(request(verified, a, recipe)))
+        self.assertNotEqual(request(verified, a, recipe), request(verified, b, recipe))
+        with self.assertRaisesRegex(DependencyError, 'approval-mismatch'):
+            approve(verified, b, recipe, old)
+
+    def test_scalar_bounds_and_types_fail_with_a_closed_nonsecret_diagnostic(self):
+        from tools.application_dependency_store import DependencyError
+        _workspace, scope, environment = self.fixture()
+        for value in (None, True, 4, 'private-' + 'sentinel\n', 'x' * 4097, '\ud800'):
+            with self.subTest(kind=type(value).__name__), self.assertRaises(DependencyError) as caught:
+                build.environment_material({**environment, 'LC_ALL': value}, scope)
+            self.assertEqual(str(caught.exception), 'cargo-execution-environment-invalid')
+
+    def test_paths_require_owned_directories_or_the_exact_captured_tool(self):
+        from tools.application_dependency_store import DependencyError
+        workspace, scope, environment = self.fixture()
+        for key, value in [('CARGO_HOME', str(workspace.parent / 'foreign')), ('CARGO_TARGET_DIR', 'relative'),
+                           ('ZIG_LOCAL_CACHE_DIR', str(scope.tools['cargo'])),
+                           ('RUSTC', str(scope.tools['cargo'])), ('RUSTDOC', str(scope.tools['rustc']))]:
+            with self.subTest(key=key), self.assertRaisesRegex(DependencyError, '^cargo-execution-environment-invalid$'):
+                build.environment_material({**environment, key: value}, scope)
+
+    def test_actual_namespace_forwarding_is_covered_without_disclosing_private_values(self):
+        workspace, scope, environment = self.fixture()
+        marker = 'private-' + 'scalar-marker'
+        environment.update(LANG=marker, X_UNSELECTED_CREDENTIAL=marker + '-unselected', HOME=marker + '-home')
+        guard = build.RustEnvironment(environment, scope)
+        argv = scope.wrap(scope.tools['cargo'], ['build'], workspace, environment)
+        forwarded = {argv[index + 1]: argv[index + 2] for index, value in enumerate(argv) if value == '--setenv'}
+        material = scope.receipt['declaredEnvironment']
+        observed = {key for group in ('scalars', 'paths') for key, value in material[group].items() if value is not None}
+        self.assertEqual(set(forwarded), observed | {'HOME', 'PATH'})
+        self.assertEqual(forwarded['HOME'], '/home')
+        self.assertEqual(forwarded['PATH'], '/nonexistent')
+        self.assertNotIn(marker + '-unselected', argv)
+        self.assertNotIn(marker + '-home', argv)
+        raw = project.canonical(scope.receipt)
+        self.assertNotIn(marker.encode(), raw)
+        self.assertNotIn(str(workspace).encode(), raw)
+        guard.check_unchanged(environment)
+
+    def test_receipt_rewriting_or_rebinding_cannot_promote_a_changed_environment(self):
+        from tools.application_dependency_store import DependencyError
+        _workspace, scope, environment = self.fixture()
+        guard = build.RustEnvironment(environment, scope)
+        environment['TZ'] = 'changed'
+        scope.receipt['declaredEnvironment'] = build.environment_material(environment, scope)
+        with self.assertRaisesRegex(DependencyError, '^cargo-execution-environment-mutated$'):
+            guard.check_unchanged(environment)
+        with self.assertRaisesRegex(DependencyError, '^cargo-execution-environment-already-bound$'):
+            build.RustEnvironment(environment, scope)
+
+    def test_mutation_during_namespace_preparation_refuses_before_command(self):
+        from unittest.mock import Mock
+        from tools.application_dependency_store import DependencyError
+        workspace, scope, environment = self.fixture()
+        guard = build.RustEnvironment(environment, scope)
+        actual_wrap = scope.wrap
+        def changed(*args):
+            command = actual_wrap(*args)
+            environment['CARGO_BUILD_JOBS'] = '3'
+            return command
+        commands = Mock(environment=environment)
+        with patch.object(scope, 'wrap', side_effect=changed), self.assertRaisesRegex(DependencyError, 'environment-mutated'):
+            guard.compile(commands, scope.tools['cargo'], ['build'], workspace)
+        commands.run.assert_not_called()
+
+    def test_mutation_during_command_refuses_success_without_automatic_replay(self):
+        from unittest.mock import Mock
+        from tools.application_dependency_store import DependencyError
+        workspace, scope, environment = self.fixture()
+        guard = build.RustEnvironment(environment, scope)
+        commands = Mock(environment=environment)
+        def changed(*_args):
+            environment['TZ'] = 'changed'
+            return b'not an accepted build'
+        commands.run.side_effect = changed
+        with self.assertRaisesRegex(DependencyError, 'environment-mutated'):
+            guard.compile(commands, scope.tools['cargo'], ['build'], workspace)
+        commands.run.assert_called_once()
+
+    def test_private_viewer_accepts_old_and_bound_receipts_and_refuses_raw_or_unknown_fields(self):
+        import copy
+        from tools.dev_workflow import executable_approval_request as viewer
+        from tools.dev_workflow.common import DevError
+        _workspace, scope, environment = self.fixture()
+        self.assertIs(viewer._compiler(scope.receipt), scope.receipt)
+        build.RustEnvironment(environment, scope)
+        self.assertIs(viewer._compiler(scope.receipt), scope.receipt)
+        for mutation in ('raw-value', 'unknown-variable', 'bool-size', 'foreign-tool'):
+            value = copy.deepcopy(scope.receipt)
+            selected = value['declaredEnvironment']
+            if mutation == 'raw-value': selected['scalars']['LC_ALL']['value'] = 'private-' + 'marker'
+            elif mutation == 'unknown-variable': selected['scalars']['UNSELECTED'] = None
+            elif mutation == 'bool-size': selected['scalars']['TZ']['size'] = True
+            else: selected['paths']['RUSTC'] = {'tool': 'cargo'}
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(DevError, '^executable-request-environment-invalid$'):
+                viewer._compiler(value)
+
+
+    def test_actual_builder_refuses_changed_environment_before_native_compile_boundary(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools import application_dependencies, captured_compiler_isolation, rust_application_dependencies
+        from tools.application_dependency_store import DependencyError
+        workspace, scope, _environment = self.fixture()
+        root = workspace.parent
+        source = project.create(root / 'source', 'greeting')
+        pins = json.loads((source / 'sdk-lock.json').read_bytes())['toolchain']
+        base_commands = build.Commands
+        stages = []
+        class ObservedCommands(base_commands):
+            def run(self, stage, *_command):
+                stages.append(stage)
+                if stage == 'rust-sysroot':
+                    return str(scope.distributions['rust-compiler-and-sysroot']).encode()
+                if stage == 'zig-version':
+                    return pins['sdk']['zig'].encode()
+                if stage == 'bindgen-version':
+                    return ('wit-bindgen-cli ' + pins['rust']['dependencies']['wit-bindgen']).encode()
+                raise AssertionError('native compile boundary reached without stable declared environment')
+        def isolate(owned, tools, distributions):
+            scope.workspace, scope.tools, scope.distributions = owned.resolve(), tools, distributions
+            scope.wrap = Mock(side_effect=AssertionError('changed environment reached namespace dispatch'))
+            return scope
+        def bindings(_work, _pins, commands, _tool):
+            commands.environment['CARGO_BUILD_JOBS'] = '3'
+            return project.digest(b'controlled bindings')
+        closure = SimpleNamespace(lock={'selection': {}})
+        verified = SimpleNamespace(lock={'executableInputs': []})
+        output = root / 'output'
+        with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools), [])), \
+                patch.object(build.shutil, 'which', side_effect=lambda name, **_kwargs: str(scope.tools['shell' if name == 'sh' else name])), \
+                patch.object(build, 'Commands', ObservedCommands), patch.object(build, 'binding_check', side_effect=bindings), \
+                patch.object(application_dependencies, 'verify_inputs', return_value=verified), \
+                patch.object(application_dependencies, 'prepare', return_value=closure), \
+                patch.object(rust_application_dependencies, 'configure', return_value=(b'controlled manifest', {})), \
+                patch.object(captured_compiler_isolation, 'Isolation', side_effect=isolate), \
+                patch.object(build.guest_compatibility_build, 'failure_report'), \
+                self.assertRaisesRegex(DependencyError, '^cargo-execution-environment-mutated$'):
+            build.build(source, output, scope.tools['shell'], None, 'https://example.invalid/source')
+        self.assertEqual(stages, ['rust-sysroot', 'zig-version', 'bindgen-version'])
+        scope.wrap.assert_not_called()
+        self.assertFalse((output / 'BUILD-COMPLETE.json').exists())
+        failed = json.loads((output / 'BUILD-FAILED.json').read_bytes())
+        self.assertEqual(failed['stage'], 'compile')
+        self.assertEqual(failed['reason'], 'cargo-execution-environment-mutated')

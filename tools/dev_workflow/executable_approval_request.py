@@ -25,7 +25,7 @@ def _file(value, name=None, maximum=512 * 1024 * 1024):
 def _compiler(value):
     members(value, {'formatVersion', 'profile', 'distributions', 'tools', 'sandbox', 'loaderObserver',
                     'hostRuntimeLibraries', 'network', 'ambientHome', 'credentials', 'boundary'},
-            {'loaderLibraryDirectories'})
+            {'loaderLibraryDirectories', 'declaredEnvironment'})
     require(type(value['formatVersion']) is int and value['formatVersion'] == 1
             and value['profile'] == PROFILE and value['network'] == 'denied'
             and value['ambientHome'] == 'absent' and value['credentials'] == 'not-inherited'
@@ -62,6 +62,12 @@ def _compiler(value):
             members(row, {'distribution', 'path'})
             require(row['distribution'] in value['distributions'], 'executable-request-loader-owner')
             paths.relative(row['path'])
+    if 'declaredEnvironment' in value:
+        from tools.rust_capsule_build import validate_environment_material
+        try:
+            validate_environment_material(value['declaredEnvironment'])
+        except (ValueError, TypeError):
+            require(False, 'executable-request-environment-invalid')
     return value
 
 

@@ -43,6 +43,112 @@ RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_st
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 
 
+RUST_ENVIRONMENT_SCALARS = ('LC_ALL', 'LANG', 'TZ', 'CARGO_NET_OFFLINE', 'CARGO_INCREMENTAL',
+                            'CARGO_BUILD_JOBS', 'RUSTUP_AUTO_INSTALL', 'RUSTUP_TOOLCHAIN')
+RUST_ENVIRONMENT_PATHS = {'ZIG_GLOBAL_CACHE_DIR': None, 'ZIG_LOCAL_CACHE_DIR': None,
+    'CARGO_HOME': None, 'CARGO_TARGET_DIR': None, 'RUSTC': 'rustc', 'RUSTDOC': 'rustdoc',
+    'CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER': 'linker', 'LSF_CAPTURED_ZIG': 'zig'}
+
+
+def validate_environment_material(value: dict) -> dict:
+    """Bounded digest-only shape accepted by explicit private request inspection."""
+    from tools.application_dependency_store import DependencyError
+    def require(condition):
+        if not condition:
+            raise DependencyError('cargo-execution-environment-invalid')
+    def sha(identity):
+        return isinstance(identity, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', identity) is not None
+    require(isinstance(value, dict) and set(value) == {'formatVersion', 'profile', 'scalars', 'paths'})
+    require(type(value['formatVersion']) is int and value['formatVersion'] == 1
+            and value['profile'] == 'rust-captured-environment-v1')
+    require(isinstance(value['scalars'], dict) and set(value['scalars']) == set(RUST_ENVIRONMENT_SCALARS))
+    require(isinstance(value['paths'], dict) and value['paths'].keys() == RUST_ENVIRONMENT_PATHS.keys())
+    for key, row in value['scalars'].items():
+        if row is None:
+            require(key == 'LANG')
+        else:
+            require(isinstance(row, dict) and set(row) == {'digest', 'size'})
+            require(sha(row['digest']) and type(row['size']) is int and 0 <= row['size'] <= 4096)
+    for key, row in value['paths'].items():
+        if row is None:
+            require(key == 'RUSTDOC')
+        elif owner := RUST_ENVIRONMENT_PATHS[key]:
+            require(isinstance(row, dict) and row == {'tool': owner})
+        else:
+            require(isinstance(row, dict) and set(row) == {'owner', 'relativeDigest'}
+                    and row['owner'] == 'owned-workspace' and sha(row['relativeDigest']))
+    return value
+
+
+def environment_material(environment: dict, isolation) -> dict:
+    """Observe only actual Rust child selections; never retain private values."""
+    from tools.application_dependency_store import DependencyError, regular_path
+    try:
+        if (not isinstance(environment, dict) or isolation.receipt.get('profile') != 'linux-captured-compiler-namespaces-v1'
+                or isolation.child_path is not None or isolation.loader_directories):
+            raise ValueError()
+        scalars, paths = {}, {}
+        for key in (*RUST_ENVIRONMENT_SCALARS, *RUST_ENVIRONMENT_PATHS):
+            if key not in environment:
+                if key not in {'LANG', 'RUSTDOC'}:
+                    raise ValueError()
+                (scalars if key in RUST_ENVIRONMENT_SCALARS else paths)[key] = None
+                continue
+            value = environment[key]
+            if (not isinstance(value, str) or len(value.encode('utf-8')) > 4096
+                    or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+                raise ValueError()
+            if key in RUST_ENVIRONMENT_SCALARS:
+                scalars[key] = {'digest': digest(value.encode('utf-8')), 'size': len(value.encode('utf-8'))}
+                continue
+            path = Path(value)
+            if not path.is_absolute():
+                raise ValueError()
+            selected = regular_path(path).resolve(strict=False)
+            if owner := RUST_ENVIRONMENT_PATHS[key]:
+                if owner not in isolation.tools or selected != isolation.tools[owner] or not selected.is_file():
+                    raise ValueError()
+                paths[key] = {'tool': owner}
+            else:
+                if (selected == isolation.workspace or not selected.is_relative_to(isolation.workspace)
+                        or selected.exists() and not selected.is_dir()):
+                    raise ValueError()
+                paths[key] = {'owner': 'owned-workspace',
+                              'relativeDigest': digest(selected.relative_to(isolation.workspace).as_posix().encode('utf-8'))}
+        return validate_environment_material({'formatVersion': 1, 'profile': 'rust-captured-environment-v1',
+                                              'scalars': scalars, 'paths': paths})
+    except (OSError, TypeError, ValueError, AttributeError):
+        raise DependencyError('cargo-execution-environment-invalid') from None
+
+
+class RustEnvironment:
+    def __init__(self, environment: dict, isolation):
+        from tools.application_dependency_store import DependencyError
+        if 'declaredEnvironment' in isolation.receipt:
+            raise DependencyError('cargo-execution-environment-already-bound')
+        self.isolation = isolation
+        self.before = canonical(environment_material(environment, isolation))
+        isolation.receipt['declaredEnvironment'] = json.loads(self.before)
+
+    def check_unchanged(self, environment: dict):
+        from tools.application_dependency_store import DependencyError
+        try:
+            if (canonical(environment_material(environment, self.isolation)) == self.before
+                    and canonical(self.isolation.receipt.get('declaredEnvironment')) == self.before):
+                return
+        except (OSError, TypeError, ValueError, RecursionError, AttributeError):
+            pass
+        raise DependencyError('cargo-execution-environment-mutated')
+
+    def compile(self, commands, tool: Path, arguments: list[str], work: Path) -> bytes:
+        self.check_unchanged(commands.environment)
+        wrapped = self.isolation.wrap(tool, arguments, work, commands.environment)
+        self.check_unchanged(commands.environment)
+        result = commands.run('compile', *wrapped)
+        self.check_unchanged(commands.environment)
+        return result
+
+
 class Commands:
     def __init__(self, root: Path, output: Path, environment: dict[str, str], *,
                  deadline_seconds=900, command_seconds=600):
@@ -326,7 +432,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "application-dependencies"
             verified = verify_inputs(observed.dependency_root, "rust")
             closure, approval = None, None
-            isolation, adapted_manifest = None, None
+            isolation, adapted_manifest, environment_guard = None, None, None
             if verified is not None:
                 environment.update(CARGO_HOME=str(temporary / "cargo-home"), CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
                 sysroot = Path(commands.run("rust-sysroot", paths["rustc"], "--print", "sysroot").decode().strip()).resolve(strict=True)
@@ -348,6 +454,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 selected_tools.update(zig=zig, shell=shell, linker=linker)
                 isolation = Isolation(temporary, selected_tools, {"rust-compiler-and-sysroot": sysroot,
                                       "zig-host-linker-and-sysroot": zig.parent})
+                environment_guard = RustEnvironment(environment, isolation)
                 write_json(output / "rust-compiler-inputs.json", isolation.receipt)
                 if verified.lock["executableInputs"]:
                     stage = "executable-input-approval"
@@ -378,7 +485,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     compile_arguments.append("--all-features")
                 if selection.get("noDefaultFeatures"):
                     compile_arguments.append("--no-default-features")
-                commands.run("compile", *isolation.wrap(paths["cargo"], compile_arguments, work, environment))
+                environment_guard.compile(commands, paths["cargo"], compile_arguments, work)
                 if approval is not None:
                     from tools.application_dependency_store import directory_files
                     generated_outputs = {}
@@ -430,6 +537,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 captured_files["Cargo.toml"] = files["Cargo.toml"]
                 closure.check_unchanged()
                 isolation.check_unchanged()
+                environment_guard.check_unchanged(commands.environment)
             observed.check_unchanged()
             if captured_files != files:
                 raise ValueError("project changed during the observed build")

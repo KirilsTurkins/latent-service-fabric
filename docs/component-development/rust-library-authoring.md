@@ -97,6 +97,16 @@ capabilities. If it selects build scripts or procedural macros, the builder
 requires its separate exact compiler/profile approval and an isolated stage.
 Unsupported execution remains a failure with retained diagnostics.
 
+The captured Rust compiler receipt binds the declared environment forwarded to
+its isolated child. Scalar selections are retained as bounded digests and byte
+counts; cache paths are represented by digests relative to the owned build
+workspace, and compiler paths select exact captured tools. Raw private values
+and absolute workspace paths are not retained in this material. Identical
+selections remain stable across fresh build roots. A changed selection requires
+new exact approval, and a mutation before or during compilation cannot publish
+success. This identity fence adds no runtime grant or compiler capability; it
+does not establish hermetic compilation or authenticate a publisher.
+
 ## Build, test and watch
 
 Use the existing build command with a fresh output directory and `--offline`.
