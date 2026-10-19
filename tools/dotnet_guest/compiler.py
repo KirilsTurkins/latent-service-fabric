@@ -19,6 +19,21 @@ SDK_VERSION = "10.0.100"
 COMPONENT_VERSION = "0.8.0-preview00011"
 
 
+def verify_application_resources(selected: dict, project: Path) -> None:
+    """Recipe setup must not substitute reviewed trimming/resource bytes."""
+    from tools.application_dependency_store import DependencyError, read_bytes
+    for kind in ('resources', 'trimmingDescriptors'):
+        for row in selected[kind]:
+            if not row['active']:
+                continue
+            try:
+                raw = read_bytes(project / row['attributes']['Include'], row['size'])
+            except (OSError, DependencyError):
+                raise DependencyError('nuget-compiler-resource-preimage-mismatch') from None
+            if len(raw) != row['size'] or digest(raw) != row['digest']:
+                raise DependencyError('nuget-compiler-resource-preimage-mismatch')
+
+
 def runtime_inputs(root: Path) -> bytes:
     files = {"sdk/dotnet-guest/runtime/" + name: value
              for name, value in snapshot(root / "sdk/dotnet-guest/runtime").items()}
@@ -254,6 +269,8 @@ class Compiler:
             self.isolation.protect_inputs(project / "Capsule.csproj")
             if resources.objects:
                 self.isolation.protect_inputs(project / "resources")
+        if self.application_closure is not None:
+            verify_application_resources(selected, project)
         self.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
             project / "nuget.config", "--locked-mode", "--packages", self.package_cache, "--disable-parallel",
             "-p:NuGetAudit=false", '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')

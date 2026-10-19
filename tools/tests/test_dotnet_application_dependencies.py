@@ -1304,5 +1304,113 @@ class NugetFeedIdentities(unittest.TestCase):
         self.assertEqual(baseline, (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes())
 
 
+class SelectedCompilerResourcePreimages(unittest.TestCase):
+    setUp = CapturedCompilerSelection.setUp
+    graph = CapturedCompilerSelection.graph
+    application = CapturedCompilerSelection.application
+
+    class RestoreReached(Exception):
+        pass
+
+    def selected_application(self, path='trimming/library.xml', kind='TrimmerRootDescriptor'):
+        compiler, work, output = self.application(self.root)
+        project = work / 'Capsule.csproj'
+        project.write_bytes(project.read_bytes().replace(b'</Project>',
+            ('<ItemGroup><' + kind + ' Include="' + path + '" /></ItemGroup></Project>').encode()))
+        selected = work / path
+        if path != 'Capsule.csproj':
+            selected.parent.mkdir(parents=True, exist_ok=True)
+            selected.write_bytes(b'<linker><assembly fullname="Outside.Library"><type fullname="Outside.Payload" /></assembly></linker>')
+        self.configure.return_value = {**self.configure.return_value, **declarations(snapshot(work))}
+        original_run = compiler.run
+        def run(stage, *arguments):
+            if stage == 'locked-restore':
+                self.stages.append(stage)
+                raise self.RestoreReached
+            return original_run(stage, *arguments)
+        compiler.run = run
+        return compiler, work, output
+
+    def test_canonical_wit_cannot_replace_a_selected_trimming_descriptor(self):
+        from unittest.mock import patch
+        compiler, work, output = self.selected_application('component.wit')
+        original = (work / 'component.wit').read_bytes()
+        with patch('tools.dotnet_application_dependencies.configure', self.configure), \
+                self.assertRaisesRegex(DependencyError, '^nuget-compiler-resource-preimage-mismatch$'):
+            compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+        self.assertNotIn('locked-restore', self.stages)
+        self.assertEqual((work / 'component.wit').read_bytes(), original)
+        self.assertEqual((output / 'project/component.wit').read_bytes(), (work / 'wit/world.wit').read_bytes())
+
+    def test_resource_embedding_cannot_replace_a_selected_project_descriptor(self):
+        from unittest.mock import patch
+        from tools import guest_resources
+        from tools.build_snapshot import canonical
+        compiler, work, output = self.selected_application('Capsule.csproj')
+        original = (work / 'Capsule.csproj').read_bytes()
+        (work / 'assets').mkdir()
+        (work / 'assets/data.bin').write_bytes(b'captured immutable resource')
+        (work / guest_resources.MANIFEST).write_bytes(canonical({'schemaVersion': guest_resources.PROFILE,
+            'resources': [{'path': 'data/value.bin', 'source': 'assets/data.bin', 'mediaType': 'application/octet-stream'}]}))
+        with patch('tools.dotnet_application_dependencies.configure', self.configure), \
+                self.assertRaisesRegex(DependencyError, '^nuget-compiler-resource-preimage-mismatch$'):
+            compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+        self.assertNotIn('locked-restore', self.stages)
+        self.assertEqual((work / 'Capsule.csproj').read_bytes(), original)
+        self.assertIn(b'EnableDefaultEmbeddedResourceItems', (output / 'project/Capsule.csproj').read_bytes())
+
+    def test_unchanged_active_descriptor_and_embedded_resource_reach_restore_exactly(self):
+        from unittest.mock import patch
+        compiler, work, output = self.selected_application()
+        source = work / 'data/value.bin'
+        source.parent.mkdir(); source.write_bytes(b'\x00original\xff')
+        project = work / 'Capsule.csproj'
+        project.write_bytes(project.read_bytes().replace(b'</Project>',
+            b'<ItemGroup><EmbeddedResource Include="data/value.bin" LogicalName="outside.value" />'
+            b'<TrimmerRootDescriptor Include="trimming/inactive.xml" Condition="\'$(RuntimeIdentifier)\' == \'linux-x64\'" />'
+            b'</ItemGroup></Project>'))
+        (work / 'trimming/inactive.xml').write_bytes(b'<linker />')
+        self.configure.return_value = {**self.configure.return_value, **declarations(snapshot(work))}
+        sdk_lock = (work / 'sdk-lock.json').read_bytes()
+        with patch('tools.dotnet_application_dependencies.configure', self.configure), \
+                self.assertRaises(self.RestoreReached):
+            compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+        for name in ('trimming/library.xml', 'data/value.bin'):
+            self.assertEqual((output / 'project' / name).read_bytes(), (work / name).read_bytes())
+        self.assertFalse((output / 'project/trimming/inactive.xml').exists())
+        self.assertEqual((work / 'sdk-lock.json').read_bytes(), sdk_lock)
+        self.assertEqual(self.stages[-1], 'locked-restore')
+        self.assertNotIn('native-aot', self.stages)
+
+    def test_missing_changed_oversized_or_linked_selected_inputs_fail_closed(self):
+        from unittest.mock import patch
+        from tools.dotnet_guest.compiler import verify_application_resources
+        from tools.application_dependency_store import is_reparse
+        from tools.build_snapshot import digest
+        selected = {'resources': [], 'trimmingDescriptors': [{'attributes': {'Include': 'trimming.xml'},
+            'active': True, 'size': 10, 'digest': digest(b'<linker />')}]}
+        path = self.root / 'trimming.xml'
+        for mode in ('missing', 'changed', 'oversized', 'link'):
+            if path.exists():
+                path.unlink()
+            if mode != 'missing':
+                path.write_bytes(b'not linker' if mode == 'changed' else b'<linker />' + (b'X' if mode == 'oversized' else b''))
+            with self.subTest(mode=mode), \
+                    patch('tools.application_dependency_store.is_reparse',
+                          side_effect=lambda item: mode == 'link' and item == path or is_reparse(item)), \
+                    self.assertRaisesRegex(DependencyError, '^nuget-compiler-resource-preimage-mismatch$'):
+                verify_application_resources(selected, self.root)
+
+    def test_default_compiler_without_application_closure_keeps_existing_restore_path(self):
+        from unittest.mock import patch
+        compiler, work, output = self.selected_application()
+        compiler.application_closure = None
+        with patch('tools.dotnet_guest.compiler.verify_application_resources',
+                   side_effect=AssertionError('default compiler unexpectedly checked application inputs')), \
+                self.assertRaises(self.RestoreReached):
+            compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+        self.assertEqual(self.stages[-1], 'locked-restore')
+
+
 if __name__ == '__main__':
     unittest.main()
