@@ -23,7 +23,8 @@ from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory
 
 HELPERS = ('tools/dotnet_standard_entropy_fixture.py', 'tools/dotnet_standard_entropy_probe.py',
     'tools/qualify_dotnet_standard_entropy.py', 'tools/run_rust_capsule_workflow.py',
-    'tools/dotnet_guest/entropy.py', 'tools/dotnet_guest/entropy_grants.py')
+    'tools/dotnet_guest/entropy.py', 'tools/dotnet_guest/entropy_grants.py',
+    'tools/dotnet_guest/managed_entropy.py', 'tools/dotnet_guest/compiler.py')
 
 
 def qualify(output: Path, tools: Path, native_qualification: Path):
@@ -64,6 +65,13 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
                 and port['nativeLinkBinding']['secureWrapOccurrences'] == 1,
                 'dotnet-entropy-final-native-port-binding')
         record['nativePort'] = port
+        managed = read_json(greeting / 'managed-entropy-port.json')
+        require(managed['profile'] == 'dotnet-standard-rng-managed-v1'
+                and len(set(managed['replaced'])) == 17 and managed['unchangedMethods'] == 3240
+                and len(managed['nativeAotReferenceBinding']) == 1
+                and managed['applicationAssemblyEdits'] == 0 and managed['sharedPackageModified'] is False,
+                'dotnet-entropy-final-managed-port-binding')
+        record['managedPort'] = managed
         stage = 'sign'
         builds = [greeting if template == 'greeting' else companions[template] for template in TEMPLATES]
         commands.run('demo-sign', binaries['capsule_authoring'], 'demo-sign', output / 'releases', *builds)

@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tomllib
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -29,6 +30,40 @@ CASES = {
 }
 OLD_CASE = "tls13-five-thousand-tiny-certificates-old"
 PARSER_CEILING = 64 * 1024
+CURRENT_LOCK_SHA256 = "334b1e01f646aae3ff92b8fb039172082a08273b8d088c6d6e184fe94a34760b"
+
+
+def current_reference_lock() -> bytes:
+    raw = read_file(captured.CURRENT_PATCH_ROOT / "reference-Cargo.lock", 65536)
+    if hashlib.sha256(raw).hexdigest() != CURRENT_LOCK_SHA256:
+        raise ValueError("tls-parser-reference-lock-identity")
+    packages = tomllib.loads(raw.decode("utf-8")).get("package", [])
+    workspace = tomllib.loads(read_file(captured.ROOT / "Cargo.lock", 4 * 1024 * 1024).decode("utf-8"))
+    if not isinstance(packages, list) or not 2 <= len(packages) <= 64:
+        raise ValueError("tls-parser-reference-lock-bound")
+    local = []
+    for row in packages:
+        if "source" not in row:
+            local.append((row.get("name"), row.get("version")))
+            continue
+        matches = [p for p in workspace.get("package", [])
+                   if all(row.get(k) == p.get(k) for k in ("name", "version", "source", "checksum"))]
+        if row.get("source") != "registry+https://github.com/rust-lang/crates.io-index" or len(matches) != 1:
+            raise ValueError("tls-parser-reference-current-dependency")
+    if sorted(local) != [("rustls", "0.23.46"), ("tls-parser-reference", "0.0.0")]:
+        raise ValueError("tls-parser-reference-local-dependency")
+    return raw
+
+
+def project_manifest(dependency: str, *, current: bool) -> bytes:
+    if dependency not in {"original-rustls", "bounded-rustls"}:
+        raise ValueError("tls-parser-reference-project")
+    text = ('[package]\nname="tls-parser-reference"\nversion="0.0.0"\nedition="2024"\n'
+            f'[dependencies]\nrustls={{path="../{dependency}",default-features=false,features=["ring","std","tls12"]}}\n')
+    if current:
+        # The probe is independent even if its output is inside a checkout.
+        text += '[workspace]\nresolver="3"\n'
+    return text.encode("utf-8")
 
 
 def observations(raw: bytes, *, original: bool) -> list[dict]:
@@ -62,8 +97,12 @@ def profile(version: str):
 
 
 def qualify(archive: Path, output: Path, cargo: Path, rustc: Path,
-            *, parser_version: str = "0.23.45") -> dict:
+            *, parser_version: str = "0.23.45", fetch_current_dependencies: bool = False) -> dict:
     patch_root, apply = profile(parser_version)
+    current = parser_version == "0.23.46"
+    if fetch_current_dependencies and not current:
+        raise ValueError("tls-parser-reference-fetch-current-only")
+    locked = current_reference_lock() if current else None
     output = fresh(output)
     compiler = subprocess.run([str(rustc), "--version"], capture_output=True, check=True,
                               timeout=30).stdout.decode().strip()
@@ -84,18 +123,23 @@ def qualify(archive: Path, output: Path, cargo: Path, rustc: Path,
         project = output / mode
         (project / "src").mkdir(parents=True)
         (project / "src/main.rs").write_bytes(reference)
-        (project / "Cargo.toml").write_text(
-            '[package]\nname="tls-parser-reference"\nversion="0.0.0"\nedition="2024"\n'
-            f'[dependencies]\nrustls={{path="../{dependency}",default-features=false,features=["ring","std","tls12"]}}\n',
-            encoding="utf-8")
+        (project / "Cargo.toml").write_bytes(project_manifest(dependency, current=current))
+        if locked is not None:
+            (project / "Cargo.lock").write_bytes(locked)
         environment = {**os.environ, "CARGO_TARGET_DIR": str(output / (mode + "-target")),
                        "CARGO_BUILD_JOBS": "2", "CARGO_PROFILE_DEV_DEBUG": "0",
                        "CARGO_INCREMENTAL": "0"}
         with (output / (mode + "-build.log")).open("wb") as log:
-            subprocess.run([str(cargo), "generate-lockfile", "--offline"], cwd=project,
-                           env=environment, stdout=log, stderr=log, check=True, timeout=120)
+            if locked is None:
+                subprocess.run([str(cargo), "generate-lockfile", "--offline"], cwd=project,
+                               env=environment, stdout=log, stderr=log, check=True, timeout=120)
+            elif mode == "old" and fetch_current_dependencies:
+                subprocess.run([str(cargo), "fetch", "--locked"], cwd=project,
+                               env=environment, stdout=log, stderr=log, check=True, timeout=120)
             subprocess.run([str(cargo), "build", "--offline", "--locked"], cwd=project,
                            env=environment, stdout=log, stderr=log, check=True, timeout=600)
+        if locked is not None and (project / "Cargo.lock").read_bytes() != locked:
+            raise ValueError("tls-parser-reference-lock-changed")
         binary = output / (mode + "-target/debug/tls-parser-reference")
         run = subprocess.run([str(binary), mode], capture_output=True, timeout=30)
         (output / (mode + "-stdout.jsonl")).write_bytes(run.stdout)
@@ -113,6 +157,9 @@ def qualify(archive: Path, output: Path, cargo: Path, rustc: Path,
               "parserCeilingBytes": PARSER_CEILING, "executions": packets,
               "parserReferenceExecuted": True, "accountingQualified": False,
               "hostTlsInstalled": False, "sharedRegistryModified": False}
+    if locked is not None:
+        result["selectedReferenceLockSha256"] = CURRENT_LOCK_SHA256
+        result["registryDependenciesMatchWorkspace"] = True
     (output / "receipt.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     return result
 
@@ -124,9 +171,11 @@ def main():
     parser.add_argument("--cargo", required=True, type=Path)
     parser.add_argument("--rustc", required=True, type=Path)
     parser.add_argument("--parser-version", choices=("0.23.45", "0.23.46"), default="0.23.45")
+    parser.add_argument("--fetch-current-dependencies", action="store_true")
     arguments = parser.parse_args()
     result = qualify(arguments.archive, arguments.output, arguments.cargo, arguments.rustc,
-                     parser_version=arguments.parser_version)
+                     parser_version=arguments.parser_version,
+                     fetch_current_dependencies=arguments.fetch_current_dependencies)
     print(json.dumps({"parserReferenceExecuted": result["parserReferenceExecuted"],
                       "accountingQualified": False, "hostTlsInstalled": False}))
 

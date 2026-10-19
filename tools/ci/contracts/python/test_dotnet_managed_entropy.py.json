@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "ManagedEntropyTests.test_both_exact_private_assemblies_are_observed_once",
+    "ManagedEntropyTests.test_changed_derived_algorithm_refuses",
+    "ManagedEntropyTests.test_changed_upstream_bytes_or_descriptor_refuse",
+    "ManagedEntropyTests.test_generated_material_target_or_captured_source_drift_refuses",
+    "ManagedEntropyTests.test_missing_duplicate_or_original_native_reference_refuses",
+    "ManagedEntropyTests.test_pinned_upstream_algorithms_have_only_the_closed_namespace_and_base_derivation",
+    "ManagedEntropyTests.test_unselected_framework_preimage_refuses"
+  ],
+  "guards": {
+    "ManagedEntropyTests.test_both_exact_private_assemblies_are_observed_once": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_changed_derived_algorithm_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_changed_upstream_bytes_or_descriptor_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_generated_material_target_or_captured_source_drift_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_missing_duplicate_or_original_native_reference_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_pinned_upstream_algorithms_have_only_the_closed_namespace_and_base_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_unselected_framework_preimage_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_managed_entropy.py",
+  "reviewReason": "Add exact managed source derivation, direct native binding and reference drift refusal controls; retain seven cases and all guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

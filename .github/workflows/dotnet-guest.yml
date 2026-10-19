@@ -21,6 +21,7 @@ on:
       - 'tools/dotnet_standard_entropy*.py'
       - 'tools/qualify_dotnet_standard_entropy.py'
       - 'tools/tests/test_dotnet_secure_entropy.py'
+      - 'tools/tests/test_dotnet_managed_entropy.py'
       - 'tools/dotnet_standard_console*.py'
       - 'tools/qualify_dotnet_standard_console.py'
       - 'tools/tests/test_dotnet_standard_console.py'
@@ -40,6 +41,10 @@ on:
       - 'tools/dotnet_dependency_recovery.py'
       - 'tools/dotnet_reflection_fixture.py'
       - 'tools/qualify_dotnet_reflection.py'
+      - 'tools/qualify_dotnet_reflection_boundaries.py'
+      - 'tools/dotnet_catalogue_free_build.py'
+      - 'tools/tests/test_dotnet_reflection_boundaries.py'
+      - 'docs/testing/dotnet-reflection-boundaries.md'
       - 'tools/tests/test_dotnet_reflection.py'
       - 'docs/testing/dotnet-reflection-qualification.md'
       - 'tools/tests/test_dotnet_dependency_recovery.py'
@@ -268,6 +273,11 @@ jobs:
       - name: Qualify authenticated private NuGet capture and signed offline lifecycle
         run: |
           python3 tools/qualify_dotnet_private_dependencies.py --prepared-qualification "$RUNNER_TEMP/dotnet-capsule-dependencies" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-private-dependencies"
+      - name: Test catalogue-free source and explicit unsupported reflection boundaries
+        run: python3 -m unittest tools.tests.test_dotnet_reflection_boundaries -v
+      - name: Qualify JIT and unrepresentable reflection refusal without optional catalogue data
+        run: |
+          python3 tools/qualify_dotnet_reflection_boundaries.py --prepared-qualification "$RUNNER_TEMP/dotnet-capsule-dependencies" --output "$RUNNER_TEMP/dotnet-reflection-boundaries" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
       - name: Check real closed adapter synchronous types and exact core preservation
         run: python3 -B -m unittest tools.tests.test_dotnet_closed_io -v
       - name: Qualify captured ordinary Console and strict bounded logging
@@ -276,6 +286,8 @@ jobs:
           python3 tools/qualify_dotnet_standard_console.py --output "$RUNNER_TEMP/dotnet-standard-console" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Check native PAL secure entropy behavior and explicit scalar authority
         run: python3 -m unittest tools.tests.test_dotnet_secure_entropy -v
+      - name: Validate exact managed RNG derivation and private NativeAOT references
+        run: python3 -m unittest tools.tests.test_dotnet_managed_entropy -v
       - name: Qualify captured ordinary RandomNumberGenerator and typed source denial
         run: >-
           python3 tools/qualify_dotnet_standard_entropy.py --output "$RUNNER_TEMP/dotnet-standard-entropy"
@@ -298,12 +310,26 @@ jobs:
             ${{ runner.temp }}/dotnet-standard-entropy/build/compiler-inputs.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/nuget-build-inputs.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/managed-entropy*.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy.o
             ${{ runner.temp }}/dotnet-standard-entropy/build/compatibility*.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/component.wasm
             ${{ runner.temp }}/dotnet-standard-entropy/build/logs/**
             ${{ runner.temp }}/dotnet-standard-entropy/node/public-workflow.json
             ${{ runner.temp }}/dotnet-standard-entropy/node/controls/dotnet-entropy-*.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/qualification.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/FAILED.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/capture.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/catalogue-free-source.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/build/BUILD-FAILED.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/build/source-inputs.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/build/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/build/build-observation.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/build/nuget-build-inputs.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/build/compiler-containment.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/node/workflow.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/node/FAILED.json
             ${{ runner.temp }}/dotnet-standard-console/qualified.json
             ${{ runner.temp }}/dotnet-standard-console/FAILED.json
             ${{ runner.temp }}/dotnet-standard-console/logs/**

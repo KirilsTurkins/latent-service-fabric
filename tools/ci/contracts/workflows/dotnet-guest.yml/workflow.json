@@ -37,6 +37,7 @@
           "tools/dotnet_standard_entropy*.py",
           "tools/qualify_dotnet_standard_entropy.py",
           "tools/tests/test_dotnet_secure_entropy.py",
+          "tools/tests/test_dotnet_managed_entropy.py",
           "tools/dotnet_standard_console*.py",
           "tools/qualify_dotnet_standard_console.py",
           "tools/tests/test_dotnet_standard_console.py",
@@ -56,6 +57,10 @@
           "tools/dotnet_dependency_recovery.py",
           "tools/dotnet_reflection_fixture.py",
           "tools/qualify_dotnet_reflection.py",
+          "tools/qualify_dotnet_reflection_boundaries.py",
+          "tools/dotnet_catalogue_free_build.py",
+          "tools/tests/test_dotnet_reflection_boundaries.py",
+          "docs/testing/dotnet-reflection-boundaries.md",
           "tools/tests/test_dotnet_reflection.py",
           "docs/testing/dotnet-reflection-qualification.md",
           "tools/tests/test_dotnet_dependency_recovery.py",
@@ -103,7 +108,7 @@
     "entropy-replay",
     "toolchain"
   ],
-  "reviewReason": "Diagnostic-only manual secure-entropy selection adds one independent bounded job; all original paths, ordinary commands, permissions and default behavior remain.",
+  "reviewReason": "Diagnostic-only default-false entropy replay against authenticated native products; additive source restoration controls and reflection programme retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

@@ -17,7 +17,7 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import snapshot
 
 PACKAGE = 'Outside.Standard.Entropy'
-CASES = ('empty', 'one', 'wide', 'instance', 'offset', 'integer', 'invalid', 'initializer', 'budget')
+CASES = ('empty', 'one', 'wide', 'instance', 'offset', 'integer', 'invalid', 'initializer', 'nonzero', 'choices', 'hex', 'subclass', 'budget')
 LIBRARY_SOURCE = r'''using System;
 using System.Security.Cryptography;
 namespace OutsideEntropy;
@@ -50,7 +50,7 @@ public static class Library {
             count = 33; break;
         case "invalid":
             try { RandomNumberGenerator.GetInt32(4, 4); throw new Exception("invalid range accepted"); }
-            catch (ArgumentOutOfRangeException) { }
+            catch (ArgumentException) { }
             try { RandomNumberGenerator.GetBytes(-1); throw new Exception("invalid length accepted"); }
             catch (ArgumentOutOfRangeException) { }
             count = 2; break;
@@ -58,6 +58,43 @@ public static class Library {
             if (Initializer.Request != mode || Initializer.Length != 16)
                 throw new Exception("request-sensitive entropy initializer was frozen");
             count = 16; break;
+        case "nonzero":
+            byte[] nonzero = new byte[257];
+            using (var random = RandomNumberGenerator.Create()) random.GetNonZeroBytes(nonzero.AsSpan());
+            foreach (byte value in nonzero) if (value == 0) throw new Exception("zero byte acknowledged");
+            count = nonzero.Length; break;
+        case "choices":
+            char[] choices = new[] { 'a', 'b', 'c' };
+            char[] items = RandomNumberGenerator.GetItems<char>(choices, 33);
+            foreach (char value in items) if (value < 'a' || value > 'c') throw new Exception("invalid choice");
+            Span<char> destination = stackalloc char[17];
+            RandomNumberGenerator.GetItems<char>(choices, destination);
+            foreach (char value in destination) if (value < 'a' || value > 'c') throw new Exception("invalid span choice");
+            string generated = RandomNumberGenerator.GetString(choices, 9);
+            foreach (char value in generated) if (value < 'a' || value > 'c') throw new Exception("invalid string choice");
+            int[] shuffled = new[] { 1, 2, 3, 4 };
+            RandomNumberGenerator.Shuffle<int>(shuffled);
+            Array.Sort(shuffled);
+            for (int index = 0; index < 4; ++index) if (shuffled[index] != index + 1) throw new Exception("shuffle changed items");
+            count = items.Length + destination.Length + generated.Length; break;
+        case "hex":
+            string hex = RandomNumberGenerator.GetHexString(33, lowercase: true);
+            foreach (char value in hex) if (!((value >= '0' && value <= '9') || (value >= 'a' && value <= 'f')))
+                throw new Exception("invalid hexadecimal string");
+            Span<char> hexSpan = stackalloc char[17];
+            RandomNumberGenerator.GetHexString(hexSpan);
+            foreach (char value in hexSpan) if (!((value >= '0' && value <= '9') || (value >= 'A' && value <= 'F')))
+                throw new Exception("invalid hexadecimal span");
+            count = hex.Length + hexSpan.Length; break;
+        case "subclass":
+            var derived = new DerivedGenerator();
+            byte[] custom = new byte[35]; Array.Fill(custom, (byte)0x5a);
+            derived.GetBytes(custom, 1, 33);
+            if (custom[0] != 0x5a || custom[34] != 0x5a) throw new Exception("base generator overrun");
+            Span<byte> customSpan = stackalloc byte[33]; derived.GetBytes(customSpan);
+            foreach (byte value in customSpan) if (value != 0x6b) throw new Exception("base span did not dispatch");
+            derived.Dispose(); if (!derived.Disposed) throw new Exception("base Dispose did not dispatch");
+            count = 33; break;
         case "budget":
             try {
                 // More than the unchanged 65,536-byte provider aggregate.
@@ -77,6 +114,11 @@ public static class Library {
         return "ordinary-entropy:" + mode + "|count=" + count + "|fresh=1";
     }
 }
+public sealed class DerivedGenerator : RandomNumberGenerator {
+    public bool Disposed;
+    public override void GetBytes(byte[] value) { Array.Fill(value, (byte)0x6b); }
+    protected override void Dispose(bool disposing) { Disposed = disposing; }
+}
 public static class Initializer {
     public static readonly string Request;
     public static readonly int Length;
@@ -86,7 +128,7 @@ public static class Initializer {
     }
 }
 '''
-COUNTS = dict(zip(CASES[:-1], (0, 1, 257, 32, 33, 33, 2, 16)))
+COUNTS = dict(zip(CASES[:-1], (0, 1, 257, 32, 33, 33, 2, 16, 257, 59, 50, 33)))
 
 
 def expected(mode):

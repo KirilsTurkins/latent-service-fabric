@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_reflection_boundaries.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Own signed seven-case reflection and catalogue-free staged offline build qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6259148cfdebebfcbf49b99fb3f2a84682c51bb1281bce6f59eeba96f9dd2f93"
+}
