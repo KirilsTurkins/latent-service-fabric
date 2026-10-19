@@ -74,16 +74,25 @@
           ".github/workflows/dotnet-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "private_nuget_variance": {
+            "default": false,
+            "description": "Reuse exact03a native products and capture both private offline component outputs",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "private-nuget-variance",
     "toolchain"
   ],
-  "reviewReason": "Preserve ordinary NuGet gates and bind explicit public trust plus authenticated offline lifecycle qualification",
+  "reviewReason": "Explicit default-off private NuGet variance job; retain all normal native obligations and original limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

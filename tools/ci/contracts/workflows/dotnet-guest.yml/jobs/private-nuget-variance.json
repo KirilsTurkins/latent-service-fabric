@@ -1,0 +1,105 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.private_nuget_variance }}",
+    "name": "Fixed-source private NuGet component variance diagnostic",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Test fixed public artifact and package identity controls",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_private_replay\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve only exact source-bound native products and companion packages",
+        "run": "python3 tools/replay_dotnet_private_dependencies.py --output \"$RUNNER_TEMP/private-nuget-prepared\""
+      },
+      {
+        "name": "Install captured NativeAOT namespace and loader inputs",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the pinned native compiler and closed runtime",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Reproduce private capture and exact offline component equality",
+        "run": "python3 tools/qualify_dotnet_private_dependencies.py --prepared-qualification \"$RUNNER_TEMP/private-nuget-prepared\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-private-dependencies\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain fixed public evidence and owned component intermediates",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-private-variance-${{ github.sha }}",
+          "path": "${{ runner.temp }}/private-nuget-prepared/retrieval.json\n${{ runner.temp }}/dotnet-private-dependencies/qualification.json\n${{ runner.temp }}/dotnet-private-dependencies/FAILED.json\n${{ runner.temp }}/dotnet-private-dependencies/capture.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/component.wasm\n${{ runner.temp }}/dotnet-private-dependencies/build-0/native-aot-raw.wasm\n${{ runner.temp }}/dotnet-private-dependencies/build-0/build-observation.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/source-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/recipe-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/component.wasm\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/native-aot-raw.wasm\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/build-observation.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/source-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/recipe-inputs.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "private-nuget-variance",
+  "kind": "job",
+  "reviewReason": "Manual fixed-source30-minute private diagnostic reuses source-bound native5 and companions; normal equality refusal retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}

@@ -57,6 +57,11 @@ on:
       - 'crates/latent-wasmtime/**'
       - '.github/workflows/dotnet-guest.yml'
   workflow_dispatch:
+    inputs:
+      private_nuget_variance:
+        description: Reuse exact03a native products and capture both private offline component outputs
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -78,6 +83,7 @@ env:
 
 jobs:
   toolchain:
+    if: ${{ !inputs.private_nuget_variance }}
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -261,6 +267,16 @@ jobs:
             ${{ runner.temp }}/dotnet-private-dependencies/build-*/build-observation.json
             ${{ runner.temp }}/dotnet-private-dependencies/build-*/compiler-containment.json
             ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/component.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/native-aot-raw.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/build-observation.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/source-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/component.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/native-aot-raw.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/build-observation.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/source-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/recipe-inputs.json
             ${{ runner.temp }}/dotnet-private-dependencies/node-*/workflow.json
             ${{ runner.temp }}/dotnet-private-dependencies/node-*/FAILED.json
             ${{ runner.temp }}/dotnet-standard-resources/**
@@ -310,3 +326,94 @@ jobs:
             ${{ runner.temp }}/dotnet-http-error-port/
           if-no-files-found: error
           retention-days: 7
+
+  private-nuget-variance:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.private_nuget_variance }}
+    name: Fixed-source private NuGet component variance diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Test fixed public artifact and package identity controls
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_dotnet_private_replay
+      - name: Retrieve only exact source-bound native products and companion packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/replay_dotnet_private_dependencies.py --output "$RUNNER_TEMP/private-nuget-prepared"
+      - name: Install captured NativeAOT namespace and loader inputs
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the pinned native compiler and closed runtime
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Reproduce private capture and exact offline component equality
+        run: python3 tools/qualify_dotnet_private_dependencies.py --prepared-qualification "$RUNNER_TEMP/private-nuget-prepared" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-private-dependencies"
+      - name: Retain fixed public evidence and owned component intermediates
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-private-variance-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/private-nuget-prepared/retrieval.json
+            ${{ runner.temp }}/dotnet-private-dependencies/qualification.json
+            ${{ runner.temp }}/dotnet-private-dependencies/FAILED.json
+            ${{ runner.temp }}/dotnet-private-dependencies/capture.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/component.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/native-aot-raw.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/build-observation.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/source-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-0/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/component.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/native-aot-raw.wasm
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/build-observation.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/source-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/recipe-inputs.json
+          if-no-files-found: warn
+          retention-days: 3

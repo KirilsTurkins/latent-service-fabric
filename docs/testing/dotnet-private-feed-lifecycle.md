@@ -81,3 +81,21 @@ or hermetic-build claim. Descriptor-selected reflection and unsupported dynamic
 or reflection operations require their own actual-component evidence. #687 and
 the broader six-language tickets remain open until their literal criteria and
 required tests are independently reconciled with successful source-bound runs.
+
+## Fixed-source build variance diagnostic
+
+The explicit `private_nuget_variance` workflow input is a diagnostic for the
+retained `03a3f745` private-feed programme, not a replacement normal qualification.
+It retrieves only the source-bound five native tools and four companion package
+inputs from artifact `12206326792`. Artifact/run/head/size/digest, source-before
+and source-after maps, native binary hashes and package inventories must match;
+the unchanged `prepared_inputs` consumer checks them again before use.
+
+The separate job installs the ordinary pinned NativeAOT tools, then performs
+fresh private capture and offline builds. It does not repeat native application
+compilation, the full SDK programme or the printed guide. The exact component
+identity assertion remains mandatory. Both initial/rebuilt component and raw
+NativeAOT products, observations and input identities are retained for comparison;
+private keys, credentials and raw command streams are excluded from this upload.
+No deterministic-build cause, private signed lifecycle pass, current development
+compilation or whole-ticket completion is implied by this diagnostic.

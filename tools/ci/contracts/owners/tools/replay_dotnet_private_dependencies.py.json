@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_private_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Exact03a diagnostic with early strict current-source and finite fixed-artifact-size cumulative range bound; normal qualifier unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "328b3b8989eec68e0064a861263cf4a15497108c75f007f4db2babe551c215b9"
+}
