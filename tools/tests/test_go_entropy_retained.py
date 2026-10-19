@@ -90,7 +90,10 @@ class RetainedEntropy(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary);binary = base/'compiled-latentd';binary.write_bytes(b'actual new host')
             rows = [{'reason': 'compiler-artifact', 'target': {'name': 'latentd', 'kind': ['bin']},
-                     'executable': str(binary), 'features': []}, {'reason': 'build-finished', 'success': True}]
+                     'executable': str(binary), 'features': [],
+                     'profile': {'opt_level': '0', 'debuginfo': 0, 'debug_assertions': True,
+                                 'overflow_checks': True, 'test': False}},
+                    {'reason': 'build-finished', 'success': True}]
             calls = []
             def command(*arguments):
                 calls.append(arguments)
@@ -103,17 +106,42 @@ class RetainedEntropy(unittest.TestCase):
                 self.assertEqual(actual.read_bytes(), binary.read_bytes())
                 self.assertEqual(proof['compiledSource'], 'a'*40)
                 self.assertTrue(proof['ordinaryDefaults'])
+                self.assertEqual(proof['profile'], rows[0]['profile'])
                 self.assertEqual(calls[0][1:], ('cargo', 'build', '--locked', '-p', 'latentd', '--bin', 'latentd', '--message-format=json'))
-                for mode in ('features', 'incomplete', 'source-drift'):
+                for mode in ('features', 'incomplete', 'source-drift', 'debug-info'):
                     original = copy.deepcopy(rows)
                     destination = base/mode;destination.mkdir()
                     if mode == 'features': rows[0]['features'] = ['development-test-node']
                     elif mode == 'incomplete': rows[1]['success'] = False
+                    elif mode == 'debug-info': rows[0]['profile']['debuginfo'] = 2
                     with patch.object(qualification, 'source_identity', side_effect=[{'before': True}, {'after': True}]
                                       if mode == 'source-drift' else None,
                                       return_value={'same': True}), self.assertRaisesRegex(RuntimeError, 'go-entropy-retained-'):
                         qualification.current_host(destination, commands)
                     rows[:] = original
+
+    def test_sanitized_native_build_restores_debug_zero_and_original_correctness_settings(self):
+        # The workflow environment is deliberately stripped by build_environment.
+        # Capture the real Commands constructor before any native work begins.
+        from tools import build_observation
+        ambient = {'CARGO_PROFILE_DEV_DEBUG': '2', 'CARGO_INCREMENTAL': '1',
+                   'RUSTFLAGS': '--unreviewed-native-flags'}
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.dict(build_observation.os.environ, ambient), \
+                patch.object(qualification.sys, 'platform', 'linux'), \
+                patch.object(qualification.sys, 'version_info', (3, 13)), \
+                patch.object(qualification, 'Commands', side_effect=RuntimeError('constructor captured')) as command:
+            base = Path(temporary)
+            with self.assertRaisesRegex(RuntimeError, 'constructor captured'):
+                qualification.qualify(base/'unused-inputs', base/'owned-output')
+            environment = command.call_args.args[2]
+            for key, expected in {'CARGO_INCREMENTAL': '0', 'CARGO_PROFILE_DEV_DEBUG': '0',
+                    'CARGO_PROFILE_TEST_DEBUG': '0', 'CARGO_PROFILE_DEV_DEBUG_ASSERTIONS': 'true',
+                    'CARGO_PROFILE_TEST_DEBUG_ASSERTIONS': 'true', 'CARGO_PROFILE_DEV_OVERFLOW_CHECKS': 'true',
+                    'CARGO_PROFILE_TEST_OVERFLOW_CHECKS': 'true'}.items():
+                self.assertEqual(environment.get(key), expected, key)
+            self.assertNotIn('RUSTFLAGS', environment)
+            self.assertEqual(command.call_args.kwargs, {'deadline_seconds': 1950, 'command_seconds': 1800})
 
     def test_manual_cpu_scalar_and_entropy_jobs_are_independent_and_original_deadline_is_unchanged(self):
         from tools import ci_lane_inventory

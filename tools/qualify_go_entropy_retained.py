@@ -108,13 +108,17 @@ def current_host(output, commands):
                 and row['target']['name'] == 'latentd' and 'bin' in row['target']['kind'] and row.get('executable')]
     require(len(finished) == len(selected) == 1 and finished[0]['success'] is True
             and not selected[0]['features'], 'go-entropy-retained-ordinary-host-only')
+    profile = selected[0]['profile']
+    require(profile == {'opt_level': '0', 'debuginfo': 0, 'debug_assertions': True,
+                        'overflow_checks': True, 'test': False},
+            'go-entropy-retained-native-correctness-profile')
     source = Path(selected[0]['executable'])
     expected = file_identity(source, 512*1024**2)
     owned = output/'current-latentd';shutil.copyfile(source, owned);owned.chmod(0o700)
     require(file_identity(owned, 512*1024**2) == expected and source_identity(ROOT) == before,
             'go-entropy-retained-current-host-changed')
     proof = {'compiledSource': head, 'sourceIdentity': before, 'binary': expected,
-        'features': [], 'ordinaryDefaults': True, 'originalCliAndCompanionsRecompiled': False}
+        'features': [], 'profile': profile, 'ordinaryDefaults': True, 'originalCliAndCompanionsRecompiled': False}
     write_json(output/'current-host.json', proof)
     return owned, proof
 
@@ -122,7 +126,13 @@ def current_host(output, commands):
 def qualify(acquired, output):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'go-entropy-retained-Linux-Python313')
     output = fresh(output)
-    commands = Commands(ROOT, output, build_environment(output), deadline_seconds=1950, command_seconds=1800)
+    environment = build_environment(output)
+    # Match normal qualification after the isolated environment removes ambient
+    # Cargo settings. Keep correctness checks and the existing binary byte bound.
+    environment.update(CARGO_INCREMENTAL='0', CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    commands = Commands(ROOT, output, environment, deadline_seconds=1950, command_seconds=1800)
     record = {'schemaVersion': 'latent.go.retained-entropy-qualification.v1', 'status': 'incomplete',
         'fullTicketQualification': False, 'publisherAuthenticated': False, 'releasePublished': False,
         'originalNormalReceiptRewritten': False, 'randomPayloadRetained': False}

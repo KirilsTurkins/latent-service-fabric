@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_entropy_retained.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
+  "reviewReason": "Restore explicit debug-zero/nonincremental native correctness profile after sanitized environment; preserve binary and execution bounds, add real command-environment regression and reject changed compiler profile.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4056f807c5fa9183330c95766aa7a0ee6325b938fce861359f922fb27b710f28"
+  "sha256": "0336c430bff2082c13109296d09891431fa7f7b25f2b10db7eaa4de33f42cceb"
 }
