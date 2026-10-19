@@ -217,6 +217,9 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
                 or row["origin"] == "dependency" and isinstance(row.get("owner"), str)
                 and re.fullmatch(r"[A-Za-z0-9_@+./:-]{1,256}", row["owner"])
                 and ".." not in row["owner"] and "//" not in row["owner"], "resource-index-origin")
+        require(row["origin"] == "application" and value["manifestDigest"] is not None
+                or row["origin"] == "dependency" and value["dependencyLockDigest"] is not None,
+                "resource-index-origin-binding-missing", "denied")
         require(isinstance(row["digest"], str) and SHA.fullmatch(row["digest"])
                 and row["object"] == "resources/objects/" + row["digest"][7:], "resource-object-path-invalid")
         require(type(row["size"]) is int and 0 <= row["size"] <= MAX_FILE, "resource-byte-limit", "exhausted")

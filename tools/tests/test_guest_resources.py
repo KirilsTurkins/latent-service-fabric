@@ -226,6 +226,55 @@ class ResourceCapture(unittest.TestCase):
         with self.assertRaisesRegex(resources.ResourceError, "lock-missing"):
             resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
 
+    def test_dependency_origin_requires_bound_lock_even_after_index_rehash(self):
+        packaged = resources.capture(captured(), COMPONENT, SOURCE)
+        self.assertEqual(check(packaged)["resources"][0]["origin"], "application")
+        self.assertIsNone(packaged.index["dependencyLockDigest"])
+        changed = copy.deepcopy(packaged.index)
+        changed["resources"][0].update(origin="dependency", owner="external:uncaptured:1.0")
+        changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
+        with self.assertRaises(resources.ResourceError) as raised:
+            check(resources.PackagedResources(changed, packaged.objects))
+        self.assertEqual((raised.exception.category, raised.exception.code),
+                         ("denied", "resource-index-origin-binding-missing"))
+
+    def test_application_origin_requires_bound_manifest_even_after_index_rehash(self):
+        payload = b"dependency-only immutable bytes"
+        owner = "external:captured:1.0"
+        lock = {"artifacts": [{"id": owner, "files": [{"path": "data.txt", "digest": digest(payload), "size": len(payload)}]}]}
+        files = {"latent.dependencies.lock.json": encode(lock), "dependencies/data.txt": payload}
+        additional = {**row("data.txt", "dependencies/data.txt"), "digest": digest(payload), "owner": owner}
+        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+        dependency = digest(files["latent.dependencies.lock.json"])
+        self.assertEqual(check(packaged, dependency=dependency)["resources"][0]["origin"], "dependency")
+        self.assertIsNone(packaged.index["manifestDigest"])
+        changed = copy.deepcopy(packaged.index)
+        changed["resources"][0]["origin"] = "application"
+        changed["resources"][0].pop("owner")
+        changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
+        with self.assertRaises(resources.ResourceError) as raised:
+            check(resources.PackagedResources(changed, packaged.objects), dependency=dependency)
+        self.assertEqual((raised.exception.category, raised.exception.code),
+                         ("denied", "resource-index-origin-binding-missing"))
+
+    def test_mixed_origins_bind_both_inputs_and_preserve_shared_immutable_objects(self):
+        files = captured()
+        payload = files["assets/greeting.txt"]
+        owner = "external:captured:1.0"
+        lock = {"artifacts": [{"id": owner, "files": [{"path": "data.txt", "digest": digest(payload), "size": len(payload)}]}]}
+        files.update({"latent.dependencies.lock.json": encode(lock), "dependencies/data.txt": payload})
+        additional = {**row("dependency/data.txt", "dependencies/data.txt"), "digest": digest(payload), "owner": owner}
+        before = copy.deepcopy(files)
+        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+        value = check(packaged, dependency=digest(files["latent.dependencies.lock.json"]))
+        self.assertEqual([item["origin"] for item in value["resources"]], ["application", "dependency"])
+        self.assertEqual(value["manifestDigest"], digest(files[resources.MANIFEST]))
+        self.assertEqual(value["dependencyLockDigest"], digest(files["latent.dependencies.lock.json"]))
+        self.assertEqual(value["count"], 2)
+        self.assertEqual(value["bytes"], 2 * len(payload))
+        self.assertEqual(list(packaged.objects.values()), [payload])
+        self.assertEqual(files, before)
+
     def test_six_language_package_inputs_include_index_and_original_bytes(self):
         for language in ("rust", "c", "java", "go", "typescript", "dotnet"):
             with self.subTest(language=language), tempfile.TemporaryDirectory() as temporary:
