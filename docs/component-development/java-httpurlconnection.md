@@ -79,8 +79,10 @@ HTTPS currently fails before provider contact because the standard HTTPS type,
 certificate/pinning and socket-factory boundary is unqualified. Provider TLS
 alone cannot substitute those Java API semantics. Separate nonzero connect/read
 timeouts, conditional date requests, interactive authentication, explicit chunk
-framing, the wire HTTP version/reason phrase and indexed status-line/header views
-remain unsupported. Automatic redirect status handling fails without another
+framing, the wire HTTP version and indexed status-line/header views remain
+unsupported. The typed provider does not export a reason phrase; the optional
+`getResponseMessage()` returns `null` after completing the normal response,
+without inventing text or suppressing an operation error. Automatic redirect status handling fails without another
 dispatch; explicit `setInstanceFollowRedirects(false)` exposes the response.
 These failures are blockers for those features, not success-labelled conformance
 skips. There is no implicit proxy, socket fallback, retry, reconnect or credential

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_private_http.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review immutable captured local HTTP JARs with genuine native tuple, exact offline source and recipe, strict signed provider evidence and unchanged limits",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "dc99932e14b8628091e8820d6551ded6f7397395e6130923f2f74f3a9de7c405"
+}

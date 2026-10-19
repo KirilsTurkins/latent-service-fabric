@@ -96,7 +96,7 @@ class ExplicitEntropyAuthority(unittest.TestCase):
         self.assertEqual(rule["operations"], ["bytes"])
         self.assertEqual(rule["ceiling"], {"operations": 16, "inputBytes": 8,
             "outputBytes": 4096, "wallTimeMillis": 5000})
-        self.assertEqual(result["noncryptoEntropyAuthority"]["secureRandom"], "unchanged-denial")
+        self.assertEqual(result["noncryptoEntropyAuthority"]["secureRandom"], "declared-provider-u64")
 
     def test_uncertain_or_dispatched_guest_failure_never_creates_entropy_authority(self):
         invalid = []

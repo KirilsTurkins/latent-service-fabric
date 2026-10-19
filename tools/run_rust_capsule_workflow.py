@@ -45,13 +45,17 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False):
+        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False):
     require(type(standard_typescript_entropy) is bool and (not standard_typescript_entropy or language == 'typescript')
             and not (standard_typescript_entropy and (standard_typescript_console or captured_dependency_recovery
                 or captured_npm_private or approved_typescript_generator)), 'authoring-typescript-standard-entropy-language')
     require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
             'authoring-typescript-console-language')
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
+    require(type(dotnet_standard_entropy) is bool
+            and (not dotnet_standard_entropy or (language == "dotnet" and noncrypto_entropy
+                 and not (dotnet_standard_logging or dotnet_reflection or captured_dotnet_private))),
+            "authoring-dotnet-secure-entropy-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
     require(type(c_standard_facilities) is bool and (not c_standard_facilities or language == "c"),
@@ -240,6 +244,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
+                    if dotnet_standard_entropy:
+                        from tools.dotnet_standard_entropy_probe import grant as grant_secure_entropy
+                        grant_secure_entropy(client, node, fixture, targets, publications, result)
                     if dotnet_standard_logging:
                         from tools.dotnet_standard_console_probe import grant as grant_console
                         grant_console(client, node, fixture, targets, publications, result)
@@ -262,6 +269,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import probe as entropy_probe
                         entropy_probe(client, targets['greeting'], probe, result, len(names))
+                    if dotnet_standard_entropy:
+                        from tools.dotnet_standard_entropy_probe import probe as probe_secure_entropy
+                        probe_secure_entropy(client, targets['greeting'], probe, result, len(names))
                     if dotnet_standard_logging:
                         from tools.dotnet_standard_console_probe import probe as probe_console
                         probe_console(client, targets['greeting'], probe, result, len(names))
