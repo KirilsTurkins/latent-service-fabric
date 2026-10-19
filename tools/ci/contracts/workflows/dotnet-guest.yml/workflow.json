@@ -34,6 +34,9 @@
           "tools/dotnet_standard_http*.py",
           "tools/dotnet_internal_io_port.py",
           "tools/qualify_dotnet_standard_http.py",
+          "tools/dotnet_standard_entropy*.py",
+          "tools/qualify_dotnet_standard_entropy.py",
+          "tools/tests/test_dotnet_secure_entropy.py",
           "tools/dotnet_standard_console*.py",
           "tools/qualify_dotnet_standard_console.py",
           "tools/tests/test_dotnet_standard_console.py",
@@ -91,7 +94,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Compose closed synchronous Console IO repair with independent merged reflection/private NuGet and other facility selectors; retain original commands, limits and all owning controls.",
+  "reviewReason": "Add explicit pinned secure PAL scalar authority, native C reference and signed outside ordinary RNG gate while preserving every prior command, case, limits and receipt.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

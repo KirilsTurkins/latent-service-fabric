@@ -54,12 +54,13 @@ class NoncryptoNativePort(unittest.TestCase):
     def prepare(self):
         return entropy.prepare(self.compiler, [runtime.CLOCK, runtime.RANDOM], self.project, self.output)
 
-    def response(self, port, *, objects=1, wraps=1, secure=False):
+    def response(self, port, *, objects=1, wraps=1, secure=1, extra=False):
         target = self.project / "obj/Release/link.rsp"
         target.parent.mkdir(parents=True, exist_ok=True)
         body = ["\"" + str(port.object) + "\""] * objects + [entropy.WRAP] * wraps
-        if secure:
-            body.append("-Wl,--wrap=SystemNative_GetCryptographicallySecureRandomBytes")
+        body.extend([entropy.SECURE_WRAP] * secure)
+        if extra:
+            body.append("-Wl,--wrap=SystemNative_Unreviewed")
         target.write_text("\n".join(body), encoding="utf-8")
         return target
 
@@ -78,7 +79,7 @@ class NoncryptoNativePort(unittest.TestCase):
         self.assertEqual(value["original"]["digest"], digest(self.archive_bytes))
         self.assertEqual(value["originalMember"]["digest"], digest(self.member))
         self.assertEqual(value["derived"]["digest"], digest(port.object.read_bytes()))
-        self.assertEqual(value["secureRandom"], "unchanged-denial")
+        self.assertEqual(value["secureRandom"], "declared-provider-u64")
         self.assertFalse(value["ordinaryLibraryExecutionQualified"])
         self.assertEqual(value["nativeLinkBinding"]["objectOccurrences"], 1)
         self.assertEqual(port.retained.read_bytes(), port.object.read_bytes())
@@ -105,9 +106,10 @@ class NoncryptoNativePort(unittest.TestCase):
 
     def test_missing_duplicate_and_secure_redirects_fail_actual_link_binding(self):
         port = self.prepare()
-        for objects, wraps, secure in ((0, 1, False), (2, 1, False), (1, 0, False), (1, 2, False), (1, 1, True)):
+        for objects, wraps, secure, extra in ((0, 1, 1, False), (2, 1, 1, False), (1, 0, 1, False),
+                (1, 2, 1, False), (1, 1, 0, False), (1, 1, 2, False), (1, 1, 1, True)):
             with self.subTest(objects=objects, wraps=wraps, secure=secure):
-                self.response(port, objects=objects, wraps=wraps, secure=secure)
+                self.response(port, objects=objects, wraps=wraps, secure=secure, extra=extra)
                 with self.assertRaisesRegex(ValueError, "native-link-binding"):
                     port.finish(self.project, self.evidence)
                 self.assertFalse((self.evidence / "noncrypto-entropy-port.json").exists())
@@ -230,7 +232,7 @@ class SeparateEntropySelection(unittest.TestCase):
         self.addCleanup(fixture.doCleanups)
         compiler, work, output = fixture.application(fixture.root, emitted=[runtime.CLOCK,
             "wasi:random/random@0.2.6", "wasi:random/insecure@0.2.6"], final=[runtime.CLOCK, runtime.RANDOM])
-        compiler.generated_materials = []
+        compiler.generated_materials, compiler.compiler_patches = [], []
         compiler.wac.write_bytes(b"owned unit-boundary component composer")
         original_run, plugs = compiler.run, []
         def run(stage, executable, *arguments):
@@ -244,9 +246,17 @@ class SeparateEntropySelection(unittest.TestCase):
                 plugs.extend(arguments)
             return original_run(stage, executable, *arguments)
         compiler.run = run
-        with patch("tools.dotnet_application_dependencies.configure", fixture.configure), patch("tools.dotnet_guest.entropy.prepare") as prepare:
+        def closed_projection(actual, adapter, directory, profile):
+            self.assertIs(actual, compiler)
+            self.assertEqual(profile, "closed")
+            (fixture.evidence / "closed-io-port.json").write_bytes(b'{"fixture":"closed-io"}')
+            return adapter, {"fixture": "closed-io"}
+        with patch("tools.dotnet_application_dependencies.configure", fixture.configure), \
+                patch("tools.dotnet_guest.closed_io.prepare", side_effect=closed_projection) as projected, \
+                patch("tools.dotnet_guest.entropy.prepare") as prepare:
             prepare.return_value = None
             component, result = compiler.compile(work, "examples:greeting/service@1.0.0", output)
+        projected.assert_called_once()
         prepare.assert_called_once_with(compiler, [runtime.CLOCK, runtime.RANDOM], output / "project", output)
         self.assertTrue(component.is_file())
         self.assertEqual(plugs[0], "compose")
@@ -257,7 +267,7 @@ class SeparateEntropySelection(unittest.TestCase):
         self.assertEqual(source.count('"wasi:random/insecure@0.2.6": runtime1'), 1)
         self.assertNotIn('"wasi:random/insecure@0.2.0":', source)
         materials = {row["name"] for row in compiler.generated_materials}
-        self.assertEqual(materials, {"runtime-composition", "runtime-composition-source"})
+        self.assertEqual(materials, {"runtime-composition", "runtime-composition-source", "dotnet-closed-io-port"})
         self.assertEqual(result["runtimeProfile"]["profile"], "closed")
         self.assertEqual(result["runtimeProfile"]["additionalAdapters"][0]["name"], "noncrypto-entropy")
         receipt = json.loads((fixture.evidence / "closed-runtime-coverage.json").read_bytes())
