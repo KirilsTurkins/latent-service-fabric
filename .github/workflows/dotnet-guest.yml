@@ -319,7 +319,7 @@ jobs:
 
   reflection-replay:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.reflection_replay }}
-    name: Fixed-source private NuGet component variance diagnostic
+    name: Signed descriptor reflection with retained native products
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     permissions:

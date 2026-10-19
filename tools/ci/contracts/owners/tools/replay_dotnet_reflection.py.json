@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_dotnet_reflection.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit manual-only original03a native-product reuse and fresh reflected-component build, retaining every normal command and default behavior.",
+  "reviewReason": "Correct receipt reader to existing 32 MiB producer bound after actual 5410904-byte successful offline build receipt; preserve every containment and runtime assertion.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "09a829843849101f2c36bd3f387ffe4da5397582362805c4ce637177e332b354"
+  "sha256": "c7c021eb2643654796206eff052f0ac3017c6cc5e06bbe796208926314f070fe"
 }
