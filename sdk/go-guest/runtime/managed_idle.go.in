@@ -1,0 +1,77 @@
+// Finite runtime-owned maintenance capacity in the original activation ledger.
+// These reservations never admit application callbacks or independent work.
+const lsfManagedCapacity = 8
+var lsfManagedOwners [lsfManagedCapacity][2]uint64
+var lsfManagedPrepared bool
+var lsfManagedAssigned uint32
+
+// Called before runtime package initialization can allocate maintenance g's.
+// Reserve every slot first: GC may later create a worker inside cabi_realloc,
+// where a new component import is forbidden. Unused capacity remains charged.
+func lsfPrepareManagedIdle() {
+	if lsfManagedPrepared || lsfManagedAssigned != 0 { lsfFail("LSF managed runtime bootstrap overlap") }
+	if lsfClockPauseDepth != 0 { lsfFail("LSF managed runtime bootstrap during lowering") }
+	for index := range lsfManagedOwners {
+		var result lsfTokenResult
+		lsfRegister(1, 0, 0, 0, unsafe.Pointer(&result))
+		if result.tag != 0 || result.id == 0 { lsfFail("LSF managed runtime capacity denied") }
+		lsfManagedOwners[index] = [2]uint64{result.generation, result.id}
+	}
+	lsfManagedPrepared = true
+}
+
+//go:nosplit
+func lsfManagedOwner(gp *g) bool {
+	if gp.lsfOwner[1] == 0 { return false }
+	for index := range lsfManagedOwners {
+		if gp.lsfOwner == lsfManagedOwners[index] { return true }
+	}
+	return false
+}
+
+// Every scheduler resume, including injectglist's GC path, checks the fence.
+// Keep retired token identities until Store drop so a post-result GC wake can
+// never turn into unowned execution during canonical cleanup.
+//go:nosplit
+func lsfManagedBeforeRun(gp *g) {
+	if lsfManagedOwner(gp) && !lsfManagedPrepared {
+		lsfFail("LSF maintenance resume after retirement")
+	}
+}
+
+// The exact source-pinned worker functions still have the existing restricted
+// finalizer/cleanup policy. Application daemon status or parking is no proof.
+//go:nosplit
+func lsfTakeManagedOwner() [2]uint64 {
+	if !lsfManagedPrepared || lsfManagedAssigned >= lsfManagedCapacity {
+		lsfFail("LSF managed runtime worker capacity exhausted")
+	}
+	owner := lsfManagedOwners[lsfManagedAssigned]
+	lsfManagedAssigned++
+	return owner
+}
+
+// At dispatcher idle, every accepted application task has actually exited and
+// there is no runnable guest or host subtask. Independently check all remaining
+// g's; only the declared maintenance workers may remain physically parked.
+// Guest heap/stack memory stays charged to the original Store until destruction.
+func lsfRetireManagedIdle() {
+	if !lsfManagedPrepared || lsfClockPauseDepth != 0 {
+		lsfFail("LSF managed runtime retirement outside dispatcher idle")
+	}
+	current := getg()
+	if lsfManagedOwner(current) { lsfFail("LSF maintenance worker cannot seal an activation") }
+	for _, gp := range allgs {
+		status := readgstatus(gp) &^ _Gscan
+		if gp == current || status == _Gdead { continue }
+		if !lsfManagedOwner(gp) || !lsfTrustedIdle(gp.startpc) || status != _Gwaiting {
+			lsfFail("LSF managed runtime is not physically idle")
+		}
+	}
+	for _, owner := range lsfManagedOwners {
+		var result lsfUnitResult
+		lsfSettle(int64(owner[0]), int64(owner[1]), unsafe.Pointer(&result))
+		if result.tag != 0 { lsfFail("LSF managed runtime settlement unconfirmed") }
+	}
+	lsfManagedPrepared = false
+}

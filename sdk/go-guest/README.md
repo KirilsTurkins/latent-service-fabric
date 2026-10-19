@@ -1,5 +1,9 @@
 # Go capsule SDK
 
+Ordinary `fmt`, `log` and stdout/stderr writes can use the explicitly declared
+[bounded standard logging profile](../../docs/component-development/go-standard-logging.md).
+The signed campaign is pending; buffered/async logger drain remains unqualified.
+
 For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
 and select your language. The language profile below describes compiler and
 custom packaging details.
@@ -24,6 +28,10 @@ Do not substitute stock Go or TinyGo. No ambient WASI imports survive the
 closed runtime adapter. Runtime clocks and entropy are explicit LSF imports,
 requiring installed providers, policy bindings and per-deployment grants.
 The first node call without those grants must fail closed.
+
+The opt-in [maintenance worker profile](../../docs/development/go-managed-idle.md)
+reserves finite original-ledger capacity for the pinned runtime's internal
+workers and fences retirement. Its signed qualification is tracked separately.
 
 ## Typed contracts
 

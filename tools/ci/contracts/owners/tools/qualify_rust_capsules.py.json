@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind committed LF source; preserve existing qualification and opt in Go generated source with exact offline materials and three additional signed results.",
+  "reviewReason": "Exact Git-LF union captures private CA/generator/logging/managed-v5 helpers while all original controls/default selectors remain.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ee2432798a9608fd0f0d557d891fd8076a67dda52af7770f741be4a71c319687"
+  "sha256": "1ae0dcad6739fa1f6871d5317f6a3bb6a9ebba9bf8a76b99f436ab79caebcd9c"
 }
