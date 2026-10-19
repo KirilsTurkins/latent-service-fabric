@@ -6,9 +6,14 @@ qualification on the observer's behalf. No Cargo or engine build occurs.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import argparse
+import importlib
+import importlib.machinery
 import importlib.util
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -61,6 +66,65 @@ def observer_host(directory: Path, identity: dict) -> Path:
     return host
 
 
+def failure_sites(error: BaseException) -> list[dict]:
+    """Only public owned-source locations, never error text or local paths."""
+    sites = []
+    trace = error.__traceback__
+    while trace is not None:
+        frame = trace.tb_frame
+        path = Path(frame.f_code.co_filename).resolve()
+        if (ROOT in path.parents and path.suffix == '.py'
+                and (ROOT/'tools') in path.parents
+                and re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]{0,79}', frame.f_code.co_name)
+                and 1 <= trace.tb_lineno <= 1000000):
+            sites.append({'source': path.relative_to(ROOT).as_posix(),
+                          'function': frame.f_code.co_name, 'line': trace.tb_lineno})
+        trace = trace.tb_next
+    return sites[-8:]
+
+
+@contextmanager
+def selected_candidate(native: Path, products: dict, identity: dict, replacements: dict):
+    """Bind original products to a separately identified private source candidate.
+
+    The unmodified full prepared-source guard runs before installing candidate
+    bytes and after restoration. During the candidate, each use rehashes all
+    five original products and all four reviewed source files. No production
+    receipt validator is changed or given current-source qualification credit.
+    """
+    def verified_original(selected):
+        require(Path(selected).resolve() == native.resolve(), 'fetch-candidate-original-native-path')
+        require(all(read_file(ROOT/name, 131072) == raw for name, raw in replacements.items()),
+                'fetch-candidate-reviewed-source-drift')
+        require({name: file_identity(path, 512*1024**2) for name, path in products.items()}
+                == identity['nativeProducts'], 'fetch-candidate-original-products-drift')
+        return products, identity
+
+    verified_original(native)
+    compiler_source = ROOT/'tools/typescript_guest/compiler.py'
+    # Compile the authenticated bytes directly: importing an already loaded
+    # module (or a same-timestamp .pyc) would silently reuse the old adapter.
+    class ReviewedSourceLoader(importlib.machinery.SourceFileLoader):
+        def get_code(self, fullname):
+            return self.source_to_code(read_file(Path(self.path), 131072), self.path)
+
+    loader = ReviewedSourceLoader('private_fetch_candidate_compiler', str(compiler_source))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    require(spec is not None, 'fetch-candidate-compiler-loader')
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    build_module = importlib.import_module('tools.typescript_guest.build')
+    original_compiler = build_module.Compiler
+    require(module.Compiler is not original_compiler, 'fetch-candidate-fresh-compiler-required')
+    with patch.object(fetch, 'prepared_native', side_effect=verified_original), \
+            patch.object(build_module, 'Compiler', module.Compiler):
+        try:
+            yield
+        finally:
+            verified_original(native)
+    require(build_module.Compiler is original_compiler, 'fetch-candidate-compiler-not-restored')
+
+
 def run(candidate: Path, adapters: Path, native: Path, engine: Path, splicer: Path, tools: Path,
         observer: Path, observer_helper: Path, output: Path) -> dict:
     output = fresh(output)
@@ -77,18 +141,25 @@ def run(candidate: Path, adapters: Path, native: Path, engine: Path, splicer: Pa
               'originalBackend': {'sha256': digest(original), 'bytes': len(original)},
               'nativeTuple': identity, 'compilerOrEngineRebuilt': False,
               'currentPrHeadQualification': False, 'privateObserverQualification': False,
-              'ordinaryFiniteGate': 'not-run'}
+              'ordinaryFiniteGate': 'not-run',
+              'preparedSourceValidatedBeforeAndAfterRestoration': True,
+              'selectedSourceQualification': False}
     try:
         for name, raw in replacements.items():
             (ROOT/name).write_bytes(raw)
         require(sorted(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()) == sorted(replacements),
                 'fetch-candidate-only-reviewed-source-delta')
         try:
-            result = fetch.qualify(output/'attempt', tools, engine, splicer, prepared=native)
+            with selected_candidate(native, originals, identity, replacements):
+                result = fetch.qualify(output/'attempt', tools, engine, splicer, prepared=native)
             record['ordinaryFiniteGate'] = result['status']
             record['ordinaryCases'] = result['cases']
         except (ValueError, OSError, KeyError, TypeError, RuntimeError) as error:
             record['ordinaryFailureClass'] = type(error).__name__
+            record['ordinaryFailureSites'] = failure_sites(error)
+            # Only the known fixed setup code is projected; no arbitrary error text.
+            if str(error) == 'typescript-library-exact-prepared-source-required':
+                record['ordinaryFailureCode'] = str(error)
             record['ordinaryFiniteGate'] = 'failed'
         except Exception:
             record['ordinaryFiniteGate'] = 'failed'

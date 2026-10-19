@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_candidate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate the exact three guarded compiler-adapter bytes and preserve all unchanged ordinary native and owner limits.",
+  "reviewReason": "Private replay validates original prepared source before/after four reviewed overlays, rehashes five native products on every use, and loads exact compiler bytes without stale module or bytecode reuse; drift and closed-source-location controls preserve private error suppression.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "83c9224b7247a2818227a729f6139956ed4adad4262f80706263bad897f23e9f"
+  "sha256": "0b4206bf8a1f8558512eed46654eec1cd2ea21b24fa63982c938814a0c530239"
 }

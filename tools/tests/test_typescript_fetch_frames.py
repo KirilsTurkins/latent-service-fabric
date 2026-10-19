@@ -316,6 +316,64 @@ class FetchFailureFrames(unittest.TestCase):
             with self.assertRaisesRegex(WorkflowError, 'exact-adapter'):
                 candidate.candidate_adapters(root)
 
+    def test_candidate_failure_sites_never_project_error_text_or_external_paths(self):
+        from tools import diagnose_typescript_fetch_candidate as candidate
+        try:
+            candidate.require(False, 'PRIVATE credential/path/error')
+        except WorkflowError as error:
+            sites = candidate.failure_sites(error)
+        self.assertEqual(sites[-1]['source'], 'tools/phase2_operator_process.py')
+        self.assertEqual(sites[-1]['function'], 'require')
+        self.assertLessEqual(len(sites), 8)
+        self.assertNotIn('PRIVATE', json.dumps(sites))
+        self.assertTrue(all(not Path(row['source']).is_absolute() and row['line'] > 0 for row in sites))
+        with patch.object(candidate, 'ROOT', Path('/outside/owned/source')):
+            try:
+                raise RuntimeError('PRIVATE credential/path')
+            except RuntimeError as error:
+                sites = candidate.failure_sites(error)
+        self.assertEqual(sites, [])
+
+    def test_candidate_original_native_validation_and_fresh_compiler_are_separate_from_source_overlay(self):
+        from tools import diagnose_typescript_fetch_candidate as candidate
+        from tools.typescript_guest import build as builder
+        old_compiler = builder.Compiler
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = root/'tools/typescript_guest/compiler.py'
+            compiler.parent.mkdir(parents=True)
+            raw = b'class Compiler:\n    candidate_marker = "new-adapter"\n'
+            compiler.write_bytes(raw)
+            products = {name: root/name for name in candidate.fetch.PRODUCTS}
+            for name, path in products.items():
+                path.write_bytes(name.encode())
+            identity = {'nativeProducts': {name: candidate.file_identity(path) for name, path in products.items()}}
+            replacements = {'tools/typescript_guest/compiler.py': raw}
+            original_validator = candidate.fetch.prepared_native
+            with patch.object(candidate, 'ROOT', root):
+                with candidate.selected_candidate(root, products, identity, replacements):
+                    self.assertEqual(builder.Compiler.candidate_marker, 'new-adapter')
+                    self.assertEqual(candidate.fetch.prepared_native(root), (products, identity))
+                    with self.assertRaisesRegex(WorkflowError, 'original-native-path'):
+                        candidate.fetch.prepared_native(root/'other')
+                    selected = products['latentd']
+                    before = selected.read_bytes()
+                    selected.write_bytes(b'changed')
+                    with self.assertRaisesRegex(WorkflowError, 'original-products-drift'):
+                        candidate.fetch.prepared_native(root)
+                    selected.write_bytes(before)
+                    compiler.write_bytes(raw+b'\n')
+                    with self.assertRaisesRegex(WorkflowError, 'reviewed-source-drift'):
+                        candidate.fetch.prepared_native(root)
+                    compiler.write_bytes(raw)
+                self.assertIs(builder.Compiler, old_compiler)
+                self.assertIs(candidate.fetch.prepared_native, original_validator)
+                with self.assertRaisesRegex(RuntimeError, 'original-error'):
+                    with candidate.selected_candidate(root, products, identity, replacements):
+                        raise RuntimeError('original-error')
+                self.assertIs(builder.Compiler, old_compiler)
+                self.assertIs(candidate.fetch.prepared_native, original_validator)
+
     def test_candidate_private_observer_rejects_changed_binary_and_wrong_source(self):
         from tools import diagnose_typescript_fetch_candidate as candidate
         with tempfile.TemporaryDirectory() as directory:
