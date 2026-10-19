@@ -73,12 +73,47 @@ async function requestTypedOpen(url: string) {
     return 'request-typed-open-ready';
   } catch (error) { return 'request-typed-open-refused:' + httpErrorTag(error); }
 }
+async function frontendReady(url: string, stage: number) {
+  const control = globalThis as unknown as Record<string, unknown>;
+  control.__lsfFetchProbe = stage;
+  try {
+    const response = await fetch(new Request(url, {headers: new Headers([['x-conformance', 'ordinary-global']])}));
+    return stage === 5 && response.status === 204 ? 'frontend-probe-5-ready' : 'frontend-probe-unexpected';
+  } catch (error) {
+    return error instanceof TypeError && error.message === 'lsf-fetch-frontend-stop-' + stage
+      ? 'frontend-probe-' + stage + '-ready' : 'frontend-probe-other';
+  } finally { delete control.__lsfFetchProbe; }
+}
 '''
     return {**source, 'main.ts': probe + source['main.ts'].replace(marker,
         marker + b'\n    if (mode === 5) return await typedInvalidUrl();'
                  b'\n    if (mode === 6) return await typedOpen(url, false);'
                  b'\n    if (mode === 7) return await typedOpen(url, true);'
-                 b'\n    if (mode === 8) return await requestTypedOpen(url);', 1)}
+                 b'\n    if (mode === 8) return await requestTypedOpen(url);'
+                 b'\n    if (mode >= 9 && mode <= 13) return await frontendReady(url, mode - 8);', 1)}
+
+
+def frontend_bundle(raw: bytes) -> bytes:
+    """Fixed public backend derivation; the real compiler and fixture stay unchanged."""
+    original = read_file(ROOT/'tools/typescript_guest/fetch.mjs', 65536).replace(
+        b'export function installFetch(', b'function __lsfInstallFetch(', 1)
+    require(raw.count(original) == 1, 'fetch-boundary-original-backend-shape')
+    selected = original
+    changes = (
+        (b'      metadata(request); // Validate before admitting or contacting a provider.\n',
+         b"      if (target.__lsfFetchProbe === 1) throw new TypeError('lsf-fetch-frontend-stop-1');\n"),
+        (b"      request.signal.addEventListener('abort', abort, {once: true});\n",
+         b"      if (target.__lsfFetchProbe === 2) {request.signal.removeEventListener('abort', abort);outstanding--;throw new TypeError('lsf-fetch-frontend-stop-2');}\n"),
+        (b'  async function perform(request, cancelled) {\n',
+         b"    if (target.__lsfFetchProbe === 3) throw new TypeError('lsf-fetch-frontend-stop-3');\n"),
+        (b'  async function exchange(request, cancelled) {\n',
+         b"    if (target.__lsfFetchProbe === 4) throw new TypeError('lsf-fetch-frontend-stop-4');\n"
+         b"    if (target.__lsfFetchProbe === 5) {const owned = await http.open(metadata(request));await http.abortUpload(owned);return new Response(null, {status:204});}\n"),
+    )
+    for before, addition in changes:
+        require(selected.count(before) == 1, 'fetch-boundary-frontend-stop-shape')
+        selected = selected.replace(before, before + addition, 1)
+    return raw.replace(original, selected, 1)
 
 
 def public_bundle(path: Path) -> dict:
@@ -109,10 +144,23 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
     record['probeSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)}
                             for name, raw in original_source.items()}
     record['applicationSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)} for name, raw in source.items()}
-    record['applicationDerivation'] = 'private-typed-error-and-success-resource-import-probes-only'
+    record['applicationDerivation'] = 'private-typed-import-and-finite-frontend-stop-probes-only'
     original_project, original_call, original_connect = fetch.project, fetch.call, fetch.connect
     original_compile = Compiler.compile
+    original_command = Compiler.run
     services = []
+
+    def command(compiler, stage, tool, *arguments):
+        result = original_command(compiler, stage, tool, *arguments)
+        if stage == 'bundle':
+            bundle = Path(arguments[4])
+            before = read_file(bundle, 65536)
+            after = frontend_bundle(before)
+            record['privateFrontendDerivation'] = {'originalBundleDigest': digest(before),
+                'derivedBundleDigest': digest(after), 'qualification': False,
+                'stopLabels': ['after-metadata', 'after-listener', 'perform-entry', 'exchange-entry', 'nested-open-abort']}
+            bundle.write_bytes(after)
+        return result
 
     def compile(compiler, work, world, destination, **kwargs):
         try:
@@ -148,7 +196,8 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
         require(activation in {'fetch-runtime-denied', 'fetch-http-denied', 'fetch-entry',
             'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
             'fetch-typed-invalid-url', 'fetch-typed-header-refusal', 'fetch-typed-open',
-            'fetch-request-typed-open', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
+            'fetch-request-typed-open', 'fetch-frontend-1', 'fetch-frontend-2', 'fetch-frontend-3',
+            'fetch-frontend-4', 'fetch-frontend-5', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
             'fetch-boundary-activation-name')
         row = original_call(client, target, template, function, arguments, activation, **kwargs)
         fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
@@ -189,6 +238,12 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             write_json(output/'probe-request-typed-open.json', record['probes'][-1])
             fetch.require_result(combined, 'request-typed-open-ready', 1)
             fetch.retire(client, probe, target, output, 'request-typed-open')
+            for stage in range(1, 6):
+                tested = invoke(client, target, template, function, [stage + 8, arguments[1]], 'fetch-frontend-' + str(stage))
+                record['probes'].append({'name': 'frontend-' + str(stage), 'mode': stage + 8, 'entry': tested})
+                write_json(output/('probe-frontend-' + str(stage) + '.json'), record['probes'][-1])
+                fetch.require_result(tested, 'frontend-probe-' + str(stage) + '-ready', 1 if stage == 5 else 0)
+                fetch.retire(client, probe, target, output, 'frontend-' + str(stage))
         return row
 
     try:
@@ -198,7 +253,8 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
         # All compiler/engine/native validation is the original qualifier's.
         # Only the outside-checkout application's two source files differ.
         with patch.object(fetch, 'project', project), patch.object(fetch, 'connect', connect), \
-                patch.object(fetch, 'call', call), patch.object(Compiler, 'compile', compile):
+                patch.object(fetch, 'call', call), patch.object(Compiler, 'compile', compile), \
+                patch.object(Compiler, 'run', command):
             result = fetch.qualify(output/'attempt', tools, engine, splicer, prepared=native)
             record['originalFiniteGate'] = result['status']
         record['status'] = 'observed'

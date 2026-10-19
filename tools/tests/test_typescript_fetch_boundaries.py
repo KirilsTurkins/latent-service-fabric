@@ -49,10 +49,10 @@ class FetchBoundaries(unittest.TestCase):
                                 'response': {'outcomeKnown': True, 'error': {'code': 'guest-trap'}}}
                     expected = {3: 'promise-ready', 4: 'request-copy-ready', 5: 'typed-invalid-url-ready',
                                 6: 'typed-open-refused:invalid-request', 7: 'typed-open-ready',
-                                8: 'request-typed-open-ready'}[arguments[0]]
+                                8: 'request-typed-open-ready', **{stage + 8: 'frontend-probe-' + str(stage) + '-ready' for stage in range(1, 6)}}[arguments[0]]
                     return {'exitCode': 0, 'decoded': ['wrong' if invalid else expected], 'processReaped': True,
                         'response': {'outcomeKnown': True, 'data': {'consumption': {
-                            'outboundRequests': 1 if arguments[0] in (7, 8) else 0, 'childCalls': 0, 'effectCount': 0}}}}
+                            'outboundRequests': 1 if arguments[0] in (7, 8, 13) else 0, 'childCalls': 0, 'effectCount': 0}}}}
 
                 def original_qualify(output, tools, engine, splicer, prepared):
                     captured = boundaries.fetch.project(app)
@@ -82,12 +82,12 @@ class FetchBoundaries(unittest.TestCase):
                 self.assertEqual(record['actualNodeExecutionLimits'], configured)
                 self.assertNotIn('private-never-export', json.dumps(record))
                 self.assertEqual(record['actualInvocationBudgets']['fetch-promise-ready'], budget)
-                self.assertEqual([call[2][0] for call in calls], [3] if invalid else [3, 4, 5, 6, 0, 7, 8])
-                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid else 7)
+                self.assertEqual([call[2][0] for call in calls], [3] if invalid else [3, 4, 5, 6, 0, 7, 8, 9, 10, 11, 12, 13])
+                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid else 12)
                 if not invalid:
                     self.assertEqual(record['actualInvocationBudgets']['fetch-json']['cpuFuel'], 1000000000)
                     self.assertEqual(record['originalJsonFailure']['response']['error']['code'], 'guest-trap')
-                    self.assertEqual(calls[-3], ('typescript-fetch', 'run',
+                    self.assertEqual(next(call for call in calls if call[2][0] == 0), ('typescript-fetch', 'run',
                         [0, 'http://127.0.0.1/conformance/json'], 'fetch-json'))
                 self.assertIs(boundaries.fetch.call, original_call)
 
@@ -105,7 +105,8 @@ class FetchBoundaries(unittest.TestCase):
             b'    if (mode === 4) return await requestCopyReady(url);\n    if (mode === 5) return await typedInvalidUrl();'
             b'\n    if (mode === 6) return await typedOpen(url, false);'
             b'\n    if (mode === 7) return await typedOpen(url, true);'
-            b'\n    if (mode === 8) return await requestTypedOpen(url);')))
+            b'\n    if (mode === 8) return await requestTypedOpen(url);'
+            b'\n    if (mode >= 9 && mode <= 13) return await frontendReady(url, mode - 8);')))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root/'default-client.ts').write_bytes(derived['default-client.ts'])
@@ -187,6 +188,47 @@ assert.equal(globalThis.aborted,3);
             path.write_bytes(b'x'*65537)
             with self.assertRaises(ValueError):
                 boundaries.public_bundle(path)
+
+    def test_finite_frontend_stops_preserve_normal_fetch_and_exercise_actual_outer_wrapper(self):
+        import subprocess
+        import shutil
+        original = (boundaries.ROOT/'tools/typescript_guest/fetch.mjs').read_bytes().replace(
+            b'export function installFetch(', b'function __lsfInstallFetch(', 1)
+        raw = b'// exact owned application\n' + original + b'\n// unchanged exported application\n'
+        derived = boundaries.frontend_bundle(raw)
+        self.assertTrue(derived.startswith(b'// exact owned application\n'))
+        self.assertTrue(derived.endswith(b'\n// unchanged exported application\n'))
+        for bad in (b'no backend', raw + original):
+            with self.assertRaisesRegex(WorkflowError, 'original-backend-shape'):
+                boundaries.frontend_bundle(bad)
+        script = '''
+import assert from 'node:assert/strict';
+const target = {TextEncoder,TextDecoder,URL,URLSearchParams,AbortSignal,AbortController};
+let opens=0, aborts=0, reads=0;
+const upload = {[Symbol.dispose](){throw new Error('consumed-owner-must-not-drop');}};
+const body = {[Symbol.dispose](){}};
+__lsfInstallFetch({
+  async open(request){opens++;assert.equal(request.headers[0].name,'x-conformance');return upload;},
+  async abortUpload(owner){assert.equal(owner,upload);aborts++;},
+  async finish(owner){assert.equal(owner,upload);return {status:200,headers:[],body};},
+  async read(){reads++;return undefined;}
+},()=>false,target);
+for (let repeat=0;repeat<20;repeat++) for(let stage=1;stage<=4;stage++) {
+  target.__lsfFetchProbe=stage;
+  await assert.rejects(target.fetch(new target.Request('http://127.0.0.1/conformance/json',
+    {headers:{'x-conformance':'ordinary-global'}})),error=>error instanceof TypeError && error.message==='lsf-fetch-frontend-stop-'+stage);
+}
+assert.equal(opens,0);
+target.__lsfFetchProbe=5;
+const response=await target.fetch(new target.Request('http://127.0.0.1/conformance/json',{headers:{'x-conformance':'ordinary-global'}}));
+assert.equal(response.status,204);assert.equal(opens,1);assert.equal(aborts,1);assert.equal(reads,0);
+delete target.__lsfFetchProbe;
+const real=await target.fetch(new target.Request('http://127.0.0.1/conformance/json',{headers:{'x-conformance':'ordinary-global'}}));
+assert.equal(real.status,200);assert.equal(opens,2);assert.equal(aborts,1);assert.equal(reads,1);
+'''
+        result = subprocess.run([shutil.which('node'), '--input-type=module', '-e', derived.decode()+script],
+                                text=True, capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == '__main__':
