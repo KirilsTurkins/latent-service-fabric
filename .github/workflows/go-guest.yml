@@ -159,6 +159,11 @@ on:
       - tools/toolchain.toml
       - .github/workflows/go-guest.yml
   workflow_dispatch:
+    inputs:
+      replay-entropy-authority:
+        description: Replay the unchanged 42a entropy component with corrected explicit input authority
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -180,6 +185,7 @@ env:
 
 jobs:
   upstream-probe:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-entropy-authority }}
     name: Go runtime and complete capsule qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -543,5 +549,46 @@ jobs:
             ${{ runner.temp }}/go-entry-private-frames/node/entry.json
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
+          if-no-files-found: warn
+          retention-days: 7
+  entropy-authority-replay:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority }}
+    name: Same-component Go entropy explicit authority and retirement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install only existing locked Python dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact-source replay and finite entropy authority controls
+        run: python3 -B -m unittest tools.tests.test_go_standard_entropy tools.tests.test_go_entropy_replay -v
+      - name: Read fixed original public documents and binary products
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/go_entropy_replay_inputs.py --output "$RUNNER_TEMP/go-entropy-original-inputs"
+      - name: Re-sign unchanged component and repeat all original and entropy outcomes
+        run: python3 -B tools/replay_go_standard_entropy.py --acquired "$RUNNER_TEMP/go-entropy-original-inputs" --output "$RUNNER_TEMP/go-entropy-authority-replay"
+      - name: Retain bounded same-component source and signed observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-entropy-authority-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-entropy-original-inputs/acquisition.json
+            ${{ runner.temp }}/go-entropy-authority-replay/qualification.json
+            ${{ runner.temp }}/go-entropy-authority-replay/FAILED.json
+            ${{ runner.temp }}/go-entropy-authority-replay/node/workflow.json
+            ${{ runner.temp }}/go-entropy-authority-replay/node/FAILED.json
+            ${{ runner.temp }}/go-entropy-authority-replay/node/controls/*.json
           if-no-files-found: warn
           retention-days: 7

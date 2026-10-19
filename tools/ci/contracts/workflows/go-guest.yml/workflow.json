@@ -180,16 +180,25 @@
           ".github/workflows/go-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "replay-entropy-authority": {
+            "default": false,
+            "description": "Replay the unchanged 42a entropy component with corrected explicit input authority",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "entropy-authority-replay",
     "upstream-probe"
   ],
-  "reviewReason": "Retain all merged v5 managed-runtime gates and unchanged default runtime selection; add default-profile ordinary Go entropy capture/signed controls under the existing job deadline and invocation limits.",
+  "reviewReason": "Explicit default-off replay authenticates historical compiled products and exact authority-only harness delta; original normal programme and caps preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
