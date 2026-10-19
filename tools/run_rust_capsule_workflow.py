@@ -44,7 +44,7 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False, captured_dotnet_private=False):
+        captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -71,6 +71,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(captured_dotnet_private) is bool and (not captured_dotnet_private or language == 'dotnet')
             and not (captured_dotnet_private and captured_dependency_recovery),
             'authoring-private-NuGet-language')
+    require(type(dotnet_reflection) is bool and (not dotnet_reflection or language == 'dotnet')
+            and not (dotnet_reflection and captured_dependency_recovery), 'authoring-dotnet-reflection-language')
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -175,6 +177,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.dotnet_private_feed_fixture import probe as probe_private_nuget
                         probe_private_nuget(client, targets['greeting'], probe, result, len(names),
                                             read_json(fixture / 'private-nuget-probe.json'))
+                    if dotnet_reflection:
+                        from tools.dotnet_reflection_fixture import probe as reflection_probe
+                        reflection_probe(client, targets['greeting'], probe, result, len(names))
                     if captured_git_component:
                         from tools.rust_git_component_fixture import probe as probe_git_component
                         probe_git_component(client, targets['greeting'], probe, result, len(names))

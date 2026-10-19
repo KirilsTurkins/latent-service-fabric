@@ -74,16 +74,25 @@
           ".github/workflows/dotnet-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "reflection_replay": {
+            "default": false,
+            "description": "Fresh descriptor reflection using exact already-qualified native products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "reflection-replay",
     "toolchain"
   ],
-  "reviewReason": "Preserve ordinary NuGet gates and bind explicit public trust plus authenticated offline lifecycle qualification",
+  "reviewReason": "Add explicit manual-only original03a native-product reuse and fresh reflected-component build, retaining every normal command and default behavior.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

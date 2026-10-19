@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ !inputs.reflection_replay }}",
     "name": "NativeAOT component qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -185,7 +186,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Bind fixed public NuGet phase identities and source evidence without retaining private peer inputs",
+  "reviewReason": "Add explicit manual-only original03a native-product reuse and fresh reflected-component build, retaining every normal command and default behavior.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

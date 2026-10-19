@@ -1,0 +1,5 @@
+# Focused .NET reflection execution
+
+The explicit reflection_replay selector in dotnet-guest.yml retrieves the fixed original03a qualification, native products and four companion packages. It authenticates all original receipts and source identities. Only an additional default-off reflection probe differs in the current runner; projecting it out must exactly recover the original runner AST. No original normal qualification is rewritten or recreated.
+
+The job captures an outside managed package, its literal trimming descriptor and embedded dynamic assembly, removes originals, builds with the maintained offline NativeAOT compiler, and normally packages, signs, admits and executes the component. All four reflected/dynamic/fresh cases and the original normal node controls must pass. Native Cargo products are not rebuilt. Compiler inputs and current fixture inputs retain their distinct source identities. Public artifacts include actual build selections, containment, provenance and node receipts. No JIT, general reflection, full ticket or production-builder trust claim is made.
