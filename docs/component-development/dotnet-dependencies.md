@@ -65,6 +65,15 @@ Package targets, analyzers, source generators and `.resx` processing are executa
 
 For additional local/private feeds, pass `--feed-config` with `{"sources":[{"name":"private","url":"https://feed.example.com/index.json","patterns":["Example.*"],"authorizationEnv":"LSF_PRIVATE_NUGET_AUTH","username":"token"}]}` or a local `path` containing only `.nupkg` files. Feed mappings preserve native package-source selection. Credentials enter only an owned fetch configuration; public fetch receipts retain endpoint/location digests. Offline compilation inherits neither credentials nor feed configuration. `update PROJECT PACKAGE --version EXACT_VERSION` and `remove PROJECT PACKAGE` edit only application package declarations. They preserve SDK packages and the accepted lock; unsupported conditional edits require explicit source review. Resolve with `--update-lock` after a change, inspect the fresh candidate and accept its exact digest with `review-lock`. An old accepted lock remains unusable with changed declarations.
 
+Feed names must be unique ignoring ASCII case across the SDK feeds and every
+additional source. NuGet's [source provider](https://github.com/dotnet/dotnet/blob/79c85d969a02abd06c2202949318fd4c21e5e7a0/src/nuget-client/src/NuGet.Core/NuGet.Configuration/PackageSource/PackageSourceProvider.cs#L121)
+selects source names case-insensitively, so `private` and `Private` cannot select
+two distinct feeds. All names are checked before local archives are read or
+credentials are retrieved; ambiguity fails with
+`nuget-explicit-feed-policy-invalid`. Unique names keep their original casing in
+source mappings, credential elements and public identity receipts. This source
+preflight does not establish authenticated private-feed execution qualification.
+
 Resolution holds a project-owned authoring lock and stages native restore locks, asset metadata and original archives privately. It rechecks sources, SDK, descriptor, resolver and hash helper before publication. Failed attempts preserve the accepted lock and roll back their own published native/manifest bytes while preserving concurrent user edits. A successful resolution remains a candidate until exact review; cache presence grants no trust. A frontend project stores the manifest, accepted lock and CAS at its outer project root, with native inputs bound to its selected application directory. An inner shadow capture is rejected.
 
 For a maintained frontend project, `test PROJECT --workspace WORKSPACE --select TEST` and `watch PROJECT --workspace WORKSPACE --select TEST` verify the same reviewed closure before delegating to normal `dev test` and `dev up --watch`. These commands preserve operator grants, recipe trust, package signing and admission; a changed lock or recipe requires normal fresh trust. `--frontend` requires its exact `--frontend-sha256`, or the owner delegates through its maintained source controller. Uncertain remote mutations retain their original exit code and are never retried automatically. The source controls exercise command delegation and transactional failure boundaries; actual signed .NET watch/update qualification remains a separate required gate.

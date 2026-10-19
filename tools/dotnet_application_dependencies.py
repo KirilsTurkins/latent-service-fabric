@@ -340,16 +340,18 @@ def feed_config(policy: dict | None, owned: Path, sdk_configuration: bytes) -> t
     if set(policy) != {'sources'} or not isinstance(policy['sources'], list) or not 1 <= len(policy['sources']) <= 8:
         if policy != {'sources': []}:
             raise DependencyError('nuget-explicit-feed-policy-invalid')
+    feed_rows, seen = baseline_sources + policy['sources'], set()
+    for row in feed_rows:
+        if set(row) - {'name', 'url', 'path', 'authorizationEnv', 'username', 'patterns'} or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}', row.get('name', '')) or row['name'].lower() in seen:
+            raise DependencyError('nuget-explicit-feed-policy-invalid')
+        seen.add(row['name'].lower())
     root = ET.Element('configuration')
     sources = ET.SubElement(root, 'packageSources')
     ET.SubElement(sources, 'clear')
     credentials = ET.SubElement(root, 'packageSourceCredentials')
-    identities, seen = [], set()
+    identities = []
     mappings = copy.deepcopy(baseline.find('packageSourceMapping'))
-    for row in baseline_sources + policy['sources']:
-        if set(row) - {'name', 'url', 'path', 'authorizationEnv', 'username', 'patterns'} or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}', row.get('name', '')) or row['name'] in seen:
-            raise DependencyError('nuget-explicit-feed-policy-invalid')
-        seen.add(row['name'])
+    for row in feed_rows:
         if ('url' in row) == ('path' in row):
             raise DependencyError('nuget-explicit-feed-policy-invalid')
         if 'path' in row:
