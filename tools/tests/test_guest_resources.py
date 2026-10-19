@@ -200,7 +200,10 @@ class ResourceCapture(unittest.TestCase):
         files = {"latent.dependencies.lock.json": encode(lock), "dependencies/java-resources/data.txt": payload}
         additional = {**row("data.txt", "dependencies/java-resources/data.txt"), "digest": digest(payload), "owner": "private:transitive:2.0"}
         packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
-        self.assertEqual(check(packaged, dependency=digest(files["latent.dependencies.lock.json"]))["resources"][0]["origin"], "dependency")
+        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+                                 component_digest=digest(COMPONENT), dependency_lock_digest=digest(files["latent.dependencies.lock.json"]),
+                                 dependency_lock=files["latent.dependencies.lock.json"])
+        self.assertEqual(value["resources"][0]["origin"], "dependency")
         for key, value in (("owner", "private:not-captured:1.0"), ("digest", digest(b"changed"))):
             with self.subTest(key=key), self.assertRaises(resources.ResourceError):
                 resources.capture(files, COMPONENT, SOURCE, additional_resources=[{**additional, key: value}])
@@ -246,7 +249,10 @@ class ResourceCapture(unittest.TestCase):
         additional = {**row("data.txt", "dependencies/data.txt"), "digest": digest(payload), "owner": owner}
         packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
         dependency = digest(files["latent.dependencies.lock.json"])
-        self.assertEqual(check(packaged, dependency=dependency)["resources"][0]["origin"], "dependency")
+        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+                                 component_digest=digest(COMPONENT), dependency_lock_digest=dependency,
+                                 dependency_lock=files["latent.dependencies.lock.json"])
+        self.assertEqual(value["resources"][0]["origin"], "dependency")
         self.assertIsNone(packaged.index["manifestDigest"])
         changed = copy.deepcopy(packaged.index)
         changed["resources"][0]["origin"] = "application"
@@ -266,7 +272,10 @@ class ResourceCapture(unittest.TestCase):
         additional = {**row("dependency/data.txt", "dependencies/data.txt"), "digest": digest(payload), "owner": owner}
         before = copy.deepcopy(files)
         packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
-        value = check(packaged, dependency=digest(files["latent.dependencies.lock.json"]))
+        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+                                 component_digest=digest(COMPONENT), manifest_digest=digest(files[resources.MANIFEST]),
+                                 dependency_lock_digest=digest(files["latent.dependencies.lock.json"]),
+                                 dependency_lock=files["latent.dependencies.lock.json"])
         self.assertEqual([item["origin"] for item in value["resources"]], ["application", "dependency"])
         self.assertEqual(value["manifestDigest"], digest(files[resources.MANIFEST]))
         self.assertEqual(value["dependencyLockDigest"], digest(files["latent.dependencies.lock.json"]))
@@ -342,3 +351,126 @@ class ResourceCapture(unittest.TestCase):
             (root / "latent.project.json").write_bytes(encode(value))
             with self.assertRaisesRegex(common.DevError, "resource-input-excluded"):
                 project.load(root)
+
+
+class DependencyIndexProvenance(unittest.TestCase):
+    def fixture(self):
+        payload = b"owned transitive bytes"
+        other = b"other captured bytes"
+        lock = {"artifacts": [
+            {"id": "external:owner-a:1.0", "files": [{"path": "data.bin", "digest": digest(payload), "size": len(payload)}]},
+            {"id": "external:owner-b:1.0", "files": [{"path": "other.bin", "digest": digest(other), "size": len(other)}]}]}
+        files = {resources.MANIFEST: manifest([row("app/data.bin", "assets/data.bin", "application/octet-stream")]),
+                 "assets/data.bin": payload, "dependencies/data.bin": payload,
+                 "latent.dependencies.lock.json": encode(lock)}
+        additional = {**row("dependency/data.bin", "dependencies/data.bin", "application/octet-stream"),
+                      "digest": digest(payload), "owner": "external:owner-a:1.0"}
+        return files, resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+
+    def verify(self, packaged, files, dependency_lock):
+        return resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+                                component_digest=digest(COMPONENT), manifest_digest=digest(files[resources.MANIFEST]),
+                                dependency_lock_digest=digest(files["latent.dependencies.lock.json"]),
+                                dependency_lock=dependency_lock)
+
+    def rehash(self, index):
+        index["identity"] = digest(encode({key: value for key, value in index.items() if key != "identity"}))
+
+    def test_rehashed_owner_must_belong_to_the_actual_bound_lock(self):
+        files, packaged = self.fixture()
+        changed = copy.deepcopy(packaged.index)
+        changed["resources"][1]["owner"] = "external:not-captured:1.0"
+        self.rehash(changed)
+        with self.assertRaisesRegex(resources.ResourceError, "^resource-dependency-owner-not-captured$"):
+            self.verify(resources.PackagedResources(changed, packaged.objects), files, files["latent.dependencies.lock.json"])
+
+    def test_captured_owner_cannot_claim_another_owners_or_unobserved_bytes(self):
+        files, packaged = self.fixture()
+        changed = copy.deepcopy(packaged.index)
+        changed["resources"][1]["owner"] = "external:owner-b:1.0"
+        self.rehash(changed)
+        with self.assertRaisesRegex(resources.ResourceError, "^resource-dependency-bytes-not-captured$"):
+            self.verify(resources.PackagedResources(changed, packaged.objects), files, files["latent.dependencies.lock.json"])
+        changed = copy.deepcopy(packaged.index)
+        payload = b"outside every captured owner"
+        identity = digest(payload)
+        object_path = "resources/objects/" + identity[7:]
+        changed["bytes"] += len(payload) - changed["resources"][1]["size"]
+        changed["resources"][1].update(digest=identity, object=object_path, size=len(payload))
+        self.rehash(changed)
+        objects = {**packaged.objects, object_path: payload}
+        with self.assertRaisesRegex(resources.ResourceError, "^resource-dependency-bytes-not-captured$"):
+            self.verify(resources.PackagedResources(changed, objects), files, files["latent.dependencies.lock.json"])
+
+    def test_digest_only_wrong_type_and_substituted_lock_cannot_supply_membership(self):
+        from unittest.mock import patch
+        files, packaged = self.fixture()
+        for raw, code in ((None, "resource-index-dependency-lock-required"),
+                          ("not lock bytes", "resource-dependency-lock-invalid"),
+                          (bytearray(files["latent.dependencies.lock.json"]), "resource-dependency-lock-invalid"),
+                          (encode({"artifacts": []}), "resource-index-dependency-lock-mismatch")):
+            with self.subTest(code=code), patch.object(resources, "dependency_artifacts", side_effect=AssertionError("unbound lock was parsed")) as parsed, \
+                    self.assertRaisesRegex(resources.ResourceError, "^" + code + "$"):
+                self.verify(packaged, files, raw)
+            parsed.assert_not_called()
+
+    def test_bound_lock_document_rejects_malformed_duplicate_nonfinite_and_oversized_input(self):
+        from unittest.mock import patch
+        files, packaged = self.fixture()
+        for raw in (b"{}", b"[]", b'{"artifacts":null}', b'{"artifacts":[],"artifacts":[]}',
+                    b'{"artifacts":NaN}', b"{", b"\xff"):
+            changed = copy.deepcopy(packaged.index)
+            changed["dependencyLockDigest"] = digest(raw)
+            self.rehash(changed)
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                self.verify(resources.PackagedResources(changed, packaged.objects),
+                            {**files, "latent.dependencies.lock.json": raw}, raw)
+        raw = files["latent.dependencies.lock.json"]
+        with patch.object(resources, "MAX_DEPENDENCY_LOCK", len(raw) - 1), \
+                patch.object(resources, "dependency_artifacts", side_effect=AssertionError("oversized lock was parsed")) as parsed, \
+                self.assertRaisesRegex(resources.ResourceError, "^resource-dependency-lock-limit$"):
+            self.verify(packaged, files, raw)
+        parsed.assert_not_called()
+
+    def test_ambiguous_owner_or_changed_file_inventory_cannot_authenticate_resource(self):
+        files, packaged = self.fixture()
+        lock = json.loads(files["latent.dependencies.lock.json"])
+        variants = []
+        duplicate = copy.deepcopy(lock)
+        duplicate["artifacts"].append(copy.deepcopy(duplicate["artifacts"][0]))
+        variants.append((duplicate, "resource-dependency-owner-not-captured"))
+        wrong_files = copy.deepcopy(lock)
+        wrong_files["artifacts"][0]["files"] = "not an inventory"
+        variants.append((wrong_files, "resource-dependency-owner-not-captured"))
+        wrong_size = copy.deepcopy(lock)
+        wrong_size["artifacts"][0]["files"][0]["size"] += 1
+        variants.append((wrong_size, "resource-dependency-bytes-not-captured"))
+        for lock, code in variants:
+            raw = encode(lock)
+            changed = copy.deepcopy(packaged.index)
+            changed["dependencyLockDigest"] = digest(raw)
+            self.rehash(changed)
+            with self.subTest(code=code), self.assertRaisesRegex(resources.ResourceError, "^" + code + "$"):
+                self.verify(resources.PackagedResources(changed, packaged.objects),
+                            {**files, "latent.dependencies.lock.json": raw}, raw)
+
+    def test_valid_mixed_origins_and_shared_owner_bytes_keep_index_identity_and_parse_lock_once(self):
+        from unittest.mock import patch
+        files, _ = self.fixture()
+        payload = files["dependencies/data.bin"]
+        lock = json.loads(files["latent.dependencies.lock.json"])
+        lock["artifacts"][1]["files"] = copy.deepcopy(lock["artifacts"][0]["files"])
+        files["latent.dependencies.lock.json"] = encode(lock)
+        additional = [{**row("dependency/" + str(number) + ".bin", "dependencies/data.bin", "application/octet-stream"),
+                       "digest": digest(payload), "owner": artifact["id"]} for number, artifact in enumerate(lock["artifacts"])]
+        before = copy.deepcopy(files)
+        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=additional)
+        with patch.object(resources, "dependency_artifacts", wraps=resources.dependency_artifacts) as parsed:
+            value = self.verify(packaged, files, files["latent.dependencies.lock.json"])
+        self.assertEqual(parsed.call_count, 1)
+        self.assertEqual(value, packaged.index)
+        self.assertEqual(value["count"], 3)
+        self.assertEqual(value["bytes"], 3 * len(payload))
+        self.assertEqual([row["origin"] for row in value["resources"]], ["application", "dependency", "dependency"])
+        self.assertEqual(list(packaged.objects.values()), [payload])
+        self.assertEqual(files, before)

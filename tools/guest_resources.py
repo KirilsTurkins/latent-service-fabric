@@ -17,6 +17,7 @@ MAX_NAME = 256
 MAX_FILE = 8 * 1024 * 1024
 MAX_TOTAL = 32 * 1024 * 1024
 MAX_DOCUMENT = 256 * 1024
+MAX_DEPENDENCY_LOCK = 8 * 1024 * 1024
 RECIPE = ("tools/guest_resources.py",)
 SHA = re.compile(r"sha256:[0-9a-f]{64}\Z")
 MEDIA = re.compile(r"[A-Za-z0-9!#$&^_.+-]{1,127}/[A-Za-z0-9!#$&^_.+-]{1,127}\Z")
@@ -85,6 +86,23 @@ def declarations(files: dict[str, bytes]) -> list[dict]:
     return value["resources"]
 
 
+def dependency_artifacts(raw: bytes) -> list:
+    lock = decode(raw, MAX_DEPENDENCY_LOCK)
+    require(isinstance(lock, dict) and isinstance(lock.get("artifacts"), list), "resource-dependency-lock-invalid")
+    return lock["artifacts"]
+
+
+def dependency_owner(artifacts: list, owner: str) -> dict:
+    candidates = [item for item in artifacts if isinstance(item, dict) and item.get("id") == owner]
+    require(len(candidates) == 1 and isinstance(candidates[0].get("files"), list), "resource-dependency-owner-not-captured", "denied")
+    return candidates[0]
+
+
+def dependency_member(artifact: dict, identity: str, size: int) -> None:
+    require(any(isinstance(item, dict) and item.get("digest") == identity and item.get("size") == size
+                for item in artifact["files"]), "resource-dependency-bytes-not-captured", "denied")
+
+
 def dependency_resource(files: dict[str, bytes], row: dict) -> None:
     require(isinstance(row, dict) and set(row) == {"path", "source", "mediaType", "digest", "owner"},
             "resource-dependency-declaration-schema")
@@ -96,15 +114,12 @@ def dependency_resource(files: dict[str, bytes], row: dict) -> None:
             and ".." not in row["owner"] and "//" not in row["owner"],
             "resource-dependency-owner")
     require("latent.dependencies.lock.json" in files, "resource-dependency-lock-missing", "missing")
-    lock = decode(files["latent.dependencies.lock.json"], 8 * 1024 * 1024)
-    require(isinstance(lock, dict) and isinstance(lock.get("artifacts"), list), "resource-dependency-lock-invalid")
-    candidates = [item for item in lock["artifacts"] if isinstance(item, dict) and item.get("id") == row["owner"]]
-    require(len(candidates) == 1 and isinstance(candidates[0].get("files"), list), "resource-dependency-owner-not-captured", "denied")
+    artifacts = dependency_artifacts(files["latent.dependencies.lock.json"])
+    artifact = dependency_owner(artifacts, row["owner"])
     require(row["source"] in files, "resource-source-missing", "missing")
     payload = files[row["source"]]
     require(isinstance(payload, bytes) and digest(payload) == row["digest"], "resource-dependency-bytes-changed", "denied")
-    require(any(isinstance(item, dict) and item.get("digest") == row["digest"] and item.get("size") == len(payload)
-                for item in candidates[0]["files"]), "resource-dependency-bytes-not-captured", "denied")
+    dependency_member(artifact, row["digest"], len(payload))
 
 
 @dataclass(frozen=True)
@@ -185,7 +200,8 @@ def assemble(output: Path, files: dict[str, bytes], component: bytes, *, additio
 
 
 def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, component_digest: str,
-           manifest_digest: str | None = None, dependency_lock_digest: str | None = None) -> dict:
+           manifest_digest: str | None = None, dependency_lock_digest: str | None = None,
+           dependency_lock: bytes | None = None) -> dict:
     value = decode(raw, MAX_DOCUMENT, maximum_items=4096)
     fields = {"schemaVersion", "sourceDigest", "componentDigest", "manifestDigest", "dependencyLockDigest", "limits",
               "count", "bytes", "resources", "runtimeLookup", "scratchStorage", "identity"}
@@ -204,7 +220,7 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
     require(isinstance(value["resources"], list) and type(value["count"]) is int
             and value["count"] == len(value["resources"]) <= MAX_COUNT, "resource-count-limit", "exhausted")
     require(type(value["bytes"]) is int and 0 <= value["bytes"] <= MAX_TOTAL, "resource-byte-limit", "exhausted")
-    total, spellings, paths_seen, object_paths, previous = 0, {}, set(), set(), ""
+    total, spellings, paths_seen, object_paths, previous, artifacts = 0, {}, set(), set(), "", None
     for row in value["resources"]:
         require(isinstance(row, dict) and set(row) in ({"path", "object", "digest", "size", "mediaType", "origin"},
                 {"path", "object", "digest", "size", "mediaType", "origin", "owner"}), "resource-index-entry-schema")
@@ -227,6 +243,14 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
         payload = objects[row["object"]]
         require(isinstance(payload, bytes) and len(payload) == row["size"] and digest(payload) == row["digest"],
                 "resource-object-integrity-mismatch", "denied")
+        if row["origin"] == "dependency":
+            if artifacts is None:
+                require(dependency_lock is not None, "resource-index-dependency-lock-required", "missing")
+                require(isinstance(dependency_lock, bytes), "resource-dependency-lock-invalid")
+                require(0 < len(dependency_lock) <= MAX_DEPENDENCY_LOCK, "resource-dependency-lock-limit", "exhausted")
+                require(digest(dependency_lock) == value["dependencyLockDigest"], "resource-index-dependency-lock-mismatch", "denied")
+                artifacts = dependency_artifacts(dependency_lock)
+            dependency_member(dependency_owner(artifacts, row["owner"]), row["digest"], row["size"])
         total += row["size"]
         object_paths.add(row["object"])
     require(total == value["bytes"] and set(objects) == object_paths, "resource-index-inventory-mismatch", "denied")
