@@ -267,7 +267,9 @@ def qualify(prepared, output, tools):
                 products['examples/package'], REPOSITORY, tools=tools, offline=True)
             require(inventory(source_files(app)) == observed and dependencies.verify_inputs(app, 'dotnet').lock == lock,
                     'private-NuGet-offline-build-changed-source')
-            containment = read_json(artifact / 'compiler-containment.json')
+            # Match the build producer's bounded material reader; a full .NET
+            # distribution inventory can exceed the default 4 MiB source cap.
+            containment = read_json(artifact / 'compiler-containment.json', 32 * 1024 * 1024)
             require(containment['network'] == 'denied' and containment['credentials'] == 'not-inherited',
                     'private-NuGet-offline-compiler-not-contained')
             if ordinal == 0:

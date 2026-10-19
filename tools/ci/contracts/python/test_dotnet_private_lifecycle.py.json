@@ -1,5 +1,8 @@
 {
   "cases": [
+    "ActualContainmentReceipt.test_large_receipt_does_not_weaken_network_or_credential_refusal",
+    "ActualContainmentReceipt.test_real_post_build_reader_accepts_producer_receipt_above_fixture_default",
+    "ActualContainmentReceipt.test_real_post_build_reader_retains_exact_producer_byte_ceiling",
     "ActualSelectedGraph.test_actual_library_producer_captures_transitive_reference_inside_each_owned_build",
     "ActualSelectedGraph.test_actual_original_digests_transitive_edge_and_no_extra_package_are_required",
     "ActualSelectedGraph.test_failed_public_receipt_preserves_original_qualification_exception_identity",
@@ -15,6 +18,42 @@
     "PrivateProtocol.test_unknown_paths_never_get_package_bytes_and_request_budget_does_not_grow"
   ],
   "guards": {
+    "ActualContainmentReceipt.test_large_receipt_does_not_weaken_network_or_credential_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:312092c56f9ac02952f0ab24fef4b6bdd29f84bd5e535c86f82e86f387570783"
+      ],
+      "skipSites": []
+    },
+    "ActualContainmentReceipt.test_real_post_build_reader_accepts_producer_receipt_above_fixture_default": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:312092c56f9ac02952f0ab24fef4b6bdd29f84bd5e535c86f82e86f387570783"
+      ],
+      "skipSites": []
+    },
+    "ActualContainmentReceipt.test_real_post_build_reader_retains_exact_producer_byte_ceiling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:312092c56f9ac02952f0ab24fef4b6bdd29f84bd5e535c86f82e86f387570783"
+      ],
+      "skipSites": []
+    },
     "ActualSelectedGraph.test_actual_library_producer_captures_transitive_reference_inside_each_owned_build": {
       "bases": [
         "unittest.TestCase"
@@ -174,6 +213,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_private_lifecycle.py",
-  "reviewReason": "Preserve ordinary NuGet gates and bind explicit public trust plus authenticated offline lifecycle qualification",
+  "reviewReason": "Match actual .NET containment material producer 32 MiB bound; preserve isolation assertions and original cases, add actual-reader regressions.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

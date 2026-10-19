@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind fixed public NuGet phase identities and source evidence without retaining private peer inputs",
+  "reviewReason": "Match actual .NET containment material producer 32 MiB bound; preserve isolation assertions and original cases, add actual-reader regressions.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dd0e01c8c48f3d733980326111fd7773dc61a0ea700fa71cbb04eec586d84280"
+  "sha256": "84aa42bdff5c47856fafcf309050dce483a995657e7ed3e7d3981f3224819591"
 }

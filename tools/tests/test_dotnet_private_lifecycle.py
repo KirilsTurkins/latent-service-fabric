@@ -187,6 +187,57 @@ class ActualSelectedGraph(unittest.TestCase):
                     qualification.prepared_inputs(root)
 
 
+class ActualContainmentReceipt(unittest.TestCase):
+    def exercise(self, receipt, *, oversized=False):
+        from types import SimpleNamespace
+        from tools.rust_capsule_project import canonical
+        original = RuntimeError('source-only signing boundary')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            artifact = root / 'artifact'
+            artifact.mkdir()
+            (artifact / 'BUILD-COMPLETE.json').write_bytes(canonical({'componentDigest': digest(b'not-executed')}))
+            path = artifact / 'compiler-containment.json'
+            path.write_bytes(canonical(receipt))
+            if oversized:
+                with path.open('r+b') as stream:
+                    stream.truncate(32 * 1024 * 1024 + 1)
+            commands = SimpleNamespace(run=unittest.mock.Mock(side_effect=original))
+            with patch.object(qualification, 'Commands', return_value=commands), \
+                    patch.object(qualification, 'prepared_inputs', return_value=({}, {}, {
+                        name: root / name.replace('/', '-') for name in qualification.PRODUCTS})), \
+                    patch.object(qualification, 'capture', return_value=([(root / 'app', {}, '1.0.0', False)], {})), \
+                    patch.object(qualification, 'source_files', return_value={'source': b'unchanged'}), \
+                    patch.object(qualification.dependencies, 'verify_inputs', return_value=SimpleNamespace(lock={})), \
+                    patch.object(qualification, 'build', return_value=artifact) as build:
+                try:
+                    qualification.qualify(root / 'prepared', root / 'output', root / 'tools')
+                except Exception as error:
+                    return error, original, build.call_count, commands.run.call_count
+                self.fail('source-only signing boundary was not reached')
+
+    def test_real_post_build_reader_accepts_producer_receipt_above_fixture_default(self):
+        receipt = {'network': 'denied', 'credentials': 'not-inherited', 'distributions': {'identity': 'a' * (5 * 1024 * 1024)}}
+        error, original, builds, signs = self.exercise(receipt)
+        self.assertIs(error, original)
+        self.assertEqual((builds, signs), (2, 1))
+
+    def test_real_post_build_reader_retains_exact_producer_byte_ceiling(self):
+        error, _original, builds, signs = self.exercise({}, oversized=True)
+        self.assertIsInstance(error, ValueError)
+        self.assertEqual((builds, signs), (1, 0))
+
+    def test_large_receipt_does_not_weaken_network_or_credential_refusal(self):
+        for field, value in (('network', 'allowed'), ('credentials', 'inherited')):
+            receipt = {'network': 'denied', 'credentials': 'not-inherited', 'distributions': {'identity': 'a' * (5 * 1024 * 1024)}}
+            receipt[field] = value
+            with self.subTest(field=field):
+                error, _original, builds, signs = self.exercise(receipt)
+                self.assertIsInstance(error, WorkflowError)
+                self.assertEqual(str(error), 'private-NuGet-offline-compiler-not-contained')
+                self.assertEqual((builds, signs), (1, 0))
+
+
 class ActualSignedProbe(unittest.TestCase):
     def execute(self, *, removed=False, wrong_revision=False):
         from tools import rust_capsule_node as node
