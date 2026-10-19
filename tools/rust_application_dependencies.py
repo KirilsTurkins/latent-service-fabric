@@ -363,7 +363,32 @@ def selected_graph(metadata: dict, selected: dict, root: Path) -> dict:
     return selected['resolve']
 
 
-def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[dict], dict]:
+def vendor_inventory(directory: Path, checksum: str | None) -> tuple[dict, dict]:
+    """Bind native vendor checksums to one bounded original file inventory."""
+    files = directory_files(directory)
+    try:
+        raw = files['.cargo-checksum.json']
+        value = native_metadata(raw)
+        if (not isinstance(value, dict) or 'package' not in value or not isinstance(value.get('files'), dict)
+                or any(path_name(name) != name or not isinstance(identity, str)
+                       or not re.fullmatch('[0-9a-f]{64}', identity) for name, identity in value['files'].items())):
+            raise ValueError()
+    except (KeyError, ValueError):
+        raise DependencyError('cargo-vendor-checksum-invalid') from None
+    if value['package'] != checksum:
+        raise DependencyError('cargo-vendor-package-checksum-mismatch')
+    observed = {name: digest(data)[7:] for name, data in files.items() if name != '.cargo-checksum.json'}
+    if observed.keys() != value['files'].keys():
+        raise DependencyError('cargo-vendor-file-inventory-mismatch')
+    if observed != value['files']:
+        raise DependencyError('cargo-vendor-file-checksum-mismatch')
+    preimage = canonical([{'path': name, 'digest': digest(data), 'size': len(data)} for name, data in sorted(files.items())])
+    original = {'digest': digest(preimage), 'size': len(preimage)}
+    return original, {'package': checksum, 'checksumDigest': digest(raw), 'inventoryDigest': original['digest']}
+
+
+def analyze(metadata: dict, root: Path, vendor: Path, pins: dict, *,
+            vendor_preimages: dict | None = None) -> tuple[list[dict], dict]:
     if (not isinstance(metadata, dict) or metadata.get('version') != 1 or not isinstance(metadata.get('packages'), list)
             or not isinstance(metadata.get('resolve'), dict) or len(metadata['packages']) > 1024):
         raise DependencyError('cargo-native-graph-invalid')
@@ -372,8 +397,8 @@ def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[
         raise DependencyError('cargo-native-graph-not-closed')
     baseline = {(row['name'], row['version'], row.get('source')): row.get('checksum')
                 for row in tomllib.loads((ROOT / 'tools/rust_capsule.lock').read_text())['package']}
-    native_checksums = {(row['name'], row['version'], row.get('source')): row.get('checksum')
-                       for row in tomllib.loads(read_bytes(root / 'Cargo.lock').decode())['package']}
+    native_packages = tomllib.loads(read_bytes(root / 'Cargo.lock').decode())['package']
+    native_checksums = {(row['name'], row['version'], row.get('source')): row.get('checksum') for row in native_packages}
     artifacts, graph = [], []
     for identity, package in sorted(packages.items()):
         node = nodes[identity]
@@ -385,7 +410,16 @@ def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[
             graph.append({'id': identity, 'artifact': None, 'features': node.get('features', []),
                           'dependencies': node.get('deps', []), 'source': 'captured-project-or-sdk'})
             continue
+        vendor_evidence = None
         if source:
+            locked = [row for row in native_packages if (row['name'], row['version'], row.get('source'))
+                      == (package['name'], package['version'], source)]
+            if (len(locked) != 1 or (source.startswith(('registry+', 'sparse+'))
+                    and (not isinstance(locked[0].get('checksum'), str)
+                         or not re.fullmatch('[0-9a-f]{64}', locked[0]['checksum'])))
+                    or (source.startswith('git+') and locked[0].get('checksum') is not None)
+                    or not source.startswith(('registry+', 'sparse+', 'git+'))):
+                raise DependencyError('cargo-native-package-lock-mismatch')
             url = source.partition('+')[2].split('#', 1)[0]
             parsed = urlsplit(url)
             if parsed.username or parsed.password or set(parse_qs(parsed.query)) - {'rev', 'tag', 'branch'}:
@@ -397,6 +431,9 @@ def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[
             if len(matches) != 1:
                 raise DependencyError('cargo-vendor-package-ambiguous-or-missing')
             directory = matches[0]
+            original, vendor_evidence = vendor_inventory(directory, locked[0].get('checksum'))
+            if vendor_preimages is not None:
+                vendor_preimages[package_identity(package)] = original
             mount = 'dependencies/cargo-vendor/' + directory.name
         else:
             directory = path.parent
@@ -415,6 +452,8 @@ def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[
                             'targets': package.get('targets', []), 'license': package.get('license'),
                             'licenseFile': package.get('license_file'), 'executableKinds': executable,
                             'sdkCompilerInput': sdk_owned}}
+        if vendor_evidence is not None:
+            row['metadata']['vendorChecksum'] = vendor_evidence
         artifacts.append(row)
         graph.append({'id': identity, 'artifact': row['id'], 'features': node.get('features', []),
                       'dependencies': node.get('deps', []), 'source': source or 'captured-path'})
@@ -577,7 +616,8 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         if trust_raw is not None:
             resolver['tlsTrust'] = {'profile': 'cargo-explicit-registry-ca-v1', 'caFile': trust_name,
                                     'digest': digest(trust_raw), 'size': len(trust_raw), 'verification': 'required'}
-        artifacts, graph = analyze(metadata, project, vendor, resolver)
+        vendor_preimages = {}
+        artifacts, graph = analyze(metadata, project, vendor, resolver, vendor_preimages=vendor_preimages)
         graph['selectedResolve'] = selected_resolve
         mappings = {Path(package['manifest_path']).parent.resolve(): Path(row['mount'])
                     for package in metadata['packages'] for row in artifacts if row['metadata']['nativeIdDigest'] == digest(package['id'].encode())}
@@ -669,6 +709,11 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                     original = next(row for row in locked['artifacts'] if row['id'] == spec['id'])['original']
                     if source not in local_preimages or store.get(**original) != local_preimages[source]:
                         raise DependencyError('cargo-local-source-mutated')
+        for row in locked['artifacts']:
+            if row['id'] in vendor_preimages:
+                if row['original'] != vendor_preimages[row['id']]:
+                    raise DependencyError('cargo-vendor-source-mutated')
+                store.get(**row['original'])
         if local_sources.observe(project, capture_inputs=True) != local_before:
             raise DependencyError('cargo-local-source-mutated')
         if file_identity(Path(local_sources.__file__), 'cargo-local-input-observer') != observer_before:

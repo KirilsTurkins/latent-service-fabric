@@ -815,3 +815,147 @@ class CargoExternalSourceStability(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class CargoVendorIntegrity(unittest.TestCase):
+    """Native command outputs are modelled; actual capture/CAS/review are used."""
+    @classmethod
+    def setUpClass(cls):
+        RustDependencyAuthoring.setUpClass.__func__(cls)
+
+    def setUp(self):
+        RustDependencyAuthoring.setUp(self)
+        self.source = 'registry+https://github.com/rust-lang/crates.io-index'
+        self.checksum = 'a' * 64
+        self.select_vendor()
+        self.mutate_vendor = lambda: None
+
+    def select_vendor(self):
+        declaration = self.original['Cargo.toml'] + b'\n[dependencies]\noutside="=1.0.0"\n'
+        (self.app / 'Cargo.toml').write_bytes(declaration)
+        lock = self.original['Cargo.lock'] + ('\n[[package]]\nname="outside"\nversion="1.0.0"\nsource='
+            + json.dumps(self.source) + '\n' + ('checksum="' + self.checksum + '"\n' if self.checksum else '')).encode()
+        (self.app / 'Cargo.lock').write_bytes(lock)
+        (self.library / 'Cargo.toml').write_bytes(b'[package]\nname="outside"\nversion="1.0.0"\nedition="2024"\n')
+
+    def metadata(self):
+        value = RustDependencyAuthoring.metadata(self)
+        value['packages'] = value['packages'][:2]
+        value['packages'][1]['source'] = self.source
+        value['resolve']['nodes'] = value['resolve']['nodes'][:2]
+        value['resolve']['nodes'][1]['deps'] = []
+        return value
+
+    def write_checksum(self):
+        files = {path.relative_to(self.vendored).as_posix(): digest(path.read_bytes())[7:]
+                 for path in self.vendored.rglob('*') if path.is_file() and path.name != '.cargo-checksum.json'}
+        (self.vendored / '.cargo-checksum.json').write_bytes(canonical({'files': files, 'package': self.checksum}))
+
+    def resolver_command(self, command, cwd, environment, seconds, maximum):
+        self.calls.append((list(command), Path(cwd), dict(environment), seconds, maximum))
+        if command[1] == '--version':
+            raw = b'cargo 1.97.1 (source-boundary-model)\n'
+        elif command[1] == 'metadata':
+            raw = canonical(self.metadata())
+        elif command[1] == 'vendor':
+            self.vendored = Path(command[-1]) / 'outside-1.0.0'
+            shutil.copytree(self.library, self.vendored)
+            self.write_checksum()
+            self.mutate_vendor()
+            raw = b'[source.crates-io]\nreplace-with="captured"\n[source.captured]\ndirectory="vendor"\n'
+        else:
+            self.fail('unexpected resolver command')
+        return subprocess.CompletedProcess(command, 0, raw, b'')
+
+    select = RustDependencyAuthoring.select
+    capture = RustDependencyAuthoring.capture
+
+    def rejected(self, code):
+        previous = {name: (self.owner / name).read_bytes() if (self.owner / name).exists() else None
+                    for name in (inputs.MANIFEST, inputs.LOCK, 'cargo-resolved.lock.json', 'sdk-lock.json')}
+        with self.assertRaisesRegex(DependencyError, '^' + code + '$'):
+            self.capture()
+        for name, raw in previous.items():
+            self.assertEqual((self.owner / name).read_bytes() if (self.owner / name).exists() else None, raw)
+        self.assertFalse(list(self.root.glob('candidate-*.json')))
+
+    def test_valid_registry_inventory_is_captured_reviewed_and_works_without_originals(self):
+        candidate, lock = self.capture()
+        authoring.review(self.owner, candidate, digest(candidate.read_bytes()))
+        shutil.rmtree(self.library)
+        shutil.rmtree(self.child)
+        with patch.object(inputs, 'fetch', side_effect=AssertionError('offline capture fetched')):
+            work, output = self.root / 'work', self.root / 'output'
+            work.mkdir(); output.mkdir()
+            (work / 'Cargo.toml').write_bytes((self.app / 'Cargo.toml').read_bytes())
+            closure = inputs.prepare(self.owner, work, output, 'rust')
+            _manifest, receipt = native.configure(closure, work, self.root / 'cargo-home')
+            closure.check_unchanged()
+        artifact = next(row for row in lock['artifacts'] if row['metadata'].get('package') == 'outside')
+        self.assertEqual((work / artifact['mount'] / 'src/lib.rs').read_bytes(), b'pub fn value() -> u32 { 42 }\n')
+        self.assertFalse(receipt['networkResolution'])
+        self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
+
+    def test_changed_vendored_source_refuses_before_candidate_publication(self):
+        self.mutate_vendor = lambda: (self.vendored / 'src/lib.rs').write_bytes(b'changed after native vendor')
+        self.rejected('cargo-vendor-file-checksum-mismatch')
+
+    def test_unlisted_build_script_and_missing_resource_are_not_accepted(self):
+        for mutation in ('added', 'missing'):
+            with self.subTest(mutation=mutation):
+                self.mutate_vendor = (lambda: (self.vendored / 'build.rs').write_bytes(b'fn main() {}')) if mutation == 'added' else (
+                    lambda: (self.vendored / 'src/lib.rs').unlink())
+                self.rejected('cargo-vendor-file-inventory-mismatch')
+
+    def test_vendor_package_checksum_is_bound_to_exact_native_lock(self):
+        def wrong():
+            path = self.vendored / '.cargo-checksum.json'
+            value = json.loads(path.read_bytes()); value['package'] = 'b' * 64
+            path.write_bytes(canonical(value))
+        self.mutate_vendor = wrong
+        self.rejected('cargo-vendor-package-checksum-mismatch')
+
+    def test_missing_duplicate_and_malformed_checksum_records_fail_closed(self):
+        values = [None, b'{"files":{},"files":{},"package":null}', b'{"files":NaN,"package":null}',
+                  canonical({'files': {'../secret': 'a' * 64}, 'package': self.checksum}),
+                  canonical({'files': {}, 'package': self.checksum})]
+        for raw in values:
+            with self.subTest(raw=raw):
+                def changed(raw=raw):
+                    path = self.vendored / '.cargo-checksum.json'
+                    path.unlink() if raw is None else path.write_bytes(raw)
+                self.mutate_vendor = changed
+                self.rejected('cargo-vendor-checksum-invalid|cargo-vendor-file-inventory-mismatch')
+
+    def test_missing_and_ambiguous_native_lock_identity_are_not_silently_collapsed(self):
+        original = (self.app / 'Cargo.lock').read_bytes()
+        for suffix in (b'', original[len(self.original['Cargo.lock']):]):
+            with self.subTest(duplicate=bool(suffix)):
+                (self.app / 'Cargo.lock').write_bytes(self.original['Cargo.lock'] if not suffix else original + suffix)
+                self.rejected('cargo-native-package-lock-mismatch')
+        (self.app / 'Cargo.lock').write_bytes(original)
+
+    def test_exact_git_revision_keeps_null_package_checksum_and_file_inventory(self):
+        self.source = 'git+https://example.invalid/ordinary.git?rev=' + 'c' * 40 + '#' + 'c' * 40
+        self.checksum = None
+        self.select_vendor()
+        candidate, lock = self.capture()
+        artifact = next(row for row in lock['artifacts'] if row['metadata'].get('package') == 'outside')
+        self.assertEqual(artifact['metadata']['nativeSourceDigest'], digest(self.source.encode()))
+        self.assertFalse(artifact['metadata']['sdkCompilerInput'])
+        authoring.review(self.owner, candidate, digest(candidate.read_bytes()))
+
+    def test_transient_validly_rechecksummed_vendor_swap_cannot_change_original_cas(self):
+        actual_capture = native.capture
+        def swapped(*args, **kwargs):
+            original = (self.vendored / 'src/lib.rs').read_bytes()
+            checksum = (self.vendored / '.cargo-checksum.json').read_bytes()
+            (self.vendored / 'src/lib.rs').write_bytes(b'transient changed source')
+            self.write_checksum()
+            try:
+                return actual_capture(*args, **kwargs)
+            finally:
+                (self.vendored / 'src/lib.rs').write_bytes(original)
+                (self.vendored / '.cargo-checksum.json').write_bytes(checksum)
+        with patch.object(native, 'capture', side_effect=swapped):
+            self.rejected('cargo-vendor-source-mutated')
