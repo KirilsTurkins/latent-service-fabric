@@ -43,7 +43,8 @@ def write_workflow_receipt(path, value):
 
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
-        captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False):
+        captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
+        captured_rust_matrix=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -64,6 +65,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
             "authoring-captured-Git-component-language")
     require(type(rust_compatibility) is bool and (not rust_compatibility or language == "rust"),
             "authoring-Rust-compatibility-language")
+    require(type(captured_rust_matrix) is bool and (not captured_rust_matrix or language == "rust")
+            and not (captured_rust_matrix and (rust_compatibility or captured_git_component or captured_dependency_recovery)),
+            "authoring-Rust-matrix-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -160,6 +164,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if rust_compatibility:
                         from tools.rust_compatibility_probe import probe as probe_compatibility
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))
+                    if captured_rust_matrix:
+                        from tools.rust_dependency_matrix import probe as probe_matrix
+                        probe_matrix(client, targets['greeting'], probe, result, len(names),
+                                     read_json(fixture / 'matrix-probe.json'))
                     if captured_git_component:
                         from tools.rust_git_component_fixture import probe as probe_git_component
                         probe_git_component(client, targets['greeting'], probe, result, len(names))

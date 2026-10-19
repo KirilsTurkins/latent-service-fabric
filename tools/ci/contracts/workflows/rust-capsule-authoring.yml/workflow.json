@@ -65,11 +65,12 @@
   "requiredJobs": [
     "authoring",
     "compatibility",
+    "dependency-matrix",
     "git-closure",
     "git-components",
     "standard-clocks"
   ],
-  "reviewReason": "Add signed Rust native-reference/captured unsupported-operation qualification using this run existing native products; retain every existing command, bound and prior case.",
+  "reviewReason": "Retain every existing Rust job, including signed unsupported-operation compatibility. Require one additive varied dependency graph qualification job using this run's existing public prepared native tuple.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
