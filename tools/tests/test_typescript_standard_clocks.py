@@ -11,6 +11,43 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ApplicationClockTests(unittest.TestCase):
+    def test_isolated_compiler_stages_exact_clock_source_and_real_bundle_can_read_it(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        from tools.typescript_guest.compiler import Compiler
+        old = os.environ.get('LSF_CLOCK_TEST_COMPILER')
+        if old:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location('clock_compiler_preimage_control', old)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            Compiler = module.Compiler
+        def command(stage, *_arguments):
+            if stage == 'node-version': return b'v24.19.0'
+            if stage == 'wasm-tools-version': return b'wasm-tools 1.254.0'
+            self.assertEqual(stage, 'prepare-compiler-adapter')
+            return b''
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); tools = root/'tools'; tools.mkdir()
+            package = b'{"dependencies":{}}'; (tools/'package.json').write_bytes(package)
+            isolated = root/'isolated'; isolated.mkdir()
+            commands = SimpleNamespace(environment={'PATH': os.environ['PATH']}, run=command)
+            # Only external adapter preparation and namespace installation are
+            # mocked. The constructor must copy its actual recipe and Node reads it.
+            with patch('tools.captured_compiler_isolation.Isolation'):
+                compiler = Compiler(tools, commands, {'package.json': package}, isolated_workspace=isolated)
+            self.assertEqual((compiler.recipe/'clock_app.mjs').read_bytes(),
+                             (ROOT/'tools/typescript_guest/clock_app.mjs').read_bytes())
+            stub = root/'esbuild.mjs'
+            stub.write_bytes(b"export async function build(o){const text=o.banner.js+o.footer.js;return {metafile:{inputs:{},outputs:{[o.outfile]:{bytes:text.length}}},outputFiles:[{path:o.outfile,text,contents:new TextEncoder().encode(text)}]};}")
+            imports = root/'imports.json'; imports.write_bytes(b'[]')
+            configuration = root/'configuration.json'; configuration.write_bytes(b'{}')
+            source = root/'main.js'; source.write_bytes(b'export const answer=42;\n')
+            result = subprocess.run([shutil.which('node'), str(compiler.recipe/'bundle.mjs'), str(stub),
+                str(root), str(source), str(root/'application.mjs'), str(imports), str(configuration)],
+                capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8'))
+
     def test_selected_bundle_uses_verified_native_clocks_without_application_JS_imports(self):
         from tools.typescript_guest.compiler import native_clock_configuration
         from tools.typescript_guest.runtime_profile import CLOCK_PROFILES, SELECTED_WORLD
