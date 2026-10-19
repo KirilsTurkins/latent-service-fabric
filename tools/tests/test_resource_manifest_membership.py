@@ -9,6 +9,12 @@ from unittest.mock import patch
 
 from tools import guest_resources as resources
 from tools.dev_workflow.common import digest, encode
+from tools.rust_capsule_project import inventory
+
+
+def source_inputs(files):
+    return inventory({path: data for path, data in files.items()
+                      if path != "latent.dependencies.lock.json" and not path.startswith("dependencies/")})
 
 
 class ApplicationManifestMembership(unittest.TestCase):
@@ -23,12 +29,12 @@ class ApplicationManifestMembership(unittest.TestCase):
         additional = [{"path": "dependency/data.bin", "source": "dependencies/data.bin",
                        "mediaType": "application/octet-stream", "owner": "outside:immutable:1.0",
                        "digest": digest(payload)}]
-        packaged = resources.capture(files, b"component", b"source", additional_resources=additional)
+        packaged = resources.capture(files, b"component", source_inputs(files), additional_resources=additional)
         return files, packaged
 
     def verify(self, packaged, files, manifest):
         return resources.verify(encode(packaged.index), packaged.objects,
-            source_digest=digest(b"source"), component_digest=digest(b"component"),
+            source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files), component_digest=digest(b"component"),
             manifest_digest=packaged.index["manifestDigest"], manifest=manifest,
             dependency_lock_digest=packaged.index["dependencyLockDigest"],
             dependency_lock=files.get("latent.dependencies.lock.json"))
@@ -125,7 +131,7 @@ class ApplicationManifestMembership(unittest.TestCase):
     def test_declared_empty_requires_its_bound_bytes_and_dependency_only_needs_no_manifest(self):
         files, _ = self.fixture()
         files[resources.MANIFEST] = encode({"schemaVersion": resources.PROFILE, "resources": []})
-        packaged = resources.capture(files, b"component", b"source")
+        packaged = resources.capture(files, b"component", source_inputs(files))
         self.assertEqual(self.verify(packaged, files, files[resources.MANIFEST]), packaged.index)
         with self.assertRaisesRegex(resources.ResourceError, "^resource-index-manifest-required$"):
             self.verify(packaged, files, None)
@@ -133,10 +139,10 @@ class ApplicationManifestMembership(unittest.TestCase):
         additional = [{"path": "dependency/data.bin", "source": "dependencies/data.bin",
                        "mediaType": "application/octet-stream", "owner": "outside:immutable:1.0",
                        "digest": digest(files["dependencies/data.bin"])}]
-        packaged = resources.capture(files, b"component", b"source", additional_resources=additional)
+        packaged = resources.capture(files, b"component", source_inputs(files), additional_resources=additional)
         self.assertEqual(self.verify(packaged, files, files[resources.MANIFEST]), packaged.index)
         files.pop(resources.MANIFEST)
-        packaged = resources.capture(files, b"component", b"source", additional_resources=additional)
+        packaged = resources.capture(files, b"component", source_inputs(files), additional_resources=additional)
         with patch.object(resources, "application_declarations", side_effect=AssertionError("no declaration is bound")):
             self.assertEqual(self.verify(packaged, files, None), packaged.index)
 
@@ -158,7 +164,7 @@ class ApplicationManifestMembership(unittest.TestCase):
                 output = Path(temporary)
                 selected = {**files, "sdk-lock.json": encode({"language": language}),
                             "vendor/lsf/Cargo.toml": b'[workspace.package]\nversion="0.1.0-alpha.5"\n'}
-                (output / "source-inputs.json").write_bytes(b"source")
+                (output / "source-inputs.json").write_bytes(source_inputs(files))
                 project = {"name": "mixed-resources", "tenant": "examples", "service": "examples/mixed-resources",
                            "world": "examples:mixed-resources/service@1.0.0", "version": "1.0.0", "limits": {}}
                 package_inputs(output, project, {"imports": [], "exports": []}, selected, b"component",

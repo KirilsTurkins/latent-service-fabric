@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 from tools.dev_workflow.common import decode, digest, encode
-from tools.rust_capsule_project import inventory, read_file
+from tools.rust_capsule_project import MAX_FILES, MAX_FILE as MAX_SOURCE_INVENTORY, inventory, read_file
 
 MANIFEST = "capsule-resources.json"
 INDEX = "resource-index.json"
@@ -103,6 +103,27 @@ def application_declarations(raw: bytes | None, expected_digest: str) -> dict[st
         register(row["path"], spellings, leaves)
         selected[row["path"]] = row
     return selected
+
+
+def application_sources(raw: bytes | None, expected_digest: str) -> dict:
+    require(raw is not None, "resource-index-source-inventory-required", "missing")
+    require(isinstance(raw, bytes), "resource-source-inventory-bytes-required")
+    require(0 < len(raw) <= MAX_SOURCE_INVENTORY, "resource-source-inventory-limit", "exhausted")
+    require(digest(raw) == expected_digest, "resource-index-source-inventory-mismatch", "denied")
+    value = decode(raw, MAX_SOURCE_INVENTORY)
+    require(isinstance(value, dict), "resource-source-inventory-invalid")
+    require(len(value) <= MAX_FILES, "resource-source-count-limit", "exhausted")
+    return value
+
+
+def application_source_member(sources: dict, path: str, identity: str, size: int) -> None:
+    require(path in sources, "resource-source-not-captured", "denied")
+    item = sources[path]
+    require(isinstance(item, dict) and set(item) == {"digest", "size"}
+            and isinstance(item["digest"], str) and SHA.fullmatch(item["digest"])
+            and type(item["size"]) is int and item["size"] >= 0, "resource-source-entry-invalid")
+    require(item["digest"] == identity and item["size"] == size,
+            "resource-source-bytes-not-captured", "denied")
 
 
 def dependency_owner(artifacts: list, owner: str) -> dict:
@@ -201,6 +222,10 @@ def assemble(output: Path, files: dict[str, bytes], component: bytes, *, additio
     packaged = capture(files, component, source, additional_resources=additional_resources)
     if packaged is None:
         return []
+    verify(encode(packaged.index), packaged.objects, source_digest=digest(source), component_digest=digest(component),
+           manifest_digest=packaged.index["manifestDigest"], manifest=files.get(MANIFEST), source_inventory=source,
+           dependency_lock_digest=packaged.index["dependencyLockDigest"],
+           dependency_lock=files.get("latent.dependencies.lock.json"))
     layers = []
     for path, payload in sorted({INDEX: encode(packaged.index), **packaged.objects}.items()):
         destination = output / path
@@ -214,7 +239,8 @@ def assemble(output: Path, files: dict[str, bytes], component: bytes, *, additio
 
 def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, component_digest: str,
            manifest_digest: str | None = None, dependency_lock_digest: str | None = None,
-           dependency_lock: bytes | None = None, manifest: bytes | None = None) -> dict:
+           dependency_lock: bytes | None = None, manifest: bytes | None = None,
+           source_inventory: bytes | None = None) -> dict:
     value = decode(raw, MAX_DOCUMENT, maximum_items=4096)
     fields = {"schemaVersion", "sourceDigest", "componentDigest", "manifestDigest", "dependencyLockDigest", "limits",
               "count", "bytes", "resources", "runtimeLookup", "scratchStorage", "identity"}
@@ -234,7 +260,7 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
             and value["count"] == len(value["resources"]) <= MAX_COUNT, "resource-count-limit", "exhausted")
     require(type(value["bytes"]) is int and 0 <= value["bytes"] <= MAX_TOTAL, "resource-byte-limit", "exhausted")
     total, spellings, paths_seen, object_paths, previous, artifacts = 0, {}, set(), set(), "", None
-    application, application_paths = None, set()
+    application, application_paths, sources = None, set(), None
     for row in value["resources"]:
         require(isinstance(row, dict) and set(row) in ({"path", "object", "digest", "size", "mediaType", "origin"},
                 {"path", "object", "digest", "size", "mediaType", "origin", "owner"}), "resource-index-entry-schema")
@@ -262,6 +288,10 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
                 application = application_declarations(manifest, value["manifestDigest"])
             require(logical in application and row["mediaType"] == application[logical]["mediaType"],
                     "resource-application-not-declared", "denied")
+            if sources is None:
+                sources = application_sources(source_inventory, value["sourceDigest"])
+                application_source_member(sources, MANIFEST, value["manifestDigest"], len(manifest))
+            application_source_member(sources, application[logical]["source"], row["digest"], row["size"])
             application_paths.add(logical)
         else:
             if artifacts is None:
@@ -277,5 +307,8 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
         if application is None:
             application = application_declarations(manifest, value["manifestDigest"])
         require(application_paths == set(application), "resource-index-application-inventory-mismatch", "denied")
+        if sources is None:
+            sources = application_sources(source_inventory, value["sourceDigest"])
+            application_source_member(sources, MANIFEST, value["manifestDigest"], len(manifest))
     require(total == value["bytes"] and set(objects) == object_paths, "resource-index-inventory-mismatch", "denied")
     return value

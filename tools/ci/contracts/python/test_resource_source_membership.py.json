@@ -1,0 +1,30 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Require actual captured source inventories in resource fixtures and preserve all cases/assertions/skip conditions.",
+  "module":"tools/tests/test_resource_source_membership.py",
+  "cases":["ApplicationSourceMembership.test_declared_empty_manifest_still_belongs_to_the_captured_source","ApplicationSourceMembership.test_dependency_only_assembly_preserves_opaque_source_and_no_declaration_fast_path","ApplicationSourceMembership.test_exact_shared_binary_bytes_keep_mixed_origin_identity_and_parse_source_once","ApplicationSourceMembership.test_inventory_byte_count_and_document_bounds_precede_selected_entry_access","ApplicationSourceMembership.test_missing_digest_only_substituted_or_wrong_type_inventory_cannot_be_decoded","ApplicationSourceMembership.test_normal_assembly_rejects_changed_resource_or_manifest_before_writing_layers","ApplicationSourceMembership.test_rehashed_new_payload_cannot_replace_bytes_at_a_declared_source_path","ApplicationSourceMembership.test_selected_manifest_and_source_entries_require_exact_digest_size_and_path","ApplicationSourceMembership.test_selected_source_metadata_has_closed_shape_and_nonboolean_integer_size"],
+  "guards":{
+    "ApplicationSourceMembership.test_rehashed_new_payload_cannot_replace_bytes_at_a_declared_source_path":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_missing_digest_only_substituted_or_wrong_type_inventory_cannot_be_decoded":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_inventory_byte_count_and_document_bounds_precede_selected_entry_access":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_selected_manifest_and_source_entries_require_exact_digest_size_and_path":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_selected_source_metadata_has_closed_shape_and_nonboolean_integer_size":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_exact_shared_binary_bytes_keep_mixed_origin_identity_and_parse_source_once":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_normal_assembly_rejects_changed_resource_or_manifest_before_writing_layers":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_declared_empty_manifest_still_belongs_to_the_captured_source":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23",
+    "ApplicationSourceMembership.test_dependency_only_assembly_preserves_opaque_source_and_no_declaration_fast_path":
+      "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23"
+  },
+  "guardDefinitions":{
+    "191cc91ff9b19d1327527539d6e65e54fefd748564bf20e7c0261fe5357bda23":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:881fa8b33f4adff52e9c314f66c16f07787ef32226f659c2a238ac8cd0394a27","class:setup-sha256:f313c45911703cd5410351ab180c1fbb556bb3d624ff5208f4934a6721e2eef6"]}
+  }
+}
