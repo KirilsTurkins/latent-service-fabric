@@ -58,4 +58,20 @@ class EntropyReplay(unittest.TestCase):
             "${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority }}")
 
 
+    def test_fixed_range_reader_enforces_512_read_bound_before_an_extra_http_request(self):
+        from unittest.mock import MagicMock, patch
+        self.assertEqual(inputs.MAX_REQUESTS, 512)
+        remote = inputs.Remote('https://example.invalid/fixed', 1)
+        remote.requests = inputs.MAX_REQUESTS - 1
+        response = MagicMock(); response.status = 206
+        response.headers = {'Content-Range': 'bytes 0-0/1'}; response.read.return_value = b'x'
+        response.__enter__.return_value = response
+        with patch.object(inputs.urllib.request, 'urlopen', return_value=response) as network:
+            self.assertEqual(remote.read(1), b'x')
+            remote.seek(0)
+            with self.assertRaisesRegex(WorkflowError, 'total-range-bound'):
+                remote.read(1)
+            self.assertEqual(network.call_count, 1)
+
+
 if __name__ == '__main__': unittest.main()

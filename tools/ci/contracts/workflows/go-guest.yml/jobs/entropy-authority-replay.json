@@ -51,7 +51,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "go-entropy-authority-replay-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-entropy-original-inputs/acquisition.json\n${{ runner.temp }}/go-entropy-authority-replay/qualification.json\n${{ runner.temp }}/go-entropy-authority-replay/FAILED.json\n${{ runner.temp }}/go-entropy-authority-replay/node/workflow.json\n${{ runner.temp }}/go-entropy-authority-replay/node/FAILED.json\n${{ runner.temp }}/go-entropy-authority-replay/node/controls/*.json\n",
+          "path": "${{ runner.temp }}/go-entropy-original-inputs/acquisition.json\n${{ runner.temp }}/go-entropy-original-inputs/acquisition-failure.json\n${{ runner.temp }}/go-entropy-authority-replay/qualification.json\n${{ runner.temp }}/go-entropy-authority-replay/FAILED.json\n${{ runner.temp }}/go-entropy-authority-replay/node/workflow.json\n${{ runner.temp }}/go-entropy-authority-replay/node/FAILED.json\n${{ runner.temp }}/go-entropy-authority-replay/node/controls/*.json\n",
           "retention-days": 7
         }
       }
@@ -60,7 +60,7 @@
   },
   "jobId": "entropy-authority-replay",
   "kind": "job",
-  "reviewReason": "Explicit default-off replay authenticates historical compiled products and exact authority-only harness delta; original normal programme and caps preserved.",
+  "reviewReason": "Bounded fixed-index artifact replay preserves byte/file caps; closed setup guard/counters replace opaque failure, no runtime or acceptance ceiling changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

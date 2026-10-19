@@ -585,6 +585,7 @@ jobs:
           name: go-entropy-authority-replay-${{ github.sha }}
           path: |
             ${{ runner.temp }}/go-entropy-original-inputs/acquisition.json
+            ${{ runner.temp }}/go-entropy-original-inputs/acquisition-failure.json
             ${{ runner.temp }}/go-entropy-authority-replay/qualification.json
             ${{ runner.temp }}/go-entropy-authority-replay/FAILED.json
             ${{ runner.temp }}/go-entropy-authority-replay/node/workflow.json
