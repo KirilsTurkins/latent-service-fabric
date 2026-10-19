@@ -661,7 +661,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             raise DependencyError('cargo-resolution-input-mutated')
         for spec in artifacts:
             if spec['format'] == 'directory' and spec['metadata'].get('nativeSourceDigest') == digest(b'captured-path'):
-                source = Path(spec['source']['path']).resolve(strict=True)
+                try:
+                    source = Path(spec['source']['path']).resolve(strict=True)
+                except OSError:
+                    raise DependencyError('cargo-local-source-mutated') from None
                 if not source.is_relative_to(project):
                     original = next(row for row in locked['artifacts'] if row['id'] == spec['id'])['original']
                     if source not in local_preimages or store.get(**original) != local_preimages[source]:

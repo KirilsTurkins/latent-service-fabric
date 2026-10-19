@@ -750,6 +750,15 @@ class CargoExternalSourceStability(unittest.TestCase):
             self.assert_refused()
         self.assertEqual(resource.read_bytes(), before)
 
+    def test_external_source_removed_after_capture_preserves_closed_failure_and_prior_inputs(self):
+        original_capture = native.capture
+        def capture_then_remove(*arguments, **keywords):
+            locked = original_capture(*arguments, **keywords)
+            shutil.rmtree(self.library)
+            return locked
+        with patch.object(native, 'capture', side_effect=capture_then_remove):
+            self.assert_refused()
+
     def test_valid_external_script_is_still_captured_offline_but_requires_separate_approval(self):
         self.external_build_script = True
         (self.library / 'build.rs').write_bytes(b'fn main() {}\n')
