@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_go_entry.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Split diagnostic-only integer control, string input and string output through normal signed CLI and original retirement fences; retain original gates and finite deadlines",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "c6acf7f5e41f38fa347c3fbca08a2460789b6dc42053dad40f374c59622679cd"
+}

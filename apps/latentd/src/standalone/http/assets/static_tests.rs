@@ -304,7 +304,7 @@ async fn public_document_navigation_never_grants_asset_private_mount_or_unsafe_a
             403,
         ),
     ] {
-        let (status, headers, body) = h.call(method, path, extra, "").await;
+        let (status, headers, body) = h.serial_call(method, path, extra, "").await;
         assert_eq!(status, expected, "{method} {path}");
         assert!(!headers
             .to_ascii_lowercase()

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_go_entry_frames.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Move workspace traversal after original credential and capability drop; retain all namespace/authority choices, same signed replay and original budgets",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "16c34b9bf546ef74b34d9ffb223dd1fda9f0361d79a02936ff87f87e3f022a49"
+}

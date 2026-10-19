@@ -64,6 +64,45 @@ def module_key(row: dict) -> str:
     return row['Path'] + ('@' + row['Version'] if row.get('Version') else '')
 
 
+def runtime_build_dependencies(files: dict[str, bytes]) -> list[dict]:
+    """SDK binding imports are build inputs even before bindings are generated."""
+    prefix = 'vendor/lsf/sdk/go-guest/runtime-deps/'
+    lock = json.loads(files[prefix + 'dependencies.lock.json'])
+    if (digest(files[prefix + 'go.mod']) != 'sha256:' + lock['manifestSha256']
+            or digest(files[prefix + 'go.sum']) != 'sha256:' + lock['sumSha256']):
+        raise DependencyError('go-sdk-runtime-lock-identity')
+    expected = native.sums(files[prefix + 'go.sum'])
+    modules = lock['modules']
+    if not modules or len({row['path'] for row in modules}) != len(modules):
+        raise DependencyError('go-sdk-runtime-lock-identity')
+    for row in modules:
+        native.module_path(row['path'])
+        if (expected.get((row['path'], row['version'])) != row['sum']
+                or expected.get((row['path'], row['version'] + '/go.mod')) != row['goModSum']):
+            raise DependencyError('go-sdk-runtime-lock-identity')
+    return modules
+
+
+def runtime_declarations(root: dict, modules: list[dict]) -> None:
+    for module in modules:
+        identity, version = module['path'], module['version']
+        required = [row for row in root.get('Require') or [] if row['Path'] == identity]
+        if (len(required) > 1 or any(row.get('Version') != version for row in required)
+                or any(row['Old']['Path'] == identity for row in root.get('Replace') or [])
+                or any(row['Path'] == identity for row in root.get('Exclude') or [])):
+            raise DependencyError('go-application-overrides-immutable-sdk-runtime-module')
+
+
+def runtime_selection(selected: list[dict], locked_sums: bytes, modules: list[dict]) -> None:
+    expected = native.sums(locked_sums)
+    for module in modules:
+        rows = [row for row in selected if row['Path'] == module['path']]
+        if (len(rows) != 1 or rows[0].get('Version') != module['version'] or rows[0].get('Replace')
+                or expected.get((module['path'], module['version'])) != module['sum']
+                or expected.get((module['path'], module['version'] + '/go.mod')) != module['goModSum']):
+            raise DependencyError('go-native-sdk-runtime-selection-or-checksum-drift')
+
+
 def edit(project: Path, operation: str, *, identity: str, version: str | None = None,
          local: Path | None = None, go: Path | None = None) -> dict:
     native.module_path(identity)
@@ -120,6 +159,7 @@ def create_lock(project: Path, *, go: Path | None = None, proxy_config: Path | N
     selected = native.selection({'tags': tags or []})
     with authoring.transaction(project) as (owner, app, private, sdk):
         before = authoring.source_files(app)
+        runtime_modules = runtime_build_dependencies(before)
         accepted = {name: authoring.optional(owner, name) for name in ('latent.dependencies.json', 'latent.dependencies.lock.json')}
         recipes = recipe_identity()
         if proxy_config is not None:
@@ -134,6 +174,7 @@ def create_lock(project: Path, *, go: Path | None = None, proxy_config: Path | N
                 destination = work / name; destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(raw)
             root = declaration(go, work, environment)
+            runtime_declarations(root, runtime_modules)
             local_inputs, replacements = {}, []
             for row in root.get('Replace') or []:
                 target = row['New']
@@ -159,8 +200,18 @@ def create_lock(project: Path, *, go: Path | None = None, proxy_config: Path | N
             # Both commands select metadata/download bytes only. Neither invokes
             # go generate, application code, a toolchain installer or a compiler.
             command(go, ['mod', 'tidy'], work, environment, fetch=True)
+            runtime_declarations(declaration(go, work, environment), runtime_modules)
+            # Ordinary source may not import WIT helpers until the compiler
+            # creates bindings. Keep their immutable SDK dependency explicit
+            # in the native lock, before capture/review; never mutate it during
+            # offline compilation or insert an application-side blank import.
+            command(go, ['mod', 'edit', *['-require=' + row['path'] + '@' + row['version']
+                                        for row in runtime_modules]], work, environment)
             command(go, ['mod', 'download', 'all'], work, environment, fetch=True)
-            declaration(go, work, environment)
+            runtime_declarations(declaration(go, work, environment), runtime_modules)
+            selected_modules = native.json_stream(command(go, ['list', '-m', '-json', 'all'],
+                                                          work, environment, fetch=True).stdout)
+            runtime_selection(selected_modules, read_bytes(work / 'go.sum'), runtime_modules)
             for key, original in replacements:
                 command(go, ['mod', 'edit', '-replace=' + key + '=' + original], work, environment)
             outputs = {'go.mod': read_bytes(work / 'go.mod'),
@@ -175,6 +226,7 @@ def create_lock(project: Path, *, go: Path | None = None, proxy_config: Path | N
             return {'formatVersion': 1, 'stage': 'go-native-lock', 'status': 'locked',
                     'configurationDigest': digest(outputs['go.mod']), 'nativeSumDigest': digest(outputs['go.sum']),
                     'fetchPolicyDigest': digest(canonical(policy)), 'sdkLockDigest': digest(sdk[0]),
+                    'sdkRuntimeBuildDependencies': runtime_modules,
                     'captureRequired': True, 'reviewRequired': True, 'previousLockPreserved': True,
                     'compilerExecution': False, 'generators': 'never-executed', 'tags': selected['tags'],
                     'nativeGo': go_before, 'resolverVersion': version, 'recipe': recipes}

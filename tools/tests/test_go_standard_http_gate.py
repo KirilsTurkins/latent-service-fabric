@@ -14,6 +14,79 @@ from tools.rust_capsule_project import ROOT, read_file, snapshot
 
 
 class StandardHttpGate(unittest.TestCase):
+    def test_random_grant_funds_exact_scalar_descriptor_without_opening_other_inputs(self):
+        from types import SimpleNamespace
+        from tools import go_standard_http_node as node
+        providers = [{'id': name, 'capability': capability, 'profile': profile,
+                      'configurationDigest': 'sha256:'+'0'*64}
+                     for name, (capability, profile, _operation, _kind) in node.RUNTIME_PROVIDERS.items()]
+        providers += [{'id': 'activation', 'capability': node.ACTIVATION, 'profile': 'activation-owned-v1',
+                       'configurationDigest': 'sha256:'+'1'*64},
+                      {'id': 'http-standard', 'capability': node.CAPABILITY,
+                       'profile': 'bounded-streaming-http-identity-v1', 'configurationDigest': 'sha256:'+'2'*64}]
+        installation = SimpleNamespace(startup_record={'providers': providers})
+        with patch.object(node, 'policy') as apply:
+            runtime, authorized = node.grants('client', installation, 'publication',
+                                             {'scheme': 'http', 'host': '127.0.0.1', 'port': 1234})
+        policies = {call.args[2]: call.args[3] for call in apply.call_args_list if call.args[1] == 'policy'}
+        # The actual broker dispatches an eight-byte little-endian length even
+        # for scalar u64-value. This is request metadata, not entropy output.
+        provider = read_file(ROOT/'crates/latent-capabilities/src/broker/random.rs').decode()
+        self.assertIn('let input = (length as u64).to_le_bytes();', provider)
+        self.assertIn('ResourceTarget::Random,\n                &input,', provider)
+        descriptor = (8).to_bytes(8, 'little')
+        ceiling = policies['random-allow']['rules'][0]['ceiling']
+        self.assertEqual(ceiling['inputBytes'], len(descriptor))
+        self.assertLess(ceiling['inputBytes'], len(descriptor)+1)
+        self.assertEqual(ceiling['outputBytes'], 32768)
+        for identity in ('clockMonotonic', 'clockWall', 'activation'):
+            self.assertEqual(policies[identity+'-allow']['rules'][0]['ceiling']['inputBytes'], 0)
+        binding = next(call.args[3] for call in apply.call_args_list if call.args[2] == 'random-installed')
+        self.assertEqual(binding['restriction']['operations'], ['u64-value'])
+        self.assertEqual(policies['random-allow']['rules'][0]['operations'], ['u64-value'])
+        self.assertEqual(len(runtime), 4)
+        self.assertEqual(authorized[:-1], runtime)
+        self.assertEqual(authorized[-1]['capability'], node.CAPABILITY)
+
+    def test_entry_probes_keep_original_http_cases_separate_and_retire_without_external_effects(self):
+        from tools import go_standard_http_node as node
+        source = read_file(ROOT/'sdk/go-guest/runtime/standard-http-conformance/main.go').decode()
+        self.assertLess(source.index('if which == 25'),source.index('client := &http.Client'))
+        self.assertLess(source.index('http.NewRequestWithContext'),source.index('if which == 26'))
+        self.assertLess(source.index('if which == 26'),source.index('client.Do(request)'))
+        rows = [{'exitCode':0,'decoded':[value],'processReaped':True,
+                 'response':{'data':{'consumption':{'outboundRequests':0,'effectCount':0}}}}
+                for value in ('entered','request-ready')]
+        result = {'cases':[]}
+        with patch.object(node,'invoke',side_effect=rows) as invoke, patch.object(node,'retire_case') as retire:
+            node.entry_probes('client','probe',{'name':'target'},Path('output'),'http://fixture/json',result)
+        self.assertEqual(result['cases'],[])
+        self.assertEqual([row['name'] for row in result['entryProbes']],['entry','request-setup'])
+        self.assertEqual([call.args[2] for call in invoke.call_args_list],[25,26])
+        self.assertEqual([call.args[-1] for call in retire.call_args_list],['probe-entry','probe-request-setup'])
+        self.assertTrue(all(call.args[3] == 'http://fixture/json' for call in invoke.call_args_list))
+
+    def test_failed_or_effectful_entry_probe_is_retained_and_cannot_qualify_or_continue(self):
+        from tools import go_standard_http_node as node
+        for changed in ({'exitCode':4}, {'decoded':['wrong']}, {'processReaped':False},
+                        {'outboundRequests':1}, {'effectCount':1}):
+            row = {'exitCode':0,'decoded':['entered'],'processReaped':True,
+                   'response':{'data':{'consumption':{'outboundRequests':0,'effectCount':0}}}}
+            for key,value in changed.items():
+                if key in {'outboundRequests','effectCount'}:
+                    row['response']['data']['consumption'][key] = value
+                else:
+                    row[key] = value
+            result = {'cases':[]}
+            with self.subTest(changed=changed), patch.object(node,'invoke',return_value=row) as invoke, \
+                    patch.object(node,'retire_case') as retire:
+                with self.assertRaisesRegex(WorkflowError,'standard-go-probe-'):
+                    node.entry_probes('client','probe',{'name':'target'},Path('output'),'http://fixture/json',result)
+                self.assertEqual(invoke.call_count,1)
+                retire.assert_not_called()
+                self.assertEqual(len(result['entryProbes']),1)
+                self.assertEqual(result['cases'],[])
+
     def test_compile_qualifier_selects_the_actual_captured_world_for_both_fixtures(self):
         from tools import qualify_go_http_context
         for fixture in ('http-context-conformance','standard-http-conformance'):

@@ -150,7 +150,13 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("reason", Known(ADMISSION_REASONS)),
         ],
         "scheduler.limit" => &[("reason", Known(SCHEDULER_REASONS))],
-        "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
+        "activation.guest-trap-kind" => &[
+            ("kind", Value::GuestTrapKind),
+            (
+                "phase",
+                Known(&["instantiate", "export-lookup", "call-and-postreturn"]),
+            ),
+        ],
         "activation.guest-trap" => &[(
             "code",
             Known(&[
@@ -255,6 +261,12 @@ pub(super) fn sanitize(details: &[ErrorDetail]) -> Vec<JsonValue> {
             let schema = fields(&detail.kind)?;
             let mut output = Map::new();
             for (key, rule) in schema {
+                if detail.kind == "activation.guest-trap-kind"
+                    && *key == "phase"
+                    && detail.fields.get("kind").map(String::as_str) != Some("runtime-error")
+                {
+                    continue;
+                }
                 let Some(value) = detail.fields.get(*key) else {
                     continue;
                 };

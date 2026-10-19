@@ -38,6 +38,7 @@ use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
 mod admission;
+mod call_phase;
 #[cfg(test)]
 mod dispatch_tests;
 mod input;
@@ -52,6 +53,7 @@ mod start;
 use preparation_context::PreparationContext;
 mod store;
 mod transaction_access;
+use call_phase::CallPhase;
 use owned::WasmtimePreparedUse;
 pub use preparation::PreparationActivitySnapshot;
 use preparation::{Compilation, ComponentIntegrity, PreparationCounters};
@@ -595,6 +597,7 @@ impl WasmtimeBackend {
             trace.stage(InvocationInputPhase::BeforeCallExport);
         }
         let native_stack_scope = native_stack_observer.clone();
+        let mut call_phase = CallPhase::Instantiate;
         let call = call_export(
             &runtime,
             function,
@@ -604,6 +607,7 @@ impl WasmtimeBackend {
             timing,
             setup_started,
             input_trace,
+            &mut call_phase,
         );
         let call_result = match native_stack_scope {
             Some(scope) => crate::native_stacks::scoped(scope, call)?.await,
@@ -643,7 +647,7 @@ impl WasmtimeBackend {
         // Capture the execution winner before cleanup signals unfinished child
         // owners. Cleanup cancellation cannot replace an existing trap, resource
         // failure, or bounded lifecycle failure with a different terminal cause.
-        let outcome =
+        let mut outcome =
             if call_result.is_ok() && accounting_error.is_none() && lifecycle_error.is_some() {
                 drop(call_result);
                 drop(encoded);
@@ -675,6 +679,7 @@ impl WasmtimeBackend {
                     accounting_error,
                 )
             };
+        call_phase.annotate(&mut outcome);
         // Cleanup order is intentional: after the guest call and its
         // component-model post-return complete, the actual component instance,
         // store/host state, temporary input, and all activation-owned guards
@@ -1152,6 +1157,7 @@ async fn call_export(
     timing: &mut Phase0InvocationTiming,
     setup_started: Instant,
     input_trace: Option<&InputTrace>,
+    call_phase: &mut CallPhase,
 ) -> wasmtime::Result<()> {
     runtime
         .threading
@@ -1161,8 +1167,10 @@ async fn call_export(
         Ok(instance) => {
             timing.backend_setup_micros = elapsed_micros(setup_started);
             let guest_call_started = Instant::now();
+            *call_phase = CallPhase::ExportLookup;
             let result = match instance.get_func(&mut *store, function.index) {
                 Some(func) => {
+                    *call_phase = CallPhase::CallAndPostReturn;
                     if let Some(trace) = input_trace {
                         trace.stage(InvocationInputPhase::GuestCallStart);
                     }

@@ -131,6 +131,7 @@ enum Value {
     Unsigned,
     Known(&'static [&'static str]),
     GuestTrapKind,
+    PlatformCode,
 }
 
 pub(super) fn public_platform_error(
@@ -181,7 +182,14 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("consumed", Unsigned),
             ("requested", Unsigned),
         ],
-        "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
+        "activation.guest-trap-kind" => &[
+            ("kind", Value::GuestTrapKind),
+            (
+                "phase",
+                Known(&["instantiate", "export-lookup", "call-and-postreturn"]),
+            ),
+        ],
+        "activation.guest-host-failure" => &[("code", Value::PlatformCode)],
         "activation.guest-trap" => &[(
             "code",
             Known(&[
@@ -212,6 +220,11 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
 }
 
 fn public_detail(mut detail: ErrorDetail, limits: &InvocationLimits) -> Option<ErrorDetail> {
+    if detail.kind == "activation.guest-trap-kind"
+        && detail.fields.get("kind").map(String::as_str) != Some("runtime-error")
+    {
+        detail.fields.remove("phase");
+    }
     let allowed = fields(&detail.kind)?;
     let mut public = latent_core::Metadata::new();
     for (key, kind) in allowed.iter().take(limits.max_platform_error_fields) {
@@ -226,6 +239,7 @@ fn public_detail(mut detail: ErrorDetail, limits: &InvocationLimits) -> Option<E
             Value::GuestTrapKind => {
                 latent_core::error::GuestTrapKind::from_wire_name(&value).is_some()
             }
+            Value::PlatformCode => latent_core::PlatformErrorCode::from_wire_code(&value).is_some(),
             Value::Unsigned => {
                 !value.is_empty()
                     && value.len() <= 20

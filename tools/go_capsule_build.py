@@ -39,6 +39,13 @@ RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 
 
+def runtime_transformations_material(output: Path) -> dict:
+    # Compiler transformation inventories use the existing bounded source-file
+    # domain; they are not the smaller controller/runtime-selection document.
+    transformations = read_file(output / 'go-runtime-transformations.json')
+    return {'name': 'go-runtime-transformations', 'digest': digest(transformations), 'size': len(transformations)}
+
+
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, offline_cache: Path | None = None) -> Path:
     project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'go')
@@ -137,8 +144,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
                     data = read_file(output / name, 16 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
-            transformations = read_file(output / 'go-runtime-transformations.json', 65536)
-            materials.append({'name': 'go-runtime-transformations', 'digest': digest(transformations), 'size': len(transformations)})
+            materials.append(runtime_transformations_material(output))
             materials.append(guest_runtime_receipts.emit(output, 'go', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],

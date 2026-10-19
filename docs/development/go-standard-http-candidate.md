@@ -13,6 +13,78 @@ The runtime parent, actual component build, signed provider cases, two unchanged
 independent libraries and outside-checkout developer module remain required.
 Source controls do not establish runtime qualification or close the ticket.
 
+The ordinary engine's finite table ceiling is 12,000 entries. The captured Go
+linker reserves 4,096 slots before its function entries: the observed standard
+component needs 10,495, exceeding the previous 10,000 ceiling during instantiation.
+This changes the engine compatibility digest and does not increase linear-memory,
+fuel, deadline or capability allowances. On a 64-bit host, the unchanged maximum
+of 128 tables has a slot-storage ceiling of 12,288,000 bytes, 2,048,000 bytes above
+the prior bound; allocator overhead is additional. This is a host-native bound,
+not a claim that table storage is charged as guest linear memory or that the full
+Go cost-accounting acceptance is complete. Fresh signed qualification is required.
+
+The signed entry diagnostics remain separate from HTTP qualification. Two tiny
+ordinary v4 projects keep the same `run(u32, string) -> string` world and constant
+return, differing only by a blank `net/http` import. They use the frozen normal
+native products, ordinary compiler/signing/admission and original owner fences.
+Both diagnostic worlds declare only their four reachable runtime imports and use
+runtime-only grants; the final component-surface check remains strict. The
+required HTTP fixtures keep their full HTTP world and original grants.
+The diagnostic also invokes three separate signatures before the original
+string-in/string-out export: no-input `u32`, string-input `u32`, and no-input
+string output. Each gets its own public row, exact result check and original
+retirement fence, including when it traps. This distinguishes argument and
+result handling without asserting that a trap occurs inside the Go handler.
+The pinned GoPkg allocator uses pre-init `runtime.sbrk` until its deferred
+initializer enables GC allocation, and refuses nonzero old pointer/size. These
+are source hypotheses to inspect if string input alone fails; actual allocator
+arguments are not observed by this diagnostic. Both minimal projects omit the
+streaming import, so they do not select the finite HTTP overlay and cannot
+qualify that backend.
+If the no-input control also traps, one failure-only private node replay can
+capture at most 32 numeric Wasm function indices and offsets before the public
+sanitizer. It reuses the unchanged signed no-HTTP package, runtime grants,
+activation budget, integer-control call and owner fences. Its two read-only
+source overlays enable only bounded frame capture and numeric stderr emission;
+DWARF details stay disabled. No names, source paths or raw native output are
+retained, and the private binary is excluded from artifacts. A failed launcher
+retains only the existing closed family/category and preflight phase/code fields;
+unknown or private values are refused. Bubblewrap starts at `/`; only after
+the original credential/capability drop does `env --chdir` enter the runner
+workspace. This avoids root traversal of runner-only ancestors without adding
+DAC privileges. The captured permission refusal alone does not prove that path
+was its actual cause. The offline build
+and replay share a 600-second diagnostic bound, with 450 seconds for the build
+and 90 seconds for the node. This is the last native command after every
+acceptance command; the ephemeral target is diagnostic-only afterwards and
+cache saving remains disabled. Neither successful capture nor clean retirement
+qualifies the still-required original HTTP programmes.
+Their public rows are retained even if an entry traps; they never count among the
+original 33 standard or 30 library cases. This failure-only observation is bounded
+to 600 seconds, with 180-second compiles and 90-second node scenarios, under the
+unchanged 45-minute job. A difference can narrow the reachable initialization
+graph; it does not identify a specific initializer or prove an ABI defect by
+itself. No raw private runtime error or named native backtrace is made public.
+
+At exact `dc77129d33a8092402b3fa6a5868b7de498dd15e`, the private replay reached
+its authenticated preflight, built offline and captured nine bounded numeric
+frames for the unchanged signed no-HTTP integer control. The original source,
+component, signed release and frozen products remained unchanged. Mapping the
+exact component's function indices and offsets identifies runtime bootstrap:
+`_initialize` through `rt0`, `schedinit`, `randinit`, `random_get` and the closed
+exit adapter. The four signatures still trap with identical per-component fuel;
+HTTP and string handling are not necessary for that failure. This does not
+establish that later HTTP paths work.
+
+The qualifier's runtime policy allowed zero input bytes for every scalar provider,
+but the random provider dispatches an eight-byte little-endian length descriptor,
+including for `u64-value`. Its refusal makes the Go overlay exit rather than use
+clock-derived entropy. The candidate now grants exactly eight input bytes to
+that scalar random operation; clock and activation inputs stay zero. Provider
+limits, output allowances, operation restrictions and the fail-closed runtime are
+unchanged. A focused policy regression is red with the old ceiling and green
+with this correction. Fresh original signed HTTP and client gates remain required.
+
 ## Finite API contract
 
 The candidate supports ordinary default Client calls, DefaultClient,
@@ -46,6 +118,14 @@ compression fails explicitly. Authorization, cookies and other reserved request
 headers fail before contact. Content-Type and Idempotency-Key are structured
 typed request fields. No source-level credential or raw-header exception is
 introduced for any library.
+
+Cloning a supported Transport preserves its explicit field copies and the
+original Once/nil-map distinction, but the compiler-owned profile does not
+initialize an unused wire HTTP/2 implementation during Clone. Upstream
+Go1.27.2 otherwise creates an HTTP2Config as that side effect, which the finite
+backend correctly rejects as unsupported configuration. Explicit application
+HTTP2, Protocols and dialer selections remain rejected; the clone correction
+does not erase them or make an HTTP/2/TLS claim.
 
 The guest Transport owns no connection pool. Guest idle-pool bounds therefore
 cover zero retained connections; CloseIdleConnections has no guest connection
@@ -134,3 +214,7 @@ and authenticate the default backend initializer without admitting custom dialer
 This signed gate has been added and has not yet executed. HTTPS, published
 default-client consumers, the wider matrix and complete #692 acceptance remain
 required; no full-ticket result follows from this candidate.
+
+The [two published client capture gate](go-default-http-libraries.md) adds
+ordinary library request/JSON paths and private transitive workers as a separate
+pending qualification. It preserves this original standard-API gate.

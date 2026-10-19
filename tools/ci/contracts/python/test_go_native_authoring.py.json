@@ -1,4 +1,8 @@
 {
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Keep every prior native-authoring test assertion and order; add pinned SDK build-dependency restoration, review-required/source-identity, override/replace/exclude, post-tidy, ambiguous graph and both-checksum controls. Explicitly review command-model helper changes that model tidy pruning and native metadata; no native execution, new skip or budget change.",
+  "module": "tools/tests/test_go_native_authoring.py",
   "cases": [
     "GoNativeAuthoring.test_add_update_remove_are_native_offline_edits_preserving_accepted_capture",
     "GoNativeAuthoring.test_aggregate_local_file_count_is_bounded_before_mirror_publication",
@@ -7,8 +11,14 @@
     "GoNativeAuthoring.test_invalid_versions_and_immutable_sdk_edits_fail_without_native_execution",
     "GoNativeAuthoring.test_native_failure_preserves_both_native_files_and_accepted_capture",
     "GoNativeAuthoring.test_native_lock_restores_portable_local_replacements_and_preserves_prior_capture",
+    "GoNativeAuthoring.test_native_lock_retains_reviewable_sdk_build_input_for_source_without_wit_imports",
     "GoNativeAuthoring.test_partial_native_publication_rolls_back_only_our_bytes",
+    "GoNativeAuthoring.test_sdk_build_requirement_cannot_hide_an_override_replacement_or_exclusion",
     "GoNativeAuthoring.test_sdk_overlap_and_shadow_targets_are_denied",
+    "GoNativeAuthoring.test_sdk_runtime_lock_binds_manifest_and_original_checksum_bytes",
+    "GoNativeAuthoring.test_sdk_runtime_override_introduced_during_tidy_is_not_silently_replaced",
+    "GoNativeAuthoring.test_sdk_runtime_selection_requires_one_unreplaced_module",
+    "GoNativeAuthoring.test_sdk_selected_version_and_both_checksums_are_verified_before_native_publication",
     "GoNativeAuthoring.test_source_local_resource_and_tool_drift_deny_publication"
   ],
   "guards": {
@@ -18,47 +28,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
-    },
-    "GoNativeAuthoring.test_aggregate_local_file_count_is_bounded_before_mirror_publication": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
-    },
-    "GoNativeAuthoring.test_cli_lock_failure_is_redacted_without_retry": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
-    },
-    "GoNativeAuthoring.test_explicit_empty_credential_slot_has_no_anonymous_fallback": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
     },
     "GoNativeAuthoring.test_invalid_versions_and_immutable_sdk_edits_fail_without_native_execution": {
       "bases": [
@@ -66,23 +40,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
-    },
-    "GoNativeAuthoring.test_native_failure_preserves_both_native_files_and_accepted_capture": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
     },
     "GoNativeAuthoring.test_native_lock_restores_portable_local_replacements_and_preserves_prior_capture": {
       "bases": [
@@ -90,35 +52,107 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
     },
-    "GoNativeAuthoring.test_partial_native_publication_rolls_back_only_our_bytes": {
+    "GoNativeAuthoring.test_native_lock_retains_reviewable_sdk_build_input_for_source_without_wit_imports": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
-      ],
-      "skipSites": []
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
     },
-    "GoNativeAuthoring.test_sdk_overlap_and_shadow_targets_are_denied": {
+    "GoNativeAuthoring.test_sdk_build_requirement_cannot_hide_an_override_replacement_or_exclusion": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_sdk_selected_version_and_both_checksums_are_verified_before_native_publication": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_sdk_runtime_override_introduced_during_tidy_is_not_silently_replaced": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_sdk_runtime_selection_requires_one_unreplaced_module": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_sdk_runtime_lock_binds_manifest_and_original_checksum_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_native_failure_preserves_both_native_files_and_accepted_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_aggregate_local_file_count_is_bounded_before_mirror_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
     },
     "GoNativeAuthoring.test_source_local_resource_and_tool_drift_deny_publication": {
       "bases": [
@@ -126,15 +160,59 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
-        "class:setup-sha256:9e1f14608e4741662e732bbe08ee204f455ab9866f463c5147a8fd4508e091bf"
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_partial_native_publication_rolls_back_only_our_bytes": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_sdk_overlap_and_shadow_targets_are_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_explicit_empty_credential_slot_has_no_anonymous_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
+    },
+    "GoNativeAuthoring.test_cli_lock_failure_is_redacted_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dbe5d6b1d66cbb0f10d78b24e7984df9ba47d2c905ee6dd59b62f4a0ce43d529",
+        "class:setup-sha256:7bc94fbd6db101f92e8d533a6c8ba5dd37875bbbae16ed60f7a568a32c447ab0"
+      ]
     }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_go_native_authoring.py",
-  "reviewReason": "Guard exact native edits, bounded local mirrors, rollback, drift, credentials and redacted failure; all existing modules unchanged",
-  "schemaVersion": "latent.ci.contracts.v1"
+  }
 }

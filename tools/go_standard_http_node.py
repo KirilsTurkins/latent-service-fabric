@@ -89,10 +89,13 @@ def grants(client, node, publication, origin):
             'capability': capability, 'providerProfile': profile,
             'configurationDigest': descriptor['configurationDigest'], 'configurationEpoch': 1,
             'restriction': {'operations': [operation]}})
+        # The random provider dispatches an eight-byte length descriptor even
+        # for u64-value. Clock reads carry no input payload.
+        input_bytes = 8 if name == 'random' else 0
         policy(client, 'policy', name + '-allow', {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
             'id': 'runtime', 'effect': 'allow', 'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
             'services': [SERVICE], 'publications': [publication], 'capability': capability, 'operations': [operation],
-            'resources': {'kind': kind}, 'ceiling': {'operations': 4096, 'inputBytes': 0,
+            'resources': {'kind': kind}, 'ceiling': {'operations': 4096, 'inputBytes': input_bytes,
                 'outputBytes': 32768, 'wallTimeMillis': 5000}}]})
         result.append({'capability': capability, 'policy': name + '-allow'})
     for capability, identity, binding, operations, kind, ceiling in (
@@ -148,13 +151,74 @@ def invoke(client, target, which, url, activation):
     return row
 
 
-def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None):
+def retire_case(client, probe, target, output, name):
+    # These same original owner fences apply to probes and ordinary cases.
+    retired = sample(client, probe, 'after-'+name, 1)
+    slots = next(row for row in retired['inventory']['topology']['entries']
+                 if row['name'] == 'invocation-cleanup-slots')
+    require(slots['activeCount'] == '0', 'standard-go-cleanup-slots-retired')
+    write_json(output/('after-'+name+'.json'), retired)
+    usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
+    require(not usage['unavailable'] and all(key in usage['counters'] and int(usage['counters'][key]) == 0
+        for key in ACTIVE_COUNTERS), 'standard-go-provider-physical-owners')
+
+
+def entry_probes(client, probe, target, output, address, result, *, libraries=False):
+    result['entryProbes'] = []
+    choices = (('library-entry',200,'library-entered'), ('private-marker',201,'private-marker-ready')) if libraries else (
+        ('entry',25,'entered'), ('request-setup',26,'request-ready'))
+    for name, which, expected in choices:
+        row = invoke(client,target,which,address,'standard-probe-'+name)
+        # Retain even the first failed probe without counting it as an HTTP case.
+        result['entryProbes'].append({'name':name, **row})
+        require(row['exitCode'] == 0 and row['decoded'] == [expected] and row['processReaped'],
+                'standard-go-probe-'+name+'-result')
+        consumption = row['response']['data']['consumption']
+        require(all(type(consumption[key]) is int and consumption[key] == 0
+                    for key in ('outboundRequests','effectCount')), 'standard-go-probe-external-effect')
+        retire_case(client,probe,target,output,'probe-'+name)
+
+
+def library_cases(secondary: dict, native_reference: dict | None = None) -> list[tuple]:
+    from tools.go_http_library_reference import outcomes, malformed_outcomes
+    truncated = outcomes(native_reference)
+    # Legacy source-only inventories can construct the original case list.
+    # The signed runner below requires the additional actual observation.
+    malformed = malformed_outcomes(native_reference) if 'malformedJsonClients' in native_reference else None
+    cases = []
+    for index,name in enumerate(('sling','requests')):
+        # The declared response length exceeds the host's output allowance:
+        # both clients receive the refusal before any JSON decoder runs.
+        for label,mode,path,expected in (
+            ('json',0,'/conformance/json','200:domain:7:caf\u00e9:first|\u03bb'),
+            ('http404',0,'/conformance/status/404','404:error:domain-error'),
+            ('http500',0,'/conformance/status/500','500:error:domain-error'),
+            ('truncated',0,'/conformance/body/truncated',truncated[name]),
+            ('oversized',0,'/conformance/body/oversized','transport-error'),
+            ('malformed-json',0,'/conformance/body/malformed-json',malformed[name] if malformed is not None else 'invalid-json'),
+            ('forbidden',3,'/conformance/json','transport-error'),
+            ('cancel-headers',4,'/conformance/hold/headers','cancelled'),
+            ('partial-context-cancel',5,'/conformance/body/partial','cancelled'),
+            ('post',1,'/conformance/echo','200:echo:AAECAw=='),
+            ('uncertain',1,'/conformance/mutation/close','transport-error'),
+            ('alternate-denied',0,f"http://{secondary['host']}:{secondary['port']}/conformance/denied-target",'transport-error'),
+            ('pre-cancelled',6,'/conformance/json','cancelled'),
+            ('sibling-cancel',7,'/conformance/hold/headers','cancelled'),
+            ('fresh',0,'/conformance/json','200:domain:7:caf\u00e9:first|\u03bb')):
+            cases.append((name+'-'+label,index*100+mode,path,expected))
+    return cases
+
+
+def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
+        suite: str = 'standard', native_reference: dict | None = None):
+    require(suite in {'standard','libraries'},'standard-go-unknown-fixture-suite')
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-go-original-deadline-expired')
     output = fresh(output)
     result = {'schemaVersion': 'latent.go.standard-http.qualification.v1', 'status': 'in-progress',
         'scope': 'ordinary-default-go-client-and-signed-real-provider-subset',
         'unchangedThirdPartyLibraryQualification': False, 'releasePublication': 'not-performed', 'cases': []}
+    result['suite'] = suite
     binaries = ({name: native/name for name in ('latent', 'latentd', 'capsule_authoring')}
                 if isinstance(native, Path) else dict(native))
     require(set(binaries) == {'latent', 'latentd', 'capsule_authoring'}, 'standard-go-native-tuple-required')
@@ -177,9 +241,17 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         'tools/standard_http/observations.py', 'tools/go_guest/http.py', 'tools/go_guest/http_context.py',
         'sdk/go-guest/runtime/http_async.go.in', 'sdk/go-guest/runtime/http_transport.go.in',
         'tools/static_api/node.py', 'tools/guest_runtime_profiles.py')
+    if suite == 'libraries':
+        source_paths += ('sdk/go-guest/runtime/http-library-conformance/main.go',
+            'tools/go_http_library_fixture.py','tools/qualify_go_http_libraries.py')
     result['sources'] = {name: file_identity(ROOT/name) for name in source_paths}
     result['limitations'] = ['Native process RSS is sampled, not allocator/native/kernel upper-bound proof.',
         'Finite ordinary standard-API controls; no two-client, private-library, all-runtime or full ticket qualification.']
+    if suite == 'libraries':
+        result['limitations'] = ['Native RSS sampling is not an allocator/native/kernel upper-bound proof.',
+            'Shared standard33 gate owns early-close/concrete Transport/custom extension controls.',
+            'Sling partial-response context cancellation does not independently prove the header-return phase.',
+            'No complete runtime, TLS, socket, pool or full ticket qualification.']
     node = peer = client = None
     stage = 'sign'
     try:
@@ -231,6 +303,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                     and denied['response']['data']['consumption']['cpuFuel'] == '0',
                     'standard-go-http-grant-denial')
             target = deploy(client, source/'deployment.json', publication, generation=str(target['generation']), grants=authorized)
+            stage = 'entry-boundary'
+            entry_probes(client,probe,target,output,url+'/conformance/json',result,libraries=suite == 'libraries')
             stage = 'ordinary-http'
             cases = [('json', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('http404', 0, '/conformance/status/404', '404:error:domain-error'),
@@ -266,6 +340,11 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('user-agent-first', 23, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('noncanonical-user-agent-denied', 24, '/conformance/json', 'transport-error'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
+            if suite == 'libraries':
+                from tools.go_http_library_reference import malformed_outcomes
+                malformed_outcomes(native_reference)
+                result['nativeReference'] = native_reference
+                cases = library_cases(secondary,native_reference)
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
                 require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-go-'+name+'-result')
@@ -273,14 +352,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 # The shared outbound owner checks every activation-scoped and
                 # service-resident row. Ingress-only exchange rows are absent on
                 # this node, which has no HTTP listener installation.
-                retired = sample(client, probe, 'after-'+name, 1)
-                slots = next(row for row in retired['inventory']['topology']['entries']
-                             if row['name'] == 'invocation-cleanup-slots')
-                require(slots['activeCount'] == '0', 'standard-go-cleanup-slots-retired')
-                write_json(output/('after-'+name+'.json'), retired)
-                usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
-                require(not usage['unavailable'] and all(key in usage['counters'] and int(usage['counters'][key]) == 0
-                    for key in ACTIVE_COUNTERS), 'standard-go-provider-physical-owners')
+                retire_case(client,probe,target,output,name)
             result['finalOs'] = probe.sample()
             delete_all(client, [target['name']])
             stop(client, node)
@@ -290,16 +362,18 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
             validate_peer(observation)
-            require(observation['acceptedConnections'] == observation['startedRequests'] == 18 and observation['rejectedRequests'] == 0
-                and observation['committedMutations'] == 1
+            contacts = 24 if suite == 'libraries' else 18
+            require(observation['acceptedConnections'] == observation['startedRequests'] == contacts and observation['rejectedRequests'] == 0
+                and observation['committedMutations'] == (2 if suite == 'libraries' else 1)
                 and all(row['role'] == 'primary' for row in observation['requests']),
                 'standard-go-peer-contact-count')
-            expected_agents = (b'Go-http-client/1.1', None, b'fixture-agent/1', b'Go-http-client/1.1')
-            for row, agent in zip(observation['requests'][-4:], expected_agents, strict=True):
-                require(row['userAgent'] == {'present':agent is not None,
-                    'bytes':len(agent) if agent is not None else 0,
-                    'sha256':'sha256:'+hashlib.sha256(agent).hexdigest() if agent is not None else None},
-                    'standard-go-user-agent-semantics')
+            if suite == 'standard':
+                expected_agents = (b'Go-http-client/1.1', None, b'fixture-agent/1', b'Go-http-client/1.1')
+                for row, agent in zip(observation['requests'][-4:], expected_agents, strict=True):
+                    require(row['userAgent'] == {'present':agent is not None,
+                        'bytes':len(agent) if agent is not None else 0,
+                        'sha256':'sha256:'+hashlib.sha256(agent).hexdigest() if agent is not None else None},
+                        'standard-go-user-agent-semantics')
             result['peer'] = observation
             result['peerReaped'] = peer.owner.finished
             peer = None
@@ -310,6 +384,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 'standard-go-artifact-changed')
         require(result['sources'] == {name: file_identity(ROOT/name) for name in source_paths}, 'standard-go-sources-changed')
         result['status'] = 'passed'
+        result['unchangedThirdPartyLibraryQualification'] = suite == 'libraries'
         write_json(output/'qualification.json', result)
         return result
     except BaseException:

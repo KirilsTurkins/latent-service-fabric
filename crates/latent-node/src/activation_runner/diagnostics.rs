@@ -18,9 +18,19 @@ pub(super) fn trap_kind_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
     };
     // Select a static token. Never forward message, backtrace, request bytes or
     // arbitrary metadata, including a contradictory backend classification.
+    let mut fields = Metadata::from([("kind".into(), kind.wire_name().into())]);
+    let phase = match trap.metadata.get("runtimePhase").map(String::as_str) {
+        Some("instantiate") => Some("instantiate"),
+        Some("export-lookup") => Some("export-lookup"),
+        Some("call-and-postreturn") => Some("call-and-postreturn"),
+        _ => None,
+    };
+    if let (GuestTrapKind::RuntimeError, Some(phase)) = (kind, phase) {
+        fields.insert("phase".into(), phase.into());
+    }
     Some(ErrorDetail {
         kind: "activation.guest-trap-kind".into(),
-        fields: Metadata::from([("kind".into(), kind.wire_name().into())]),
+        fields,
     })
 }
 
@@ -278,6 +288,60 @@ mod tests {
         ] {
             assert_eq!(mapped("guest-runtime-error", metadata).details.len(), 1);
         }
+    }
+
+    #[test]
+    fn runtime_phase_requires_generic_failure_and_only_closed_source_boundaries() {
+        for phase in ["instantiate", "export-lookup", "call-and-postreturn"] {
+            let error = mapped(
+                "guest-runtime-error",
+                Metadata::from([
+                    ("classification".into(), "runtime-error".into()),
+                    ("runtimePhase".into(), phase.into()),
+                    ("provider".into(), "private-fixture-text".into()),
+                ]),
+            );
+            assert_eq!(error.code, PlatformErrorCode::GuestTrap);
+            assert!(!error.retryable);
+            assert_eq!(error.details.len(), 2);
+            assert_eq!(
+                error.details[1].fields,
+                Metadata::from([
+                    ("kind".into(), "runtime-error".into()),
+                    ("phase".into(), phase.into()),
+                ])
+            );
+        }
+        for phase in [
+            "",
+            "Instantiate",
+            " instantiate",
+            "instantiate\n",
+            "private-fixture-text",
+        ] {
+            let error = mapped(
+                "guest-runtime-error",
+                Metadata::from([
+                    ("classification".into(), "runtime-error".into()),
+                    ("runtimePhase".into(), phase.into()),
+                ]),
+            );
+            assert_eq!(
+                error.details[1].fields,
+                Metadata::from([("kind".into(), "runtime-error".into())])
+            );
+        }
+        let error = mapped(
+            "guest-trap",
+            Metadata::from([
+                ("trap".into(), "unreachable-code".into()),
+                ("runtimePhase".into(), "instantiate".into()),
+            ]),
+        );
+        assert_eq!(
+            error.details[1].fields,
+            Metadata::from([("kind".into(), "unreachable-code".into())])
+        );
     }
 
     #[test]

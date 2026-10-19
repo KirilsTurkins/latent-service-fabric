@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "HttpLibraryCapture.test_client_ci_gate_requires_normal_native_and_own_boundaries_without_waiving_shared_failure",
+    "HttpLibraryCapture.test_declared_oversized_response_is_refused_before_either_client_decoder",
+    "HttpLibraryCapture.test_malformed_json_oracle_requires_paired_native_results_in_signed_runner",
+    "HttpLibraryCapture.test_native_malformed_observations_share_frozen_build_and_persist_failed_row",
+    "HttpLibraryCapture.test_native_reference_uses_captured_sources_offline_and_persists_before_refusal",
+    "HttpLibraryCapture.test_nested_private_origins_and_injected_coordinates_fail_before_writes",
+    "HttpLibraryCapture.test_normal_lock_target_reparse_is_denied_before_capture_or_review",
+    "HttpLibraryCapture.test_ordinary_clients_use_normal_reviewable_native_lock_without_wit_source_imports",
+    "HttpLibraryCapture.test_private_coordinates_change_application_inputs_without_changing_captured_sdk",
+    "HttpLibraryCapture.test_private_marker_probes_keep_original_cases_and_enforce_zero_effects_and_retirement",
+    "HttpLibraryCapture.test_tampered_native_tuple_cannot_start_capture_resolution_compilation_or_node",
+    "HttpLibraryCapture.test_truncated_oracle_requires_actual_native_observation_and_keeps_other_cases"
+  ],
+  "guards": {
+    "HttpLibraryCapture.test_client_ci_gate_requires_normal_native_and_own_boundaries_without_waiving_shared_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_declared_oversized_response_is_refused_before_either_client_decoder": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_malformed_json_oracle_requires_paired_native_results_in_signed_runner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_native_malformed_observations_share_frozen_build_and_persist_failed_row": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_native_reference_uses_captured_sources_offline_and_persists_before_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_nested_private_origins_and_injected_coordinates_fail_before_writes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_normal_lock_target_reparse_is_denied_before_capture_or_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_ordinary_clients_use_normal_reviewable_native_lock_without_wit_source_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_private_coordinates_change_application_inputs_without_changing_captured_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_private_marker_probes_keep_original_cases_and_enforce_zero_effects_and_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_tampered_native_tuple_cannot_start_capture_resolution_compilation_or_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_truncated_oracle_requires_actual_native_observation_and_keeps_other_cases": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_http_libraries.py",
+  "reviewReason": "Add declared-size pre-decoder refusal and mandatory paired native malformed JSON reference controls while retaining all original test cases and fixture guards",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

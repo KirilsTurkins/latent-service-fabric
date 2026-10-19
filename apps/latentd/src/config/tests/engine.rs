@@ -4,6 +4,15 @@ use super::{config, document, input, CellConfig, MIB};
 use crate::config::{EngineAllocator, EngineConfig, EngineOptimization};
 
 #[test]
+fn ordinary_node_inherits_finite_table_capacity_without_extra_engine_options() {
+    let (directory, config) = config();
+    let runtime = config.derive().unwrap().wasmtime;
+    assert_eq!(runtime.maximum_table_elements, 12_000);
+    assert_eq!(runtime.maximum_tables_per_store, 128);
+    assert!(!directory.path().join("data").exists());
+}
+
+#[test]
 fn java_guest_engine_is_explicit_and_does_not_raise_operator_limits() {
     let (_directory, mut config) = config();
     let before = config.clone().derive().unwrap().wasmtime;

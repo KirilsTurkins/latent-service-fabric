@@ -29,6 +29,7 @@ func (localTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 func Run(which uint32, address string) string {
 	invocations++
 	if invocations != 1 { return "stale-state" }
+	if which == 25 { return "entered" }
 	client := &http.Client{Timeout:time.Second}
 	defer client.CloseIdleConnections()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -38,6 +39,7 @@ func Run(which uint32, address string) string {
 	if which == 1 { method = http.MethodPost; body = bytes.NewReader([]byte{0,1,2,3}) }
 	request, err := http.NewRequestWithContext(ctx, method, address, body)
 	if err != nil { return "request-error" }
+	if which == 26 { return "request-ready" }
 	if which == 1 { request.Header.Set("Content-Type", "application/octet-stream") }
 	if which == 3 { request.Header.Set("Authorization", "must-not-leave-guest") }
 	if which == 4 { var timeout context.CancelFunc; ctx, timeout = context.WithTimeout(ctx, 20*time.Millisecond); defer timeout(); request = request.WithContext(ctx) }

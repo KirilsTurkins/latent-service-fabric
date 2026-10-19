@@ -3312,14 +3312,15 @@
         "transaction_runtime::factory::pre_host_conflict::tests::physical_original_attempt_owner_blocks_abort_until_real_retirement",
         "transaction_runtime::factory::pre_host_conflict::tests::protected_original_clock_is_sampled_before_publication_and_response_fences",
         "transaction_runtime::factory::pre_host_conflict::tests::protected_original_deadline_cannot_be_replaced_by_recovery_time",
-        "transaction_runtime::tests::technical_abort::successful_return_with_unavailable_host_result_preserves_original_pending_command"
+        "transaction_runtime::tests::technical_abort::successful_return_with_unavailable_host_result_preserves_original_pending_command",
+        "activation_runner::diagnostics::tests::runtime_phase_requires_generic_failure_and_only_closed_source_boundaries"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 188,
+      "minimumCases": 189,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -7314,7 +7315,11 @@
         "native_stacks::tests::controlled_profile_rejects_pooling_and_absent_runtime_and_binds_compatibility",
         "native_stacks::tests::copied_task_token_cannot_start_another_child_even_after_its_first_mapping_retires",
         "native_stacks::tests::logical_finalization_cannot_hide_a_guest_owned_native_or_task_record",
-        "native_stacks::tests::original_native_and_memory_limits_reject_before_mapping_and_roll_back_unstarted_permits"
+        "native_stacks::tests::original_native_and_memory_limits_reject_before_mapping_and_roll_back_unstarted_permits",
+        "backend::call_phase::tests::only_generic_runtime_failure_gets_the_actual_closed_call_boundary",
+        "backend::call_phase::tests::call_boundary_does_not_relabel_traps_accounting_or_lifecycle_failures",
+        "host::tests::finite_default_table_limit_admits_go_minimum_and_rejects_excess",
+        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7327,7 +7332,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 375,
+      "minimumCases": 379,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -9173,7 +9178,10 @@
         "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
         "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
-        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation"
+        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation",
+        "invocation::conversion::tests::trap_kinds::known_host_failure_codes_survive_invocation_status_and_foreign_envelopes",
+        "invocation::conversion::tests::trap_kinds::host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds",
+        "invocation::conversion::tests::trap_kinds::runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9240,7 +9248,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 272,
+      "minimumCases": 275,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9613,14 +9621,15 @@
         "package::registry::tests::cancellation::denied_pull_does_not_export_and_diagnostics_exclude_credentials",
         "package::registry::tests::copy_budget_and_complete_push_association_are_checked_before_transfer",
         "package::registry::tests::partial_push_retains_confirmed_package_and_uncertain_evidence_without_retry",
-        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners"
+        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners",
+        "error::tests::runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certainty"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 166,
+      "minimumCases": 167,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -10278,7 +10287,8 @@
         "config::tests::providers::scalar_aliases::aliases_cannot_change_epoch_chain_sources_or_duplicate_any_identity_or_scope",
         "config::tests::providers::scalar_aliases::aliases_never_supply_missing_or_stateful_implementations",
         "config::tests::providers::scalar_aliases::aliases_preserve_original_fourteen_descriptor_slots_and_closed_input",
-        "standalone::start::tests::provider_startup::scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners"
+        "standalone::start::tests::provider_startup::scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners",
+        "config::tests::engine::ordinary_node_inherits_finite_table_capacity_without_extra_engine_options"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10347,7 +10357,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 445,
+      "minimumCases": 446,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

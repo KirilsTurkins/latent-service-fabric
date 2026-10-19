@@ -842,6 +842,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         reviewed_framework_archives = ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications"
         reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
         reviewed_go_probe = ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components"
+        reviewed_go_normal_id = ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -872,6 +873,15 @@ class RepositoryMigrationTests(unittest.TestCase):
                     value["run"] = value["run"].replace(
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
+            if key == reviewed_go_normal_id:
+                # The independent client gate refers to this unchanged normal
+                # qualification by its stable Actions step id. Retain every
+                # historical command byte and execution field; only its command
+                # identity changes from the display name to that exact id.
+                replacement = ".github/workflows/go-guest.yml:upstream-probe:normal_go_qualification"
+                self.assertNotIn(key, data["after"])
+                self.assertEqual(data["after"][replacement], dict(value, name="normal_go_qualification"), key)
+                continue
             self.assertIn(key, data["after"])
             if key == reviewed_framework_archives:
                 # Materialize the already authenticated locked archives before
