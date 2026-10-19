@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve original capture/compiler/cleanup failure when bounded FAILED observer itself errors; add original exception identity controls without changing positive campaign.",
+  "reviewReason": "Bind reviewed unchanged qualifier to exact committed LF source bytes; correct Windows physical CRLF fingerprint.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "982fc5dfc8fbf442c607701e3401d97c71afc029662dca0af123413237930b9a"
+  "sha256": "3c8fc7cbafc598d474b396d33765682947e8c5af9c8d9f2c30f0df793c40a1d6"
 }
