@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_standard_entropy.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed explicit Rust entropy campaign and default-off runner integration; all old paths and bounds retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e549da5653ac164bc5e16b6da8a2a999cabc97a4e79fca7f40f413cf369bdc1e"
+}

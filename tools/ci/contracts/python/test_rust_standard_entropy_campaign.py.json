@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "StandardEntropyCampaign.test_nine_cases_typed_and_infallible_denials_trap_fuel_and_fresh_recovery_retire",
+    "StandardEntropyCampaign.test_normal_pure_transitive_capture_exact_review_removes_originals_and_preserves_sdk",
+    "StandardEntropyCampaign.test_unknown_unretired_overbudget_or_unrelated_effects_never_pass",
+    "StandardEntropyCampaign.test_wrong_created_profile_refuses_before_source_or_review_mutation"
+  ],
+  "guards": {
+    "StandardEntropyCampaign.test_nine_cases_typed_and_infallible_denials_trap_fuel_and_fresh_recovery_retire": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aeb5aacef16861d5a24a9afe36cf984e8cab983016949bfa0b7462aa5f5bf150",
+        "class:setup-sha256:6747536fc8a5adc0c3dfd7012e640e976ff73467630c71ff11137ee8ac4b09e5"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropyCampaign.test_normal_pure_transitive_capture_exact_review_removes_originals_and_preserves_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aeb5aacef16861d5a24a9afe36cf984e8cab983016949bfa0b7462aa5f5bf150",
+        "class:setup-sha256:6747536fc8a5adc0c3dfd7012e640e976ff73467630c71ff11137ee8ac4b09e5"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropyCampaign.test_unknown_unretired_overbudget_or_unrelated_effects_never_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aeb5aacef16861d5a24a9afe36cf984e8cab983016949bfa0b7462aa5f5bf150",
+        "class:setup-sha256:6747536fc8a5adc0c3dfd7012e640e976ff73467630c71ff11137ee8ac4b09e5"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropyCampaign.test_wrong_created_profile_refuses_before_source_or_review_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aeb5aacef16861d5a24a9afe36cf984e8cab983016949bfa0b7462aa5f5bf150",
+        "class:setup-sha256:6747536fc8a5adc0c3dfd7012e640e976ff73467630c71ff11137ee8ac4b09e5"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_standard_entropy_campaign.py",
+  "reviewReason": "Add real capture/review/retirement and refusal campaign controls; no old tests changed.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

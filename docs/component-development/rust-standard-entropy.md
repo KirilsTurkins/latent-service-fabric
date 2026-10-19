@@ -34,3 +34,24 @@ These are not signed component qualification. A fresh owned sysroot, actual
 offline dependency build and signed ordinary-library programme remain required
 before this source delivery can satisfy the facility execution gate. No FIPS,
 statistical quality, concurrency or transactional replay claim is made.
+
+
+The separate `standard-entropy` qualification job builds one owned entropy std
+sysroot from the authenticated Rust 1.97.1 archive, then captures an outside
+library with ordinary getrandom 0.3.4, rand_core 0.9.3 OsRng, a transitive UTF-8
+text resource and a binary resource. Both outside source directories are removed
+before the isolated, offline component build. The normal executable-input gate
+first refuses getrandom's audited build script; only this controlled fixture
+programme then reviews and consumes the exact retained request identity.
+
+The signed programme requires the original 27 node cases plus two before-guest
+missing-grant denials and 16 entropy calls. It covers empty, one-byte, 257-byte,
+uninitialized, scalar, OsRng, HashMap seeding, 4096-byte and oversized requests;
+typed budget denial and an infallible standard-library trap; exact policy
+restoration; and fresh activation after denial, trap and fuel exhaustion. Each
+executed call must have known outcome, bounded fuel/memory, zero unrelated
+outbound/log/effect use and physical process/provider retirement. The 65536-byte
+provider aggregate and original invocation budgets are unchanged. This programme
+does not claim aggregate-quota exhaustion. Its source/protocol controls pass;
+actual owned-std compilation and signed execution remain pending until a
+source-bound passing receipt is retained.

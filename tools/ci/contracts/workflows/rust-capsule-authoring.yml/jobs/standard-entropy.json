@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Rebuilt Rust standard entropy and signed ordinary libraries",
+    "needs": "authoring",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the existing bounded compiler namespace and pinned bindings",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Download this run's existing public native and companion products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "rust-git-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-entropy-prepared"
+        }
+      },
+      {
+        "name": "Test exact entropy source, ordinary transitive capture and retirement controls",
+        "run": "python3 -m unittest tools.tests.test_rust_standard_entropy tools.tests.test_rust_standard_entropy_campaign"
+      },
+      {
+        "name": "Build owned entropy std and execute ordinary signed libraries",
+        "run": "python3 tools/qualify_rust_standard_entropy.py --prepared-qualification \"$RUNNER_TEMP/rust-entropy-prepared\" --output \"$RUNNER_TEMP/rust-standard-entropy\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded entropy observations including failed attempts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-standard-entropy-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-standard-entropy/qualification.json\n${{ runner.temp }}/rust-standard-entropy/FAILED.json\n${{ runner.temp }}/rust-standard-entropy/capture.json\n${{ runner.temp }}/rust-standard-entropy/logs/**\n${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json\n${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**\n${{ runner.temp }}/rust-standard-entropy/approval-required/*.json\n${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/*.json\n${{ runner.temp }}/rust-standard-entropy/build/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/component.wasm\n${{ runner.temp }}/rust-standard-entropy/node/workflow.json\n${{ runner.temp }}/rust-standard-entropy/node/FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "standard-entropy",
+  "kind": "job",
+  "reviewReason": "Add separate exact Rust entropy qualification with normal native/companion producer dependency; no old job or command change.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}
