@@ -1,0 +1,128 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-failed-fetch && inputs.observe-fetch-candidate }}",
+    "name": "Exact Fetch backend candidate with existing compiler and ordinary host",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Install existing locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check exact candidate and authenticated observer controls",
+        "run": "python3 -m unittest tools.tests.test_typescript_fetch_frames tools.tests.test_typescript_fetch -v\npython3 tools/diagnose_typescript_fetch_candidate.py --help\n"
+      },
+      {
+        "name": "Preserve only the candidate and replay helpers outside original checkout",
+        "run": "cp tools/typescript_guest/fetch.mjs \"$RUNNER_TEMP/fetch-candidate.mjs\"\ncp tools/diagnose_typescript_fetch_candidate.py \"$RUNNER_TEMP/fetch-candidate.py\"\ncp tools/diagnose_typescript_fetch_failure.py \"$RUNNER_TEMP/fetch-observer.py\"\n"
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "0754391a20027a539f1d5b7c0426719a4bd6c3c1"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only the existing compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install original locked compiler namespace",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/fetch-candidate-tools\""
+      },
+      {
+        "name": "Read authenticated fetch-candidate-native",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "typescript-fetch-native-input-0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+          "path": "${{ runner.temp }}/fetch-candidate-native",
+          "run-id": 39276911555
+        }
+      },
+      {
+        "name": "Read authenticated fetch-candidate-engine",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "typescript-fetch-engine-input-0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+          "path": "${{ runner.temp }}/fetch-candidate-engine",
+          "run-id": 39276911555
+        }
+      },
+      {
+        "name": "Read authenticated fetch-candidate-splicer",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "typescript-source-splicer-input-0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+          "path": "${{ runner.temp }}/fetch-candidate-splicer",
+          "run-id": 39276911555
+        }
+      },
+      {
+        "name": "Read authenticated fetch-candidate-observer",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "typescript-fetch-private-host-1c420914b72bff605422a9077fa3eea34af321a3",
+          "path": "${{ runner.temp }}/fetch-candidate-observer",
+          "run-id": 39298630321
+        }
+      },
+      {
+        "name": "Compile only the backend repair and run the original ordinary signed gate",
+        "run": "chmod u+x \"$RUNNER_TEMP/fetch-candidate-native/native-binaries/\"*\npython3 -B \"$RUNNER_TEMP/fetch-candidate.py\" --candidate \"$RUNNER_TEMP/fetch-candidate.mjs\" --native \"$RUNNER_TEMP/fetch-candidate-native\" --engine \"$RUNNER_TEMP/fetch-candidate-engine\" --splicer \"$RUNNER_TEMP/fetch-candidate-splicer\" --tools \"$RUNNER_TEMP/fetch-candidate-tools\" --observer \"$RUNNER_TEMP/fetch-candidate-observer\" --observer-helper \"$RUNNER_TEMP/fetch-observer.py\" --output \"$RUNNER_TEMP/fetch-candidate-result\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain candidate build and closed ordinary or private evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-fetch-candidate-${{ github.sha }}",
+          "path": "${{ runner.temp }}/fetch-candidate-result/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/build/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/build/logs/**\n${{ runner.temp }}/fetch-candidate-result/attempt/build/component.wasm\n${{ runner.temp }}/fetch-candidate-result/attempt/node/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/node/controls/*.json\n${{ runner.temp }}/fetch-candidate-result/private-replay/*.json\n${{ runner.temp }}/fetch-candidate-result/private-replay/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "fetch-candidate",
+  "kind": "job",
+  "reviewReason": "Private manual-only exact backend candidate uses existing authenticated compiler/engine/native products, preserves ordinary finite signed gate and strict bounds, and reuses the private observer only after an actual retained failure; no Cargo/engine rebuild or production qualification transfer.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

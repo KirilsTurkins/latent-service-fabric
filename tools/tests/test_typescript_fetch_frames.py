@@ -288,5 +288,36 @@ class FetchFailureFrames(unittest.TestCase):
             self.assertNotIn(forbidden, retained)
 
 
+    def test_candidate_backend_requires_the_exact_reviewed_bytes(self):
+        from tools import diagnose_typescript_fetch_candidate as candidate
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)/'fetch.mjs'
+            source.write_bytes(read_file(fetch.ROOT/candidate.BACKEND))
+            self.assertEqual(candidate.candidate_bytes(source), source.read_bytes())
+            source.write_bytes(source.read_bytes()+b'\n')
+            with self.assertRaisesRegex(WorkflowError, 'exact-backend'):
+                candidate.candidate_bytes(source)
+
+    def test_candidate_private_observer_rejects_changed_binary_and_wrong_source(self):
+        from tools import diagnose_typescript_fetch_candidate as candidate
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = root/'private-latentd'; binary.write_bytes(b'owned-private-observer')
+            value = {'qualification': False, 'sourceCommit': candidate.TESTED, 'originalNative': {'owned': 'native'},
+                     'markers': {'numericFrames': True, 'registrationFailures': True},
+                     'privateHost': candidate.file_identity(binary)}
+            path = root/'private-host-identity.json';path.write_bytes(json.dumps(value).encode())
+            with patch.object(candidate, 'PRIVATE_IDENTITY', candidate.file_identity(path)):
+                self.assertEqual(candidate.observer_host(root, {'owned': 'native'}), binary)
+                binary.write_bytes(b'changed-private-observer')
+                with self.assertRaisesRegex(WorkflowError, 'observer-binary'):
+                    candidate.observer_host(root, {'owned': 'native'})
+            value['sourceCommit'] = 'unrelated-source'
+            path.write_bytes(json.dumps(value).encode())
+            with patch.object(candidate, 'PRIVATE_IDENTITY', candidate.file_identity(path)):
+                with self.assertRaisesRegex(WorkflowError, 'observer-source'):
+                    candidate.observer_host(root, {'owned': 'native'})
+
+
 if __name__ == '__main__':
     unittest.main()

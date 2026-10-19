@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-failed-fetch }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-failed-fetch && !inputs.observe-fetch-candidate }}",
     "name": "Private numeric frames for the authenticated failed Fetch component",
     "permissions": {
       "actions": "read",
@@ -123,7 +123,7 @@
   },
   "jobId": "fetch-failure-frames",
   "kind": "job",
-  "reviewReason": "Drain private host stderr through original graceful shutdown, validate multiple closed numeric records under global32-frame bound and retain authenticated private observer tuple for exact reuse.",
+  "reviewReason": "Private manual-only exact backend candidate uses existing authenticated compiler/engine/native products, preserves ordinary finite signed gate and strict bounds, and reuses the private observer only after an actual retained failure; no Cargo/engine rebuild or production qualification transfer.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

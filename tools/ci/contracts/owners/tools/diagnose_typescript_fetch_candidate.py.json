@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_typescript_fetch_candidate.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Private manual-only exact backend candidate uses existing authenticated compiler/engine/native products, preserves ordinary finite signed gate and strict bounds, and reuses the private observer only after an actual retained failure; no Cargo/engine rebuild or production qualification transfer.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "38f6911518a3aba2806125cdee2dae01ac8007bef4d4bede0886555a245e19b5"
+}
