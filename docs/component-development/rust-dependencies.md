@@ -249,6 +249,13 @@ fetch may contact its registries. The exact owned crate revision is restored
 while native update/removal loads its manifests; its original directories are
 deleted again before every captured compilation. The ordinary captured compiler
 retains its network-denied namespace. The programme exports only bounded public results.
+Each command uses the smaller of its existing deadline and the remaining
+2,400-second programme budget. The separate 2,450-second process ceiling remains
+unchanged. Atomic checkpoints retain elapsed milliseconds and the last eight
+completed command timings under hashed labels; the final public report retains
+the completed timing list. A timeout is still a failed qualification. These
+observations distinguish work already completed from the active phase; they do
+not by themselves establish a deadlock, capacity cause or clean shutdown.
 Its source is not an executed qualification receipt, and later final-source CI
 must preserve the other language gates in the shared developer-tools job.
 
