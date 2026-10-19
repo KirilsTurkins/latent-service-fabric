@@ -313,6 +313,39 @@ assert.equal(contacts,4);
                 str(root), str(fetch.ROOT/'tools/typescript_guest/fetch.mjs')], capture_output=True, text=True, timeout=20)
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
+    def test_no_http_promise_and_request_copy_controls_retain_real_thenable_await_and_listener_cleanup(self):
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, output, backend] = process.argv.slice(2);
+const {installFetch} = await import(pathToFileURL(backend));
+const forbidden = () => { throw new Error('no-http-control-contacted-provider'); };
+installFetch({open:forbidden,finish:forbidden,read:forbidden,chunkBytes:forbidden},()=>false);
+for(const name of ['default-client','main']) {
+  const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
+  await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+}
+const {api}=await import(pathToFileURL(output+'/main.mjs'));
+assert.equal(await api.run(3,'https://fixture.invalid/conformance/json'),'promise-ready');
+let added=0,removed=0;
+const add=AbortSignal.prototype.addEventListener, remove=AbortSignal.prototype.removeEventListener;
+AbortSignal.prototype.addEventListener=function(...args){added++;return add.apply(this,args);};
+AbortSignal.prototype.removeEventListener=function(...args){removed++;return remove.apply(this,args);};
+assert.equal(await api.run(4,'https://fixture.invalid/conformance/json'),'request-copy-ready');
+assert.equal(added,1);assert.equal(removed,1);
+AbortSignal.prototype.addEventListener=add;AbortSignal.prototype.removeEventListener=remove;
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE),
+                str(root), str(fetch.ROOT/'tools/typescript_guest/fetch.mjs')], capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def test_closed_guest_diagnostics_cannot_replace_signed_success(self):
         for stage in ('request', 'fetch', 'body-before', 'body-json', 'body-after', 'body-repeat', 'serialize'):
             for kind in ('TypeError', 'RangeError', 'Error', 'other'):

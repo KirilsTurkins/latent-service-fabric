@@ -20,6 +20,34 @@ export function requestReady(url: string): string {
   } catch (error) { return diagnostic('request', error); }
 }
 
+async function exchangeWithoutHttp(): Promise<string> {
+  return await {then(resolve: (value: string) => void) { resolve('settled'); }};
+}
+
+async function performWithoutHttp(): Promise<string> { return await exchangeWithoutHttp(); }
+
+export async function promiseReady(): Promise<string> {
+  let cleaned = false;
+  let completion: Promise<void> | undefined;
+  const value = await new Promise<string>((resolve, reject) => {
+    completion = performWithoutHttp().then(resolve, reject).finally(() => { cleaned = true; });
+  });
+  await completion;
+  if (value !== 'settled' || !cleaned) throw new Error('fetch-runtime-promise-state');
+  return 'promise-ready';
+}
+
+export async function requestCopyReady(url: string): Promise<string> {
+  const first = construct(url), second = new Request(first);
+  const abort = () => { throw new Error('fetch-runtime-unexpected-abort'); };
+  second.signal.addEventListener('abort', abort, {once: true});
+  try {
+    if (await promiseReady() !== 'promise-ready' || second.signal.aborted || second.bodyUsed ||
+        second.headers.get('x-client') !== 'ordinary-global') throw new Error('fetch-runtime-request-copy-state');
+    return 'request-copy-ready';
+  } finally { second.signal.removeEventListener('abort', abort); }
+}
+
 export async function request(url: string): Promise<string> {
   let stage = 'request';
   try {

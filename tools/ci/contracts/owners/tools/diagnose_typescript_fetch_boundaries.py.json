@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_typescript_fetch_boundaries.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "22ece21449b5454cb4f73afe8eba24a23e48da32b6763b362d5edd5fed6ce2f0"
+}

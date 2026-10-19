@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_fetch_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Align only the finite signed Fetch runner read window with the existing adapter and provider maximum; preserve all total-body, owner, authority and exact-result gates; add old-mismatch/new-alignment adapter control.",
+  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "939b30bc4f9af8361740892400aa47f6d8db605bd69829d755daf5b2e312c031"
+  "sha256": "a1ce6d808d87444dbb43cd4eb2652a50785c1a50ea7153457d5c418a9312fccf"
 }

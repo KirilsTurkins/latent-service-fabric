@@ -244,6 +244,15 @@ and transitive modules. Pure `Headers`/`Response` initialization stays in the
 snapshot; `Request` and its native signal graph are constructed during the
 invocation. A real async export checks entry, GET JSON, HTTP 404 as a response,
 one-shot buffered `json()` consumption and a fresh per-activation counter.
+Before the first HTTP call, additional no-HTTP controls exercise a real
+thenable/Promise/await chain and a copied Request's AbortSignal listener plus
+that same chain. These isolate the native asynchronous/object boundary; they
+do not make a failed JSON call successful. The original typed results and
+physical retirement assertions remain mandatory. A separate manual same-SDK
+experiment can reuse the authenticated earlier SDK engine/compiler/native
+products and compile only the new application. Its receipts explicitly name
+that older SDK tree and never qualify the current PR head; no private-frame
+observation or aggregate diagnostic-job success supplies signed Fetch proof.
 Missing runtime and HTTP grants must refuse before execution with no outbound,
 child or mutation effects. The peer must observe exactly three authorized GETs,
 and every completed control must leave the observed topology, cleanup slots and

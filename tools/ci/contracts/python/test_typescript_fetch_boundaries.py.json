@@ -1,0 +1,23 @@
+{
+  "cases": [
+    "FetchBoundaries.test_old_sdk_wrapper_adds_strict_zero_io_probes_without_replacing_original_json_gate"
+  ],
+  "guards": {
+    "FetchBoundaries.test_old_sdk_wrapper_adds_strict_zero_io_probes_without_replacing_original_json_gate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eff5d9eb94a3129a430bc4716829c356392675222f6d9902f7ff7d21a7d05704",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_fetch_boundaries.py",
+  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

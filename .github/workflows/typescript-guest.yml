@@ -110,6 +110,10 @@ on:
         description: Replay the authenticated d412 Fetch failure with bounded private frames
         type: boolean
         default: false
+      observe-fetch-boundaries:
+        description: Compile only new boundary probes using authenticated d412 SDK products
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -131,7 +135,7 @@ env:
 
 jobs:
   source-splicer:
-    if: ${{ !inputs.observe-failed-fetch }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}
     name: Source-owned asynchronous import compiler
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -329,7 +333,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   boundary:
-    if: ${{ !inputs.observe-failed-fetch }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -633,5 +637,85 @@ jobs:
             ${{ runner.temp }}/typescript-fetch-frames/observation.json
             ${{ runner.temp }}/typescript-fetch-frames/node/observation.json
             ${{ runner.temp }}/typescript-fetch-frames/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7
+  fetch-boundaries:
+    name: Same-SDK signed Promise and Request-copy boundaries
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.observe-fetch-boundaries }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - name: Install the existing locked Python dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check actual probe sources and failure-preserving wrapper controls
+        run: python3 -m unittest tools.tests.test_typescript_fetch_runtime tools.tests.test_typescript_fetch_boundaries -v
+      - name: Preserve the reviewed outside-checkout application and observer
+        run: |
+          cp tools/diagnose_typescript_fetch_boundaries.py "$RUNNER_TEMP/diagnose-typescript-boundaries.py"
+          mkdir "$RUNNER_TEMP/typescript-boundary-probes"
+          cp sdk/typescript-guest/probes/fetch-runtime/main.ts "$RUNNER_TEMP/typescript-boundary-probes/main.ts"
+          cp sdk/typescript-guest/probes/fetch-runtime/default-client.ts "$RUNNER_TEMP/typescript-boundary-probes/default-client.ts"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ba62bf8f266e589971a03e496b18b8f2cb5e5d85
+          persist-credentials: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install only the existing isolated compiler boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the original locked compiler namespace
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-boundary-tools"
+      - name: Read the authenticated original native products
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
+          run-id: 39247171188
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/typescript-boundary-native
+      - name: Read the authenticated original source-owned engine
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: typescript-fetch-engine-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
+          run-id: 39247171188
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/typescript-boundary-engine
+      - name: Read the authenticated original source compiler
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: typescript-source-splicer-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
+          run-id: 39247171188
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/typescript-boundary-splicer
+      - name: Compile and sign only the application boundary experiment
+        run: python3 -B "$RUNNER_TEMP/diagnose-typescript-boundaries.py" --probes "$RUNNER_TEMP/typescript-boundary-probes" --native "$RUNNER_TEMP/typescript-boundary-native" --engine "$RUNNER_TEMP/typescript-boundary-engine" --splicer "$RUNNER_TEMP/typescript-boundary-splicer" --tools "$RUNNER_TEMP/typescript-boundary-tools" --output "$RUNNER_TEMP/typescript-fetch-boundaries"
+      - name: Retain closed same-SDK observations and actual application build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: typescript-fetch-boundaries-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-fetch-boundaries/*.json
+            ${{ runner.temp }}/typescript-fetch-boundaries/attempt/*.json
+            ${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/*.json
+            ${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/logs/**
+            ${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/component.wasm
+            ${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/*.json
+            ${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/controls/*.json
           if-no-files-found: warn
           retention-days: 7

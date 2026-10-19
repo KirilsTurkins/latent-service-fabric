@@ -7,6 +7,7 @@
     "TypeScriptFetchRuntimeTests.test_configuration_and_grants_keep_authority_exact_service_get_paths_and_owner_limits",
     "TypeScriptFetchRuntimeTests.test_grant_denial_requires_permission_code_zero_execution_and_reaped_process",
     "TypeScriptFetchRuntimeTests.test_native_selection_cannot_fall_back_between_prepared_and_ordinary_inputs",
+    "TypeScriptFetchRuntimeTests.test_no_http_promise_and_request_copy_controls_retain_real_thenable_await_and_listener_cleanup",
     "TypeScriptFetchRuntimeTests.test_normal_captured_fixture_keeps_exact_async_world_sdk_and_original_budget",
     "TypeScriptFetchRuntimeTests.test_provider_read_window_matches_actual_adapter_without_relaxing_total_body_or_owners",
     "TypeScriptFetchRuntimeTests.test_real_peer_requires_exact_three_contacts_and_no_denied_contact_or_mutation",
@@ -98,6 +99,18 @@
       ],
       "skipSites": []
     },
+    "TypeScriptFetchRuntimeTests.test_no_http_promise_and_request_copy_controls_retain_real_thenable_await_and_listener_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
     "TypeScriptFetchRuntimeTests.test_normal_captured_fixture_keeps_exact_async_world_sdk_and_original_budget": {
       "bases": [
         "unittest.TestCase"
@@ -161,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch_runtime.py",
-  "reviewReason": "Align only the finite signed Fetch runner read window with the existing adapter and provider maximum; preserve all total-body, owner, authority and exact-result gates; add old-mismatch/new-alignment adapter control.",
+  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
