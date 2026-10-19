@@ -40,7 +40,22 @@ synthetic class headers, original-directory removal, transitive tampering,
 forged/incomplete provider evidence and pre-effect platform refusal. These
 source controls do not execute JVM bytecode or qualify a component.
 
-Actual hosted execution of the two components is pending. This programme does
-not qualify a second independently published HTTP client, HTTPS certificate
-APIs, separate connect/read timeouts, new redirects/cookies/proxies, concurrency
-or the whole #688/#741 tickets. Their remaining literal requirements stay open.
+The [focused hosted run39339203495/job118356258933](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39339203495/job/118356258933)
+passed all 26 signed cases, four grant refusals and 26 physical retirement
+snapshots across both fresh components, with clean/reaped nodes and peers.
+Artifact `12228269186` (`sha256:47dc81be6f276f13a5a5f30ae9a1a143816d5a94d7307768cd1c32f7c0274fa1`)
+binds feature source `0c869e3912244b798131403c683a0901fa2220e5` and diagnostic
+fixture source `d26b10b94c257c30058757b7d65bc0bb552d33d6`. Its fixed public JSON
+records were independently checked, including both identical compiler inventories.
+
+The focused replay authenticates four helpers compiled at `03a3f74598f2abfd0224169ae2871818f6c8419d`
+and an ordinary-default, features-empty host compiled at `e97d44ddc744c9bd738d9b3b7a7d8b7234133e36`.
+It does not recreate a production native tuple or claim current native compilation.
+The development integration preserves all Java recipe/compiler/qualifier bytes;
+the incoming workspace `Cargo.toml` differs from the captured SDK source used
+by the passed components and retains that source distinction.
+
+This programme does not qualify a second independently published HTTP client,
+HTTPS certificate APIs, separate connect/read timeouts, new redirects/cookies/
+proxies, concurrency or the whole #688/#741 tickets. Their remaining literal
+requirements stay open.
