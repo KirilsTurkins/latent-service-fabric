@@ -1,6 +1,7 @@
 //! Ordinary compiler-built Go APIs through signed V5 node admission.
 use super::*;
 
+#[path = "go/managed_idle.rs"]
 mod managed_idle;
 
 fn checkpoint_component(
