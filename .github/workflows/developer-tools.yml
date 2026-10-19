@@ -560,42 +560,42 @@ jobs:
       - name: Exercise native production Wasmtime and shared scenario assertions outside checkout
         run: python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json
       - name: Retrieve identical deterministic clock capsules and real node receipts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: developer-clock-fixtures-${{ github.sha }}
           path: target/dev-clock-fixtures/
       - name: Compare actual native Windows clocks and denial with the signed Linux node
         run: python tools/run_dev_clock_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-clock-fixtures --output target/dev-portable-clock-comparison.json
       - name: Retrieve identical failure capsules and real node receipts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: developer-failure-fixtures-${{ github.sha }}
           path: target/dev-failure-fixtures/
       - name: Compare native Windows failures and fresh state with the signed Linux node
         run: python tools/run_dev_failure_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-failure-fixtures --output target/dev-portable-failure-comparison.json
       - name: Retrieve identical HTTP capsules and real node receipts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: developer-http-fixtures-${{ github.sha }}
           path: target/dev-http-fixtures/
       - name: Compare authenticated native Windows HTTP with the signed Linux node
         run: python tools/run_dev_http_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-http-fixtures --output target/dev-portable-http-comparison.json
       - name: Retrieve identical metric capsules and real node exports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: developer-metric-fixtures-${{ github.sha }}
           path: target/dev-metric-fixtures/
       - name: Compare native Windows metric exports with the signed Linux node
         run: python tools/run_dev_metric_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-metric-fixtures --output target/dev-portable-metric-comparison.json
       - name: Retrieve exact C components compiled by the maintained guest tool recipe
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: developer-c-portable-inputs-${{ github.sha }}
           path: target/dev-c-portable/
       - name: Execute actual C applications and SDK providers natively
         run: python tools/run_portable_c_tests.py --host target/release/latent-portable-test-host.exe --providers target/dev-c-portable/providers --applications target/dev-c-portable/applications --output target/dev-portable-c-smoke.json
       - name: Retrieve identical maintained applications
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: developer-*-applications-${{ github.sha }}
           path: target/dev-applications/
@@ -658,7 +658,7 @@ jobs:
         run: python -m pip install --require-hashes -r tools/dev-frontend-linux.lock
       - name: Build native Linux frontend and observe redistributed libraries
         run: python tools/build_dev_frontend.py --output target/dev-linux-frontend
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: developer-*-applications-${{ github.sha }}
           path: target/dev-applications/
@@ -711,11 +711,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: windows-portable-subset-${{ github.sha }}
           path: target/windows/
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: linux-portable-subset-${{ github.sha }}
           path: target/linux/
@@ -785,7 +785,7 @@ jobs:
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: developer-windows-inputs-${{ github.sha }}
           path: target/windows-input
