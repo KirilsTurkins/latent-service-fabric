@@ -11,6 +11,50 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ApplicationClockTests(unittest.TestCase):
+    def test_selected_bundle_uses_verified_native_clocks_without_application_JS_imports(self):
+        from tools.typescript_guest.compiler import native_clock_configuration
+        from tools.typescript_guest.runtime_profile import CLOCK_PROFILES, SELECTED_WORLD
+        fixture = ROOT/'tools/tests/fixtures/typescript_clock_profile/selected-graph.json'
+        graph = json.loads(fixture.read_bytes())['graph']
+        node = shutil.which('node'); self.assertIsNotNone(node)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stub = root/'esbuild.mjs'
+            stub.write_bytes(b"export async function build(o){const text=o.banner.js+o.footer.js;return {metafile:{inputs:{},outputs:{[o.outfile]:{bytes:text.length}}},outputFiles:[{path:o.outfile,text,contents:new TextEncoder().encode(text)}]};}")
+            imports = root/'imports.json'; imports.write_bytes(b'[]')
+            source = root/'main.js'; source.write_bytes(b'export const answer=42;\n')
+            for profile in CLOCK_PROFILES:
+                configuration = native_clock_configuration({'runtimeProfile': profile}, profile, graph, SELECTED_WORLD)
+                self.assertEqual(configuration['nativeClockInterfaces'],
+                    ['latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'])
+                for index, changed in enumerate((None, [], configuration['nativeClockInterfaces'][:1],
+                                                 configuration['nativeClockInterfaces']*2)):
+                    with self.subTest(profile=profile, interfaces=changed):
+                        value = configuration if changed is None else {**configuration, 'nativeClockInterfaces': changed}
+                        path = root/'configuration.json'; path.write_bytes(json.dumps(value).encode())
+                        output = root/f'application-{profile}-{index}.mjs'
+                        script = os.environ.get('LSF_CLOCK_TEST_BUNDLE', str(ROOT/'tools/typescript_guest/bundle.mjs'))
+                        built = subprocess.run([node, script, str(stub), str(root), str(source), str(output),
+                            str(imports), str(path)], capture_output=True, text=True, timeout=10)
+                        self.assertEqual(built.returncode == 0, changed is None, built.stderr)
+                        if changed is None:
+                            metadata = json.loads(output.with_suffix('.mjs.inputs.json').read_bytes())
+                            self.assertEqual(metadata['standardClockProfile'], 'lsf-standard-clock-native-v1')
+
+    def test_native_clock_selection_cannot_be_supplied_by_capture_or_omit_a_verified_interface(self):
+        from tools.typescript_guest.compiler import native_clock_configuration
+        from tools.typescript_guest.runtime_profile import CLOCK_PROFILE, SELECTED_WORLD, SYNC_PROFILE
+        fixture = ROOT/'tools/tests/fixtures/typescript_clock_profile'
+        selected = json.loads((fixture/'selected-graph.json').read_bytes())['graph']
+        original = json.loads((fixture/'original-graph.json').read_bytes())['graph']
+        for field in ('standardClockProfile', 'standardClockBackendDigest', 'nativeClockInterfaces'):
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'cannot-override'):
+                native_clock_configuration({field: []}, CLOCK_PROFILE, selected, SELECTED_WORLD)
+        with self.assertRaisesRegex(ValueError, 'requires-verified-native'):
+            native_clock_configuration({}, CLOCK_PROFILE, original, 'tests:typescript-async/capsule@1.0.0')
+        self.assertEqual(native_clock_configuration({}, SYNC_PROFILE, original,
+            'tests:typescript-async/capsule@1.0.0'), {'nativeClockInterfaces': []})
+
     def javascript(self, body):
         node = shutil.which('node')
         self.assertIsNotNone(node, 'Node is required for actual clock guard controls')

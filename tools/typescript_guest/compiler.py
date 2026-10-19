@@ -52,6 +52,21 @@ def import_identities(graph: dict, selected: str) -> list[str]:
     return sorted(imports)
 
 
+def native_clock_configuration(configuration: dict, profile: str, graph: dict, world: str) -> dict:
+    """Relay the verified native world, separately from application JS imports."""
+    from tools.typescript_guest import runtime_profile as runtime
+    from tools.typescript_guest.clock_engine import CLOCK_INTERFACES
+    if {'standardClockProfile', 'standardClockBackendDigest', 'nativeClockInterfaces'} & configuration.keys():
+        raise ValueError('application-cannot-override-standard-clock-backend')
+    selected = []
+    if profile in runtime.CLOCK_PROFILES:
+        imports = runtime.public_graph(graph, world)['imports']
+        if not set(CLOCK_INTERFACES) <= imports.keys():
+            raise ValueError('standard-clock-requires-verified-native-clock-interfaces')
+        selected = list(CLOCK_INTERFACES)
+    return {**configuration, 'nativeClockInterfaces': selected}
+
+
 class Compiler:
     def __init__(self, tools: Path, commands, expected: dict[str, bytes], *, isolated_workspace: Path | None = None,
                  runtime_profile: str = 'spidermonkey-public-sync-v1', engine: Path | None = None,
@@ -345,6 +360,7 @@ class Compiler:
         bundle = output / "application.mjs"
         bundle_configuration = output / "bundle-configuration.json"
         configured = fetch_profile.bundle_configuration(application_modules or {}, self.runtime_profile, imports)
+        configured = native_clock_configuration(configured, self.runtime_profile, graph, world)
         if {'standardConsoleProfile', 'activationExports'} & configured.keys():
             raise ValueError('application-cannot-override-standard-console-backend')
         from tools.typescript_guest import entropy_profile

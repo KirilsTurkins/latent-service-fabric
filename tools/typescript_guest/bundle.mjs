@@ -38,8 +38,9 @@ const insideProject = path => {
 // checks when a module captures an intrinsic by reference.
 const nativeClocks = ['spidermonkey-activation-promises-clocks-v1',
   'spidermonkey-activation-promises-clocks-imports-v1'].includes(configuration.runtimeProfile);
+const clockInterfaces = ['latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'];
 if (configuration.standardClockProfile !== undefined || configuration.standardClockBackendDigest !== undefined ||
-    nativeClocks && !['latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'].every(name => imports.has(name))) {
+    JSON.stringify(configuration.nativeClockInterfaces ?? []) !== JSON.stringify(nativeClocks ? clockInterfaces : [])) {
   throw new Error('standard-clock-requires-exact-profile-and-declared-clocks');
 }
 const clockProfile = nativeClocks ? 'lsf-standard-clock-native-v1' : 'lsf-standard-clock-unsupported-v1';
