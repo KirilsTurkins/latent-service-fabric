@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_rust_dependency_watch_ci.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reuse the exact closed checkpoint validator for bounded numeric timing fields; preserve the 2450-second private-account ceiling and all existing cleanup/refusal requirements.",
+  "reviewReason": "Allow the private runner wrapper to contain the complete three-build Rust watch within the reviewed one-hour qualifier budget plus bounded cleanup.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6cb31ab61a38d99969d835bd8dc929b8a5d77dfa4e25d01ede21f76e7040bc45"
+  "sha256": "912836c445b0f5b2671aad2d123859f8d8d7c1e0f3a1c65bbc876fe065155e0e"
 }

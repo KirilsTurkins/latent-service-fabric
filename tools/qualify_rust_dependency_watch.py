@@ -34,9 +34,12 @@ def require(value, reason):
         raise ValueError(reason)
 
 
+TOTAL_BUDGET_SECONDS = 3600
+
+
 def command_timeout(began, timeout):
-    """A late command cannot outlive the unchanged whole-programme deadline."""
-    remaining = 2400 - (time.monotonic() - began)
+    """A late command cannot outlive the bounded whole-programme deadline."""
+    remaining = TOTAL_BUDGET_SECONDS - (time.monotonic() - began)
     require(remaining > 0, 'qualification-total-deadline')
     return min(timeout, remaining)
 
@@ -499,7 +502,7 @@ def main() -> int:
 
     def await_event(offset, predicate, label, timeout=1000):
         checkpoint('watch-event', label)
-        deadline = min(began + 2400, time.monotonic() + timeout)
+        deadline = min(began + TOTAL_BUDGET_SECONDS, time.monotonic() + timeout)
         while time.monotonic() < deadline:
             values = observed()
             for index, value in enumerate(values[offset:], offset):
@@ -607,7 +610,7 @@ def main() -> int:
         fixture.remove_original(inputs, 'child')
         tests('43/SDK/captured watch data')
         # The watcher can finish a queued source/dependency observation before
-        # reaching the recipe-trust refusal; the outer 2400s limit still applies.
+        # reaching the recipe-trust refusal; the whole-programme limit still applies.
         offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-trust-required',
                                      'updated-recipe-trust', 120)
         report['updateBeforeTrust'] = denied

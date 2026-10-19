@@ -937,7 +937,7 @@ class RustWatchCommandDeadline(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary, ExitStack() as held:
             stop = RuntimeError('stop-after-one-completed-command')
             run = Mock(side_effect=[SimpleNamespace(returncode=0, stdout=b'', stderr=b''), stop])
-            actual = self.programme(held, Path(temporary), 2399, run)
+            actual = self.programme(held, Path(temporary), 3599, run)
             with self.assertRaises(RuntimeError) as observed:
                 actual.main()
             self.assertIs(observed.exception, stop)
@@ -945,14 +945,14 @@ class RustWatchCommandDeadline(unittest.TestCase):
             self.assertEqual(run.call_count, 2)
             report = json.loads((actual.output / 'qualification.json').read_bytes())
             self.assertEqual(len(report['commands']), 1)
-            self.assertEqual(report['commands'][0]['startedMillis'], 2399000)
+            self.assertEqual(report['commands'][0]['startedMillis'], 3599000)
             self.assertEqual(report['commands'][0]['durationMillis'], 0)
 
     def test_actual_command_retains_smaller_command_cap_and_expired_total_never_dispatches(self):
         from contextlib import ExitStack
         from unittest.mock import Mock, patch
         from tools import qualify_rust_dependency_watch as qualifier
-        for now, expected in ((100, 1000), (2400, None)):
+        for now, expected in ((100, 1000), (2400, 1000), (3600, None)):
             with self.subTest(now=now), tempfile.TemporaryDirectory() as temporary, ExitStack() as held:
                 original = RuntimeError('stop-before-native-dispatch')
                 run = Mock(side_effect=original)
@@ -966,7 +966,7 @@ class RustWatchCommandDeadline(unittest.TestCase):
                         actual.main()
                     self.assertIs(observed.exception, original)
                     self.assertEqual(run.call_args.kwargs['timeout'], expected)
-        with patch.object(qualifier.time, 'monotonic', return_value=2390):
+        with patch.object(qualifier.time, 'monotonic', return_value=3590):
             self.assertEqual(qualifier.command_timeout(0, 2), 2)
 
     def test_actual_command_timeout_preserves_original_failure_and_never_marks_completion(self):
@@ -977,7 +977,7 @@ class RustWatchCommandDeadline(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary, ExitStack() as held:
             original = subprocess.TimeoutExpired(['private-argument'], 1)
             run = Mock(side_effect=original)
-            actual = self.programme(held, Path(temporary), 2399, run)
+            actual = self.programme(held, Path(temporary), 3599, run)
             with self.assertRaises(subprocess.TimeoutExpired) as observed:
                 actual.main()
             self.assertIs(observed.exception, original)
@@ -990,15 +990,16 @@ class RustWatchCommandDeadline(unittest.TestCase):
             self.assertFalse((actual.output / 'add-closed-graph.stdout').exists())
             progress = json.loads((actual.output / 'public-progress.json').read_bytes())
             self.assertEqual(progress['completedCommands'], 0)
-            self.assertEqual(progress['elapsedMillis'], 2399000)
+            self.assertEqual(progress['elapsedMillis'], 3599000)
 
     def test_budget_helper_preserves_original_deadlines_and_fractional_remaining_time(self):
         from unittest.mock import patch
         from tools import qualify_rust_dependency_watch as qualifier
-        for now, selected, expected in ((10, 1000, 1000), (2399.75, 1000, .25), (2390, 2, 2)):
+        for now, selected, expected in ((10, 1000, 1000), (2400, 1000, 1000),
+                                         (3599.75, 1000, .25), (3590, 2, 2)):
             with self.subTest(now=now), patch.object(qualifier.time, 'monotonic', return_value=now):
                 self.assertEqual(qualifier.command_timeout(0, selected), expected)
-        for now in (2400, 2401):
+        for now in (3600, 3601):
             with self.subTest(now=now), patch.object(qualifier.time, 'monotonic', return_value=now):
                 with self.assertRaisesRegex(ValueError, '^qualification-total-deadline$'):
                     qualifier.command_timeout(0, 1000)

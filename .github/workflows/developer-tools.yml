@@ -182,7 +182,7 @@ jobs:
     if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository
     name: Guest tool bundle and maintained application builds (${{ matrix.language }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
