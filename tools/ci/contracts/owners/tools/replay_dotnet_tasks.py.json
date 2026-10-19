@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_tasks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Explicit default-false diagnostic Task replay selects only its bounded job. Normal PR/push/ordinary dispatch keeps every old toolchain command and original per-step guard, budget and prerequisite.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6cac9ea0851a4427af6346f34e99490f575439b8972d7989d69f8a821ecb770f"
+}
