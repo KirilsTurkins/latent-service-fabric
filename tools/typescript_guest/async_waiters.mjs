@@ -90,3 +90,39 @@ function __lsfApplicationBuiltinModule(name, exports) {
   return source.replace(/^defineBuiltinModule\(/gm, '__lsfApplicationBuiltinModule(')
     .replace(anchor, anchor + helper);
 }
+
+// Preserve public asynchronous entry while avoiding a synthetic await-null
+// reaction only for the actual private Task that is first in an idle queue.
+export function directIdleTaskSlots(source) {
+  const replacements = [
+    ['isSync() { return !this.isAsync(); }',
+      'isSync() { return !this.isAsync(); }\n  hasExitedBeforeEntry() { return this.#exited; }'],
+    ["      await this.#nextTaskPromise;\n      if (placeholder.completed) throw new Error('selected-runtime-task-exited-before-slot');",
+      '      if (this.#nextTaskPromise !== null || !(task instanceof AsyncTask) ||\n' +
+      '          this.#nextTaskQueue.find(entry => !entry.completed) !== placeholder) {\n' +
+      '        await this.#nextTaskPromise;\n' +
+      '      }\n' +
+      '      if (placeholder.completed || task instanceof AsyncTask && task.hasExitedBeforeEntry()) {\n' +
+      '        placeholder.completed = true;\n' +
+      '        this.#nextTaskQueue = this.#nextTaskQueue.filter(entry => entry !== placeholder);\n' +
+      '        if (this.#nextTaskPromise === placeholder.promise) this.#nextTaskPromise = null;\n' +
+      "        throw new Error('selected-runtime-task-exited-before-slot');\n" +
+      '      }'],
+    ['    await cstate.nextTaskExecutionSlot({ task: this });',
+      '    await cstate.nextTaskExecutionSlot({ task: this });\n' +
+      "    if (this.#exited) throw new Error('selected-runtime-task-exited-before-entry');"],
+  ];
+  if (source.split('class AsyncTask {').length !== 2 ||
+      source.split('  #exited = false;').length !== 2 ||
+      source.split('    this.#exited = true;').length !== 2 ||
+      source.includes('hasExitedBeforeEntry')) {
+    throw new Error('selected-runtime-idle-task-shape-drift');
+  }
+  for (const [before, after] of replacements) {
+    if (source.split(before).length !== 2) {
+      throw new Error('selected-runtime-idle-task-shape-drift');
+    }
+    source = source.replace(before, after);
+  }
+  return source;
+}

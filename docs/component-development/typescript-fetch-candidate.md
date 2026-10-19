@@ -281,3 +281,14 @@ remain unqualified. Even a passing finite run does not qualify two unchanged
 published clients, a private consumer, top-level `Request`, streaming/tee,
 Abort/timeout races, reaction/timer/memory limits or cross-tenant reuse. The
 engine metadata remains `unknown` / `not-evaluated`; #691 remains open.
+
+The selected source-splicer adapter avoids an idle `await null` only when the
+actual private `AsyncTask` is first in the queue. Other callers and contended
+slots keep their asynchronous wait. The actual exited flag is checked before
+slot admission and again after the preserved public `Task.enter` await, so
+closing between these boundaries cannot grant entry. Existing task, queue,
+native-owner, authority and invocation bounds are unchanged; no pending work
+is settled or refunded early. Authentic generated-source controls preserve
+closed first/middle refusal, entry races, live ordering and the retirement-gap
+case. Node-reference allocations fall from 10 to 8 for idle entry; this count
+is not LSF owner accounting or a signed Fetch qualification result.
