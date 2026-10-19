@@ -122,7 +122,8 @@ def prepare(compiler, project, output):
     originals = tuple(root / folder / 'System.Security.Cryptography.dll'
                       for folder in ('lib', 'native-hidden'))
     original_inputs = [original(path) for path in originals]
-    cecil = http_errors.cecil_path(compiler.tools)
+    # Use the already authenticated support copy carried into the captured namespace.
+    cecil = compiler.http_error_tools / 'http-errors/Mono.Cecil.dll'
     http_errors.require_digest(cecil, http_errors.CECIL_DIGEST, 'managed-entropy-cecil')
     owned = output / 'managed-entropy-port'
     owned.mkdir(mode=0o700)
@@ -140,6 +141,8 @@ def prepare(compiler, project, output):
                      '-p:LsfCecilPath=' + str(cecil), '-p:RestoreConfigFile=' + str(staged / 'nuget.config'),
                      '-p:NuGetAudit=false', '-nodeReuse:false', '-p:UseSharedCompilation=false',
                      '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
+    http_errors.require_digest(cecil, http_errors.CECIL_DIGEST, 'managed-entropy-cecil')
+    http_errors.require_digest(owned / 'rewrite/Mono.Cecil.dll', http_errors.CECIL_DIGEST, 'managed-entropy-cecil-output')
     helper = owned / 'helper/Lsf.StandardEntropy.dll'
     assembly = owned / 'System.Security.Cryptography.dll'
     receipt = owned / 'rewrite.json'

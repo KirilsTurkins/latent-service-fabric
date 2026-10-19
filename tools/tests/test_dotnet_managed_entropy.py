@@ -4,6 +4,8 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 
 from tools.build_observation import file_identity
 from tools.dotnet_guest import managed_entropy as entropy
@@ -29,6 +31,29 @@ class ManagedEntropyTests(unittest.TestCase):
         self.assertIn(b'throw new CryptographicException()', files['Support.cs'])
         self.assertEqual(files['ManagedEntropy.targets'].count(b'<DirectPInvoke Include="System.Native"'), 1)
         self.assertIn(b"'%(IlcReference.Filename)' == 'System.Security.Cryptography'", files['ManagedEntropy.targets'])
+
+    def test_rewriter_reference_uses_the_authenticated_captured_support_copy(self):
+        support = self.root / 'captured-support'
+        cecil = support / 'http-errors/Mono.Cecil.dll'
+        cecil.parent.mkdir(parents=True)
+        cecil.write_bytes(b'bounded captured Cecil stand-in')
+        compiler = SimpleNamespace(sdk=ROOT / 'sdk/dotnet-guest', package_cache=self.root / 'packages',
+            tools=self.root / 'unmounted-original-tools', http_error_tools=support, dotnet=self.root / 'dotnet')
+        class BuildObserved(Exception):
+            pass
+        def observe(name, executable, *arguments):
+            self.assertEqual(name, 'managed-entropy-build-managedentropy')
+            reference = next(str(value) for value in arguments if str(value).startswith('-p:LsfCecilPath='))
+            self.assertEqual(reference, '-p:LsfCecilPath=' + str(cecil))
+            self.assertTrue(cecil.is_file())
+            raise BuildObserved()
+        compiler.run = observe
+        output = self.root / 'output'
+        output.mkdir()
+        with patch.object(entropy, 'original', return_value={}), patch.object(entropy.http_errors,
+                'CECIL_DIGEST', entropy.digest(cecil.read_bytes())):
+            with self.assertRaises(BuildObserved):
+                entropy.prepare(compiler, self.root / 'project', output)
 
     def test_changed_upstream_bytes_or_descriptor_refuse(self):
         path = self.source / 'upstream/RandomNumberGenerator.cs'
