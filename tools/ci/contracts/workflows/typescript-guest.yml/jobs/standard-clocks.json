@@ -31,7 +31,7 @@
       },
       {
         "name": "Install original isolated compiler prerequisites",
-        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\npython3 -m pip install -r tools/requirements.lock\n"
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install -r tools/requirements.lock\n"
       },
       {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
@@ -75,7 +75,7 @@
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
+  "reviewReason": "Repair actual before-component loopback permission failure by restoring the exact already-reviewed namespace prerequisite used by the original captured TypeScript compiler; keep all isolation flags and finite deadlines.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

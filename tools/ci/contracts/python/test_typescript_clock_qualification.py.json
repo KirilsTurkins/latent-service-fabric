@@ -1,6 +1,7 @@
 {
   "cases": [
     "ClockQualification.test_both_snapshot_forms_bind_same_engine_and_preserve_source_without_treating_them_as_passed_components",
+    "ClockQualification.test_clock_job_requires_same_user_namespace_setup_as_original_isolated_compiler",
     "ClockQualification.test_engine_acquisition_rejects_alias_encryption_and_size_drift",
     "ClockQualification.test_engine_acquisition_selects_only_two_original_pinned_members",
     "ClockQualification.test_owned_child_failure_restores_exact_original_application_source",
@@ -8,6 +9,18 @@
   ],
   "guards": {
     "ClockQualification.test_both_snapshot_forms_bind_same_engine_and_preserve_source_without_treating_them_as_passed_components": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d73dc0537d32ee0deaffdde5d008f6157a9eb505bae44089ac49b02170c20c27",
+        "class:setup-sha256:890a79ba7162984e313500551f50144c893937df1b2f153d5189d478a6d512c3"
+      ],
+      "skipSites": []
+    },
+    "ClockQualification.test_clock_job_requires_same_user_namespace_setup_as_original_isolated_compiler": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_clock_qualification.py",
-  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
+  "reviewReason": "Repair actual before-component loopback permission failure by restoring the exact already-reviewed namespace prerequisite used by the original captured TypeScript compiler; keep all isolation flags and finite deadlines.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

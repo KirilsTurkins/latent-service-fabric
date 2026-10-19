@@ -11,6 +11,17 @@ from tools.rust_capsule_project import inventory, snapshot
 
 
 class ClockQualification(unittest.TestCase):
+    def test_clock_job_requires_same_user_namespace_setup_as_original_isolated_compiler(self):
+        from tools.ci_lane_inventory import workflow_model
+        from tools.rust_capsule_project import ROOT
+        jobs = workflow_model((ROOT/'.github/workflows/typescript-guest.yml').read_text(encoding='utf-8'))['jobs']
+        original = next(step['run'] for step in jobs['boundary']['steps']
+                        if step.get('name') == 'Install captured JavaScript compiler namespace').splitlines()
+        selected = next(step['run'] for step in jobs['standard-clocks']['steps']
+                        if step.get('name') == 'Install original isolated compiler prerequisites').splitlines()
+        self.assertEqual(selected[:len(original)], original)
+        self.assertIn('sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0', original)
+
     def engine_entries(self):
         entries = []
         for name, (_target, size) in qualification.ENGINE_MEMBERS.items():
