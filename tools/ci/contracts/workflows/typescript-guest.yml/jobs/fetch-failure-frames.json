@@ -87,6 +87,17 @@
       },
       {
         "if": "always()",
+        "name": "Retain separate bounded private compiler setup diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-fetch-private-cargo-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fetch-frames/private-build.stderr.txt\n${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt\n",
+          "retention-days": 1
+        }
+      },
+      {
+        "if": "always()",
         "name": "Retain only closed observations and original public CLI rows",
         "uses": "actions/upload-artifact",
         "with": {
@@ -101,7 +112,7 @@
   },
   "jobId": "fetch-failure-frames",
   "kind": "job",
-  "reviewReason": "Private failure-only replay of exact aea signed component and original bounds; fixed host registration kind/code plus seven bounded counts, no raw guest text or qualification credit.",
+  "reviewReason": "Retain separate bounded private compiler setup stderr/stdout with known credential redaction; preserve exact replay, fixed registration labels, all original limits and production gates.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

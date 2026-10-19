@@ -191,6 +191,30 @@ class FetchFailureFrames(unittest.TestCase):
             self.assertIn('min(450, deadline-time.monotonic())', helper)
             self.assertIn('deadline = time.monotonic()+600', helper)
 
+    def test_private_cargo_failure_projects_closed_setup_tokens_and_only_stream_digests(self):
+        raw = b'error: no matching package named PRIVATE-PACKAGE found; credential PRIVATE-TOKEN'
+        observed = fetch.cargo_setup_observation(SimpleNamespace(stdout=b'', stderr=raw))
+        self.assertEqual(observed['categories'], ['offline-dependency-unavailable'])
+        self.assertEqual(observed['stderr'], {'bytes': len(raw), 'sha256': digest(raw)})
+        self.assertFalse(observed['rawOutputRetained'])
+        self.assertNotIn('PRIVATE', json.dumps(observed))
+        self.assertEqual(fetch.cargo_setup_observation(SimpleNamespace(stdout=b'other', stderr=b''))['categories'], [])
+        with self.assertRaises(WorkflowError):
+            fetch.cargo_setup_observation(SimpleNamespace(stdout=b'x'*(2*1024**2+2), stderr=b''))
+
+    def test_private_compiler_output_is_bounded_redacted_and_separate_from_public_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            built = SimpleNamespace(stdout=b'compiler setup only', stderr=b'error: dependency; TOKEN-VALUE; PASSWORD-VALUE')
+            record = fetch.retain_private_cargo(built, root, {'GITHUB_TOKEN': 'TOKEN-VALUE', 'BUILD_PASSWORD': 'PASSWORD-VALUE',
+                                                            'NONSECRET_NAME': 'never-dump-environment'})
+            self.assertFalse(record['qualification'])
+            self.assertEqual((root/'private-build.stderr.txt').read_bytes(), b'error: dependency; [REDACTED]; [REDACTED]')
+            self.assertNotIn('TOKEN-VALUE', json.dumps(record))
+            self.assertNotIn('never-dump-environment', json.dumps(record))
+            with self.assertRaises(WorkflowError):
+                fetch.retain_private_cargo(SimpleNamespace(stdout=b'x'*1048577, stderr=b''), root, {})
+
     def test_manual_observer_has_no_gate_substitution_and_downloads_only_the_authenticated_run(self):
         workflow = yaml.safe_load(read_file(fetch.ROOT/'.github/workflows/typescript-guest.yml'))
         jobs = workflow['jobs']
@@ -205,6 +229,13 @@ class FetchFailureFrames(unittest.TestCase):
         self.assertTrue(all(row['run-id'] == 39276911555 and fetch.TESTED in row['name'] for row in downloads))
         selected = [step['with']['ref'] for step in steps if step.get('with', {}).get('ref')]
         self.assertEqual(selected, [fetch.TESTED])
+        private = [step['with'] for step in steps if step.get('name') ==
+                   'Retain separate bounded private compiler setup diagnostics']
+        self.assertEqual(len(private), 1)
+        self.assertEqual(private[0]['retention-days'], 1)
+        self.assertEqual(private[0]['path'].splitlines(), [
+            '${{ runner.temp }}/typescript-fetch-frames/private-build.stderr.txt',
+            '${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt'])
         retained = steps[-1]['with']['path']
         for forbidden in ('private-latentd', 'source-overlays', 'stderr', '**', 'releases'):
             self.assertNotIn(forbidden, retained)

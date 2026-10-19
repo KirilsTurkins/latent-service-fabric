@@ -5,6 +5,7 @@ import argparse
 from contextlib import ExitStack
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import secrets
@@ -229,6 +230,51 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
     return record
 
 
+def retain_private_cargo(built, output: Path, environment: dict) -> dict:
+    """Retain bounded compiler output only, redacting known credential values.
+
+    This runs before signing, node startup or peer credentials exist. These
+    files are private setup diagnostics and are never runtime qualification.
+    """
+    secrets = []
+    for key, value in environment.items():
+        if re.search(r'(^|_)(TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|AUTHORIZATION|API_KEY|PRIVATE_KEY)(_|$)', key, re.I):
+            require(type(value) is str and len(value) <= 32768, 'fetch-frame-redaction-value-limit')
+            if value:
+                secrets.append(value.encode())
+    result = {}
+    for label, raw in [('stdout', built.stdout), ('stderr', built.stderr)]:
+        require(type(raw) is bytes and len(raw) <= 1048576, 'fetch-frame-private-compiler-output-bound')
+        for value in sorted(set(secrets), key=len, reverse=True):
+            raw = raw.replace(value, b'[REDACTED]')
+        truncated = len(raw) > 1048576
+        path = output/('private-build.'+label+'.txt')
+        path.write_bytes(raw[:1048576])
+        result[label] = {**file_identity(path), 'redactedOutputTruncated': truncated}
+    return {'scope': 'private-bounded-compiler-setup-only', 'knownCredentialValuesRedacted': True,
+            'streams': result, 'qualification': False}
+
+
+def cargo_setup_observation(built) -> dict:
+    """Project fixed compiler/setup tokens only; never retain Cargo output."""
+    data = built.stdout+b'\n'+built.stderr
+    require(len(data) <= 2*1024**2+1, 'fetch-frame-build-capture-limit')
+    categories = []
+    for label, tokens in (
+        ('offline-dependency-unavailable', (b'error: no matching package named ',
+            b'attempting to make an HTTP request, but --offline was specified',)),
+        ('locked-update-required', (b'the lock file ', b'needs to be updated but --locked was passed',)),
+        ('missing-source-path', (b'failed to read ', b'No such file or directory',)),
+        ('custom-build-command-failed', (b'failed to run custom build command for ',)),
+        ('linker-failed', (b'linking with ', b'failed: exit status:',)),
+    ):
+        if (any(token in data for token in tokens) if label == 'offline-dependency-unavailable'
+                else all(token in data for token in tokens)):
+            categories.append(label)
+    return {'categories': categories, 'stdout': {'bytes': len(built.stdout), 'sha256': digest(built.stdout)},
+            'stderr': {'bytes': len(built.stderr), 'sha256': digest(built.stderr)}, 'rawOutputRetained': False}
+
+
 def private_target(root: Path, output: Path, environment: dict) -> tuple[Path, str]:
     """Use cached outputs when present, otherwise build only in fresh private storage.
 
@@ -247,7 +293,8 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
     deadline = time.monotonic()+600
     record = {'schemaVersion': 'latent.typescript.private-fetch-frames.v1',
         'qualification': False, 'status': 'incomplete', 'stage': 'inputs', 'testedCommit': TESTED,
-        'component': COMPONENT, 'rawNativeOutputRetained': False, 'privateBinaryPublished': False,
+        'component': COMPONENT, 'rawNodeOutputRetained': False, 'privateCompilerOutputRetained': True,
+        'privateBinaryPublished': False,
         'helper': file_identity(Path(__file__)),
         'limits': {'overallSeconds': 600, 'buildSeconds': 450, 'frames': 32, 'registrationFailures': 16, 'ownerCount': 8192}}
     try:
@@ -281,6 +328,8 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         built = run_bounded_result(private_build_command(ROOT, overlays, environment, tools, context),
             ROOT, environment, min(450, deadline-time.monotonic()), 1048576)
         record.update(frames.private_build_observation(built))
+        record['cargoSetup'] = cargo_setup_observation(built)
+        record['privateCompilerDiagnostics'] = retain_private_cargo(built, output, os.environ)
         require(built.returncode == 0 and record['hostPreflight'] is not None,
                 'fetch-frame-private-host-build')
         private_host = output/'private-latentd'

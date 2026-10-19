@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Permit a fresh owned private target after observed absent native outputs; preserve offline locked build, exact replay, source overlays and 450/600-second bounds.",
+  "reviewReason": "Retain separate bounded credential-redacted private compiler setup output; no raw runtime output, no component changes and no passing substitution.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b35400198b34995aa511b98372f879817d74e0d6866c3a9b54091883c8779081"
+  "sha256": "520dec103365a54938458239fdf9a47782f7905dbbf2aa54fb7a5457d5034f52"
 }

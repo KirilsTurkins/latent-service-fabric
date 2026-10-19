@@ -628,6 +628,16 @@ jobs:
         run: |
           chmod u+x "$RUNNER_TEMP/typescript-original-native/native-binaries/"*
           python3 -B "$RUNNER_TEMP/diagnose-typescript-fetch.py" --attempt "$RUNNER_TEMP/typescript-original-fetch" --native "$RUNNER_TEMP/typescript-original-native" --output "$RUNNER_TEMP/typescript-fetch-frames"
+      - name: Retain separate bounded private compiler setup diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: typescript-fetch-private-cargo-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-fetch-frames/private-build.stderr.txt
+            ${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt
+          if-no-files-found: warn
+          retention-days: 1
       - name: Retain only closed observations and original public CLI rows
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
