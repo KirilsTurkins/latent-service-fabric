@@ -58,7 +58,8 @@
           "docs/component-development/rust-authoring.md",
           "docs/component-development/rust-dependencies.md"
         ]
-      }
+      },
+      "workflow_dispatch": {}
     },
     "permissions": {
       "contents": "read"
@@ -73,7 +74,7 @@
     "standard-clocks",
     "standard-stdio"
   ],
-  "reviewReason": "Add a separately bounded same-run-products signed standard stdio job; preserve every original job, command, deadline and gate. Rebuild exact owned std and execute captured ordinary transitive-library closed/logging/failure/fresh paths; native results remain pending.",
+  "reviewReason": "Permit input-free manual execution of the unchanged owning Rust job graph on an exact pushed feature branch without requiring another open PR; preserve all previous events and job gates.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
