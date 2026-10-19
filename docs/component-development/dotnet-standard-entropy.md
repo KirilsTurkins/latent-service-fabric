@@ -38,9 +38,14 @@ case. No raw random bytes are retained. Its explicit experimental policy is
 restricted to the selected publication and does not change default language
 profiles or authorize transactional application entropy.
 
-The new signed secure-RNG programme is pending actual execution. Source tests
-and the prior Console/hash-seed campaign do not qualify this secure path. The
-Linux owning test also executes a small native reference for exact byte order,
+The [signed secure-RNG programme](../testing/evidence/dotnet-standard-entropy-signed-2026-10-20.json)
+passed all 46 invocations in run 39337820957 / job 118351634254 on source
+`6ca6ee1929ca895e587c5f40ea101076010b9a99`. All 13 ordinary API cases and
+denial/trap/fuel/fresh recovery passed, every process was reaped, all 25 sampled
+active provider-owner sets were zero and node shutdown was clean. Historical
+native helpers and the scalar-owner host retain their separately authenticated
+compiled sources; the current vendored workspace is not a new native-build claim.
+The Linux owning test also executes a small native reference for exact byte order,
 buffer canaries, all three typed provider errors, partial-output clearing and
 unchanged noncryptographic behavior. This provides no statistical-quality,
 FIPS, transactional replay or concurrency certification. It advances the entropy
@@ -58,5 +63,6 @@ The obsolete named algorithm factory remains unsupported. The source capture
 includes the original .NET license and exact upstream preimages. Generic choices,
 shuffle, hexadecimal strings, nonzero bytes, custom subclass dispatch and Dispose
 are included in the signed programme, alongside the basic byte and integer cases.
-The initial signed run found the original unsupported stubs and failed; corrected
-signed execution is required before this profile is reported as qualified.
+The initial signed run found the original unsupported stubs and failed. The
+passing corrected run observes the private managed/native derivations and their
+actual NativeAOT/linker bindings; original failures remain in the linked report.
