@@ -25,6 +25,10 @@ closed runtime adapter. Runtime clocks and entropy are explicit LSF imports,
 requiring installed providers, policy bindings and per-deployment grants.
 The first node call without those grants must fail closed.
 
+The opt-in [maintenance worker profile](../../docs/development/go-managed-idle.md)
+reserves finite original-ledger capacity for the pinned runtime's internal
+workers and fences retirement. Its signed qualification is tracked separately.
+
 ## Typed contracts
 
 Edit `src/main.go`, `wit/world.wit` and `capsule-project.json` in the created

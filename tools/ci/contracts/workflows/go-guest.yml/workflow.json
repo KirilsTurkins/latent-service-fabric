@@ -46,6 +46,8 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_http_context.py",
           "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_managed_idle.py",
+          "docs/development/go-managed-idle.md",
           "tools/tests/test_go_standard_http.py",
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
@@ -122,6 +124,8 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_http_context.py",
           "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_managed_idle.py",
+          "docs/development/go-managed-idle.md",
           "tools/tests/test_go_standard_http.py",
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
@@ -175,7 +179,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Trigger native captured-client reference source and retain only three bounded JSON reference receipts",
+  "reviewReason": "Review opt-in Go v5 maintenance reservations, scheduler late-resume fence and additive signed GC/capacity/drain/cancellation gate. Preserve every earlier profile, required command, skip boundary and original operator ceiling.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

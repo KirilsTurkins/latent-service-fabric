@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
+  "reviewReason": "Review opt-in Go v5 maintenance reservations, scheduler late-resume fence and additive signed GC/capacity/drain/cancellation gate. Preserve every earlier profile, required command, skip boundary and original operator ceiling.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fca1305106ce7c1490ca0c54ebfd6eac5061f9a911e4fb8837aaa8182880044b"
+  "sha256": "4b1b5b1b2510142eb6f0ed5a01ab6eed66cdd125b525fb5a9e10dceea9e8b2ec"
 }

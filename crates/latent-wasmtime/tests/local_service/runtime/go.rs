@@ -1,6 +1,8 @@
 //! Ordinary compiler-built Go APIs through signed V5 node admission.
 use super::*;
 
+mod managed_idle;
+
 fn checkpoint_component(
     variable: &str,
     profile: &str,
@@ -11,8 +13,11 @@ fn checkpoint_component(
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
     let timers = profile == "go-component-activation-v3";
     let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
+    let managed = profile == "go-component-activation-v5";
     let initializers = profile == "go-component-activation-v4" && !published;
-    let expected: &[u8] = if published {
+    let expected: &[u8] = if managed {
+        include_bytes!("../../../../../sdk/go-guest/runtime/managed-idle-conformance/main.go")
+    } else if published {
         include_bytes!("../../../../../sdk/go-guest/runtime/published-conformance/main.go")
     } else if initializers {
         include_bytes!("../../../../../sdk/go-guest/runtime/initializers-conformance/main.go")
@@ -29,7 +34,9 @@ fn checkpoint_component(
     assert_eq!(record["profile"], profile);
     assert_eq!(
         record["fixture"],
-        if published {
+        if managed {
+            "managed-idle"
+        } else if published {
             "published"
         } else if initializers {
             "initializers"
@@ -44,10 +51,12 @@ fn checkpoint_component(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    if profile == "go-component-activation-v2" || timers || initializers || published {
+    if profile == "go-component-activation-v2" || timers || initializers || published || managed {
         assert_eq!(
             record["nativeReference"]["modes"],
-            if published {
+            if managed {
+                serde_json::json!([0, 1, 2])
+            } else if published {
                 serde_json::json!([0, 2, 3])
             } else if initializers {
                 serde_json::json!([0])
