@@ -155,6 +155,8 @@ def capture(output, commands, node, npm):
     nonce = secrets.token_hex(12)
     root_name, _ = packages(nonce, VERSIONS[0], 'root')
     leaf_name, _ = packages(nonce, VERSIONS[0], 'leaf')
+    peer_name, _ = packages(nonce, VERSIONS[0], 'peer')
+    optional_name, _ = packages(nonce, VERSIONS[0], 'optional')
     phases, controls, identities = [], [], []
     with tempfile.TemporaryDirectory(prefix='lsf-private-npm-acquisition-') as temporary:
         owned = Path(temporary)
@@ -191,9 +193,10 @@ def capture(output, commands, node, npm):
                 lock = capture_phase(commands, app, candidate, policy, node, npm, token, confidential, condition=condition)
                 graph = read_json(app / 'npm-resolved.lock.json')
                 rows = [row for row in graph['nodes'] if row['location'] in {
-                    'node_modules/' + root_name, 'node_modules/' + leaf_name}]
+                    'node_modules/' + name for name in (root_name, leaf_name, peer_name, optional_name)}]
                 require((not rows) if phase == 'removed' else
-                    (len(rows) == 2 and all(row['version'] == version and row['selected'] for row in rows)),
+                    (len(rows) == 4 and all(row['version'] == version for row in rows)
+                     and all(row['selected'] for row in rows if row['location'] != 'node_modules/' + optional_name)),
                     'private-npm-native-selected-transitive-closure')
                 require(graph['selection']['conditions'] == ([CONDITION] if condition else [])
                     and graph['fetchTrust']['caFile'] == 'registry-trust/roots.pem', 'private-npm-condition-and-trust-selection')
@@ -201,8 +204,16 @@ def capture(output, commands, node, npm):
                     parent = next(row for row in rows if row['location'] == 'node_modules/' + root_name)
                     require(any(edge['name'] == leaf_name and edge['selected'] == 'node_modules/' + leaf_name
                                 for edge in parent['dependencies']), 'private-npm-transitive-edge-required')
+                    peer_row = next(row for row in rows if row['location'] == 'node_modules/' + peer_name)
+                    optional_row = next(row for row in rows if row['location'] == 'node_modules/' + optional_name)
+                    require(peer_row['peer'] and optional_row['optional']
+                        and optional_row['selected'] == (version == VERSIONS[0])
+                        and optional_row['os'] == (['linux'] if version == VERSIONS[0] else ['!linux'])
+                        and any(edge['name'] == peer_name and edge['kind'] == 'peerDependencies'
+                            and edge['selected'] == 'node_modules/' + peer_name for edge in parent['dependencies']),
+                        'private-npm-peer-optional-platform-selection')
                     require(all(row['ignoredLifecycleScripts'] == ['install', 'postinstall', 'preinstall', 'prepare']
-                                for row in rows), 'private-npm-lifecycle-hooks-not-accounted')
+                                for row in rows if row['selected']), 'private-npm-lifecycle-hooks-not-accounted')
                 if phase == 'initial':
                     baseline = accepted(app)
                     controls.extend(integrity_controls(commands, app, lock, confidential))
@@ -231,6 +242,22 @@ def capture(output, commands, node, npm):
                                 'private-npm-negative-authority')
                         controls.append({'case': case, 'peerRequests': len(observations),
                             'tlsHandshakeFailures': feed.handshake_failures-handshakes, 'acceptedLockPreserved': True})
+                    peer_asset = '/tarballs/peer-' + VERSIONS[0] + '.tgz'
+                    peer_original, peer_start = feed.assets[peer_asset], len(feed.observations)
+                    try:
+                        with feed.lock:
+                            feed.assets.pop(peer_asset)
+                        failed = output / 'missing-required-peer-candidate.json'
+                        author(commands, 'missing-required-peer', 'resolve', app, '--candidate', failed,
+                            '--node', node, '--npm', npm, '--registry-config', policy, '--condition', CONDITION,
+                            token=token, expected=1, confidential=confidential)
+                        require(not failed.exists() and accepted(app) == baseline and any(
+                            row['authorized'] and row['status'] == 404 for row in feed.observations[peer_start:]),
+                            'private-npm-missing-required-peer-accepted')
+                        controls.append({'case': 'missing-required-peer', 'acceptedLockPreserved': True})
+                    finally:
+                        with feed.lock:
+                            feed.assets[peer_asset] = peer_original
                     asset = '/tarballs/root-' + VERSIONS[0] + '.tgz'
                     _, files = packages(nonce, VERSIONS[0], 'root')
                     files['selected.mjs'] += b'\n// changed source at the same selected version\n'
@@ -261,7 +288,7 @@ def capture(output, commands, node, npm):
             observations = list(feed.observations)
             require(any(row['asset'] == 'private-tarball' and row['authorized'] and row['status'] == 200
                         for row in observations), 'private-npm-authenticated-acquisition-not-observed')
-    return phases, {'status': 'passed', 'nonce': nonce, 'packages': [root_name, leaf_name],
+    return phases, {'status': 'passed', 'nonce': nonce, 'packages': [root_name, leaf_name, peer_name, optional_name],
         'versions': list(VERSIONS), 'phases': identities, 'controls': controls, 'requests': observations,
         'peerPhysicallyReaped': True, 'originalPackagesUnavailableBeforeBuild': True,
         'credentialsCaptured': False, 'privateKeyCaptured': False, 'sdkLockDigest': digest(sdk)}

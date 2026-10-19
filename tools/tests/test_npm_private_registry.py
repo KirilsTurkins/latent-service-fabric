@@ -26,8 +26,8 @@ class PrivateRegistry(unittest.TestCase):
     def test_native_packuments_integrity_archives_conditions_and_resources_are_consistent(self):
         nonce = 'a'*24
         assets = fixture.assets(nonce, 'https://127.0.0.1:1234')
-        self.assertEqual(len(assets), 6)
-        for role in ('root', 'leaf'):
+        self.assertEqual(len(assets), 12)
+        for role in ('root', 'leaf', 'peer', 'optional'):
             identity, _ = fixture.packages(nonce, fixture.VERSIONS[0], role)
             versions = json.loads(assets['/'+identity][1])['versions']
             for version in fixture.VERSIONS:
@@ -41,11 +41,26 @@ class PrivateRegistry(unittest.TestCase):
                 if role == 'root':
                     self.assertEqual(versions[version]['dependencies'], {'@private-'+nonce+'/leaf': version})
                     self.assertEqual(versions[version]['exports'][fixture.CONDITION], './selected.mjs')
+                    self.assertEqual(list(json.loads(files['package.json'])['exports']),
+                                     ['types', fixture.CONDITION, 'default'])
                     self.assertIn(b'fresh private state', files['selected.mjs'])
                     self.assertIn(b'bytes[1] !== 255', files['selected.mjs'])
-                else:
+                elif role == 'leaf':
                     self.assertEqual(files['resource.bin'], bytes((0, 255, 65, 128)))
                     self.assertIn('Gr\u00fc\u00dfe'.encode(), files['resource.txt'])
+
+    def test_peers_and_platform_optional_sources_are_observable_and_native_metadata_is_exact(self):
+        nonce = 'a'*24
+        for version in fixture.VERSIONS:
+            _, files = fixture.packages(nonce, version, 'root')
+            declaration = json.loads(files['package.json'])
+            self.assertEqual(declaration['peerDependencies'], {'@private-'+nonce+'/peer': version})
+            self.assertEqual(declaration['optionalDependencies'], {'@private-'+nonce+'/optional': version})
+            self.assertIn(b'private peer', files['selected.mjs'])
+            self.assertEqual(b'import optional from ' in files['selected.mjs'], version == fixture.VERSIONS[0])
+            _, optional = fixture.packages(nonce, version, 'optional')
+            self.assertEqual(json.loads(optional['package.json'])['os'],
+                             ['linux'] if version == fixture.VERSIONS[0] else ['!linux'])
 
     def test_open_or_invalid_coordinates_are_refused_before_archive_generation(self):
         for nonce, version, role in (('a'*23, '1.0.0', 'root'), ('G'*24, '1.0.0', 'root'),

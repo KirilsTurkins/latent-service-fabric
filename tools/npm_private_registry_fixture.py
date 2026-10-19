@@ -25,7 +25,7 @@ MAX_REQUESTS = 256
 def packages(nonce, version, role):
     require(isinstance(nonce, str) and len(nonce) == 24
         and all(c in '0123456789abcdef' for c in nonce)
-        and version in VERSIONS and role in {'root', 'leaf'}, 'private-npm-package-selection')
+        and version in VERSIONS and role in {'root', 'leaf', 'peer', 'optional'}, 'private-npm-package-selection')
     identity = '@private-' + nonce + '/' + role
     manifest = {'name': identity, 'version': version, 'license': 'Apache-2.0',
         'scripts': {'preinstall': 'node forbidden.cjs', 'install': 'node forbidden.cjs',
@@ -33,26 +33,38 @@ def packages(nonce, version, role):
     files = {'forbidden.cjs': b'throw new Error("private package lifecycle must not run");\n'}
     if role == 'root':
         leaf = '@private-' + nonce + '/leaf'
-        manifest.update(type='module', dependencies={leaf: version}, exports={
+        peer = '@private-' + nonce + '/peer'
+        optional = '@private-' + nonce + '/optional'
+        manifest.update(type='module', dependencies={leaf: version}, peerDependencies={peer: version},
+            optionalDependencies={optional: version}, exports={
             'types': './index.d.ts', CONDITION: './selected.mjs', 'default': './default.mjs'})
         files['index.d.ts'] = b'export function describe(value: string): string;\n'
         for name, selected in (('selected', 'enabled'), ('default', 'default')):
             files[name + '.mjs'] = ('import leaf from ' + json.dumps(leaf) + ';\n'
                 'import text from ' + json.dumps(leaf + '/text') + ';\n'
                 'import bytes from ' + json.dumps(leaf + '/bytes') + ';\n'
+                'import peer from ' + json.dumps(peer) + ';\n'
+                + ('import optional from ' + json.dumps(optional) + ';\n' if version == VERSIONS[0] else '') +
                 'let calls = 0; const prefix = leaf.prefix();\n'
                 'export function describe(value) { if (++calls !== 1 || prefix !== leaf.prefix()) '
                 'throw new Error("fresh private state"); '
                 'if (prefix !== text + "|00ff4180" || bytes.length !== 4 || bytes[0] !== 0 || '
                 'bytes[1] !== 255 || bytes[2] !== 65 || bytes[3] !== 128) throw new Error("private resource"); '
+                'if (peer.value !== ' + json.dumps(nonce + ':' + version + '|peer') + ') throw new Error("private peer"); '
+                + ('if (optional.value !== ' + json.dumps(nonce + ':' + version + '|optional') + ') throw new Error("private optional"); ' if version == VERSIONS[0] else '') +
                 'return prefix + "|' + selected + '|" + value; }\n').encode()
-    else:
+    elif role == 'leaf':
         manifest.update(main='index.cjs', exports={'.': './index.cjs', './text': './resource.txt', './bytes': './resource.bin'})
         text = nonce + ':' + version + '|Gr\u00fc\u00dfe'
         files.update({'text.json': json.dumps(text, ensure_ascii=False).encode(),
             'resource.txt': text.encode(), 'resource.bin': bytes((0, 255, 65, 128)),
             'index.cjs': b'const text = require("./text.json");\nexports.prefix = () => text + "|00ff4180";\n'})
-    files['package.json'] = json.dumps(manifest, sort_keys=True).encode()
+    else:
+        manifest.update(main='index.cjs')
+        if role == 'optional':
+            manifest['os'] = ['linux'] if version == VERSIONS[0] else ['!linux']
+        files['index.cjs'] = ('exports.value = ' + json.dumps(nonce + ':' + version + '|' + role) + ';\n').encode()
+    files['package.json'] = json.dumps(manifest).encode()
     return identity, files
 
 
@@ -71,7 +83,7 @@ def archive(files):
 
 def assets(nonce, base_url):
     result = {}
-    for role in ('root', 'leaf'):
+    for role in ('root', 'leaf', 'peer', 'optional'):
         versions = {}
         for version in VERSIONS:
             identity, files = packages(nonce, version, role)
