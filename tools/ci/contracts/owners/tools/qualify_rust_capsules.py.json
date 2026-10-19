@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit TypeScript generator qualification preserves the original normal programme and limits, adds exact source approval and signed request-dependent values; existing C generator acceptance remains required.",
+  "reviewReason": "Preserve all merged generator/logging/profile paths and import the existing bounded read_file consumer used by actual generator rebuild material validation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0b185b3c6979c3656cb472984e3c891b67c7e075bf4d6117e928ca9b142ee853"
+  "sha256": "b3a39408072ecde3136786615e11fd086dc3a41211cb72ed62b8afab0e37a042"
 }

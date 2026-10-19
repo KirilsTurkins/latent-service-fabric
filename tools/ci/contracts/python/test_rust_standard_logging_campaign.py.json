@@ -1,0 +1,26 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Add a separately bounded same-run-products signed standard stdio job; preserve every original job, command, deadline and gate. Rebuild exact owned std and execute captured ordinary transitive-library closed/logging/failure/fresh paths; native results remain pending.",
+  "module":"tools/tests/test_rust_standard_logging_campaign.py",
+  "cases":["StandardStdioCampaign.test_closed_stdio_is_three_separate_zero_log_fresh_invocations","StandardStdioCampaign.test_explicit_provider_grant_preserves_existing_grants_and_denies_before_guest","StandardStdioCampaign.test_normal_pure_transitive_capture_exact_review_removes_originals_and_preserves_sdk","StandardStdioCampaign.test_same_products_reuse_rejects_companion_bytes_even_when_marker_unchanged","StandardStdioCampaign.test_selector_rejects_foreign_language_bool_alias_or_competing_suite_before_output","StandardStdioCampaign.test_ten_standard_cases_and_two_trap_fuel_fresh_pairs_require_physical_samples","StandardStdioCampaign.test_wrong_created_profile_refuses_before_source_or_review_mutation"],
+  "guards":{
+    "StandardStdioCampaign.test_normal_pure_transitive_capture_exact_review_removes_originals_and_preserves_sdk":
+      "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c",
+    "StandardStdioCampaign.test_wrong_created_profile_refuses_before_source_or_review_mutation":
+      "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c",
+    "StandardStdioCampaign.test_ten_standard_cases_and_two_trap_fuel_fresh_pairs_require_physical_samples":
+      "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c",
+    "StandardStdioCampaign.test_closed_stdio_is_three_separate_zero_log_fresh_invocations":
+      "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c",
+    "StandardStdioCampaign.test_explicit_provider_grant_preserves_existing_grants_and_denies_before_guest":
+      "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c",
+    "StandardStdioCampaign.test_selector_rejects_foreign_language_bool_alias_or_competing_suite_before_output":
+      "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c",
+    "StandardStdioCampaign.test_same_products_reuse_rejects_companion_bytes_even_when_marker_unchanged":
+      "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c"
+  },
+  "guardDefinitions":{
+    "41b128644a850abb861fec38b861760039bdb8d3c8346de5bd2c0f4e2588345c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a73dd3cb2b92545b7c16706ae5f8187f0e2000ac43eee358c2629177e9b9d648","class:setup-sha256:a49cacfbd4ec8888fb1023d21c92c29acd8c47010553e9ffea581a31c7d81153"]}
+  }
+}

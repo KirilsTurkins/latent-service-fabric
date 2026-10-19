@@ -52,6 +52,9 @@
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
+          "tools/qualify_go_standard_logging.py",
+          "tools/go_standard_logging_probe.py",
+          "tools/tests/test_go_standard_logging.py",
           "tools/qualify_go_http_libraries.py",
           "tools/go_http_library_fixture.py",
           "tools/go_http_library_reference.py",
@@ -75,6 +78,7 @@
           "schemas/**",
           "docs/component-development/go-authoring.md",
           "docs/component-development/go-dependencies.md",
+          "docs/component-development/go-standard-logging.md",
           "docs/development/go-capsule-qualification.md",
           "docs/development/go-http-context-cancellation.md",
           "crates/latent-wasmtime/**",
@@ -130,6 +134,9 @@
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
+          "tools/qualify_go_standard_logging.py",
+          "tools/go_standard_logging_probe.py",
+          "tools/tests/test_go_standard_logging.py",
           "tools/qualify_go_http_libraries.py",
           "tools/go_http_library_fixture.py",
           "tools/go_http_library_reference.py",
@@ -153,6 +160,7 @@
           "schemas/**",
           "docs/component-development/go-authoring.md",
           "docs/component-development/go-dependencies.md",
+          "docs/component-development/go-standard-logging.md",
           "docs/development/go-capsule-qualification.md",
           "docs/development/go-http-context-cancellation.md",
           "crates/latent-wasmtime/**",
@@ -179,7 +187,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Review opt-in Go v5 maintenance reservations, scheduler late-resume fence and additive signed GC/capacity/drain/cancellation gate. Preserve every earlier profile, required command, skip boundary and original operator ceiling.",
+  "reviewReason": "Preserve all logging and managed-v5 path triggers and original required native workflow.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

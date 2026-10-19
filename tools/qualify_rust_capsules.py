@@ -25,7 +25,7 @@ from tools.check_rust_capsule_ownership import check as ownership
 from tools.phase3_resource_identity import file_identity, inventory as directory_identity, source_identity
 from tools.run_rust_capsule_workflow import run as node_workflow
 from tools.rust_capsule_build import Commands, build
-from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_json, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_file, read_json, write_json
 
 HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py", "qualify_rust_capsules.py",
     "run_rust_capsule_workflow.py", "rust_capsule_cases.py", "rust_capsule_node.py", "check_rust_capsule_ownership.py",
@@ -53,7 +53,7 @@ def inputs(language="rust"):
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/managed_idle.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/managed_idle.py", "go_guest/sdk.py", "go_guest/standard_log.py", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
                     "go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")
