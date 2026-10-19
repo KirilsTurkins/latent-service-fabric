@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add bounded authenticated Go proxy capture and signed offline lifecycle; retain every existing command, case and guard.",
+  "reviewReason": "Bind committed LF source; preserve existing qualification and opt in Go generated source with exact offline materials and three additional signed results.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "95e549ff23dc322c1c784ec408ab4eded9dd552d495859785c6ccb2228910d8f"
+  "sha256": "ee2432798a9608fd0f0d557d891fd8076a67dda52af7770f741be4a71c319687"
 }

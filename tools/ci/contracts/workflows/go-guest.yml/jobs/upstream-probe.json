@@ -184,8 +184,12 @@
         "run": "python3 -m unittest tools.tests.test_go_dependency_recovery"
       },
       {
+        "name": "Check exact Go generator approval, containment and source adoption",
+        "run": "LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_generator_authoring tools.tests.test_go_generator_fixture -v"
+      },
+      {
         "name": "Qualify captured Go libraries in signed components",
-        "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
+        "run": "python3 tools/qualify_go_capsules.py --application-dependencies --approved-generator --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
       {
         "if": "${{ failure() && steps.standard_timers.outcome == 'failure' }}",
@@ -213,7 +217,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Add bounded authenticated Go proxy capture and signed offline lifecycle; retain every existing command, case and guard.",
+  "reviewReason": "Explicit review: preserve the same signed Go application qualification command and every existing case, adding only --approved-generator plus mandatory existing native generator controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

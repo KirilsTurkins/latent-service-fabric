@@ -56,7 +56,7 @@ def inputs(language="rust"):
                     "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "go_application_dependencies.py", "go_proxy_tls.py", "captured_compiler_isolation.py",
-                    "go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")
+                    "go_generator_authoring.py", "go_generator_fixture.py", "go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
@@ -122,8 +122,8 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         raise ValueError("unsupported authoring qualification language")
     if static_application_dependencies and (language != "c" or not application_dependencies):
         raise ValueError("static application qualification requires captured C source qualification")
-    if approved_generator and (language != "c" or not application_dependencies):
-        raise ValueError("approved generator qualification requires captured C source qualification")
+    if type(approved_generator) is not bool or approved_generator and (language not in {"c", "go"} or not application_dependencies):
+        raise ValueError("approved generator qualification requires captured C or Go source qualification")
     if language == "typescript" and typescript_tools is None:
         raise ValueError("explicit pinned TypeScript compiler installation required")
     creator, builder = create, build
@@ -262,6 +262,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                     raise ValueError("missing pinned Go module resolver")
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies", Path(go).resolve(strict=True))
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                if approved_generator:
+                    from tools.go_generator_fixture import install as install_go_generator
+                    stage = "approved-go-generator"
+                    result["approvedGenerator"] = install_go_generator(project, output / "outside-project-generator")
                 stage = "standalone-builds"
             if language == 'dotnet' and application_dependencies and template == 'greeting':
                 from tools.dotnet_dependency_fixture import install
@@ -300,12 +304,14 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                     "https://github.com/KirilsTurkins/latent-service-fabric")
                 original_complete, rebuilt_complete = result["builds"][template], read_json(rebuilt / "BUILD-COMPLETE.json")
                 if any(original_complete[key] != rebuilt_complete[key] for key in ("sourceDigest", "sdkBindingDigest")):
-                    raise ValueError("generated C offline rebuild changed captured source or SDK identity")
+                    raise ValueError("generated source offline rebuild changed captured source or SDK identity")
                 for candidate in (artifact, rebuilt):
                     material = next(item for item in read_json(candidate / "build-observation.json")["materials"]
-                                    if item["name"] == "c-generator-inputs")
-                    if set(material) != {"name", "digest", "size"} or material["digest"] != result["approvedGenerator"]["generatedInputsDigest"]:
-                        raise ValueError("generated C provenance does not bind the signable captured inputs")
+                                    if item["name"] == language + "-generator-inputs")
+                    if material != {"name": language + "-generator-inputs",
+                            "digest": result["approvedGenerator"]["generatedInputsDigest"],
+                            "size": len(read_file(project / (language + '-generated-inputs.json')))}:
+                        raise ValueError("generated source provenance does not bind the signable captured inputs")
                 result["builds"]["greeting-offline-rebuild"] = rebuilt_complete
                 result["approvedGenerator"]["offlineRebuild"] = "same-captured-source-and-sdk"
                 stage = "standalone-builds"
@@ -382,10 +388,19 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                      "--", "--ignored", "--test-threads=1", "--show-output")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
+        if approved_generator and language == 'go':
+            write_json(output / 'releases/go-generator-probe.json',
+                {key: result['approvedGenerator'][key] for key in ('nonce', 'value')})
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
             language=language, noncrypto_entropy=language == "dotnet",
-            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies)
+            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies,
+            approved_go_generator=language == 'go' and approved_generator)
+        if approved_generator and language == 'go':
+            if (result['node'].get('approvedGoGenerator', {}).get('status') != 'passed'
+                    or len(result['node']['approvedGoGenerator']['cases']) != 3):
+                raise ValueError('approved Go generated results were not observed on the signed component')
+            result['approvedGenerator']['signedGeneratedResults'] = result['node']['approvedGoGenerator']
         if language == "rust" and application_dependencies:
             from tools.rust_dependency_failures import qualify as qualify_ffi
             stage = "captured-native-ffi-failure"

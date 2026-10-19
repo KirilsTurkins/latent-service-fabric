@@ -35,6 +35,9 @@
           "tools/go_native_authoring.py",
           "tools/go_proxy_tls.py",
           "tools/go_private_proxy_fixture.py",
+          "tools/go_generator_fixture.py",
+          "tools/tests/test_go_generator_fixture.py",
+          "tools/tests/test_go_generator_authoring.py",
           "tools/qualify_go_private_dependencies.py",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
@@ -116,6 +119,9 @@
           "tools/go_native_authoring.py",
           "tools/go_proxy_tls.py",
           "tools/go_private_proxy_fixture.py",
+          "tools/go_generator_fixture.py",
+          "tools/tests/test_go_generator_fixture.py",
+          "tools/tests/test_go_generator_authoring.py",
           "tools/qualify_go_private_dependencies.py",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
@@ -185,7 +191,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Add bounded authenticated Go proxy capture and signed offline lifecycle; retain every existing command, case and guard.",
+  "reviewReason": "Add explicit generator fixture/control triggers while preserving original jobs and policies.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

@@ -19,6 +19,9 @@ on:
       - tools/go_native_authoring.py
       - tools/go_proxy_tls.py
       - tools/go_private_proxy_fixture.py
+      - tools/go_generator_fixture.py
+      - tools/tests/test_go_generator_fixture.py
+      - tools/tests/test_go_generator_authoring.py
       - tools/qualify_go_private_dependencies.py
       - tools/tests/test_go_proxy_tls.py
       - tools/tests/test_go_private_proxy.py
@@ -96,6 +99,9 @@ on:
       - tools/go_native_authoring.py
       - tools/go_proxy_tls.py
       - tools/go_private_proxy_fixture.py
+      - tools/go_generator_fixture.py
+      - tools/tests/test_go_generator_fixture.py
+      - tools/tests/test_go_generator_authoring.py
       - tools/qualify_go_private_dependencies.py
       - tools/tests/test_go_proxy_tls.py
       - tools/tests/test_go_private_proxy.py
@@ -335,9 +341,11 @@ jobs:
         run: python3 -m unittest tools.tests.test_go_native_authoring
       - name: Test captured library failure and cancellation observation fences
         run: python3 -m unittest tools.tests.test_go_dependency_recovery
+      - name: Check exact Go generator approval, containment and source adoption
+        run: LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_generator_authoring tools.tests.test_go_generator_fixture -v
       - name: Qualify captured Go libraries in signed components
         run: |
-          python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"
+          python3 tools/qualify_go_capsules.py --application-dependencies --approved-generator --output "$RUNNER_TEMP/go-capsule-dependencies"
       - name: Locate failed timer Wasm frames using private read-only source overlays
         if: ${{ failure() && steps.standard_timers.outcome == 'failure' }}
         run: |
