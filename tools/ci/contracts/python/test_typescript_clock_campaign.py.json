@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ClockCampaign.test_all13_values_and_two_terminal_fresh_pairs_preserve_original_caps_and_idle_samples",
+    "ClockCampaign.test_configure_keeps_existing_provider_and_installs_only_greeting_clock_bindings",
+    "ClockCampaign.test_each_missing_clock_is_refused_before_guest_and_only_both_exact_sources_are_granted",
+    "ClockCampaign.test_selector_refuses_other_languages_aliases_or_other_programmes_before_any_output"
+  ],
+  "guards": {
+    "ClockCampaign.test_all13_values_and_two_terminal_fresh_pairs_preserve_original_caps_and_idle_samples": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:df7fb7f56cf951fb45d2dc6373ee4f000a20771c076c6fdd0e7a2918dacaec63",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockCampaign.test_configure_keeps_existing_provider_and_installs_only_greeting_clock_bindings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:df7fb7f56cf951fb45d2dc6373ee4f000a20771c076c6fdd0e7a2918dacaec63",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockCampaign.test_each_missing_clock_is_refused_before_guest_and_only_both_exact_sources_are_granted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:df7fb7f56cf951fb45d2dc6373ee4f000a20771c076c6fdd0e7a2918dacaec63",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockCampaign.test_selector_refuses_other_languages_aliases_or_other_programmes_before_any_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:df7fb7f56cf951fb45d2dc6373ee4f000a20771c076c6fdd0e7a2918dacaec63",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_clock_campaign.py",
+  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_standard_clocks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5fb8a9c99e97dc651d91b02fcc1b94ec413d91b96a9ec77a338859c8b7e3a072"
+}

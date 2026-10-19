@@ -1,0 +1,81 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-standard-clocks }}",
+    "name": "Ordinary Date and performance signed authority and fresh-state programme",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Install original isolated compiler prerequisites",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\npython3 -m pip install -r tools/requirements.lock\n"
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check ordinary clock semantics and bounded qualification controls",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_standard_clocks tools.tests.test_typescript_clock_fixture tools.tests.test_typescript_clock_campaign tools.tests.test_typescript_clock_qualification -v"
+      },
+      {
+        "name": "Install normal pinned TypeScript compiler tools",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-clock-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire only authenticated public layers original native products and clock engine",
+        "run": "python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs \"$RUNNER_TEMP/typescript-clock-original-inputs\"\npython3 -B tools/qualify_typescript_standard_clocks.py --acquire-engine --engine \"$RUNNER_TEMP/typescript-clock-original-engine\"\n",
+        "timeout-minutes": 5
+      },
+      {
+        "name": "Compile two clock components refuse snapshot observations and execute all47 signed outcomes",
+        "run": "python3 -B tools/qualify_typescript_standard_clocks.py --acquired \"$RUNNER_TEMP/typescript-clock-original-inputs\" --engine \"$RUNNER_TEMP/typescript-clock-original-engine\" --tools \"$RUNNER_TEMP/typescript-clock-tools\" --output \"$RUNNER_TEMP/typescript-standard-clocks\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain source-bound compiler refusals authority results and physical cleanup",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-standard-clocks-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-clock-original-inputs/acquisition.json\n${{ runner.temp }}/typescript-clock-original-engine/acquisition.json\n${{ runner.temp }}/typescript-standard-clocks/*.json\n${{ runner.temp }}/typescript-standard-clocks/build-*/*.json\n${{ runner.temp }}/typescript-standard-clocks/build-*/component.wasm\n${{ runner.temp }}/typescript-standard-clocks/build-*/logs/**\n${{ runner.temp }}/typescript-standard-clocks/snapshot-*/*.json\n${{ runner.temp }}/typescript-standard-clocks/snapshot-*/logs/**\n${{ runner.temp }}/typescript-standard-clocks/node/*.json\n${{ runner.temp }}/typescript-standard-clocks/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "standard-clocks",
+  "kind": "job",
+  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}
