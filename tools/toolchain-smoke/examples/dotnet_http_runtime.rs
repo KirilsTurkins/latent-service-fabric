@@ -14,6 +14,8 @@ wit_bindgen::generate!({
     ],
 });
 
+#[path = "../../../sdk/dotnet-guest/runtime/console/closed.rs"]
+mod console;
 #[path = "../../../sdk/dotnet-guest/runtime/http/io.rs"]
 mod http_io;
 #[path = "../../../sdk/dotnet-guest/runtime/http/types.rs"]

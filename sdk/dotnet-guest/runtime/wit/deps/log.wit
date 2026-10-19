@@ -1,0 +1,24 @@
+package latent:log@0.1.0;
+
+interface log {
+    enum level {
+        trace,
+        debug,
+        info,
+        warn,
+        error,
+    }
+
+    record field {
+        name: string,
+        value: string,
+    }
+
+    variant log-error {
+        budget-exhausted,
+        invalid-field(string),
+        unavailable,
+    }
+
+    write: func(level: level, message: string, fields: list<field>) -> result<bool, log-error>;
+}
