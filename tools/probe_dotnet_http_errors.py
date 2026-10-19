@@ -13,7 +13,19 @@ if __package__ in {None, ""}:
 from tools.build_observation import build_environment
 from tools.dotnet_guest import http_errors
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, fresh, read_file, snapshot, write_json
+from tools.rust_capsule_project import ROOT, digest, fresh, read_file, snapshot, write_json
+
+
+def validate_async_probe(result: dict, derived: Path) -> None:
+    if (result["assertions"] != 17
+            or result["originalDigest"] != http_errors.SOURCE_DIGEST
+            or result["derivedDigest"] != digest(read_file(derived, http_errors.MAX_ASSEMBLY))
+            or any(result[key] is not True for key in (
+                "originalEntersAsyncBodyDespitePreCancellation", "preCancelledTaskPreservesOriginalToken",
+                "outerNullValidationPreserved", "uncancelledFaultsPreserved"))
+            or any(result[key] is not False for key in (
+                "preCancelledGuestIoQualified", "pendingGuestIoQualified", "defaultClientComponentQualified"))):
+        raise ValueError("http-async-pre-cancellation-probe-assertions")
 
 
 def probe(tools: Path, output: Path) -> dict:
@@ -127,15 +139,7 @@ def probe(tools: Path, output: Path) -> dict:
     async_cancelled = json.loads(commands.run("actual-bcl-async-pre-cancellation", dotnet,
         output / "probe/HttpErrorsProbe.dll", "--async-pre-cancellation", original, sync_derived,
         output / "actual-bcl-async-pre-cancellation.json"))
-    if (async_cancelled["assertions"] != 17
-            or async_cancelled["originalDigest"] != http_errors.SOURCE_DIGEST
-            or async_cancelled["derivedDigest"] != digest(read_file(sync_derived, http_errors.MAX_ASSEMBLY))
-            or any(async_cancelled[key] is not True for key in (
-                "originalEntersAsyncBodyDespitePreCancellation", "preCancelledTaskPreservesOriginalToken",
-                "outerNullValidationPreserved", "uncancelledFaultsPreserved"))
-            or any(async_cancelled[key] is not False for key in (
-                "preCancelledGuestIoQualified", "pendingGuestIoQualified", "defaultClientComponentQualified"))):
-        raise ValueError("http-async-pre-cancellation-probe-assertions")
+    validate_async_probe(async_cancelled, sync_derived)
     count = len(commands.records)
     async_original_control = output / "original-async-pre-cancellation.json"
     try:

@@ -9,10 +9,34 @@ from tools.dotnet_guest import http_errors
 from tools.dotnet_standard_http_node import request_api_binding, require_pre_cancelled_outbound
 from tools.dotnet_standard_http_project import managed_source, project
 from tools.phase2_operator_process import WorkflowError
+from tools.probe_dotnet_http_errors import validate_async_probe
 from tools.rust_capsule_project import ROOT, digest, inventory, read_file, snapshot
 
 
 class AsyncPreCancellation(unittest.TestCase):
+    def test_host_probe_binds_its_receipt_to_the_actual_derived_assembly_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            derived = Path(temporary)/'System.Net.Http.dll'
+            derived.write_bytes(b'bounded-host-control-assembly')
+            result = {
+                'assertions': 17, 'originalDigest': http_errors.SOURCE_DIGEST,
+                'derivedDigest': digest(derived.read_bytes()),
+                'originalEntersAsyncBodyDespitePreCancellation': True,
+                'preCancelledTaskPreservesOriginalToken': True,
+                'outerNullValidationPreserved': True, 'uncancelledFaultsPreserved': True,
+                'preCancelledGuestIoQualified': False, 'pendingGuestIoQualified': False,
+                'defaultClientComponentQualified': False}
+            validate_async_probe(result, derived)
+            for field, wrong in (('derivedDigest', digest(b'foreign-derived')),
+                                 ('originalDigest', digest(b'foreign-original')),
+                                 ('preCancelledGuestIoQualified', True), ('outerNullValidationPreserved', False)):
+                with self.subTest(field=field), self.assertRaisesRegex(
+                        ValueError, 'http-async-pre-cancellation-probe-assertions'):
+                    validate_async_probe({**result, field: wrong}, derived)
+            derived.write_bytes(b'changed-after-probe')
+            with self.assertRaisesRegex(ValueError, 'http-async-pre-cancellation-probe-assertions'):
+                validate_async_probe(result, derived)
+
     def test_receipt_rejects_missing_foreign_and_type_confused_fields(self):
         expected = copy.deepcopy(http_errors.ASYNC_PRE_CANCELLATION)
         http_errors.validate_async_pre_cancellation(expected)

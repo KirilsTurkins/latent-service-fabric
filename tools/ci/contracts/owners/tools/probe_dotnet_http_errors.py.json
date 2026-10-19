@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/probe_dotnet_http_errors.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve six existing actual BCL probes and add authenticated async pre-cancellation/token controls and original-as-derived refusal",
+  "reviewReason": "Preserve all actual BCL probes and validate authenticated async cancellation receipt with the imported digest helper before accepting host evidence",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "12aaa8365d7c89fdc6381d91c55095efc444bdbf087d887564b581ba35cd8e79"
+  "sha256": "a0a42e37ed77535287635ea9a674c5236e251d2fb38b87283cdbfbf6e47bf74d"
 }
