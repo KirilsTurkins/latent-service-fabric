@@ -18,6 +18,10 @@ on:
       - 'tools/dotnet_standard_http*.py'
       - 'tools/dotnet_internal_io_port.py'
       - 'tools/qualify_dotnet_standard_http.py'
+      - 'tools/dotnet_standard_console*.py'
+      - 'tools/qualify_dotnet_standard_console.py'
+      - 'tools/tests/test_dotnet_standard_console.py'
+      - 'docs/component-development/dotnet-standard-console.md'
       - 'tools/standard_http/**'
       - 'tools/dotnet_capsule.py'
       - 'tools/dotnet_application_dependencies.py'
@@ -234,12 +238,32 @@ jobs:
       - name: Qualify signed asynchronous HttpClient pre-cancellation without dispatch
         run: |
           python3 tools/qualify_dotnet_standard_http.py --pre-cancelled-async --output "$RUNNER_TEMP/dotnet-standard-http-async-cancel" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Qualify captured ordinary Console and strict bounded logging
+        run: |
+          python3 -m unittest tools.tests.test_dotnet_standard_console
+          python3 tools/qualify_dotnet_standard_console.py --output "$RUNNER_TEMP/dotnet-standard-console" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/dotnet-standard-console/qualified.json
+            ${{ runner.temp }}/dotnet-standard-console/FAILED.json
+            ${{ runner.temp }}/dotnet-standard-console/logs/**
+            ${{ runner.temp }}/dotnet-standard-console/outside/evidence/**
+            ${{ runner.temp }}/dotnet-standard-console/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-standard-console/build/BUILD-FAILED.json
+            ${{ runner.temp }}/dotnet-standard-console/build/build-observation.json
+            ${{ runner.temp }}/dotnet-standard-console/build/source-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/compiler-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/nuget-build-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/compatibility*.json
+            ${{ runner.temp }}/dotnet-standard-console/build/component.wasm
+            ${{ runner.temp }}/dotnet-standard-console/build/logs/**
+            ${{ runner.temp }}/dotnet-standard-console/node/public-workflow.json
+            ${{ runner.temp }}/dotnet-standard-console/node/controls/dotnet-console-*.json
             ${{ runner.temp }}/dotnet-standard-resources/**
             ${{ runner.temp }}/dotnet-standard-http/**
             ${{ runner.temp }}/dotnet-standard-http-send/**

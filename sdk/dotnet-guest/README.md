@@ -92,6 +92,15 @@ NativeAOT GC monotonic time is routed through
 the operator. Missing authority fails closed. Host calls share the activation's
 budget and deadline; wrappers do not retry or widen them.
 
+An explicitly declared `latent:log/log@0.1.0` can select the
+[ordinary Console source profile](../../docs/component-development/dotnet-standard-console.md)
+when NativeAOT actually emits stdout/stderr imports. It preserves BCL formatting
+and routes bounded UTF-8 through the existing typed log capability; it creates
+no provider or grant. Provider rejection and canonical incomplete flush fail
+strictly; the unchanged BCL raw Console stream's flush remains a no-op.
+The new signed Console campaign is pending; local port references do not qualify
+the BCL/ABI or the broader asynchronous runtime.
+
 Standalone capsules use a 128 MiB memory ceiling, finite one-billion fuel
 ceiling and explicit 120-second cold invocation ceiling. The all-SDK harness
 uses ten-billion fuel for its deliberately multi-operation cases. Its nested

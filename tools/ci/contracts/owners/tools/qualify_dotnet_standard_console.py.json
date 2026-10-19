@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_standard_console.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add explicit ordinary Console logging and captured signed lifecycle campaign; preserve existing BCL/HTTP programmes and all original limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "72a7625a23bde565d0777ee30ebfcd3065f5476ead3cd5c0a6de30df95563a94"
+}

@@ -14,6 +14,8 @@ wit_bindgen::generate!({
     },
 });
 
+#[path = "../../../sdk/dotnet-guest/runtime/console/closed.rs"]
+mod console;
 #[path = "../../../sdk/dotnet-guest/runtime/http/denied.rs"]
 mod denied;
 #[path = "../../../sdk/dotnet-guest/runtime/http/quota.rs"]

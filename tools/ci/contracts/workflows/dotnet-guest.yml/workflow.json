@@ -34,6 +34,10 @@
           "tools/dotnet_standard_http*.py",
           "tools/dotnet_internal_io_port.py",
           "tools/qualify_dotnet_standard_http.py",
+          "tools/dotnet_standard_console*.py",
+          "tools/qualify_dotnet_standard_console.py",
+          "tools/tests/test_dotnet_standard_console.py",
+          "docs/component-development/dotnet-standard-console.md",
           "tools/standard_http/**",
           "tools/dotnet_capsule.py",
           "tools/dotnet_application_dependencies.py",
@@ -76,7 +80,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Retain current dependency recovery and relocated compiler controls plus the exact reviewed internal IO adapter fixture stage; preserve every original command, skip and resource bound.",
+  "reviewReason": "Add explicit ordinary Console logging and captured signed lifecycle campaign; preserve existing BCL/HTTP programmes and all original limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

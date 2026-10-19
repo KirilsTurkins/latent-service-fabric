@@ -1,10 +1,10 @@
 //! WASI resource identities shared by the BCL and this HTTP backend.
 use super::{
+    ClosedError,
     exports::wasi::io,
     poll::Pollable,
     pump::{self, Readiness},
-    state::{Exchange, Slot, CHUNK},
-    ClosedError,
+    state::{CHUNK, Exchange, Slot},
 };
 use std::{cell::Cell, rc::Rc};
 
@@ -13,6 +13,7 @@ pub struct Input {
     _slot: Slot,
 }
 pub struct Output {
+    console: Option<super::console::Stream>,
     exchange: Option<Rc<Exchange>>,
     permit: Cell<usize>,
     _slot: Slot,
@@ -143,8 +144,18 @@ impl Drop for Input {
 }
 
 impl Output {
+    pub fn stdout() -> Self {
+        Self::stdio(super::console::stdout())
+    }
+    pub fn stderr() -> Self {
+        Self::stdio(super::console::stderr())
+    }
     pub fn closed() -> Self {
+        Self::stdio(None)
+    }
+    fn stdio(console: Option<super::console::Stream>) -> Self {
         Self {
+            console,
             exchange: None,
             permit: Cell::new(0),
             _slot: Slot::new(),
@@ -154,6 +165,7 @@ impl Output {
         let slot = Slot::new();
         exchange.output_views.set(exchange.output_views.get() + 1);
         Self {
+            console: None,
             exchange: Some(exchange),
             permit: Cell::new(0),
             _slot: slot,
@@ -162,6 +174,9 @@ impl Output {
 }
 impl io::streams::GuestOutputStream for Output {
     fn check_write(&self) -> Result<u64, io::streams::StreamError> {
+        if let Some(console) = &self.console {
+            return console.check_write();
+        }
         let Some(exchange) = &self.exchange else {
             return Err(io::streams::StreamError::Closed);
         };
@@ -177,6 +192,9 @@ impl io::streams::GuestOutputStream for Output {
         Ok(permit as u64)
     }
     fn write(&self, contents: Vec<u8>) -> Result<(), io::streams::StreamError> {
+        if let Some(console) = &self.console {
+            return console.write(contents);
+        }
         let Some(exchange) = &self.exchange else {
             return Err(io::streams::StreamError::Closed);
         };
@@ -187,6 +205,9 @@ impl io::streams::GuestOutputStream for Output {
         exchange.queue(contents).map_err(|_| failed())
     }
     fn flush(&self) -> Result<(), io::streams::StreamError> {
+        if let Some(console) = &self.console {
+            return console.flush();
+        }
         let Some(exchange) = &self.exchange else {
             return Err(io::streams::StreamError::Closed);
         };
@@ -200,6 +221,9 @@ impl io::streams::GuestOutputStream for Output {
     }
     async fn blocking_flush(&self) -> Result<(), io::streams::StreamError> {
         self.flush()?;
+        if self.console.is_some() {
+            return Ok(());
+        }
         let exchange = self.exchange.as_ref().expect("HTTP output owner");
         if !exchange.writable() {
             let source: Rc<dyn Readiness> = Rc::new(HttpReady {

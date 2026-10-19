@@ -243,3 +243,27 @@ path = "../../research/invocation-concurrency/host.rs"
 test = false
 bench = false
 doc = false
+
+[[example]]
+name = "dotnet-closed-logging-runtime"
+path = "examples/dotnet_closed_logging_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "dotnet-activation-logging-runtime"
+path = "examples/dotnet_activation_logging_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "dotnet-http-logging-runtime"
+path = "examples/dotnet_http_logging_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
