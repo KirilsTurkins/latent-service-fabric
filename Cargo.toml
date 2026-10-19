@@ -48,6 +48,7 @@ members = [
     "crates/latent-testkit",
     "sdk/rust",
     "sdk/rust-guest",
+    "sdk/rust-standard-stdio",
     "tools/toolchain-smoke",
     "tools/optimization-workloads",
     "tools/optimization-bench",

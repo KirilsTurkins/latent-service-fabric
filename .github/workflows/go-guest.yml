@@ -30,10 +30,15 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_managed_idle.py
+      - docs/development/go-managed-idle.md
       - tools/tests/test_go_standard_http.py
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/qualify_go_standard_logging.py
+      - tools/go_standard_logging_probe.py
+      - tools/tests/test_go_standard_logging.py
       - tools/qualify_go_http_libraries.py
       - tools/go_http_library_fixture.py
       - tools/go_http_library_reference.py
@@ -57,6 +62,7 @@ on:
       - schemas/**
       - docs/component-development/go-authoring.md
       - docs/component-development/go-dependencies.md
+      - docs/component-development/go-standard-logging.md
       - docs/development/go-capsule-qualification.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
@@ -102,10 +108,15 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_managed_idle.py
+      - docs/development/go-managed-idle.md
       - tools/tests/test_go_standard_http.py
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/qualify_go_standard_logging.py
+      - tools/go_standard_logging_probe.py
+      - tools/tests/test_go_standard_logging.py
       - tools/qualify_go_http_libraries.py
       - tools/go_http_library_fixture.py
       - tools/go_http_library_reference.py
@@ -129,6 +140,7 @@ on:
       - schemas/**
       - docs/component-development/go-authoring.md
       - docs/component-development/go-dependencies.md
+      - docs/component-development/go-standard-logging.md
       - docs/development/go-capsule-qualification.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
@@ -283,6 +295,10 @@ jobs:
         run: |
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-owned-initializers" --runtime-profile go-component-activation-v4 --fixture initializers
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_INITIALIZER_FIXTURE="$RUNNER_TEMP/go-owned-initializers" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation -- --ignored --exact --nocapture
+      - name: Qualify original Go maintenance capacity and physical retirement
+        run: |
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-idle" --runtime-profile go-component-activation-v5 --fixture managed-idle
+          LSF_GUEST_SDK_LANGUAGE=go LSF_GO_MANAGED_IDLE_FIXTURE="$RUNNER_TEMP/go-managed-idle" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::managed_idle::signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain -- --ignored --exact --nocapture
       - name: Test captured Go native graphs and namespace
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation
@@ -294,6 +310,10 @@ jobs:
         id: normal_go_qualification
         run: |
           python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
+      - name: Check ordinary Go standard logging installation and frozen products
+        run: python3 -m unittest tools.tests.test_go_standard_logging -v
+      - name: Qualify ordinary captured fmt log and os writes on the signed node
+        run: python3 tools/qualify_go_standard_logging.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-logging"
       - name: Check captured ordinary HTTP fixture and frozen native product ownership
         run: |
           python3 -m unittest tools.tests.test_go_standard_http_gate -v
@@ -338,6 +358,18 @@ jobs:
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/go-standard-logging/qualification.json
+            ${{ runner.temp }}/go-standard-logging/FAILED.json
+            ${{ runner.temp }}/go-standard-logging/capture.json
+            ${{ runner.temp }}/go-standard-logging/build/BUILD-*.json
+            ${{ runner.temp }}/go-standard-logging/build/component.wasm
+            ${{ runner.temp }}/go-standard-logging/build/*-inputs.json
+            ${{ runner.temp }}/go-standard-logging/build/application-dependencies.json
+            ${{ runner.temp }}/go-standard-logging/build/go-runtime-transformations.json
+            ${{ runner.temp }}/go-standard-logging/build/logs/**
+            ${{ runner.temp }}/go-standard-logging/logs/**
+            ${{ runner.temp }}/go-standard-logging/node/*.json
+            ${{ runner.temp }}/go-standard-logging/node/controls/**
             ${{ runner.temp }}/go-http-libraries/qualification.json
             ${{ runner.temp }}/go-http-libraries/FAILED.json
             ${{ runner.temp }}/go-http-libraries/*/capture.json
@@ -443,6 +475,14 @@ jobs:
             ${{ runner.temp }}/go-owned-initializers/build/component.wit
             ${{ runner.temp }}/go-owned-initializers/build/runtime-overlay/
             ${{ runner.temp }}/go-published-runtime/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-managed-idle/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-managed-idle/src/
+            ${{ runner.temp }}/go-managed-idle/wit/
+            ${{ runner.temp }}/go-managed-idle/logs/
+            ${{ runner.temp }}/go-managed-idle/native-reference/
+            ${{ runner.temp }}/go-managed-idle/build/component.wasm
+            ${{ runner.temp }}/go-managed-idle/build/component.wit
+            ${{ runner.temp }}/go-managed-idle/build/runtime-overlay/
             ${{ runner.temp }}/go-published-runtime/application-dependencies.json
             ${{ runner.temp }}/go-published-runtime/compiler-containment.json
             ${{ runner.temp }}/go-published-runtime/go-module-build-inputs.json

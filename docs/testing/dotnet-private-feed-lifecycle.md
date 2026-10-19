@@ -62,9 +62,10 @@ An edit invalidates the old native graph until the new exact candidate is review
 The peer is physically closed and joined, its listener refuses connections and
 all original library sources/packages/key files are removed before application
 compilation. The programme then performs four contained offline NativeAOT builds:
-two identical initial builds, the updated graph and the removed graph. The
+two initial builds with exact captured source/recipe/compiler/asset/binding and
+runtime-input identities, the updated graph and the removed graph. The
 removed graph contains neither private package and uses the ordinary greeting.
-Each of the three states is independently signed, admitted and executed through
+Both initial outputs and the updated/removed outputs are independently signed, admitted and executed through
 the ordinary five-capsule node programme. Additional dynamic calls bind the
 intended publication, actual global route snapshot and exact component revision,
 then observe idle ownership and clean node shutdown.
@@ -81,3 +82,10 @@ or hermetic-build claim. Descriptor-selected reflection and unsupported dynamic
 or reflection operations require their own actual-component evidence. #687 and
 the broader six-language tickets remain open until their literal criteria and
 required tests are independently reconciled with successful source-bound runs.
+
+The bounded private lifecycle run [39299989335](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39299989335)
+on fixture source `7cb608c450` verified all four independent signed outputs and
+six refusal controls, with native products retained from source `03a3f74598`.
+Both initial components had equal captured inputs and passed separately; their
+raw bytes differed. This proves an offline rebuild, not deterministic compilation
+or fresh native compilation of a later integration.

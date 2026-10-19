@@ -249,6 +249,58 @@ def capture(root, tools, commands):
         'credentialsCaptured': False, 'privateKeyCaptured': False, 'sdkLockDigest': digest(sdk)}
 
 
+def offline_pair(artifact, rebuilt):
+    """Bind two real offline builds without inventing byte reproducibility."""
+    names = ('source-inputs.json', 'recipe-inputs.json', 'compiler-inputs.json', 'nuget-build-inputs.json')
+    selected = {name: read_file(artifact / name, 32 * 1024 * 1024) for name in names}
+    require(all(read_file(rebuilt / name, 32 * 1024 * 1024) == raw for name, raw in selected.items()),
+            'private-NuGet-offline-rebuild-input-drift')
+    records, binding, runtime = [], None, None
+    for path in (artifact, rebuilt):
+        marker = read_json(path / 'BUILD-COMPLETE.json')
+        observation_raw = read_file(path / 'build-observation.json')
+        observation = read_json(path / 'build-observation.json')
+        component = file_identity(path / 'component.wasm', 64 * 1024 * 1024)
+        require(marker['componentDigest'] == observation['componentDigest'] == component['sha256']
+                and observation['componentSize'] == component['bytes']
+                and marker['observationDigest'] == digest(observation_raw)
+                and marker['sourceDigest'] == digest(selected['source-inputs.json']),
+                'private-NuGet-offline-rebuild-observation-drift')
+        require(observation['parameters'] == {'compiler': 'native-aot-llvm', 'bindings': 'wit-bindgen-csharp',
+                    'language': 'csharp', 'target': 'wasi-wasm', 'runtime': 'native-aot',
+                    'locked': True, 'ambientWasi': False}
+                and observation['parameters']['locked'] is True
+                and observation['parameters']['ambientWasi'] is False, 'private-NuGet-offline-rebuild-compiler-contract')
+        materials = observation['materials']
+        require(len({row['name'] for row in materials}) == len(materials), 'private-NuGet-offline-rebuild-material-alias')
+        materials = {row['name']: row for row in materials}
+        for filename, label in zip(names, ('source-snapshot', 'build-recipe', 'compiler-inputs', 'nuget-build-inputs')):
+            raw = selected[filename]
+            require(materials.get(label) == {'name': label, 'digest': digest(raw), 'size': len(raw)},
+                    'private-NuGet-offline-rebuild-material-drift')
+        containment = read_json(path / 'compiler-containment.json', 32 * 1024 * 1024)
+        require(containment['network'] == 'denied' and containment['credentials'] == 'not-inherited',
+                'private-NuGet-offline-compiler-not-contained')
+        generated = read_json(path / 'bindings.json', 16 * 1024 * 1024)
+        actual_binding = digest(json.dumps(generated['bindings']['outputs'], sort_keys=True).encode())
+        require(marker['sdkBindingDigest'] == generated['filesDigest'] == actual_binding,
+                'private-NuGet-offline-rebuild-binding-drift')
+        profile = generated['runtimeProfile']
+        require(profile['schemaVersion'] == 'latent.dotnet.runtime.v1', 'private-NuGet-offline-rebuild-runtime-schema')
+        actual_runtime = {key: profile[key] for key in ('schemaVersion', 'profile', 'declaredImports', 'emittedImports', 'adapter')}
+        if 'additionalAdapters' in profile:
+            actual_runtime['additionalAdapters'] = profile['additionalAdapters']
+        if binding is not None:
+            require(binding == actual_binding and runtime == actual_runtime,
+                    'private-NuGet-offline-rebuild-runtime-drift')
+        binding, runtime = actual_binding, actual_runtime
+        records.append({**component, 'observationDigest': marker['observationDigest']})
+    return {'status': 'passed', 'inputs': {name: digest(raw) for name, raw in selected.items()},
+            'bindingDigest': binding, 'runtimeInputDigest': digest(canonical(runtime)),
+            'components': records, 'rawBytesIdentical': records[0]['sha256'] == records[1]['sha256'],
+            'reproducibility': 'not-claimed'}
+
+
 def qualify(prepared, output, tools):
     output = fresh(output)
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=2400, command_seconds=900)
@@ -259,7 +311,7 @@ def qualify(prepared, output, tools):
         stage = 'authenticated-native-capture-and-lifecycle'
         phases, captured = capture(output, tools, commands)
         write_json(output / 'capture.json', captured)
-        builds, nodes = [], []
+        builds, nodes, rebuilt_inputs = [], [], None
         for ordinal, (app, lock, version, removed) in enumerate(phases):
             stage = 'offline-component-build-' + str(ordinal)
             observed = inventory(source_files(app))
@@ -272,28 +324,32 @@ def qualify(prepared, output, tools):
             containment = read_json(artifact / 'compiler-containment.json', 32 * 1024 * 1024)
             require(containment['network'] == 'denied' and containment['credentials'] == 'not-inherited',
                     'private-NuGet-offline-compiler-not-contained')
+            variants = [(str(ordinal), artifact)]
             if ordinal == 0:
                 rebuilt = build(app, output / 'offline-rebuild', products['examples/capsule_contracts'],
                     products['examples/package'], REPOSITORY, tools=tools, offline=True)
-                require(read_json(artifact / 'BUILD-COMPLETE.json')['componentDigest']
-                        == read_json(rebuilt / 'BUILD-COMPLETE.json')['componentDigest'],
-                        'private-NuGet-offline-component-not-identical')
-            stage = 'normal-sign-and-enforced-node-' + str(ordinal)
-            require(prepared_inputs(prepared)[:2] == (before, receipt), 'private-NuGet-prepared-input-drift')
-            signed = output / ('signed-' + str(ordinal))
-            commands.run('private-NuGet-sign-' + str(ordinal), products['examples/capsule_authoring'], 'demo-sign',
-                signed, artifact, *(prepared / 'builds' / name for name in COMPANIONS))
-            write_json(signed / 'private-nuget-probe.json', {'nonce': captured['nonce'], 'version': version, 'removed': removed})
-            node = node_workflow(products['latent'], products['latentd'], signed, output / ('node-' + str(ordinal)),
-                language='dotnet', noncrypto_entropy=True, captured_dotnet_private=True)
-            require(node['status'] == 'passed' and node['capturedDotnetPrivate']['status'] == 'passed'
-                    and len(node['capturedDotnetPrivate']['cases']) == 3, 'private-NuGet-signed-node-not-qualified')
-            builds.append(read_json(artifact / 'BUILD-COMPLETE.json'))
-            nodes.append(file_identity(output / ('node-' + str(ordinal)) / 'workflow.json'))
+                rebuilt_inputs = offline_pair(artifact, rebuilt)
+                require(inventory(source_files(app)) == observed and dependencies.verify_inputs(app, 'dotnet').lock == lock,
+                        'private-NuGet-offline-build-changed-source')
+                variants.append(('initial-rebuild', rebuilt))
+            for label, selected_artifact in variants:
+                stage = 'normal-sign-and-enforced-node-' + label
+                require(prepared_inputs(prepared)[:2] == (before, receipt), 'private-NuGet-prepared-input-drift')
+                signed = output / ('signed-' + label)
+                commands.run('private-NuGet-sign-' + label, products['examples/capsule_authoring'], 'demo-sign',
+                    signed, selected_artifact, *(prepared / 'builds' / name for name in COMPANIONS))
+                write_json(signed / 'private-nuget-probe.json', {'nonce': captured['nonce'], 'version': version, 'removed': removed})
+                node = node_workflow(products['latent'], products['latentd'], signed, output / ('node-' + label),
+                    language='dotnet', noncrypto_entropy=True, captured_dotnet_private=True)
+                require(node['status'] == 'passed' and node['capturedDotnetPrivate']['status'] == 'passed'
+                        and len(node['capturedDotnetPrivate']['cases']) == 3, 'private-NuGet-signed-node-not-qualified')
+                builds.append(read_json(selected_artifact / 'BUILD-COMPLETE.json'))
+                nodes.append(file_identity(output / ('node-' + label) / 'workflow.json'))
         require(before == inputs('dotnet') and prepared_inputs(prepared)[:2] == (before, receipt)
                 and material == {name: file_identity(ROOT / name) for name in MATERIALS}
                 and time.monotonic() < commands.deadline, 'private-NuGet-qualification-input-drift')
         result = {'formatVersion': 1, 'status': 'passed', 'capture': captured, 'builds': builds, 'nodeReceipts': nodes,
+            'offlineRebuild': {**rebuilt_inputs, 'separatelySignedAndExecuted': True},
             'materials': material, 'preparedSourceIdentityDigest': receipt['sourceIdentityDigest'],
             'nativeBinaries': receipt['binaries'], 'hermetic': False, 'cleanHost': False,
             'publisherAuthenticated': False, 'releasePublication': 'not-performed',

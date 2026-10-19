@@ -1,0 +1,256 @@
+{
+  "cases": [
+    "TypeScriptConsole.test_actual_esbuild_capture_defers_both_modules_and_preserves_source_map_locations",
+    "TypeScriptConsole.test_actual_parser_defers_transitive_and_direct_initializers_preserving_live_exports",
+    "TypeScriptConsole.test_decoder_interface_export_plan_is_accepted_by_actual_bundler",
+    "TypeScriptConsole.test_initializer_log_failure_is_sticky_with_no_retry_or_build_time_log",
+    "TypeScriptConsole.test_integer_formatter_uses_console_standard_parseint_instead_of_node_percent_d_extension",
+    "TypeScriptConsole.test_interface_export_uses_named_node_not_decoder_numeric_identity",
+    "TypeScriptConsole.test_malformed_log_signature_and_resource_export_fail_closed",
+    "TypeScriptConsole.test_mutable_export_bindings_and_getter_receiver_remain_live_after_initialization",
+    "TypeScriptConsole.test_only_declared_exact_log_interface_selects_the_strict_profile_without_grant",
+    "TypeScriptConsole.test_owned_signed_fixture_keeps_sdk_default_profile_limits_and_original_greeting",
+    "TypeScriptConsole.test_parser_rejects_tla_reexports_missing_and_extra_exports_and_resource_shapes",
+    "TypeScriptConsole.test_signed_programme_requires_preentry_denial_and_all_strict_accounted_cases",
+    "TypeScriptConsole.test_snapshot_denial_unsupported_values_and_methods_do_not_inspect_objects_or_flush",
+    "TypeScriptConsole.test_standard_primitive_formatting_levels_and_undefined_return_are_synchronous",
+    "TypeScriptConsole.test_strict_host_rejections_and_false_never_acknowledge_or_retry",
+    "TypeScriptConsole.test_utf8_boundary_replacement_and_oversize_refuse_before_host_write"
+  ],
+  "guards": {
+    "TypeScriptConsole.test_actual_esbuild_capture_defers_both_modules_and_preserves_source_map_locations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": [
+        "self.skipTest('Pinned esbuild/Acorn compiler inputs are required for real bundle controls')",
+        "skip-control-sha256:17a54ca518a0c053e580c3e5eac3f4fdb9067e09d529d4471ff50b79e0da1e09"
+      ]
+    },
+    "TypeScriptConsole.test_actual_parser_defers_transitive_and_direct_initializers_preserving_live_exports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_decoder_interface_export_plan_is_accepted_by_actual_bundler": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": [
+        "self.skipTest('Pinned esbuild/Acorn inputs are required for actual export-plan control')",
+        "skip-control-sha256:485a3e61941eb38300a5d719d3bc69765755851278c35fbfd2b50ec1a9436504"
+      ]
+    },
+    "TypeScriptConsole.test_initializer_log_failure_is_sticky_with_no_retry_or_build_time_log": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_integer_formatter_uses_console_standard_parseint_instead_of_node_percent_d_extension": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_interface_export_uses_named_node_not_decoder_numeric_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_malformed_log_signature_and_resource_export_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_mutable_export_bindings_and_getter_receiver_remain_live_after_initialization": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_only_declared_exact_log_interface_selects_the_strict_profile_without_grant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_owned_signed_fixture_keeps_sdk_default_profile_limits_and_original_greeting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_parser_rejects_tla_reexports_missing_and_extra_exports_and_resource_shapes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_signed_programme_requires_preentry_denial_and_all_strict_accounted_cases": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_snapshot_denial_unsupported_values_and_methods_do_not_inspect_objects_or_flush": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_standard_primitive_formatting_levels_and_undefined_return_are_synchronous": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_strict_host_rejections_and_false_never_acknowledge_or_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptConsole.test_utf8_boundary_replacement_and_oversize_refuse_before_host_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d50a8ca640a6e36d84e8941ffe3b7e9959fd8c3ac7c5bdf48bbc89a7b78d10b5",
+        "class:setup-sha256:5fbe08f8f2821d1f532f9d29b2b54fbdb6a0de78d667303707c85fd6ac8988d6",
+        "class:skip:self.skipTest('Node is required for actual adapter semantics')",
+        "class:skip:self.skipTest('Pinned compiler Acorn input is required for activation-module parser controls')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_console.py",
+  "reviewReason": "Use actual named interface exports instead of decoder-local numeric keys; add graph and actual bundler controls without changing original cases or skip guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

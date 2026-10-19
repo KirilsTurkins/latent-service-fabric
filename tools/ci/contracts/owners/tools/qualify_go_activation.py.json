@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review unchanged initializer/published fixture selection and preserved GC controls against committed LF bytes after Windows conflict resolution.",
+  "reviewReason": "Review opt-in Go v5 maintenance reservations, scheduler late-resume fence and additive signed GC/capacity/drain/cancellation gate. Preserve every earlier profile, required command, skip boundary and original operator ceiling.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8748319ec27b68bfc190677299dddb7475b96449aa1a07bc4c8bc29cfe8144a4"
+  "sha256": "d1d799e78a8bba7a237b0d776299b0f4f9154a193b440c9455424e34be6f362e"
 }

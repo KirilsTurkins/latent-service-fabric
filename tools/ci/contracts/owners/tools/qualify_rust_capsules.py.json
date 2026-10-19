@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind explicit public CA capture and authenticated private NuGet offline lifecycle with existing gates",
+  "reviewReason": "Preserve current development helpers plus private NuGet capture source; exact additive merge union.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "326dd1394a3b25d024b50b09d649a48f4335d45ffdb33b12d86b37e7d92f0700"
+  "sha256": "eaa21da0dd79cbc5ff2987654f546254a983670e59702358a3d1c2cfd2fef471"
 }

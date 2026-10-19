@@ -196,7 +196,7 @@ class ActualContainmentReceipt(unittest.TestCase):
             root = Path(temporary)
             artifact = root / 'artifact'
             artifact.mkdir()
-            (artifact / 'BUILD-COMPLETE.json').write_bytes(canonical({'componentDigest': digest(b'not-executed')}))
+            OfflineBuildEvidence.artifact(artifact, b'not-executed')
             path = artifact / 'compiler-containment.json'
             path.write_bytes(canonical(receipt))
             if oversized:
@@ -289,6 +289,113 @@ class ActualSignedProbe(unittest.TestCase):
             with self.subTest(options=options), patch.object(workflow, 'fresh') as fresh, self.assertRaisesRegex(WorkflowError, 'private-NuGet-language'):
                 workflow.run(None, None, None, None, **options)
             fresh.assert_not_called()
+
+
+class OfflineBuildEvidence(unittest.TestCase):
+    @staticmethod
+    def artifact(path, component=b'owned initial component'):
+        from tools.rust_capsule_project import canonical
+        path.mkdir(parents=True, exist_ok=True)
+        selected = {'source-inputs.json': b'captured graph and selected source',
+                    'recipe-inputs.json': b'captured compiler recipe',
+                    'compiler-inputs.json': b'pinned native tools and runtime adapters',
+                    'nuget-build-inputs.json': b'locked package and asset selection'}
+        for name, raw in selected.items(): (path/name).write_bytes(raw)
+        (path/'component.wasm').write_bytes(component)
+        outputs = {'Generated.cs': {'digest': digest(b'generated bindings'), 'size': 18}}
+        binding = digest(json.dumps(outputs, sort_keys=True).encode())
+        profile = {'schemaVersion': 'latent.dotnet.runtime.v1', 'profile': 'closed',
+                   'declaredImports': [], 'emittedImports': [],
+                   'adapter': {'name': 'closed-runtime', 'digest': digest(b'adapter'), 'size': 7}}
+        (path/'bindings.json').write_bytes(canonical({'bindings': {'outputs': outputs},
+            'filesDigest': binding, 'runtimeProfile': profile}))
+        parameters = {'compiler': 'native-aot-llvm', 'bindings': 'wit-bindgen-csharp', 'language': 'csharp',
+                      'target': 'wasi-wasm', 'runtime': 'native-aot', 'locked': True, 'ambientWasi': False}
+        observation = {'componentDigest': digest(component), 'componentSize': len(component), 'parameters': parameters,
+            'materials': [{'name': label, 'digest': digest(selected[name]), 'size': len(selected[name])}
+                for name, label in zip(selected, ('source-snapshot', 'build-recipe', 'compiler-inputs', 'nuget-build-inputs'))]}
+        raw = canonical(observation)
+        (path/'build-observation.json').write_bytes(raw)
+        marker = {'componentDigest': digest(component), 'observationDigest': digest(raw),
+                  'sourceDigest': digest(selected['source-inputs.json']), 'sdkBindingDigest': binding}
+        (path/'BUILD-COMPLETE.json').write_bytes(canonical(marker))
+        (path/'compiler-containment.json').write_bytes(canonical({'network': 'denied', 'credentials': 'not-inherited'}))
+        return marker
+
+    def test_actual_pair_binds_two_distinct_outputs_without_claiming_reproducibility(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); a, b = root/'a', root/'b'
+            self.artifact(a); self.artifact(b, b'owned rebuilt component with private debug identity')
+            result = qualification.offline_pair(a, b)
+            self.assertFalse(result['rawBytesIdentical'])
+            self.assertEqual(result['reproducibility'], 'not-claimed')
+            self.assertEqual(len(result['components']), 2)
+            self.assertNotEqual(result['components'][0]['sha256'], result['components'][1]['sha256'])
+
+    def test_source_recipe_compiler_graph_binding_runtime_and_containment_drift_still_refuse(self):
+        from tools.rust_capsule_project import canonical
+        for mode in ('source-inputs.json', 'recipe-inputs.json', 'compiler-inputs.json', 'nuget-build-inputs.json',
+                     'binding', 'runtime', 'network', 'credentials', 'observation', 'component'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); a, b = root/'a', root/'b'; self.artifact(a); self.artifact(b, b'rebuilt')
+                if mode.endswith('.json'): (b/mode).write_bytes(b'changed')
+                elif mode in ('binding', 'runtime'):
+                    value = json.loads((b/'bindings.json').read_bytes())
+                    if mode == 'binding': value['filesDigest'] = digest(b'wrong binding')
+                    else: value['runtimeProfile']['profile'] = 'different runtime'
+                    (b/'bindings.json').write_bytes(canonical(value))
+                elif mode in ('network', 'credentials'):
+                    (b/'compiler-containment.json').write_bytes(canonical({
+                        'network': 'allowed' if mode == 'network' else 'denied',
+                        'credentials': 'inherited' if mode == 'credentials' else 'not-inherited'}))
+                elif mode == 'observation': (b/'build-observation.json').write_bytes(b'{}')
+                else: (b/'component.wasm').write_bytes(b'tampered actual output')
+                with self.assertRaises((WorkflowError, KeyError)):
+                    qualification.offline_pair(a, b)
+
+    def test_actual_qualifier_signs_and_executes_both_initial_outputs_and_preserves_second_node_failure(self):
+        from types import SimpleNamespace
+        from tools.rust_capsule_project import canonical
+        for fail_rebuild in (False, True):
+            with self.subTest(fail_rebuild=fail_rebuild), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); commands = SimpleNamespace(deadline=float('inf'), records=[])
+                original = RuntimeError('owned rebuilt node failed')
+                signed, executed = [], []
+                def sign(stage, _tool, command, target, artifact, *companions):
+                    self.assertEqual(command, 'demo-sign'); signed.append(artifact.name); target.mkdir()
+                commands.run = sign
+                def build(app, output, *args, **kwargs):
+                    self.assertTrue(kwargs['offline']); self.artifact(output, output.name.encode()); return output
+                def node(_cli, _node, fixture, output, **kwargs):
+                    self.assertTrue(kwargs['captured_dotnet_private']); self.assertTrue(kwargs['noncrypto_entropy'])
+                    executed.append(output.name)
+                    if fail_rebuild and output.name == 'node-initial-rebuild': raise original
+                    output.mkdir(); (output/'workflow.json').write_bytes(canonical({'status': 'passed'}))
+                    return {'status': 'passed', 'capturedDotnetPrivate': {'status': 'passed', 'cases': [0, 1, 2]}}
+                products = {name: root/name.replace('/', '-') for name in qualification.PRODUCTS}
+                phases = [(root/'app', {}, version, removed) for version, removed in
+                          (('1.0.0', False), ('2.0.0', False), ('2.0.0', True))]
+                with patch.object(qualification, 'Commands', return_value=commands), \
+                     patch.object(qualification, 'prepared_inputs', return_value=({}, {'binaries': {}, 'sourceIdentityDigest': digest(b'{}')}, products)), \
+                     patch.object(qualification, 'capture', return_value=(phases, {'nonce': 'a'*24})), \
+                     patch.object(qualification, 'source_files', return_value={'source': b'unchanged'}), \
+                     patch.object(qualification.dependencies, 'verify_inputs', return_value=SimpleNamespace(lock={})), \
+                     patch.object(qualification, 'build', side_effect=build), \
+                     patch.object(qualification, 'node_workflow', side_effect=node), \
+                     patch.object(qualification, 'inputs', return_value={}):
+                    if fail_rebuild:
+                        with self.assertRaises(RuntimeError) as raised:
+                            qualification.qualify(root/'prepared', root/'output', root/'tools')
+                        self.assertIs(raised.exception, original)
+                        self.assertEqual(signed, ['build-0', 'offline-rebuild'])
+                        self.assertEqual(executed, ['node-0', 'node-initial-rebuild'])
+                    else:
+                        result = qualification.qualify(root/'prepared', root/'output', root/'tools')
+                        self.assertEqual(signed, ['build-0', 'offline-rebuild', 'build-1', 'build-2'])
+                        self.assertEqual(executed, ['node-0', 'node-initial-rebuild', 'node-1', 'node-2'])
+                        self.assertEqual(len(result['nodeReceipts']), 4)
+                        self.assertTrue(result['offlineRebuild']['separatelySignedAndExecuted'])
+                        self.assertFalse(result['offlineRebuild']['rawBytesIdentical'])
 
 
 if __name__ == '__main__':

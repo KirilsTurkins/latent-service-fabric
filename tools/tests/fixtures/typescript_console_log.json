@@ -1,0 +1,134 @@
+{
+  "worlds": [],
+  "interfaces": [
+    {
+      "name": "log",
+      "types": {
+        "level": 0,
+        "field": 1,
+        "log-error": 2
+      },
+      "functions": {
+        "write": {
+          "name": "write",
+          "kind": "freestanding",
+          "params": [
+            {
+              "name": "level",
+              "type": 0
+            },
+            {
+              "name": "message",
+              "type": "string"
+            },
+            {
+              "name": "fields",
+              "type": 3
+            }
+          ],
+          "result": 4
+        }
+      },
+      "package": 0
+    }
+  ],
+  "types": [
+    {
+      "name": "level",
+      "kind": {
+        "enum": {
+          "cases": [
+            {
+              "name": "trace"
+            },
+            {
+              "name": "debug"
+            },
+            {
+              "name": "info"
+            },
+            {
+              "name": "warn"
+            },
+            {
+              "name": "error"
+            }
+          ]
+        }
+      },
+      "owner": {
+        "interface": 0
+      }
+    },
+    {
+      "name": "field",
+      "kind": {
+        "record": {
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "value",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "owner": {
+        "interface": 0
+      }
+    },
+    {
+      "name": "log-error",
+      "kind": {
+        "variant": {
+          "cases": [
+            {
+              "name": "budget-exhausted",
+              "type": null
+            },
+            {
+              "name": "invalid-field",
+              "type": "string"
+            },
+            {
+              "name": "unavailable",
+              "type": null
+            }
+          ]
+        }
+      },
+      "owner": {
+        "interface": 0
+      }
+    },
+    {
+      "name": null,
+      "kind": {
+        "list": 1
+      },
+      "owner": null
+    },
+    {
+      "name": null,
+      "kind": {
+        "result": {
+          "ok": "bool",
+          "err": 2
+        }
+      },
+      "owner": null
+    }
+  ],
+  "packages": [
+    {
+      "name": "latent:log@0.1.0",
+      "interfaces": {
+        "log": 0
+      },
+      "worlds": {}
+    }
+  ]
+}

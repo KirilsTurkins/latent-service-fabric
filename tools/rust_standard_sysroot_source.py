@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 import tarfile
 
 from tools import rust_standard_clock_profile as clock, rust_standard_tls_profile as tls
+from tools import rust_standard_logging_profile as stdio
 from tools.dev_workflow.common import digest, encode, require
 from tools.rust_capsule_project import checked_path, inventory, read_file, write_json
 
@@ -16,7 +17,7 @@ MAX_BYTES = 128 * 1024 * 1024
 MAX_FILE_BYTES = 8 * 1024 * 1024
 PREFIX = 'rust-src-1.97.1/rust-src/lib/rustlib/src/rust/library/'
 PROFILE = 'lsf-rust-std-source-staging-v1'
-RECIPE = ('tools/rust_standard_sysroot_source.py', *clock.RECIPE, *tls.RECIPE)
+RECIPE = ('tools/rust_standard_sysroot_source.py', *clock.RECIPE, *tls.RECIPE, *stdio.RECIPE)
 
 
 def selected_library_entries(source, *, modes=None):
@@ -63,6 +64,7 @@ def prepare(archive: Path, output: Path, *, target=clock.TARGET, rust=clock.RUST
     # Both helpers check their exact upstream preimages before changing a file.
     changes = clock.overlay({n: original[n] for n in clock.ORIGINALS}, inputs['sdk/rust-standard-runtime/clock.rs'])
     changes.update(tls.overlay({n: original[n] for n in tls.ORIGINALS}, inputs['sdk/rust-standard-runtime/tls.rs']))
+    changes.update(stdio.selected(original, inputs))
     selected.update(changes)
     selected_modes = {**modes, **{name: 0o644 for name in changes if name not in modes}}
     output.mkdir(mode=0o700, parents=True)
@@ -94,6 +96,7 @@ def prepare(archive: Path, output: Path, *, target=clock.TARGET, rust=clock.RUST
         'originalBytes': sum(map(len, original.values())), 'selectedBytes': sum(map(len, selected.values())),
         'changedPaths': sorted(changes), 'compilerSourceBounds': {'files': MAX_FILES, 'bytes': MAX_BYTES, 'fileBytes': MAX_FILE_BYTES},
         'applicationControllerBoundsChanged': False, 'qualification': 'unqualified-source',
+        'standardStdio': 'explicit-unsupported-v1',
         'installedSysroot': False, 'compilerInvoked': False, 'supportedRuntimeProfile': False,
         'automaticBuilderSelection': False, 'noStdAndAllocSourceBytesPreserved': True,
         'proposedOwnedBuild': {'command': ['cargo', 'build', '--locked', '--offline', '--manifest-path',
