@@ -70,6 +70,8 @@ def verify(root: Path = ROOT) -> dict:
         raise ValueError("host-tls-provider-workspace-isolation")
     if any(name in table for table in workspace.get("patch", {}).values() for name in (NAME, "rustls")):
         raise ValueError("host-tls-provider-global-patch")
+    if workspace.get("replace"):
+        raise ValueError("host-tls-provider-global-replacement")
     lock = tomllib.loads(read_file(root / "Cargo.lock", 4 * 1024 * 1024).decode())
     local = [p for p in lock["package"] if p["name"] == NAME]
     if local != [{"name": NAME, "version": "0.23.46", "dependencies":

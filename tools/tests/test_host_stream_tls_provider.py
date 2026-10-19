@@ -76,13 +76,16 @@ class BoundedTlsProviderSource(unittest.TestCase):
                     provider.verify(root)
 
     def test_global_shadowing_changed_lock_and_accounting_enablement_are_refused(self):
-        for kind in ("global-patch", "workspace", "lock", "accounting"):
+        for kind in ("global-patch", "global-replace", "workspace", "lock", "accounting"):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
                 self.fixture(root)
                 if kind == "global-patch":
                     target = root / "Cargo.toml"
                     target.write_bytes(target.read_bytes() + b'\n[patch.crates-io]\nrustls = {path="crates/vendor/rustls-outbound"}\n')
+                elif kind == "global-replace":
+                    target = root / "Cargo.toml"
+                    target.write_bytes(target.read_bytes() + b'\n[replace]\n"latent-rustls-outbound:0.23.46" = {path="foreign"}\n')
                 elif kind == "workspace":
                     target = root / "Cargo.toml"
                     target.write_bytes(target.read_bytes().replace(b'exclude = ["crates/vendor/rustls-outbound"]', b"exclude = []", 1))
