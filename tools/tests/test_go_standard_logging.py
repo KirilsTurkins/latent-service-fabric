@@ -167,6 +167,33 @@ class StandardLogging(unittest.TestCase):
                 with self.assertRaisesRegex(WorkflowError, 'Go-standard-logging-language'):
                     run(None, None, None, None, language=language, go_standard_logging=selection)
 
+    def test_fixture_updates_existing_descriptor_and_sdk_lock_before_native_capture(self):
+        from tools import go_standard_logging_probe as probe
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = create(root / 'application', 'greeting')
+            captured = {'artifacts': [{'id': 'ordinary-library', 'role': 'application',
+                'metadata': {'module': probe.IDENTITY}}], 'executableInputs': []}
+            def resolve(application, candidate, **kwargs):
+                files = snapshot(application)
+                descriptor, _, _ = validate(files)
+                self.assertEqual(descriptor['limits']['logBytes'], 1024)
+                sdk = json.loads(files['sdk-lock.json'])
+                self.assertEqual(sdk['template']['sourceDigest'], digest(files['src/main.go']))
+                self.assertEqual(sdk['template']['witDigest'], digest(files['wit/world.wit']))
+                write_json(candidate, captured)
+                return captured
+            def review(application, candidate, identity):
+                self.assertEqual(identity, digest(candidate.read_bytes()))
+                write_json(application / 'latent.dependencies.lock.json', captured)
+            with patch.object(probe.native, 'edit'), patch.object(probe.native, 'create_lock'), \
+                    patch.object(probe, 'resolve', side_effect=resolve), \
+                    patch.object(probe, 'review', side_effect=review), \
+                    patch.object(probe, 'status', return_value={'status': 'verified'}):
+                result = probe.install(project, root / 'outside-library', root / 'go')
+            self.assertEqual(result['artifact'], 'ordinary-library')
+            self.assertFalse((root / 'outside-library').exists())
+
 
 if __name__ == '__main__':
     unittest.main()

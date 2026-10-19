@@ -6,7 +6,7 @@ import shutil
 from tools import go_native_authoring as native
 from tools.go_application_dependencies import resolve
 from tools.go_dependency_authoring import review, status
-from tools.phase2_operator_process import require, read_json, write_json
+from tools.phase2_operator_process import require, read_json
 from tools.rust_capsule_project import ROOT, digest, snapshot
 
 IDENTITY = 'outside.example.test/ordinary-standard-logging'
@@ -91,10 +91,10 @@ def install(project: Path, outside: Path, go: Path) -> dict:
         path.write_bytes(raw)
     descriptor = read_json(project / 'capsule-project.json')
     descriptor['limits']['logBytes'] = 1024
-    write_json(project / 'capsule-project.json', descriptor)
+    (project / 'capsule-project.json').write_text(json.dumps(descriptor, indent=2) + '\n', encoding='utf-8')
     sdk = read_json(project / 'sdk-lock.json')
     sdk['template']['sourceDigest'], sdk['template']['witDigest'] = digest(source), digest(wit)
-    write_json(project / 'sdk-lock.json', sdk)
+    (project / 'sdk-lock.json').write_text(json.dumps(sdk, indent=2) + '\n', encoding='utf-8')
     sdk_before = (project / 'sdk-lock.json').read_bytes()
     native.edit(project, 'add', identity=IDENTITY, version='v0.0.0', local=outside, go=go)
     native.create_lock(project, go=go)
