@@ -37,7 +37,7 @@ OPS = ['register', 'park', 'wake', 'settle', 'close', 'observe', 'wait-for',
 RUNTIME_PROVIDERS = dict(RUNTIME)
 
 
-def configuration(directory, releases, startup, credential):
+def configuration(directory, releases, startup, credential, *, adversarial=False):
     path = configure_node(directory, releases, 'examples')
     value = read_json(path)
     value['securityProfile'] = 'local-experimental-v1'
@@ -74,6 +74,9 @@ def configuration(directory, releases, startup, credential):
     value['providers']['bindings'].append({'name': 'activation-standard', 'tenant': 'examples',
         'consumerService': SERVICE, 'providerService': 'activation-host', 'contract': ACTIVATION,
         'providerBinding': 'activation-installed'})
+    if adversarial:
+        from tools.go_http_adversarial import configure
+        value = configure(value)
     # Replace only this owned private configuration; no installed service changes.
     path.write_text(json.dumps(value, indent=2)+'\n', encoding='utf-8')
     return path
@@ -211,7 +214,7 @@ def library_cases(secondary: dict, native_reference: dict | None = None) -> list
 
 def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
         suite: str = 'standard', native_reference: dict | None = None):
-    require(suite in {'standard','libraries'},'standard-go-unknown-fixture-suite')
+    require(suite in {'standard','libraries','adversarial'},'standard-go-unknown-fixture-suite')
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-go-original-deadline-expired')
     output = fresh(output)
@@ -240,7 +243,9 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         'tools/standard_http/peer.py', 'tools/standard_http/protocol.py', 'tools/standard_http/vectors.py',
         'tools/standard_http/observations.py', 'tools/go_guest/http.py', 'tools/go_guest/http_context.py',
         'sdk/go-guest/runtime/http_async.go.in', 'sdk/go-guest/runtime/http_transport.go.in',
-        'tools/static_api/node.py', 'tools/guest_runtime_profiles.py')
+        'tools/static_api/node.py', 'tools/guest_runtime_profiles.py', 'tools/go_http_adversarial.py')
+    if suite == 'adversarial':
+        source_paths += ('tools/fixtures/go-http-adversarial/main.go', 'tools/qualify_go_http_adversarial.py')
     if suite == 'libraries':
         source_paths += ('sdk/go-guest/runtime/http-library-conformance/main.go',
             'tools/go_http_library_fixture.py','tools/qualify_go_http_libraries.py')
@@ -274,7 +279,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                            work/'peer', environment, cancellation, maximum=65536)
             cleanup.callback(peer.close)
             startup = peer.line(min(client.deadline, time.monotonic()+10))
-            config = configuration(work/'node', signed, startup, credential)
+            config = configuration(work/'node', signed, startup, credential, adversarial=suite == 'adversarial')
             result['configurationIdentity'] = file_identity(config)
             stage = 'node'
             node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1)
@@ -345,6 +350,11 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 malformed_outcomes(native_reference)
                 result['nativeReference'] = native_reference
                 cases = library_cases(secondary,native_reference)
+            if suite == 'adversarial':
+                from tools.go_http_adversarial import run_cases
+                target = run_cases(client, node, source, target, publication, startup['origins'],
+                                   output, probe, result, invoke, retire_case)
+                cases = []
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
                 require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-go-'+name+'-result')
@@ -362,11 +372,15 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
             validate_peer(observation)
-            contacts = 24 if suite == 'libraries' else 18
-            require(observation['acceptedConnections'] == observation['startedRequests'] == contacts and observation['rejectedRequests'] == 0
-                and observation['committedMutations'] == (2 if suite == 'libraries' else 1)
-                and all(row['role'] == 'primary' for row in observation['requests']),
-                'standard-go-peer-contact-count')
+            if suite == 'adversarial':
+                from tools.go_http_adversarial import peer_outcome
+                peer_outcome(observation)
+            else:
+                contacts = 24 if suite == 'libraries' else 18
+                require(observation['acceptedConnections'] == observation['startedRequests'] == contacts and observation['rejectedRequests'] == 0
+                    and observation['committedMutations'] == (2 if suite == 'libraries' else 1)
+                    and all(row['role'] == 'primary' for row in observation['requests']),
+                    'standard-go-peer-contact-count')
             if suite == 'standard':
                 expected_agents = (b'Go-http-client/1.1', None, b'fixture-agent/1', b'Go-http-client/1.1')
                 for row, agent in zip(observation['requests'][-4:], expected_agents, strict=True):

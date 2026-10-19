@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.fast_dependency_replay }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.fast_dependency_replay && !inputs.fast_http_replay }}",
     "name": "Fixed-source Go private and generator replay",
     "permissions": {
       "actions": "read",
@@ -75,7 +75,7 @@
   },
   "jobId": "dependency-replay",
   "kind": "job",
-  "reviewReason": "Bounded fixed-artifact replay retaining full normal node prerequisite and fresh private/generator builds and signed nodes.",
+  "reviewReason": "Add default-off source-bound HTTP replay: preserve original commands and modes, authenticate original3050 native/SDK/compiler inputs, fresh normal27 plus fresh app original33/adversarial9; no Cargo rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

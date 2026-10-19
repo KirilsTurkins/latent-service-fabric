@@ -184,6 +184,10 @@ on:
         description: Reuse only exact source-bound native products for a fresh dependency replay
         type: boolean
         default: false
+      fast_http_replay:
+        description: With fast_dependency_replay, select only fresh HTTP application qualification
+        type: boolean
+        default: false
       replay_campaign:
         description: Independent private-feed and approved-generator campaigns
         type: choice
@@ -594,7 +598,7 @@ jobs:
           retention-days: 7
 
   dependency-replay:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.fast_dependency_replay }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.fast_dependency_replay && !inputs.fast_http_replay }}
     name: Fixed-source Go private and generator replay
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -666,5 +670,77 @@ jobs:
             ${{ runner.temp }}/go-dependency-replay-generator/build-*/build-observation.json
             ${{ runner.temp }}/go-dependency-replay-generator/node-*/workflow.json
             ${{ runner.temp }}/go-dependency-replay-generator/node-*/FAILED.json
+          if-no-files-found: warn
+          retention-days: 3
+
+  http-adversarial-replay:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.fast_dependency_replay && inputs.fast_http_replay }}
+    name: Fixed-source signed Go HTTP lifecycle replay
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 4
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install the original captured namespace prerequisite
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Test source binding, private diagnostic privacy and real fixture filenames
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy
+      - name: Retrieve only original qualified products and pinned reproduction tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/replay_go_dependencies.py --output "$RUNNER_TEMP/go-dependency-replay-inputs"
+      - name: Prepare the exact retained Go compiler without rebuilding native products
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools="$RUNNER_TEMP/go-dependency-replay-inputs/tools"
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $tools/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$tools/go.tar.gz" -C "$tools"
+          chmod 700 "$tools/componentize-go" "$tools/wasm-tools"
+          python3 tools/go_guest/runtime.py --prepare-compiler "$tools/go" --output "$tools/go-async"
+          echo "$tools/go-async/bin" >> "$GITHUB_PATH"
+          echo "$tools" >> "$GITHUB_PATH"
+      - name: Replay the unchanged full normal signed programme first
+        id: baseline
+        run: python3 tools/replay_go_dependencies.py --prepared "$RUNNER_TEMP/go-dependency-replay-inputs" --campaign baseline --output "$RUNNER_TEMP/go-dependency-replay-baseline"
+      - name: Fresh component and both original33 and additional9 signed HTTP cases
+        run: python3 tools/replay_go_http_adversarial.py --prepared "$RUNNER_TEMP/go-dependency-replay-inputs" --baseline "$RUNNER_TEMP/go-dependency-replay-baseline" --output "$RUNNER_TEMP/go-http-adversarial-replay"
+      - name: Retain only public bounded replay identities and node receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-http-adversarial-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-dependency-replay-inputs/retrieval.json
+            ${{ runner.temp }}/go-dependency-replay-inputs/source-preimages.json
+            ${{ runner.temp }}/go-dependency-replay-baseline/qualification.json
+            ${{ runner.temp }}/go-dependency-replay-baseline/node/workflow.json
+            ${{ runner.temp }}/go-dependency-replay-baseline/node/FAILED.json
+            ${{ runner.temp }}/go-http-adversarial-replay/*.json
+            ${{ runner.temp }}/go-http-adversarial-replay/logs/00-fresh-http-component.stdout.txt
+            ${{ runner.temp }}/go-http-adversarial-replay/logs/00-fresh-http-component.stderr.txt
+            ${{ runner.temp }}/go-http-adversarial-replay/project/src/main.go
+            ${{ runner.temp }}/go-http-adversarial-replay/project/capsule-project.json
+            ${{ runner.temp }}/go-http-adversarial-replay/project/sdk-lock.json
+            ${{ runner.temp }}/go-http-adversarial-replay/build/*.json
+            ${{ runner.temp }}/go-http-adversarial-replay/build/component.wasm
+            ${{ runner.temp }}/go-http-adversarial-replay/build/component.wit
+            ${{ runner.temp }}/go-http-adversarial-replay/standard-node/*.json
+            ${{ runner.temp }}/go-http-adversarial-replay/standard-node/controls/**
+            ${{ runner.temp }}/go-http-adversarial-replay/adversarial-node/*.json
+            ${{ runner.temp }}/go-http-adversarial-replay/adversarial-node/controls/**
           if-no-files-found: warn
           retention-days: 3

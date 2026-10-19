@@ -230,7 +230,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Preserve every full qualification command and bound; only explicit manual replay bypasses the full job.",
+  "reviewReason": "Preserve original upstream guard and every command; default-off optional HTTP selection uses existing fast mode plus explicit HTTP flag, with original native/SDK/compiler inputs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

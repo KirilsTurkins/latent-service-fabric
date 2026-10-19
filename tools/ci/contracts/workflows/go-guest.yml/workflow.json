@@ -207,6 +207,11 @@
             "description": "Reuse only exact source-bound native products for a fresh dependency replay",
             "type": "boolean"
           },
+          "fast_http_replay": {
+            "default": false,
+            "description": "With fast_dependency_replay, select only fresh HTTP application qualification",
+            "type": "boolean"
+          },
           "replay_campaign": {
             "default": "both",
             "description": "Independent private-feed and approved-generator campaigns",
@@ -226,9 +231,10 @@
   },
   "requiredJobs": [
     "dependency-replay",
+    "http-adversarial-replay",
     "upstream-probe"
   ],
-  "reviewReason": "Default-off explicit fixed-source diagnostic selector, retaining the full normal qualification.",
+  "reviewReason": "Preserve original upstream guard and every command; default-off optional HTTP selection uses existing fast mode plus explicit HTTP flag, with original native/SDK/compiler inputs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

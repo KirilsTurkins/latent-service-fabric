@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_go_http_adversarial.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add default-off source-bound HTTP replay: preserve original commands and modes, authenticate original3050 native/SDK/compiler inputs, fresh normal27 plus fresh app original33/adversarial9; no Cargo rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8c14af59a11dbfcab87e2a531da88e5d7dab278d4344f489373219767fd1efff"
+}
