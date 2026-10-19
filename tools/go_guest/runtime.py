@@ -122,9 +122,17 @@ def prepare_compiler(goroot: Path, destination: Path) -> Path:
 
 def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
             *, sdk: Path | None = None, activation: bool = False, checkpoints: bool = False, timers: bool = False,
-            initializers: bool = False, http_context: bool = False) -> Path:
+            initializers: bool = False, http_context: bool = False, standard_log: bool = False,
+            managed_idle: bool = False) -> Path:
     goroot, destination = checked_roots(goroot, destination)
     sources = checked_sources(goroot, PREIMAGES)
+    if type(standard_log) is not bool:
+        raise ValueError('Go-standard-log-selection-must-be-boolean')
+    if type(managed_idle) is not bool or managed_idle and not (activation and checkpoints and timers and initializers):
+        raise ValueError('Go-managed-idle-requires-complete-activation-profile')
+    if standard_log:
+        from tools.go_guest.standard_log import syscall_source
+        sources['syscall/fs_wasip1.go'] = syscall_source(sources['syscall/fs_wasip1.go'])
     # netpollinit reserves subs[0] for its synthetic timeout. GC world restart
     # calls netpoll(0) even with no armed descriptors; the upstream poller then
     # asks WASI to poll that empty, already-expired timeout. There is no event
@@ -175,6 +183,12 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
             from tools.go_guest.http_context import async_source as http_async_source
             upstream, adapted = activation_source
             activation_source = upstream, http_async_source(adapted, sdk)
+    if standard_log:
+        from tools.go_guest.standard_log import runtime_source
+        sources['runtime/proc.go'] = runtime_source(sources['runtime/proc.go'])
+    if managed_idle:
+        from tools.go_guest.managed_idle import runtime_sources as managed_sources
+        managed_sources(sources, sdk)
     destination.mkdir(parents=True)
     replacements = {}
     if activation_source is not None:

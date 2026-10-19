@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "ManagedIdle.test_incomplete_overlay_flags_fail_before_any_output_directory",
+    "ManagedIdle.test_normal_project_creation_captures_profile_and_original_activation_contract",
+    "ManagedIdle.test_profile_is_explicit_and_inherits_only_reviewed_predecessors",
+    "ManagedIdle.test_runtime_receipt_binds_v5_project_and_captured_selection",
+    "ManagedIdle.test_source_transform_keeps_actual_worker_allocation_and_user_ownership_separate",
+    "ManagedIdle.test_source_transform_rejects_missing_or_ambiguous_worker_and_retirement_hooks"
+  ],
+  "guards": {
+    "ManagedIdle.test_incomplete_overlay_flags_fail_before_any_output_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f83811cf7e0639a58f937276f4fd3abd4da7edd08c67c14733c4f4de0b3a5a84",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedIdle.test_normal_project_creation_captures_profile_and_original_activation_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f83811cf7e0639a58f937276f4fd3abd4da7edd08c67c14733c4f4de0b3a5a84",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedIdle.test_profile_is_explicit_and_inherits_only_reviewed_predecessors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f83811cf7e0639a58f937276f4fd3abd4da7edd08c67c14733c4f4de0b3a5a84",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedIdle.test_runtime_receipt_binds_v5_project_and_captured_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f83811cf7e0639a58f937276f4fd3abd4da7edd08c67c14733c4f4de0b3a5a84",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedIdle.test_source_transform_keeps_actual_worker_allocation_and_user_ownership_separate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f83811cf7e0639a58f937276f4fd3abd4da7edd08c67c14733c4f4de0b3a5a84",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedIdle.test_source_transform_rejects_missing_or_ambiguous_worker_and_retirement_hooks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f83811cf7e0639a58f937276f4fd3abd4da7edd08c67c14733c4f4de0b3a5a84",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_managed_idle.py",
+  "reviewReason": "Review opt-in Go v5 maintenance reservations, scheduler late-resume fence and additive signed GC/capacity/drain/cancellation gate. Preserve every earlier profile, required command, skip boundary and original operator ceiling.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

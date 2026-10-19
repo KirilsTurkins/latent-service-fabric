@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve authenticated existing empty GC readiness poll correction together with standard HTTP context instrumentation; production bodies unchanged by common regression integration.",
+  "reviewReason": "Semantic union of existing logging selection and incoming v5 managed ownership, both default-off guards and source hooks retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0185bd10ad54a6e265b4e273819b8313afa1997c022a6f241e4c8c0e3be0c116"
+  "sha256": "5f101670ec9c415de6d1e2f1a6bc00e44a84ddb3608bbb5fc1ab2440a606ed35"
 }

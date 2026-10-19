@@ -74,6 +74,70 @@ the new sysroot through a cache glob. The required
 checks on its dependency graph. TLS and thread overlays are not selected by this
 clock-only build.
 
+## Standard stdio candidate
+
+The owned clock/sysroot build now selects a pinned stdio PAL alongside clocks.
+Its default PAL returns `io::ErrorKind::Unsupported` for nonempty stdin reads,
+stdout/stderr writes and flush. Empty writes can complete with zero bytes. The
+outer std wrapper no longer masks these errors as bad-file-descriptor success,
+and this target's stdout buffer has zero capacity, so an ordinary buffered
+`print!` cannot acknowledge bytes that will later be discarded.
+
+The separately selected `rust-standard-logging-v1` authoring profile uses
+`stdio_logging.rs` beneath unchanged `std::io`, `print!` and `eprint!` calls.
+The compiler-owned `latent-standard-stdio` crate supplies one fixed intra-core
+Rust-ABI symbol using the SDK's actual generated typed LOG binding; it registers
+no application callback. Both sides require the same pinned compiler. Standard
+output maps to info and standard error to error, with no guest-supplied identity
+fields. Each synchronous call accepts at most 256 UTF-8 bytes and 16 vectors;
+vectors are joined before decoding. Separate incomplete UTF-8 writes fail
+explicitly. A false provider result, invalid field, unavailable provider, budget
+exhaustion or reentrancy remains an error. No retry or hidden worker is added.
+Flush has no buffered work and acknowledges only completed sink acceptance,
+never remote delivery. Drop and failed panic reporting perform no hidden log.
+
+`rust-standard-closed-v1` selects the same owned build with the concrete closed
+stdio PAL. These explicit profiles require `build --standard-runtime` with the
+current recipe/compiler/source/rlib-bound build receipt. Target-only Cargo
+configuration leaves host build scripts and macros on their original sysroot;
+captured builds mount the owned target sysroot read-only and retain its identity
+in build materials. A prepared build receipt is a builder assertion, not a
+publisher signature or an authorization. Declaring LOG installs no provider or
+grant. The legacy stock profile still uses the unmodified prebuilt standard
+library; no supported logging or concrete-Unsupported stdio claim is made for
+that separate profile.
+
+The eight host tests in `stdio_reference.rs` exercise the actual PAL files with
+a synthetic bridge. `tools/run_rust_stdio_reference.py` also extracts the three
+exact pinned upstream methods: the old write/write_all/flush Unsupported
+assertions fail and the new reference passes. These controls do not qualify the
+rebuilt std, generated binding, component or signed node. Actual default standard
+logging and fresh-state/failure qualification remain required before acceptance.
+
+The new `Rebuilt Rust standard stdio and signed ordinary libraries` job is an
+independent 20-minute child of the existing authoring job. It reuses only that
+run's exact native five-product tuple and four original companion builds, then
+builds closed and logging std from the authenticated Rust source archive. A
+normal captured outside library calls only ordinary std APIs and a transitive
+`include_str!` resource; original outside sources are removed before offline
+component compilation. The existing signed runner retains all 27 original
+outcomes and adds three closed-error/fresh calls, or two pre-admission denials
+and fourteen logging/error/failure/fresh calls. Each new completed/fault call
+requires process reaping and the original idle accounting samples. No original
+job command, limit, signing rule or runtime budget is relaxed.
+
+The first branch-native campaign at
+[`c0814dbb`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39287224120/job/118189609658)
+built both owned standard libraries. The closed profile compiled, signed and
+completed all 30 required node outcomes with component
+`sha256:573125eb56798d9f26a37800ca4989dacf1d7e21b81ca069a861ca549821baae`.
+The logging application then failed compilation because its app-world macro
+lacked the declared LOG interface mapping. Creators now reuse
+`latent_guest::bindings::log`, preserving existing mappings and template bodies.
+The normal compiler recipe excludes workspace Cargo metadata; explicitly prepared
+standard-runtime profiles still capture and authenticate it. These corrections
+require a fresh campaign; no signed logging pass is claimed.
+
 `tools/qualify_rust_standard_clock.py` prepares an ordinary `SystemTime::now`
 component using that emitted std graph and the pinned bindings/component tool.
 Application code calls no SDK clock or executor. Its optional, explicitly hashed

@@ -35,6 +35,11 @@
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
           "tools/npm_lock_authoring.py",
+          "tools/typescript_registry_tls.py",
+          "tools/npm_private_registry_fixture.py",
+          "tools/qualify_npm_private_dependencies.py",
+          "tools/tests/test_typescript_registry_tls.py",
+          "tools/tests/test_npm_private_registry.py",
           "tools/tests/test_typescript_dependency_authoring.py",
           "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -89,6 +94,11 @@
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
           "tools/npm_lock_authoring.py",
+          "tools/typescript_registry_tls.py",
+          "tools/npm_private_registry_fixture.py",
+          "tools/qualify_npm_private_dependencies.py",
+          "tools/tests/test_typescript_registry_tls.py",
+          "tools/tests/test_npm_private_registry.py",
           "tools/tests/test_typescript_dependency_authoring.py",
           "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -134,7 +144,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Build an actual Fetch-selected async-import component from same-run source-owned engine and splicer without inferring signed/provider execution.",
+  "reviewReason": "Add bounded authenticated npm lifecycle with frozen exact native inputs; preserve all original workflow events, jobs, commands, tests, guards and production limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
