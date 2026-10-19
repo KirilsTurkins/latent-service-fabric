@@ -78,7 +78,7 @@ async function frontendReady(url: string, stage: number) {
   control.__lsfFetchProbe = stage;
   try {
     const response = await fetch(new Request(url, {headers: new Headers([['x-conformance', 'ordinary-global']])}));
-    return stage === 5 && response.status === 204 ? 'frontend-probe-5-ready' : 'frontend-probe-unexpected';
+    return stage >= 5 && response.status === 204 ? 'frontend-probe-' + stage + '-ready' : 'frontend-probe-unexpected';
   } catch (error) {
     return error instanceof TypeError && error.message === 'lsf-fetch-frontend-stop-' + stage
       ? 'frontend-probe-' + stage + '-ready' : 'frontend-probe-other';
@@ -90,7 +90,7 @@ async function frontendReady(url: string, stage: number) {
                  b'\n    if (mode === 6) return await typedOpen(url, false);'
                  b'\n    if (mode === 7) return await typedOpen(url, true);'
                  b'\n    if (mode === 8) return await requestTypedOpen(url);'
-                 b'\n    if (mode >= 9 && mode <= 13) return await frontendReady(url, mode - 8);', 1)}
+                 b'\n    if (mode >= 9 && mode <= 16) return await frontendReady(url, mode - 8);', 1)}
 
 
 def frontend_bundle(raw: bytes) -> bytes:
@@ -108,11 +108,19 @@ def frontend_bundle(raw: bytes) -> bytes:
          b"    if (target.__lsfFetchProbe === 3) throw new TypeError('lsf-fetch-frontend-stop-3');\n"),
         (b'  async function exchange(request, cancelled) {\n',
          b"    if (target.__lsfFetchProbe === 4) throw new TypeError('lsf-fetch-frontend-stop-4');\n"
-         b"    if (target.__lsfFetchProbe === 5) {const owned = await http.open(metadata(request));await http.abortUpload(owned);return new Response(null, {status:204});}\n"),
+         b"    if (target.__lsfFetchProbe >= 5 && target.__lsfFetchProbe <= 8) {const imports = target.__lsfFetchProbe === 8 ? diagnosticHttp : http;const owned = await imports.open(metadata(request));await imports.abortUpload(owned);return new Response(null, {status:204});}\n"),
     )
     for before, addition in changes:
         require(selected.count(before) == 1, 'fetch-boundary-frontend-stop-shape')
         selected = selected.replace(before, before + addition, 1)
+    before = b'    return new Promise((resolve, reject) => {\n'
+    require(selected.count(before) == 1, 'fetch-boundary-executor-shape')
+    selected = selected.replace(before,
+        b'    if (target.__lsfFetchProbe === 6) {const request = new Request(input, init);metadata(request);return perform(request, () => false); }\n' + before, 1)
+    before = b'      perform(request, () => cancelled).then(resolve, error => reject(failure(error))).finally(() => {\n'
+    require(selected.count(before) == 1, 'fetch-boundary-scheduling-shape')
+    selected = selected.replace(before,
+        b'      (target.__lsfFetchProbe === 7 ? Promise.resolve().then(() => perform(request, () => cancelled)) : perform(request, () => cancelled)).then(resolve, error => reject(failure(error))).finally(() => {\n', 1)
     return raw.replace(original, selected, 1)
 
 
@@ -158,7 +166,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             after = frontend_bundle(before)
             record['privateFrontendDerivation'] = {'originalBundleDigest': digest(before),
                 'derivedBundleDigest': digest(after), 'qualification': False,
-                'stopLabels': ['after-metadata', 'after-listener', 'perform-entry', 'exchange-entry', 'nested-open-abort']}
+                'stopLabels': ['after-metadata', 'after-listener', 'perform-entry', 'exchange-entry', 'nested-open-abort', 'outside-executor', 'deferred-executor', 'application-import-binding']}
             bundle.write_bytes(after)
         return result
 
@@ -197,7 +205,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
             'fetch-typed-invalid-url', 'fetch-typed-header-refusal', 'fetch-typed-open',
             'fetch-request-typed-open', 'fetch-frontend-1', 'fetch-frontend-2', 'fetch-frontend-3',
-            'fetch-frontend-4', 'fetch-frontend-5', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
+            'fetch-frontend-4', 'fetch-frontend-5', 'fetch-frontend-6', 'fetch-frontend-7', 'fetch-frontend-8', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
             'fetch-boundary-activation-name')
         row = original_call(client, target, template, function, arguments, activation, **kwargs)
         fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
@@ -238,11 +246,18 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             write_json(output/'probe-request-typed-open.json', record['probes'][-1])
             fetch.require_result(combined, 'request-typed-open-ready', 1)
             fetch.retire(client, probe, target, output, 'request-typed-open')
-            for stage in range(1, 6):
+            for stage in range(1, 9):
                 tested = invoke(client, target, template, function, [stage + 8, arguments[1]], 'fetch-frontend-' + str(stage))
                 record['probes'].append({'name': 'frontend-' + str(stage), 'mode': stage + 8, 'entry': tested})
                 write_json(output/('probe-frontend-' + str(stage) + '.json'), record['probes'][-1])
-                fetch.require_result(tested, 'frontend-probe-' + str(stage) + '-ready', 1 if stage == 5 else 0)
+                if (stage >= 5 and tested['exitCode'] == 4 and tested['processReaped'] is True
+                        and tested['response']['outcomeKnown'] is True
+                        and tested['response']['error']['code'] == 'guest-trap'):
+                    # This is retained failure evidence, never a passing control.
+                    # Continue only after the same strict failed-store cleanup.
+                    record.setdefault('frontendFailureStages', []).append(stage)
+                else:
+                    fetch.require_result(tested, 'frontend-probe-' + str(stage) + '-ready', 1 if stage >= 5 else 0)
                 fetch.retire(client, probe, target, output, 'frontend-' + str(stage))
         return row
 

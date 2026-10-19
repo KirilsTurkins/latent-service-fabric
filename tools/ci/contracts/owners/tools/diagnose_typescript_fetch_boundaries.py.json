@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_boundaries.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Diagnostic-only finite frontend stop/rejection and faithful nested typed-open controls; preserve actual original JSON failure, original resources, one-outbound bound and false qualification.",
+  "reviewReason": "Finite failure-preserving same-SDK import-context probes; all original gate, grants, budgets and cleanup remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6968aced6a03b9f6af6f19c01bcf2c67bc1f029a7c9aafde650ce187f590c676"
+  "sha256": "fc671ea5647ff59a9ae90d1ceee993627c36b337f138a1c299ee637b13ac23ce"
 }
