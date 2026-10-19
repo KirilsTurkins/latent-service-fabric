@@ -29,10 +29,12 @@ MATERIALS = ('tools/qualify_go_standard_logging.py', 'tools/go_standard_logging_
 
 def frozen(native: Path):
     receipt = read_json(native / 'qualification.json')
+    node = read_json(native / 'node/workflow.json')
     require(receipt.get('schemaVersion') == 'latent.go-capsule.qualification.v1'
             and receipt.get('status') == 'passed'
             and receipt.get('node', {}).get('status') == 'passed'
-            and len(receipt.get('node', {}).get('invocations', [])) >= 27
+            and receipt['node'].get('receiptDigest') == digest((native / 'node/workflow.json').read_bytes())
+            and node.get('status') == 'passed' and len(node.get('invocations', [])) >= 27
             and read_json(native / 'source-inputs.json') == inputs('go')
             and digest((native / 'source-inputs.json').read_bytes()) == receipt.get('sourceIdentityDigest'),
             'go-log-current-normal-qualification-required')
@@ -82,7 +84,8 @@ def qualify(output: Path, native: Path):
         record['nativeQualification'] = file_identity(native / 'qualification.json')
         record['nativeBinaries'] = receipt['binaries']
         record['fullNormalBaseline'] = {'status': receipt['node']['status'],
-            'invocations': len(receipt['node']['invocations']),
+            'invocations': len(read_json(native / 'node/workflow.json')['invocations']),
+            'receiptDigest': receipt['node']['receiptDigest'],
             'sourceIdentityDigest': receipt['sourceIdentityDigest'],
             'qualification': record['nativeQualification']}
         go = Path(shutil.which('go') or 'missing-pinned-go').resolve(strict=True)

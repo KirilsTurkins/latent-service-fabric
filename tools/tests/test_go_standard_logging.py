@@ -142,13 +142,33 @@ class StandardLogging(unittest.TestCase):
                 path.mkdir(parents=True)
                 builds[name] = {'identity': name}
                 write_json(path / 'BUILD-COMPLETE.json', builds[name])
+            (native / 'node').mkdir()
+            node = {'status': 'passed', 'invocations': [None] * 27}
+            write_json(native / 'node/workflow.json', node)
             receipt = {'schemaVersion': 'latent.go-capsule.qualification.v1', 'status': 'passed',
-                'node': {'status': 'passed', 'invocations': [None] * 27},
+                'node': {'status': 'passed', 'receiptDigest': digest((native / 'node/workflow.json').read_bytes())},
                 'sourceIdentityDigest': digest((native / 'source-inputs.json').read_bytes()),
                 'binaries': identities, 'builds': builds}
             write_json(native / 'qualification.json', receipt)
             with patch.object(qualification, 'inputs', return_value=source):
                 self.assertEqual(qualification.frozen(native)[0], receipt)
+                for change in ('changed-bytes', 'failed-node', 'short-programme'):
+                    changed = dict(node)
+                    if change == 'changed-bytes':
+                        changed['foreign'] = True
+                    elif change == 'failed-node':
+                        changed['status'] = 'failed'
+                    else:
+                        changed['invocations'] = [None] * 26
+                    (native / 'node/workflow.json').write_text(json.dumps(changed))
+                    if change != 'changed-bytes':
+                        receipt['node']['receiptDigest'] = digest((native / 'node/workflow.json').read_bytes())
+                        (native / 'qualification.json').write_text(json.dumps(receipt))
+                    with self.subTest(change=change), self.assertRaisesRegex(WorkflowError, 'current-normal'):
+                        qualification.frozen(native)
+                (native / 'node/workflow.json').write_text(json.dumps(node))
+                receipt['node']['receiptDigest'] = digest((native / 'node/workflow.json').read_bytes())
+                (native / 'qualification.json').write_text(json.dumps(receipt))
                 receipt['node']['status'] = 'failed'
                 (native / 'qualification.json').write_text(json.dumps(receipt))
                 with self.assertRaisesRegex(WorkflowError, 'current-normal'):
