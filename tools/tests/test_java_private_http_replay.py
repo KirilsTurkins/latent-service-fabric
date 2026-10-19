@@ -116,6 +116,48 @@ class JavaPrivateHttpReplayTest(unittest.TestCase):
         self.assertEqual(selected['latent'], root/'native/latent')
         self.assertNotIn(root/'native/latentd', selected.values())
 
+    def test_actual_prepare_consumes_original_producer_prefixed_helper_members(self):
+        import hashlib
+        source = b'{"source":"source-only capture fixture"}'
+        sha = 'sha256:'+hashlib.sha256(source).hexdigest()
+        products = {name: {'sha256': 'sha256:'+hashlib.sha256(name.encode()).hexdigest(), 'bytes': len(name)}
+                    for name in materials.HELPERS}
+        q = {'schemaVersion': 'latent.dotnet-capsule.qualification.v1', 'status': 'passed',
+             'node': {'status': 'passed'}, 'sourceIdentityDigest': sha,
+             'binaries': {('latent' if n == 'latent' else 'examples/'+n): value
+                          for n, value in products.items()}}
+        raw = json.dumps(q).encode()
+        members = {'dotnet-capsule-dependencies/qualification.json': raw,
+                   'dotnet-capsule-dependencies/source-inputs.json': source,
+                   'dotnet-capsule-dependencies/source-inputs-after.json': source}
+        members.update({'dotnet-capsule-dependencies/native-binaries/' +
+                        ('latent' if n == 'latent' else 'examples-'+n): n.encode() for n in products})
+        selected = []
+        class OriginalArtifact:
+            def __init__(self, kind):
+                if kind != 'helpers':
+                    raise AssertionError('not the original helper source')
+            def extract(self, name, destination):
+                selected.append(name)
+                destination.write_bytes(members[name])
+            def summary(self):
+                return {'sourceOnlyFixture': True}
+        with tempfile.TemporaryDirectory() as directory, patch.object(materials, 'Artifact', OriginalArtifact), \
+                patch.object(materials, 'retrieve_host', return_value={'sourceOnlyFixture': True}), \
+                patch.object(materials, 'HELPERS', products), patch.object(materials, 'SOURCE_SHA', sha), \
+                patch.object(materials, 'QUALIFICATION_SHA', 'sha256:'+hashlib.sha256(raw).hexdigest()), \
+                patch.object(materials, 'api', return_value={'parents': [{'sha': materials.ORIGINAL}],
+                                                           'tree': {'sha': 'f'*40}}):
+            output = Path(directory)/'prepared'
+            result = materials.prepare(output)
+            self.assertEqual(set(selected), set(members))
+            self.assertEqual(len(selected), 7)
+            self.assertFalse(result['nativeRecompiled'])
+            self.assertFalse(result['nativeTupleCreated'])
+            self.assertFalse((output/'native-tuple.json').exists())
+            for name in products:
+                self.assertEqual((output/'native'/name).read_bytes(), name.encode())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -45,7 +45,7 @@ PREFIX = 'dotnet-capsule-dependencies/'
 ALLOWED = {
     'helpers': {PREFIX + name: 1024**2 for name in
         ('qualification.json', 'source-inputs.json', 'source-inputs-after.json')}
-        | {'native-binaries/' + ('latent' if name == 'latent' else 'examples-' + name): 256*1024**2
+        | {PREFIX + 'native-binaries/' + ('latent' if name == 'latent' else 'examples-' + name): 256*1024**2
            for name in HELPERS},
     'host': {'go-entropy-retained/current-host.json': 1024**2,
              'go-entropy-retained/current-latentd': 256*1024**2},
@@ -133,6 +133,13 @@ class Artifact:
         self.archive = zipfile.ZipFile(self.remote)
         names = self.archive.namelist()
         require(len(names) <= 20000 and len(names) == len(set(names)), 'java-replay-member-bound')
+        self.index = {}
+        for name, maximum in ALLOWED[kind].items():
+            row = self.archive.getinfo(name)
+            require(0 < row.file_size <= maximum and not row.is_dir()
+                    and stat.S_IFMT(row.external_attr >> 16) in (0, stat.S_IFREG),
+                    'java-replay-fixed-member-preflight')
+            self.index[name] = {'bytes': row.file_size, 'compressedBytes': row.compress_size}
         self.selected = {}
 
     def extract(self, name, destination):
@@ -157,7 +164,8 @@ class Artifact:
     def summary(self):
         return {'artifact': self.metadata['id'], 'archiveDigest': self.metadata['digest'],
                 'selected': self.selected, 'rangeBytes': self.remote.transferred,
-                'rangeRequests': self.remote.requests, 'wholeArchiveRetained': False}
+                'rangeRequests': self.remote.requests, 'fixedMembersPreflighted': self.index,
+                'wholeArchiveRetained': False}
 
 
 def git_source_identity(revision):
@@ -241,7 +249,7 @@ def prepare(output):
     for name, expected in HELPERS.items():
         key = 'latent' if name == 'latent' else 'examples/'+name
         require(q['binaries'][key] == expected, 'java-replay-original-helper-receipt')
-        old.extract('native-binaries/'+key.replace('/', '-'), products/name)
+        old.extract(PREFIX+'native-binaries/'+key.replace('/', '-'), products/name)
         require(file_identity(products/name, 256*1024**2) == expected, 'java-replay-original-helper-product')
         (products/name).chmod(0o700)
     # The host remains separate: no overwritten original host or fabricated tuple.
