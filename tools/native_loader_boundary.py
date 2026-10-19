@@ -14,6 +14,11 @@ from pathlib import Path
 
 CRATE = "crates/latent-wasmtime"
 GUEST = "tools/angular-renderer-adapter"
+# The existing wasm-only Rust-ABI stdio export needs an unsafe symbol attribute,
+# not an unsafe body. Bind its entire reviewed bridge and retain every Clippy
+# lint; this does not grant another host loader or handwritten memory operation.
+STANDARD_STDIO = "sdk/rust-standard-stdio"
+STANDARD_STDIO_SHA256 = "e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731"
 GUEST_ALLOW = '#[allow(unsafe_code)] // Only wit-bindgen\'s generated canonical ABI and export.\nmod abi;'
 GUEST_ABI = '''#![allow(clippy::same_length_and_capacity, reason = "wit-bindgen consumes allocations transferred by the canonical ABI")]
 #[cfg(not(feature = "backend-http"))]
@@ -92,6 +97,8 @@ def validate(root: Path) -> list[str]:
             if lints != {"rust": {"unsafe_code": "deny"}, "clippy": workspace["lints"]["clippy"]}:
                 errors.append("Angular guest must retain deny and all workspace Clippy lints")
             errors.extend(validate_guest(root))
+        elif member == STANDARD_STDIO:
+            errors.extend(validate_standard_stdio(root, workspace["lints"]["clippy"]))
         elif lints != {"workspace": True}:
             errors.append(f"{member} must inherit workspace unsafe-code prohibition")
     if "#![deny(unsafe_code)]" not in (root / CRATE / "src/lib.rs").read_text(encoding="utf-8"):
@@ -130,6 +137,19 @@ def validate(root: Path) -> list[str]:
             # No unsafe allowance is granted to the child state machine.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
+    return errors
+
+
+def validate_standard_stdio(root: Path, clippy: dict) -> list[str]:
+    errors = []
+    crate = root / STANDARD_STDIO
+    manifest = tomllib.loads((crate / "Cargo.toml").read_text(encoding="utf-8"))
+    if manifest.get("lints") != {"rust": {"unsafe_code": "deny"}, "clippy": clippy}:
+        errors.append("standard stdio must retain deny and all workspace Clippy lints")
+    sources = sorted(path.relative_to(crate).as_posix() for path in (crate / "src").rglob("*.rs"))
+    source = (crate / "src/lib.rs").read_text(encoding="utf-8")
+    if sources != ["src/lib.rs"] or hashlib.sha256(source.encode("utf-8")).hexdigest() != STANDARD_STDIO_SHA256:
+        errors.append("audited standard stdio bridge changed; review its wasm-only Rust-ABI export and typed log ownership")
     return errors
 
 
