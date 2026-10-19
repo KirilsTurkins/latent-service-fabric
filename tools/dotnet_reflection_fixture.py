@@ -51,8 +51,54 @@ CASES = (('OutsideReflectionRoot|ReflectValue|first', 'descriptor-reflected:firs
          ('OutsideReflectionRoot|ReflectValue|fresh', 'descriptor-reflected:fresh'))
 
 
-def select(project: Path) -> None:
+BOUNDARY_ROOTS = ROOTS.replace(b'</assembly>', b'<type fullname="OutsideReflectionBoundary">'
+    b'<method name="ByRefLikeValue" /></type></assembly>')
+BOUNDARY_LIBRARY = LIBRARY + '''
+public static class OutsideReflectionBoundary {
+ private static int calls;
+ private static int BoundaryBodyCalls;
+ public static string Describe(string request, byte[] originalAssembly) {
+  if (++calls != 1) throw new System.Exception("boundary activation state reused");
+  if (request == "jit-caught") {
+   if (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported ||
+       System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+    throw new System.Exception("dynamic code unexpectedly supported");
+   try {
+    _ = new System.Reflection.Emit.DynamicMethod("OwnedUnsupportedJit", typeof(void), System.Type.EmptyTypes);
+    return "unexpected-dynamic-code";
+   } catch (System.PlatformNotSupportedException) { return "dynamic-code-unsupported"; }
+  }
+  if (request == "byref-like-caught") {
+   var method = typeof(OutsideReflectionBoundary).GetMethod("ByRefLikeValue",
+       System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+       ?? throw new System.MissingMethodException();
+   if (!method.ReturnType.IsByRefLike || BoundaryBodyCalls != 0)
+    throw new System.Exception("wrong reflected boundary");
+   try {
+    method.Invoke(null, System.Array.Empty<object>());
+    return "unexpected-byref-like-invoke";
+   } catch (System.NotSupportedException) {
+    if (BoundaryBodyCalls != 0) throw new System.Exception("unrepresentable method body executed");
+    return "byref-like-invoke-unsupported";
+   }
+  }
+  return OutsideReflection.Describe(request, originalAssembly);
+ }
+ public static System.ReadOnlySpan<int> ByRefLikeValue() {
+  ++BoundaryBodyCalls;
+  return System.ReadOnlySpan<int>.Empty;
+ }
+}
+'''
+BOUNDARY_CASES = CASES + (('jit-caught', 'dynamic-code-unsupported'),
+    ('byref-like-caught', 'byref-like-invoke-unsupported'),
+    ('OutsideReflectionRoot|ReflectValue|after-boundaries', 'descriptor-reflected:after-boundaries'))
+
+
+def select(project: Path, *, boundaries: bool = False) -> None:
     """Add literal descriptor bytes to the ordinary reviewed application project."""
+    require(type(boundaries) is bool, 'reflection-boundaries-boolean')
+    roots = BOUNDARY_ROOTS if boundaries else ROOTS
     path = project / 'Capsule.csproj'
     before = read_file(path)
     require(before.count(b'</Project>') == 1 and b'TrimmerRootDescriptor' not in before,
@@ -60,7 +106,7 @@ def select(project: Path) -> None:
     target = project / DESCRIPTOR
     target.parent.mkdir(mode=0o700)
     with target.open('xb') as stream:
-        stream.write(ROOTS)
+        stream.write(roots)
     path.write_bytes(before.replace(b'</Project>',
         b'<ItemGroup><TrimmerRootDescriptor Include="reflection/roots.xml" /></ItemGroup></Project>'))
     source = project / 'src/Main.cs'
@@ -79,11 +125,13 @@ def select(project: Path) -> None:
         return OutsideReflection.Describe(request, output.ToArray());
     }
 '''
+    if boundaries:
+        helper = helper.replace(b'OutsideReflection.Describe', b'OutsideReflectionBoundary.Describe')
     position = changed.rfind(b'}')
     source.write_bytes(changed[:position] + helper + changed[position:])
     selected = declarations(snapshot(project))
     require(selected['trimmingDescriptors'] == [{'attributes': {'Include': DESCRIPTOR}, 'active': True,
-            'digest': digest(ROOTS), 'size': len(ROOTS)}], 'reflection-descriptor-not-selected')
+            'digest': digest(roots), 'size': len(roots)}], 'reflection-descriptor-not-selected')
 
 
 def captured_package(lock, identity, version, package):
@@ -95,19 +143,21 @@ def captured_package(lock, identity, version, package):
     return rows[0]
 
 
-def install(project: Path, outside: Path, tools: Path) -> dict:
+def install(project: Path, outside: Path, tools: Path, *, boundaries: bool = False) -> dict:
     """Build one owned library, resolve/review normally, then remove its originals."""
     from tools.dotnet_guest.entropy_grants import declare
+    require(type(boundaries) is bool, 'reflection-boundaries-boolean')
+    roots, library_source = (BOUNDARY_ROOTS, BOUNDARY_LIBRARY) if boundaries else (ROOTS, LIBRARY)
     sdk = read_file(project / 'sdk-lock.json')
     declare(project)
-    select(project)
+    select(project, boundaries=boundaries)
     outside.mkdir(mode=0o700)
     with tempfile.TemporaryDirectory(prefix='reflection-originals-', dir=outside) as temporary:
         owned = Path(temporary)
         library, evidence, feed = (owned / name for name in ('library', 'evidence', 'feed'))
         for path in (library, evidence, feed):
             path.mkdir(mode=0o700)
-        (library / 'Library.cs').write_text(LIBRARY, encoding='utf-8')
+        (library / 'Library.cs').write_text(library_source, encoding='utf-8')
         (library / 'Library.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
             '<TargetFramework>net10.0</TargetFramework><AssemblyName>ReflectionInput</AssemblyName>'
             '<OutputType>Library</OutputType><Nullable>enable</Nullable><UseSharedCompilation>false</UseSharedCompilation>'
@@ -152,9 +202,9 @@ def install(project: Path, outside: Path, tools: Path) -> dict:
         result = {'formatVersion': 1, 'package': identity.lower(), 'version': version,
             'original': row['original'], 'treeDigest': row['treeDigest'],
             'candidateDigest': digest(raw), 'sdkLockDigest': digest(sdk),
-            'descriptor': {'digest': digest(ROOTS), 'size': len(ROOTS)},
+            'descriptor': {'digest': digest(roots), 'size': len(roots)},
             'dynamicAssembly': {'digest': digest(assembly), 'size': len(assembly)},
-            'librarySourceDigest': digest(LIBRARY.encode()), 'originalsRemovedBeforeBuild': True,
+            'librarySourceDigest': digest(library_source.encode()), 'originalsRemovedBeforeBuild': True,
             'managedPreparation': {'compilerInputsDigest': digest(canonical(compiler.before)),
                 'assembly': {'digest': digest(assembly), 'size': len(assembly)}, 'commandCount': len(commands.records)},
             'catalogueRegistration': False, 'executableInputs': []}
@@ -162,12 +212,14 @@ def install(project: Path, outside: Path, tools: Path) -> dict:
     return result
 
 
-def probe(client, target, ownership_probe, result, population):
+def probe(client, target, ownership_probe, result, population, *, boundaries: bool = False):
     from tools.rust_capsule_node import assert_value, call, provider_idle, sample, selected_revision
     from tools.rust_dependency_recovery import failed
+    require(type(boundaries) is bool, 'reflection-boundaries-boolean')
+    cases = BOUNDARY_CASES if boundaries else CASES
     expected_revision = selected_revision(client, target)
     observations = []
-    for ordinal, (mode, expected) in enumerate(CASES):
+    for ordinal, (mode, expected) in enumerate(cases):
         row = call(client, target, 'greeting', 'greet', ['reflection:' + mode], 'dotnet-reflection-' + str(ordinal))
         result['invocations'].append(row)
         if expected is None:
@@ -182,6 +234,9 @@ def probe(client, target, ownership_probe, result, population):
         result['samples'].append(sample(client, ownership_probe, 'dotnet-reflection-' + str(ordinal), population))
         result['providerIdle'].append(provider_idle(client))
         observations.append({'case': ordinal, 'outcome': 'terminal-trap' if expected is None else expected})
-    result['dotnetReflection'] = {'status': 'passed', 'cases': observations,
+    key = 'dotnetReflectionBoundaries' if boundaries else 'dotnetReflection'
+    result[key] = {'status': 'passed', 'cases': observations,
         'scope': 'descriptor-selected reflection, caught dynamic-load refusal, uncaught trap and fresh activation',
         'trapCause': 'not-inferred-from-generic-node-error', 'fullTicketQualification': False}
+    if boundaries:
+        result[key]['scope'] = 'original four reflection cases plus caught JIT and byref-like Invoke refusal and fresh activation'

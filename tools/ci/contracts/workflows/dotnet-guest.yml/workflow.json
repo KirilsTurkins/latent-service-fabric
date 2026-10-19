@@ -49,6 +49,10 @@
           "tools/dotnet_dependency_recovery.py",
           "tools/dotnet_reflection_fixture.py",
           "tools/qualify_dotnet_reflection.py",
+          "tools/qualify_dotnet_reflection_boundaries.py",
+          "tools/dotnet_catalogue_free_build.py",
+          "tools/tests/test_dotnet_reflection_boundaries.py",
+          "docs/testing/dotnet-reflection-boundaries.md",
           "tools/tests/test_dotnet_reflection.py",
           "docs/testing/dotnet-reflection-qualification.md",
           "tools/tests/test_dotnet_dependency_recovery.py",
@@ -87,7 +91,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Add descriptor-selected reflection qualification after merged private NuGet; preserve all original commands and finite limits.",
+  "reviewReason": "Trigger unchanged owning job for new explicit boundary source, tests and documentation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
