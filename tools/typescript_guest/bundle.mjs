@@ -11,6 +11,12 @@ const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
 const configuration = configurationPath ? JSON.parse(await readFile(configurationPath, 'utf8')) : {};
 const captured = !!configuration.moduleRoot;
 const standardFetch = configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
+const entropyProfile = configuration.standardEntropyProfile ?? 'lsf-math-random-unsupported-v1';
+const standardEntropy = entropyProfile === 'lsf-math-random-approved-v1';
+if ((!standardEntropy && entropyProfile !== 'lsf-math-random-unsupported-v1') ||
+    standardEntropy !== imports.has('latent:random/random@0.1.0')) {
+  throw new Error('standard-entropy-requires-exact-profile-and-declared-random');
+}
 if (configuration.standardFetchProfile !== undefined && (!standardFetch ||
     configuration.runtimeProfile !== 'spidermonkey-activation-promises-clocks-imports-v1' ||
     !imports.has('latent:http/streaming@0.3.0'))) {
@@ -24,13 +30,10 @@ const insideProject = path => {
 // Initializers run during component snapshot creation. Reject caller-dependent
 // clock/entropy observations before any library initializer. The wrapper also
 // checks when a module captures an intrinsic by reference.
-let guard = captured || standardFetch ? `
-var __lsfSnapshotActive = true;
-var __lsfOriginalRandom = Math.random, __lsfOriginalDate = Date;
-Math.random = function() {
-  if (__lsfSnapshotActive) throw new Error('snapshot-time-entropy-observation-unsupported');
-  return __lsfOriginalRandom();
-};
+// This string is application-realm code, not a compiler-host or engine edit.
+let guard = 'var __lsfSnapshotActive = true;\n';
+guard += captured || standardFetch || standardEntropy ? `
+var __lsfOriginalDate = Date;
 globalThis.Date = new Proxy(__lsfOriginalDate, {
   apply(target, self, args) {
     if (__lsfSnapshotActive) throw new Error('snapshot-time-clock-observation-unsupported');
@@ -49,6 +52,15 @@ globalThis.Date = new Proxy(__lsfOriginalDate, {
   }
 });
 ` : '';
+const entropySource = await readFile(new URL('./entropy.mjs', import.meta.url), 'utf8');
+const entropyAnchor = 'export function installMathRandom(';
+if (entropySource.split(entropyAnchor).length !== 2) throw new Error('compiler-owned-entropy-install-shape');
+const entropyBackend = (standardEntropy ?
+  "import * as __lsfEntropySource from 'latent:random/random@0.1.0';\n" : '') +
+  entropySource.replace(entropyAnchor, 'function __lsfInstallMathRandom(') +
+  '\n__lsfInstallMathRandom(' + (standardEntropy ? '__lsfEntropySource' : 'null') +
+  ', () => __lsfSnapshotActive);\n';
+guard += entropyBackend;
 let backend = '';
 if (standardFetch) {
   const source = await readFile(new URL('./fetch.mjs', import.meta.url), 'utf8');
@@ -68,7 +80,7 @@ const result = await build({
   sourcemap: captured ? 'external' : false, sourcesContent: false,
   minify: false, metafile: true, write: false, logLevel: 'warning',
   logOverride: { 'unsupported-dynamic-import': 'error', 'unsupported-require-call': 'error', 'direct-eval': 'error' },
-  banner: { js: guard }, footer: { js: captured || standardFetch ? '__lsfSnapshotActive = false;' : '' },
+  banner: { js: guard }, footer: { js: '__lsfSnapshotActive = false;' },
   plugins: [{ name: 'captured-closed-modules', setup(builder) {
     builder.onResolve({ filter: /.*/ }, args => {
       if (args.kind === 'dynamic-import' || args.kind.startsWith('require') && !captured) {
@@ -138,6 +150,8 @@ for (const file of result.outputFiles) {
 await writeFile(output + '.inputs.json', JSON.stringify({
   ...result.metafile, capturedInputs: inputs, selection: configuration,
   snapshotGuardDigest: 'sha256:' + createHash('sha256').update(guard).digest('hex'),
+  standardEntropyProfile: entropyProfile,
+  standardEntropyBackendDigest: 'sha256:' + createHash('sha256').update(entropyBackend).digest('hex'),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,
     standardFetchBackendDigest: 'sha256:' + createHash('sha256').update(backend).digest('hex')} : {}),
   moduleResolution: 'neutral-native-exports-import-require-default-with-explicit-custom-conditions',
