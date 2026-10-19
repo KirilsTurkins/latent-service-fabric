@@ -58,6 +58,21 @@ class TypeScriptConsole(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'cannot-override'):
                 profile.configuration(changed, graph, 'examples:console/service@1.0.0', standard)
 
+    def test_interface_export_uses_named_node_not_decoder_numeric_identity(self):
+        graph, standard = self.graph()
+        function = graph['worlds'][0]['exports']['run']['function']
+        graph['interfaces'].append({'name': 'api', 'functions': {'run': function}, 'types': {}, 'package': 1})
+        graph['worlds'][0]['exports'] = {'interface-1': {'interface': {'id': 1}}}
+        selected = profile.configuration({}, graph, 'examples:console/service@1.0.0', standard)
+        self.assertEqual(selected['activationExports'], [{'name': 'api', 'functions': [{'name': 'run', 'parameters': 1}]}])
+        graph['worlds'][0]['exports'] = {'interface-27': {'interface': {'id': 1}}}
+        self.assertEqual(profile.configuration({}, graph, 'examples:console/service@1.0.0', standard), selected)
+        for invalid in (None, '', 'not:an-interface', '__lsfPrivate'):
+            with self.subTest(invalid=invalid):
+                graph['interfaces'][1]['name'] = invalid
+                with self.assertRaisesRegex(ValueError, 'named-export-required|versioned-interface-required'):
+                    profile.configuration({}, graph, 'examples:console/service@1.0.0', standard)
+
     def test_malformed_log_signature_and_resource_export_fail_closed(self):
         graph, standard = self.graph()
         for mutate in (lambda g: g['interfaces'][0]['functions']['write'].update(result='bool'),
@@ -253,6 +268,34 @@ assert.deepEqual(calls,[['info','transitive-init',[]],['warn','direct-init',[]]]
                                     cwd=root, text=True, capture_output=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stderr)
 
+
+    def test_decoder_interface_export_plan_is_accepted_by_actual_bundler(self):
+        tools = os.environ.get('LSF_TYPESCRIPT_FRONTEND')
+        if tools is None:
+            self.skipTest('Pinned esbuild/Acorn inputs are required for actual export-plan control')
+        tools = Path(tools)/'node_modules'
+        graph, standard = self.graph()
+        function = graph['worlds'][0]['exports']['run']['function']
+        graph['interfaces'].append({'name': 'api', 'functions': {'run': function}, 'types': {}, 'package': 1})
+        graph['worlds'][0]['exports'] = {'interface-1': {'interface': {'id': 1}}}
+        selected = profile.configuration({}, graph, 'examples:console/service@1.0.0', standard)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'main.ts').write_bytes(b"console.info('initializer');export const api={run(value:string){return value;}};\n")
+            (root/'imports.json').write_bytes(json.dumps([profile.INTERFACE]).encode())
+            (root/'configuration.json').write_bytes(json.dumps(selected).encode())
+            output = root/'application.mjs'
+            command = [shutil.which('node'), str(ROOT/'tools/typescript_guest/bundle.mjs'),
+                str(tools/'esbuild/lib/main.js'), str(root), str(root/'main.ts'), str(output),
+                str(root/'imports.json'), str(root/'configuration.json'), str(tools/'acorn/dist/acorn.mjs')]
+            result = subprocess.run(command, text=True, capture_output=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            actual = output.read_text()
+            self.assertIn('export const api =', actual)
+            self.assertNotIn('export const interface1 =', actual)
+            self.assertIn('__lsfInitializeApplication()', actual)
+            metadata = json.loads((root/'application.mjs.inputs.json').read_bytes())
+            self.assertEqual(metadata['activationExports'], selected['activationExports'])
 
     def test_owned_signed_fixture_keeps_sdk_default_profile_limits_and_original_greeting(self):
         from tools.typescript_guest.project import create, validate

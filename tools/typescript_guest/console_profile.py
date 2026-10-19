@@ -36,7 +36,7 @@ def configuration(base: dict, graph: dict, world: str, standard: dict) -> dict:
             exports.append({**function(name, item['function']), 'functions': None})
         elif set(item) == {'interface'}:
             interface = graph['interfaces'][item['interface']['id']]
-            exports.append({'name': camel(name), 'functions': [function(key, value)
+            exports.append({'name': camel(interface['name']), 'functions': [function(key, value)
                 for key, value in interface['functions'].items()]})
         else:
             raise ValueError('standard-console-export-unsupported')
