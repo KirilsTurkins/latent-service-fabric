@@ -48,6 +48,16 @@ actual compiler attempts must refuse direct and captured-reference clock reads
 at snapshot creation. Mocked source/protocol checks are not evidence that these
 components have executed.
 
+The first completed component in the campaign exposed unused readiness imports
+pruned by the encoder. For the exact authenticated clock-engine envelope, the
+final parser comparison permits only omission of `observe`, `wait-for`,
+`wait-until` and their exclusive `phase`/`observation` types. The complete
+original activation ABI digest is still pinned, including omitted declarations;
+all eight retained activation functions, three retained types, both complete
+clock interfaces and application exports must match exactly. A different core,
+source envelope, interface, signature or added import is refused. This is
+compiler graph reconciliation, not signed runtime qualification.
+
 For the bounded prepared-input campaign:
 
 ```bash
