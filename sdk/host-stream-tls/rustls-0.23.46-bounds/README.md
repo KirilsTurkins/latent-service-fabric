@@ -24,3 +24,21 @@ connection / 64 KiB trust reservations are unchanged. Fresh current-closure
 allocation, stack/kernel, protected lifecycle and actual-component evidence is
 required before enabling direct host TLS. This is a prerequisite for #738;
 #739/#740 and language-owned guest TLS retain their independent requirements.
+
+## Current minimal reference lane
+
+The `Current host TLS parser reference` workflow builds only two small parser
+executables: the authenticated original 0.23.46 source and the captured bounded
+source. `reference-Cargo.lock` fixes 24 registry dependencies to the exact
+versions, sources and checksums in the maintained workspace lock. The qualifier
+checks that closure before creating output, optionally fetches only the locked
+closure, then builds both references offline and locked with two build jobs.
+It checks that neither build changes its lockfile.
+
+The original 5,000-certificate case must still exceed the 64 KiB parser ceiling
+and fail its reference process; the bounded source must pass all eight existing
+vectors with zero live parser allocations after Drop. The workflow retains the
+closed observations, source/lock identities and build diagnostics. A green lane
+would establish only this native parser reference, not complete connection or
+trust accounting, a TLS handshake, or a signed component. Historical 0.23.45
+receipts are not replaced or re-attributed.
