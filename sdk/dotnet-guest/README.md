@@ -46,10 +46,15 @@ This is not permission to turn asynchronous operations into blocking host I/O.
 NativeAOT has no JIT or dynamic assembly loading. The compiled profile probe
 checks dynamic-code flags, UTF-8 library round-trips, completed/uncompleted
 activation-local tasks and explicit GC collection. WIT exports remain rooted
-after trimming. Runtime reflection/member lookup is unsupported: even
-`GetMethod` for a statically named method requests ambient hash-seed entropy
-in this pinned runtime and traps. A separate negative probe and fresh-state
-invocation check that boundary; reflection failure is not a supported return.
+after trimming. Descriptor-selected reflection is qualified for the finite
+`Assembly.GetType` / `Type.GetMethod` / `MethodInfo.Invoke` path described in
+[the reflection programme](../../docs/testing/dotnet-reflection-qualification.md).
+It requires the reviewed trimming descriptor and an explicitly declared and
+granted random capability for this runtime's noncrypto hash-seed initialization.
+The closed profile without that authority still refuses the operation.
+Loading captured valid managed bytes with `Assembly.Load(byte[])` is explicitly
+unsupported: the signed probe catches `PlatformNotSupportedException`, separately
+checks the uncaught terminal trap, then verifies fresh reflected state.
 Reflection.Emit, application threads, timers, task schedulers and a CLR host
 event loop are outside this profile. An unresolved managed task may belong
 to an activation, but cannot preserve an application after its activation

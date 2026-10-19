@@ -172,9 +172,12 @@ within the original workflow deadline; an immediate restart refusal is retained
 as a separate observation. Application updates cannot reuse that fixture's
 approval or infer a durable outcome from a timeout.
 
-Supported reflection/trimming, private-feed authentication and identity
-variation, update/remove/watch and broader memory/cancellation/disposal/GC
-qualification remain required by #687. Task/ThreadPool and ordinary HttpClient
+Descriptor-selected reflection and dynamic-load refusal now have a
+[fresh signed result](../testing/dotnet-reflection-qualification.md#recorded-signed-result).
+Private-feed authentication, identity variation and offline update/removal are
+qualified by [PR #1126](https://github.com/KirilsTurkins/latent-service-fabric/pull/1126).
+Broader #687 acceptance must still be reconciled with the retained watch and
+memory/cancellation/disposal/GC evidence. Task/ThreadPool and ordinary HttpClient
 retain their own runtime tickets. The focused signed resource checks establish
 the named standard lookup path, not universal compatibility for NuGet packages.
 

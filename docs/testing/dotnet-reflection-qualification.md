@@ -17,8 +17,9 @@ The application selects a literal `TrimmerRootDescriptor`. The descriptor roots
 `OutsideReflectionRoot.ReflectValue` in `ReflectionInput`; the member is reached
 through runtime-supplied type and method names using ordinary
 `Assembly.GetType`, `Type.GetMethod` and `MethodInfo.Invoke`. No annotation stub,
-warning suppression, replacement reflection method or additional runtime grant
-is introduced. The qualification checks the descriptor's exact digest and size
+warning suppression or replacement reflection method is introduced. The fixture
+selects the existing noncrypto entropy import and explicit service/publication
+grant used by captured NuGet resource qualification; it adds no ambient authority. The qualification checks the descriptor's exact digest and size
 in source inputs, actual compiler selection and the build observation's bound
 material before ordinary package signing.
 The same actual compiled DLL is also selected as an embedded resource, bound
@@ -58,5 +59,26 @@ it does not rerun SDK preparation or increase invocation budgets.
 Public retention contains fixed JSON inventories and results, without raw
 compiler streams or arbitrary workspace archives. Receipts explicitly retain
 `fullTicketQualification: false`, `hermetic: false`, `cleanHost: false` and
-`publisherAuthenticated: false`. Authenticated private-feed lifecycle, the
-remaining #687 matrix and whole-ticket closure are separate requirements.
+`publisherAuthenticated: false`. Authenticated private-feed lifecycle is separately qualified in
+[PR #1126](https://github.com/KirilsTurkins/latent-service-fabric/pull/1126);
+whole-ticket closure still requires reconciliation of every #687 criterion.
+
+## Recorded signed result
+
+[Run 39307965194, job 118249849904](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39307965194/job/118249849904)
+passed on fixture `37aff00e5fe850c2f4058f2485ab1591dcee2931`.
+Artifact `12215022877` retains the qualification and actual node receipts.
+All 31 calls completed with known outcomes and reaped CLI processes. The four
+reflection cases returned the exact first value, caught dynamic-load refusal,
+uncaught terminal guest trap and exact fresh value, respectively. Their peak
+memory remained below 56 MiB, with no outbound requests or effects. The node
+stopped cleanly and all peer holds closed.
+
+The run compiled the reflection component afresh using the original captured
+compiler inputs. It authenticated the retained native products from source
+`03a3f74598f2abfd0224169ae2871818f6c8419d` and did not rebuild Cargo products.
+Its normal 27 node cases were executed afresh; the earlier native qualification
+receipt was preserved as historical evidence. The initial replay failed because
+a verifier applied its default 4 MiB JSON limit to the compiler's 5.4 MiB
+containment receipt. The corrected reader uses the producer's existing 32 MiB
+limit; network-denied and credential-isolation checks remain mandatory.
