@@ -336,7 +336,7 @@ jobs:
           retention-days: 14
       - name: Set up the qualified Angular build runtime
         if: (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -842,7 +842,7 @@ jobs:
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
       - name: Set up the Node SDK provider participant
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -967,7 +967,7 @@ jobs:
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.19.0
           cache: npm
