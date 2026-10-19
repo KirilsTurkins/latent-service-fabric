@@ -462,7 +462,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     if (standard_runtime is not None) != (runtime_profile in {standard.CLOSED, standard.PROFILE}):
         raise ValueError('explicit Rust logging profile requires its owned prepared standard runtime only')
     source_inputs = inventory(files)
-    recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+    recipe_files = {name: read_file(ROOT / name)
+                    for name in dict.fromkeys((*RECIPE, *standard.source_build_inputs(runtime_profile)))}
     # The manifest/deployment seed is also an actual recipe input, not an
     # implicit dependency hidden outside the observation.
     for name in ("examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"):

@@ -80,6 +80,17 @@ class StandardLogging(unittest.TestCase):
                     project.create(target, 'greeting', runtime_profile=value if value is not None else 'null')
                 self.assertFalse(target.exists())
 
+    def test_default_minimal_recipe_excludes_workspace_metadata_but_prepared_runtime_retains_it(self):
+        self.assertFalse({'Cargo.toml', 'Cargo.lock'} & set(build.RECIPE))
+        self.assertEqual(inputs.source_build_inputs(inputs.DEFAULT), ())
+        for selected in (inputs.CLOSED, inputs.PROFILE):
+            self.assertEqual(set(inputs.source_build_inputs(selected)), {'Cargo.toml', 'Cargo.lock'})
+            self.assertLessEqual(set(std.RECIPE), set(build.RECIPE) | set(inputs.source_build_inputs(selected)))
+        self.assertLessEqual({'Cargo.toml', 'Cargo.lock'}, set(std.RECIPE))
+        for malformed in ('unknown', None, [], {}, True):
+            with self.subTest(malformed=malformed), self.assertRaisesRegex(DevError, 'runtime-profile'):
+                inputs.source_build_inputs(malformed)
+
     def prepared(self, root):
         compiler = root / 'rustc'; compiler.write_bytes(b'controlled compiler identity, never invoked')
         prepared = root / 'prepared'
@@ -105,7 +116,7 @@ class StandardLogging(unittest.TestCase):
         (prepared / 'std-sysroot-build.json').write_bytes(encode(value))
 
     def test_prepared_exact_graph_has_target_only_flag_and_bound_source_material(self):
-        self.assertLessEqual(set(std.RECIPE), set(build.RECIPE))
+        self.assertLessEqual(set(std.RECIPE), set(build.RECIPE) | set(inputs.source_build_inputs(inputs.PROFILE)))
         with tempfile.TemporaryDirectory() as directory:
             prepared, compiler, value = self.prepared(Path(directory))
             selected = inputs.Prepared(prepared, compiler)

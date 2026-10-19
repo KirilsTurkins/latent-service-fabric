@@ -20,7 +20,11 @@ DEFAULT = 'wasm32-unknown-unknown-panic-abort-v1'
 CLOSED = 'rust-standard-closed-v1'
 PROFILE = 'rust-standard-logging-v1'
 LOG = 'latent:log/log@0.1.0'
-RECIPE = ('tools/rust_standard_logging_inputs.py', *source.RECIPE,
+# Workspace metadata authenticates the explicit std source build. It is not
+# a required input to the normal compiler recipe or its minimal offline CLI.
+SOURCE_BUILD_METADATA = ('Cargo.toml', 'Cargo.lock')
+RECIPE = ('tools/rust_standard_logging_inputs.py',
+          *(name for name in source.RECIPE if name not in SOURCE_BUILD_METADATA),
           'tools/rust_standard_sysroot_build.py', 'tools/rust_capsule_build.py',
           'tools/build_observation.py', 'tools/build_process.py', 'tools/build_process_linux.py',
           'tools/build_process_signals.py', 'tools/captured_compiler_isolation.py')
@@ -30,6 +34,11 @@ def selection(project: dict) -> str:
     value = project.get('runtimeProfile', DEFAULT)
     require(isinstance(value, str) and value in {DEFAULT, CLOSED, PROFILE}, 'rust-standard-runtime-profile')
     return value
+
+
+def source_build_inputs(profile):
+    selection({'runtimeProfile': profile})
+    return SOURCE_BUILD_METADATA if profile in {CLOSED, PROFILE} else ()
 
 
 class Prepared:
