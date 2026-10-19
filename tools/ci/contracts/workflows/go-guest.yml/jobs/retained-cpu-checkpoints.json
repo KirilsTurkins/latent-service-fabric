@@ -1,0 +1,71 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority && !inputs.entropy-only }}",
+    "name": "Original signed CPU checkpoint cancellation and deadline controls",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore only locked dependency compilation cache",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Read exact failed-run compiler fixtures without recompilation",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "go-guest-upstream-72e693bc25fe269bb584feaaf4b7270fa81647df",
+          "path": "${{ runner.temp }}/go-checkpoint-retained",
+          "run-id": 39310234677
+        }
+      },
+      {
+        "env": {
+          "LSF_GO_CHECKPOINT_FIXTURE": "${{ runner.temp }}/go-checkpoint-retained/go-checkpoints",
+          "LSF_GO_NO_CHECKPOINT_FIXTURE": "${{ runner.temp }}/go-checkpoint-retained/go-no-checkpoints",
+          "LSF_GUEST_SDK_LANGUAGE": "go"
+        },
+        "name": "Execute the unchanged complete signed CPU case with the physical original-root witness",
+        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation -- --ignored --exact --nocapture"
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "retained-cpu-checkpoints",
+  "kind": "job",
+  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-guest.yml"
+}

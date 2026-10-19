@@ -63,8 +63,8 @@ pub(crate) fn install(
                 Err(error) => Err(error),
             };
             checkpoint(&mut store)?;
-            let result = result
-                .map(|completion| {
+            let (result, owner) = match result {
+                Ok(completion) => {
                     let value = u64::from_le_bytes(
                         completion
                             .bytes
@@ -72,16 +72,16 @@ pub(crate) fn install(
                             .try_into()
                             .expect("fixed u64 output"),
                     );
-                    store
-                        .data_mut()
-                        .capabilities
-                        .retain_lowering(completion.owner);
-                    value
-                })
-                .map_err(convert);
+                    (Ok(value), Some(completion.owner))
+                }
+                Err(error) => (Err(convert(error)), None),
+            };
             synchronize(&mut store)?;
             store.data_mut().record_host_call(started);
-            Ok((result,))
+            // The affine owner stays in Wasmtime's returned value through the
+            // actual canonical lower/store operation, including lowering errors.
+            // Sequential scalar calls then reuse the original finite allowance.
+            Ok((super::runtime::Completion::new(result, owner),))
         })
     })?;
     Ok(())
