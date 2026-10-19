@@ -89,3 +89,27 @@ that emitted component actually passes, this is a qualification programme,
 not signed `Send` evidence. It does not cover two unchanged libraries,
 factory middleware, default-buffering `Send` overloads, all options,
 cross-tenant state or broader runtime limits.
+
+## Asynchronous pre-cancellation
+
+The same TaskWait-selected BCL derivation also checks an already-cancelled token
+at the entry to the pinned `WasiHttpHandler.SendAsync`. The original 63-byte IL
+preimage is authenticated separately. The prefix returns CoreLib's ordinary
+`Task.FromCanceled<HttpResponseMessage>` with that exact token; it does not enter
+the original async state machine or allocate its WASI request wrapper. For an
+uncancelled token, every original instruction and the state machine remain
+unchanged. The default outer handler still validates a null request first.
+
+The host probe compares the retained original and derived assemblies using
+requests whose absent URI faults before any WASI import. It checks cancelled
+Task state/token, outer validation and unchanged uncancelled faults. This is
+host BCL evidence, not proof of zero provider dispatch or pending-I/O retirement.
+
+The separate `--pre-cancelled-async` signed programme retains all fourteen
+original async cases and adds one already-cancelled call. The original async
+and fifteen-case synchronous fixture bytes stay unchanged. The extra programme
+requires an integer zero outbound-attempt count, the same signed revision,
+per-call physical idle checks, all twelve original peer vectors and clean
+shutdown under the existing bounds. Until its actual component passes, that
+gate is pending. This slice establishes no post-dispatch cancellation, new
+factory/content profile, default-pool behavior or full #693 completion.

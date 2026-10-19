@@ -13,7 +13,19 @@ if __package__ in {None, ""}:
 from tools.build_observation import build_environment
 from tools.dotnet_guest import http_errors
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, fresh, read_file, snapshot, write_json
+from tools.rust_capsule_project import ROOT, digest, fresh, read_file, snapshot, write_json
+
+
+def validate_async_probe(result: dict, derived: Path) -> None:
+    if (result["assertions"] != 17
+            or result["originalDigest"] != http_errors.SOURCE_DIGEST
+            or result["derivedDigest"] != digest(read_file(derived, http_errors.MAX_ASSEMBLY))
+            or any(result[key] is not True for key in (
+                "originalEntersAsyncBodyDespitePreCancellation", "preCancelledTaskPreservesOriginalToken",
+                "outerNullValidationPreserved", "uncancelledFaultsPreserved"))
+            or any(result[key] is not False for key in (
+                "preCancelledGuestIoQualified", "pendingGuestIoQualified", "defaultClientComponentQualified"))):
+        raise ValueError("http-async-pre-cancellation-probe-assertions")
 
 
 def probe(tools: Path, output: Path) -> dict:
@@ -124,6 +136,23 @@ def probe(tools: Path, output: Path) -> dict:
         raise ValueError("http-default-sync-send-original-negative-control-accepted")
     default_send["originalAsDerivedRejected"] = True
 
+    async_cancelled = json.loads(commands.run("actual-bcl-async-pre-cancellation", dotnet,
+        output / "probe/HttpErrorsProbe.dll", "--async-pre-cancellation", original, sync_derived,
+        output / "actual-bcl-async-pre-cancellation.json"))
+    validate_async_probe(async_cancelled, sync_derived)
+    count = len(commands.records)
+    async_original_control = output / "original-async-pre-cancellation.json"
+    try:
+        commands.run("original-async-pre-cancellation-rejected", dotnet, output / "probe/HttpErrorsProbe.dll",
+            "--async-pre-cancellation", original, original, async_original_control)
+    except ValueError:
+        if (len(commands.records) != count + 1 or commands.records[-1]["exitCode"] != 1
+                or async_original_control.exists()):
+            raise
+    else:
+        raise ValueError("http-async-pre-cancellation-original-negative-control-accepted")
+    async_cancelled["originalAsDerivedRejected"] = True
+
     def rejected(stage, input_path, output_path, receipt_path, *mode):
         count = len(commands.records)
         try:
@@ -167,6 +196,7 @@ def probe(tools: Path, output: Path) -> dict:
               "responseReadErrors": response_errors, "requestContentHeaders": content_headers,
               "synchronousSend": sync_send,
               "defaultHandlerSynchronousSend": default_send,
+              "asynchronousPreCancellation": async_cancelled,
               "synchronousRead": {**sync_result, "rewriteDeterministic": True,
                   "fivePreimageAndOwnershipDenials": True, "boundedErrorAssertions": combined["assertions"]}}
     write_json(output / "result.json", result)

@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Preserve five original cancellation controls and add actual derived-byte binding, foreign identity, changed assembly and unearned qualification refusal for the host wrapper",
+  "module": "tools/tests/test_dotnet_async_pre_cancellation.py",
+  "cases": [
+    "AsyncPreCancellation.test_actual_api_binding_rejects_an_original_fixture_as_the_extra_programme",
+    "AsyncPreCancellation.test_async_selection_adds_only_pre_cancelled_mode_and_keeps_async_api",
+    "AsyncPreCancellation.test_host_probe_binds_its_receipt_to_the_actual_derived_assembly_bytes",
+    "AsyncPreCancellation.test_pre_cancelled_request_requires_integer_zero_outbound_attempts",
+    "AsyncPreCancellation.test_receipt_rejects_missing_foreign_and_type_confused_fields",
+    "AsyncPreCancellation.test_selection_rejects_mixed_non_boolean_or_ambiguous_request_modes"
+  ],
+  "guards": {
+    "AsyncPreCancellation.test_host_probe_binds_its_receipt_to_the_actual_derived_assembly_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7be226c6840a615319222e7978f21f88573150b4f347437207bbed5a974ac9e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "AsyncPreCancellation.test_receipt_rejects_missing_foreign_and_type_confused_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7be226c6840a615319222e7978f21f88573150b4f347437207bbed5a974ac9e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "AsyncPreCancellation.test_async_selection_adds_only_pre_cancelled_mode_and_keeps_async_api": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7be226c6840a615319222e7978f21f88573150b4f347437207bbed5a974ac9e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "AsyncPreCancellation.test_selection_rejects_mixed_non_boolean_or_ambiguous_request_modes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7be226c6840a615319222e7978f21f88573150b4f347437207bbed5a974ac9e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "AsyncPreCancellation.test_actual_api_binding_rejects_an_original_fixture_as_the_extra_programme": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7be226c6840a615319222e7978f21f88573150b4f347437207bbed5a974ac9e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "AsyncPreCancellation.test_pre_cancelled_request_requires_integer_zero_outbound_attempts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7be226c6840a615319222e7978f21f88573150b4f347437207bbed5a974ac9e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}

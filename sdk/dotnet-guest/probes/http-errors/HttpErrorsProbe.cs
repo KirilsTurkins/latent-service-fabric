@@ -6,6 +6,16 @@ using System.Text.Json;
 // Execute the actual captured WASI BCL in two isolated host load contexts.
 // This verifies its conversion/exception boundary, not a guest scheduler or
 // default-client component. No native WASI import is called by this probe.
+if (args.Length == 4 && args[0] == "--async-pre-cancellation")
+{
+    try { HttpAsyncPreCancellationProbe.Run(args[1..]); }
+    catch (InvalidDataException error) when (error.Message == "http-async-pre-cancellation-probe-mismatch")
+    {
+        Console.Error.WriteLine("http-async-pre-cancellation-probe-mismatch");
+        Environment.ExitCode = 1;
+    }
+    return;
+}
 if (args.Length == 4 && args[0] == "--default-sync-send")
 {
     try { HttpDefaultSyncSendProbe.Run(args[1..]); }
@@ -100,6 +110,101 @@ Console.WriteLine(JsonSerializer.Serialize(result));
 originalContext.Unload();
 derivedContext.Unload();
 
+
+internal static class HttpAsyncPreCancellationProbe
+{
+    // Empty RequestUri makes every uncancelled host control fail before WASI
+    // imports. Only the signed programme can establish actual zero host contact.
+    internal static void Run(string[] args)
+    {
+        if (args.Length != 3 || File.Exists(args[2]))
+            throw new InvalidDataException("http-async-pre-cancellation-probe-arguments");
+        string Digest(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+        if (Digest(args[0]) != "3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587")
+            throw new InvalidDataException("http-async-pre-cancellation-probe-preimage");
+        var contexts = new[] { new AssemblyLoadContext("original-async-pre-cancel", isCollectible: true),
+            new AssemblyLoadContext("derived-async-pre-cancel", isCollectible: true) };
+        var owned = new List<IDisposable>();
+        try
+        {
+            var assemblies = new[] { contexts[0].LoadFromAssemblyPath(Path.GetFullPath(args[0])),
+                contexts[1].LoadFromAssemblyPath(Path.GetFullPath(args[1])) };
+            const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            var assertions = 0;
+            void Equal(object? expected, object? actual)
+            {
+                assertions++;
+                if (!Equals(expected, actual)) throw new InvalidDataException("http-async-pre-cancellation-probe-mismatch");
+            }
+            object Handler(Assembly assembly)
+            {
+                var type = assembly.GetType("System.Net.Http.HttpClient", throwOnError: true)!;
+                var client = Activator.CreateInstance(type)!;
+                owned.Add((IDisposable)client);
+                var outer = type.BaseType!.GetField("_handler", Flags)!.GetValue(client)!;
+                Equal("System.Net.Http.HttpClientHandler", outer.GetType().FullName);
+                Equal("System.Net.Http.WasiHttpHandler", outer.GetType().GetField("_underlyingHandler", Flags)!.GetValue(outer)!.GetType().FullName);
+                return outer;
+            }
+            object Request(Assembly assembly)
+            {
+                var request = Activator.CreateInstance(assembly.GetType("System.Net.Http.HttpRequestMessage", throwOnError: true)!)!;
+                owned.Add((IDisposable)request);
+                return request;
+            }
+            Task Send(object handler, object? request, CancellationToken token) => (Task)handler.GetType().GetMethods(Flags)
+                .Single(method => method.Name == "SendAsync" && method.GetParameters().Length == 2).Invoke(handler, [request, token])!;
+            Exception Failure(Action action)
+            {
+                try { action(); }
+                catch (Exception error)
+                {
+                    while (error is TargetInvocationException { InnerException: not null } target) error = target.InnerException!;
+                    return error;
+                }
+                throw new InvalidDataException("http-async-pre-cancellation-probe-mismatch");
+            }
+            var before = Handler(assemblies[0]);
+            var after = Handler(assemblies[1]);
+            var cancelled = new CancellationToken(canceled: true);
+            var original = Send(before, Request(assemblies[0]), cancelled);
+            Equal(false, original.IsCanceled);
+            Equal(typeof(ArgumentException), Failure(() => original.GetAwaiter().GetResult()).GetType());
+            var repaired = Send(after, Request(assemblies[1]), cancelled);
+            Equal(true, repaired.IsCompleted);
+            Equal(true, repaired.IsCanceled);
+            Equal(TaskStatus.Canceled, repaired.Status);
+            var cancellation = Failure(() => repaired.GetAwaiter().GetResult());
+            Equal(true, cancellation is OperationCanceledException);
+            Equal(cancelled, ((OperationCanceledException)cancellation).CancellationToken);
+            // Cancellation must not hide the original outer null-request check.
+            Equal(typeof(ArgumentNullException), Failure(() => Send(before, null, cancelled)).GetType());
+            Equal(typeof(ArgumentNullException), Failure(() => Send(after, null, cancelled)).GetType());
+            using var uncancelled = new CancellationTokenSource();
+            foreach (var token in new[] { CancellationToken.None, uncancelled.Token })
+            {
+                var first = Send(before, Request(assemblies[0]), token);
+                var second = Send(after, Request(assemblies[1]), token);
+                Equal(first.Status, second.Status);
+                Equal(Failure(() => first.GetAwaiter().GetResult()).GetType(),
+                    Failure(() => second.GetAwaiter().GetResult()).GetType());
+            }
+            var result = new { scope = "captured-default-http-handler-async-pre-cancellation-host-controls", assertions,
+                originalDigest = "sha256:" + Digest(args[0]), derivedDigest = "sha256:" + Digest(args[1]),
+                originalEntersAsyncBodyDespitePreCancellation = true, preCancelledTaskPreservesOriginalToken = true,
+                outerNullValidationPreserved = true, uncancelledFaultsPreserved = true,
+                preCancelledGuestIoQualified = false, pendingGuestIoQualified = false, defaultClientComponentQualified = false };
+            using var output = new FileStream(args[2], FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            JsonSerializer.Serialize(output, result);
+            Console.WriteLine(JsonSerializer.Serialize(result));
+        }
+        finally
+        {
+            foreach (var item in owned) item.Dispose();
+            foreach (var context in contexts) context.Unload();
+        }
+    }
+}
 
 internal static class HttpSyncReadProbe
 {

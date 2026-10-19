@@ -89,6 +89,23 @@ DEFAULT_SYNC_SEND = {
 }
 
 
+ASYNC_PRE_CANCELLATION = {
+    "profile": "dotnet-wasi-async-pre-cancellation-v1",
+    "method": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.WasiHttpHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+    "originalIlBytes": 63,
+    "originalIlDigest": "sha256:7b7f39644060fdb94e9dc4d970fd4b7239b5a6a629d2986aceea862463ee692b",
+    "cancellationCheck": "original-CoreLib-CancellationToken.IsCancellationRequested",
+    "cancelledResult": "original-CoreLib-Task.FromCanceled<HttpResponseMessage>",
+    "uncancelled": "complete-original-method-body",
+    "originalAsyncStateMachine": "unchanged",
+    "modifiedOriginalMethods": 1,
+    "generatedHelpers": 0,
+    "newHostImports": 0,
+    "preCancelledGuestIoQualified": False,
+    "pendingGuestIoQualified": False,
+}
+
+
 SYNC_READ = {
     "profile": "dotnet-wasi-sync-response-read-v1",
     "method": "System.Int32 System.Net.Http.WasiInputStream::Read(System.Byte[],System.Int32,System.Int32)",
@@ -105,6 +122,7 @@ SYNC_READ = {
     "requestContentHeaders": REQUEST_CONTENT_HEADERS,
     "synchronousSend": SYNC_SEND,
     "defaultHandlerSynchronousSend": DEFAULT_SYNC_SEND,
+    "asynchronousPreCancellation": ASYNC_PRE_CANCELLATION,
 }
 
 
@@ -138,6 +156,13 @@ def validate_default_sync_send(value: dict) -> None:
         raise ValueError("http-default-sync-send-rewrite-receipt")
 
 
+def validate_async_pre_cancellation(value: dict) -> None:
+    if (type(value) is not dict or set(value) != set(ASYNC_PRE_CANCELLATION)
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in ASYNC_PRE_CANCELLATION.items())):
+        raise ValueError("http-async-pre-cancellation-rewrite-receipt")
+
+
 def validate_sync_read(value: dict) -> None:
     digests = {"originalReadBodyDigest", "originalAsyncBodyDigest"}
     if (type(value) is not dict or set(value) != set(SYNC_READ) | digests | {"unchangedOriginalMethods"}
@@ -152,6 +177,7 @@ def validate_sync_read(value: dict) -> None:
     validate_request_content_headers(value["requestContentHeaders"])
     validate_sync_send(value["synchronousSend"])
     validate_default_sync_send(value["defaultHandlerSynchronousSend"])
+    validate_async_pre_cancellation(value["asynchronousPreCancellation"])
 
 
 def source_paths(tools: Path) -> tuple[Path, Path]:

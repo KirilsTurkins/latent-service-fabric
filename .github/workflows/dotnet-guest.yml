@@ -231,6 +231,9 @@ jobs:
           python3 -m unittest tools.tests.test_dotnet_resources
           python3 tools/qualify_dotnet_resources.py --dotnet "$(command -v dotnet)" --output "$RUNNER_TEMP/dotnet-standard-resources"
           python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-dependencies" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --application-dependencies
+      - name: Qualify signed asynchronous HttpClient pre-cancellation without dispatch
+        run: |
+          python3 tools/qualify_dotnet_standard_http.py --pre-cancelled-async --output "$RUNNER_TEMP/dotnet-standard-http-async-cancel" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -240,6 +243,7 @@ jobs:
             ${{ runner.temp }}/dotnet-standard-resources/**
             ${{ runner.temp }}/dotnet-standard-http/**
             ${{ runner.temp }}/dotnet-standard-http-send/**
+            ${{ runner.temp }}/dotnet-standard-http-async-cancel/**
             ${{ runner.temp }}/transaction-guests-dotnet/**/report.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/recipe-inputs.json

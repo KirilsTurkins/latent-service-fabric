@@ -271,9 +271,9 @@ def require_case_result(name, row, expected, observe_failure):
         raise
 
 
-def request_api_binding(artifact: Path, *, synchronous_send: bool) -> dict:
+def request_api_binding(artifact: Path, *, synchronous_send: bool, pre_cancelled_async: bool = False) -> dict:
     """Bind the API label to the normal compiler's captured source and component."""
-    managed = managed_source(synchronous_send=synchronous_send)
+    managed = managed_source(synchronous_send=synchronous_send, pre_cancelled_async=pre_cancelled_async)
     source = read_file(artifact/'source-inputs.json')
     observed = read_json(artifact/'build-observation.json')
     component = file_identity(artifact/'component.wasm')
@@ -322,7 +322,7 @@ def require_synchronous_peer(observation: dict) -> dict:
 
 
 def retain_peer_observation(raw: bytes, authorization: bytes, output: Path, result: dict, *,
-        synchronous_send: bool) -> None:
+        synchronous_send: bool, pre_cancelled_async: bool = False) -> None:
     """Keep bounded protocol evidence even when its acceptance predicates fail."""
     require(type(raw) is bytes and len(raw) <= 65536, 'standard-dotnet-peer-observation-size')
     require(type(authorization) is bytes and re.fullmatch(rb'Bearer [a-f0-9]{64}', authorization),
@@ -341,10 +341,18 @@ def retain_peer_observation(raw: bytes, authorization: bytes, output: Path, resu
         'standard-dotnet-peer-contact-count')
     if synchronous_send:
         result['synchronousSend']['peer'] = require_synchronous_peer(observation)
+    if pre_cancelled_async:
+        result['asynchronousPreCancellation']['peer'] = require_synchronous_peer(observation)
+
+
+def require_pre_cancelled_outbound(row: dict) -> None:
+    require(type(row['response']['data']['consumption']['outboundRequests']) is int
+            and row['response']['data']['consumption']['outboundRequests'] == 0,
+            'standard-dotnet-send-pre-cancelled-outbound-attempt')
 
 
 def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
-        synchronous_send: bool = False):
+        synchronous_send: bool = False, pre_cancelled_async: bool = False):
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-dotnet-original-deadline-expired')
     output = fresh(output)
@@ -366,7 +374,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
     result['artifact'] = {name: file_identity(artifact/name) for name in (
         'BUILD-COMPLETE.json', 'component.wasm', 'build-observation.json', 'source-inputs.json',
         'recipe-inputs.json', 'runtime-profile.json', 'closed-runtime-coverage.json', 'bindings.json')}
-    if synchronous_send:
+    if synchronous_send or pre_cancelled_async:
         result['artifact'].update({name: file_identity(artifact/name) for name in (
             'compiler-inputs.json', 'compiler-patches-preparation.json', 'compiler-patches.json')})
     source_paths = ('tools/dotnet_standard_http_project.py', 'tools/dotnet_standard_http_node.py',
@@ -384,7 +392,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
     node = peer = client = None
     stage = 'request-api-binding'
     try:
-        result['requestApi'] = request_api_binding(artifact, synchronous_send=synchronous_send)
+        result['requestApi'] = request_api_binding(artifact, synchronous_send=synchronous_send,
+                                                  pre_cancelled_async=pre_cancelled_async)
         stage = 'sign'
         environment = build_environment(output)
         signed = output/'releases'
@@ -456,7 +465,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
                 require_case_result(name, row, expected,
                     lambda: prefix_diagnostics(result, client, target, url, probe, output, row))
-                if synchronous_send:
+                if synchronous_send or pre_cancelled_async:
                     revision = prefix_revision(row, result['artifact']['component.wasm']['sha256'])
                     require(revision is not None and (send_revision is None or revision == send_revision),
                             'standard-dotnet-send-signed-revision-or-process')
@@ -466,18 +475,16 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 # service-resident row. Ingress-only exchange rows are absent on
                 # this node, which has no HTTP listener installation.
                 retire(client, target, probe, output, name)
-            if synchronous_send:
-                stage = 'synchronous-pre-cancelled'
+            if synchronous_send or pre_cancelled_async:
+                stage = 'synchronous-pre-cancelled' if synchronous_send else 'asynchronous-pre-cancelled'
                 row = invoke(client, target, 6, url+'/conformance/json', 'standard-pre-cancelled')
                 require_case_result('pre-cancelled', row, '1:cancelled', lambda: None)
-                require(type(row['response']['data']['consumption']['outboundRequests']) is int
-                        and row['response']['data']['consumption']['outboundRequests'] == 0,
-                        'standard-dotnet-send-pre-cancelled-outbound-attempt')
+                require_pre_cancelled_outbound(row)
                 require(prefix_revision(row, result['artifact']['component.wasm']['sha256']) == send_revision,
                         'standard-dotnet-send-pre-cancelled-signed-revision-or-process')
                 result['cases'].append('pre-cancelled')
                 retire(client, target, probe, output, 'pre-cancelled')
-                result['synchronousSend'] = {'ordinaryDefaultClient': True,
+                result['synchronousSend' if synchronous_send else 'asynchronousPreCancellation'] = {'ordinaryDefaultClient': True,
                     'sameSignedRevision': send_revision, 'freshManagedStatePerInvocation': True,
                     'allOriginalFourteenCases': True, 'preCancelledRequest': True,
                     'physicalOwnerChecksPerInvocation': True, 'fullTicketQualification': False}
@@ -491,7 +498,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             stage = 'peer-observation'
             peer.stop()
             retain_peer_observation(bytes(peer.buffers[0]), credential.read_bytes(), output, result,
-                                    synchronous_send=synchronous_send)
+                                    synchronous_send=synchronous_send, pre_cancelled_async=pre_cancelled_async)
             result['peerReaped'] = peer.owner.finished
             peer = None
         require(before == {name: file_identity(path) for name, path in binaries.items()}, 'standard-dotnet-native-tuple-changed')
@@ -522,5 +529,7 @@ if __name__ == '__main__':
     parser.add_argument('--native', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--synchronous-send', action='store_true')
+    parser.add_argument('--pre-cancelled-async', action='store_true')
     args = parser.parse_args()
-    run(args.artifact, args.native, args.output, synchronous_send=args.synchronous_send)
+    run(args.artifact, args.native, args.output, synchronous_send=args.synchronous_send,
+        pre_cancelled_async=args.pre_cancelled_async)

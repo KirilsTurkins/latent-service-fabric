@@ -10,11 +10,18 @@ from tools.dotnet_guest.project import create
 from tools.rust_capsule_project import ROOT, digest, read_file, snapshot
 
 
-def managed_source(*, synchronous_send: bool = False) -> bytes:
-    if type(synchronous_send) is not bool:
+def managed_source(*, synchronous_send: bool = False, pre_cancelled_async: bool = False) -> bytes:
+    if (type(synchronous_send) is not bool or type(pre_cancelled_async) is not bool
+            or (synchronous_send and pre_cancelled_async)):
         raise ValueError('standard-dotnet-request-api-selection')
     managed = read_file(ROOT/'examples/dotnet-standard-http/Main.cs')
     if not synchronous_send:
+        if pre_cancelled_async:
+            cancellation = b'        if (which == 4) cancellation.CancelAfter(100);'
+            if managed.count(cancellation) != 1:
+                raise ValueError('standard-dotnet-async-pre-cancel-fixture-shape')
+            newline = b'\r\n' if b'\r\n' in managed else b'\n'
+            return managed.replace(cancellation, cancellation + newline + b'        if (which == 6) cancellation.Cancel();')
         return managed
     newline = b'\r\n' if b'\r\n' in managed else b'\n'
     original = (b'client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,' + newline
@@ -30,8 +37,8 @@ def managed_source(*, synchronous_send: bool = False) -> bytes:
         cancellation + newline + b'        if (which == 6) cancellation.Cancel();')
 
 
-def project(directory: Path, *, synchronous_send: bool = False) -> Path:
-    managed = managed_source(synchronous_send=synchronous_send)
+def project(directory: Path, *, synchronous_send: bool = False, pre_cancelled_async: bool = False) -> Path:
+    managed = managed_source(synchronous_send=synchronous_send, pre_cancelled_async=pre_cancelled_async)
     app = create(directory, 'greeting', 'dotnet-standard-http')
     source = ROOT/'examples/dotnet-standard-http'
     wit = read_file(source/'world.wit')
