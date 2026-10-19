@@ -166,4 +166,22 @@ class ConsolePrivateDiagnostic(unittest.TestCase):
         self.assertTrue(any('console-observer.py' in step.get('run', '') for step in private['steps']))
 
 
+    def test_fixed_member_read_budget_allows_known_index_and_refuses_one_extra_range(self):
+        from unittest.mock import patch, MagicMock
+        # Authenticated index: 73 fixed members / 69,478,656 compressed bytes.
+        # At most 355 header/data reads; no payload/network/file-size cap grows.
+        self.assertEqual(acquisition.MAX_REQUESTS, 512)
+        remote = acquisition.Remote('https://example.invalid/fixed', 1)
+        remote.requests = acquisition.MAX_REQUESTS - 1
+        response = MagicMock(); response.status = 206
+        response.headers = {'Content-Range': 'bytes 0-0/1'}; response.read.return_value = b'x'
+        response.__enter__.return_value = response
+        with patch.object(acquisition.urllib.request, 'urlopen', return_value=response) as network:
+            self.assertEqual(remote.read(1), b'x')
+            remote.seek(0)
+            with self.assertRaisesRegex(WorkflowError, 'total-range-bound'):
+                remote.read(1)
+            self.assertEqual(network.call_count, 1)
+
+
 if __name__ == '__main__': unittest.main()

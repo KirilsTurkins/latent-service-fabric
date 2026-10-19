@@ -107,7 +107,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-console-private-observation-${{ github.sha }}",
-          "path": "${{ runner.temp }}/console-original-inputs/acquisition.json\n${{ runner.temp }}/console-private-trap/observation.json\n${{ runner.temp }}/console-private-trap/node/observation.json\n${{ runner.temp }}/console-private-trap/node/controls/*.json\n",
+          "path": "${{ runner.temp }}/console-original-inputs/acquisition.json\n${{ runner.temp }}/console-original-inputs/acquisition-failure.json\n${{ runner.temp }}/console-private-trap/observation.json\n${{ runner.temp }}/console-private-trap/node/observation.json\n${{ runner.temp }}/console-private-trap/node/controls/*.json\n",
           "retention-days": 7
         }
       }
@@ -116,7 +116,7 @@
   },
   "jobId": "console-private",
   "kind": "job",
-  "reviewReason": "Explicit diagnostic-only Console selector; preserve original normal job, authenticate original component/native inputs and bound closed trap observations without public error changes.",
+  "reviewReason": "Fixed authenticated member index requires bounded header/data reads; preserve byte/file caps and publish only closed guard/progress when setup refuses.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

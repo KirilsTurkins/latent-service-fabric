@@ -6,6 +6,7 @@
     "ConsolePrivateDiagnostic.test_closed_variant_capture_excludes_arbitrary_error_and_surrounding_output",
     "ConsolePrivateDiagnostic.test_declared_public_metadata_has_exact_source_and_recipe_membership",
     "ConsolePrivateDiagnostic.test_fixed_artifact_members_exclude_tool_closures_keys_and_source_payloads",
+    "ConsolePrivateDiagnostic.test_fixed_member_read_budget_allows_known_index_and_refuses_one_extra_range",
     "ConsolePrivateDiagnostic.test_frame_capture_enforces_global_32_and_record_16_limits",
     "ConsolePrivateDiagnostic.test_inventory_uses_real_capture_shape_and_refuses_foreign_paths",
     "ConsolePrivateDiagnostic.test_overlay_authenticates_original_host_and_changes_only_private_observer",
@@ -75,6 +76,18 @@
       "skipSites": []
     },
     "ConsolePrivateDiagnostic.test_fixed_artifact_members_exclude_tool_closures_keys_and_source_payloads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2e4ae82da0e2f7927a8d6f386e33bd5f75f2ccd4e27080fe13cd0012bf112d51",
+        "class:setup-sha256:cdaca5a099d26e3e6ec5361686c3ab00e64c74688d69fe0117f8e4ce60651322"
+      ],
+      "skipSites": []
+    },
+    "ConsolePrivateDiagnostic.test_fixed_member_read_budget_allows_known_index_and_refuses_one_extra_range": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -161,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_console_private_diagnostic.py",
-  "reviewReason": "Explicit diagnostic-only Console selector; preserve original normal job, authenticate original component/native inputs and bound closed trap observations without public error changes.",
+  "reviewReason": "Fixed authenticated member index requires bounded header/data reads; preserve byte/file caps and publish only closed guard/progress when setup refuses.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

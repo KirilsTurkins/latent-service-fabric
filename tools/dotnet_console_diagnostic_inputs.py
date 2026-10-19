@@ -22,6 +22,9 @@ from tools.rust_capsule_project import fresh, write_json
 
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 ARTIFACT = 12208042991
+MAX_REQUESTS = 512
+PROGRESS = {'stage': 'metadata', 'rangeRequests': 0, 'networkBytes': 0, 'completedMembers': 0}
+
 TESTED = 'a1028e1bd854700f27e75017349c58b88b53b0d5'
 COMPANIONS = ('word-count', 'shipping', 'http-status', 'recovery')
 PUBLIC = frozenset({'BUILD-COMPLETE.json', 'build-observation.json', 'source-inputs.json',
@@ -76,7 +79,8 @@ class Remote(io.RawIOBase):
         if not count: return b''
         self.requests += 1
         self.network_bytes += count
-        require(self.requests <= 256 and self.network_bytes <= 128 * 1024**2, 'console-artifact-total-range-bound')
+        PROGRESS.update(rangeRequests=self.requests, networkBytes=self.network_bytes)
+        require(self.requests <= MAX_REQUESTS and self.network_bytes <= 128 * 1024**2, 'console-artifact-total-range-bound')
         end = self.position + count - 1
         request = urllib.request.Request(self.url, headers={'Range': f'bytes={self.position}-{end}'})
         with urllib.request.urlopen(request, timeout=30) as response:
@@ -116,6 +120,7 @@ def acquire(output: Path):
             and (parsed.hostname.endswith('.blob.core.windows.net')
                  or parsed.hostname.endswith('.githubusercontent.com')), 'console-artifact-download-origin')
     del credential, headers
+    PROGRESS['stage'] = 'fixed-member-index'
     remote = Remote(signed_url, metadata['size_in_bytes'])
     copied, total = [], 0
     with zipfile.ZipFile(remote) as archive:
@@ -123,6 +128,7 @@ def acquire(output: Path):
         require(len(all_names) <= 65536 and len(all_names) == len(set(all_names)), 'console-artifact-member-index')
         names = [name for name in all_names if selected(name)]
         require(24 <= len(names) <= 128, 'console-artifact-selected-member-count')
+        PROGRESS.update(stage='fixed-members', selectedMembers=len(names))
         for name in names:
             item = archive.getinfo(name)
             require(not item.is_dir() and not stat.S_ISLNK(item.external_attr >> 16)
@@ -141,6 +147,7 @@ def acquire(output: Path):
             require(written == item.file_size, 'console-artifact-selected-file-length')
             destination.chmod(0o700 if '/native-binaries/' in name else 0o600)
             copied.append({'path': name, 'size': written})
+            PROGRESS['completedMembers'] = len(copied)
     receipt = {'qualification': False, 'artifactId': ARTIFACT, 'testedSource': TESTED,
         'selected': copied, 'networkBytes': remote.network_bytes, 'rangeRequests': remote.requests,
         'completeArchiveDownloaded': False, 'credentialsRetained': False}
@@ -156,7 +163,12 @@ if __name__ == '__main__':
         observed = acquire(arguments.output)
     except Exception as error:
         # urllib errors can contain an expiring signed URL. Never print one.
-        print(json.dumps({'status': 'failed', 'errorCategory': type(error).__name__}))
+        guard = error.args[0] if isinstance(error, RuntimeError) and len(error.args) == 1 \
+            and isinstance(error.args[0], str) and re.fullmatch(r'console-artifact-[a-z-]{1,96}', error.args[0]) else 'other'
+        failure = {'status': 'failed', 'errorCategory': type(error).__name__, 'guardReason': guard,
+                   'progress': dict(PROGRESS), 'credentialOrSignedUrlRetained': False}
+        write_json(arguments.output / 'acquisition-failure.json', failure)
+        print(json.dumps(failure))
         raise SystemExit(1)
     print(json.dumps({'status': 'acquired', 'members': len(observed['selected']),
                       'networkBytes': observed['networkBytes']}))

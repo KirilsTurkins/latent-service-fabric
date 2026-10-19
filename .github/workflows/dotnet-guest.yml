@@ -399,6 +399,7 @@ jobs:
           name: dotnet-console-private-observation-${{ github.sha }}
           path: |
             ${{ runner.temp }}/console-original-inputs/acquisition.json
+            ${{ runner.temp }}/console-original-inputs/acquisition-failure.json
             ${{ runner.temp }}/console-private-trap/observation.json
             ${{ runner.temp }}/console-private-trap/node/observation.json
             ${{ runner.temp }}/console-private-trap/node/controls/*.json
