@@ -1,7 +1,12 @@
 name: Rust capsule authoring
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      entropy_replay:
+        description: Focused entropy qualification with authenticated historical native products
+        type: boolean
+        default: false
   pull_request:
     branches: [development]
     paths:
@@ -57,6 +62,7 @@ env:
 
 jobs:
   standard-clocks:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.entropy_replay }}
     name: Rebuilt Rust standard clocks and signed grants
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -457,6 +463,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   git-closure:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.entropy_replay }}
     name: Native Cargo Git capture and offline metadata
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -487,6 +494,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   authoring:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.entropy_replay }}
     name: Standalone Rust capsule authoring
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -672,4 +680,77 @@ jobs:
           name: rust-git-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/rust-git-prepared/
           if-no-files-found: error
+          retention-days: 3
+
+  entropy-replay:
+    name: Focused Rust entropy with separately authenticated native products
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.entropy_replay }}
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Install the existing bounded compiler namespace and pinned bindings
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Authenticate historical sources and public products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --no-tags --depth=1 origin 6ffab636e647f93bfa12fda12a0383316f8dce8d e97d44ddc744c9bd738d9b3b7a7d8b7234133e36
+          python3 tools/replay_rust_standard_entropy.py --prepare --output "$RUNNER_TEMP/rust-entropy-prepared"
+      - name: Test exact entropy source, ordinary transitive capture and retirement controls
+        run: python3 -m unittest tools.tests.test_rust_standard_entropy tools.tests.test_rust_standard_entropy_campaign
+      - name: Build owned entropy std and execute ordinary signed libraries
+        run: >-
+          python3 tools/replay_rust_standard_entropy.py
+          --prepared "$RUNNER_TEMP/rust-entropy-prepared"
+          --output "$RUNNER_TEMP/rust-standard-entropy"
+      - name: Retain bounded entropy observations including failed attempts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-entropy-focused-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-entropy-prepared/retrieval.json
+            ${{ runner.temp }}/rust-entropy-prepared/host/host-retrieval.json
+            ${{ runner.temp }}/rust-standard-entropy/replay-materials.json
+            ${{ runner.temp }}/rust-standard-entropy/qualification.json
+            ${{ runner.temp }}/rust-standard-entropy/FAILED.json
+            ${{ runner.temp }}/rust-standard-entropy/capture.json
+            ${{ runner.temp }}/rust-standard-entropy/logs/**
+            ${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json
+            ${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**
+            ${{ runner.temp }}/rust-standard-entropy/approval-required/*.json
+            ${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**
+            ${{ runner.temp }}/rust-standard-entropy/build/*.json
+            ${{ runner.temp }}/rust-standard-entropy/build/logs/**
+            ${{ runner.temp }}/rust-standard-entropy/build/component.wasm
+            ${{ runner.temp }}/rust-standard-entropy/node/workflow.json
+            ${{ runner.temp }}/rust-standard-entropy/node/FAILED.json
+          if-no-files-found: warn
           retention-days: 3

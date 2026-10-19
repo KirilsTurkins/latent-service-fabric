@@ -873,12 +873,18 @@ class RepositoryMigrationTests(unittest.TestCase):
         for name in ("observe-failed-fetch", "observe-fetch-boundaries", "replay-entropy-policy"):
             self.assertEqual(inputs[name]["type"], "boolean")
             self.assertIs(inputs[name]["default"], False)
+        rust_input = data['workflowContracts']['.github/workflows/rust-capsule-authoring.yml']['on']['workflow_dispatch']['inputs']['entropy_replay']
+        self.assertEqual(rust_input['type'], 'boolean')
+        self.assertIs(rust_input['default'], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
             if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
                 self.assertEqual(value["jobIf"], "success()", key)
                 value["jobIf"] = reviewed_typescript_observer_guard
+            if value['workflow'] == '.github/workflows/rust-capsule-authoring.yml' and value['job'] in {'standard-clocks', 'git-closure', 'authoring'}:
+                self.assertEqual(value['jobIf'], 'success()', key)
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.entropy_replay }}"
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.

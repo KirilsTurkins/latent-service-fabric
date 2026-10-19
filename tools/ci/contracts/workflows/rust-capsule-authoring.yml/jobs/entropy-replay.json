@@ -1,0 +1,86 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.entropy_replay }}",
+    "name": "Focused Rust entropy with separately authenticated native products",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "fetch-depth": 1,
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the existing bounded compiler namespace and pinned bindings",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate historical sources and public products",
+        "run": "git fetch --no-tags --depth=1 origin 6ffab636e647f93bfa12fda12a0383316f8dce8d e97d44ddc744c9bd738d9b3b7a7d8b7234133e36\npython3 tools/replay_rust_standard_entropy.py --prepare --output \"$RUNNER_TEMP/rust-entropy-prepared\"\n"
+      },
+      {
+        "name": "Test exact entropy source, ordinary transitive capture and retirement controls",
+        "run": "python3 -m unittest tools.tests.test_rust_standard_entropy tools.tests.test_rust_standard_entropy_campaign"
+      },
+      {
+        "name": "Build owned entropy std and execute ordinary signed libraries",
+        "run": "python3 tools/replay_rust_standard_entropy.py --prepared \"$RUNNER_TEMP/rust-entropy-prepared\" --output \"$RUNNER_TEMP/rust-standard-entropy\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded entropy observations including failed attempts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-entropy-focused-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-entropy-prepared/retrieval.json\n${{ runner.temp }}/rust-entropy-prepared/host/host-retrieval.json\n${{ runner.temp }}/rust-standard-entropy/replay-materials.json\n${{ runner.temp }}/rust-standard-entropy/qualification.json\n${{ runner.temp }}/rust-standard-entropy/FAILED.json\n${{ runner.temp }}/rust-standard-entropy/capture.json\n${{ runner.temp }}/rust-standard-entropy/logs/**\n${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json\n${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**\n${{ runner.temp }}/rust-standard-entropy/approval-required/*.json\n${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/*.json\n${{ runner.temp }}/rust-standard-entropy/build/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/component.wasm\n${{ runner.temp }}/rust-standard-entropy/node/workflow.json\n${{ runner.temp }}/rust-standard-entropy/node/FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "entropy-replay",
+  "kind": "job",
+  "reviewReason": "Explicit manual-only entropy replay; retain every ordinary command, budget, guard and producer dependency.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}

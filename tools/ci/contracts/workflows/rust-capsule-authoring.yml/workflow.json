@@ -59,7 +59,15 @@
           "docs/component-development/rust-dependencies.md"
         ]
       },
-      "workflow_dispatch": {}
+      "workflow_dispatch": {
+        "inputs": {
+          "entropy_replay": {
+            "default": false,
+            "description": "Focused entropy qualification with authenticated historical native products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -69,13 +77,14 @@
     "authoring",
     "compatibility",
     "dependency-matrix",
+    "entropy-replay",
     "git-closure",
     "git-components",
     "standard-clocks",
     "standard-entropy",
     "standard-stdio"
   ],
-  "reviewReason": "Add explicit ordinary Rust entropy campaign; retain every old job, ordered command, test and guard.",
+  "reviewReason": "Add explicit default-false Rust entropy diagnostic; ordinary PR/push paths retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
