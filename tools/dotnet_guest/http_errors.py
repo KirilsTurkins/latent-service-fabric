@@ -85,6 +85,7 @@ DEFAULT_SYNC_SEND = {
     "profile": "dotnet-default-httpclient-sync-send-v1",
     "method": "System.Net.Http.HttpResponseMessage System.Net.Http.HttpClientHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
     "asyncMethod": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.HttpClientHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+    "preCancellation": "original-CancellationToken.ThrowIfCancellationRequested-before-SendAsync",
 }
 
 

@@ -683,7 +683,8 @@ class HttpDefaultSyncSendPortTests(unittest.TestCase):
         self.descriptor = {**self.inner.descriptor(),
             'profile': 'dotnet-default-httpclient-sync-send-v1',
             'method': 'System.Net.Http.HttpResponseMessage System.Net.Http.HttpClientHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)',
-            'asyncMethod': 'System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.HttpClientHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)'}
+            'asyncMethod': 'System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.HttpClientHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)',
+            'preCancellation': 'original-CancellationToken.ThrowIfCancellationRequested-before-SendAsync'}
 
     def test_outer_send_receipt_is_mandatory_and_keeps_inner_port_and_joint_ilc_identity(self):
         fixture = self.fixture
@@ -726,6 +727,34 @@ class HttpDefaultSyncSendPortTests(unittest.TestCase):
             receipt['defaultHandlerSynchronousSend'] = {**self.descriptor, key: value}
             with self.subTest(field=key), self.assertRaisesRegex(ValueError, 'http-(sync-read|default-sync-send)-rewrite-receipt'):
                 http_errors.validate_sync_read(receipt)
+
+
+class HttpPreCancelledSendPortTests(unittest.TestCase):
+    def test_old_receipt_without_pre_cancel_check_cannot_publish_compiler_references(self):
+        inner = HttpSyncSendPortTests()
+        fixture = inner.fixture()
+        self.addCleanup(inner.doCleanups)
+        original = fixture.http.run_tool
+        def old_port(stage, *arguments):
+            original(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result['synchronousRead']['defaultHandlerSynchronousSend']['preCancellation']
+            arguments[-1].write_text(json.dumps(result), encoding='utf-8')
+        fixture.http.run_tool = old_port
+        before = snapshot(fixture.http.project)
+        with self.assertRaisesRegex(ValueError, 'http-sync-read-rewrite-receipt'):
+            fixture.prepare()
+        self.assertEqual(snapshot(fixture.http.project), before)
+        self.assertFalse((fixture.http.evidence/'derived-System.Net.Http.dll').exists())
+
+    def test_pre_cancel_receipt_is_mandatory_exact_and_cannot_claim_native_execution(self):
+        descriptor = dict(http_errors.DEFAULT_SYNC_SEND)
+        http_errors.validate_default_sync_send(descriptor)
+        self.assertIs(descriptor['nativeSendQualified'], False)
+        for value in ('after-original-SendAsync', 'completed-cancellation-only', True, None):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError,
+                    '^http-default-sync-send-rewrite-receipt$'):
+                http_errors.validate_default_sync_send({**descriptor, 'preCancellation': value})
 
 
 if __name__ == "__main__":

@@ -103,9 +103,10 @@ def probe(tools: Path, output: Path) -> dict:
 
     default_send = json.loads(commands.run("actual-bcl-default-sync-send", dotnet, output / "probe/HttpErrorsProbe.dll",
         "--default-sync-send", original, sync_derived, output / "actual-bcl-default-sync-send.json"))
-    if (default_send["assertions"] != 15 or default_send["originalSynchronousSendUnsupported"] is not True
+    if (default_send["assertions"] != 19 or default_send["originalSynchronousSendUnsupported"] is not True
             or default_send["originalSendAsyncFaultsPreserved"] is not True
             or default_send["ordinaryDefaultConstructionPreserved"] is not True
+            or default_send["preCancelledTokenRejectedBeforeOriginalAsync"] is not True
             or default_send["nativeSendQualified"] is not False
             or default_send["pendingGuestIoQualified"] is not False
             or default_send["defaultClientComponentQualified"] is not False):

@@ -24,6 +24,12 @@ keeps the original lazy handler/telemetry chain. Each port checks that every
 other method is unchanged; the serialized product is reopened and checked as
 in the existing port.
 
+At entry, the outer synchronous method calls the original CoreLib
+`CancellationToken.ThrowIfCancellationRequested` before `SendAsync`. The
+compiler checks the existing method reference and token identity. An already
+cancelled token therefore cannot start an outbound attempt or open a peer
+connection. This adds no cancellation implementation to `SendAsync`.
+
 The whole original System.Net.Http digest remains
 `3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587`.
 The existing pinned Cecil digest and both actual ILC references remain
@@ -33,13 +39,16 @@ exact types; either missing or altered evidence fails before compiler project
 references are published. Their `nativeSendQualified` values remain false.
 
 The existing fifteen inner-handler host controls remain intact. A separate
-fifteen-control captured-BCL probe covers the outer default handler, with an
+nineteen-control captured-BCL probe covers the outer default handler, with an
 original-as-derived negative control that must reject its unsupported throw. Each probe
 constructs the original default client/handler path in separate original and
 derived contexts, demonstrates the original unsupported synchronous method,
 and compares the derived synchronous faults with original and derived async
 faults for invalid requests. Those paths fail before WASI I/O. They establish
 neither successful transmission nor genuinely pending guest progress.
+The outer probe also supplies a valid request with an already-cancelled token:
+the original synchronous method stays unsupported, while the derived method
+throws the original `OperationCanceledException` carrying that same token.
 
 The original fourteen signed HTTP cases and their source remain unchanged.
 The new API still needs a signed emitted component calling ordinary
@@ -70,6 +79,9 @@ cancelled headers and partial bodies actually enter unreleased gates, and the
 uncertain POST commits once without a response. Pre-cancellation and the two
 denials add no peer contact. Peer observations supplement the independent
 node/provider accounting; they do not prove a refund or external rollback.
+The pre-cancelled invocation must also report zero outbound attempts. Bounded
+peer observations are retained before the final assertions, including on
+failure, after checking that they contain no per-run credential or token.
 
 The owning .NET workflow runs this command after the unchanged async HTTP
 qualification and retains its complete success or failure directory. Until

@@ -664,6 +664,14 @@ internal static class HttpDefaultSyncSend
             handlerConstructor.Body.Instructions.Any(instruction => instruction.OpCode == OpCodes.Newobj &&
                 instruction.Operand is MethodReference target && target.FullName == "System.Void System.Net.Http.WasiHttpHandler::.ctor()"));
         var references = module.GetMemberReferences().OfType<MethodReference>().ToArray();
+        var cancellationThrow = references.Single(method => method.FullName ==
+            "System.Void System.Threading.CancellationToken::ThrowIfCancellationRequested()");
+        Require(cancellationThrow.HasThis && cancellationThrow.Parameters.Count == 0 &&
+            cancellationThrow.DeclaringType.IsValueType &&
+            cancellationThrow.DeclaringType.Scope is AssemblyNameReference cancellationScope &&
+            cancellationScope.FullName == CoreLib &&
+            send.Parameters[1].ParameterType.FullName == cancellationThrow.DeclaringType.FullName &&
+            send.Parameters[1].ParameterType.Scope is AssemblyNameReference parameterScope && parameterScope.FullName == CoreLib);
         var awaiterTemplate = references.Single(method => method.Name == "GetAwaiter" &&
             ClosedType(method.DeclaringType, "System.Threading.Tasks.Task`1", "System.Net.Http.HttpResponseMessage"));
         var resultTemplate = references.Single(method => method.Name == "GetResult" &&
@@ -689,6 +697,8 @@ internal static class HttpDefaultSyncSend
         var awaiter = new VariableDefinition(awaiterType);
         send.Body.Variables.Add(awaiter);
         var il = send.Body.GetILProcessor();
+        il.Emit(OpCodes.Ldarga, send.Parameters[1]);
+        il.Emit(OpCodes.Call, cancellationThrow);
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldarg_1);
         il.Emit(OpCodes.Ldarg_2);
@@ -707,6 +717,7 @@ internal static class HttpDefaultSyncSend
             defaultConstruction = "original-HttpClient-HttpClientHandler-WasiHttpHandler",
             completion = "original-SendAsync-TaskAwaiter",
             requestAndCancellation = "original-arguments",
+            preCancellation = "original-CancellationToken.ThrowIfCancellationRequested-before-SendAsync",
             modifiedOriginalMethods = 1,
             generatedHelpers = 0,
             newHostImports = 0,

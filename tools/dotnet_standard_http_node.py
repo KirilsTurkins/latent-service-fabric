@@ -470,6 +470,9 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 stage = 'synchronous-pre-cancelled'
                 row = invoke(client, target, 6, url+'/conformance/json', 'standard-pre-cancelled')
                 require_case_result('pre-cancelled', row, '1:cancelled', lambda: None)
+                require(type(row['response']['data']['consumption']['outboundRequests']) is int
+                        and row['response']['data']['consumption']['outboundRequests'] == 0,
+                        'standard-dotnet-send-pre-cancelled-outbound-attempt')
                 require(prefix_revision(row, result['artifact']['component.wasm']['sha256']) == send_revision,
                         'standard-dotnet-send-pre-cancelled-signed-revision-or-process')
                 result['cases'].append('pre-cancelled')

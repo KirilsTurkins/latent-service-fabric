@@ -556,8 +556,8 @@ internal static class HttpSyncSendProbe
 
 internal static class HttpDefaultSyncSendProbe
 {
-    // Only invalid requests are executed on the host: their original SendAsync
-    // fails before native WASI I/O. Successful/pending Send requires signed-node
+    // Invalid requests and already-cancelled tokens stop before native WASI I/O.
+    // Successful/pending Send requires signed-node
     // qualification and cannot be inferred from these completed fault paths.
     internal static void Run(string[] args)
     {
@@ -626,6 +626,23 @@ internal static class HttpDefaultSyncSendProbe
                 Equal(unchanged.Message, synchronous.Message);
             }
             Equal("System.Net.Http.HttpMessageHandler", Method(derivedHandler, "Send").GetBaseDefinition().DeclaringType!.FullName);
+            using var cancelled = new CancellationTokenSource();
+            cancelled.Cancel();
+            object ValidRequest(Assembly assembly)
+            {
+                var request = Request(assembly, false)!;
+                request.GetType().GetProperty("RequestUri")!.SetValue(request,
+                    new Uri("http://127.0.0.1:1/pre-cancelled-source-control"));
+                return request;
+            }
+            var originalCancelled = Failure(() => Method(originalHandler, "Send").Invoke(originalHandler,
+                [ValidRequest(original), cancelled.Token]));
+            Equal(typeof(PlatformNotSupportedException), originalCancelled.GetType());
+            var derivedCancelled = Failure(() => Method(derivedHandler, "Send").Invoke(derivedHandler,
+                [ValidRequest(derived), cancelled.Token]));
+            Equal(typeof(OperationCanceledException), derivedCancelled.GetType());
+            Equal(cancelled.Token, ((OperationCanceledException)derivedCancelled).CancellationToken);
+            Equal(true, cancelled.IsCancellationRequested);
             var result = new {
                 scope = "captured-default-http-handler-sync-send-validation-host-controls",
                 assertions,
@@ -634,6 +651,7 @@ internal static class HttpDefaultSyncSendProbe
                 originalSynchronousSendUnsupported = true,
                 originalSendAsyncFaultsPreserved = true,
                 ordinaryDefaultConstructionPreserved = true,
+                preCancelledTokenRejectedBeforeOriginalAsync = true,
                 nativeSendQualified = false,
                 pendingGuestIoQualified = false,
                 defaultClientComponentQualified = false,
