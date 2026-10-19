@@ -30,31 +30,26 @@ const insideProject = path => {
 // Initializers run during component snapshot creation. Reject caller-dependent
 // clock/entropy observations before any library initializer. The wrapper also
 // checks when a module captures an intrinsic by reference.
-let guard = captured || standardFetch || standardConsole ? `
-var __lsfSnapshotActive = true;
-var __lsfOriginalRandom = Math.random, __lsfOriginalDate = Date;
+const nativeClocks = ['spidermonkey-activation-promises-clocks-v1',
+  'spidermonkey-activation-promises-clocks-imports-v1'].includes(configuration.runtimeProfile);
+if (configuration.standardClockProfile !== undefined || configuration.standardClockBackendDigest !== undefined ||
+    nativeClocks && !['latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'].every(name => imports.has(name))) {
+  throw new Error('standard-clock-requires-exact-profile-and-declared-clocks');
+}
+const clockProfile = nativeClocks ? 'lsf-standard-clock-native-v1' : 'lsf-standard-clock-unsupported-v1';
+let guard = 'var __lsfSnapshotActive = true;\n' + (captured || standardFetch || standardConsole ? `
+var __lsfOriginalRandom = Math.random;
 Math.random = function() {
   if (__lsfSnapshotActive) throw new Error('snapshot-time-entropy-observation-unsupported');
   return __lsfOriginalRandom();
 };
-globalThis.Date = new Proxy(__lsfOriginalDate, {
-  apply(target, self, args) {
-    if (__lsfSnapshotActive) throw new Error('snapshot-time-clock-observation-unsupported');
-    return Reflect.apply(target, self, args);
-  },
-  construct(target, args, receiver) {
-    if (__lsfSnapshotActive && args.length === 0) throw new Error('snapshot-time-clock-observation-unsupported');
-    return Reflect.construct(target, args, receiver);
-  },
-  get(target, name, receiver) {
-    if (name === 'now') return function() {
-      if (__lsfSnapshotActive) throw new Error('snapshot-time-clock-observation-unsupported');
-      return target.now();
-    };
-    return Reflect.get(target, name, receiver);
-  }
-});
-` : '';
+` : '');
+const clockSource = await readFile(new URL('./clock_app.mjs', import.meta.url), 'utf8');
+const clockAnchor = 'export function installApplicationClocks(';
+if (clockSource.split(clockAnchor).length !== 2) throw new Error('compiler-owned-clock-install-shape');
+const clockBackend = clockSource.replace(clockAnchor, 'function __lsfInstallApplicationClocks(') +
+  '\n__lsfInstallApplicationClocks(' + nativeClocks + ', () => __lsfSnapshotActive);\n';
+guard += clockBackend;
 let backend = '';
 let consoleBackend = '';
 if (standardFetch) {
@@ -75,7 +70,7 @@ if (standardConsole) {
     '\n__lsfInstallConsole(__lsfConsoleLog, () => __lsfSnapshotActive);\n';
   guard += consoleBackend;
 }
-const footer = captured || standardFetch || standardConsole ? '__lsfSnapshotActive = false;' : '';
+const footer = '__lsfSnapshotActive = false;';
 const result = await build({
   absWorkingDir: project, entryPoints: [input], outfile: output,
   bundle: true, format: 'esm', platform: 'neutral', target: 'es2022',
@@ -176,6 +171,8 @@ for (const file of result.outputFiles) {
 }
 await writeFile(output + '.inputs.json', JSON.stringify({
   ...result.metafile, capturedInputs: inputs, selection: configuration,
+  standardClockProfile: clockProfile,
+  standardClockBackendDigest: 'sha256:' + createHash('sha256').update(clockBackend).digest('hex'),
   snapshotGuardDigest: 'sha256:' + createHash('sha256').update(guard).digest('hex'),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,
     standardFetchBackendDigest: 'sha256:' + createHash('sha256').update(backend).digest('hex')} : {}),

@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "ApplicationClockTests.test_actual_bundle_replaces_frozen_default_clock_success_and_blocks_snapshot_reads",
+    "ApplicationClockTests.test_backend_error_identity_and_full_millisecond_value_are_preserved_without_retry",
+    "ApplicationClockTests.test_default_reads_refuse_but_explicit_date_arguments_and_statics_remain_deterministic",
+    "ApplicationClockTests.test_selected_backend_is_lazy_and_snapshot_reads_never_reach_it",
+    "ApplicationClockTests.test_unknown_installation_or_backend_shape_fails_before_a_clock_read"
+  ],
+  "guards": {
+    "ApplicationClockTests.test_actual_bundle_replaces_frozen_default_clock_success_and_blocks_snapshot_reads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3cfd11895700b683837a2710d2076694cf6493acd67554b2f3b461cfe17b671",
+        "class:setup-sha256:0bcf83e368dc4f7f6e6abce15cdd7fca48fc2380d385025a6a9583910e4774f2"
+      ],
+      "skipSites": []
+    },
+    "ApplicationClockTests.test_backend_error_identity_and_full_millisecond_value_are_preserved_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3cfd11895700b683837a2710d2076694cf6493acd67554b2f3b461cfe17b671",
+        "class:setup-sha256:0bcf83e368dc4f7f6e6abce15cdd7fca48fc2380d385025a6a9583910e4774f2"
+      ],
+      "skipSites": []
+    },
+    "ApplicationClockTests.test_default_reads_refuse_but_explicit_date_arguments_and_statics_remain_deterministic": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3cfd11895700b683837a2710d2076694cf6493acd67554b2f3b461cfe17b671",
+        "class:setup-sha256:0bcf83e368dc4f7f6e6abce15cdd7fca48fc2380d385025a6a9583910e4774f2"
+      ],
+      "skipSites": []
+    },
+    "ApplicationClockTests.test_selected_backend_is_lazy_and_snapshot_reads_never_reach_it": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3cfd11895700b683837a2710d2076694cf6493acd67554b2f3b461cfe17b671",
+        "class:setup-sha256:0bcf83e368dc4f7f6e6abce15cdd7fca48fc2380d385025a6a9583910e4774f2"
+      ],
+      "skipSites": []
+    },
+    "ApplicationClockTests.test_unknown_installation_or_backend_shape_fails_before_a_clock_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3cfd11895700b683837a2710d2076694cf6493acd67554b2f3b461cfe17b671",
+        "class:setup-sha256:0bcf83e368dc4f7f6e6abce15cdd7fca48fc2380d385025a6a9583910e4774f2"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_standard_clocks.py",
+  "reviewReason": "Add five actual JS app-realm clock controls: concrete undeclared/snapshot refusal, deterministic explicit Date semantics, current backend identity/laziness/error preservation, production bundle old-frozen-value regression; no native qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
