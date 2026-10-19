@@ -65,7 +65,9 @@ def inputs(language="rust"):
                     "typescript_guest/async_waiters.mjs", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "typescript_application_dependencies.py", "captured_compiler_isolation.py",
-                    "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "guest_authoring_frontend.py")
+                    "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "guest_authoring_frontend.py",
+                    "typescript_console_probe.py", "typescript_guest/console_profile.py", "typescript_guest/console.mjs",
+                    "typescript_guest/activation_module.mjs")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/outputs.py", "dotnet_guest/sdk.py",
@@ -117,7 +119,10 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
 
 
 def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None,
-            application_dependencies=False, static_application_dependencies=False, approved_generator=False):
+            application_dependencies=False, static_application_dependencies=False, approved_generator=False,
+            standard_typescript_console=False):
+    if type(standard_typescript_console) is not bool or standard_typescript_console and (language != 'typescript' or application_dependencies):
+        raise ValueError('standard console qualification requires standalone TypeScript')
     if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
     if static_application_dependencies and (language != "c" or not application_dependencies):
@@ -205,6 +210,9 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         (output / "builds").mkdir(mode=0o700)
         for template in TEMPLATES:
             project = creator(output / "projects" / template, template)
+            if standard_typescript_console and template == 'greeting':
+                from tools.typescript_console_probe import prepare as prepare_console
+                result['standardConsole'] = prepare_console(project)
             executable_approval = None
             if language == "dotnet" and template == "greeting":
                 from tools.dotnet_resource_fixture import install as install_resources
@@ -385,7 +393,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
             language=language, noncrypto_entropy=language == "dotnet",
-            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies)
+            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies,
+            **({'standard_typescript_console': True} if standard_typescript_console else {}))
+        if standard_typescript_console:
+            if len(result['node'].get('typescriptConsoleCases', [])) != 8:
+                raise ValueError('all signed TypeScript console cases must pass')
+            result['standardConsole']['signedExecution'] = 'signed-admitted-component'
         if language == "rust" and application_dependencies:
             from tools.rust_dependency_failures import qualify as qualify_ffi
             stage = "captured-native-ffi-failure"

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Capture both logging and v5 helper identities in the unchanged normal Go source identity recipe.",
+  "reviewReason": "Preserve current development Go logging and Rust stdio flag/recipe identities alongside the independently signed TypeScript console programme; no implementation, budgets or case omissions.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ad2cb9d5251d28234863c75a898212322e7d58e790be8ab20f8471c2e1c62395"
+  "sha256": "ae2528334e246f8b2b8230517e8a10d6747da84cf358f70e34bdf6e9c97d16da"
 }
