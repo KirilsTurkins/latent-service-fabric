@@ -13,7 +13,11 @@
     "TypeScriptFetchTests.test_pending_typed_exchange_http_errors_chunk_retirement_and_no_replay",
     "TypeScriptFetchTests.test_redirects_reauthorize_strip_headers_and_mutation_is_never_replayed",
     "TypeScriptFetchTests.test_replacement_body_does_not_consume_or_reuse_inherited_bytes",
-    "TypeScriptFetchTests.test_standard_headers_buffered_body_clone_and_one_shot_request"
+    "TypeScriptFetchTests.test_response_error_factory_preserves_null_body_immutable_headers_and_clone",
+    "TypeScriptFetchTests.test_response_redirect_factory_matches_reference_location_status_and_clone",
+    "TypeScriptFetchTests.test_response_redirect_preserves_conversion_errors_and_finite_url_profile",
+    "TypeScriptFetchTests.test_standard_headers_buffered_body_clone_and_one_shot_request",
+    "TypeScriptFetchTests.test_synthetic_responses_do_not_contact_provider_or_convert_fetch_failure"
   ],
   "guards": {
     "TypeScriptFetchTests.test_abort_rejects_before_contact_and_retains_capacity_until_actual_completion": {
@@ -185,7 +189,59 @@
       ],
       "skipSites": []
     },
+    "TypeScriptFetchTests.test_response_error_factory_preserves_null_body_immutable_headers_and_clone": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchTests.test_response_redirect_factory_matches_reference_location_status_and_clone": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchTests.test_response_redirect_preserves_conversion_errors_and_finite_url_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
+    },
     "TypeScriptFetchTests.test_standard_headers_buffered_body_clone_and_one_shot_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508",
+        "class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77",
+        "class:skip:self.skipTest('requires Node')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchTests.test_synthetic_responses_do_not_contact_provider_or_convert_fetch_failure": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -201,6 +257,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch.py",
-  "reviewReason": "Add four bounded Node reference and typed-adapter controls for standard Headers iterable pairs, primitive refusal, iterator ownership and unchanged profile limits",
+  "reviewReason": "Add bounded pure Response.error/redirect factories, null-body/clone/immutable-header controls and preserve original typed-fetch rejection/ownership obligations; Node parity and normative conversion controls remain distinct.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -6,6 +6,7 @@ export function installFetch(http, snapshotActive, target = globalThis) {
   const unsupported = member => new TypeError('lsf-fetch-buffered-v1:unsupported:' + member);
   const records = new WeakMap();
   const immutableHeaders = new WeakSet();
+  const errorResponses = new WeakSet();
   let outstanding = 0;
   function readonly(owner, values) {
     for (const [key, value] of Object.entries(values)) {
@@ -186,6 +187,7 @@ export function installFetch(http, snapshotActive, target = globalThis) {
     get ok() { return this.status >= 200 && this.status <= 299; }
     clone() {
       if (this.bodyUsed) throw new TypeError('body-already-used');
+      if (errorResponses.has(this)) return Response.error();
       const statusText = Object.getOwnPropertyDescriptor(this, 'statusText');
       const result = new Response(records.get(this).content, {status: this.status,
         statusText: statusText.get ? '' : statusText.value, headers: this.headers});
@@ -201,8 +203,26 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       if (!headers.has('content-type')) headers.set('content-type', 'application/json');
       return new Response(body, {...init, headers});
     }
-    static error() { throw unsupported('Response.error'); }
-    static redirect() { throw unsupported('Response.redirect'); }
+    static error() {
+      const result = new Response();
+      readonly(result, {status: 0, type: 'error'});
+      immutableHeaders.add(result.headers);
+      errorResponses.add(result);
+      return result;
+    }
+    static redirect(url, status = 302) {
+      if (typeof target.URL !== 'function') throw unsupported('runtime-URL');
+      if (typeof url === 'symbol') throw new TypeError('invalid-redirect-url');
+      const input = String(url), numeric = +status;
+      const code = Number.isFinite(numeric) ? ((Math.trunc(numeric) % 65536) + 65536) % 65536 : 0;
+      const parsed = new target.URL(input);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw unsupported('Response.redirect-url');
+      if (parsed.href.length > 2048) throw new RangeError('fetch-url-limit');
+      if (![301, 302, 303, 307, 308].includes(code)) throw new RangeError('invalid-redirect-status');
+      const result = new Response(null, {status: code, headers: {location: parsed.href}});
+      immutableHeaders.add(result.headers);
+      return result;
+    }
   }
   const forbidden = new Set(['host', 'content-length', 'content-encoding', 'accept-encoding', 'authorization',
     'cookie', 'set-cookie', 'expect', 'x-api-key', 'x-auth-token', 'x-amz-security-token', 'connection',

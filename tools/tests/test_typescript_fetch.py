@@ -12,6 +12,102 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class TypeScriptFetchTests(unittest.TestCase):
+    def test_response_error_factory_preserves_null_body_immutable_headers_and_clone(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+for (const Response of [globalThis.Response, target.Response]) {
+  const response = Response.error();
+  assert.equal(response instanceof Response, true);
+  assert.deepEqual([response.status, response.statusText, response.type, response.ok,
+    response.url, response.redirected, response.body, response.bodyUsed], [0, '', 'error', false, '', false, null, false]);
+  assert.deepEqual([...response.headers], []);
+  for (const value of [response, response.clone()]) {
+    assert.equal(value.status, 0); assert.equal(value.type, 'error');
+    assert.equal(await value.text(), '');
+    assert.equal((await value.arrayBuffer()).byteLength, 0);
+    await assert.rejects(value.json(), SyntaxError);
+    assert.equal(value.bodyUsed, false);
+    for (const operation of ['append', 'set', 'delete']) {
+      assert.throws(() => value.headers[operation]('x-test', 'value'), TypeError);
+    }
+  }
+  const copy = response.clone();
+  assert.notEqual(copy, response); assert.notEqual(copy.headers, response.headers);
+  assert.throws(() => new Response(null, {status: 0}), RangeError);
+  const ordinary = new Response('ordinary');
+  ordinary.headers.set('x-test', 'mutable');
+  assert.equal(await ordinary.clone().text(), 'ordinary');
+}
+""")
+
+    def test_response_redirect_factory_matches_reference_location_status_and_clone(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+const url = 'https://EXAMPLE.test:443/a path?value=\u2603#fragment';
+const object = new URL(url);
+assert.deepEqual([...target.Response.redirect(object).headers], [...globalThis.Response.redirect(object).headers]);
+for (const status of [undefined, 301, 302, 303, 307, 308, '301', 301.9, 65536 + 302]) {
+  const reference = globalThis.Response.redirect(url, status);
+  const response = target.Response.redirect(url, status);
+  assert.deepEqual([...response.headers], [...reference.headers]);
+  assert.deepEqual([response.status, response.statusText, response.type, response.ok,
+    response.url, response.redirected, response.body], [reference.status, '', 'default', false, '', false, null]);
+  assert.equal(response.headers.get('location'), new URL(url).href);
+  assert.equal(response.headers.get('location').endsWith('#fragment'), true);
+  for (const value of [response, response.clone()]) {
+    assert.equal(value.status, reference.status);
+    assert.equal(await value.text(), ''); assert.equal(value.bodyUsed, false);
+    for (const operation of ['append', 'set', 'delete']) {
+      assert.throws(() => value.headers[operation]('x-test', 'value'), TypeError);
+    }
+  }
+}
+""")
+
+    def test_response_redirect_preserves_conversion_errors_and_finite_url_profile(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+for (const Response of [globalThis.Response, target.Response]) {
+  for (const status of [0, 200, 304, 400, null, NaN, Infinity]) {
+    assert.throws(() => Response.redirect('https://example.test/', status), RangeError);
+  }
+  for (const url of ['/relative', 'invalid URL']) assert.throws(() => Response.redirect(url), TypeError);
+  const reason = new Error('original status conversion');
+  const events = [];
+  assert.throws(() => Response.redirect({toString() {events.push('url'); return 'invalid URL';}},
+    {valueOf() {events.push('status'); throw reason;}}), error => error === reason);
+  assert.deepEqual(events, ['url', 'status']);
+}
+// Web IDL unsigned-short conversion uses ToNumber, which rejects BigInt.
+assert.throws(() => target.Response.redirect('https://example.test/', 301n), TypeError);
+// The unsigned-short modulo is nonnegative, including for negative inputs.
+assert.equal(target.Response.redirect('https://example.test/', -65536 + 307).status, 307);
+const prefix = 'https://example.test/';
+const maximum = prefix + 'x'.repeat(2048 - prefix.length);
+assert.equal(target.Response.redirect(maximum).headers.get('location'), maximum);
+assert.throws(() => target.Response.redirect(maximum + 'x'), /fetch-url-limit/);
+assert.throws(() => target.Response.redirect('ftp://example.test/'), /unsupported:Response.redirect-url/);
+""")
+
+    def test_synthetic_responses_do_not_contact_provider_or_convert_fetch_failure(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+let calls = 0;
+const original = {tag: 'uncertain'};
+installFetch({async open() {calls++; throw original;}}, () => false, target);
+assert.equal(target.Response.error().clone().type, 'error');
+assert.equal(target.Response.redirect('https://example.test/next').clone().status, 302);
+assert.equal(calls, 0);
+await assert.rejects(target.fetch('https://example.test/', {method: 'POST'}), error =>
+  error instanceof TypeError && error.uncertain === true && error.cause === original);
+assert.equal(calls, 1);
+assert.equal(target.Response.error().status, 0);
+assert.equal(calls, 1);
+""")
+
     def test_headers_accept_iterable_pairs_and_capture_independent_values(self):
         self.run_javascript(r"""
 const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
