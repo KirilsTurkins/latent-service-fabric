@@ -26,6 +26,7 @@ REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 ARTIFACTS = {'products': (12211733679, 266925280, 'sha256:2a9dd9ea62dcc4e367f413533b6d64c935f5c4c1ba5edeb17493172876821651'),
     'tools': (12209174521, 81715219, 'sha256:4c8419d5c40fcfa5082af8c8c0dddf0d6089833c23dfc386192c8766434a4395')}
 PRODUCTS = ('latent', 'latentd', 'examples/capsule_contracts', 'examples/package', 'examples/capsule_authoring')
+UNUSED_ORIGINAL_PRODUCTS = ('examples/go_runtime_probe',)
 COMPANIONS = tuple(TEMPLATES)
 MAX_DOCUMENT = 4 * 1024**2
 ORIGINAL_QUALIFICATION_DIGEST = 'sha256:ab8a39c9010649aa3f13a06f6d7db74276bbfd6b21c9fc8edcd683ec579bbfcc'
@@ -153,7 +154,8 @@ def retrieve_build(artifact, template, prepared, expected):
     layers = read_json(output / 'package-source.json')['layers']
     require(1 <= len(layers) <= 32, 'go-replay-package-layer-count')
     allowed = {'component.wasm', 'capsule.json', 'contracts.json', 'wit-lock.json', 'compatibility-report.json',
-               'wit/world.wit', 'wit/deps/clock/package.wit', 'wit/deps/http-v2/package.wit', 'wit/deps/http/package.wit'}
+               'wit/world.wit', 'wit/deps/clock/package.wit', 'wit/deps/random/package.wit',
+               'wit/deps/http-v2/package.wit', 'wit/deps/http/package.wit'}
     observed = {'package-source.json': (output / 'package-source.json').read_bytes()}
     for layer in layers:
         name = layer['source']
@@ -197,6 +199,12 @@ def expected_original_inputs():
 def owned_output(output):
     require(output != ROOT and ROOT not in output.parents, 'go-replay-output-outside-source')
     return fresh(output)
+
+
+def selected_products(receipt):
+    require(set(receipt['binaries']) == set(PRODUCTS + UNUSED_ORIGINAL_PRODUCTS),
+            'go-replay-exact-original-native-inventory')
+    return {name: receipt['binaries'][name] for name in PRODUCTS}
 
 
 def production_name(name):
@@ -276,10 +284,10 @@ def prepare(output):
         artifact.extract(prefix + name, output / name)
     receipt = read_json(output / 'qualification.json')
     require(digest((output / 'qualification.json').read_bytes()) == ORIGINAL_QUALIFICATION_DIGEST, 'go-replay-original-receipt-digest')
+    native_products = selected_products(receipt)
     source = (output / 'source-inputs.json').read_bytes()
     require(receipt['schemaVersion'] == 'latent.go-capsule.qualification.v1'
             and receipt['status'] == receipt['node']['status'] == 'passed'
-            and set(receipt['binaries']) == set(PRODUCTS)
             and json.loads(source) == expected_original_inputs()
             and source == (output / 'source-inputs-after.json').read_bytes()
             and digest(source) == receipt['sourceIdentityDigest'], 'go-replay-exact-original-source')
@@ -307,7 +315,8 @@ def prepare(output):
         'nativeProductionPreimages': {'files': len(preimages['files']), 'bytes': preimages['bytes'],
                                      'receipt': file_identity(output / 'source-preimages.json')},
         'permittedFixtureSourceDelta': 'only missing bounded reader import in qualifier', 'sourceIdentityDigest': receipt['sourceIdentityDigest'],
-        'nativeProducts': receipt['binaries'], 'artifact': artifact.summary(),
+        'nativeProducts': native_products, 'unusedOriginalProducts': list(UNUSED_ORIGINAL_PRODUCTS),
+        'artifact': artifact.summary(),
         'normalQualificationRecreated': False, 'nativeProductsCompiled': False,
         'originalNormalNode': {'receipt': file_identity(node_path,16*1024**2),
                                'invocations': len(node['invocations'])},
@@ -363,6 +372,7 @@ def compiler_tools(prepared, expected):
 def frozen(prepared):
     receipt = read_json(prepared / 'qualification.json')
     require(digest((prepared / 'qualification.json').read_bytes()) == ORIGINAL_QUALIFICATION_DIGEST, 'go-replay-original-receipt-drift')
+    selected_products(receipt)
     retrieval = read_json(prepared / 'retrieval.json')
     require(retrieval['compiledSource']['head'] == ORIGINAL_HEAD
             and retrieval['compiledSource']['run'] == ORIGINAL_RUN and retrieval['compiledSource']['job'] == ORIGINAL_JOB

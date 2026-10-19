@@ -2,6 +2,8 @@
 
 The explicit `fast_dependency_replay` manual selector reuses only five native
 products and five normal component packages from run39298177972/head3050cd9d33.
+Its pinned receipt lists six native products; the unused `go_runtime_probe` is
+accounted for but is neither downloaded nor executed by this replay.
 The original full45-minute job remains the default and retains every command,
 assertion, artifact and time bound. This diagnostic branch intentionally stays
 on that source composition rather than claiming a new development compilation.

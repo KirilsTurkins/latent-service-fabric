@@ -18,6 +18,51 @@ from tools.rust_capsule_project import canonical, digest
 
 
 class ReplayBoundaries(unittest.TestCase):
+    def test_original_random_wit_layer_is_bound_and_unknown_layers_still_refuse(self):
+        from tools.rust_capsule_project import inventory
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for ordinal, member in enumerate(('wit/deps/random/package.wit', 'private.env')):
+                layers = [{'source': name, 'path': name} for name in ('component.wasm', member)]
+                observed = {'package-source.json': canonical({'layers': layers}),
+                            'component.wasm': b'original component', member: b'original WIT'}
+                package = inventory(observed)
+                observation = canonical({'materials': [{'name': 'package-inputs',
+                    'digest': digest(package), 'size': len(package)}]})
+                marker = {'componentDigest': digest(observed['component.wasm']),
+                          'observationDigest': digest(observation), 'sourceDigest': digest(b'original source')}
+                records = dict(observed, **{'BUILD-COMPLETE.json': canonical(marker),
+                    'build-observation.json': observation, 'source-inputs.json': b'original source',
+                    'recipe-inputs.json': b'{}', 'package-inputs.json': package, 'deployment.json': b'{}'})
+                class FixedArtifact:
+                    def extract(self, name, output, maximum=None):
+                        prefix = 'go-capsule-authoring/builds/greeting/'
+                        self_name = name.removeprefix(prefix)
+                        self_outer.assertTrue(name.startswith(prefix))
+                        output.parent.mkdir(parents=True, exist_ok=True)
+                        output.write_bytes(records[self_name])
+                self_outer = self
+                artifact = FixedArtifact()
+                destination = root / str(ordinal)
+                if ordinal == 0:
+                    replay.retrieve_build(artifact, 'greeting', destination, marker)
+                    self.assertEqual((destination / 'builds/greeting' / member).read_bytes(), b'original WIT')
+                else:
+                    with self.assertRaisesRegex(Exception, 'fixed-package-layer'):
+                        replay.retrieve_build(artifact, 'greeting', destination, marker)
+                    self.assertFalse((destination / 'builds/greeting' / member).exists())
+
+    def test_actual_six_product_inventory_reuses_only_five_and_refuses_unexpected_products(self):
+        rows = {name: {'sha256': digest(name.encode()), 'bytes': 1}
+                for name in replay.PRODUCTS + replay.UNUSED_ORIGINAL_PRODUCTS}
+        selected = replay.selected_products({'binaries': rows})
+        self.assertEqual(set(selected), set(replay.PRODUCTS))
+        self.assertNotIn('examples/go_runtime_probe', selected)
+        for changed in ({name: row for name, row in rows.items() if name != 'examples/go_runtime_probe'},
+                        dict(rows, unexpected={'sha256': digest(b'other'), 'bytes': 1})):
+            with self.assertRaisesRegex(Exception, 'exact-original-native-inventory'):
+                replay.selected_products({'binaries': changed})
+
     def test_wrong_or_ambient_tool_refuses_before_authoring_can_execute_it(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); tools = root / 'tools'; tools.mkdir()
