@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Exact Git-LF union captures private CA/generator/logging/managed-v5 helpers while all original controls/default selectors remain.",
+  "reviewReason": "Import the existing bounded reader used by generator material size validation; preserve all generator checks and owning commands.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1ae0dcad6739fa1f6871d5317f6a3bb6a9ebba9bf8a76b99f436ab79caebcd9c"
+  "sha256": "8bb5994da580ca0b40e4571f81175b26efc7fe5c6539bc26ba95165e7304f1e3"
 }
