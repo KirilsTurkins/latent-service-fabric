@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schema/compatibility-catalogue/v1",
+  "title": "Informational source-bound library observations",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "lsf.compatibility.catalogue.v1"
+    },
+    "authority": {
+      "const": "none"
+    },
+    "packageEligibility": {
+      "const": "independent-of-catalogue"
+    },
+    "documents": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "origin": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "run": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "job": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "artifact": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "member": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              }
+            },
+            "required": [
+              "source",
+              "run",
+              "job",
+              "artifact",
+              "member"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "bytes",
+          "origin"
+        ],
+        "additionalProperties": false
+      },
+      "maxProperties": 64
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "identity": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "language": {
+            "enum": [
+              "c",
+              "dotnet",
+              "go",
+              "java",
+              "rust",
+              "typescript"
+            ]
+          },
+          "package": {
+            "type": "object",
+            "properties": {
+              "coordinate": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "artifactDigest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            },
+            "required": [
+              "coordinate",
+              "version",
+              "artifactDigest"
+            ],
+            "additionalProperties": false
+          },
+          "packageBindings": {
+            "type": "object",
+            "properties": {
+              "coordinate": {
+                "$ref": "#/$defs/reference"
+              },
+              "version": {
+                "$ref": "#/$defs/reference"
+              },
+              "artifactDigest": {
+                "$ref": "#/$defs/reference"
+              }
+            },
+            "required": [
+              "coordinate",
+              "version",
+              "artifactDigest"
+            ],
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "known-incompatible",
+              "optional-adapter-assisted",
+              "supported-ordinary-configuration",
+              "tested-default-path",
+              "untested"
+            ]
+          },
+          "surface": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "construction": {
+            "enum": [
+              "ordinary-default",
+              "ordinary-configuration",
+              "injected-adapter",
+              "not-executed"
+            ]
+          },
+          "bindings": {
+            "type": "object",
+            "properties": {
+              "automaticPatches": {
+                "$ref": "#/$defs/reference"
+              },
+              "backend": {
+                "$ref": "#/$defs/reference"
+              },
+              "compiler": {
+                "$ref": "#/$defs/reference"
+              },
+              "component": {
+                "$ref": "#/$defs/reference"
+              },
+              "configuration": {
+                "$ref": "#/$defs/reference"
+              },
+              "engine": {
+                "$ref": "#/$defs/reference"
+              },
+              "graph": {
+                "$ref": "#/$defs/reference"
+              },
+              "runtime": {
+                "$ref": "#/$defs/reference"
+              },
+              "source": {
+                "$ref": "#/$defs/reference"
+              },
+              "wit": {
+                "$ref": "#/$defs/reference"
+              }
+            },
+            "required": [
+              "automaticPatches",
+              "backend",
+              "compiler",
+              "component",
+              "configuration",
+              "engine",
+              "graph",
+              "runtime",
+              "source",
+              "wit"
+            ],
+            "additionalProperties": false
+          },
+          "evidence": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "actual-component",
+                  "native-reference",
+                  "compiler",
+                  "not-run"
+                ]
+              },
+              "result": {
+                "$ref": "#/$defs/reference"
+              },
+              "source": {
+                "$ref": "#/$defs/reference"
+              },
+              "component": {
+                "$ref": "#/$defs/reference"
+              },
+              "claims": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                },
+                "minItems": 1,
+                "maxItems": 32,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "kind",
+              "result",
+              "source",
+              "component",
+              "claims"
+            ],
+            "additionalProperties": false
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "identity",
+          "language",
+          "package",
+          "packageBindings",
+          "status",
+          "surface",
+          "construction",
+          "bindings",
+          "evidence",
+          "limitations"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 256
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "authority",
+    "packageEligibility",
+    "documents",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "properties": {
+        "document": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "pointer": {
+          "type": "string",
+          "maxLength": 512,
+          "pattern": "^(/.*)?$"
+        },
+        "valueDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "document",
+        "pointer",
+        "valueDigest"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
