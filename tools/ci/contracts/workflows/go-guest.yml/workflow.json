@@ -52,6 +52,10 @@
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
+          "tools/go_http_adversarial.py",
+          "tools/fixtures/go-http-adversarial/**",
+          "tools/qualify_go_http_adversarial.py",
+          "tools/tests/test_go_http_adversarial.py",
           "tools/qualify_go_standard_logging.py",
           "tools/go_standard_logging_probe.py",
           "tools/tests/test_go_standard_logging.py",
@@ -134,6 +138,10 @@
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
+          "tools/go_http_adversarial.py",
+          "tools/fixtures/go-http-adversarial/**",
+          "tools/qualify_go_http_adversarial.py",
+          "tools/tests/test_go_http_adversarial.py",
           "tools/qualify_go_standard_logging.py",
           "tools/go_standard_logging_probe.py",
           "tools/tests/test_go_standard_logging.py",
@@ -187,7 +195,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Preserve all logging and managed-v5 path triggers and original required native workflow.",
+  "reviewReason": "Preserve original standard33, library and native commands; add nine signed application-fixture cases with authenticated existing native products and unchanged SDK/runtime sources.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
