@@ -636,6 +636,8 @@ jobs:
           path: |
             ${{ runner.temp }}/typescript-fetch-frames/private-build.stderr.txt
             ${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt
+            ${{ runner.temp }}/typescript-fetch-frames/private-fetch.stderr.txt
+            ${{ runner.temp }}/typescript-fetch-frames/private-fetch.stdout.txt
           if-no-files-found: warn
           retention-days: 1
       - name: Retain only closed observations and original public CLI rows

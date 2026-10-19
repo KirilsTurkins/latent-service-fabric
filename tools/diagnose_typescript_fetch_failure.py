@@ -11,6 +11,7 @@ import shutil
 import secrets
 import sys
 import tempfile
+import tomllib
 import time
 
 # The workflow preserves this helper outside the checkout before selecting the
@@ -230,12 +231,13 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
     return record
 
 
-def retain_private_cargo(built, output: Path, environment: dict) -> dict:
+def retain_private_cargo(built, output: Path, environment: dict, *, stage: str = 'build') -> dict:
     """Retain bounded compiler output only, redacting known credential values.
 
     This runs before signing, node startup or peer credentials exist. These
     files are private setup diagnostics and are never runtime qualification.
     """
+    require(stage in {'build', 'fetch'}, 'fetch-frame-private-compiler-stage')
     secrets = []
     for key, value in environment.items():
         if re.search(r'(^|_)(TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|AUTHORIZATION|API_KEY|PRIVATE_KEY)(_|$)', key, re.I):
@@ -248,7 +250,7 @@ def retain_private_cargo(built, output: Path, environment: dict) -> dict:
         for value in sorted(set(secrets), key=len, reverse=True):
             raw = raw.replace(value, b'[REDACTED]')
         truncated = len(raw) > 1048576
-        path = output/('private-build.'+label+'.txt')
+        path = output/('private-'+stage+'.'+label+'.txt')
         path.write_bytes(raw[:1048576])
         result[label] = {**file_identity(path), 'redactedOutputTruncated': truncated}
     return {'scope': 'private-bounded-compiler-setup-only', 'knownCredentialValuesRedacted': True,
@@ -275,6 +277,22 @@ def cargo_setup_observation(built) -> dict:
             'stderr': {'bytes': len(built.stderr), 'sha256': digest(built.stderr)}, 'rawOutputRetained': False}
 
 
+
+def locked_registry_inputs(root: Path) -> dict:
+    """Authenticate data-only registry hydration; no git/unlocked dependency."""
+    raw = read_file(root/'Cargo.lock', 1024*1024)
+    require(digest(raw) == 'sha256:9ca94752fc918c521dd365eab93c8b92dfdde8c770df1377a10c8b44fe85b4d8',
+            'fetch-frame-original-lock')
+    packages = tomllib.loads(raw.decode())['package']
+    require(0 < len(packages) <= 2048 and all(not item.get('source') or (
+        item['source'] == 'registry+https://github.com/rust-lang/crates.io-index'
+        and re.fullmatch(r'[a-f0-9]{64}', item.get('checksum', ''))) for item in packages),
+        'fetch-frame-checksummed-registry-only')
+    return {'lock': file_identity(root/'Cargo.lock'), 'packages': len(packages),
+            'registryPackages': sum(bool(item.get('source')) for item in packages),
+            'target': 'x86_64-unknown-linux-gnu', 'locked': True, 'buildScriptsExecuted': False}
+
+
 def private_target(root: Path, output: Path, environment: dict) -> tuple[Path, str]:
     """Use cached outputs when present, otherwise build only in fresh private storage.
 
@@ -296,7 +314,7 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         'component': COMPONENT, 'rawNodeOutputRetained': False, 'privateCompilerOutputRetained': True,
         'privateBinaryPublished': False,
         'helper': file_identity(Path(__file__)),
-        'limits': {'overallSeconds': 600, 'buildSeconds': 450, 'frames': 32, 'registrationFailures': 16, 'ownerCount': 8192}}
+        'limits': {'overallSeconds': 600, 'buildSeconds': 450, 'registryFetchSeconds': 60, 'frames': 32, 'registrationFailures': 16, 'ownerCount': 8192}}
     try:
         head = run_bounded_result(['git', 'rev-parse', 'HEAD'], ROOT, build_environment(output), 10, 4096)
         require(head.returncode == 0 and head.stdout.decode().strip() == TESTED,
@@ -325,8 +343,17 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
             CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
             CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true', CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
             CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+        record['stage'] = 'locked-registry-hydration'
+        registry = locked_registry_inputs(ROOT)
+        fetched = run_bounded_result([tools['cargo'], 'fetch', '--locked', '--target', registry['target']],
+            ROOT, environment, min(60, deadline-time.monotonic()-120), 1048576)
+        record['registryHydration'] = {**registry, 'exitCode': fetched.returncode,
+            'privateDiagnostics': retain_private_cargo(fetched, output, os.environ, stage='fetch')}
+        require(locked_registry_inputs(ROOT) == registry, 'fetch-frame-lock-drift-after-fetch')
+        require(fetched.returncode == 0, 'fetch-frame-locked-registry-hydration')
+        record['stage'] = 'private-build'
         built = run_bounded_result(private_build_command(ROOT, overlays, environment, tools, context),
-            ROOT, environment, min(450, deadline-time.monotonic()), 1048576)
+            ROOT, environment, min(450, deadline-time.monotonic()-120), 1048576)
         record.update(frames.private_build_observation(built))
         record['cargoSetup'] = cargo_setup_observation(built)
         record['privateCompilerDiagnostics'] = retain_private_cargo(built, output, os.environ)
@@ -347,7 +374,9 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         record['failureClass'] = type(error).__name__ if type(error).__name__ in {
             'WorkflowError', 'ValueError', 'KeyError', 'TypeError', 'OSError', 'FileNotFoundError'} else 'Other'
         known = {'fetch-frame-existing-native-target', 'go-entry-frame-source-set',
-                 'go-entry-frame-environment', 'fetch-frame-three-overlay-set', 'fetch-frame-private-host-build'}
+                 'go-entry-frame-environment', 'fetch-frame-three-overlay-set', 'fetch-frame-private-host-build',
+                  'fetch-frame-locked-registry-hydration', 'fetch-frame-lock-drift-after-fetch',
+                  'fetch-frame-original-lock', 'fetch-frame-checksummed-registry-only'}
         record['guardReason'] = (error.args[0] if len(error.args) == 1 and type(error.args[0]) is str
                                  and error.args[0] in known else 'other')
     finally:

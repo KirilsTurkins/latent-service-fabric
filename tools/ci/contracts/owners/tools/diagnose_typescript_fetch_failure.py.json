@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain separate bounded credential-redacted private compiler setup output; no raw runtime output, no component changes and no passing substitution.",
+  "reviewReason": "Hydrate only exact original checksummed crates.io lock inputs through data-only locked fetch before unchanged offline private host build; retain setup output and hard bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "520dec103365a54938458239fdf9a47782f7905dbbf2aa54fb7a5457d5034f52"
+  "sha256": "cd21f40ed273ff2d7fd43185fb2c249f3611097e171dfc5cd040aa666334c674"
 }

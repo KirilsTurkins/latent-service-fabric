@@ -188,7 +188,7 @@ class FetchFailureFrames(unittest.TestCase):
             original = read_file(fetch.ROOT/'tools/diagnose_go_entry_frames.py').decode()
             self.assertIn("'build', '--offline', '--locked'", original)
             helper = read_file(Path(fetch.__file__)).decode()
-            self.assertIn('min(450, deadline-time.monotonic())', helper)
+            self.assertIn('min(450, deadline-time.monotonic()-120)', helper)
             self.assertIn('deadline = time.monotonic()+600', helper)
 
     def test_private_cargo_failure_projects_closed_setup_tokens_and_only_stream_digests(self):
@@ -215,6 +215,23 @@ class FetchFailureFrames(unittest.TestCase):
             with self.assertRaises(WorkflowError):
                 fetch.retain_private_cargo(SimpleNamespace(stdout=b'x'*1048577, stderr=b''), root, {})
 
+    def test_registry_preparation_binds_exact_original_checksums_and_runs_no_build(self):
+        raw = read_file(fetch.ROOT/'Cargo.lock', 1024*1024)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'Cargo.lock').write_bytes(raw)
+            original = fetch.locked_registry_inputs(root)
+            self.assertEqual(original['target'], 'x86_64-unknown-linux-gnu')
+            self.assertEqual(original['packages'], 442)
+            self.assertTrue(original['locked'])
+            self.assertFalse(original['buildScriptsExecuted'])
+            (root/'Cargo.lock').write_bytes(raw+b'\n')
+            with self.assertRaisesRegex(WorkflowError, 'original-lock'):
+                fetch.locked_registry_inputs(root)
+            helper = read_file(Path(fetch.__file__)).decode()
+            self.assertIn("[tools['cargo'], 'fetch', '--locked', '--target', registry['target']]", helper)
+            self.assertIn('min(60, deadline-time.monotonic()-120)', helper)
+
     def test_manual_observer_has_no_gate_substitution_and_downloads_only_the_authenticated_run(self):
         workflow = yaml.safe_load(read_file(fetch.ROOT/'.github/workflows/typescript-guest.yml'))
         jobs = workflow['jobs']
@@ -235,7 +252,9 @@ class FetchFailureFrames(unittest.TestCase):
         self.assertEqual(private[0]['retention-days'], 1)
         self.assertEqual(private[0]['path'].splitlines(), [
             '${{ runner.temp }}/typescript-fetch-frames/private-build.stderr.txt',
-            '${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt'])
+            '${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt',
+            '${{ runner.temp }}/typescript-fetch-frames/private-fetch.stderr.txt',
+            '${{ runner.temp }}/typescript-fetch-frames/private-fetch.stdout.txt'])
         retained = steps[-1]['with']['path']
         for forbidden in ('private-latentd', 'source-overlays', 'stderr', '**', 'releases'):
             self.assertNotIn(forbidden, retained)

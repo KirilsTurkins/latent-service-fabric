@@ -92,7 +92,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-fetch-private-cargo-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-fetch-frames/private-build.stderr.txt\n${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt\n",
+          "path": "${{ runner.temp }}/typescript-fetch-frames/private-build.stderr.txt\n${{ runner.temp }}/typescript-fetch-frames/private-build.stdout.txt\n${{ runner.temp }}/typescript-fetch-frames/private-fetch.stderr.txt\n${{ runner.temp }}/typescript-fetch-frames/private-fetch.stdout.txt\n",
           "retention-days": 1
         }
       },
@@ -112,7 +112,7 @@
   },
   "jobId": "fetch-failure-frames",
   "kind": "job",
-  "reviewReason": "Retain separate bounded private compiler setup stderr/stdout with known credential redaction; preserve exact replay, fixed registration labels, all original limits and production gates.",
+  "reviewReason": "Hydrate only exact original checksummed crates.io lock inputs through data-only locked fetch before unchanged offline private host build; retain setup output and hard bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
