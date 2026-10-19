@@ -1,0 +1,30 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Require actual bounded declaration bytes and complete application name/media membership; retain dependency and six-language assembly positives.",
+  "module":"tools/tests/test_resource_manifest_membership.py",
+  "cases":["ApplicationManifestMembership.test_all_six_package_assembly_paths_keep_exact_mixed_manifest_and_dependency_membership","ApplicationManifestMembership.test_declared_empty_requires_its_bound_bytes_and_dependency_only_needs_no_manifest","ApplicationManifestMembership.test_declared_rows_cannot_be_omitted_even_when_the_remaining_inventory_is_rehashed","ApplicationManifestMembership.test_exact_mixed_selection_preserves_shared_binary_empty_bytes_and_parses_once","ApplicationManifestMembership.test_manifest_document_shape_aliases_and_limits_still_fail_closed","ApplicationManifestMembership.test_missing_wrong_type_and_substituted_manifest_are_rejected_before_decoding","ApplicationManifestMembership.test_rehashed_application_names_and_media_require_actual_declaration_membership","ApplicationManifestMembership.test_relabelling_either_origin_cannot_change_the_declared_application_inventory","ApplicationManifestMembership.test_verified_manifest_validates_source_paths_without_ambient_file_reads"],
+  "guards":{
+    "ApplicationManifestMembership.test_rehashed_application_names_and_media_require_actual_declaration_membership":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_declared_rows_cannot_be_omitted_even_when_the_remaining_inventory_is_rehashed":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_relabelling_either_origin_cannot_change_the_declared_application_inventory":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_missing_wrong_type_and_substituted_manifest_are_rejected_before_decoding":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_manifest_document_shape_aliases_and_limits_still_fail_closed":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_exact_mixed_selection_preserves_shared_binary_empty_bytes_and_parses_once":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_declared_empty_requires_its_bound_bytes_and_dependency_only_needs_no_manifest":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_verified_manifest_validates_source_paths_without_ambient_file_reads":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25",
+    "ApplicationManifestMembership.test_all_six_package_assembly_paths_keep_exact_mixed_manifest_and_dependency_membership":
+      "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25"
+  },
+  "guardDefinitions":{
+    "b24f22252f1c599f6bc1384e2e1ca26a80768ce74e634903c7597699a08aef25":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:6190b8f640c5e9b65b08b3cd45793df0ce38c54be5df497e8cabb0d9481bad37","class:setup-sha256:dee1c48d257bc871a9b19e7dbd58b435d98c6196aaa2c4c7d6b8524964843133"]}
+  }
+}

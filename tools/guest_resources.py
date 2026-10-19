@@ -92,6 +92,19 @@ def dependency_artifacts(raw: bytes) -> list:
     return lock["artifacts"]
 
 
+def application_declarations(raw: bytes | None, expected_digest: str) -> dict[str, dict]:
+    require(raw is not None, "resource-index-manifest-required", "missing")
+    require(isinstance(raw, bytes), "resource-manifest-bytes-required")
+    require(0 < len(raw) <= MAX_DOCUMENT, "resource-manifest-limit", "exhausted")
+    require(digest(raw) == expected_digest, "resource-index-manifest-mismatch", "denied")
+    rows = declarations({MANIFEST: raw})
+    spellings, leaves, selected = {}, set(), {}
+    for row in rows:
+        register(row["path"], spellings, leaves)
+        selected[row["path"]] = row
+    return selected
+
+
 def dependency_owner(artifacts: list, owner: str) -> dict:
     candidates = [item for item in artifacts if isinstance(item, dict) and item.get("id") == owner]
     require(len(candidates) == 1 and isinstance(candidates[0].get("files"), list), "resource-dependency-owner-not-captured", "denied")
@@ -201,7 +214,7 @@ def assemble(output: Path, files: dict[str, bytes], component: bytes, *, additio
 
 def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, component_digest: str,
            manifest_digest: str | None = None, dependency_lock_digest: str | None = None,
-           dependency_lock: bytes | None = None) -> dict:
+           dependency_lock: bytes | None = None, manifest: bytes | None = None) -> dict:
     value = decode(raw, MAX_DOCUMENT, maximum_items=4096)
     fields = {"schemaVersion", "sourceDigest", "componentDigest", "manifestDigest", "dependencyLockDigest", "limits",
               "count", "bytes", "resources", "runtimeLookup", "scratchStorage", "identity"}
@@ -221,6 +234,7 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
             and value["count"] == len(value["resources"]) <= MAX_COUNT, "resource-count-limit", "exhausted")
     require(type(value["bytes"]) is int and 0 <= value["bytes"] <= MAX_TOTAL, "resource-byte-limit", "exhausted")
     total, spellings, paths_seen, object_paths, previous, artifacts = 0, {}, set(), set(), "", None
+    application, application_paths = None, set()
     for row in value["resources"]:
         require(isinstance(row, dict) and set(row) in ({"path", "object", "digest", "size", "mediaType", "origin"},
                 {"path", "object", "digest", "size", "mediaType", "origin", "owner"}), "resource-index-entry-schema")
@@ -243,7 +257,13 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
         payload = objects[row["object"]]
         require(isinstance(payload, bytes) and len(payload) == row["size"] and digest(payload) == row["digest"],
                 "resource-object-integrity-mismatch", "denied")
-        if row["origin"] == "dependency":
+        if row["origin"] == "application":
+            if application is None:
+                application = application_declarations(manifest, value["manifestDigest"])
+            require(logical in application and row["mediaType"] == application[logical]["mediaType"],
+                    "resource-application-not-declared", "denied")
+            application_paths.add(logical)
+        else:
             if artifacts is None:
                 require(dependency_lock is not None, "resource-index-dependency-lock-required", "missing")
                 require(isinstance(dependency_lock, bytes), "resource-dependency-lock-invalid")
@@ -253,5 +273,9 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
             dependency_member(dependency_owner(artifacts, row["owner"]), row["digest"], row["size"])
         total += row["size"]
         object_paths.add(row["object"])
+    if value["manifestDigest"] is not None:
+        if application is None:
+            application = application_declarations(manifest, value["manifestDigest"])
+        require(application_paths == set(application), "resource-index-application-inventory-mismatch", "denied")
     require(total == value["bytes"] and set(objects) == object_paths, "resource-index-inventory-mismatch", "denied")
     return value
