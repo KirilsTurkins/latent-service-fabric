@@ -1,5 +1,9 @@
 # Go capsule SDK
 
+Ordinary `fmt`, `log` and stdout/stderr writes can use the explicitly declared
+[bounded standard logging profile](../../docs/component-development/go-standard-logging.md).
+The signed campaign is pending; buffered/async logger drain remains unqualified.
+
 For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
 and select your language. The language profile below describes compiler and
 custom packaging details.

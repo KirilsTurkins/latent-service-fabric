@@ -195,7 +195,10 @@ class Compiler:
             raise ValueError("unimplemented-Go-WIT-export")
         binding_before = {path: path.read_bytes() for path in generated.glob("*/wit_bindings.go")}
         http_context = install(self.sdk, generated, http_context=activation)
+        from tools.go_guest.standard_log import install as install_standard_log
+        standard_log, log_transformations = install_standard_log(self.sdk, generated, runtime_profile)
         transforms = entry_transform
+        transforms.extend(log_transformations)
         for path, before in sorted(binding_before.items()):
             after = path.read_bytes()
             if after != before:
@@ -224,7 +227,7 @@ class Compiler:
             overlay_path = overlay(self.goroot, output / "runtime-overlay",
                                    generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
                                    activation=activation, checkpoints=checkpoints, timers=timers, initializers=initializers,
-                                   http_context=http_context)
+                                   http_context=http_context, standard_log=standard_log)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
             if selected_module is not None and selected_module["tags"]:
                 self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])

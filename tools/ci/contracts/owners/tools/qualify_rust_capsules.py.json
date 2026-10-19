@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
+  "reviewReason": "Add ordinary bounded Go standard logging and its captured signed campaign; preserve original APIs, authority, required commands, deadlines and existing tests.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fca1305106ce7c1490ca0c54ebfd6eac5061f9a911e4fb8837aaa8182880044b"
+  "sha256": "d0e6bfd3a0a516a705d6c27a55d5d31a28d0e22c6e1da5d4d70a25f8d6149b78"
 }
