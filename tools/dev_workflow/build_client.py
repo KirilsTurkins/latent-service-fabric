@@ -25,7 +25,6 @@ class Observer:
         now = time.monotonic()
         if now - self.previous < 0.5:
             return
-        self.previous = now
         try:
             changed = selection(self.source) != self.expected
         except (DevError, OSError, ValueError):
@@ -34,6 +33,9 @@ class Observer:
         if self.superseded and not self.cancelled:
             result = self.connection.call("cancel-build", {"buildId": self.build_id, "reason": "superseded"}, timeout=10)
             self.cancelled = result["accepted"]
+        # A captured snapshot can take longer than the polling interval. Keep a
+        # gap after completion instead of rescanning on every transport callback.
+        self.previous = time.monotonic()
 
 
 def cancel_and_confirm(connection, selected: str) -> None:

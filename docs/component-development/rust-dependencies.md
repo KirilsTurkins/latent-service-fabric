@@ -256,6 +256,14 @@ completed command timings under hashed labels; the final public report retains
 the completed timing list. A timeout is still a failed qualification. These
 observations distinguish work already completed from the active phase; they do
 not by themselves establish a deadlock, capacity cause or clean shutdown.
+During a watched build, source observation waits at least half a second after
+the preceding observation and any cancellation request complete. A slow captured
+snapshot therefore cannot trigger another full scan on the next transport poll.
+Unusable or changed source still supersedes only the current build identity;
+an unaccepted cancellation can be retried after the same gap. The final complete
+source check before returning the build and before deployment remains mandatory.
+This removes redundant polling work without extending the watch deadline or
+establishing that the complete three-stage qualification fits its budget.
 Its source is not an executed qualification receipt, and later final-source CI
 must preserve the other language gates in the shared developer-tools job.
 

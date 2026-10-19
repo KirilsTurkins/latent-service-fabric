@@ -14,6 +14,58 @@ from tools.dev_workflow import build_client, common, paths, process, project, sn
 from tools.tests.test_dev_contracts import descriptor
 
 
+class ObserverCadence(unittest.TestCase):
+    def test_slow_snapshot_observation_waits_from_completion_before_scanning_again(self):
+        clock, scans = [10.0], []
+        expected = ("recipe", "source")
+        def selection(source):
+            scans.append(clock[0])
+            clock[0] += 2.0
+            return expected
+        class Connection:
+            def call(self, *args, **kwargs):
+                raise AssertionError("unchanged selection cannot cancel a build")
+        observer = build_client.Observer(Path.cwd(), expected, Connection(), "a" * 32)
+        with patch.object(build_client, "selection", selection), patch.object(build_client.time, "monotonic", side_effect=lambda: clock[0]):
+            observer.check()
+            clock[0] += 0.01
+            observer.check()
+            self.assertEqual(scans, [10.0])
+            clock[0] = 12.5
+            observer.check()
+        self.assertEqual(scans, [10.0, 12.5])
+        self.assertFalse(observer.superseded)
+        self.assertFalse(observer.cancelled)
+
+    def test_slow_unavailable_snapshot_keeps_owned_cancellation_retry_after_cooldown(self):
+        clock, scans, calls = [10.0], [], []
+        def selection(source):
+            scans.append(clock[0])
+            clock[0] += 2.0
+            raise common.DevError("source-file-unavailable-or-unsafe")
+        class Connection:
+            def call(self, operation, arguments, **options):
+                calls.append((operation, arguments, options))
+                clock[0] += 1.0
+                return {"accepted": len(calls) > 1}
+        observer = build_client.Observer(Path.cwd(), ("recipe", "source"), Connection(), "b" * 32)
+        with patch.object(build_client, "selection", selection), patch.object(build_client.time, "monotonic", side_effect=lambda: clock[0]):
+            observer.check()
+            self.assertTrue(observer.superseded)
+            self.assertFalse(observer.cancelled)
+            clock[0] += 0.01
+            observer.check()
+            self.assertEqual(scans, [10.0])
+            self.assertEqual(len(calls), 1)
+            clock[0] = 13.5
+            observer.check()
+            self.assertTrue(observer.cancelled)
+            clock[0] = 17.0
+            observer.check()
+        self.assertEqual(scans, [10.0, 13.5, 17.0])
+        self.assertEqual(calls, [("cancel-build", {"buildId": "b" * 32, "reason": "superseded"}, {"timeout": 10})] * 2)
+
+
 class WatchTransitions(unittest.TestCase):
     def test_failed_foreground_lock_does_not_stop_an_existing_build(self):
         from tools.dev_workflow import cli
@@ -76,7 +128,7 @@ class WatchTransitions(unittest.TestCase):
                 calls.append((operation, arguments))
                 return {"accepted": True}
         observer = build_client.Observer(Path.cwd(), ("recipe", "old"), Connection(), "a" * 32)
-        with patch.object(build_client, "selection", return_value=("recipe", "new")), patch.object(build_client.time, "monotonic", side_effect=[1, 2]):
+        with patch.object(build_client, "selection", return_value=("recipe", "new")), patch.object(build_client.time, "monotonic", side_effect=[1, 1, 2, 2]):
             observer.check()
             observer.check()
         self.assertTrue(observer.superseded)
