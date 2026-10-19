@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_fetch_component.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Build an actual Fetch-selected async-import component from same-run source-owned engine and splicer without inferring signed/provider execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b5d9e06c83e7018a1e343d4d6e6014ba0e95dc58ace63a9792a9163b4b495d70"
+}

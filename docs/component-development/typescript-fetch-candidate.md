@@ -133,6 +133,24 @@ two unchanged clients/private-dependency controls, broader lifecycle/exhaustion
 and measured ownership evidence. The independent approved socket profile remains
 owned by #737–#740.
 
+The `Actual source-owned Fetch component construction` workflow job now consumes
+the exact same-run source-built import engine and compiler splicer. It runs the
+maintained compiler on an outside-checkout project with ordinary global lookup
+in direct and transitive module initializers and a real async typed HTTP import.
+Successful componentization includes the fixture's snapshot-time constructor
+assertions, generated-declaration typechecking, component validation and decoded
+public-type comparison. It retains the actual component, selected backend and
+bootstrap digests, exact engine/splicer inputs, and before/after source/compiler
+identities. It builds no second engine or native node and preserves the existing
+job deadlines and guards.
+
+The new job is a qualification attempt until its exact-head hosted result is
+verified. Its report deliberately distinguishes component construction from
+runtime execution: it does not invoke the async export, sign or admit a component,
+contact a real provider, or run unchanged published/private clients. Those gates,
+the HTTP/Abort/body/lifecycle matrix and physical cleanup remain required; engine
+support stays `unknown` / `not-evaluated` after a successful build.
+
 ## Synthetic response factories
 
 The buffered profile supplies `Response.error()` and
