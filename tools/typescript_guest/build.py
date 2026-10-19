@@ -32,7 +32,7 @@ RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "t
     "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py",
-           "tools/typescript_dependency_authoring.py", "tools/npm_lock_authoring.py", "tools/captured_compiler_isolation.py")
+           "tools/typescript_dependency_authoring.py", "tools/npm_lock_authoring.py", "tools/typescript_registry_tls.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += ('tools/guest_runtime_receipts.py',)
@@ -58,6 +58,8 @@ RECIPE += ("tools/typescript_generator_authoring.py",)
 RECIPE += ('tools/typescript_guest/entropy.mjs', 'tools/typescript_guest/entropy_profile.py')
 RECIPE += ('tools/typescript_guest/fetch.mjs', 'tools/typescript_guest/fetch_profile.py',
            'sdk/typescript-guest/activation/fetch-globals.d.ts')
+RECIPE += ('tools/typescript_guest/console.mjs', 'tools/typescript_guest/console_profile.py',
+           'tools/typescript_guest/activation_module.mjs', 'sdk/typescript-guest/capabilities/console-globals.d.ts')
 
 
 def runtime_package_sources(original: dict[str, bytes], selected: dict,
@@ -197,6 +199,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             (output / 'typescript-entropy-selection.json').write_bytes(entropy_selection)
             runtime_materials.append({'name': 'typescript-standard-entropy',
                                       'digest': digest(entropy_selection), 'size': len(entropy_selection)})
+            runtime_assets += (('typescript-entropy-selection.json', 'asset',
+                                'application/vnd.latent.typescript.entropy-selection.v1+json'),)
             if closure is not None:
                 (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
                 (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))

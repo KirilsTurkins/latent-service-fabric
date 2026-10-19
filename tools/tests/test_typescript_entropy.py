@@ -126,7 +126,7 @@ assert.throws(()=>installMathRandom(null,null,{}),TypeError);
                 b" if(Math.random!==originalRandom) throw Error('compiler-host-random-mutated');\n"
                 b" const input=await readFile(options.entryPoints[0],'utf8');\n"
                 b" const text=options.banner.js+'\\n'+input+'\\n'+options.footer.js;\n"
-                b" return {metafile:{inputs:{}},outputFiles:[{path:options.outfile,text,contents:Buffer.from(text)}]};\n"
+                b" return {metafile:{inputs:{},outputs:{}},outputFiles:[{path:options.outfile,text,contents:Buffer.from(text)}]};\n"
                 b"}\n")
             imports, configuration = root / 'imports.json', root / 'configuration.json'
             imports.write_bytes(b'[]')

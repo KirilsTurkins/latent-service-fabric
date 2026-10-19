@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Rebuilt Rust standard stdio and signed ordinary libraries",
+    "needs": "authoring",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the existing bounded compiler namespace and pinned bindings",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Download this run's existing public native and companion products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "rust-git-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-stdio-prepared"
+        }
+      },
+      {
+        "name": "Test pinned stdio source and actual PAL host reference",
+        "run": "python3 -m unittest tools.tests.test_rust_standard_logging tools.tests.test_rust_standard_logging_campaign\npython3 tools/run_rust_stdio_reference.py --rustc \"$(rustup which rustc)\" --output \"$RUNNER_TEMP/rust-stdio-reference\"\n"
+      },
+      {
+        "name": "Build owned closed and logging std and execute ordinary signed libraries",
+        "run": "python3 tools/qualify_rust_standard_logging.py --prepared-qualification \"$RUNNER_TEMP/rust-stdio-prepared\" --output \"$RUNNER_TEMP/rust-standard-stdio\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded stdio observations including failed attempts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-standard-stdio-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-stdio-reference/qualification.json\n${{ runner.temp }}/rust-standard-stdio/qualification.json\n${{ runner.temp }}/rust-standard-stdio/FAILED.json\n${{ runner.temp }}/rust-standard-stdio/*-capture.json\n${{ runner.temp }}/rust-standard-stdio/logs/**\n${{ runner.temp }}/rust-standard-stdio/*-std/*.json\n${{ runner.temp }}/rust-standard-stdio/*-std/logs/**\n${{ runner.temp }}/rust-standard-stdio/*-build/*.json\n${{ runner.temp }}/rust-standard-stdio/*-build/logs/**\n${{ runner.temp }}/rust-standard-stdio/*-build/component.wasm\n${{ runner.temp }}/rust-standard-stdio/*-node/workflow.json\n${{ runner.temp }}/rust-standard-stdio/*-node/FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "standard-stdio",
+  "kind": "job",
+  "reviewReason": "Add a separately bounded same-run-products signed standard stdio job; preserve every original job, command, deadline and gate. Rebuild exact owned std and execute captured ordinary transitive-library closed/logging/failure/fresh paths; native results remain pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}

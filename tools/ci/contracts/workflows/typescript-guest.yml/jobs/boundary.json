@@ -67,6 +67,10 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
+        "name": "Test the explicit strict console and activation module initialization",
+        "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-guest-tools\" python3 -m unittest tools.tests.test_typescript_console -v"
+      },
+      {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -107,7 +111,7 @@
       },
       {
         "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
-        "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
+        "run": "python3 tools/qualify_typescript_capsules.py --standard-console --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
         "name": "Test controlled native npm lock authoring",
@@ -126,6 +130,14 @@
         "run": "python3 tools/qualify_typescript_dependencies.py --resolve-only --output \"$RUNNER_TEMP/typescript-library-integrity\"\npython3 tools/qualify_typescript_dependencies.py --offline --output \"$RUNNER_TEMP/typescript-library-integrity\" --tools \"$RUNNER_TEMP/typescript-guest-tools\" --prepared-qualification \"$RUNNER_TEMP/typescript-capsule-dependencies\"\n"
       },
       {
+        "name": "Test explicit registry trust and private campaign controls",
+        "run": "python3 -m unittest tools.tests.test_typescript_registry_tls tools.tests.test_npm_private_registry"
+      },
+      {
+        "name": "Qualify authenticated npm lifecycle with original native products",
+        "run": "python3 tools/qualify_npm_private_dependencies.py --native-qualification \"$RUNNER_TEMP/typescript-capsule-dependencies\" --tools \"$RUNNER_TEMP/typescript-guest-tools\" --output \"$RUNNER_TEMP/npm-private-dependencies\""
+      },
+      {
         "name": "Validate explicit TypeScript runtime selection and preserved public contracts",
         "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools tools.tests.test_typescript_runtime_materials tools.tests.test_typescript_runtime_bundle tools.tests.test_typescript_text_codec_source tools.tests.test_typescript_async_waiters tools.tests.test_typescript_runtime_packaging\n"
       },
@@ -136,7 +148,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-guest-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/transaction-guests-typescript/**/report.json\n${{ runner.temp }}/transaction-guests-typescript/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-typescript/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-typescript/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-typescript/**/component.wasm\n${{ runner.temp }}/transaction-guests-typescript/**/component.wit\n${{ runner.temp }}/transaction-guests-typescript/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-typescript/**/logs/**\n${{ runner.temp }}/transaction-guests-typescript/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-typescript/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-typescript/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-typescript/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-typescript/**/bindings/**\n${{ runner.temp }}/transaction-guests-typescript/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-typescript/report.json\n${{ runner.temp }}/transaction-contract-typescript/source.tar.gz\n${{ runner.temp }}/transaction-contract-typescript/component.wit\n${{ runner.temp }}/transaction-contract-typescript/preparation.json\n${{ runner.temp }}/transaction-contract-typescript/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-typescript/logs/**\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.log\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wit\n${{ runner.temp }}/transaction-contract-typescript/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/generated/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-typescript/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/component.wasm\ntarget/typescript-guest-runtime/runtime-tests.log\ntarget/typescript-guest-runtime/owner-tests.log\n${{ runner.temp }}/typescript-guest-probe/\n${{ runner.temp }}/typescript-capsule-authoring/\n${{ runner.temp }}/typescript-capsule-dependencies/\n${{ runner.temp }}/typescript-library-integrity/capture.json\n${{ runner.temp }}/typescript-library-integrity/qualification.json\n${{ runner.temp }}/typescript-library-integrity/FAILED.json\n${{ runner.temp }}/typescript-library-integrity/acquisition/logs/**\n${{ runner.temp }}/typescript-library-integrity/execution/logs/**\n${{ runner.temp }}/typescript-library-integrity/build/*.json\n${{ runner.temp }}/typescript-library-integrity/build/component.wasm\n${{ runner.temp }}/typescript-library-integrity/build/logs/**\n${{ runner.temp }}/typescript-library-integrity/offline-rebuild/*.json\n${{ runner.temp }}/typescript-library-integrity/offline-rebuild/component.wasm\n${{ runner.temp }}/typescript-library-integrity/offline-rebuild/logs/**\n${{ runner.temp }}/typescript-library-integrity/node/**/*.json\n",
+          "path": "${{ runner.temp }}/transaction-guests-typescript/**/report.json\n${{ runner.temp }}/transaction-guests-typescript/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-typescript/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-typescript/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-typescript/**/component.wasm\n${{ runner.temp }}/transaction-guests-typescript/**/component.wit\n${{ runner.temp }}/transaction-guests-typescript/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-typescript/**/logs/**\n${{ runner.temp }}/transaction-guests-typescript/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-typescript/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-typescript/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-typescript/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-typescript/**/bindings/**\n${{ runner.temp }}/transaction-guests-typescript/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-typescript/report.json\n${{ runner.temp }}/transaction-contract-typescript/source.tar.gz\n${{ runner.temp }}/transaction-contract-typescript/component.wit\n${{ runner.temp }}/transaction-contract-typescript/preparation.json\n${{ runner.temp }}/transaction-contract-typescript/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-typescript/logs/**\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.log\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wit\n${{ runner.temp }}/transaction-contract-typescript/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/generated/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-typescript/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/component.wasm\ntarget/typescript-guest-runtime/runtime-tests.log\ntarget/typescript-guest-runtime/owner-tests.log\n${{ runner.temp }}/typescript-guest-probe/\n${{ runner.temp }}/typescript-capsule-authoring/\n${{ runner.temp }}/typescript-capsule-dependencies/\n${{ runner.temp }}/npm-private-dependencies/capture.json\n${{ runner.temp }}/npm-private-dependencies/qualification.json\n${{ runner.temp }}/npm-private-dependencies/FAILED.json\n${{ runner.temp }}/npm-private-dependencies/logs/**\n${{ runner.temp }}/npm-private-dependencies/build-*/*.json\n${{ runner.temp }}/npm-private-dependencies/build-*/component.wasm\n${{ runner.temp }}/npm-private-dependencies/build-*/logs/**\n${{ runner.temp }}/npm-private-dependencies/offline-rebuild/*.json\n${{ runner.temp }}/npm-private-dependencies/offline-rebuild/component.wasm\n${{ runner.temp }}/npm-private-dependencies/node-*/workflow.json\n${{ runner.temp }}/npm-private-dependencies/node-*/FAILED.json\n${{ runner.temp }}/typescript-library-integrity/capture.json\n${{ runner.temp }}/typescript-library-integrity/qualification.json\n${{ runner.temp }}/typescript-library-integrity/FAILED.json\n${{ runner.temp }}/typescript-library-integrity/acquisition/logs/**\n${{ runner.temp }}/typescript-library-integrity/execution/logs/**\n${{ runner.temp }}/typescript-library-integrity/build/*.json\n${{ runner.temp }}/typescript-library-integrity/build/component.wasm\n${{ runner.temp }}/typescript-library-integrity/build/logs/**\n${{ runner.temp }}/typescript-library-integrity/offline-rebuild/*.json\n${{ runner.temp }}/typescript-library-integrity/offline-rebuild/component.wasm\n${{ runner.temp }}/typescript-library-integrity/offline-rebuild/logs/**\n${{ runner.temp }}/typescript-library-integrity/node/**/*.json\n",
           "retention-days": 7
         }
       }
@@ -145,7 +157,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Preserve every merged integrity and original boundary command, artifact path and75-minute budget; add normal native npm lock authoring control.",
+  "reviewReason": "Compose development logging and Console with unchanged private npm capture qualification; preserve every existing command.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

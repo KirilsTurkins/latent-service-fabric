@@ -25,6 +25,7 @@
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
           "sdk/rust-standard-runtime/**",
+          "sdk/rust-standard-stdio/**",
           "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
@@ -45,6 +46,7 @@
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
           "sdk/rust-standard-runtime/**",
+          "sdk/rust-standard-stdio/**",
           "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
@@ -56,7 +58,8 @@
           "docs/component-development/rust-authoring.md",
           "docs/component-development/rust-dependencies.md"
         ]
-      }
+      },
+      "workflow_dispatch": {}
     },
     "permissions": {
       "contents": "read"
@@ -68,9 +71,10 @@
     "dependency-matrix",
     "git-closure",
     "git-components",
-    "standard-clocks"
+    "standard-clocks",
+    "standard-stdio"
   ],
-  "reviewReason": "Retain every existing Rust job, including signed unsupported-operation compatibility. Require one additive varied dependency graph qualification job using this run's existing public prepared native tuple.",
+  "reviewReason": "Permit input-free manual execution of the unchanged owning Rust job graph on an exact pushed feature branch without requiring another open PR; preserve all previous events and job gates.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

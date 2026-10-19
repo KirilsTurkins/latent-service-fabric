@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "RegistryTrust.test_default_has_no_trust_side_effect_and_linux_selection_is_explicit",
+    "RegistryTrust.test_infrastructure_escape_and_open_trust_declarations_refuse",
+    "RegistryTrust.test_installed_recipe_contains_actual_trust_validation",
+    "RegistryTrust.test_native_environment_keeps_tokens_opaque_and_uses_only_explicit_npm_ca",
+    "RegistryTrust.test_offline_changed_source_or_profile_refuses",
+    "RegistryTrust.test_owned_public_bundle_and_identity_are_bound_to_exact_child_inputs",
+    "RegistryTrust.test_private_key_malformed_oversized_and_non_certificate_data_refuse",
+    "RegistryTrust.test_source_owned_copy_and_tls_verification_mutation_refuse",
+    "RegistryTrustCapture.test_native_lock_checks_owned_trust_and_records_immutable_recipe",
+    "RegistryTrustCapture.test_real_capture_and_exact_review_bind_ca_as_native_input"
+  ],
+  "guards": {
+    "RegistryTrust.test_default_has_no_trust_side_effect_and_linux_selection_is_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrust.test_infrastructure_escape_and_open_trust_declarations_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrust.test_installed_recipe_contains_actual_trust_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrust.test_native_environment_keeps_tokens_opaque_and_uses_only_explicit_npm_ca": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrust.test_offline_changed_source_or_profile_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrust.test_owned_public_bundle_and_identity_are_bound_to_exact_child_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrust.test_private_key_malformed_oversized_and_non_certificate_data_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrust.test_source_owned_copy_and_tls_verification_mutation_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:1451ddf25820c887e8cbf0cce109b494626c9980095b5dd90e96f6f37ae19959"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrustCapture.test_native_lock_checks_owned_trust_and_records_immutable_recipe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:8a73554039af46cba6bc54eaa0df00a6f1054ad25d50d8305c1e800802bee743"
+      ],
+      "skipSites": []
+    },
+    "RegistryTrustCapture.test_real_capture_and_exact_review_bind_ca_as_native_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fb3a006a272336a19ebb8b4198fcc2033755ebc3b24e892ef132325163c69ea",
+        "class:setup-sha256:8a73554039af46cba6bc54eaa0df00a6f1054ad25d50d8305c1e800802bee743"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_registry_tls.py",
+  "reviewReason": "Capture explicit bounded public npm CA bytes and require unchanged strict verification; preserve existing default authoring, cases and guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
