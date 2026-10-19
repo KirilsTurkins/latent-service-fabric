@@ -199,7 +199,8 @@ public final class Connection extends HttpURLConnection {
     @Override public int getResponseCode() throws IOException { response(); return responseCode; }
     @Override public String getResponseMessage() throws IOException {
         response();
-        throw new ProtocolException("HTTP reason phrase is not supplied by this exact profile");
+        // This typed provider exports status and headers, but no reason phrase.
+        return null;
     }
     @Override public Map<String, List<String>> getHeaderFields() {
         try { response(); return responseHeaders; }
