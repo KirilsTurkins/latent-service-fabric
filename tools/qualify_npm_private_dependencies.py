@@ -141,6 +141,16 @@ def preserved(app, target, lock, confidential):
     return target
 
 
+def application_source(original, package):
+    hook = b'return `Hello, ${clean}!`;'
+    guard = b'if (utf8Length(clean) > 100)'
+    require(original.count(hook) == 1 and original.count(guard) == 1
+        and original.index(guard) < original.index(hook), 'private-npm-original-template-required')
+    selected = b'import { describe } from ' + json.dumps(package).encode() + b';\n' + original
+    return selected.replace(hook,
+        b'if (clean.startsWith("private-npm:")) return describe(clean.slice(12));\n    ' + hook)
+
+
 def capture(output, commands, node, npm):
     nonce = secrets.token_hex(12)
     root_name, _ = packages(nonce, VERSIONS[0], 'root')
@@ -153,11 +163,7 @@ def capture(output, commands, node, npm):
         require(all(nonce.encode() not in raw for name, raw in source_files(app).items()
                     if name.startswith('vendor/lsf/')), 'private-npm-coordinate-already-in-sdk')
         original_source = read_file(app / 'src/main.ts')
-        hook = b'  greet(name) {'
-        require(original_source.count(hook) == 1, 'private-npm-original-template-required')
-        selected = b'import { describe } from "' + root_name.encode() + b'";\n' + original_source
-        selected = selected.replace(hook, hook + b'\n    if (name.startsWith("private-npm:")) return describe(name.slice(12));')
-        (app / 'src/main.ts').write_bytes(selected)
+        (app / 'src/main.ts').write_bytes(application_source(original_source, root_name))
         token, wrong = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
         with server(owned, commands, nonce, token) as (feed, endpoint, certificate, key):
             confidential = (token.encode(), wrong.encode(), key,

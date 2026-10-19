@@ -100,6 +100,21 @@ class PrivateRegistry(unittest.TestCase):
             peer.response('/missing', '')
         self.assertEqual(len(peer.observations), fixture.MAX_REQUESTS)
 
+    def test_private_module_hook_preserves_actual_template_trim_and_input_limits(self):
+        from tools.typescript_guest.project import create
+        with tempfile.TemporaryDirectory() as temporary:
+            project = create(Path(temporary)/'project', 'greeting')
+            original = (project/'src/main.ts').read_bytes()
+            selected = gate.application_source(original, '@private-'+'a'*24+'/root')
+            self.assertLess(selected.index(b'const clean = trim(name)'), selected.index(b'"private-npm:"'))
+            self.assertLess(selected.index(b'if (utf8Length(clean) > 100)'), selected.index(b'"private-npm:"'))
+            restored = selected.split(b'\n', 1)[1].replace(
+                b'if (clean.startsWith("private-npm:")) return describe(clean.slice(12));\n    ', b'')
+            self.assertEqual(restored, original)
+            for value in (original.replace(b'if (utf8Length(clean) > 100)', b'if (false)'), original+original):
+                with self.assertRaisesRegex(WorkflowError, 'original-template-required'):
+                    gate.application_source(value, '@private-'+'a'*24+'/root')
+
     def test_authority_is_child_only_and_previous_environment_restored(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); (root/'logs').mkdir()

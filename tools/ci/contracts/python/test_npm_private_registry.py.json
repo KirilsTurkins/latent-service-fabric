@@ -10,6 +10,7 @@
     "PrivateRegistry.test_open_or_invalid_coordinates_are_refused_before_archive_generation",
     "PrivateRegistry.test_peer_authentication_exact_asset_allowlist_and_redacted_observations",
     "PrivateRegistry.test_peer_total_request_bound_is_finite",
+    "PrivateRegistry.test_private_module_hook_preserves_actual_template_trim_and_input_limits",
     "PrivateRegistry.test_private_probe_cannot_run_in_another_language_or_via_truthy_selection",
     "PrivateRegistry.test_probe_metadata_is_closed_and_validated_before_any_invocation",
     "PrivateRegistry.test_signed_values_use_full_route_tuple_and_original_physical_idle",
@@ -137,6 +138,18 @@
       ],
       "skipSites": []
     },
+    "PrivateRegistry.test_private_module_hook_preserves_actual_template_trim_and_input_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cdb0e8fb7e84db9234a95cd7929b9d426801fa843df3eb1336f4d618bb72eab4",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
     "PrivateRegistry.test_private_probe_cannot_run_in_another_language_or_via_truthy_selection": {
       "bases": [
         "unittest.TestCase"
@@ -200,6 +213,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_npm_private_registry.py",
-  "reviewReason": "Add actual HTTPS/credential and secret-retention controls plus language-only private probe selection; preserve original cases and guards.",
+  "reviewReason": "Preserve actual template trim/100-byte guards before private module probes; all existing controls and runtime limits remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

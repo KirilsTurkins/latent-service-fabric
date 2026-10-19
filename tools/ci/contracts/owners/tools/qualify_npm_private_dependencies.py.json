@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_npm_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add bounded authenticated npm lifecycle with frozen exact native inputs; preserve all original workflow events, jobs, commands, tests, guards and production limits.",
+  "reviewReason": "Preserve actual template trim/100-byte guards before private module probes; all existing controls and runtime limits remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5564deb3491c1a4b459bbaa9ef3a9e22494a23047bf5b3a0c0b321f68f4527d1"
+  "sha256": "703bc6efa42645486f151d135e2872a89cc03aa81715bccfd2bd1d594522b553"
 }
