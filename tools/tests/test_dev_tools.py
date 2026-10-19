@@ -648,7 +648,9 @@ print('selected-recipe-imports-owned')
                    "go": "tools.go_capsule_build", "typescript": "tools.typescript_guest.build"}
         for language, module in modules.items():
             with self.subTest(language=language):
-                result = self.load(self.stage(language), module)
+                staged = self.stage(language)
+                self.assertEqual((staged / 'tools/rust_standard_logging_inputs.py').is_file(), language == 'rust')
+                result = self.load(staged, module)
                 self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace")[:4096])
                 self.assertEqual(result.stdout.decode("ascii").splitlines(), ["selected-recipe-imports-owned"])
                 self.assertEqual(result.stderr, b"")

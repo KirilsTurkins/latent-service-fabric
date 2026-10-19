@@ -1,5 +1,9 @@
 # TypeScript compiler and runtime profile
 
+The explicit declared LOG import selects the bounded
+[standard console candidate](typescript-standard-console.md), including
+activation-time module initialization. Its signed qualification remains pending.
+
 Ordinary application npm graphs use the [captured dependency workflow](typescript-dependencies.md), separately from the pinned SDK compiler lock.
 
 For application development, use [Creating a capsule](creating-a-capsule.md).

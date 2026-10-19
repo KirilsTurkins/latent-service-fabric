@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve merged Go maintenance source identities and add explicit npm public trust inputs; unchanged native and language qualification guards.",
+  "reviewReason": "Compose development logging and Console with unchanged private npm capture qualification; preserve every existing command.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cc96d2b3304364afd7ae9c0b589d470cb5c654dffa1d76647e3a843bde0d2f70"
+  "sha256": "60ba45e10f5b875fdee397999a4bf099f524ea5a5ef0c8f40c6132fef0eddf8a"
 }

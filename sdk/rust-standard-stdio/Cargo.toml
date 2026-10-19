@@ -1,0 +1,14 @@
+[package]
+name = "latent-standard-stdio"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Compiler-owned synchronous standard-stdio bridge for the explicit LSF Rust logging profile."
+
+[lints.rust]
+unsafe_code = "deny"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+latent-component-bindings = { path = "../../crates/latent-component-bindings" }
