@@ -18,6 +18,7 @@ from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.rust_capsule_project import snapshot
+from tools import dotnet_registry_tls
 
 PROFILE = 'dotnet-native-aot-component-v1'
 PROJECT = 'Capsule.csproj'
@@ -337,9 +338,10 @@ def feed_config(policy: dict | None, owned: Path, sdk_configuration: bytes) -> t
     baseline = xml(sdk_configuration)
     baseline_sources = [{'name': row.attrib['key'], 'url': row.attrib['value']} for row in baseline.find('packageSources') if row.tag == 'add']
     policy = policy or {'sources': []}
-    if set(policy) != {'sources'} or not isinstance(policy['sources'], list) or not 1 <= len(policy['sources']) <= 8:
-        if policy != {'sources': []}:
-            raise DependencyError('nuget-explicit-feed-policy-invalid')
+    if (not isinstance(policy, dict) or set(policy) - {'sources', 'tlsTrust'} or 'sources' not in policy
+            or not isinstance(policy['sources'], list) or not 0 <= len(policy['sources']) <= 8):
+        raise DependencyError('nuget-explicit-feed-policy-invalid')
+    dotnet_registry_tls.selection(policy)
     feed_rows, seen = baseline_sources + policy['sources'], set()
     for row in feed_rows:
         if set(row) - {'name', 'url', 'path', 'authorizationEnv', 'username', 'patterns'} or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}', row.get('name', '')) or row['name'].lower() in seen:
@@ -434,14 +436,21 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             raise DependencyError('nuget-resolver-sdk-version-not-pinned')
         (owned / 'global.json').write_bytes(files['global.json'])
         config, source_policy = feed_config(policy, owned, files['vendor/lsf/sdk/dotnet-guest/nuget.config'])
+        trust = dotnet_registry_tls.prepare(project, files, policy, owned, environment)
+        if trust is not None:
+            source_policy['tlsTrust'] = trust.identity
         (owned / 'nuget.config').write_bytes(config)
         (owned / PROJECT).write_bytes(resolver_project(files))
         existing = files.get(LOCK)
         if existing and not update_lock:
             (owned / LOCK).write_bytes(existing)
+        if trust is not None:
+            trust.check()
         run_bounded([str(dotnet), 'restore', str(owned / PROJECT), '--configfile', str(owned / 'nuget.config'),
             '--packages', str(owned / 'packages'), '--disable-parallel', '--locked-mode' if existing and not update_lock else '--force-evaluate',
             '-p:NuGetAudit=false', *['-p:' + key + '=false' for key in IMPORT_GUARDS]], owned, environment, 600, 4 * 1024 * 1024)
+        if trust is not None:
+            trust.check()
         lock_bytes, assets_bytes = read_bytes(owned / LOCK, MAX_NATIVE_JSON), read_bytes(owned / 'obj/project.assets.json', MAX_NATIVE_JSON)
         native_lock, assets = native_json(lock_bytes), native_json(assets_bytes)
         native = analyze(native_lock, assets, baseline, declared)
@@ -479,13 +488,16 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         check = owned / 'capture-inputs'
         check.mkdir(mode=0o700)
         native_bytes = canonical(native) + b'\n'
+        native_inputs = {PROJECT: files[PROJECT], 'global.json': files['global.json'], LOCK: lock_bytes, ASSETS: native_bytes}
+        if trust is not None:
+            native_inputs[trust.name] = trust.original
         manifest = {'formatVersion': 1, 'language': 'dotnet', 'selection': declared['selection'],
-            'nativeLocks': [prefix + name for name in (PROJECT, 'global.json', LOCK, ASSETS)],
+            'nativeLocks': [prefix + name for name in native_inputs],
             'artifacts': specs, 'transformations': []}
         for row in specs:
             if row['metadata'].get('ecosystem') == 'msbuild-resource':
                 row['source'] = {'path': str(project / row['metadata']['source'])}
-        for name, raw in {PROJECT: files[PROJECT], 'global.json': files['global.json'], LOCK: lock_bytes, ASSETS: native_bytes}.items():
+        for name, raw in native_inputs.items():
             target = check / (prefix + name)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
@@ -504,6 +516,8 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             staged_store.put(store.get(**original))
         captured = capture(check, cache=store.root)
         validate_selection(files, declared['selection'], native_lock, native, captured['artifacts'])
+        if trust is not None:
+            trust.check()
         if (source_files(project) != files or optional(owner, MANIFEST) != previous_manifest
                 or optional(owner, 'latent.dependencies.lock.json') != previous_lock
                 or file_identity(dotnet, 'dotnet') != resolver_before
@@ -523,6 +537,10 @@ def validate_selection(files: dict[str, bytes], selected: dict, native_lock: dic
                        artifacts: list[dict]) -> tuple[dict, list[dict], dict]:
     """Check the native graph identically during exact review and compilation."""
     declared = declarations(files, selected)
+    fetch_policy = native.get('fetchPolicy', {})
+    if not isinstance(fetch_policy, dict):
+        raise DependencyError('nuget-feed-trust-identity-invalid')
+    dotnet_registry_tls.validate(files, fetch_policy.get('tlsTrust'))
     baseline = native_json(files['vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'])
     if native['selection'] != declared['selection'] or native['sdkBaselineDigest'] != digest(canonical(baseline)):
         raise DependencyError('nuget-native-selection-or-sdk-baseline-drift')

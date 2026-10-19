@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Union approved generator and merged private npm lifecycle. Preserve all commands, captured-input ownership, default-off probes and retained evidence.",
+  "reviewReason": "Retain all qualified TypeScript generator/private npm and merged private NuGet helper identities; no native or compiler behavior change.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f34d29a5c7d7b7a0b4f86559b1b0c15020836064b467fbf3e204faaa8650a89a"
+  "sha256": "74794ffcc4d22a9a6ba65d44f95e7374a7dcaaa8605bf668540081146c3179cf"
 }
