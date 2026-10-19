@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_boundaries.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Repair Fetch fixture header to existing peer-authorized x-conformance without widening policy; actual-adapter control binds real peer allowlist and preserves old-source refusal plus exact JSON/body/fresh success. Private diagnostic retains only closed WIT error tags.",
+  "reviewReason": "Bounded diagnostic-only capture of actual public compiler bundle before runtime credentials plus normalized copied Request through genuine typed open/abort; preserve original failed JSON, budgets, authority and current PR qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2678239fea9d23eec3e1ce90a71716c8df9a4c9daadc0a417e5794d4752b2ea4"
+  "sha256": "ada9b2a37662decc7e47b49244342199720263b172e205b2c5e5f5e77b5d7748"
 }

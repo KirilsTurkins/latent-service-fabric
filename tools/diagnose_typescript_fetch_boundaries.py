@@ -15,6 +15,7 @@ from tools.build_process import run_bounded_result
 from tools.phase2_operator_process import require, write_json
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file
+from tools.typescript_guest.compiler import Compiler
 
 TESTED = 'ba62bf8f266e589971a03e496b18b8f2cb5e5d85'
 
@@ -59,11 +60,34 @@ async function typedOpen(url: string, allowed: boolean) {
     return (stage === 'open' ? 'typed-open-refused:' : 'typed-abort-refused:') + httpErrorTag(error);
   }
 }
+async function requestTypedOpen(url: string) {
+  try {
+    const first = new Request(url, {headers: new Headers([['x-conformance', 'ordinary-global']])});
+    const request = new Request(first);
+    const headers = [];
+    for (const [name, value] of request.headers) headers.push({name, value});
+    const upload = await diagnosticHttp.open({method: request.method.toLowerCase() as 'get',
+      url: request.url, headers, bodyLength: 0n, bodyMediaType: undefined,
+      idempotencyKey: undefined, timeoutMillis: undefined});
+    await diagnosticHttp.abortUpload(upload);
+    return 'request-typed-open-ready';
+  } catch (error) { return 'request-typed-open-refused:' + httpErrorTag(error); }
+}
 '''
     return {**source, 'main.ts': probe + source['main.ts'].replace(marker,
         marker + b'\n    if (mode === 5) return await typedInvalidUrl();'
                  b'\n    if (mode === 6) return await typedOpen(url, false);'
-                 b'\n    if (mode === 7) return await typedOpen(url, true);', 1)}
+                 b'\n    if (mode === 7) return await typedOpen(url, true);'
+                 b'\n    if (mode === 8) return await requestTypedOpen(url);', 1)}
+
+
+def public_bundle(path: Path) -> dict:
+    # This is produced only from the fixed public SDK and the owned two-file
+    # application, before the peer or any runtime credential is created.
+    raw = read_file(path, 65536)
+    value = {'sha256': digest(raw), 'bytes': len(raw), 'publicSource': raw.decode('utf-8')}
+    require(len(json.dumps(value).encode()) <= 131072, 'fetch-boundary-bundle-record-limit')
+    return value
 
 
 def numeric_fields(path: Path, fields: set[str]) -> dict:
@@ -87,7 +111,16 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
     record['applicationSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)} for name, raw in source.items()}
     record['applicationDerivation'] = 'private-typed-error-and-success-resource-import-probes-only'
     original_project, original_call, original_connect = fetch.project, fetch.call, fetch.connect
+    original_compile = Compiler.compile
     services = []
+
+    def compile(compiler, work, world, destination, **kwargs):
+        try:
+            return original_compile(compiler, work, world, destination, **kwargs)
+        finally:
+            bundle = destination/'application.mjs'
+            if bundle.is_file():
+                record['actualCompilerBundle'] = public_bundle(bundle)
 
     def project(directory):
         app = original_project(directory)
@@ -114,7 +147,8 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
     def invoke(client, target, template, function, arguments, activation, **kwargs):
         require(activation in {'fetch-runtime-denied', 'fetch-http-denied', 'fetch-entry',
             'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
-            'fetch-typed-invalid-url', 'fetch-typed-header-refusal', 'fetch-typed-open', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
+            'fetch-typed-invalid-url', 'fetch-typed-header-refusal', 'fetch-typed-open',
+            'fetch-request-typed-open', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
             'fetch-boundary-activation-name')
         row = original_call(client, target, template, function, arguments, activation, **kwargs)
         fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
@@ -150,6 +184,11 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             write_json(output/'probe-typed-open.json', record['probes'][-1])
             fetch.require_result(opened, 'typed-open-ready', 1)
             fetch.retire(client, probe, target, output, 'typed-open')
+            combined = invoke(client, target, template, function, [8, arguments[1]], 'fetch-request-typed-open')
+            record['probes'].append({'name': 'request-typed-open', 'mode': 8, 'entry': combined})
+            write_json(output/'probe-request-typed-open.json', record['probes'][-1])
+            fetch.require_result(combined, 'request-typed-open-ready', 1)
+            fetch.retire(client, probe, target, output, 'request-typed-open')
         return row
 
     try:
@@ -159,7 +198,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
         # All compiler/engine/native validation is the original qualifier's.
         # Only the outside-checkout application's two source files differ.
         with patch.object(fetch, 'project', project), patch.object(fetch, 'connect', connect), \
-                patch.object(fetch, 'call', call):
+                patch.object(fetch, 'call', call), patch.object(Compiler, 'compile', compile):
             result = fetch.qualify(output/'attempt', tools, engine, splicer, prepared=native)
             record['originalFiniteGate'] = result['status']
         record['status'] = 'observed'

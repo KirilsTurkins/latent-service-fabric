@@ -48,10 +48,11 @@ class FetchBoundaries(unittest.TestCase):
                         return {'exitCode': 4, 'decoded': None, 'processReaped': True,
                                 'response': {'outcomeKnown': True, 'error': {'code': 'guest-trap'}}}
                     expected = {3: 'promise-ready', 4: 'request-copy-ready', 5: 'typed-invalid-url-ready',
-                                6: 'typed-open-refused:invalid-request', 7: 'typed-open-ready'}[arguments[0]]
+                                6: 'typed-open-refused:invalid-request', 7: 'typed-open-ready',
+                                8: 'request-typed-open-ready'}[arguments[0]]
                     return {'exitCode': 0, 'decoded': ['wrong' if invalid else expected], 'processReaped': True,
                         'response': {'outcomeKnown': True, 'data': {'consumption': {
-                            'outboundRequests': 1 if arguments[0] == 7 else 0, 'childCalls': 0, 'effectCount': 0}}}}
+                            'outboundRequests': 1 if arguments[0] in (7, 8) else 0, 'childCalls': 0, 'effectCount': 0}}}}
 
                 def original_qualify(output, tools, engine, splicer, prepared):
                     captured = boundaries.fetch.project(app)
@@ -81,12 +82,12 @@ class FetchBoundaries(unittest.TestCase):
                 self.assertEqual(record['actualNodeExecutionLimits'], configured)
                 self.assertNotIn('private-never-export', json.dumps(record))
                 self.assertEqual(record['actualInvocationBudgets']['fetch-promise-ready'], budget)
-                self.assertEqual([call[2][0] for call in calls], [3] if invalid else [3, 4, 5, 6, 0, 7])
-                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid else 6)
+                self.assertEqual([call[2][0] for call in calls], [3] if invalid else [3, 4, 5, 6, 0, 7, 8])
+                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid else 7)
                 if not invalid:
                     self.assertEqual(record['actualInvocationBudgets']['fetch-json']['cpuFuel'], 1000000000)
                     self.assertEqual(record['originalJsonFailure']['response']['error']['code'], 'guest-trap')
-                    self.assertEqual(calls[-2], ('typescript-fetch', 'run',
+                    self.assertEqual(calls[-3], ('typescript-fetch', 'run',
                         [0, 'http://127.0.0.1/conformance/json'], 'fetch-json'))
                 self.assertIs(boundaries.fetch.call, original_call)
 
@@ -103,7 +104,8 @@ class FetchBoundaries(unittest.TestCase):
             b'    if (mode === 4) return await requestCopyReady(url);',
             b'    if (mode === 4) return await requestCopyReady(url);\n    if (mode === 5) return await typedInvalidUrl();'
             b'\n    if (mode === 6) return await typedOpen(url, false);'
-            b'\n    if (mode === 7) return await typedOpen(url, true);')))
+            b'\n    if (mode === 7) return await typedOpen(url, true);'
+            b'\n    if (mode === 8) return await requestTypedOpen(url);')))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root/'default-client.ts').write_bytes(derived['default-client.ts'])
@@ -149,6 +151,9 @@ for (const [mode,expected] of [[0,'typed-open-ready'],[3,'typed-open-refused:per
   assert.equal(await api.run(7,'http://127.0.0.1:1234/conformance/json'),expected);
 }
 assert.equal(globalThis.aborted,2);
+globalThis.testMode=0;
+assert.equal(await api.run(8,'http://127.0.0.1:1234/conformance/json'),'request-typed-open-ready');
+assert.equal(globalThis.aborted,3);
 '''
             result = subprocess.run([node, '--experimental-strip-types', '--input-type=module', '-e', script],
                                     cwd=root, text=True, capture_output=True, timeout=15)
@@ -170,6 +175,18 @@ assert.equal(globalThis.aborted,2);
                 path.write_text(json.dumps(value))
                 with self.subTest(value=value), self.assertRaisesRegex(WorkflowError, 'numeric-budget-fields'):
                     boundaries.numeric_fields(path, fields)
+
+    def test_actual_public_compiler_bundle_is_exact_and_bounded_before_runtime_setup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'application.mjs'
+            raw = (boundaries.ROOT/'tools/typescript_guest/fetch.mjs').read_bytes()
+            path.write_bytes(raw)
+            value = boundaries.public_bundle(path)
+            self.assertEqual(value, {'sha256': boundaries.digest(raw), 'bytes': len(raw),
+                                     'publicSource': raw.decode()})
+            path.write_bytes(b'x'*65537)
+            with self.assertRaises(ValueError):
+                boundaries.public_bundle(path)
 
 
 if __name__ == '__main__':

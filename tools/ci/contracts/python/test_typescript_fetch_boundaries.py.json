@@ -1,10 +1,23 @@
 {
   "cases": [
+    "FetchBoundaries.test_actual_public_compiler_bundle_is_exact_and_bounded_before_runtime_setup",
     "FetchBoundaries.test_emitted_budget_capture_preserves_large_fuel_and_rejects_private_unknown_or_noninteger_fields",
     "FetchBoundaries.test_old_sdk_wrapper_adds_strict_zero_io_probes_without_replacing_original_json_gate",
     "FetchBoundaries.test_private_typed_refusal_requires_exact_invalid_url_and_preserves_real_fixture_sources"
   ],
   "guards": {
+    "FetchBoundaries.test_actual_public_compiler_bundle_is_exact_and_bounded_before_runtime_setup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eff5d9eb94a3129a430bc4716829c356392675222f6d9902f7ff7d21a7d05704",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "FetchBoundaries.test_emitted_budget_capture_preserves_large_fuel_and_rejects_private_unknown_or_noninteger_fields": {
       "bases": [
         "unittest.TestCase"
@@ -44,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch_boundaries.py",
-  "reviewReason": "Repair Fetch fixture header to existing peer-authorized x-conformance without widening policy; actual-adapter control binds real peer allowlist and preserves old-source refusal plus exact JSON/body/fresh success. Private diagnostic retains only closed WIT error tags.",
+  "reviewReason": "Bounded diagnostic-only capture of actual public compiler bundle before runtime credentials plus normalized copied Request through genuine typed open/abort; preserve original failed JSON, budgets, authority and current PR qualification.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
