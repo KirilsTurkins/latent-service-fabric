@@ -48,6 +48,15 @@ Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="exampl
 
 `TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.
 
+Immediately before locked restore, the captured recipe verifies each active
+trimming descriptor and project-declared embedded resource against its reviewed
+digest and size. A path overwritten by canonical WIT, project generation or
+another compiler setup step fails with
+`nuget-compiler-resource-preimage-mismatch`; compiler-owned output is retained
+instead of restoring application bytes over it. Unchanged inputs and inactive
+target conditions keep their existing behavior. This identity fence does not
+establish supported reflection or emitted-component compatibility.
+
 The application-native asset restriction is checked by the same selected-graph
 analysis during resolution, exact lock review, offline cache preparation and
 the compiler's post-restore selection recheck. A selected `native` asset or
