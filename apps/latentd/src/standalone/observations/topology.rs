@@ -37,9 +37,12 @@ impl TopologySource {
     ) -> Self {
         Self {
             limits: Limits {
-                // Each runtime permits at most one additional blocking thread.
-                invocation_threads: count(settings.runtime_workers).saturating_add(1),
-                control_threads: count(settings.control_workers).saturating_add(1),
+                invocation_threads: count(settings.worker_stacks.invocation.maximum_threads()),
+                control_threads: count(settings.worker_stacks.control.maximum_threads()),
+                invocation_stack_bytes: count(
+                    settings.worker_stacks.invocation.maximum_mapping_bytes(),
+                ),
+                control_stack_bytes: count(settings.worker_stacks.control.maximum_mapping_bytes()),
                 connections: count(settings.transport.maximum_connections),
                 rpcs: count(settings.transport.maximum_rpcs),
                 control_jobs: count(settings.transport.maximum_control_jobs),
@@ -235,6 +238,8 @@ fn count(value: usize) -> u64 {
 struct Limits {
     invocation_threads: u64,
     control_threads: u64,
+    invocation_stack_bytes: u64,
+    control_stack_bytes: u64,
     connections: u64,
     rpcs: u64,
     control_jobs: u64,
@@ -289,7 +294,7 @@ fn rows(limits: Limits, observed: Observed) -> impl Iterator<Item = Row> {
         .chain(service_rows())
 }
 
-fn node_rows(limits: Limits, observed: Observed) -> [Row; 11] {
+fn node_rows(limits: Limits, observed: Observed) -> [Row; 13] {
     use ResourceOwnership::NodeFixed;
     [
         row("standalone-node", "process", NodeFixed, 1, Some(1)),
@@ -306,6 +311,29 @@ fn node_rows(limits: Limits, observed: Observed) -> [Row; 11] {
             NodeFixed,
             limits.control_threads,
             Some(observed.control_threads),
+        ),
+        // These are reserved mapping envelopes, not sampled resident bytes.
+        row(
+            "invocation-runtime-stack",
+            "byte",
+            NodeFixed,
+            limits.invocation_stack_bytes,
+            Some(
+                observed
+                    .invocation_threads
+                    .saturating_mul(count(crate::worker_stacks::THREAD_MAPPING_ALLOWANCE)),
+            ),
+        ),
+        row(
+            "control-runtime-stack",
+            "byte",
+            NodeFixed,
+            limits.control_stack_bytes,
+            Some(
+                observed
+                    .control_threads
+                    .saturating_mul(count(crate::worker_stacks::THREAD_MAPPING_ALLOWANCE)),
+            ),
         ),
         // Configuration is known, but no OS-thread observation is exposed here.
         row("wasmtime-epoch", "thread", NodeFixed, 1, None),

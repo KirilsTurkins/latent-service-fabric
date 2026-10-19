@@ -83,6 +83,7 @@ pub struct NodeSettings {
     pub(crate) node: latent_node::NodeDescriptor,
     pub(crate) runtime_workers: usize,
     pub(crate) control_workers: usize,
+    pub(crate) worker_stacks: crate::worker_stacks::NodeWorkerStacks,
     pub(crate) artifacts: latent_artifacts::DirectoryArtifactRepositoryConfig,
     pub(crate) deployments: latent_control_store::DirectoryDeploymentRepositoryConfig,
     pub(crate) supply_chain: SupplyChainSettings,
@@ -169,10 +170,7 @@ impl NodeConfig {
 impl NodeSettings {
     #[must_use]
     pub fn control_blocking_threads(&self) -> usize {
-        1 + usize::from(
-            self.rollouts.is_some()
-                && (self.capability_policies.is_some() || self.providers.is_some()),
-        )
+        self.worker_stacks.control.maximum_threads() - self.control_workers
     }
 }
 

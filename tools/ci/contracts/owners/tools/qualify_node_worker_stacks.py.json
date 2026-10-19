@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_node_worker_stacks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "One shared checked standalone worker stack profile fixes actual two-blocking-worker undercount and ambient native default; source-owned fixed16-dependency Linux mapping/guard/retirement reference, all old cases/limits preserved; no full-node/TLS/kernel qualification",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "931f3c2bb3a1b40aba336f4918992d71178dd83876231dc86beb8ff5147ec39d"
+}

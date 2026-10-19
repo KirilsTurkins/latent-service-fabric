@@ -1,10 +1,9 @@
 use std::path::Path;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
 use latent_core::PlatformErrorCode;
-use tokio::runtime::{Builder, Runtime};
 use tokio::signal::unix::{signal, Signal, SignalKind};
 
 use crate::config::{NodeConfig, NodeSettings};
@@ -23,18 +22,17 @@ pub(super) fn run(path: &Path) -> Result<(), Failure> {
     let threads = RuntimeThreads::default();
     let control_threads = Arc::clone(&threads.control);
     let invocation_threads = Arc::clone(&threads.invocation);
-    let control = runtime(
-        settings.control_workers,
-        settings.control_blocking_threads(),
-        "latent-control",
-        &threads.control,
-    )?;
-    let invocation = match runtime(
-        settings.runtime_workers,
-        1,
-        "latent-invocation",
-        &threads.invocation,
-    ) {
+    let control = settings
+        .worker_stacks
+        .control
+        .build("latent-control", &threads.control)
+        .map_err(|_| Failure::new("runtime", PlatformErrorCode::Unavailable))?;
+    let invocation = match settings
+        .worker_stacks
+        .invocation
+        .build("latent-invocation", &threads.invocation)
+        .map_err(|_| Failure::new("runtime", PlatformErrorCode::Unavailable))
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             control.shutdown_timeout(runtime_timeout);
@@ -54,29 +52,6 @@ pub(super) fn run(path: &Path) -> Result<(), Failure> {
         ));
     }
     status::stopped(&result?)
-}
-
-fn runtime(
-    workers: usize,
-    blocking: usize,
-    name: &'static str,
-    counter: &Arc<AtomicUsize>,
-) -> Result<Runtime, Failure> {
-    let started = Arc::clone(counter);
-    let stopped = Arc::clone(counter);
-    Builder::new_multi_thread()
-        .worker_threads(workers)
-        .max_blocking_threads(blocking)
-        .thread_name(name)
-        .on_thread_start(move || {
-            started.fetch_add(1, Ordering::SeqCst);
-        })
-        .on_thread_stop(move || {
-            stopped.fetch_sub(1, Ordering::SeqCst);
-        })
-        .enable_all()
-        .build()
-        .map_err(|_| Failure::new("runtime", PlatformErrorCode::Unavailable))
 }
 
 async fn serve(

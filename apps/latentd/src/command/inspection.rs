@@ -14,11 +14,11 @@ fn run_mode(path: &std::path::Path, preview: bool) -> Result<(), Failure> {
         .and_then(|config| config.derive())
         .map_err(|error| Failure::new("configuration", error.code))?;
     let grace = settings.shutdown_grace();
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(settings.control_workers())
-        .max_blocking_threads(settings.control_blocking_threads())
-        .enable_all()
-        .build()
+    let threads = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let runtime = settings
+        .worker_stacks
+        .control
+        .build("latent-inspection", &threads)
         .map_err(|_| Failure::new("runtime", PlatformErrorCode::Unavailable))?;
     let encoded = if preview {
         runtime
@@ -36,6 +36,12 @@ fn run_mode(path: &std::path::Path, preview: bool) -> Result<(), Failure> {
             .and_then(crate::standalone::NativeTransactionHostInspection::encode)
     };
     runtime.shutdown_timeout(grace);
+    if threads.load(std::sync::atomic::Ordering::SeqCst) != 0 {
+        return Err(Failure::new(
+            "runtime-shutdown",
+            PlatformErrorCode::DeadlineExceeded,
+        ));
+    }
     let encoded =
         encoded.map_err(|error| Failure::new("transaction-host-inspection", error.code))?;
     let mut output = std::io::stdout().lock();
