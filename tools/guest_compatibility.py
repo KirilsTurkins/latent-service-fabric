@@ -87,6 +87,10 @@ def validate_finding(value: dict) -> None:
     # An eliminated operation requires actual compiler evidence, never a name scan.
     if value["classification"] == "unsupported-eliminated":
         require(value["evidence"] == "compiler" and "sourceDigest" in value, "compatibility-elimination-evidence")
+    if value["classification"] == "unsupported-reached":
+        require(value["evidence"] in {"actual-component", "native-reference"}
+                and value["phase"] in {"initialization", "invocation", "retirement"},
+                "compatibility-reached-evidence")
 
 
 def status(findings: list[dict], omitted: int) -> str:
@@ -105,6 +109,8 @@ def report(language: str, source: str, component: str | None, profile: str,
     for ordinal, item in enumerate(findings):
         require(ordinal < 4096, "compatibility-finding-input-limit")
         validate_finding(item)
+        require(component is not None or item["evidence"] != "actual-component",
+                "compatibility-component-evidence")
         if len(retained) < MAX_FINDINGS:
             retained.append(item)
         else:
@@ -145,6 +151,8 @@ def validate(value: dict) -> dict:
     require(isinstance(value["findings"], list) and len(value["findings"]) <= MAX_FINDINGS, "compatibility-finding-limit")
     for item in value["findings"]:
         validate_finding(item)
+        require(value["componentDigest"] is not None or item["evidence"] != "actual-component",
+                "compatibility-component-evidence")
     integer(value["omittedFindings"], 0, 10000000)
     require(value["status"] == status(value["findings"], value["omittedFindings"]), "compatibility-status-mismatch")
     require(value["authority"] == "none" and value["analysisCompleteness"] == "selected-observations",
