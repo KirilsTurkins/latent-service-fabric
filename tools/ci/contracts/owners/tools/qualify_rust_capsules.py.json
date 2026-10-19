@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve C and TypeScript generators and Console selectors while adding explicit Go generator source/results; all defaults remain false.",
+  "reviewReason": "Preserve exact Go private/generator and C/TypeScript/Console inputs while retaining both new TypeScript entropy backend inputs; no default selection or authority change.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7636fe5ca55f47dfde5938808637f06ef5879fdbb6f8fbe6c94688347204e185"
+  "sha256": "fac4196052dc39012bed473194f9b91757396769be2967177a9cae87fb0395c6"
 }

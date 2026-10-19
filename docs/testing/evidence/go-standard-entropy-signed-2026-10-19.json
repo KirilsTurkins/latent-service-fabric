@@ -1,0 +1,233 @@
+{
+  "formatVersion": 1,
+  "issue": 681,
+  "status": "passed-finite-go-entropy-slice",
+  "fullTicketQualification": false,
+  "mergedCommit": "6880cedbed2123e43bf7ba120a098466e74907a8",
+  "testedSource": "e97d44ddc744c9bd738d9b3b7a7d8b7234133e36",
+  "run": 39320463437,
+  "job": 118292873857,
+  "artifact": 12220651992,
+  "currentHost": {
+    "compiledSource": "e97d44ddc744c9bd738d9b3b7a7d8b7234133e36",
+    "sourceIdentity": {
+      "sha256": "sha256:db1b074b88c12884ac449bb873357759ab3807bcce79135c1ec45e705e84e92a",
+      "files": 3168,
+      "bytes": 23911170,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "binary": {
+      "sha256": "sha256:1ade67dfc9c461068ac7680a397f310eaf31e0e97b671a4dafd16ad710e1d050",
+      "bytes": 184227152
+    },
+    "features": [],
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": false
+    },
+    "ordinaryDefaults": true,
+    "originalCliAndCompanionsRecompiled": false
+  },
+  "historicalCompiledSource": "42a2dadf1cd77b3dda65ec4720a4ce973c5e4813",
+  "historicalCliAndCompanionsUnchanged": true,
+  "originalNormalReceiptRewritten": false,
+  "qualification": {
+    "sha256": "sha256:ba69613bb28e8e2a47aaa2e9b5af58598536a8dce6a8b47585deabbbcfe51859",
+    "bytes": 18534
+  },
+  "freshComponent": {
+    "sha256": "sha256:a5f366344a7b3074da60cb93bfb9ad2f7d837914e41f1f41dc3998766693cbc9",
+    "bytes": 2878057,
+    "source": "sha256:c5991415f589ede7b87e8e88ac0a8e8d76d6270c8e7d54d1758cd0b659470295",
+    "observation": "sha256:f22bc295f67d963a28210e327970cc30bec55d9f324b04c0d1b4943f1139aab1",
+    "offlineCompilerNetwork": "denied",
+    "originalsRemoved": true
+  },
+  "baseline": {
+    "outcomes": 27,
+    "knownAndReaped": 27,
+    "topologySamples": 24,
+    "providerIdle": 6,
+    "nodeCleanAndReaped": true,
+    "receipt": {
+      "sha256": "sha256:32e34cfde2751c2ca4bdf2b7803856bd5b3f366ad9f7c2603e515316df57f94d",
+      "bytes": 254442
+    }
+  },
+  "entropy": {
+    "outcomes": 43,
+    "knownAndReaped": 43,
+    "topologySamples": 38,
+    "providerIdle": 19,
+    "nodeCleanAndReaped": true,
+    "receipt": {
+      "sha256": "sha256:d1908e4d8e04c4e20244a44418139d0e9413e73f2be309900ed68573aed90101",
+      "bytes": 424480
+    },
+    "missingRandomDenials": 2,
+    "cases": [
+      {
+        "mode": "baseline",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:baseline|count=0|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "read-one",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:read-one|count=1|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "read-wide",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:read-wide|count=257|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "reader",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:reader|count=32|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "text",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:text|count=26|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "empty",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:empty|count=0|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "syscall",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:syscall|count=4096|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "syscall-empty",
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:syscall-empty|count=0|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      }
+    ],
+    "recovery": [
+      {
+        "mode": "budget",
+        "terminal": "guest_trap",
+        "publicCode": "guest-trap",
+        "freshDecoded": [
+          {
+            "ok": "ordinary-entropy:read-one|count=1|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "trap",
+        "terminal": "guest_trap",
+        "publicCode": "guest-trap",
+        "freshDecoded": [
+          {
+            "ok": "ordinary-entropy:read-one|count=1|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      },
+      {
+        "mode": "fuel",
+        "terminal": "resource_exhausted",
+        "publicCode": "resource-exhausted",
+        "freshDecoded": [
+          {
+            "ok": "ordinary-entropy:read-one|count=1|resource=Gr\u00fc\u00dfe|fresh=1"
+          }
+        ]
+      }
+    ]
+  },
+  "authority": {
+    "selectedGrants": [
+      {
+        "capability": "latent:clock/monotonic@0.1.0",
+        "policy": "clockMonotonic-allow"
+      },
+      {
+        "capability": "latent:clock/wall@0.1.0",
+        "policy": "clockWall-allow"
+      },
+      {
+        "capability": "latent:random/random@0.1.0",
+        "policy": "random-allow"
+      }
+    ],
+    "inputBytesPerCall": 8,
+    "genericRuntimePolicyChanged": false,
+    "additionalProviderBindings": 0,
+    "providerAndActivationLimitsChanged": false,
+    "retirementBoundary": "fixed u64 result owned through actual canonical lowering",
+    "providerAggregateBytes": 65536,
+    "policyBytesArePerCall": true
+  },
+  "randomPayloadRetained": false,
+  "concurrencyQualified": false,
+  "statisticalQualityOrFipsQualification": false,
+  "schemaVersion": "latent.go-standard-entropy.signed-observation.v1",
+  "committedFixtureInputs": {
+    "tools/qualify_go_entropy_retained.py": {
+      "sha256": "sha256:0336c430bff2082c13109296d09891431fa7f7b25f2b10db7eaa4de33f42cceb",
+      "bytes": 12683
+    },
+    "tools/go_standard_entropy_fixture.py": {
+      "sha256": "sha256:bcb901b3c555a54d8edb945d3bdb59598c5211968af9110d6950d02cd1612a93",
+      "bytes": 6872
+    },
+    "tools/go_standard_entropy_probe.py": {
+      "sha256": "sha256:041f872e1928301be2754044c6986aef2e2561dd9c71a94f2fc73b3ba0470330",
+      "bytes": 5136
+    },
+    "tools/qualify_go_standard_entropy.py": {
+      "sha256": "sha256:9c63caba2182ec95ecc287481ce283e97e9b333eb900a22840b8a0a64e5a746d",
+      "bytes": 8424
+    },
+    "tools/go_guest/runtime.py": {
+      "sha256": "sha256:5f101670ec9c415de6d1e2f1a6bc00e44a84ddb3608bbb5fc1ab2440a606ed35",
+      "bytes": 12135
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "sha256": "sha256:b3bcfc56c62bfc85d629f5fa92a9ad278c66ff227e4669b1f014565fbddcd98a",
+      "bytes": 21949
+    },
+    "crates/latent-wasmtime/src/host/random.rs": {
+      "sha256": "sha256:de183dab7e3d634fd0a7b033f095aa0441dfca04d873632126a140b0f671b90b",
+      "bytes": 4162
+    },
+    "crates/latent-wasmtime/src/host/runtime/fixed_result.rs": {
+      "sha256": "sha256:250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b423626f3f",
+      "bytes": 4139
+    }
+  }
+}

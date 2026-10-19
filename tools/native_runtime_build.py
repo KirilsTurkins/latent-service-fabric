@@ -108,7 +108,24 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
                  if checksum else f"git+https://github.com/KirilsTurkins/latent-service-fabric@{commit}",
                  "filesAnalyzed": False, "licenseConcluded": "NOASSERTION",
                  "licenseDeclared": package.get("license") or "NOASSERTION", "copyrightText": "NOASSERTION"}
-        if checksum:
+        candidates = set()
+        if package["name"] == "latent-rustls-outbound":
+            from tools import host_stream_tls_provider as bounded_tls
+
+            manifest = Path(package["manifest_path"]).resolve()
+            require(len(manifest.parents) >= 4, "bounded-tls-license-package-path")
+            root = manifest.parents[3]
+            require(package.get("source") is None and package["version"] == "0.23.46"
+                    and package.get("license") == "Apache-2.0 OR ISC OR MIT"
+                    and manifest == root / bounded_tls.PROVIDER / "Cargo.toml",
+                    "bounded-tls-license-package-identity")
+            checked = bounded_tls.verify(root)
+            directory = manifest.parent
+            candidates = {directory / name for name in checked["licenseFiles"]}
+            entry["comment"] = "Authenticated bounded outbound TLS derivation: " + encode({
+                "upstream": checked["upstream"], "recordSha256": checked["recordSha256"],
+                "licenseFiles": checked["licenseFiles"]}).decode().strip()
+        elif checksum:
             entry["checksums"] = [{"algorithm": "SHA256", "checksumValue": checksum}]
             directory = Path(package["manifest_path"]).parent
             candidates = {path for path in directory.iterdir()
@@ -123,10 +140,10 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
                 shared, origin = shared_license(package, list(packages.values()), checksums, license_policy)
                 candidates.add(shared)
                 entry["comment"] = "Shared monorepo root license from the exact published revision: " + encode(origin).decode().strip()
-            for path in sorted(candidates):
-                name = f"licenses/{package['name']}-{package['version']}/{path.name}"
-                verify.relative(name)
-                licenses[name] = path
+        for path in sorted(candidates):
+            name = f"licenses/{package['name']}-{package['version']}/{path.name}"
+            verify.relative(name)
+            licenses[name] = path
         result.append(entry)
         if key in roots:
             relationships.append({"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES",

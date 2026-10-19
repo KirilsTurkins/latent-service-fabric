@@ -1,0 +1,73 @@
+# Current bounded host TLS accounting work
+
+This plan concerns #738 / ADR-0061 and the distinct `latent-rustls-outbound`
+0.23.46 provider dependency. Production installation stays disabled and
+`ACCOUNTING_QUALIFIED=false`. A passing parser reference is one prerequisite;
+it cannot be relabelled as complete TLS accounting or ordinary-client proof.
+Historical 0.23.45 packets retain their original source and limits.
+
+## Source and build identity
+
+Reproduce all 119 files from the authenticated archive and `PROVIDER.json`.
+Require exactly five bounded parser changes plus the package-name derivation;
+retain every other upstream byte and all license texts. Actual Cargo artifact
+metadata must name this path package for `latent-streams` and retain ordinary
+registry rustls for unrelated HTTPS and peer fixtures. Bind the complete
+maintained lock, compiler, provider source and reference inputs before/after
+each build. No shared-registry rewrite or runtime source generation is allowed.
+
+## Trust configuration
+
+The existing 64 KiB provider metadata reservation precedes protected root
+loading. The profile permits 1-8 roots, each at most 8 KiB and at most 32 KiB
+aggregate. Account for protected reads, parsed/owned trust anchors, verifier and
+client configuration, temporary work and all retained clones. Verify that the
+last physical `InstalledTls` owner, not a logical provider handle, releases the
+reservation. Root replacement/hash/link/mode denials must precede contact;
+protected restart and generation fencing must not migrate authenticated state.
+
+## Connection, stack and kernel
+
+The original 256 KiB TLS host-memory/provider reservations precede connection
+construction. Inventory all parser, verification, handshake, error, encrypted
+and plaintext buffers under the actual selected crypto/dependency closure.
+The 16 KiB write-buffer and 32 KiB encrypted handshake-direction limits remain
+unchanged. Bound every supported verification algorithm, key/path cost and
+transient overlap; a benign peak or incomplete symbol attribution is not proof.
+
+TLS retains the same physical TCP socket and original 96 KiB socket reservation.
+Confirm real send/receive kernel bounds and no additional uncharged owner.
+Separately establish native stack costs and the existing executor's bounded
+concurrency; heap counters cannot stand in for stack/kernel evidence. Unknown
+or unattributed physical costs remain a failing accounting obligation.
+
+## Controlled physical barriers
+
+Use current TLS 1.2 and 1.3 maximum-valid chains/roots/extensions as well as
+hostile/truncated/oversized inputs. Retain the original amplification RED and
+all eight bounded parser observations. At connect, handshake, read, write,
+cancellation, timeout, epoch retirement, close, trap and Store drop, observe
+original Io/budget/pool owners and actual socket/buffer retirement. Accepted
+cancellation, handle drop or timeout must not refund pending physical work.
+Retained chunks/configuration clones and late completion need explicit barriers.
+
+Preserve partial I/O, EOF, backpressure, narrower operation/root deadlines,
+strict currentness before dispatch and possible-write uncertainty. No reconnect,
+request replay, fallback transport, credential inference or quota expansion is
+part of this work.
+
+## Functional and coupled proof
+
+First compile the actual bounded provider and retain exact Cargo/source identity.
+Then run owned real-peer positive/refusal and maximum-valid/hostile controls
+under unchanged limits, including trust/hostname failure, pending cancellation,
+revocation/drain, forged/stale/cross-activation handles, quota exhaustion, and
+fresh cross-tenant invocation. Production constructors must retain their
+unqualified refusal while any test-only accounting experiment is selected.
+
+Finally bind current native products and actual signed/component calls to that
+same closure. Existing TCP, canonical and direct-SDK tests remain mandatory.
+Operator rollout and separate adversarial acceptance are independent gates.
+Only complete physical bounds plus current coupled evidence and the required
+review can justify changing the accounting flag; this plan supplies no such
+qualification claim.

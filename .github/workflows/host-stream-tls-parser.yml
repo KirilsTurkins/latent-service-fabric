@@ -8,9 +8,14 @@ on:
       - '.github/workflows/host-stream-tls-parser.yml'
       - 'sdk/host-stream-tls/rustls-0.23.46-bounds/**'
       - 'tools/host_stream_tls_patch.py'
+      - 'tools/host_stream_tls_provider.py'
+      - 'tools/native_runtime_build.py'
+      - 'tools/ci_suite_inventory.py'
+      - 'crates/vendor/rustls-outbound/**'
       - 'tools/qualify_host_stream_tls_parser.py'
       - 'tools/tests/test_host_stream_tls*.py'
-      - 'crates/latent-streams/Cargo.toml'
+      - 'crates/latent-streams/**'
+      - 'Cargo.toml'
       - 'Cargo.lock'
       - 'rust-toolchain.toml'
   push:
@@ -19,9 +24,14 @@ on:
       - '.github/workflows/host-stream-tls-parser.yml'
       - 'sdk/host-stream-tls/rustls-0.23.46-bounds/**'
       - 'tools/host_stream_tls_patch.py'
+      - 'tools/host_stream_tls_provider.py'
+      - 'tools/native_runtime_build.py'
+      - 'tools/ci_suite_inventory.py'
+      - 'crates/vendor/rustls-outbound/**'
       - 'tools/qualify_host_stream_tls_parser.py'
       - 'tools/tests/test_host_stream_tls*.py'
-      - 'crates/latent-streams/Cargo.toml'
+      - 'crates/latent-streams/**'
+      - 'Cargo.toml'
       - 'Cargo.lock'
       - 'rust-toolchain.toml'
 
@@ -47,7 +57,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Check fixed source, lock and observation refusal controls
         run: |
-          python3 -m unittest tools.tests.test_host_stream_tls_current_patch tools.tests.test_host_stream_tls_patch tools.tests.test_host_stream_tls_reference tools.tests.test_host_stream_tls_reference_lock tools.tests.test_host_stream_tls_allocation -v
+          python3 -m unittest tools.tests.test_host_stream_tls_current_patch tools.tests.test_host_stream_tls_patch tools.tests.test_host_stream_tls_reference tools.tests.test_host_stream_tls_reference_lock tools.tests.test_host_stream_tls_allocation tools.tests.test_host_stream_tls_provider tools.tests.test_native_runtime.ManifestTests.test_dependency_inventory_retains_lowercase_published_license_files tools.tests.test_native_runtime.ManifestTests.test_shared_license_requires_reviewed_exact_monorepo_source_and_digest -v
       - name: Fetch only the checksum-pinned current source archive
         shell: bash
         run: |
@@ -55,6 +65,13 @@ jobs:
             https://static.crates.io/crates/rustls/rustls-0.23.46.crate \
             --output "$RUNNER_TEMP/rustls-0.23.46.crate"
           echo "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf  $RUNNER_TEMP/rustls-0.23.46.crate" | sha256sum --check
+      - name: Reproduce the distinct selected provider source closure
+        shell: bash
+        run: |
+          python3 tools/host_stream_tls_provider.py \
+            --archive "$RUNNER_TEMP/rustls-0.23.46.crate" \
+            --output "$RUNNER_TEMP/bounded-provider-source" \
+            > "$RUNNER_TEMP/host-tls-provider-source.json"
       - name: Execute only original and bounded current parser references
         shell: bash
         run: |
@@ -69,6 +86,7 @@ jobs:
         with:
           name: host-tls-parser-reference-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/host-tls-provider-source.json
             ${{ runner.temp }}/host-tls-parser-reference/receipt.json
             ${{ runner.temp }}/host-tls-parser-reference/*-stdout.jsonl
             ${{ runner.temp }}/host-tls-parser-reference/*-stderr.log

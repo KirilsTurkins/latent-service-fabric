@@ -56,9 +56,12 @@ including nested records/lists; authoritative contract derivation rejects them
 before guest compilation. This does not narrow the declared blob/streaming
 resource imports used by the capability wrappers. There is no ambient
 clock, entropy, filesystem, network, timer, worker, process or DOM authority.
-The compiler's disabled random feature leaves a deterministic `Math.random()`
-fallback, not approved entropy; use the LSF randomness wrapper for real random
-values. Disabled timers such as `setTimeout` trap rather than schedule work.
+Ordinary `Math.random()` uses one fresh `u64-value` draw only when the exact
+`latent:random/random@0.1.0` interface is declared and admitted. The high 53 bits
+map to `[0, 1)`; this API is noncryptographic. Without that declaration it throws
+a concrete unsupported error, with no deterministic or ambient fallback.
+Application snapshot-time draws throw before a host call; engine bootstrap is
+unchanged. See the [finite entropy contract](../../docs/component-development/typescript-standard-entropy.md). Disabled timers such as `setTimeout` trap rather than schedule work.
 Effects require configured, declared LSF imports and host grants. Dynamic
 imports, Node built-ins, `require`, npm dependencies and application compiler
 configuration overrides are outside this captured-source profile.
