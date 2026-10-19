@@ -120,3 +120,17 @@ adapter. The BCL's original synchronous imports remain unchanged. The separately
 admitted runtime/HTTP adapters keep their existing async projection and root
 ownership machinery. No BCL method, engine reentrancy flag, grant or resource
 limit is changed. Actual signed execution of this repair remains pending.
+
+
+The repaired closed adapter is also derived from the application's authenticated
+`vendor/lsf/sdk/dotnet-guest/runtime/wit`, through `compiler.sdk`, rather than a
+repository SDK directory. This is required by the installed toolkit layout.
+The old `645f912b0b` source failed that shipped build after NativeAOT succeeded;
+the relocated real-codec control reproduces the old failure and passes with the
+captured SDK. Its WIT inventory remains `sha256:ff7c9a9871a8504f491f8e07e5523da740f0a9d75eae364b8db783891416a0bb`,
+and deriving the retained actual adapter gives the same
+`sha256:3ff945edeed5e593e0b23f8685c07fbea678fdb7323326a9f43b2b523ba61412`
+as the successful 45-outcome signed replay. This path repair does not recompile
+the original BCL or add authority. Two mocked captured-NuGet compiler controls
+now explicitly model the closed-IO projection seam; their original imported
+contract and undeclared-authority rejection assertions remain.

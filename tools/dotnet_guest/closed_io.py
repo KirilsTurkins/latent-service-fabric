@@ -14,7 +14,7 @@ import time
 
 from tools.dotnet_guest import internal_io as io
 from tools.dotnet_guest import runtime
-from tools.rust_capsule_project import ROOT, digest, inventory, read_file, snapshot, write_json
+from tools.rust_capsule_project import digest, inventory, read_file, snapshot, write_json
 
 PROFILE = 'dotnet-private-synchronous-closed-io-v1'
 PROFILES = frozenset({'closed', 'closed-logging'})
@@ -127,7 +127,7 @@ def prepare(compiler, adapter: Path, output: Path, profile: str):
     original = read_file(adapter, io.MAX_BINARY)
     graph = json.loads(compiler.run('closed-io-original-wit', compiler.wasm, 'component', 'wit', adapter, '--json'))
     output.mkdir()
-    source = ROOT / 'sdk/dotnet-guest/runtime/wit'
+    source = compiler.sdk / 'runtime/wit'
     source_inputs = inventory(snapshot(source))
     # The pinned decoder has no --world selector. Its finite dummy encoder
     # selects the source world without compiling or executing an implementation.

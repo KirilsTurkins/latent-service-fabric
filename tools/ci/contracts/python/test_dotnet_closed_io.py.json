@@ -4,6 +4,7 @@
     "ClosedIO.test_closed_async_type_preimage_and_public_signature_changes_fail_closed",
     "ClosedIO.test_metadata_rewrite_preserves_canonical_options_and_unselected_spans",
     "ClosedIO.test_nonclosed_profiles_refuse_before_inspection_or_component_rewrite",
+    "ClosedIO.test_relocated_captured_sdk_works_without_a_repository_sdk_or_root_lookup",
     "ClosedIO.test_unknown_unreferenced_and_shared_foreign_async_types_are_refused"
   ],
   "guards": {
@@ -63,6 +64,20 @@
       ],
       "skipSites": []
     },
+    "ClosedIO.test_relocated_captured_sdk_works_without_a_repository_sdk_or_root_lookup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
+        "class:setup-sha256:159f766e7d8917e1516bd9ddda8f4a00a01b912964019a9e0a9c8a7a4f432043"
+      ],
+      "skipSites": []
+    },
     "ClosedIO.test_unknown_unreferenced_and_shared_foreign_async_types_are_refused": {
       "bases": [
         "unittest.TestCase"
@@ -80,6 +95,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_closed_io.py",
-  "reviewReason": "Closed-only synchronous adapter graph derivation fixes observed cannot-block-sync-task without changing core bytes, BCL code, runtime/HTTP async machinery, grants or limits; actual signed repair pending.",
+  "reviewReason": "Review additive real-codec relocated captured-SDK regression; all original case names and skip/execution guards unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

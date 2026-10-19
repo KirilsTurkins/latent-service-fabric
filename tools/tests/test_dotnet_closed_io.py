@@ -44,7 +44,7 @@ class ClosedIO(unittest.TestCase):
                 adapter, original, graph, reference = self.adapter(profile)
                 evidence = self.directory/profile
                 evidence.mkdir()
-                compiler = SimpleNamespace(wasm=self.wasm, run=self.run_tool,
+                compiler = SimpleNamespace(wasm=self.wasm, run=self.run_tool, sdk=ROOT/'sdk/dotnet-guest',
                     commands=SimpleNamespace(output=evidence, deadline=time.monotonic()+90))
                 selected, record = closed_io.prepare(compiler, adapter, evidence/'selected', profile)
                 actual = json.loads(self.run_tool('final', self.wasm, 'component', 'wit', selected, '--json'))
@@ -56,6 +56,25 @@ class ClosedIO(unittest.TestCase):
                 self.assertNotEqual(record['originalDigest'], record['selectedDigest'])
                 self.assertEqual(sum(map(len, record['functions'].values())), 4)
                 self.assertEqual(record['signedExecution'], 'not-run')
+
+    def test_relocated_captured_sdk_works_without_a_repository_sdk_or_root_lookup(self):
+        from unittest.mock import patch
+        from tools.rust_capsule_project import digest, inventory, snapshot
+        adapter, original, graph, reference = self.adapter()
+        captured = self.directory/'application/vendor/lsf/sdk/dotnet-guest'
+        shutil.copytree(ROOT/'sdk/dotnet-guest/runtime/wit', captured/'runtime/wit')
+        before = inventory(snapshot(captured/'runtime/wit'))
+        evidence = self.directory/'relocated';evidence.mkdir()
+        compiler = SimpleNamespace(wasm=self.wasm, run=self.run_tool, sdk=captured,
+            commands=SimpleNamespace(output=evidence, deadline=time.monotonic()+90))
+        # Old source looked beneath the toolkit root and fails this control.
+        with patch.object(closed_io, 'ROOT', self.directory/'toolkit-with-no-sdk', create=True):
+            selected, record = closed_io.prepare(compiler, adapter, evidence/'selected', 'closed-logging')
+        actual = json.loads(self.run_tool('final', self.wasm, 'component', 'wit', selected, '--json'))
+        self.assertEqual(actual, closed_io.projected_graph(graph, reference, 'closed-logging'))
+        self.assertEqual(internal_io.core_modules(original), internal_io.core_modules(selected.read_bytes()))
+        self.assertEqual(record['sourceWitInputsDigest'], digest(before))
+        self.assertEqual(inventory(snapshot(captured/'runtime/wit')), before)
 
     def test_closed_async_type_preimage_and_public_signature_changes_fail_closed(self):
         _adapter, _raw, graph, reference = self.adapter()
