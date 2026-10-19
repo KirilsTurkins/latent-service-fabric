@@ -36,21 +36,34 @@ async function typedInvalidUrl() {
       ? 'typed-invalid-url-ready' : 'typed-invalid-url-other';
   }
 }
-async function typedOpen(url: string) {
+function httpErrorTag(error: unknown): string {
+  try {
+    const payload = error && typeof error === 'object' && 'payload' in error ? error.payload : null;
+    const tag = payload && typeof payload === 'object' && 'tag' in payload ? payload.tag : null;
+    return typeof tag === 'string' && ['invalid-url', 'invalid-request', 'permission-denied',
+      'request-too-large', 'response-too-large', 'deadline-exceeded', 'cancelled', 'budget-exhausted',
+      'dns-failed', 'tls-failed', 'connection-failed', 'unavailable', 'uncertain', 'invalid-state',
+      'unexpected-eof', 'unsupported-encoding'].includes(tag) ? tag : 'other';
+  } catch { return 'other'; }
+}
+async function typedOpen(url: string, allowed: boolean) {
   let stage = 'open';
   try {
     const upload = await diagnosticHttp.open({method: 'get', url,
-      headers: [{name: 'x-client', value: 'ordinary-global'}], bodyLength: 0n,
+      headers: [{name: allowed ? 'x-conformance' : 'x-client', value: 'ordinary-global'}], bodyLength: 0n,
       bodyMediaType: undefined, idempotencyKey: undefined, timeoutMillis: undefined});
     stage = 'abort';
     await diagnosticHttp.abortUpload(upload);
     return 'typed-open-ready';
-  } catch { return stage === 'open' ? 'typed-open-refused' : 'typed-abort-refused'; }
+  } catch (error) {
+    return (stage === 'open' ? 'typed-open-refused:' : 'typed-abort-refused:') + httpErrorTag(error);
+  }
 }
 '''
     return {**source, 'main.ts': probe + source['main.ts'].replace(marker,
         marker + b'\n    if (mode === 5) return await typedInvalidUrl();'
-                 b'\n    if (mode === 6) return await typedOpen(url);', 1)}
+                 b'\n    if (mode === 6) return await typedOpen(url, false);'
+                 b'\n    if (mode === 7) return await typedOpen(url, true);', 1)}
 
 
 def numeric_fields(path: Path, fields: set[str]) -> dict:
@@ -101,7 +114,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
     def invoke(client, target, template, function, arguments, activation, **kwargs):
         require(activation in {'fetch-runtime-denied', 'fetch-http-denied', 'fetch-entry',
             'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
-            'fetch-typed-invalid-url', 'fetch-typed-open', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
+            'fetch-typed-invalid-url', 'fetch-typed-header-refusal', 'fetch-typed-open', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
             'fetch-boundary-activation-name')
         row = original_call(client, target, template, function, arguments, activation, **kwargs)
         fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
@@ -115,7 +128,8 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             probe = fetch.Probe(*services[0])
             for name, mode, expected in (('promise-ready', 3, 'promise-ready'),
                     ('request-copy-ready', 4, 'request-copy-ready'),
-                    ('typed-invalid-url', 5, 'typed-invalid-url-ready')):
+                    ('typed-invalid-url', 5, 'typed-invalid-url-ready'),
+                    ('typed-header-refusal', 6, 'typed-open-refused:invalid-request')):
                 row = invoke(client, target, template, function, [mode, arguments[1]], 'fetch-'+name)
                 record['probes'].append({'name': name, 'mode': mode, 'entry': row})
                 write_json(output/('probe-'+name+'.json'), record['probes'][-1])
@@ -131,8 +145,8 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             # substitutes for JSON success or changes the real peer assertions.
             record['originalJsonFailure'] = row
             fetch.retire(client, probe, target, output, 'failed-json')
-            opened = invoke(client, target, template, function, [6, arguments[1]], 'fetch-typed-open')
-            record['probes'].append({'name': 'typed-open', 'mode': 6, 'entry': opened})
+            opened = invoke(client, target, template, function, [7, arguments[1]], 'fetch-typed-open')
+            record['probes'].append({'name': 'typed-open', 'mode': 7, 'entry': opened})
             write_json(output/'probe-typed-open.json', record['probes'][-1])
             fetch.require_result(opened, 'typed-open-ready', 1)
             fetch.retire(client, probe, target, output, 'typed-open')

@@ -269,15 +269,19 @@ import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {stripTypeScriptTypes} from 'node:module';
 import {pathToFileURL} from 'node:url';
-const [fixture, output, backend] = process.argv.slice(2);
+const [fixture, output, backend, allowedJson] = process.argv.slice(2);
+const allowedHeaders=JSON.parse(allowedJson);
 const {installFetch} = await import(pathToFileURL(backend));
 let contacts=0, drops=0, reads=0, status=200;
 const owner=()=>({[Symbol.dispose]() {drops++;}});
 installFetch({
   async open(request) {
+    if (request.headers.some(header=>!allowedHeaders.includes(header.name))) {
+      throw {payload:{tag:'invalid-request'}};
+    }
     contacts++; reads=0; status=request.url.endsWith('/404') ? 404 : 200;
     assert.equal(request.method,'get');
-    assert.deepEqual(request.headers,[{name:'x-client',value:'ordinary-global'}]);
+    assert.deepEqual(request.headers,[{name:'x-conformance',value:'ordinary-global'}]);
     return owner();
   },
   async finish() {return {status,headers:[],body:owner()};},
@@ -287,7 +291,12 @@ installFetch({
 for(const name of ['default-client','main']) {
   const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
   await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+  await writeFile(output+'/old-'+name+'.mjs',source.replaceAll('x-conformance','x-client')
+    .replace("'./default-client.js'","'./old-default-client.mjs'"));
 }
+const old=(await import(pathToFileURL(output+'/old-main.mjs'))).api;
+assert.equal(await old.run(0,'https://fixture.invalid/conformance/json'),'1:diagnostic:fetch:TypeError');
+assert.equal(contacts,0);
 const main=pathToFileURL(output+'/main.mjs');
 const {api}=await import(main);
 assert.equal(contacts,0);
@@ -309,8 +318,13 @@ assert.equal(contacts,4);
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root/'control.mjs').write_text(script, encoding='utf-8')
+            with closing(Peer(b'Bearer '+b'0'*64, maximum_seconds=10)) as peer:
+                allowed = peer.provider_destinations()[0]['allowedRequestHeaders']
+            self.assertIn('x-conformance', allowed)
+            self.assertNotIn('x-client', allowed)
             completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE),
-                str(root), str(fetch.ROOT/'tools/typescript_guest/fetch.mjs')], capture_output=True, text=True, timeout=20)
+                str(root), str(fetch.ROOT/'tools/typescript_guest/fetch.mjs'), json.dumps(allowed)],
+                capture_output=True, text=True, timeout=20)
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_no_http_promise_and_request_copy_controls_retain_real_thenable_await_and_listener_cleanup(self):

@@ -1,6 +1,6 @@
-const headers = new Headers([['x-client', 'ordinary-global']]);
+const headers = new Headers([['x-conformance', 'ordinary-global']]);
 export const initialized = typeof fetch === 'function' && typeof Request === 'function' &&
-  new Response(null, {headers}).headers.get('x-client') === 'ordinary-global';
+  new Response(null, {headers}).headers.get('x-conformance') === 'ordinary-global';
 
 function diagnostic(stage: string, error: unknown): string {
   const kind = error instanceof TypeError ? 'TypeError' : error instanceof RangeError ? 'RangeError' :
@@ -13,7 +13,7 @@ function construct(url: string): Request { return new Request(url, {headers}); }
 export function requestReady(url: string): string {
   try {
     const input = construct(url);
-    if (input.signal.aborted || input.bodyUsed || input.headers.get('x-client') !== 'ordinary-global') {
+    if (input.signal.aborted || input.bodyUsed || input.headers.get('x-conformance') !== 'ordinary-global') {
       throw new Error('fetch-runtime-request-state');
     }
     return 'request-ready';
@@ -43,7 +43,7 @@ export async function requestCopyReady(url: string): Promise<string> {
   second.signal.addEventListener('abort', abort, {once: true});
   try {
     if (await promiseReady() !== 'promise-ready' || second.signal.aborted || second.bodyUsed ||
-        second.headers.get('x-client') !== 'ordinary-global') throw new Error('fetch-runtime-request-copy-state');
+        second.headers.get('x-conformance') !== 'ordinary-global') throw new Error('fetch-runtime-request-copy-state');
     return 'request-copy-ready';
   } finally { second.signal.removeEventListener('abort', abort); }
 }

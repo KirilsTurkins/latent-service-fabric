@@ -48,10 +48,10 @@ class FetchBoundaries(unittest.TestCase):
                         return {'exitCode': 4, 'decoded': None, 'processReaped': True,
                                 'response': {'outcomeKnown': True, 'error': {'code': 'guest-trap'}}}
                     expected = {3: 'promise-ready', 4: 'request-copy-ready', 5: 'typed-invalid-url-ready',
-                                6: 'typed-open-ready'}[arguments[0]]
+                                6: 'typed-open-refused:invalid-request', 7: 'typed-open-ready'}[arguments[0]]
                     return {'exitCode': 0, 'decoded': ['wrong' if invalid else expected], 'processReaped': True,
                         'response': {'outcomeKnown': True, 'data': {'consumption': {
-                            'outboundRequests': 1 if arguments[0] == 6 else 0, 'childCalls': 0, 'effectCount': 0}}}}
+                            'outboundRequests': 1 if arguments[0] == 7 else 0, 'childCalls': 0, 'effectCount': 0}}}}
 
                 def original_qualify(output, tools, engine, splicer, prepared):
                     captured = boundaries.fetch.project(app)
@@ -81,8 +81,8 @@ class FetchBoundaries(unittest.TestCase):
                 self.assertEqual(record['actualNodeExecutionLimits'], configured)
                 self.assertNotIn('private-never-export', json.dumps(record))
                 self.assertEqual(record['actualInvocationBudgets']['fetch-promise-ready'], budget)
-                self.assertEqual([call[2][0] for call in calls], [3] if invalid else [3, 4, 5, 0, 6])
-                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid else 5)
+                self.assertEqual([call[2][0] for call in calls], [3] if invalid else [3, 4, 5, 6, 0, 7])
+                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid else 6)
                 if not invalid:
                     self.assertEqual(record['actualInvocationBudgets']['fetch-json']['cpuFuel'], 1000000000)
                     self.assertEqual(record['originalJsonFailure']['response']['error']['code'], 'guest-trap')
@@ -102,7 +102,8 @@ class FetchBoundaries(unittest.TestCase):
         self.assertTrue(derived['main.ts'].endswith(original['main.ts'].replace(
             b'    if (mode === 4) return await requestCopyReady(url);',
             b'    if (mode === 4) return await requestCopyReady(url);\n    if (mode === 5) return await typedInvalidUrl();'
-            b'\n    if (mode === 6) return await typedOpen(url);')))
+            b'\n    if (mode === 6) return await typedOpen(url, false);'
+            b'\n    if (mode === 7) return await typedOpen(url, true);')))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root/'default-client.ts').write_bytes(derived['default-client.ts'])
@@ -113,10 +114,12 @@ class FetchBoundaries(unittest.TestCase):
 import assert from 'node:assert/strict';
 export async function open(request) {
   assert.deepEqual(request, {method:'get',url:globalThis.validOpen ? 'http://127.0.0.1:1234/conformance/json' : 'invalid',
-    headers:globalThis.validOpen ? [{name:'x-client',value:'ordinary-global'}] : [],bodyLength:0n,
+    headers:globalThis.validOpen ? [{name:globalThis.allowedHeader ? 'x-conformance' : 'x-client',value:'ordinary-global'}] : [],bodyLength:0n,
     bodyMediaType:undefined,idempotencyKey:undefined,timeoutMillis:undefined});
   if (globalThis.validOpen) {
+    if (!globalThis.allowedHeader) throw {payload:{tag:'invalid-request'}};
     if (globalThis.testMode===3) throw {payload:{tag:'permission-denied'}};
+    if (globalThis.testMode===5) throw {payload:{tag:'private-credential-text'}};
     return {owned:true};
   }
   if (globalThis.testMode===2) return {owned:true};
@@ -138,9 +141,12 @@ for (const [mode,expected] of [[0,'typed-invalid-url-ready'],[1,'typed-invalid-u
 }
 assert.equal(globalThis.aborted,1);
 globalThis.validOpen=true;
-for (const [mode,expected] of [[0,'typed-open-ready'],[3,'typed-open-refused'],[4,'typed-abort-refused']]) {
+assert.equal(await api.run(6,'http://127.0.0.1:1234/conformance/json'),'typed-open-refused:invalid-request');
+globalThis.allowedHeader=true;
+for (const [mode,expected] of [[0,'typed-open-ready'],[3,'typed-open-refused:permission-denied'],
+  [4,'typed-abort-refused:invalid-state'],[5,'typed-open-refused:other']]) {
   globalThis.testMode=mode;
-  assert.equal(await api.run(6,'http://127.0.0.1:1234/conformance/json'),expected);
+  assert.equal(await api.run(7,'http://127.0.0.1:1234/conformance/json'),expected);
 }
 assert.equal(globalThis.aborted,2);
 '''
