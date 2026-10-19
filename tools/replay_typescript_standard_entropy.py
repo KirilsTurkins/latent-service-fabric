@@ -23,6 +23,11 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_file, read_json, write_json
 
 TESTED = '02fbe2f9ed5c2cec6f568ebc7cce99216a12631e'
+COMPILED_MERGE = '2cd6bb0d1ca39e3205ef0cf6296170fcab4005fe'
+SCALAR_SOURCES = {
+    'crates/latent-wasmtime/src/host/runtime/fixed_result.rs': 'sha256:250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b423626f3f',
+    'crates/latent-wasmtime/src/host/random.rs': 'sha256:de183dab7e3d634fd0a7b033f095aa0441dfca04d873632126a140b0f671b90b',
+}
 ARTIFACT, RUN = 12222984675, 39319524998
 QUALIFICATION = 'sha256:f9aded6b7b0ba702d9ec105d30320a0b2d44c22a2ab090e88e1bc1e813bda778'
 NORMAL = '_temp/typescript-capsule-dependencies/'
@@ -127,10 +132,10 @@ def historical(acquired):
     identities = {name: file_identity(path, 512*1024**2) for name, path in binaries.items()}
     require(identities == receipt['binaries'], 'typescript-entropy-replay-historical-native-five')
     # The host stays explicitly historical. Require the exact reviewed scalar implementation, without rebinding its whole source receipt.
-    for name in ('crates/latent-wasmtime/src/host/runtime/fixed_result.rs', 'crates/latent-wasmtime/src/host/random.rs'):
-        original = subprocess.check_output(['git', 'show', TESTED+':'+name], cwd=ROOT, timeout=15)
-        require(read_file(ROOT/name) == original, 'typescript-entropy-replay-reviewed-scalar-source')
-    return binaries, receipt, {'compiledSource': TESTED, 'qualification': file_identity(normal/'qualification.json'),
+    for name, expected in SCALAR_SOURCES.items():
+        require(digest(read_file(ROOT/name)) == expected, 'typescript-entropy-replay-reviewed-scalar-source')
+    return binaries, receipt, {'compiledSourceMerge': COMPILED_MERGE, 'originalPrHead': TESTED,
+        'qualification': file_identity(normal/'qualification.json'),
         'sourceInputs': file_identity(normal/'source-inputs.json'), 'normalNode': file_identity(node_path),
         'nativeBinaries': identities, 'currentNormalReceiptFabricated': False}
 
@@ -189,7 +194,7 @@ def replay(acquired, output):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'typescript-entropy-replay-Linux-Python313')
     output = fresh(output)
     record = {'schemaVersion': 'latent.typescript.entropy-policy-replay.v1', 'status': 'incomplete',
-        'compiledSource': TESTED, 'artifactId': ARTIFACT, 'originalRunId': RUN,
+        'compiledSourceMerge': COMPILED_MERGE, 'originalPrHead': TESTED, 'artifactId': ARTIFACT, 'originalRunId': RUN,
         'newCompilation': False, 'providerAggregateExhaustionQualified': False,
         'normalReceiptRewritten': False, 'fullTicketQualification': False, 'randomPayloadRetained': False}
     stage = 'historical-inputs'
