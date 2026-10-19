@@ -122,7 +122,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -347,12 +347,40 @@ class Compiler:
         configured = fetch_profile.bundle_configuration(application_modules or {}, self.runtime_profile, imports)
         if {'standardConsoleProfile', 'activationExports'} & configured.keys():
             raise ValueError('application-cannot-override-standard-console-backend')
-        write_json(bundle_configuration, {**configured, **(console_configuration or {})})
+        from tools.typescript_guest import entropy_profile
+        standard_random = None
+        if entropy_profile.selected(imports):
+            contract = output / 'standard-random-wit'
+            (contract / 'deps/random').mkdir(parents=True)
+            raw = read_file(work / 'vendor/lsf/wit/platform/random/package.wit')
+            if raw != read_file(ROOT / 'wit/platform/random/package.wit'):
+                raise ValueError('captured TypeScript random interface differs from the maintained profile')
+            (contract / 'deps/random/package.wit').write_bytes(raw)
+            (contract / 'world.wit').write_bytes(b'package lsf:typescript-random-abi@1.0.0;\nworld abi { import latent:random/random@0.1.0; }\n')
+            standard_random = semantic(json.loads(command.run('standard-random-types', wasm,
+                                                              'component', 'wit', contract, '--json')))
+        entropy_configuration = entropy_profile.configuration(
+            {**configured, **(console_configuration or {})}, application_graph, application_world, standard_random)
+        write_json(bundle_configuration, entropy_configuration)
         if self.isolation is not None:
             self.isolation.protect_inputs(work)
         command.run("bundle", self.node, self.recipe / "bundle.mjs", self.esbuild,
                     work, work / "src/main.ts", bundle, allowed, bundle_configuration,
                     self.tools / "node_modules/acorn/dist/acorn.mjs")
+        bundled = json.loads(read_file(output / 'application.mjs.inputs.json', 8 * 1024 * 1024))
+        if bundled['standardEntropyProfile'] != entropy_configuration['standardEntropyProfile']:
+            raise ValueError('typescript-standard-entropy-selection-drift')
+        write_json(output / 'typescript-entropy-selection.json', {
+            'schemaVersion': 'latent.typescript.standard-entropy-selection.v1',
+            'profile': bundled['standardEntropyProfile'], 'api': 'Math.random',
+            'requiredCapability': entropy_profile.INTERFACE if standard_random is not None else None,
+            'backendDigest': bundled['standardEntropyBackendDigest'], 'snapshotGuardDigest': bundled['snapshotGuardDigest'],
+            'cryptographicAPI': False, 'authority': 'none', 'qualification': 'unknown',
+            'sourceInterfaceDigest': digest(raw) if standard_random is not None else None,
+            'engineInputRebound': False,
+            'engineBootstrap': 'unchanged-before-application-banner',
+            'applicationSnapshotDraw': 'throws-before-host-draw',
+            'activationInitialization': 'existing-log-profile-deferral-only'})
         arguments = [self.compiler, projected, bundle, output, binding_world]
         if self.engine is not None:
             arguments.extend((self.engine, output/'typescript-runtime-selection.json'))

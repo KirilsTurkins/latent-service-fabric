@@ -21,7 +21,8 @@ class ClosedIO(unittest.TestCase):
         self.directory = Path(self.owned.name)
         self.wasm = shutil.which('wasm-tools')
         version = subprocess.check_output([self.wasm, '--version'], timeout=10).decode().strip()
-        self.assertEqual(version, 'wasm-tools 1.254.0')
+        self.assertIn(version, ('wasm-tools 1.254.0',
+            'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'))
 
     def run_tool(self, stage, executable, *arguments):
         return subprocess.run([str(executable), *map(str, arguments)], stdout=subprocess.PIPE,
@@ -116,6 +117,27 @@ class ClosedIO(unittest.TestCase):
         self.assertEqual(selected, original.replace('(func async', '(func'))
         self.assertIn(';; untouched metadata', selected)
         self.assertEqual(selected.count('(canon lift'), 4)
+
+
+class CodecVersionSpelling(unittest.TestCase):
+    def test_only_the_exact_pinned_bare_and_official_build_forms_are_accepted(self):
+        from unittest.mock import patch
+        valid = ('wasm-tools 1.254.0', 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)')
+        invalid = ('wasm-tools 1.254.1', 'wasm-tools 1.254.0-extra',
+                   'wasm-tools 1.254.0 (000000000 2026-07-20)',
+                   'wasm-tools 1.254.0 (bb58fdf91 2026-07-20) extra')
+        for version in (*valid, *invalid):
+            with self.subTest(version=version), patch.object(subprocess, 'check_output',
+                    return_value=(version+'\n').encode()):
+                actual = ClosedIO()
+                try:
+                    if version in valid:
+                        actual.setUp()
+                    else:
+                        with self.assertRaises(AssertionError):
+                            actual.setUp()
+                finally:
+                    actual.doCleanups()
 
 
 if __name__ == '__main__':

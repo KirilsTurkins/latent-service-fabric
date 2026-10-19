@@ -1,0 +1,65 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-policy }}",
+    "name": "Same-component signed Math.random policy and fresh-state programme",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install the existing locked Python dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check exact artifact package and explicit policy controls",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_entropy_campaign tools.tests.test_typescript_entropy_replay -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire only fixed public layers and original native five products",
+        "run": "python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs \"$RUNNER_TEMP/typescript-entropy-original-inputs\"",
+        "timeout-minutes": 5
+      },
+      {
+        "name": "Re-sign unchanged components and execute normal27 plus entropy6 and missing-grant denial",
+        "run": "python3 -B tools/replay_typescript_standard_entropy.py --inputs \"$RUNNER_TEMP/typescript-entropy-original-inputs\" --output \"$RUNNER_TEMP/typescript-entropy-policy-replay\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain source-bound policy transitions outcomes and physical cleanup",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-entropy-policy-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-entropy-original-inputs/acquisition.json\n${{ runner.temp }}/typescript-entropy-policy-replay/*.json\n${{ runner.temp }}/typescript-entropy-policy-replay/node/*.json\n${{ runner.temp }}/typescript-entropy-policy-replay/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 15
+  },
+  "jobId": "entropy-policy-replay",
+  "kind": "job",
+  "reviewReason": "Reviewed default-false fixed-artifact replay; original full jobs/commands/budgets remain mandatory for normal PR/push and ordinary dispatch.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}
