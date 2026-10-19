@@ -673,5 +673,60 @@ class HttpSyncSendPortTests(unittest.TestCase):
                 http_errors.validate_sync_read(receipt)
 
 
+class HttpDefaultSyncSendPortTests(unittest.TestCase):
+    """Outer-handler evidence stays separate from the existing inner port."""
+
+    def setUp(self):
+        self.inner = HttpSyncSendPortTests()
+        self.fixture = self.inner.fixture()
+        self.addCleanup(self.inner.doCleanups)
+        self.descriptor = {**self.inner.descriptor(),
+            'profile': 'dotnet-default-httpclient-sync-send-v1',
+            'method': 'System.Net.Http.HttpResponseMessage System.Net.Http.HttpClientHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)',
+            'asyncMethod': 'System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.HttpClientHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)'}
+
+    def test_outer_send_receipt_is_mandatory_and_keeps_inner_port_and_joint_ilc_identity(self):
+        fixture = self.fixture
+        original = fixture.http.run_tool
+        def controlled(stage, *arguments):
+            original(stage, *arguments)
+            if '--sync-read' in arguments:
+                receipt = json.loads(read_file(arguments[-1]))
+                receipt['synchronousRead']['defaultHandlerSynchronousSend'] = dict(self.descriptor)
+                arguments[-1].write_text(json.dumps(receipt), encoding='utf-8')
+        fixture.http.run_tool = controlled
+        port = fixture.prepare()
+        response = fixture.references(port)
+        result = port.finish(fixture.http.project, fixture.http.evidence)
+        core = fixture.core_port.finish(fixture.http.project, fixture.http.evidence)
+        self.assertEqual(result['synchronousRead']['defaultHandlerSynchronousSend'], self.descriptor)
+        self.assertEqual(result['synchronousRead']['synchronousSend'], self.inner.descriptor())
+        self.assertEqual(result['nativeAotReferenceBinding']['responseFiles'][0]['digest'], digest(response.read_bytes()))
+        self.assertEqual(core['nativeAotReferenceBinding']['responseFiles'][0]['digest'], digest(response.read_bytes()))
+        self.assertIs(port.task_wait_port, fixture.core_port)
+
+    def test_missing_or_changed_outer_handler_receipt_cannot_publish_references_or_expand_scope(self):
+        import copy
+        fixture = self.fixture
+        original = fixture.http.run_tool
+        before = snapshot(fixture.http.project)
+        def missing(stage, *arguments):
+            original(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result['synchronousRead']['defaultHandlerSynchronousSend']
+            arguments[-1].write_text(json.dumps(result), encoding='utf-8')
+        fixture.http.run_tool = missing
+        with self.assertRaisesRegex(ValueError, 'http-sync-read-rewrite-receipt'):
+            fixture.prepare()
+        self.assertEqual(snapshot(fixture.http.project), before)
+        for key, value in (('method', self.inner.descriptor()['method']), ('completion', 'completed-value'),
+                ('modifiedOriginalMethods', True), ('generatedHelpers', False), ('newHostImports', False),
+                ('nativeSendQualified', 0), ('foreign', 'field')):
+            receipt = copy.deepcopy(fixture.receipt())
+            receipt['defaultHandlerSynchronousSend'] = {**self.descriptor, key: value}
+            with self.subTest(field=key), self.assertRaisesRegex(ValueError, 'http-(sync-read|default-sync-send)-rewrite-receipt'):
+                http_errors.validate_sync_read(receipt)
+
+
 if __name__ == "__main__":
     unittest.main()

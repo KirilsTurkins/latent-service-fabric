@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/probe_dotnet_http_errors.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add fifteen isolated original-versus-derived synchronous Send host controls under existing bounded probe; all original controls retained",
+  "reviewReason": "Add fifteen captured outer-default-handler controls and original-as-derived denial; keep all original inner15/error/read/header controls and300/120secondlimits",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "616d03ddd6c43a42de830087713d2d48d3c399c8e2fac0288701c8c1e195cf52"
+  "sha256": "bcc15e9497ad8952a21532bc058e652d73bc056005a33f23684a3fd14a4f0a2e"
 }

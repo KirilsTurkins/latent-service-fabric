@@ -1,34 +1,40 @@
 # Synchronous Send in the captured WASI HTTP profile
 
-The maintained compiler source derives the WASI handler's synchronous `Send`
+The maintained compiler source derives both default-handler synchronous `Send` methods
 only when the existing captured TaskWait/CoreLib and standard HTTP profile are
 selected together. Ordinary `new HttpClient()` construction stays intact. The
 error-only profile keeps its original unsupported synchronous method.
 
 The original `WasiHttpHandler.Send` throws `PlatformNotSupportedException` in
 [the maintained .NET RC1 source](https://github.com/dotnet/runtime/blob/v10.0.0-rc.1.25451.107/src/libraries/System.Net.Http/src/System/Net/Http/WasiHttpHandler/WasiHttpHandler.cs).
-`HttpClientHandler` constructs that WASI handler through its original default
-path. The compiler verifies that path and the exact original throw, method
-signature, virtual slot and framework reference identities before changing
-that one method.
+The outer `HttpClientHandler.Send` has a separate WASI unsupported throw in
+[the same pinned framework source](https://github.com/dotnet/runtime/blob/v10.0.0-rc.1.25451.107/src/libraries/System.Net.Http/src/System/Net/Http/HttpClientHandler.cs).
+Adapting the inner method alone leaves ordinary `HttpClient.Send` unsupported.
+The compiler verifies the original default construction path and each exact
+throw, method signature, virtual slot and framework reference identity before
+changing those two methods through separate method-only ports.
 
-The derived method passes the original request and cancellation token to the
-unchanged `SendAsync`, then joins its original Task through `GetAwaiter` and
+Each derived method passes the original request and cancellation token to its
+own unchanged `SendAsync`, then joins its original Task through `GetAwaiter` and
 `GetResult`. The separately authenticated CoreLib supplies that join. It adds
 no handler, task pump, request replay, host import, capability or budget.
 `SendAsync`, request validation, body handling, cancellation and response
-ownership retain their original implementations. Every other method is
-checked before serialization, and the serialized product is reopened and
-checked as in the existing port.
+ownership retain their original implementations. The outer port therefore
+keeps the original lazy handler/telemetry chain. Each port checks that every
+other method is unchanged; the serialized product is reopened and checked as
+in the existing port.
 
 The whole original System.Net.Http digest remains
 `3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587`.
 The existing pinned Cecil digest and both actual ILC references remain
-mandatory. The nested `dotnet-wasi-sync-send-v1` receipt has a closed field set
-and exact types; missing or altered evidence fails before compiler project
-references are published. Its `nativeSendQualified` value remains false.
+mandatory. The nested `dotnet-wasi-sync-send-v1` and
+`dotnet-default-httpclient-sync-send-v1` receipts have closed field sets and
+exact types; either missing or altered evidence fails before compiler project
+references are published. Their `nativeSendQualified` values remain false.
 
-The existing captured-BCL probe includes fifteen additional host controls. It
+The existing fifteen inner-handler host controls remain intact. A separate
+fifteen-control captured-BCL probe covers the outer default handler, with an
+original-as-derived negative control that must reject its unsupported throw. Each probe
 constructs the original default client/handler path in separate original and
 derived contexts, demonstrates the original unsupported synchronous method,
 and compares the derived synchronous faults with original and derived async
