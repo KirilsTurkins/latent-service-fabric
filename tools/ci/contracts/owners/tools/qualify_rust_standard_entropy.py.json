@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_standard_entropy.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain normal exact approval for the complete captured compiler script/macro closure; record actual inputs and capture before owned std compilation. No execution waiver or source preimage change.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "3ff9b1ce7cbe612dfd0218403d599dd62a7b6000da0faa6c793b80389803eb73"
+}

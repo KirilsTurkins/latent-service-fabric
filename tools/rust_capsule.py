@@ -19,7 +19,7 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=project.AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
-    new.add_argument('--runtime-profile', choices=('wasm32-unknown-unknown-panic-abort-v1', 'rust-standard-closed-v1', 'rust-standard-logging-v1'),
+    new.add_argument('--runtime-profile', choices=('wasm32-unknown-unknown-panic-abort-v1', 'rust-standard-closed-v1', 'rust-standard-logging-v1', 'rust-standard-entropy-v1', 'rust-standard-logging-entropy-v1'),
                      help='Explicit owned standard runtime selection; installs no authority')
     for operation in ('add', 'update', 'remove', 'lock'):
         native = commands.add_parser(operation, help='Explicit native Cargo declaration/lock authoring in a controlled fetch stage')
@@ -78,7 +78,7 @@ def parser() -> argparse.ArgumentParser:
     packaging.add_argument("--package-inputs-only", action="store_true", help="Emit checked bytes for a separately invoked packager")
     compile_.add_argument("--offline", action="store_true", help="Use already-cached pinned Cargo dependencies only")
     compile_.add_argument("--executable-approval", help="Exact captured build-script/proc-macro compiler/profile approval digest")
-    compile_.add_argument('--standard-runtime', type=Path, help='Exact prepared standard logging sysroot; requires explicit matching project profile')
+    compile_.add_argument('--standard-runtime', type=Path, help='Exact prepared standard runtime sysroot; requires explicit matching project profile')
     return parser
 
 

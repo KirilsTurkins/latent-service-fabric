@@ -214,7 +214,7 @@ def create(directory: Path, template: str, name: str | None = None, *, runtime_p
                            "No provider or capability grant is installed by this project.\n").encode()}
     files.update({"vendor/lsf/" + path: data for path, data in vendor.items()})
     transaction_features = ', features = ["transaction"]' if template == "transactional-aggregate" else ""
-    if selected_runtime == standard.PROFILE:
+    if standard.has_logging(selected_runtime):
         features = ['transaction', 'standard-logging'] if template == 'transactional-aggregate' else ['standard-logging']
         transaction_features = ', features = ' + json.dumps(features)
     files["Cargo.toml"] = f'''[package]
@@ -254,7 +254,7 @@ panic = "abort"
                "limits": limits}
     if selected_runtime != standard.DEFAULT:
         project['runtimeProfile'] = selected_runtime
-    if selected_runtime == standard.PROFILE:
+    if standard.has_logging(selected_runtime):
         # Explicit creator selection declares a dependency; it grants nothing.
         marker = b'world service {'
         if wit.count(marker) != 1:
@@ -268,6 +268,23 @@ panic = "abort"
         mapping = '"latent:log/log@0.1.0": latent_guest::bindings::log,'
         if binding_source.count(opening) != 1 or binding_source.count('with: {') > 1 or 'latent:log/log@' in binding_source:
             raise ValueError('maintained logging template binding shape changed')
+        if 'with: {' in binding_source:
+            binding_source = binding_source.replace('with: {', 'with: { ' + mapping, 1)
+        else:
+            binding_source = binding_source.replace(opening, opening + ' with: { ' + mapping + ' },', 1)
+        files['src/lib.rs'] = binding_source.encode()
+    if standard.has_entropy(selected_runtime):
+        marker = b'world service {'
+        current_world = files['wit/world.wit']
+        if current_world.count(marker) != 1:
+            raise ValueError('maintained entropy template world shape changed')
+        files['wit/world.wit'] = current_world.replace(marker, marker + b'\n    import latent:random/random@0.1.0;', 1)
+        files['wit/deps/random/package.wit'] = read_file(ROOT / 'wit/platform/random/package.wit')
+        opening = 'wit_bindgen::generate!({'
+        binding_source = files['src/lib.rs'].decode()
+        mapping = '"latent:random/random@0.1.0": latent_guest::bindings::random,'
+        if binding_source.count(opening) != 1 or binding_source.count('with: {') > 1 or 'latent:random/random@' in binding_source:
+            raise ValueError('maintained entropy template binding shape changed')
         if 'with: {' in binding_source:
             binding_source = binding_source.replace('with: {', 'with: { ' + mapping, 1)
         else:
