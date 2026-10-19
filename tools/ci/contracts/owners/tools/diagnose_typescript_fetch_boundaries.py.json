@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_boundaries.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
+  "reviewReason": "Retain exact emitted invocation budget numeric fields and configured node execution limits in older-SDK diagnostic evidence; preserve all invocation arguments, fixed labels, original signed assertions and bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "22ece21449b5454cb4f73afe8eba24a23e48da32b6763b362d5edd5fed6ce2f0"
+  "sha256": "79079e1f13acb44b98416173943d451fe33a8e199fb1a26d59f836ed5b68625f"
 }

@@ -19,11 +19,20 @@ from tools.rust_capsule_project import ROOT, digest, fresh, read_file
 TESTED = 'ba62bf8f266e589971a03e496b18b8f2cb5e5d85'
 
 
+def numeric_fields(path: Path, fields: set[str]) -> dict:
+    value = json.loads(read_file(path, 8192))
+    require(isinstance(value, dict) and set(value) == fields and all(
+        type(number) is int and 0 <= number < 2**64 for number in value.values()),
+        'fetch-boundary-numeric-budget-fields')
+    return value
+
+
 def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, output: Path) -> dict:
     output = fresh(output)
     record = {'schemaVersion': 'latent.typescript.same-sdk-fetch-boundaries.v1',
         'qualification': False, 'currentHeadQualification': False, 'status': 'incomplete',
-        'sdkTestedCommit': TESTED, 'helper': file_identity(Path(__file__)), 'probes': []}
+        'sdkTestedCommit': TESTED, 'helper': file_identity(Path(__file__)), 'probes': [],
+        'actualInvocationBudgets': {}}
     source = {name: read_file(probes/name, 65536) for name in ('main.ts', 'default-client.ts')}
     record['applicationSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)} for name, raw in source.items()}
     original_project, original_call, original_connect = fetch.project, fetch.call, fetch.connect
@@ -40,21 +49,38 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
         return app
 
     def connect(*args, **kwargs):
+        configured = json.loads(read_file(args[3]))
+        execution = configured['execution']
+        require(isinstance(execution, dict) and set(execution) == {
+            'maximumCpuFuel', 'maximumWallTimeMillis', 'maximumLogBytes'} and all(
+            type(value) is int and 0 <= value < 2**64 for value in execution.values()),
+            'fetch-boundary-node-execution-fields')
+        record['actualNodeExecutionLimits'] = execution
         service = original_connect(*args, **kwargs)
         services.append((service, file_identity(args[1])))
         return service
+
+    def invoke(client, target, template, function, arguments, activation, **kwargs):
+        require(activation in {'fetch-runtime-denied', 'fetch-http-denied', 'fetch-entry',
+            'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
+            'fetch-json', 'fetch-http404', 'fetch-fresh'}, 'fetch-boundary-activation-name')
+        row = original_call(client, target, template, function, arguments, activation, **kwargs)
+        fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
+        record['actualInvocationBudgets'][activation] = numeric_fields(
+            client.directory/(activation+'-budget.json'), fields)
+        return row
 
     def call(client, target, template, function, arguments, activation, **kwargs):
         if activation == 'fetch-json':
             require(len(services) == 1, 'fetch-boundary-single-node')
             probe = fetch.Probe(*services[0])
             for name, mode in (('promise-ready', 3), ('request-copy-ready', 4)):
-                row = original_call(client, target, template, function, [mode, arguments[1]], 'fetch-'+name)
+                row = invoke(client, target, template, function, [mode, arguments[1]], 'fetch-'+name)
                 record['probes'].append({'name': name, 'mode': mode, 'entry': row})
                 write_json(output/('probe-'+name+'.json'), record['probes'][-1])
                 fetch.require_result(row, name, 0)
                 fetch.retire(client, probe, target, output, name)
-        return original_call(client, target, template, function, arguments, activation, **kwargs)
+        return invoke(client, target, template, function, arguments, activation, **kwargs)
 
     try:
         head = run_bounded_result(['git', 'rev-parse', 'HEAD'], ROOT, build_environment(output), 10, 4096)
