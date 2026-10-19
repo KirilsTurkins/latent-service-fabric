@@ -67,6 +67,10 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
+        "name": "Test the explicit strict console and activation module initialization",
+        "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-guest-tools\" python3 -m unittest tools.tests.test_typescript_console -v"
+      },
+      {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -107,7 +111,7 @@
       },
       {
         "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
-        "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
+        "run": "python3 tools/qualify_typescript_capsules.py --standard-console --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
         "name": "Test controlled native npm lock authoring",
@@ -149,7 +153,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Explicit TypeScript generator qualification preserves the original normal programme and limits, adds exact source approval and signed request-dependent values; existing C generator acceptance remains required.",
+  "reviewReason": "Compose unchanged TypeScript generator and Console campaigns with all historical commands and case coverage retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

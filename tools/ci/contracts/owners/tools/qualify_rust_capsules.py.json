@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all merged generator/logging/profile paths and import the existing bounded read_file consumer used by actual generator rebuild material validation.",
+  "reviewReason": "Compose unchanged TypeScript generator and Console campaigns with all historical commands and case coverage retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b3a39408072ecde3136786615e11fd086dc3a41211cb72ed62b8afab0e37a042"
+  "sha256": "53f02c28de100e0f134c480199ad14e5492bb899840a73cacffa1c4f934b8875"
 }

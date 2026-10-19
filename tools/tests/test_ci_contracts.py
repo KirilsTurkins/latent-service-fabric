@@ -843,6 +843,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
         reviewed_go_probe = ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components"
         reviewed_go_normal_id = ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide"
+        reviewed_typescript_console = ".github/workflows/typescript-guest.yml:boundary:Qualify captured projects, all SDK owners, enforced node and printed guide"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -934,6 +935,14 @@ class RepositoryMigrationTests(unittest.TestCase):
             elif key == reviewed_rust_approval_extension:
                 self.assertEqual(data["after"][key], dict(value,
                     run=value["run"] + " tools.tests.test_dev_executable_approval"), key)
+            elif key == reviewed_typescript_console:
+                # Keep the entire normal authoring programme and all original
+                # execution fields. Its explicit opt-in adds strict LOG cases;
+                # it cannot substitute a smaller side campaign for this gate.
+                command = "python3 tools/qualify_typescript_capsules.py"
+                self.assertEqual(value["run"].count(command), 1)
+                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
+                    command, command + " --standard-console", 1)), key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:

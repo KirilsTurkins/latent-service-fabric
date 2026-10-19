@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from tools import rust_capsule_build as build
 from tools import rust_capsule_project as project
+from tools import rust_standard_logging_inputs as standard
 
 
 class RustProjectTests(unittest.TestCase):
@@ -428,7 +429,7 @@ class RustDeclaredEnvironment(unittest.TestCase):
         def bindings(_work, _pins, commands, _tool):
             commands.environment['CARGO_BUILD_JOBS'] = '3'
             return project.digest(b'controlled bindings')
-        closure = SimpleNamespace(lock={'selection': {'runtimeProfile': build.standard.DEFAULT}})
+        closure = SimpleNamespace(lock={'selection': {'runtimeProfile': standard.DEFAULT}})
         verified = SimpleNamespace(lock={'executableInputs': [], 'selection': closure.lock['selection']})
         output = root / 'output'
         with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools), [])), \
@@ -582,7 +583,7 @@ class RustExecutableOutputMaterials(unittest.TestCase):
         def package(output, *_args): project.write_json(output / 'package-source.json', {'layers': []})
         verified = RustDeclaredEnvironment.verified(self)
         verified.lock['executableInputs'] = [{'id': 'outside/build-script'}]
-        verified.lock['selection']['runtimeProfile'] = build.standard.DEFAULT
+        verified.lock['selection']['runtimeProfile'] = standard.DEFAULT
         output = workspace.parent / 'output'
         with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools), [])), \
                 patch.object(build.shutil, 'which', side_effect=lambda name, **_kwargs: str(scope.tools['shell' if name == 'sh' else name])), \
