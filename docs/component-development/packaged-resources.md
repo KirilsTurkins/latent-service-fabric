@@ -39,9 +39,20 @@ An application-origin row requires a bound declaration-manifest digest; a
 dependency-origin row requires a bound dependency-lock digest. Rehashing an
 index cannot replace either missing input binding by relabelling the origin.
 Application-only, dependency-only and mixed selections retain the same exact
-byte/object inventory rules. These prerequisites do not independently prove an
-owner's membership in a dependency lock; capture still validates that membership
-against the actual reviewed lock, and the signed package authenticates the index.
+byte/object inventory rules.
+
+Verification of a dependency-origin row also requires the actual reviewed lock
+bytes through the explicit `dependency_lock` input, bounded at 8 MiB. The bytes
+must match the externally supplied lock digest and the index binding before the
+lock is decoded. Each owner must occur exactly once, with the resource's exact
+digest and size in its captured file inventory; the verifier and capture use the
+same membership checks. A digest alone, substituted lock, rehashed foreign owner
+or unobserved payload cannot supply that proof. The lock is parsed once per
+verification, without reading a host path or fetching dependencies. Application
+rows do not require dependency-lock bytes. This verifies membership within the
+bound lock; the caller must still authenticate the captured graph and the source,
+component and lock digests, and the ordinary signed package authenticates the
+selected index. It does not qualify a language's runtime resource API.
 
 The developer workflow derives a `resourceInputs` manifest binding and includes
 the manifest and its declared source files in trust/watch snapshots. Changing
