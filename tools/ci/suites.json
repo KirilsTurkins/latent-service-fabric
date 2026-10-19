@@ -10291,7 +10291,10 @@
         "config::tests::providers::scalar_aliases::aliases_never_supply_missing_or_stateful_implementations",
         "config::tests::providers::scalar_aliases::aliases_preserve_original_fourteen_descriptor_slots_and_closed_input",
         "standalone::start::tests::provider_startup::scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners",
-        "config::tests::engine::ordinary_node_inherits_finite_table_capacity_without_extra_engine_options"
+        "config::tests::engine::ordinary_node_inherits_finite_table_capacity_without_extra_engine_options",
+        "standalone::providers::runtime::stream_control::tests::busy_status_observation_preserves_the_committed_result_without_republishing",
+        "standalone::providers::runtime::stream_control::tests::status_observation_returns_permanent_and_unrelated_errors_without_retry",
+        "standalone::providers::runtime::stream_control::tests::busy_status_observation_is_bounded_and_never_probes_after_its_deadline"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10360,7 +10363,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 446,
+      "minimumCases": 449,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

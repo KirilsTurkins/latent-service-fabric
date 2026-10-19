@@ -1,6 +1,7 @@
 //! Serialized control by the owning development node; no guest-facing gateway.
 use super::{unavailable, ProviderRuntime};
 use crate::config::StreamReloadGuard;
+use latent_capabilities::broker::network::StreamErrorCode;
 use latent_core::{PlatformError, PlatformErrorCode};
 use serde::Serialize;
 use std::time::{Duration, Instant};
@@ -30,6 +31,39 @@ fn conflict() -> PlatformError {
         message: "stream-control-current-generation-mismatch".into(),
         retryable: false,
         details: vec![],
+    }
+}
+
+fn status_busy() -> PlatformError {
+    PlatformError {
+        code: PlatformErrorCode::ResourceExhausted,
+        message: "stream-control-status-busy".into(),
+        retryable: true,
+        details: vec![],
+    }
+}
+
+async fn observe_stream_control_status<T>(
+    deadline: tokio::time::Instant,
+    mut observe: impl FnMut() -> Result<T, PlatformError>,
+) -> Result<T, PlatformError> {
+    loop {
+        match observe() {
+            Err(error)
+                if error.code == PlatformErrorCode::ResourceExhausted
+                    && error.message == "stream-control-status-busy" =>
+            {
+                let now = tokio::time::Instant::now();
+                if now >= deadline {
+                    return Err(error);
+                }
+                tokio::time::sleep_until(deadline.min(now + Duration::from_millis(1))).await;
+                if tokio::time::Instant::now() >= deadline {
+                    return Err(error);
+                }
+            }
+            result => return result,
+        }
     }
 }
 
@@ -71,7 +105,13 @@ impl ProviderRuntime {
             .as_ref()
             .ok_or_else(unavailable)?
             .status()
-            .map_err(|_| unavailable())?;
+            .map_err(|error| {
+                if error.code == StreamErrorCode::Exhausted {
+                    status_busy()
+                } else {
+                    unavailable()
+                }
+            })?;
         let reference = self
             .stream_binding_reference
             .as_ref()
@@ -95,6 +135,21 @@ impl ProviderRuntime {
             stream,
             failure_code: failure.map(|code| format!("{code:?}")),
         })
+    }
+
+    async fn stream_control_status_after_mutation(
+        &self,
+        operation: &'static str,
+        outcome: &'static str,
+        failure: Option<PlatformErrorCode>,
+    ) -> Result<StreamControlStatus, PlatformError> {
+        // A retired connection can briefly hold the snapshot lock after the
+        // catalog commit. Retry only that observation, never the publication.
+        observe_stream_control_status(
+            tokio::time::Instant::now() + Duration::from_millis(100),
+            || self.stream_control_status(operation, outcome, failure),
+        )
+        .await
     }
 
     /// The config file's epoch must strictly increase. A repeated signal cannot
@@ -171,29 +226,40 @@ impl ProviderRuntime {
         let prepared = match tokio::time::timeout_at(deadline.into(), work).await {
             Ok(Ok(prepared)) => prepared,
             Ok(Err(error)) => {
-                return self.stream_control_status(
+                return self
+                    .stream_control_status_after_mutation(
+                        operation,
+                        "installed-generation-binding-publication-unconfirmed",
+                        Some(error.code),
+                    )
+                    .await
+            }
+            Err(_) => {
+                return self
+                    .stream_control_status_after_mutation(
+                        operation,
+                        "installed-generation-binding-publication-unconfirmed",
+                        Some(PlatformErrorCode::DeadlineExceeded),
+                    )
+                    .await
+            }
+        };
+        if let Err(error) = catalog.commit_provider_reference_update(prepared) {
+            return self
+                .stream_control_status_after_mutation(
                     operation,
                     "installed-generation-binding-publication-unconfirmed",
                     Some(error.code),
                 )
-            }
-            Err(_) => {
-                return self.stream_control_status(
-                    operation,
-                    "installed-generation-binding-publication-unconfirmed",
-                    Some(PlatformErrorCode::DeadlineExceeded),
-                )
-            }
-        };
-        if let Err(error) = catalog.commit_provider_reference_update(prepared) {
-            return self.stream_control_status(
-                operation,
-                "installed-generation-binding-publication-unconfirmed",
-                Some(error.code),
-            );
+                .await;
         }
         self.stream_binding_reference = Some(replacement);
-        self.stream_control_status(operation, "installed-generation-bindings-published", None)
+        self.stream_control_status_after_mutation(
+            operation,
+            "installed-generation-bindings-published",
+            None,
+        )
+        .await
     }
 
     pub async fn drain_streams(&mut self) -> Result<StreamControlStatus, PlatformError> {
@@ -207,6 +273,7 @@ impl ProviderRuntime {
         } else {
             "retained-owners-not-refunded"
         };
-        self.stream_control_status("drain", outcome, None)
+        self.stream_control_status_after_mutation("drain", outcome, None)
+            .await
     }
 }

@@ -179,10 +179,7 @@ impl StreamLifecycle {
         Ok(state.current.reference())
     }
     pub fn status(&self) -> Result<StreamStatus, StreamError> {
-        let state = self
-            .state
-            .try_lock()
-            .map_err(|_| StreamError::new(StreamErrorCode::Exhausted))?;
+        let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
         let reference = state.current.reference();
         let mut usage = state.current.usage()?;
         for retired in state.retired.iter().flatten() {
