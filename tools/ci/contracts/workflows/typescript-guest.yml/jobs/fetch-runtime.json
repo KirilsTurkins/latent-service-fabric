@@ -52,6 +52,10 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-signed-fetch-tools\""
       },
       {
+        "name": "Check the actual native binding with the captured compiler parser",
+        "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-signed-fetch-tools\" python3 -m unittest tools.tests.test_typescript_native_await tools.tests.test_typescript_async_waiters -v"
+      },
+      {
         "name": "Read the existing native qualification from this exact run",
         "uses": "actions/download-artifact",
         "with": {
@@ -95,7 +99,7 @@
   },
   "jobId": "fetch-runtime",
   "kind": "job",
-  "reviewReason": "Add a finite signed default-Fetch/provider runner using exact existing same-run native and source-owned engine inputs, strict ordinary build evidence and one-shot body/retirement controls; no full ticket claim.",
+  "reviewReason": "Fuse only the source-owned native carrier helper with the existing typed await, preserving task/lift/finally; all original waiter controls remain byte-identical and captured-parser controls are mandatory in signed Fetch.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

@@ -281,3 +281,13 @@ remain unqualified. Even a passing finite run does not qualify two unchanged
 published clients, a private consumer, top-level `Request`, streaming/tee,
 Abort/timeout races, reaction/timer/memory limits or cross-tenant reuse. The
 engine metadata remains `unknown` / `not-evaluated`; #691 remains open.
+
+The source-owned import compiler fuses its private carrier lift with the typed
+binding's existing await. It rejects an unrecognized generated helper/task/finally
+graph. This removes a redundant compiler Promise while preserving task entry,
+canonical argument/result handling, application-realm Promise projection and
+actual import retirement in the existing finally path. Local controls use an
+actual retained generated `open` binding, including pending work, original native
+rejection, typed `uncertain` and lift failure. They do not establish that the
+finite signed Fetch programme passes; the previous Task-owner refusal remains a
+real failure until the corrected component succeeds under the same owner limits.

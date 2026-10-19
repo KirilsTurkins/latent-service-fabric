@@ -7,9 +7,9 @@ import { pathToFileURL } from 'node:url';
 import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
-import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises } from './async_waiters.mjs';
+import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits } from './async_waiters.mjs';
 
-const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer] = process.argv.slice(2);
+const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser] = process.argv.slice(2);
 const prepareImport = witPath === '--source-import-adapter';
 const importProfile = 'spidermonkey-activation-promises-clocks-imports-v1';
 const useImportAdapter = prepareImport || !!sourceSplicer;
@@ -80,6 +80,12 @@ if (engine || selectionPath) {
   selectedEngine = { digest: actual, size: raw.byteLength, profile: selection.profile,
     qualification: 'unknown', apiSupport: 'not-evaluated' };
 }
+let parseBindings;
+if (selectedSplicer) {
+  if (!bindingParser) throw new Error('source-owned-binding-parser-required');
+  ({parse: parseBindings} = await import(pathToFileURL(bindingParser)));
+  if (typeof parseBindings !== 'function') throw new Error('source-owned-binding-parser-required');
+}
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
   witPath, worldName: world, enableAot: false, env: compilerEnv,
@@ -90,7 +96,10 @@ const result = await componentize({
     if (selectedEngine) {
       generatedBindings = retireGeneratedTaskSlots(lazySyncImportWaiters(generatedBindings));
     }
-    if (selectedSplicer) generatedBindings = applicationRealmImportPromises(generatedBindings);
+    if (selectedSplicer) {
+      generatedBindings = fuseNativeImportAwaits(generatedBindings, parseBindings);
+      generatedBindings = applicationRealmImportPromises(generatedBindings);
+    }
     return generatedBindings;
   },
   disableFeatures: ['stdio', 'random', 'clocks', 'http', 'fetch-event'],

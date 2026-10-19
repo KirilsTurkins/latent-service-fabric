@@ -342,7 +342,8 @@ class Compiler:
         if self.engine is not None:
             arguments.extend((self.engine, output/'typescript-runtime-selection.json'))
         if self.source_splicer is not None:
-            arguments.append(self.source_splicer/'spidermonkey-embedding-splicer.js')
+            arguments.extend((self.source_splicer/'spidermonkey-embedding-splicer.js',
+                              self.tools/'node_modules/acorn/dist/acorn.mjs'))
         command.run("componentize", self.node, self.recipe / "componentize.mjs", *arguments)
         bare, embedded, component = (output / name for name in ("bare.wasm", "embedded.wasm", "component.wasm"))
         command.run("strip-projection", wasm, "strip", "--delete", "^component-type", output / "core.wasm", "-o", bare)
