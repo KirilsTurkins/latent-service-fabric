@@ -21,12 +21,24 @@ def grant(client, node, fixture, targets, publications, result):
     require(len(installed) == 1 and installed[0]['profile'] == noncrypto.PROFILE,
             'dotnet-secure-entropy-provider-identity')
     descriptor = installed[0]
+    observed = client.call('policy', '--kind', 'provider-binding', 'get', '--id', noncrypto.BINDING)
+    current = observed.get('data', {}).get('policy', {})
+    original_document = {'formatVersion': 1, 'tenant': 'examples', 'capability': RANDOM,
+        'providerProfile': noncrypto.PROFILE, 'configurationDigest': descriptor['configurationDigest'],
+        'configurationEpoch': 1, 'restriction': {'operations': ['bytes']}}
+    generation = current.get('generation')
+    require(observed.get('outcomeKnown') is True and observed.get('category') == 'success'
+            and current.get('tenant') == 'examples' and current.get('id') == noncrypto.BINDING
+            and current.get('recordKind') == 'provider-binding' and current.get('revoked') is False
+            and current.get('document') == original_document and isinstance(generation, str)
+            and generation.isdecimal() and 0 < int(generation) < 2**64,
+            'dotnet-secure-entropy-original-binding-observation')
     binding = client.directory / 'secure-entropy-binding.json'
     write_json(binding, {'formatVersion': 1, 'tenant': 'examples', 'capability': RANDOM,
         'providerProfile': noncrypto.PROFILE, 'configurationDigest': descriptor['configurationDigest'],
         'configurationEpoch': 1, 'restriction': {'operations': ['bytes', 'u64-value']}})
     client.call('policy', '--kind', 'provider-binding', 'apply', '--id', noncrypto.BINDING,
-        '--file', binding, '--operation-id', 'secure-entropy-binding', '--expected-generation', '1')
+        '--file', binding, '--operation-id', 'secure-entropy-binding', '--expected-generation', generation)
     policy = {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
         'id': 'explicit-standard-entropy', 'effect': 'allow',
         'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
@@ -42,7 +54,7 @@ def grant(client, node, fixture, targets, publications, result):
     targets['greeting'] = deploy(client, fixture / 'my-greeting/deployment.json', publications['greeting'],
         generation=str(target['generation']), grants=grants)
     result['dotnetStandardEntropyAuthority'] = {'operationDenied': denied, 'policy': policy,
-        'requiredDeclaration': RANDOM, 'additionalProviderBindings': 0,
+        'requiredDeclaration': RANDOM, 'originalBinding': current, 'additionalProviderBindings': 0,
         'providerAggregateBytes': 65536, 'defaultLanguageProfilesChanged': False,
         'transactionalEntropySupport': False, 'fipsCertification': False}
 
