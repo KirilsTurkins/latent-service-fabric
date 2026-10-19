@@ -36,6 +36,23 @@ graph. It records target, features, native revisions/checksums, exact original
 and relocated manifests, resources and executable-input identities. It does
 not run application build scripts or procedural macros.
 
+Before publishing a candidate, registry and Git vendor directories must match
+one exact native lock record. Registry package checksums match that record;
+Git sources retain Cargo's null package checksum and exact revision identity.
+The bounded `.cargo-checksum.json` must cover every original vendor file and
+match its SHA-256 bytes. The original content-addressed inventory is then
+rechecked against that validated preimage, including the checksum file, before
+publication. Missing, extra or changed files and transient capture swaps refuse
+without replacing accepted inputs. Path dependencies keep their separate source
+observation fence; manifest relocation still records distinct original bytes.
+
+These checks bind the output of the explicitly selected native resolver. The
+vendor checksum document is not publisher authentication and cannot establish
+that a compromised resolver or a self-consistent replacement is genuine. Native
+Cargo acquisition, separate executable approval and isolated compilation remain
+required. Source controls for this fence do not establish a new native build or
+signed component qualification.
+
 The supported selection is `wasm32-unknown-unknown` with the maintained
 `wasm32-unknown-unknown-panic-abort-v1` profile. Repeat `--features NAME`, or select
 `--all-features` or `--no-default-features`, on `resolve` when needed. Changing
