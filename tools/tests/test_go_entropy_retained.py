@@ -56,6 +56,17 @@ class RetainedEntropy(unittest.TestCase):
             self.assertFalse(proof['currentNormalReceiptFabricated'])
             self.assertEqual((normal/'qualification.json').read_bytes(), before)
 
+    def test_unselected_native_probe_metadata_does_not_expand_the_exact_selected_five(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary);normal = self.fixture(base)
+            path = normal/'qualification.json';receipt = json.loads(path.read_bytes())
+            receipt['binaries']['examples/go_runtime_probe'] = {'sha256': 'sha256:'+'7'*64, 'bytes': 17}
+            path.write_bytes(json.dumps(receipt).encode())
+            binaries, _builds, proof = qualification.historical(base)
+            self.assertEqual(set(binaries), set(qualification.PRODUCTS))
+            self.assertEqual(set(proof['nativeBinaries']), set(qualification.PRODUCTS))
+            self.assertFalse((normal/'native-binaries/examples-go_runtime_probe').exists())
+
     def test_changed_original_component_package_input_and_native_binary_are_refused(self):
         for changed in ('builds/greeting/component.wasm', 'builds/word-count/package-inputs.json', 'native-binaries/latent'):
             with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temporary:

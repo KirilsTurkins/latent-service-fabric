@@ -5,6 +5,7 @@
     "RetainedEntropy.test_historical_normal_proof_checks_all_five_packages_and_never_becomes_current",
     "RetainedEntropy.test_manual_cpu_scalar_and_entropy_jobs_are_independent_and_original_deadline_is_unchanged",
     "RetainedEntropy.test_new_host_requires_actual_success_single_default_product_and_stable_source",
+    "RetainedEntropy.test_unselected_native_probe_metadata_does_not_expand_the_exact_selected_five",
     "RetainedEntropy.test_wrong_acquisition_identity_or_missing_normal_greeting_refuses_before_inputs"
   ],
   "guards": {
@@ -68,6 +69,18 @@
       ],
       "skipSites": []
     },
+    "RetainedEntropy.test_unselected_native_probe_metadata_does_not_expand_the_exact_selected_five": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45e5d22c5c667159cdd7f94ea17c9b2f5703f24da3737af16388f791743cb35a",
+        "class:setup-sha256:19a5f22b43d800135af95982ef7ce5a14324779a071f6a2df4e9421aab371e26"
+      ],
+      "skipSites": []
+    },
     "RetainedEntropy.test_wrong_acquisition_identity_or_missing_normal_greeting_refuses_before_inputs": {
       "bases": [
         "unittest.TestCase"
@@ -83,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_entropy_retained.py",
-  "reviewReason": "Review bounded independent CPU/native scalar/fresh entropy qualification; original commands and limits preserved; historical source distinguished from current host.",
+  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

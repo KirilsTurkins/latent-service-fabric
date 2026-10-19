@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_entropy_retained.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review preserved current ordinary binary for exact future source-bound replay and remaining-budget cap within35min owning job.",
+  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "69e13e15aff2d92cc24225b56dd30a8fe3b2dbab32d3a1cee2a5d9bc1296749d"
+  "sha256": "4056f807c5fa9183330c95766aa7a0ee6325b938fce861359f922fb27b710f28"
 }

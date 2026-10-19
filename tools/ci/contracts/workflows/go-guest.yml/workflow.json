@@ -190,6 +190,11 @@
       },
       "workflow_dispatch": {
         "inputs": {
+          "entropy-only": {
+            "default": false,
+            "description": "Retry only the fresh entropy lane after exact-source CPU and native scalar controls passed",
+            "type": "boolean"
+          },
           "qualify-entropy-retained": {
             "default": false,
             "description": "Fresh current host and entropy component with authenticated historical normal companions",
@@ -214,7 +219,7 @@
     "retained-scalar-ownership",
     "upstream-probe"
   ],
-  "reviewReason": "Review bounded independent CPU/native scalar/fresh entropy qualification; original commands and limits preserved; historical source distinguished from current host.",
+  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

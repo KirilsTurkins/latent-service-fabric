@@ -70,7 +70,8 @@ def historical(acquired):
             'go-entropy-retained-historical-normal-proof')
     binaries = {name: normal/'native-binaries'/name.replace('/', '-') for name in PRODUCTS}
     observed = {name: file_identity(path, 512*1024**2) for name, path in binaries.items()}
-    require(observed == receipt['binaries'], 'go-entropy-retained-historical-binaries')
+    require(all(observed[name] == receipt['binaries'][name] for name in PRODUCTS),
+            'go-entropy-retained-historical-binaries')
     builds, bound = {}, {}
     for name in TEMPLATES:
         location = normal/'builds'/name

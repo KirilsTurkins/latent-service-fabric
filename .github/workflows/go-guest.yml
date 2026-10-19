@@ -176,6 +176,10 @@ on:
         description: Fresh current host and entropy component with authenticated historical normal companions
         type: boolean
         default: false
+      entropy-only:
+        description: Retry only the fresh entropy lane after exact-source CPU and native scalar controls passed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -197,7 +201,7 @@ env:
 
 jobs:
   upstream-probe:
-    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only) }}
     name: Go runtime and complete capsule qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -582,7 +586,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   entropy-authority-replay:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority && !inputs.qualify-entropy-retained }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only }}
     name: Same-component Go entropy explicit authority and retirement
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -626,7 +630,7 @@ jobs:
   retained-cpu-checkpoints:
     name: Original signed CPU checkpoint cancellation and deadline controls
     timeout-minutes: 20
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority && !inputs.entropy-only }}
     permissions:
       contents: read
       actions: read
@@ -667,7 +671,7 @@ jobs:
   retained-scalar-ownership:
     name: All15 actual random provider ownership and canonical-lowering controls
     timeout-minutes: 20
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority && !inputs.entropy-only }}
     permissions:
       contents: read
       actions: read
