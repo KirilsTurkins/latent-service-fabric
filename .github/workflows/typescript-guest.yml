@@ -773,16 +773,16 @@ jobs:
         run: python3 -m pip install -r tools/requirements.lock
       - name: Check exact candidate and authenticated observer controls
         run: |
-          git fetch --no-tags origin f737b14d4825f0febce3b8c8a8ab69b019fa94b1
+          git fetch --no-tags origin 819791f66b2d2fcbe38f2f04259af249f98cfacb
           python3 -m unittest tools.tests.test_typescript_fetch_frames tools.tests.test_typescript_fetch -v
           python3 tools/diagnose_typescript_fetch_candidate.py --help
       - name: Preserve only the candidate and replay helpers outside original checkout
         run: |
           cp tools/typescript_guest/fetch.mjs "$RUNNER_TEMP/fetch-candidate.mjs"
           mkdir "$RUNNER_TEMP/fetch-candidate-adapters"
-          git show f737b14d4825f0febce3b8c8a8ab69b019fa94b1:tools/typescript_guest/async_waiters.mjs > "$RUNNER_TEMP/fetch-candidate-adapters/async_waiters.mjs"
-          git show f737b14d4825f0febce3b8c8a8ab69b019fa94b1:tools/typescript_guest/componentize.mjs > "$RUNNER_TEMP/fetch-candidate-adapters/componentize.mjs"
-          git show f737b14d4825f0febce3b8c8a8ab69b019fa94b1:tools/typescript_guest/compiler.py > "$RUNNER_TEMP/fetch-candidate-adapters/compiler.py"
+          git show 819791f66b2d2fcbe38f2f04259af249f98cfacb:tools/typescript_guest/async_waiters.mjs > "$RUNNER_TEMP/fetch-candidate-adapters/async_waiters.mjs"
+          git show 819791f66b2d2fcbe38f2f04259af249f98cfacb:tools/typescript_guest/componentize.mjs > "$RUNNER_TEMP/fetch-candidate-adapters/componentize.mjs"
+          git show 819791f66b2d2fcbe38f2f04259af249f98cfacb:tools/typescript_guest/compiler.py > "$RUNNER_TEMP/fetch-candidate-adapters/compiler.py"
           cp tools/diagnose_typescript_fetch_candidate.py "$RUNNER_TEMP/fetch-candidate.py"
           cp tools/diagnose_typescript_fetch_failure.py "$RUNNER_TEMP/fetch-observer.py"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

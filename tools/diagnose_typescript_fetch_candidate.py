@@ -27,11 +27,11 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file
 
 TESTED = '0754391a20027a539f1d5b7c0426719a4bd6c3c1'
-CANDIDATE_SOURCE = 'f737b14d4825f0febce3b8c8a8ab69b019fa94b1'
+CANDIDATE_SOURCE = '819791f66b2d2fcbe38f2f04259af249f98cfacb'
 BACKEND = 'tools/typescript_guest/fetch.mjs'
 CANDIDATE = {'sha256': 'sha256:cfd5f8986e20312ec931dd5da912387c07da1bee3b3ca47415912aebca82dafe',
              'bytes': 19183}
-ADAPTERS = {'async_waiters.mjs': {'sha256': 'sha256:e43448ce898ecda20a83e3609c9463da29a7b977dba562c653e63bfc07d304ff', 'bytes': 11736}, 'compiler.py': {'sha256': 'sha256:603478e39ad76dad677bbff9767aa48230c3963e9b28e9deeee853e7926c79af', 'bytes': 27677}, 'componentize.mjs': {'sha256': 'sha256:300d535c4be5aaf415a7b0a427b8a498b74ffa6afea6069860fe1424287dde94', 'bytes': 7043}}
+ADAPTERS = {'async_waiters.mjs': {'sha256': 'sha256:eeb942c30c3cb578d493a603e14aa0ab6b603ae607205736f3a69b9e4d344518', 'bytes': 18606}, 'compiler.py': {'sha256': 'sha256:603478e39ad76dad677bbff9767aa48230c3963e9b28e9deeee853e7926c79af', 'bytes': 27677}, 'componentize.mjs': {'sha256': 'sha256:36d9cc5075ecf28349200d634dfcb462c4a0092618ce3aa9c18af4585a3baee9', 'bytes': 7147}}
 PRIVATE_IDENTITY = {'sha256': 'sha256:f38101edfefcc81a1e42e0f91e73ce16f5b82a6c30c915b8e133a7133a2335bd',
                     'bytes': 2109}
 

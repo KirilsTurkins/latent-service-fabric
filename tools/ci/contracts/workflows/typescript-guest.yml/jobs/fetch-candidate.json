@@ -35,11 +35,11 @@
       },
       {
         "name": "Check exact candidate and authenticated observer controls",
-        "run": "git fetch --no-tags origin f737b14d4825f0febce3b8c8a8ab69b019fa94b1\npython3 -m unittest tools.tests.test_typescript_fetch_frames tools.tests.test_typescript_fetch -v\npython3 tools/diagnose_typescript_fetch_candidate.py --help\n"
+        "run": "git fetch --no-tags origin 819791f66b2d2fcbe38f2f04259af249f98cfacb\npython3 -m unittest tools.tests.test_typescript_fetch_frames tools.tests.test_typescript_fetch -v\npython3 tools/diagnose_typescript_fetch_candidate.py --help\n"
       },
       {
         "name": "Preserve only the candidate and replay helpers outside original checkout",
-        "run": "cp tools/typescript_guest/fetch.mjs \"$RUNNER_TEMP/fetch-candidate.mjs\"\nmkdir \"$RUNNER_TEMP/fetch-candidate-adapters\"\ngit show f737b14d4825f0febce3b8c8a8ab69b019fa94b1:tools/typescript_guest/async_waiters.mjs > \"$RUNNER_TEMP/fetch-candidate-adapters/async_waiters.mjs\"\ngit show f737b14d4825f0febce3b8c8a8ab69b019fa94b1:tools/typescript_guest/componentize.mjs > \"$RUNNER_TEMP/fetch-candidate-adapters/componentize.mjs\"\ngit show f737b14d4825f0febce3b8c8a8ab69b019fa94b1:tools/typescript_guest/compiler.py > \"$RUNNER_TEMP/fetch-candidate-adapters/compiler.py\"\ncp tools/diagnose_typescript_fetch_candidate.py \"$RUNNER_TEMP/fetch-candidate.py\"\ncp tools/diagnose_typescript_fetch_failure.py \"$RUNNER_TEMP/fetch-observer.py\"\n"
+        "run": "cp tools/typescript_guest/fetch.mjs \"$RUNNER_TEMP/fetch-candidate.mjs\"\nmkdir \"$RUNNER_TEMP/fetch-candidate-adapters\"\ngit show 819791f66b2d2fcbe38f2f04259af249f98cfacb:tools/typescript_guest/async_waiters.mjs > \"$RUNNER_TEMP/fetch-candidate-adapters/async_waiters.mjs\"\ngit show 819791f66b2d2fcbe38f2f04259af249f98cfacb:tools/typescript_guest/componentize.mjs > \"$RUNNER_TEMP/fetch-candidate-adapters/componentize.mjs\"\ngit show 819791f66b2d2fcbe38f2f04259af249f98cfacb:tools/typescript_guest/compiler.py > \"$RUNNER_TEMP/fetch-candidate-adapters/compiler.py\"\ncp tools/diagnose_typescript_fetch_candidate.py \"$RUNNER_TEMP/fetch-candidate.py\"\ncp tools/diagnose_typescript_fetch_failure.py \"$RUNNER_TEMP/fetch-observer.py\"\n"
       },
       {
         "uses": "actions/checkout",
@@ -122,7 +122,7 @@
   },
   "jobId": "fetch-candidate",
   "kind": "job",
-  "reviewReason": "Select immutable combined idle Task entry and exact carrier await fusion, with unchanged native tuple, source restoration, finite ordinary signed gate and separate private observation.",
+  "reviewReason": "Pin exact authenticated native metadata inline candidate; original engine, caps, ordinary gate and observer remain unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
