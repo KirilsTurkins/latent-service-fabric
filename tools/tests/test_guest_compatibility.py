@@ -449,5 +449,78 @@ class SharedPackageAssembly(unittest.TestCase):
             self.assertFalse((output / "BUILD-COMPLETE.json").exists())
 
 
+class ReachedEvidenceFence(unittest.TestCase):
+    def rehash(self, report):
+        report['identity'] = digest(encode({key: value for key, value in report.items() if key != 'identity'}))
+        return report
+
+    def test_reached_operations_cannot_use_resolution_compile_or_link_phases(self):
+        for phase in ('resolution', 'compile', 'link'):
+            for evidence in ('actual-component', 'native-reference'):
+                with self.subTest(phase=phase, evidence=evidence), \
+                        self.assertRaisesRegex(DevError, '^compatibility-reached-evidence$'):
+                    c.finding('unsupported-reached', phase, evidence)
+
+    def test_static_model_and_unevaluated_findings_cannot_claim_reached_operations(self):
+        for evidence in ('compiler', 'final-component', 'model', 'not-evaluated'):
+            with self.subTest(evidence=evidence), \
+                    self.assertRaisesRegex(DevError, '^compatibility-reached-evidence$'):
+                c.finding('unsupported-reached', 'invocation', evidence)
+
+    def test_rehashed_static_reached_claims_are_rejected_by_reader_and_presentation(self):
+        original = sample([c.finding('unsupported-reached', 'invocation', 'native-reference')])
+        for phase, evidence in (('compile', 'compiler'), ('link', 'final-component'),
+                                ('initialization', 'model'), ('invocation', 'not-evaluated')):
+            value = copy.deepcopy(original)
+            value['findings'][0].update(phase=phase, evidence=evidence)
+            self.rehash(value)
+            for read in (lambda: c.read(encode(value)), lambda: c.present(value)):
+                with self.subTest(phase=phase, evidence=evidence), \
+                        self.assertRaisesRegex(DevError, '^compatibility-reached-evidence$'):
+                    read()
+
+    def test_actual_component_findings_require_component_identity_even_for_other_outcomes(self):
+        for classification in ('unsupported-reached', 'denied-grant', 'resource-exhausted', 'cancelled'):
+            with self.subTest(classification=classification), \
+                    self.assertRaisesRegex(DevError, '^compatibility-component-evidence$'):
+                c.report('rust', DIGEST, None, PROFILE, [],
+                         [c.finding(classification, 'invocation', 'actual-component')])
+
+    def test_rehashed_digestless_actual_component_reports_cannot_be_read_or_presented(self):
+        original = sample([c.finding('unsupported-reached', 'initialization', 'actual-component')])
+        value = copy.deepcopy(original)
+        value['componentDigest'] = None
+        self.rehash(value)
+        for read in (lambda: c.read(encode(value)), lambda: c.present(value)):
+            with self.assertRaisesRegex(DevError, '^compatibility-component-evidence$'):
+                read()
+        self.assertEqual(original['componentDigest'], DIGEST)
+        self.assertEqual(c.read(encode(original)), original)
+
+    def test_omission_limit_cannot_conceal_an_unbound_actual_component_finding(self):
+        findings = [c.finding('unresolved-behavior', 'compile', 'not-evaluated')] * c.MAX_FINDINGS
+        findings.append(c.finding('unsupported-reached', 'invocation', 'actual-component'))
+        with self.assertRaisesRegex(DevError, '^compatibility-component-evidence$'):
+            c.report('rust', DIGEST, None, PROFILE, [], findings)
+
+    def test_bound_component_and_native_reference_observations_retain_distinct_labels(self):
+        for phase in ('initialization', 'invocation', 'retirement'):
+            for evidence, component in (('actual-component', DIGEST), ('native-reference', None)):
+                with self.subTest(phase=phase, evidence=evidence):
+                    finding = c.finding('unsupported-reached', phase, evidence)
+                    report = c.report('rust', DIGEST, component, PROFILE, [], [finding])
+                    self.assertEqual(c.read(encode(report)), report)
+                    self.assertEqual(report['componentDigest'], component)
+                    self.assertEqual(report['status'], 'blocked')
+                    self.assertEqual(report['authority'], 'none')
+                    text = c.present(report)
+                    self.assertIn(phase + '; ' + evidence, text)
+                    if evidence == 'native-reference':
+                        self.assertNotIn('actual-component', text)
+        unknown = c.report('rust', DIGEST, None, PROFILE, [],
+                           [c.finding('unresolved-behavior', 'invocation', 'not-evaluated')])
+        self.assertEqual(unknown['status'], 'incomplete')
+
+
 if __name__ == "__main__":
     unittest.main()

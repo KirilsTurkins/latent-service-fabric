@@ -96,6 +96,16 @@ certificate of general library compatibility. Compiler elimination requires a
 source identity and compiler evidence. A scan for an API name cannot prove
 reachability or elimination.
 
+`unsupported-reached` requires an initialization, invocation or retirement
+observation labelled `actual-component` or `native-reference`. Compile/link,
+static, model and unevaluated evidence cannot claim that execution reached the
+operation. A native reference retains its distinct label and does not qualify
+an emitted component. Every `actual-component` finding requires a component
+digest, including findings that would otherwise be omitted by the retention
+limit; readers and text presentation also reject unbound claims. These checks
+validate the report's evidence labels and identity, not the truth of an execution
+receipt or the all-language compatibility matrix.
+
 The current package report inspects the final interface names. It conservatively
 leaves runtime initialization, transitive callbacks, actual provider/grant
 configuration and retirement unproven. Successful compilation does not qualify
