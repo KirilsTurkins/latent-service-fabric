@@ -502,6 +502,7 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
 
 def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
              cargo: Path | None, selection: dict | None, registry_config: Path | None) -> dict:
+    from tools import cargo_native_authoring as local_sources
     from tools.rust_dependency_authoring import candidate_location, optional, replace, unchanged
     from tools.dev_workflow import paths
     candidate = candidate_location(owner, candidate)
@@ -511,6 +512,13 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
     previous_graph = optional(project, 'cargo-resolved.lock.json')
     before = snapshot(project)
+    observer_before = file_identity(Path(local_sources.__file__), 'cargo-local-input-observer')
+    local_before = local_sources.observe(project, capture_inputs=True)
+    if local_before[0][project] != before:
+        raise DependencyError('cargo-local-source-mutated')
+    local_preimages = {root: canonical([{'path': name, 'digest': digest(raw), 'size': len(raw)}
+                                      for name, raw in sorted(files.items())])
+                       for root, files in local_before[0].items() if root != project}
     original_lock = read_bytes(project / 'Cargo.lock')
     pins = tomllib.loads(read_bytes(project / 'vendor/lsf/rust-toolchain.toml').decode())
     selected = dict(selection or {})
@@ -559,7 +567,11 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                                    temporary, environment, 600, 4 * 1024 * 1024).stdout
         resolver = {'cargo': file_identity(cargo, 'cargo-resolver'), 'version': version,
                     'metadataDigest': digest(raw), 'selectedMetadataDigest': digest(selected_raw), 'nativeLockDigest': digest(original_lock),
-                    'registryConfigurationDigest': digest(canonical(registries)), 'recipe': recipe_before}
+                    'registryConfigurationDigest': digest(canonical(registries)), 'recipe': recipe_before,
+                    'localInputObserver': observer_before,
+                    'localInputSnapshot': {'roots': len(local_preimages),
+                        'identity': digest(canonical(sorted((digest(str(root).encode()), digest(preimage))
+                                                           for root, preimage in local_preimages.items())))}}
         if registry_bytes is not None:
             resolver['registryConfigurationInputDigest'] = digest(registry_bytes)
         if trust_raw is not None:
@@ -647,6 +659,20 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                 raise DependencyError('cargo-registry-certificate-mutated')
         if snapshot(project) != before:
             raise DependencyError('cargo-resolution-input-mutated')
+        for spec in artifacts:
+            if spec['format'] == 'directory' and spec['metadata'].get('nativeSourceDigest') == digest(b'captured-path'):
+                try:
+                    source = Path(spec['source']['path']).resolve(strict=True)
+                except OSError:
+                    raise DependencyError('cargo-local-source-mutated') from None
+                if not source.is_relative_to(project):
+                    original = next(row for row in locked['artifacts'] if row['id'] == spec['id'])['original']
+                    if source not in local_preimages or store.get(**original) != local_preimages[source]:
+                        raise DependencyError('cargo-local-source-mutated')
+        if local_sources.observe(project, capture_inputs=True) != local_before:
+            raise DependencyError('cargo-local-source-mutated')
+        if file_identity(Path(local_sources.__file__), 'cargo-local-input-observer') != observer_before:
+            raise DependencyError('cargo-local-input-observer-mutated')
         if optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock:
             raise DependencyError('cargo-authoring-concurrent-input-edit')
         if file_identity(cargo, 'cargo-resolver') != resolver['cargo']:
