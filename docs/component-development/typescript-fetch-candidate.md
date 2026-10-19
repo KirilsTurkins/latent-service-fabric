@@ -145,6 +145,13 @@ bootstrap digests, exact engine/splicer inputs, and before/after source/compiler
 identities. It builds no second engine or native node and preserves the existing
 job deadlines and guards.
 
+The compiler namespace and containment receipts retain a compact digest of every
+field in their complete canonical JSON manifests. The namespace summary also
+records file count and total content bytes. The compiler still enforces its
+original 32,768-file / 1-GiB bounds and compares the full in-memory identities;
+the qualifier additionally requires identical before/after summaries. This keeps
+the fixture writer's 256-KiB limit unchanged even when an input manifest is larger.
+
 The new job is a qualification attempt until its exact-head hosted result is
 verified. Its report deliberately distinguishes component construction from
 runtime execution: it does not invoke the async export, sign or admit a component,

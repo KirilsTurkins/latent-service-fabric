@@ -145,5 +145,57 @@ assert.equal(drops, 2); // materialized chunk and body; finish consumed upload.
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
 
+class TypeScriptFetchManifestTests(unittest.TestCase):
+    def large_compiler_manifest(self):
+        # The exact first hosted run's source-splicer compiler inventory had
+        # 4,431 {path,digest,size} rows and 347,044,903 content bytes. Model that
+        # real shape without copying its 918,721-byte public receipt into Git.
+        rows = [{'path': 'node_modules/@bytecodealliance/jco/typescript-component-compiler/'
+            + str(index) + '/generated-file.js', 'digest': 'sha256:' + 'a' * 64,
+            'size': 100} for index in range(4431)]
+        return {'files': rows, 'bytes': sum(row['size'] for row in rows)}
+
+    def test_large_compiler_manifest_binds_every_row_with_equal_pre_post_summaries(self):
+        value = self.large_compiler_manifest()
+        original = deepcopy(value)
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            self.assertGreater(len(json.dumps(value, separators=(',', ':')).encode()), 262144)
+            with self.assertRaisesRegex(WorkflowError, 'fixture-size'):
+                fetch.write_json(root / 'full.json', value)
+            self.assertFalse((root / 'full.json').exists())
+            before = fetch.compiler_manifest_summary(value)
+            after = fetch.compiler_manifest_summary(deepcopy(value))
+            self.assertEqual(before, after)
+            self.assertEqual(before['fileCount'], 4431)
+            self.assertEqual(before['contentBytes'], value['bytes'])
+            self.assertEqual(value, original)
+            fetch.write_json(root / 'before.json', before)
+            fetch.write_json(root / 'after.json', after)
+            self.assertEqual((root / 'before.json').read_bytes(), (root / 'after.json').read_bytes())
+            self.assertLess((root / 'before.json').stat().st_size, 512)
+            for field, replacement in (('path', 'changed.js'), ('digest', 'sha256:' + 'b' * 64), ('size', 101)):
+                changed = deepcopy(value)
+                changed['files'][-1][field] = replacement
+                self.assertNotEqual(fetch.compiler_manifest_summary(changed)['manifestDigest'], before['manifestDigest'])
+
+    def test_large_containment_manifest_is_fully_bound_under_original_writer_limit(self):
+        value = {'distributions': {'typescript-compiler': self.large_compiler_manifest()['files']},
+            'network': 'denied', 'ambientHome': 'absent', 'credentials': 'not-inherited'}
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            with self.assertRaisesRegex(WorkflowError, 'fixture-size'):
+                fetch.write_json(root / 'full.json', value)
+            summary = fetch.manifest_summary(value)
+            fetch.write_json(root / 'summary.json', summary)
+            self.assertLess((root / 'summary.json').stat().st_size, 512)
+            self.assertEqual(summary, fetch.manifest_summary(deepcopy(value)))
+            changed = deepcopy(value)
+            changed['network'] = 'allowed'
+            self.assertNotEqual(summary['manifestDigest'], fetch.manifest_summary(changed)['manifestDigest'])
+            changed = deepcopy(value)
+            changed['distributions']['typescript-compiler'][-1]['digest'] = 'sha256:' + 'c' * 64
+            self.assertNotEqual(summary['manifestDigest'], fetch.manifest_summary(changed)['manifestDigest'])
+
 if __name__ == '__main__':
     unittest.main()

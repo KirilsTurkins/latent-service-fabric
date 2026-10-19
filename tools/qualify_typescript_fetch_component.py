@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -23,6 +24,24 @@ from tools.typescript_guest.runtime_profile import IMPORT_PROFILE
 
 FIXTURE = 'sdk/typescript-guest/probes/fetch'
 WORLD = 'examples:typescript-fetch/service@1.0.0'
+
+
+def manifest_summary(value: object) -> dict:
+    """Bind every JSON field without retaining an oversized fixture document."""
+    hasher, size = hashlib.sha256(), 0
+    encoder = json.JSONEncoder(sort_keys=True, separators=(',', ':'), ensure_ascii=True, allow_nan=False)
+    for part in encoder.iterencode(value):
+        raw = part.encode('utf-8')
+        hasher.update(raw)
+        size += len(raw)
+    return {'formatVersion': 1, 'encoding': 'canonical-json-sorted-keys-ascii',
+        'manifestDigest': 'sha256:' + hasher.hexdigest(), 'manifestBytes': size}
+
+
+def compiler_manifest_summary(value: dict) -> dict:
+    # Compiler.identity still owns the full 32,768-file / 1-GiB validation and
+    # check_unchanged compares the complete in-memory table, not this summary.
+    return {**manifest_summary(value), 'fileCount': len(value['files']), 'contentBytes': value['bytes']}
 
 
 def project(directory: Path) -> Path:
@@ -114,8 +133,9 @@ def qualify(output: Path, tools: Path, engine: Path, splicer: Path) -> dict:
             runtime_profile=IMPORT_PROFILE, engine=engine / 'engine.wasm',
             engine_receipt=engine / 'engine-input.json', splicer=splicer / 'splicer',
             splicer_receipt=splicer / 'splicer-input.json')
-        write_json(output / 'compiler-inputs.json', compiler.before)
-        write_json(output / 'compiler-containment.json', compiler.isolation.receipt)
+        compiler_before = compiler_manifest_summary(compiler.before)
+        write_json(output / 'compiler-inputs.json', compiler_before)
+        write_json(output / 'compiler-containment.json', manifest_summary(compiler.isolation.receipt))
         stage = 'actual-component'
         compiled = output / 'compiled'
         compiler.compile(app, WORLD, compiled)
@@ -128,7 +148,9 @@ def qualify(output: Path, tools: Path, engine: Path, splicer: Path) -> dict:
         require(recipe == {name: read_file(ROOT / name) for name in recipe_names},
             'fetch-component-recipe-changed')
         compiler.check_unchanged()
-        write_json(output / 'compiler-inputs-after.json', compiler.identity())
+        compiler_after = compiler_manifest_summary(compiler.identity())
+        require(compiler_after == compiler_before, 'fetch-component-compiler-manifest-changed')
+        write_json(output / 'compiler-inputs-after.json', compiler_after)
         write_json(output / 'runtime-materials.json', compiler.runtime_materials())
         record.update(status='compiled', sourceIdentityDigest=digest(inventory(before)),
             recipeIdentityDigest=digest(inventory(recipe)), commands=commands.records)
