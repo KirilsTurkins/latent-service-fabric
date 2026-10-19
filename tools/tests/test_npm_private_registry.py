@@ -62,6 +62,30 @@ class PrivateRegistry(unittest.TestCase):
             self.assertEqual(json.loads(optional['package.json'])['os'],
                              ['linux'] if version == fixture.VERSIONS[0] else ['!linux'])
 
+    def test_offline_rebuild_keeps_exact_inputs_and_separately_requires_both_outputs_to_run(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            roots = [Path(temporary)/name for name in ('first', 'rebuilt')]
+            selection = {'capturedInputs': [{'path': 'leaf/index.cjs', 'digest': 'owned'}],
+                'inputs': {'leaf/index.cjs': {'bytes': 17}}, 'snapshotGuardDigest': 'guard',
+                'moduleResolution': 'native', 'selection': {'conditions': ['selected'], 'mainFields': ['module','main']}}
+            for ordinal, root in enumerate(roots):
+                root.mkdir()
+                for name in ('source-inputs.json', 'recipe-inputs.json', 'compiler-inputs.json',
+                             'application-dependencies.json', 'bindings.json'):
+                    (root/name).write_bytes(b'{"exact":"owned"}')
+                (root/'bundle-selected-inputs.json').write_bytes(json.dumps(selection).encode())
+                (root/'BUILD-COMPLETE.json').write_bytes(json.dumps({'componentDigest': str(ordinal)}).encode())
+            proof = gate.offline_rebuild_identity(*roots)
+            self.assertFalse(proof['componentBytesEqual'])
+            self.assertTrue(proof['bothOutputsRequireSignedExecution'])
+            for name in ('source-inputs.json', 'recipe-inputs.json', 'compiler-inputs.json',
+                         'application-dependencies.json', 'bindings.json', 'bundle-selected-inputs.json'):
+                target = roots[1]/name; original = target.read_bytes()
+                target.write_bytes(b'{"changed":true}')
+                with self.subTest(name=name), self.assertRaises((WorkflowError,KeyError)):
+                    gate.offline_rebuild_identity(*roots)
+                target.write_bytes(original)
+
     def test_open_or_invalid_coordinates_are_refused_before_archive_generation(self):
         for nonce, version, role in (('a'*23, '1.0.0', 'root'), ('G'*24, '1.0.0', 'root'),
                 ('a'*24, 'latest', 'root'), ('a'*24, '1.0.0', '../leaf')):

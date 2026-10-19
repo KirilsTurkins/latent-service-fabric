@@ -294,6 +294,26 @@ def capture(output, commands, node, npm):
         'credentialsCaptured': False, 'privateKeyCaptured': False, 'sdkLockDigest': digest(sdk)}
 
 
+def offline_rebuild_identity(first, rebuilt):
+    # The maintained Wizer snapshot retains owned generated argv/home paths.
+    # Its binary reproducibility is explicitly unchecked; both outputs must run.
+    for name in ('source-inputs.json', 'recipe-inputs.json', 'compiler-inputs.json',
+                 'application-dependencies.json', 'bindings.json'):
+        require(read_file(first / name, 8*1024**2) == read_file(rebuilt / name, 8*1024**2),
+                'private-npm-offline-inputs-changed:' + name)
+    selections = [read_json(path / 'bundle-selected-inputs.json', 8*1024**2) for path in (first, rebuilt)]
+    for name in ('capturedInputs', 'inputs', 'snapshotGuardDigest', 'moduleResolution'):
+        require(bool(selections[0][name]) and selections[0][name] == selections[1][name],
+                'private-npm-offline-module-selection-changed:' + name)
+    for name in ('conditions', 'mainFields', 'runtimeProfile'):
+        require(selections[0]['selection'].get(name) == selections[1]['selection'].get(name),
+                'private-npm-offline-bundler-selection-changed:' + name)
+    markers = [read_json(path / 'BUILD-COMPLETE.json') for path in (first, rebuilt)]
+    return {'sourceRecipeCompilerAndModuleInputsEqual': True,
+            'componentBytesEqual': markers[0]['componentDigest'] == markers[1]['componentDigest'],
+            'componentReproducibility': 'not-claimed', 'bothOutputsRequireSignedExecution': True}
+
+
 def qualify(prepared, output, tools):
     output = fresh(output)
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=2400, command_seconds=600)
@@ -307,7 +327,7 @@ def qualify(prepared, output, tools):
         stage = 'actual-authenticated-native-acquisition'
         phases, acquired = capture(output, commands, node, npm)
         write_json(output / 'capture.json', acquired)
-        builds, nodes = [], []
+        builds, nodes, rebuild_identity = [], [], None
         for ordinal, (app, lock, version, removed, condition) in enumerate(phases):
             stage = 'offline-build-' + str(ordinal)
             before = inventory(source_files(app))
@@ -320,29 +340,36 @@ def qualify(prepared, output, tools):
             compiler_inputs = read_file(artifact / 'compiler-inputs.json')
             require(read_file(prepared / 'builds/greeting/compiler-inputs.json') == compiler_inputs,
                     'private-npm-normal-compiler-inputs-changed')
+            artifacts = [(str(ordinal), artifact)]
             if ordinal == 0:
                 rebuilt = build(app, output / 'offline-rebuild', products['capsule_contracts'], products['package'],
                     'https://github.com/KirilsTurkins/latent-service-fabric', tools=tools)
-                require(read_json(artifact / 'BUILD-COMPLETE.json')['componentDigest']
-                        == read_json(rebuilt / 'BUILD-COMPLETE.json')['componentDigest'], 'private-npm-offline-component-not-identical')
-            stage = 'sign-and-enforced-node-' + str(ordinal)
-            require(frozen(prepared)[0] == receipt, 'private-npm-original-inputs-drift')
-            signed = output / ('signed-' + str(ordinal))
-            commands.run('private-npm-sign-' + str(ordinal), products['capsule_authoring'], 'demo-sign', signed, artifact, *companions)
-            write_json(signed / 'private-npm-probe.json', {'nonce': acquired['nonce'], 'version': version,
-                       'removed': removed, 'condition': condition})
-            node_result = node_workflow(products['latent'], products['latentd'], signed, output / ('node-' + str(ordinal)),
-                                       language='typescript', captured_npm_private=True)
-            require(node_result['status'] == 'passed' and node_result['capturedNpmPrivate']['status'] == 'passed'
-                    and len(node_result['capturedNpmPrivate']['cases']) == 3, 'private-npm-actual-signed-programme-required')
-            builds.append(read_json(artifact / 'BUILD-COMPLETE.json'))
-            nodes.append(file_identity(output / ('node-' + str(ordinal)) / 'workflow.json'))
+                rebuild_identity = offline_rebuild_identity(artifact, rebuilt)
+                require(before == inventory(source_files(app)) and dependencies.verify_inputs(app, 'typescript').lock == lock,
+                        'private-npm-offline-rebuild-mutated-inputs')
+                require(read_json(rebuilt / 'application-dependencies.json')['networkResolution'] is False,
+                        'private-npm-offline-rebuild-network-resolution')
+                artifacts.append(('0-rebuild', rebuilt))
+            for label, artifact in artifacts:
+                stage = 'sign-and-enforced-node-' + label
+                require(frozen(prepared)[0] == receipt, 'private-npm-original-inputs-drift')
+                signed = output / ('signed-' + label)
+                commands.run('private-npm-sign-' + label, products['capsule_authoring'], 'demo-sign', signed, artifact, *companions)
+                write_json(signed / 'private-npm-probe.json', {'nonce': acquired['nonce'], 'version': version,
+                           'removed': removed, 'condition': condition})
+                node_result = node_workflow(products['latent'], products['latentd'], signed, output / ('node-' + label),
+                                           language='typescript', captured_npm_private=True)
+                require(node_result['status'] == 'passed' and node_result['capturedNpmPrivate']['status'] == 'passed'
+                        and len(node_result['capturedNpmPrivate']['cases']) == 3, 'private-npm-actual-signed-programme-required')
+                builds.append(read_json(artifact / 'BUILD-COMPLETE.json'))
+                nodes.append(file_identity(output / ('node-' + label) / 'workflow.json'))
         require(frozen(prepared)[3] == native_identity
                 and original_tools == {'node': file_identity(node), 'npm': file_identity(npm)}
                 and materials == {name: file_identity(ROOT / name) for name in MATERIALS}
                 and time.monotonic() < commands.deadline, 'private-npm-final-inputs-drift')
         result = {'schemaVersion': 'latent.npm.private-dependencies.qualification.v1', 'status': 'passed',
             'capture': acquired, 'builds': builds, 'nodeReceipts': nodes, 'materials': materials,
+            'offlineRebuild': rebuild_identity, 'reproducibility': 'not-claimed',
             'preparedSourceIdentityDigest': receipt['sourceIdentityDigest'], 'nativeBinaries': receipt['binaries'],
             'hermetic': False, 'cleanHost': False, 'publisherAuthenticated': False,
             'releasePublication': 'not-performed', 'generatorQualification': 'separate', 'fullTicketQualification': False}
