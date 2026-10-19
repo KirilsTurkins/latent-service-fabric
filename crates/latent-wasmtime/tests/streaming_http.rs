@@ -113,6 +113,63 @@ async fn resource_guest_drains_chunks_and_trailers_then_reclaims_all_owners() {
 }
 
 #[tokio::test]
+async fn bodyless_encoding_metadata_crosses_component_abi_and_reclaims_owners() {
+    for (which, status, length, method) in [
+        (10, 200, "Content-Length: 4096\r\n", b"HEAD"),
+        (2, 204, "", b"GET "),
+        (2, 304, "Content-Length: 4096\r\n", b"GET "),
+    ] {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut prefix = [0; 4];
+            stream.read_exact(&mut prefix).await.unwrap();
+            assert_eq!(&prefix, method);
+            request(&mut stream).await;
+            stream
+                .write_all(format!("HTTP/1.1 {status} Test\r\nContent-Encoding: gzip\r\n{length}Connection: close\r\n\r\n").as_bytes())
+                .await
+                .unwrap();
+        });
+        let f = Fixture::new(port, "/allowed").await;
+        let (request, control) = f.request("bodyless-metadata", which);
+        let report = tokio::time::timeout(
+            Duration::from_secs(2),
+            f.backend.invoke_contained(request, &control),
+        )
+        .await
+        .unwrap();
+        let GuestOutcome::Returned {
+            output,
+            consumption,
+            ..
+        } = report.outcome.unwrap()
+        else {
+            panic!("bodyless response must reach verified EOF")
+        };
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&output).unwrap(),
+            serde_json::json!([status])
+        );
+        let final_budget = control
+            .budget
+            .finalize_at(Some(&consumption), Instant::now());
+        assert!(final_budget.violation().is_none());
+        assert_eq!(final_budget.consumption().outbound_requests, 1);
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        f.idle();
+        assert_eq!(f.io.snapshot(), IoSnapshot::default());
+        server.await.unwrap();
+        assert!(f
+            .pools
+            .shutdown(Instant::now() + Duration::from_secs(2))
+            .await
+            .unwrap()
+            .is_clean());
+    }
+}
+#[tokio::test]
 async fn traps_wrong_kind_stale_handles_and_abort_close_real_owners() {
     for which in [1, 3, 5, 6, 7] {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
