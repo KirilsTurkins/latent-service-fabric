@@ -81,5 +81,5 @@ def grant(client, node, deployment: Path, publication: str, target: dict, result
     selected = deploy(client, deployment, publication, generation=str(target["generation"]),
         grants=[*target["grants"], {"capability": RANDOM, "policy": POLICY}])
     result["noncryptoEntropyAuthority"] = {"provider": descriptor, "policy": specification,
-        "scope": "explicit SDK library fixture only", "secureRandom": "unchanged-denial"}
+        "scope": "explicit SDK library fixture only", "secureRandom": "declared-provider-u64", "secureOperationGranted": False}
     return selected

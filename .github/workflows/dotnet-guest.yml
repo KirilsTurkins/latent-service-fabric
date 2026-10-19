@@ -18,6 +18,10 @@ on:
       - 'tools/dotnet_standard_http*.py'
       - 'tools/dotnet_internal_io_port.py'
       - 'tools/qualify_dotnet_standard_http.py'
+      - 'tools/dotnet_standard_entropy*.py'
+      - 'tools/qualify_dotnet_standard_entropy.py'
+      - 'tools/tests/test_dotnet_secure_entropy.py'
+      - 'tools/tests/test_dotnet_managed_entropy.py'
       - 'tools/dotnet_standard_console*.py'
       - 'tools/qualify_dotnet_standard_console.py'
       - 'tools/tests/test_dotnet_standard_console.py'
@@ -274,12 +278,39 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_dotnet_standard_console
           python3 tools/qualify_dotnet_standard_console.py --output "$RUNNER_TEMP/dotnet-standard-console" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Check native PAL secure entropy behavior and explicit scalar authority
+        run: python3 -m unittest tools.tests.test_dotnet_secure_entropy -v
+      - name: Validate exact managed RNG derivation and private NativeAOT references
+        run: python3 -m unittest tools.tests.test_dotnet_managed_entropy -v
+      - name: Qualify captured ordinary RandomNumberGenerator and typed source denial
+        run: >-
+          python3 tools/qualify_dotnet_standard_entropy.py --output "$RUNNER_TEMP/dotnet-standard-entropy"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/dotnet-standard-entropy/qualified.json
+            ${{ runner.temp }}/dotnet-standard-entropy/FAILED.json
+            ${{ runner.temp }}/dotnet-standard-entropy/logs/**
+            ${{ runner.temp }}/dotnet-standard-entropy/outside/evidence/**
+            ${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-FAILED.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/build-observation.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/source-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/compiler-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/nuget-build-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/managed-entropy*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy.o
+            ${{ runner.temp }}/dotnet-standard-entropy/build/compatibility*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/component.wasm
+            ${{ runner.temp }}/dotnet-standard-entropy/build/logs/**
+            ${{ runner.temp }}/dotnet-standard-entropy/node/public-workflow.json
+            ${{ runner.temp }}/dotnet-standard-entropy/node/controls/dotnet-entropy-*.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/qualification.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/FAILED.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/capture.json

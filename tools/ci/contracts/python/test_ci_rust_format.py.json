@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "AuthenticatedRustFormat.test_fast_and_central_execution_share_the_same_exact_owned_selection",
+    "AuthenticatedRustFormat.test_legacy_workspace_without_this_derivation_keeps_original_all_command",
+    "AuthenticatedRustFormat.test_new_owned_member_is_automatically_included_instead_of_a_frozen_allowlist",
+    "AuthenticatedRustFormat.test_real_command_checks_every_owned_package_and_only_omits_authenticated_dependency",
+    "AuthenticatedRustFormat.test_unknown_excluded_dependency_or_changed_vendor_cannot_be_silently_skipped"
+  ],
+  "guards": {
+    "AuthenticatedRustFormat.test_fast_and_central_execution_share_the_same_exact_owned_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e4d8acb31fe795ce8716b03baf998da6a81a474063126c9a4611da21644a2f1",
+        "class:setup-sha256:96000875d5c6ee54cdfa8829698280c0852355232263bb2dba7b2e679176a409"
+      ],
+      "skipSites": []
+    },
+    "AuthenticatedRustFormat.test_legacy_workspace_without_this_derivation_keeps_original_all_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e4d8acb31fe795ce8716b03baf998da6a81a474063126c9a4611da21644a2f1",
+        "class:setup-sha256:96000875d5c6ee54cdfa8829698280c0852355232263bb2dba7b2e679176a409"
+      ],
+      "skipSites": []
+    },
+    "AuthenticatedRustFormat.test_new_owned_member_is_automatically_included_instead_of_a_frozen_allowlist": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e4d8acb31fe795ce8716b03baf998da6a81a474063126c9a4611da21644a2f1",
+        "class:setup-sha256:96000875d5c6ee54cdfa8829698280c0852355232263bb2dba7b2e679176a409"
+      ],
+      "skipSites": []
+    },
+    "AuthenticatedRustFormat.test_real_command_checks_every_owned_package_and_only_omits_authenticated_dependency": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e4d8acb31fe795ce8716b03baf998da6a81a474063126c9a4611da21644a2f1",
+        "class:setup-sha256:96000875d5c6ee54cdfa8829698280c0852355232263bb2dba7b2e679176a409"
+      ],
+      "skipSites": []
+    },
+    "AuthenticatedRustFormat.test_unknown_excluded_dependency_or_changed_vendor_cannot_be_silently_skipped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e4d8acb31fe795ce8716b03baf998da6a81a474063126c9a4611da21644a2f1",
+        "class:setup-sha256:96000875d5c6ee54cdfa8829698280c0852355232263bb2dba7b2e679176a409"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_ci_rust_format.py",
+  "reviewReason": "Preserve every owned workspace package and target format check while authenticating exact third-party bounded TLS source before its sole explicit exclusion; no generic vendor skip or source rewrite",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
