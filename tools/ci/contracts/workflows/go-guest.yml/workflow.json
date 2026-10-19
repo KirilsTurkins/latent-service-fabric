@@ -56,6 +56,10 @@
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
+          "tools/go_http_adversarial.py",
+          "tools/fixtures/go-http-adversarial/**",
+          "tools/qualify_go_http_adversarial.py",
+          "tools/tests/test_go_http_adversarial.py",
           "tools/qualify_go_standard_logging.py",
           "tools/go_standard_logging_probe.py",
           "tools/tests/test_go_standard_logging.py",
@@ -143,6 +147,10 @@
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
           "tools/qualify_go_standard_http.py",
+          "tools/go_http_adversarial.py",
+          "tools/fixtures/go-http-adversarial/**",
+          "tools/qualify_go_http_adversarial.py",
+          "tools/tests/test_go_http_adversarial.py",
           "tools/qualify_go_standard_logging.py",
           "tools/go_standard_logging_probe.py",
           "tools/tests/test_go_standard_logging.py",
@@ -219,7 +227,7 @@
     "retained-scalar-ownership",
     "upstream-probe"
   ],
-  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
+  "reviewReason": "Compose the original normal Go commands and approved entropy manual selectors with the additive9 HTTP lifecycle qualification; preserve all historical run blocks and default full qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
