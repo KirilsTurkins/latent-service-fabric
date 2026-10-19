@@ -44,13 +44,21 @@ typed provider failure, with no socket fallback.
 | `Request` | Absolute HTTP(S) URLs without embedded credentials; fragments removed; GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS. A body is forbidden on GET/HEAD. |
 | Bodies | Null, UTF-8 strings, ArrayBuffer and ArrayBuffer views; input bytes copied, including view offsets. Null bodies stay unused; non-null bodies are one-shot. |
 | Consumption | Buffered `text`, `json`, `arrayBuffer` and independent buffered clones. JSON parsing errors stay parsing errors. |
-| `Headers` | Case normalization, validated names/values, duplicate combination, sorted iteration, get/set/append/delete/forEach. Fetched response headers are immutable. |
+| `Headers` | Records or iterable pairs, case normalization, validated names/values, duplicate combination, sorted iteration, get/set/append/delete/forEach. Fetched response headers are immutable. |
 | Media/idempotency | Content-Type and Idempotency-Key map to the existing dedicated typed metadata. An idempotency key grants no retry. |
 | HTTP failures | HTTP status remains a response; transport rejection retains the original error as `cause`, and `uncertain` remains explicit. |
 | Redirects | At most five GET/HEAD follow-ups, each a new authorized/charged call; cross-origin follow-ups remove every guest header. No mutation redirect/replay. |
 | Abort | Each Request and clone owns a native dependent signal, preserving the original reason without sharing signal identity. An already-aborted signal makes zero calls. Later abort rejects and prevents further transfers after the pending call settles; accepted work retains capacity until cleanup. |
 
 Request body replacement follows the [Fetch Standard's constructor order](https://fetch.spec.whatwg.org/#dom-request): an explicit non-null body supplies fresh bytes even when the input Request was consumed. It leaves the input body unchanged. Without a replacement, a successful construction transfers the unused input body exactly once. Rejected construction, including a GET/HEAD body, does not consume an otherwise unused input. A null or omitted replacement cannot revive a consumed body. Cloning still rejects a used body.
+
+`Headers` accepts two-item iterable pairs as well as arrays and records. Omitted
+or undefined initialization creates empty headers; null and other primitive
+initializers reject. A pair must contain exactly two items: the candidate stops
+at a third item and closes the active iterators instead of consuming an unbounded
+malformed pair. Iterator errors retain their identity, and profile-limit failures
+also close the outer iterator. Focused Node reference and typed-adapter controls
+cover this constructor boundary; signed component qualification remains separate.
 
 The source profile caps each buffered body at 1 MiB, each transferred chunk at
 64 KiB, headers at 64 entries/32 KiB, URLs at 2048 characters, and outstanding

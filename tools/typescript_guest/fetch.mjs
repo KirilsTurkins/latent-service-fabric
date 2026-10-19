@@ -37,12 +37,25 @@ export function installFetch(http, snapshotActive, target = globalThis) {
   class Headers {
     #entries = new Map();
     constructor(init = undefined) {
-      if (init == null) return;
-      if (typeof init[Symbol.iterator] === 'function') {
+      if (init === undefined) return;
+      if (init === null || typeof init !== 'object' && typeof init !== 'function') throw new TypeError('invalid-header-init');
+      const iterator = init[Symbol.iterator];
+      if (iterator != null) {
+        if (typeof iterator !== 'function') throw new TypeError('invalid-header-sequence');
         let count = 0;
-        for (const entry of init) {
-          if (++count > maxHeaders || !Array.isArray(entry) || entry.length !== 2) throw new TypeError('invalid-header-sequence');
-          this.append(entry[0], entry[1]);
+        for (const entry of {[Symbol.iterator]() {return Reflect.apply(iterator, init, []);}}) {
+          if (++count > maxHeaders || entry === null || typeof entry !== 'object' && typeof entry !== 'function') {
+            throw new TypeError('invalid-header-sequence');
+          }
+          const pairIterator = entry[Symbol.iterator];
+          if (typeof pairIterator !== 'function') throw new TypeError('invalid-header-sequence');
+          const pair = [];
+          for (const value of {[Symbol.iterator]() {return Reflect.apply(pairIterator, entry, []);}}) {
+            if (pair.length === 2) throw new TypeError('invalid-header-sequence');
+            pair.push(value);
+          }
+          if (pair.length !== 2) throw new TypeError('invalid-header-sequence');
+          this.append(pair[0], pair[1]);
         }
       } else {
         for (const key of Object.keys(init)) this.append(key, init[key]);

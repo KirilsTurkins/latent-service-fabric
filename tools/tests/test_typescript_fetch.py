@@ -12,6 +12,105 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class TypeScriptFetchTests(unittest.TestCase):
+    def test_headers_accept_iterable_pairs_and_capture_independent_values(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+const pairs = [
+  () => new Set(['X-Value', ' one ']),
+  () => ({*[Symbol.iterator]() {yield 'X-Value'; yield ' one ';}}),
+  () => ({[Symbol.iterator]() {let index = 0; const values = ['X-Value', ' one '];
+    return {next() {return index < values.length ? {value: values[index++], done: false} : {done: true};}};}})
+];
+for (const Headers of [globalThis.Headers, target.Headers]) {
+  for (const pair of pairs) {
+    const headers = new Headers([pair(), ['x-value', 'two']]);
+    assert.deepEqual([...headers], [['x-value', 'one, two']]);
+    assert.equal(headers.get('X-VALUE'), 'one, two');
+  }
+  const original = [['X-Value', 'original']];
+  const headers = new Headers(original);
+  original[0][1] = 'changed'; original.push(['x-value', 'added']);
+  assert.equal(headers.get('x-value'), 'original');
+  assert.deepEqual([...new Headers()], []);
+  assert.deepEqual([...new Headers(undefined)], []);
+}
+""")
+
+    def test_headers_reject_primitive_initializers_and_malformed_pairs(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+for (const Headers of [globalThis.Headers, target.Headers]) {
+  for (const invalid of [null, 1, true, 1n, Symbol('invalid'), 'ab', {[Symbol.iterator]: 1}]) {
+    assert.throws(() => new Headers(invalid), TypeError);
+  }
+  for (const pair of [null, undefined, 1, false, 'ab', {}, [], ['x'], ['x', 'v', 'extra']]) {
+    assert.throws(() => new Headers([pair]), TypeError);
+  }
+  const original = new Error('iterator-failed');
+  assert.throws(() => new Headers({get [Symbol.iterator]() {throw original;}}), error => error === original);
+  assert.throws(() => new Headers([{get [Symbol.iterator]() {throw original;}}]), error => error === original);
+}
+""")
+
+    def test_header_iterators_are_cached_and_closed_at_structural_and_profile_bounds(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+installFetch({}, () => false, target);
+for (const Headers of [globalThis.Headers, target.Headers]) {
+  let outerGets = 0, innerGets = 0;
+  const pair = {get [Symbol.iterator]() {innerGets++;
+    return function () {assert.equal(this, pair); return ['X-Value', 'v'][Symbol.iterator]();};}};
+  const source = {get [Symbol.iterator]() {outerGets++;
+    return function () {assert.equal(this, source); return [pair][Symbol.iterator]();};}};
+  assert.equal(new Headers(source).get('x-value'), 'v');
+  assert.equal(outerGets, 1); assert.equal(innerGets, 1);
+}
+let values = 0, innerClosed = 0, outerClosed = 0;
+function *badPair() {try {while (true) {values++; yield 'x';}} finally {innerClosed++;}}
+function *badSource() {try {yield badPair();} finally {outerClosed++;}}
+assert.throws(() => new target.Headers(badSource()), TypeError);
+assert.equal(values, 3); assert.equal(innerClosed, 1); assert.equal(outerClosed, 1);
+let entries = 0, boundedClosed = 0;
+function *tooMany() {try {while (true) {entries++; yield ['x', 'v'];}} finally {boundedClosed++;}}
+assert.throws(() => new target.Headers(tooMany()), /invalid-header-sequence/);
+assert.equal(entries, 65); assert.equal(boundedClosed, 1);
+assert.equal(new target.Headers([['x', 'v'.repeat(32767)]]).get('x').length, 32767);
+let bytesClosed = 0;
+function *tooLarge() {try {yield new Set(['x', 'v'.repeat(32768)]);} finally {bytesClosed++;}}
+assert.throws(() => new target.Headers(tooLarge()), /fetch-header-limit/);
+assert.equal(bytesClosed, 1);
+""")
+
+    def test_fetch_iterable_headers_use_the_typed_boundary_once_and_refuse_before_contact(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+const requests = [], events = [];
+const upload = {[Symbol.dispose]() {events.push('drop:upload');}};
+const body = {[Symbol.dispose]() {events.push('drop:body');}};
+installFetch({
+  async open(request) {requests.push(request); return upload;},
+  async finish(value) {assert.equal(value, upload); events.push('consume:upload');
+    return {status: 503, headers: [], body};},
+  async read(value, maximum) {assert.equal(value, body); assert.equal(maximum, 65536); return undefined;}
+}, () => false, target);
+function *pair(name, value) {yield name; yield value;}
+const response = await target.fetch('https://example.test/', {
+  headers: [pair('X-Value', ' one '), new Set(['x-value', 'two'])]
+});
+assert.equal(response.status, 503); assert.equal(response.ok, false);
+assert.deepEqual(requests, [{method: 'get', url: 'https://example.test/',
+  headers: [{name: 'x-value', value: 'one, two'}], bodyLength: 0n,
+  bodyMediaType: undefined, idempotencyKey: undefined, timeoutMillis: undefined}]);
+assert.deepEqual(events, ['consume:upload', 'drop:body']);
+await assert.rejects(target.fetch('https://example.test/', {headers: false}), TypeError);
+await assert.rejects(target.fetch('https://example.test/', {headers: [pair('x', 'v'), ['bad', 'v', 'extra']]}), TypeError);
+await assert.rejects(target.fetch('https://example.test/', {headers: [pair('Authorization', 'must-not-send')]}), /unsupported:reserved-header/);
+assert.equal(requests.length, 1);
+assert.deepEqual(events, ['consume:upload', 'drop:body']);
+""")
+
     def test_replacement_body_does_not_consume_or_reuse_inherited_bytes(self):
         self.run_javascript(r"""
 const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
