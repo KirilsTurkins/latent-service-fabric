@@ -39,6 +39,9 @@
           "tools/tests/test_go_generator_fixture.py",
           "tools/tests/test_go_generator_authoring.py",
           "tools/qualify_go_private_dependencies.py",
+          "tools/replay_go_dependencies.py",
+          "tools/tests/test_go_dependency_replay.py",
+          "docs/development/go-dependency-replay.md",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
           "tools/tests/test_go_native_authoring.py",
@@ -129,6 +132,9 @@
           "tools/tests/test_go_generator_fixture.py",
           "tools/tests/test_go_generator_authoring.py",
           "tools/qualify_go_private_dependencies.py",
+          "tools/replay_go_dependencies.py",
+          "tools/tests/test_go_dependency_replay.py",
+          "docs/development/go-dependency-replay.md",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
           "tools/tests/test_go_native_authoring.py",
@@ -194,16 +200,35 @@
           ".github/workflows/go-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "fast_dependency_replay": {
+            "default": false,
+            "description": "Reuse only exact source-bound native products for a fresh dependency replay",
+            "type": "boolean"
+          },
+          "replay_campaign": {
+            "default": "both",
+            "description": "Independent private-feed and approved-generator campaigns",
+            "options": [
+              "both",
+              "private",
+              "generator"
+            ],
+            "type": "choice"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "dependency-replay",
     "upstream-probe"
   ],
-  "reviewReason": "Union of private, approved generator, logging and managed-v5 triggers; original native workflow remains mandatory.",
+  "reviewReason": "Default-off explicit fixed-source diagnostic selector, retaining the full normal qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

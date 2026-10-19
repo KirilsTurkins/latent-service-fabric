@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Always sanitize confidential streams in native authoring finally before artifact retention; credentials restored and native outcome gates unchanged.",
+  "reviewReason": "Match the exact case-sensitive maintained private Go probe consumer filename.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fd51ee3276fcb8f33f36f2e4daa16157834d8bbbc86225bb716295f186a3998a"
+  "sha256": "b11966c107711c7faa94a7ea1fbbdbb0a63228edf4f9816c706cdc7dcf4f701b"
 }

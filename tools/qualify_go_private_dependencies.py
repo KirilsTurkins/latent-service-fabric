@@ -395,7 +395,7 @@ def qualify(prepared, output):
             require(frozen(prepared)[0] == receipt, 'private-Go-original-inputs-drift')
             signed = output / ('signed-' + str(ordinal))
             commands.run('private-Go-sign-' + str(ordinal), products['capsule_authoring'], 'demo-sign', signed, artifact, *companions)
-            write_json(signed / 'private-go-probe.json', {'nonce': acquired['nonce'], 'version': version, 'removed': removed})
+            write_json(signed / 'private-Go-probe.json', {'nonce': acquired['nonce'], 'version': version, 'removed': removed})
             node = node_workflow(products['latent'], products['latentd'], signed, output / ('node-' + str(ordinal)),
                                  language='go', captured_go_private=True)
             require(node['status'] == 'passed' and node['capturedGoPrivate']['status'] == 'passed'

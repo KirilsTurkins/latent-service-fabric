@@ -1,0 +1,81 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.fast_dependency_replay }}",
+    "name": "Fixed-source Go private and generator replay",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "fetch-depth": 4,
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install the original captured namespace prerequisite",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\n"
+      },
+      {
+        "name": "Test source binding, private diagnostic privacy and real fixture filenames",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve only original qualified products and pinned reproduction tools",
+        "run": "python3 tools/replay_go_dependencies.py --output \"$RUNNER_TEMP/go-dependency-replay-inputs\""
+      },
+      {
+        "name": "Prepare the exact retained Go compiler without rebuilding native products",
+        "run": "set -euo pipefail\ntools=\"$RUNNER_TEMP/go-dependency-replay-inputs/tools\"\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$tools/go.tar.gz\" -C \"$tools\"\nchmod 700 \"$tools/componentize-go\" \"$tools/wasm-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$tools/go\" --output \"$tools/go-async\"\necho \"$tools/go-async/bin\" >> \"$GITHUB_PATH\"\necho \"$tools\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "id": "baseline",
+        "name": "Replay the unchanged full normal signed programme first",
+        "run": "python3 tools/replay_go_dependencies.py --prepared \"$RUNNER_TEMP/go-dependency-replay-inputs\" --campaign baseline --output \"$RUNNER_TEMP/go-dependency-replay-baseline\""
+      },
+      {
+        "if": "${{ inputs.replay_campaign != 'generator' }}",
+        "name": "Fresh authenticated private capture, offline builds and signed lifecycle",
+        "run": "python3 tools/replay_go_dependencies.py --prepared \"$RUNNER_TEMP/go-dependency-replay-inputs\" --baseline \"$RUNNER_TEMP/go-dependency-replay-baseline\" --campaign private --output \"$RUNNER_TEMP/go-dependency-replay-private\""
+      },
+      {
+        "if": "${{ always() && steps.baseline.outcome == 'success' && inputs.replay_campaign != 'private' }}",
+        "name": "Fresh approved generation, two offline builds and signed generated values",
+        "run": "python3 tools/replay_go_dependencies.py --prepared \"$RUNNER_TEMP/go-dependency-replay-inputs\" --baseline \"$RUNNER_TEMP/go-dependency-replay-baseline\" --campaign generator --output \"$RUNNER_TEMP/go-dependency-replay-generator\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain only public bounded replay identities and node receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-dependency-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-dependency-replay-inputs/retrieval.json\n${{ runner.temp }}/go-dependency-replay-inputs/source-preimages.json\n${{ runner.temp }}/go-dependency-replay-baseline/qualification.json\n${{ runner.temp }}/go-dependency-replay-baseline/node/workflow.json\n${{ runner.temp }}/go-dependency-replay-baseline/node/FAILED.json\n${{ runner.temp }}/go-dependency-replay-private/qualification.json\n${{ runner.temp }}/go-dependency-replay-private/FAILED.json\n${{ runner.temp }}/go-dependency-replay-private/capture.json\n${{ runner.temp }}/go-dependency-replay-private/build-*/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-private/build-*/build-observation.json\n${{ runner.temp }}/go-dependency-replay-private/offline-rebuild/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-private/node-*/workflow.json\n${{ runner.temp }}/go-dependency-replay-private/node-*/FAILED.json\n${{ runner.temp }}/go-dependency-replay-generator/qualification.json\n${{ runner.temp }}/go-dependency-replay-generator/FAILED.json\n${{ runner.temp }}/go-dependency-replay-generator/build-*/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-generator/build-*/build-observation.json\n${{ runner.temp }}/go-dependency-replay-generator/node-*/workflow.json\n${{ runner.temp }}/go-dependency-replay-generator/node-*/FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 35
+  },
+  "jobId": "dependency-replay",
+  "kind": "job",
+  "reviewReason": "Bounded fixed-artifact replay retaining full normal node prerequisite and fresh private/generator builds and signed nodes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-guest.yml"
+}

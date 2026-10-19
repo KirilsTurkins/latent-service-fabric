@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ !inputs.fast_dependency_replay }}",
     "name": "Go runtime and complete capsule qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -229,7 +230,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Retain all original parent commands/steps/limits plus explicit generated-source selection and private lifecycle qualification.",
+  "reviewReason": "Preserve every full qualification command and bound; only explicit manual replay bypasses the full job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
