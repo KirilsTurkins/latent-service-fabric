@@ -1,0 +1,285 @@
+{
+  "schemaVersion": "latent.typescript.standard-entropy.signed-observation.v1",
+  "status": "passed",
+  "qualificationScope": "finite ordinary Math.random capability/policy/retirement/fresh-Store programme",
+  "run": {
+    "id": 39333644390,
+    "job": 118337650934,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39333644390",
+    "artifactId": 12226408159,
+    "artifactBytes": 241999
+  },
+  "replaySource": "3c986db55e997b97380f52db601f4d04118c5d12",
+  "originalCompiledMerge": "2cd6bb0d1ca39e3205ef0cf6296170fcab4005fe",
+  "originalPrHead": "02fbe2f9ed5c2cec6f568ebc7cce99216a12631e",
+  "historicalInputArtifact": 12222984675,
+  "historicalInputRun": 39319524998,
+  "historicalNormalOutcomes": 30,
+  "qualifiedNativeFive": {
+    "latent": {
+      "sha256": "sha256:25253f0ad347c9b710b240360dc5f16e4b1faf73b6373ed416de72e54d4a9145",
+      "bytes": 68801736
+    },
+    "latentd": {
+      "sha256": "sha256:61bfcc6da1f9704ffdab3aa157eba8e24dccc43b6e794739e5b1d0e7d4b9a616",
+      "bytes": 182156984
+    },
+    "examples/package": {
+      "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+      "bytes": 17726192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+      "bytes": 7224720
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:5a1fb049382ef7c3d828be500525e335855a5cbaee6697d4a6dd0d6d3a700aa5",
+      "bytes": 23847136
+    }
+  },
+  "originalComponents": {
+    "greeting": "sha256:6713f6b5dffc511d7f879e816d629e3ffccd2243a5f24ef15249491275b61cc6",
+    "word-count": "sha256:e233e6985c717740c1d222a0de46ad3b6eedc2d6e2d0e5129b497b9dcba6a177",
+    "shipping": "sha256:9386448bbd5f14bf502264757c99d76f14d1ea5c96d9174a566c28cec2f1c7ba",
+    "http-status": "sha256:02cd3fb72f420d9805fde72abd007066ed1cf5c35f4e538143530b0b03ad2027",
+    "recovery": "sha256:9258dac33e46b5bd3d2379a455313af40115e66f9ab88a51b339a5d3c345ace6"
+  },
+  "nodeWorkflow": {
+    "sha256": "sha256:098dad7753cfd5f35c61819edcfcd074bd25b70bc6f6c3e52cb07fa257c24ac4",
+    "bytes": 314283
+  },
+  "qualificationDigest": "sha256:63ff4fc4ddf392804142555a959d2555fdfe8bb46e5c7f40aa2c5a5da7e15195",
+  "nodeRecordedCurrentCheckoutSource": {
+    "sha256": "sha256:a87ea10517cb1597a45b6f25d1c0ad579ffc0a98f5560c6147c950d077d54733",
+    "files": 3168,
+    "bytes": 23911298,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "hostCompilationSourceRebound": false,
+  "newNativeOrComponentCompilation": false,
+  "normalReceiptRewritten": false,
+  "outcomes": 34,
+  "allProcessesReaped": true,
+  "allOutcomesKnown": true,
+  "normalProgrammeOutcomes": 27,
+  "beforeGuestMissingRandomDenials": 1,
+  "cases": [
+    {
+      "case": "undeclared",
+      "decoded": [
+        {
+          "ok": 681
+        }
+      ],
+      "activation": "ts-entropy-undeclared",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "2076298",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9502720",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "8598"
+      }
+    },
+    {
+      "case": "one",
+      "decoded": [
+        {
+          "ok": "entropy:one:ok"
+        }
+      ],
+      "activation": "ts-entropy-one",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "3712633",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9502720",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "46497462"
+      }
+    },
+    {
+      "case": "many",
+      "decoded": [
+        {
+          "ok": "entropy:many:ok"
+        }
+      ],
+      "activation": "ts-entropy-many",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "24911973",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9502720",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "68210"
+      }
+    },
+    {
+      "case": "bounds",
+      "decoded": [
+        {
+          "ok": "entropy:bounds:ok"
+        }
+      ],
+      "activation": "ts-entropy-bounds",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "173006756",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9502720",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "472683"
+      }
+    },
+    {
+      "case": "budget",
+      "decoded": [
+        {
+          "ok": "entropy:budget:bounded"
+        }
+      ],
+      "activation": "ts-entropy-budget",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "3918823",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9502720",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "11885"
+      }
+    },
+    {
+      "case": "fresh",
+      "decoded": [
+        {
+          "ok": "entropy:fresh:ok"
+        }
+      ],
+      "activation": "ts-entropy-fresh",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "3742187",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9502720",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "13088"
+      }
+    }
+  ],
+  "policyTransitions": [
+    {
+      "case": "policy-ceiling",
+      "randomInputBytesPerCall": 0,
+      "generation": "20",
+      "grants": [
+        {
+          "capability": "latent:random/random@0.1.0",
+          "policy": "typescript-entropy-policy-ceiling"
+        }
+      ]
+    },
+    {
+      "case": "fresh",
+      "randomInputBytesPerCall": 8,
+      "generation": "21",
+      "grants": [
+        {
+          "capability": "latent:random/random@0.1.0",
+          "policy": "typescript-entropy"
+        }
+      ]
+    }
+  ],
+  "providerAggregateBytesUnchanged": 65536,
+  "providerAggregateExhaustionQualified": false,
+  "originalPolicyRestoredBeforeFresh": true,
+  "randomPayloadRetained": false,
+  "providerIdleSamples": 13,
+  "everyIdleActiveOwnerFieldZero": [
+    "broker_calls",
+    "broker_handles",
+    "broker_results",
+    "broker_sessions",
+    "io_calls",
+    "io_buffers",
+    "io_streams",
+    "pool_active_connections",
+    "pool_pending_requests",
+    "pool_running_requests",
+    "pool_workers",
+    "pool_cleanup_jobs"
+  ],
+  "processSamples": 30,
+  "nodeShutdown": {
+    "reaped": true,
+    "clean": true
+  },
+  "failedHistory": [
+    {
+      "run": 39319524998,
+      "job": 118289651186,
+      "source": "02fbe2f9ed5c2cec6f568ebc7cce99216a12631e",
+      "status": "failed",
+      "case": "8193-draw aggregate-exhaustion attempt reached original 1000000000 fuel before typed refusal",
+      "aggregateExhaustionQualified": false
+    },
+    {
+      "run": 39332820139,
+      "source": "585cd9bf49bfac6507e1229120144a8410c96890",
+      "status": "failed-before-signing",
+      "reason": "historical30 was incorrectly expected27; corrected with exact-count regressions"
+    }
+  ],
+  "limitations": [
+    "No provider aggregate-exhaustion qualification.",
+    "No cryptographic API or statistical/FIPS proof.",
+    "The ordinary API source module is local; this is not published npm concurrency acceptance.",
+    "Current replay source and historical compiled native/component source are distinct.",
+    "No whole-issue or six-language facility completion."
+  ]
+}

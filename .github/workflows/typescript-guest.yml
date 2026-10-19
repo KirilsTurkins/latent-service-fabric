@@ -42,6 +42,11 @@ on:
       - 'tools/tests/test_typescript_native_build.py'
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
+      - tools/qualify_typescript_standard_entropy.py
+      - tools/typescript_entropy_probe.py
+      - tools/tests/test_typescript_entropy.py
+      - tools/tests/test_typescript_entropy_campaign.py
+      - docs/component-development/typescript-standard-entropy.md
       - 'tools/qualify_typescript_dependencies.py'
       - 'tools/qualify_typescript_dependency_refusals.py'
       - 'tools/tests/test_typescript_dependency_refusals.py'
@@ -105,6 +110,11 @@ on:
       - 'tools/tests/test_typescript_native_build.py'
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
+      - tools/qualify_typescript_standard_entropy.py
+      - tools/typescript_entropy_probe.py
+      - tools/tests/test_typescript_entropy.py
+      - tools/tests/test_typescript_entropy_campaign.py
+      - docs/component-development/typescript-standard-entropy.md
       - 'tools/qualify_typescript_dependencies.py'
       - 'tools/qualify_typescript_dependency_refusals.py'
       - 'tools/tests/test_typescript_dependency_refusals.py'
@@ -136,6 +146,10 @@ on:
         description: Compile only new boundary probes using authenticated d412 SDK products
         type: boolean
         default: false
+      replay-entropy-policy:
+        description: Re-sign unchanged02f components and qualify the explicit zero-input policy ceiling
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -157,7 +171,7 @@ env:
 
 jobs:
   source-splicer:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}
     name: Source-owned asynchronous import compiler
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -355,7 +369,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   boundary:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -475,6 +489,12 @@ jobs:
       - name: Validate explicit TypeScript runtime selection and preserved public contracts
         run: |
           python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools tools.tests.test_typescript_runtime_materials tools.tests.test_typescript_runtime_bundle tools.tests.test_typescript_text_codec_source tools.tests.test_typescript_async_waiters tools.tests.test_typescript_runtime_packaging
+      - name: Check ordinary Math.random approval snapshot and same-products programme controls
+        run: python3 -B -m unittest tools.tests.test_typescript_entropy tools.tests.test_typescript_entropy_campaign -v
+      - name: Check original scalar canonical lowering and physical call retirement
+        run: cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test random
+      - name: Sign approved and undeclared Math.random components with the exact normal products
+        run: python3 -B tools/qualify_typescript_standard_entropy.py --prepared-qualification "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools" --output "$RUNNER_TEMP/typescript-standard-entropy"
       - name: Freeze exact-source existing native products for signed Fetch
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -530,6 +550,15 @@ jobs:
             ${{ runner.temp }}/typescript-guest-probe/
             ${{ runner.temp }}/typescript-capsule-authoring/
             ${{ runner.temp }}/typescript-capsule-dependencies/
+            ${{ runner.temp }}/typescript-standard-entropy/qualification.json
+            ${{ runner.temp }}/typescript-standard-entropy/FAILED.json
+            ${{ runner.temp }}/typescript-standard-entropy/fixture-*.json
+            ${{ runner.temp }}/typescript-standard-entropy/build-*/*.json
+            ${{ runner.temp }}/typescript-standard-entropy/build-*/component.wasm
+            ${{ runner.temp }}/typescript-standard-entropy/build-*/logs/**
+            ${{ runner.temp }}/typescript-standard-entropy/node/workflow.json
+            ${{ runner.temp }}/typescript-standard-entropy/node/FAILED.json
+            ${{ runner.temp }}/typescript-standard-entropy/node/controls/*.json
             ${{ runner.temp }}/typescript-capsule-dependencies/outside-project-generator/GENERATOR-COMPLETE.json
             ${{ runner.temp }}/typescript-capsule-dependencies/projects/greeting/typescript-generated-inputs.json
             ${{ runner.temp }}/typescript-capsule-dependencies/projects/greeting/src/generated/**
@@ -774,5 +803,43 @@ jobs:
             ${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/component.wasm
             ${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/*.json
             ${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7
+  entropy-policy-replay:
+    name: Same-component signed Math.random policy and fresh-state programme
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-policy }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install the existing locked Python dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact artifact package and explicit policy controls
+        run: python3 -B -m unittest tools.tests.test_typescript_entropy_campaign tools.tests.test_typescript_entropy_replay -v
+      - name: Acquire only fixed public layers and original native five products
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs "$RUNNER_TEMP/typescript-entropy-original-inputs"
+      - name: Re-sign unchanged components and execute normal27 plus entropy6 and missing-grant denial
+        run: python3 -B tools/replay_typescript_standard_entropy.py --inputs "$RUNNER_TEMP/typescript-entropy-original-inputs" --output "$RUNNER_TEMP/typescript-entropy-policy-replay"
+      - name: Retain source-bound policy transitions outcomes and physical cleanup
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-entropy-policy-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-entropy-original-inputs/acquisition.json
+            ${{ runner.temp }}/typescript-entropy-policy-replay/*.json
+            ${{ runner.temp }}/typescript-entropy-policy-replay/node/*.json
+            ${{ runner.temp }}/typescript-entropy-policy-replay/node/controls/*.json
           if-no-files-found: warn
           retention-days: 7
