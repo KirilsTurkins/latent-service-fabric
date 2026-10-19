@@ -58,6 +58,11 @@
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_standard_entropy.py",
+          "tools/typescript_entropy_probe.py",
+          "tools/tests/test_typescript_entropy.py",
+          "tools/tests/test_typescript_entropy_campaign.py",
+          "docs/component-development/typescript-standard-entropy.md",
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
@@ -121,6 +126,11 @@
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_standard_entropy.py",
+          "tools/typescript_entropy_probe.py",
+          "tools/tests/test_typescript_entropy.py",
+          "tools/tests/test_typescript_entropy_campaign.py",
+          "docs/component-development/typescript-standard-entropy.md",
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
@@ -152,7 +162,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Union approved generator and merged private npm lifecycle. Preserve all commands, captured-input ownership, default-off probes and retained evidence.",
+  "reviewReason": "Review explicit exact-RANDOM Math.random lowering and concrete undeclared/snapshot refusal; additive actual34-outcome same-products programme and original native15 controls, original75min/allrequired commands unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
