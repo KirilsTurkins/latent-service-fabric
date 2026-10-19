@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "StandardStdioBoundary.test_actual_reviewed_guest_and_whole_workspace_pass",
+    "StandardStdioBoundary.test_another_source_file_cannot_join_the_reviewed_bridge",
+    "StandardStdioBoundary.test_bridge_identity_export_or_additional_unsafe_body_requires_review",
+    "StandardStdioBoundary.test_lint_allowance_cannot_expand_or_drop_workspace_clippy"
+  ],
+  "guards": {
+    "StandardStdioBoundary.test_actual_reviewed_guest_and_whole_workspace_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe1028e30f9b917b04a1cf2f78c42f2ba79e29899c329db723bd1e7c8cfadeea",
+        "class:setup-sha256:434a79c6e0ba10b4c64138fcb3ea52f3caabca2dee590b64124f6ff6a2c80cd0"
+      ],
+      "skipSites": []
+    },
+    "StandardStdioBoundary.test_another_source_file_cannot_join_the_reviewed_bridge": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe1028e30f9b917b04a1cf2f78c42f2ba79e29899c329db723bd1e7c8cfadeea",
+        "class:setup-sha256:434a79c6e0ba10b4c64138fcb3ea52f3caabca2dee590b64124f6ff6a2c80cd0"
+      ],
+      "skipSites": []
+    },
+    "StandardStdioBoundary.test_bridge_identity_export_or_additional_unsafe_body_requires_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe1028e30f9b917b04a1cf2f78c42f2ba79e29899c329db723bd1e7c8cfadeea",
+        "class:setup-sha256:434a79c6e0ba10b4c64138fcb3ea52f3caabca2dee590b64124f6ff6a2c80cd0"
+      ],
+      "skipSites": []
+    },
+    "StandardStdioBoundary.test_lint_allowance_cannot_expand_or_drop_workspace_clippy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe1028e30f9b917b04a1cf2f78c42f2ba79e29899c329db723bd1e7c8cfadeea",
+        "class:setup-sha256:434a79c6e0ba10b4c64138fcb3ea52f3caabca2dee590b64124f6ff6a2c80cd0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_standard_stdio_boundary.py",
+  "reviewReason": "Audit the existing wasm-only Rust-ABI stdio symbol attribute with its whole-source hash, exact deny and all workspace Clippy lints; reject added sources, expanded allowance and bridge mutations.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

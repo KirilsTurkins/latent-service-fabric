@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "latent.c23-resources.signed-observation.v1",
+  "pr": 1122,
+  "head": "d8b8072cb31ec7dfbbe3f4a4bdd74a9c7c99729a",
+  "squash": "cb3eef93d76f7657e76386280ac48925409aa0a8",
+  "runId": 39272444227,
+  "jobId": 118128004400,
+  "artifactId": 12196069156,
+  "testedSourceHead": "ed8c8cabfab3cd70598a8d07e09b576433b93409",
+  "testedSourceTree": "decfaab85ae0a93e999d5969aaf3d9cc6afaa7e5",
+  "matchedHelperFiles": 63,
+  "qualificationDigest": "sha256:da20408f692b172ffcde57e2b24679b3a4e1a74a72f1443f6a6f0331584815ea",
+  "workflowDigest": "sha256:73441f2a52c5ed4720fffe942e392362d84bf54d2062ff982bc8657f72636537",
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:42bda9386d70fd96810830ebe0e116dea0116f80aefc72f14563480fe1f2ab72",
+      "bytes": 1494
+    },
+    "sourceHead": "ed8c8cabfab3cd70598a8d07e09b576433b93409",
+    "sourceTree": "decfaab85ae0a93e999d5969aaf3d9cc6afaa7e5",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.6",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:5df438c53eed7fe2c56d05b0d9d7502b8a32c95689c77d299f425b453f082f0c",
+        "bytes": 71459976,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:4bd0c377b6c9488484454497b43072842efb5590b1d39b78436a41161c3ce788",
+        "bytes": 184272664,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:04fb6b4c782cfb289610ba118d70b4f27497069b95190a022d0e1690c23e5fc1",
+        "bytes": 20465792,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:ec6c9e629da7ae6f1503bec81ec4889e1cfb745c93e0db68fe7dcb5e7044bcaf",
+        "bytes": 8030384,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:256fef2053774207493ac0f3552e9571dac688bed42a47a53d5416ea4c2aeafd",
+        "bytes": 26401272,
+        "actualFeatures": []
+      }
+    }
+  },
+  "originalProfiles": {
+    "c-standard-facilities": 38,
+    "c-standard-logging": 41,
+    "c-standard-combined": 37
+  },
+  "components": {
+    "greeting": "sha256:bb5c7cd50e88c9d1ed33adf754711104484fee1074050bc0d8bcb7699b8d9b25",
+    "word-count": "sha256:09520059d5530f8d89fdabd3b484eed5e36ca9f8d4c04b9c1005ba4a556861af",
+    "shipping": "sha256:0ec8d2d74072815789396648b47ec21a618fa8cb5cf1045ddef63d7ab34d6867",
+    "http-status": "sha256:ace345b56c760c7077746fd38d5f65b334530495e8836b953415c697e93d3960",
+    "recovery": "sha256:a60dec25f56515d685722a6d138d7f9d5f36a145b2ebf20b01850d1c1c68c564"
+  },
+  "compiledResources": {
+    "index": {
+      "sha256": "sha256:81db3d222369ca2d3c049c6f8ed4b9495d4f5c0b2d7ddf831b59407d251e2048",
+      "bytes": 1870
+    },
+    "selection": {
+      "sha256": "sha256:47fda05054a0429a2fd0a6a8dcd68260e826f7656423459f0f5efbd89b978d6e",
+      "bytes": 1460
+    },
+    "count": 4,
+    "objects": 3,
+    "preprocessorMembership": true,
+    "sourceOriginalsRemoved": true
+  },
+  "resourceCases": [
+    {
+      "case": "utf8",
+      "activation": "c-resource-0",
+      "decoded": [
+        {
+          "ok": "compiled UTF8|Gr\u00fc\u00dfe"
+        }
+      ]
+    },
+    {
+      "case": "binary",
+      "activation": "c-resource-1",
+      "decoded": [
+        {
+          "ok": "binary:00ff4180"
+        }
+      ]
+    },
+    {
+      "case": "empty",
+      "activation": "c-resource-2",
+      "decoded": [
+        {
+          "ok": "empty:0"
+        }
+      ]
+    },
+    {
+      "case": "shared",
+      "activation": "c-resource-3",
+      "decoded": [
+        {
+          "ok": "shared:00ff4180"
+        }
+      ]
+    },
+    {
+      "case": "missing",
+      "activation": "c-resource-4",
+      "decoded": [
+        {
+          "ok": "missing:absent"
+        }
+      ]
+    },
+    {
+      "case": "fresh",
+      "activation": "c-resource-5",
+      "decoded": [
+        {
+          "ok": "fresh:1"
+        }
+      ]
+    }
+  ],
+  "recovery": [
+    {
+      "case": "trap",
+      "failure": "guest-trap",
+      "fresh": [
+        {
+          "ok": "compiled UTF8|Gr\u00fc\u00dfe"
+        }
+      ],
+      "reaped": true
+    },
+    {
+      "case": "fuel",
+      "failure": "resource-exhausted",
+      "fresh": [
+        {
+          "ok": "compiled UTF8|Gr\u00fc\u00dfe"
+        }
+      ],
+      "reaped": true
+    }
+  ],
+  "totalInvocations": 37,
+  "allInvocationProcessesReaped": true,
+  "samples": 34,
+  "idleSamples": 32,
+  "providerIdleSamples": 12,
+  "nodeCleanReaped": true,
+  "peerShutdown": {
+    "requests": 8,
+    "authorized": 8,
+    "unexpected": 0,
+    "holds": 3,
+    "closedHolds": 3
+  },
+  "publisherAuthenticated": false,
+  "releasePublished": false,
+  "fullIssueQualification": false
+}

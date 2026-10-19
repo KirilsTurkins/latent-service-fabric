@@ -45,7 +45,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, standard_typescript_entropy=False):
+        go_standard_logging=False, rust_standard_stdio=False, dotnet_standard_logging=False, standard_typescript_entropy=False):
     require(type(standard_typescript_entropy) is bool and (not standard_typescript_entropy or language == 'typescript')
             and not (standard_typescript_entropy and (standard_typescript_console or captured_dependency_recovery
                 or captured_npm_private or approved_typescript_generator)), 'authoring-typescript-standard-entropy-language')
@@ -74,6 +74,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(captured_rust_matrix) is bool and (not captured_rust_matrix or language == "rust")
             and not (captured_rust_matrix and (rust_compatibility or captured_git_component or captured_dependency_recovery)),
             "authoring-Rust-matrix-language")
+    require(type(dotnet_standard_logging) is bool and (not dotnet_standard_logging or language == 'dotnet'),
+            'authoring-dotnet-standard-logging-language')
     require(type(dotnet_reflection) is bool and (not dotnet_reflection or language == 'dotnet')
             and not (dotnet_reflection and captured_dependency_recovery), 'authoring-dotnet-reflection-language')
     require(type(captured_dotnet_private) is bool and (not captured_dotnet_private or language == 'dotnet')
@@ -136,6 +138,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                 if standard_typescript_entropy:
                     from tools.typescript_entropy_probe import configure as configure_entropy
                     configure_entropy(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if dotnet_standard_logging:
+                    from tools.dotnet_standard_console_probe import configure as configure_console
+                    configure_console(settings)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 if standard_typescript_console:
                     from tools.typescript_console_probe import configure as configure_console
@@ -208,6 +214,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
+                    if dotnet_standard_logging:
+                        from tools.dotnet_standard_console_probe import grant as grant_console
+                        grant_console(client, node, fixture, targets, publications, result)
                     if go_standard_logging:
                         from tools.go_standard_logging_probe import tutorials as logging_tutorials
                         logging_tutorials(client, targets, result)
@@ -216,6 +225,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if go_standard_logging:
                         from tools.go_standard_logging_probe import probe as probe_go_logging
                         probe_go_logging(client, targets['greeting'], probe, result, len(names))
+                    if dotnet_standard_logging:
+                        from tools.dotnet_standard_console_probe import probe as probe_console
+                        probe_console(client, targets['greeting'], probe, result, len(names))
                     if rust_compatibility:
                         from tools.rust_compatibility_probe import probe as probe_compatibility
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))
