@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "ActualSelectedGraph.test_actual_library_producer_captures_transitive_reference_inside_each_owned_build",
+    "ActualSelectedGraph.test_actual_original_digests_transitive_edge_and_no_extra_package_are_required",
+    "ActualSelectedGraph.test_failed_public_receipt_preserves_original_qualification_exception_identity",
+    "ActualSelectedGraph.test_prepared_products_use_actual_dotnet_sources_and_exact_five_binary_bytes",
+    "ActualSignedProbe.test_malformed_probe_refuses_before_any_node_call",
+    "ActualSignedProbe.test_private_resources_and_transitive_calls_bind_global_signed_revision_not_object_generation",
+    "ActualSignedProbe.test_private_selector_is_default_off_strict_bool_and_only_dotnet_before_any_effect",
+    "ActualSignedProbe.test_removed_phase_uses_ordinary_greeting_without_a_private_assembly",
+    "ActualSignedProbe.test_wrong_or_stale_signed_revision_refuses_even_with_the_expected_value",
+    "PrivateProtocol.test_actual_flat_container_authentication_and_transitive_package_are_bounded_and_redacted",
+    "PrivateProtocol.test_private_credential_scope_restores_absent_or_existing_caller_value",
+    "PrivateProtocol.test_real_greeting_hook_is_exact_and_removal_restores_identical_original",
+    "PrivateProtocol.test_unknown_paths_never_get_package_bytes_and_request_budget_does_not_grow"
+  ],
+  "guards": {
+    "ActualSelectedGraph.test_actual_library_producer_captures_transitive_reference_inside_each_owned_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ActualSelectedGraph.test_actual_original_digests_transitive_edge_and_no_extra_package_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ActualSelectedGraph.test_failed_public_receipt_preserves_original_qualification_exception_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ActualSelectedGraph.test_prepared_products_use_actual_dotnet_sources_and_exact_five_binary_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ActualSignedProbe.test_malformed_probe_refuses_before_any_node_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:7bfb3fcbe1bb247dd4990d354de8de02b10c9910634e6eacfaa936f4afb062c8"
+      ],
+      "skipSites": []
+    },
+    "ActualSignedProbe.test_private_resources_and_transitive_calls_bind_global_signed_revision_not_object_generation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:7bfb3fcbe1bb247dd4990d354de8de02b10c9910634e6eacfaa936f4afb062c8"
+      ],
+      "skipSites": []
+    },
+    "ActualSignedProbe.test_private_selector_is_default_off_strict_bool_and_only_dotnet_before_any_effect": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:7bfb3fcbe1bb247dd4990d354de8de02b10c9910634e6eacfaa936f4afb062c8"
+      ],
+      "skipSites": []
+    },
+    "ActualSignedProbe.test_removed_phase_uses_ordinary_greeting_without_a_private_assembly": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:7bfb3fcbe1bb247dd4990d354de8de02b10c9910634e6eacfaa936f4afb062c8"
+      ],
+      "skipSites": []
+    },
+    "ActualSignedProbe.test_wrong_or_stale_signed_revision_refuses_even_with_the_expected_value": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:7bfb3fcbe1bb247dd4990d354de8de02b10c9910634e6eacfaa936f4afb062c8"
+      ],
+      "skipSites": []
+    },
+    "PrivateProtocol.test_actual_flat_container_authentication_and_transitive_package_are_bounded_and_redacted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PrivateProtocol.test_private_credential_scope_restores_absent_or_existing_caller_value": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PrivateProtocol.test_real_greeting_hook_is_exact_and_removal_restores_identical_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PrivateProtocol.test_unknown_paths_never_get_package_bytes_and_request_budget_does_not_grow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498d960ed9ec2ac15a920900fecf0dab3facbf70007e742f4881ef1b3495db8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_private_lifecycle.py",
+  "reviewReason": "Preserve ordinary NuGet gates and bind explicit public trust plus authenticated offline lifecycle qualification",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
