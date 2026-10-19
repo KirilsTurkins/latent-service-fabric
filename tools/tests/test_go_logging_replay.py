@@ -94,5 +94,74 @@ class MemberFence(unittest.TestCase):
             remote.seek(0, 3)
 
 
+class ImmutableGitSourceFence(unittest.TestCase):
+    def test_missing_archive_source_is_bound_to_same_tested_commit_and_current_bytes(self):
+        import base64
+        import hashlib
+        from unittest.mock import patch
+        raw = b'owned source from the same tested commit\n'
+        blob = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+        tree = 'a'*40
+        record = {'sha': tree, 'tree': [{'path': 'extra.rs', 'type': 'blob', 'mode': '100644',
+                                       'sha': blob, 'size': len(raw)}]}
+        def api(path):
+            if path == 'git/trees/' + tree:
+                return record
+            self.assertEqual(path, 'git/blobs/' + blob)
+            return {'sha': blob, 'size': len(raw), 'encoding': 'base64',
+                    'content': base64.b64encode(raw).decode()}
+        with tempfile.TemporaryDirectory() as temporary:
+            source, archive, names = SourceFence().fixture(Path(temporary))
+            (source/'extra.rs').write_bytes(raw)
+            names.append('extra.rs')
+            with patch.object(replay, 'api', side_effect=api) as query:
+                git = replay.GitSources({'sha': replay.ORIGINAL_TESTED, 'tree': {'sha': tree}})
+                proof = replay.prove_source(archive, source, names, git)
+                self.assertEqual((proof['archiveFiles'], proof['gitOnlyFiles'], proof['files']), (1, 1, 2))
+                row = proof['inventory']['extra.rs']
+                self.assertEqual(row['testedCommit'], replay.ORIGINAL_TESTED)
+                self.assertEqual(row['gitBlobSha1'], blob)
+                self.assertEqual(row['sha256'], replay.digest(raw))
+                self.assertEqual(row['provenance'], 'official-tested-git-blob')
+                self.assertEqual(proof['inventory']['apps/main.rs']['provenance'], 'retained-source-archive')
+                self.assertEqual(replay.prove_source(archive, source, names, git), proof)
+                self.assertEqual(query.call_count, 2)
+                (source/'extra.rs').write_bytes(raw+b'changed')
+                with self.assertRaisesRegex(WorkflowError, 'preimage-mismatch'):
+                    replay.prove_source(archive, source, names, git)
+
+    def test_wrong_commit_tree_or_nonregular_selected_blob_cannot_supply_source(self):
+        from unittest.mock import patch
+        with self.assertRaisesRegex(WorkflowError, 'tested-commit'):
+            replay.GitSources({'sha': 'other', 'tree': {'sha': 'a'*40}})
+        for mode in ('wrong-tree', 'truncated', 'symlink', 'missing', 'oversized'):
+            with self.subTest(mode=mode):
+                row = {'path': 'extra.rs', 'type': 'blob', 'mode': '120000' if mode == 'symlink' else '100644',
+                       'sha': 'b'*40, 'size': 32*1024**2+1 if mode == 'oversized' else 10}
+                value = {'sha': 'c'*40 if mode == 'wrong-tree' else 'a'*40,
+                         'truncated': mode == 'truncated', 'tree': [] if mode == 'missing' else [row]}
+                with patch.object(replay, 'api', return_value=value) as query, self.assertRaises(WorkflowError):
+                    replay.GitSources({'sha': replay.ORIGINAL_TESTED, 'tree': {'sha': 'a'*40}}).read('extra.rs')
+                self.assertEqual(query.call_count, 1)
+
+    def test_blob_body_must_match_tree_object_hash_and_exact_size(self):
+        import base64
+        import hashlib
+        from unittest.mock import patch
+        raw = b'original source'
+        blob = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+        tree = {'sha': 'a'*40, 'tree': [{'path': 'extra.rs', 'type': 'blob', 'mode': '100644',
+                                      'sha': blob, 'size': len(raw)}]}
+        for mode in ('tampered-same-length', 'wrong-sha', 'wrong-size', 'invalid-base64'):
+            with self.subTest(mode=mode):
+                value = {'sha': 'c'*40 if mode == 'wrong-sha' else blob,
+                         'size': len(raw)+1 if mode == 'wrong-size' else len(raw), 'encoding': 'base64',
+                         'content': '!' if mode == 'invalid-base64' else base64.b64encode(
+                             b'changed! source' if mode == 'tampered-same-length' else raw).decode()}
+                error = ValueError if mode == 'invalid-base64' else WorkflowError
+                with patch.object(replay, 'api', side_effect=[tree, value]), self.assertRaises(error):
+                    replay.GitSources({'sha': replay.ORIGINAL_TESTED, 'tree': {'sha': 'a'*40}}).read('extra.rs')
+
+
 if __name__ == '__main__':
     unittest.main()

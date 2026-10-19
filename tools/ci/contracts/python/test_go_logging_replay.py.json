@@ -1,5 +1,8 @@
 {
   "cases": [
+    "ImmutableGitSourceFence.test_blob_body_must_match_tree_object_hash_and_exact_size",
+    "ImmutableGitSourceFence.test_missing_archive_source_is_bound_to_same_tested_commit_and_current_bytes",
+    "ImmutableGitSourceFence.test_wrong_commit_tree_or_nonregular_selected_blob_cannot_supply_source",
     "MemberFence.test_fixed_member_extractor_does_not_accept_links_or_oversized_data",
     "MemberFence.test_range_reader_refuses_an_unbounded_read_without_network",
     "SourceFence.test_actual_source_bytes_and_only_configure_or_tutorial_fixture_changes_are_allowed",
@@ -8,6 +11,42 @@
     "SourceFence.test_link_source_archive_refuses_without_extracting_a_target"
   ],
   "guards": {
+    "ImmutableGitSourceFence.test_blob_body_must_match_tree_object_hash_and_exact_size": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ImmutableGitSourceFence.test_missing_archive_source_is_bound_to_same_tested_commit_and_current_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ImmutableGitSourceFence.test_wrong_commit_tree_or_nonregular_selected_blob_cannot_supply_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "MemberFence.test_fixed_member_extractor_does_not_accept_links_or_oversized_data": {
       "bases": [
         "unittest.TestCase"
@@ -83,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_logging_replay.py",
-  "reviewReason": "Explicit default-off bounded exact-source diagnostic; preserve all original normal Go steps and limits; no fabricated normal qualification.",
+  "reviewReason": "Preserve all six source/range guards; add immutable tested-tree and blob-object adversarial source proof for archive-omitted inputs.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

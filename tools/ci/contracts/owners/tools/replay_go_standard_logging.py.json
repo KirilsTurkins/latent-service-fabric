@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_go_standard_logging.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Exact-source diagnostic labels distinguish retained Cargo products, native Go reference and fresh logging component; no normal qualification reconstruction.",
+  "reviewReason": "Verify all production inputs without narrowing: retained archive plus at most 57 regular source blobs bound to the same official tested commit, tree and object hashes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0e59b634ce52256ddf0af84471c558866a4a2d3aaa117c11ae09646f7be77959"
+  "sha256": "c79c4d060a7cb670ddbde9c2a2ac7fc2718bad26ca67975fffab4db842f04589"
 }

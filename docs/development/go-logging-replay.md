@@ -4,9 +4,13 @@ The optional `fast_logging_replay` input of the Go workflow is a bounded
 diagnostic for one retained source/product set. It is off by default; ordinary
 CI retains every original qualification step and limit.
 
-Before executing retained products, the replay compares the actual archived
-native Rust/apps/Cargo/configuration/WIT, Go SDK/compiler and complete Go build
-recipe bytes with the current checkout. Added, missing, linked or changed inputs
+Before executing retained products, the replay compares native
+Rust/apps/Cargo/configuration/WIT, Go SDK/compiler and complete Go build
+recipe bytes with the current checkout. The retained source archive covers
+3,496 selected files. Its original path selection omitted 57 other selected
+files; those are checked through the same official tested commit's immutable
+tree and regular blobs, including Git blob object hashes and SHA256 identities.
+Every file records archive or Git provenance. Added, missing, linked or changed inputs
 refuse. The original logging library and installation AST must also match;
 only its node configuration/tutorial fixture changes are excluded from that
 compile claim. Fixed artifact IDs, run/head, sizes, metadata digests, native

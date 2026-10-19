@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import base64
 import hashlib
 import io
 import json
@@ -89,8 +90,8 @@ def source_bytes(root, name):
     return path.read_bytes()
 
 
-def prove_source(archive_path, source_root, current_names):
-    """Compare actual archived bytes, including removals/additions, without extraction."""
+def prove_source(archive_path, source_root, current_names, git_sources=None):
+    """Compare the archive and explicitly bound immutable Git-only source bytes."""
     expected = {name for name in current_names if production(name)}
     seen, selected, originals, total = set(), {}, {}, 0
     with tarfile.open(archive_path, mode='r:gz') as archive:
@@ -115,13 +116,25 @@ def prove_source(archive_path, source_root, current_names):
             if production(name):
                 require(name in expected and source_bytes(source_root, name) == raw,
                         'replay-production-source-preimage-mismatch')
-                selected[name] = identity(raw)
+                selected[name] = {**identity(raw), 'provenance': 'retained-source-archive'}
+    missing = expected - selected.keys()
+    require(not missing or (git_sources is not None and len(missing) <= 57),
+            'replay-production-source-set-mismatch')
+    for name in sorted(missing):
+        raw, blob = git_sources.read(name)
+        total += len(raw)
+        require(total <= 512 * 1024**2 and len(raw) <= 32 * 1024**2,
+                'replay-source-byte-bound')
+        require(source_bytes(source_root, name) == raw, 'replay-production-source-preimage-mismatch')
+        selected[name] = {**identity(raw), 'provenance': 'official-tested-git-blob',
+                          'gitBlobSha1': blob, 'testedCommit': ORIGINAL_TESTED}
     require(set(selected) == expected and bool(selected), 'replay-production-source-set-mismatch')
     logging = 'tools/go_standard_logging_probe.py'
     require(logging in originals and fixture_ast(originals[logging], ('configure', 'tutorials'))
             == fixture_ast(source_bytes(source_root, logging), ('configure', 'tutorials')),
             'replay-logging-library-or-install-changed')
     return {'runtimeProductionBytesEqualCurrent': True, 'files': len(selected),
+            'archiveFiles': len(selected) - len(missing), 'gitOnlyFiles': len(missing),
             'inventory': selected, 'inventoryIdentity': identity(json.dumps(selected, sort_keys=True).encode()),
             'loggingLibraryInstallAndOtherProbeASTUnchanged': True,
             'fixtureChangesExcludedFromCompileClaim': ['configure', 'tutorials']}
@@ -176,6 +189,55 @@ def api(path):
     raw = subprocess.check_output(['gh', 'api', 'repos/' + REPOSITORY + '/' + path], timeout=30)
     require(len(raw) <= MAX_DOCUMENT, 'replay-api-byte-bound')
     return json.loads(raw)
+
+
+class GitSources:
+    """Only source blobs reached through the official immutable tested tree."""
+    def __init__(self, commit):
+        require(commit['sha'] == ORIGINAL_TESTED, 'replay-git-tested-commit')
+        self.root, self.trees, self.blobs = commit['tree']['sha'], {}, {}
+        self.total = 0
+
+    def tree(self, sha):
+        require(isinstance(sha, str) and len(sha) == 40
+                and all(c in '0123456789abcdef' for c in sha), 'replay-git-object-name')
+        if sha not in self.trees:
+            value = api('git/trees/' + sha)
+            rows = value['tree']
+            require(value['sha'] == sha and not value.get('truncated') and len(rows) <= 20000
+                    and len({row['path'] for row in rows}) == len(rows), 'replay-git-tree-binding')
+            self.trees[sha] = {row['path']: row for row in rows}
+        return self.trees[sha]
+
+    def read(self, name):
+        parts = safe_name(name).parts
+        require(production(name), 'replay-git-production-source-only')
+        sha = self.root
+        for part in parts[:-1]:
+            row = self.tree(sha).get(part)
+            require(row is not None and row['type'] == 'tree' and row['mode'] == '040000',
+                    'replay-git-parent-tree')
+            sha = row['sha']
+        row = self.tree(sha).get(parts[-1])
+        require(row is not None and row['type'] == 'blob' and row['mode'] in {'100644', '100755'}
+                and type(row['size']) is int and 0 <= row['size'] <= 32 * 1024**2,
+                'replay-git-regular-source-required')
+        blob = row['sha']
+        require(isinstance(blob, str) and len(blob) == 40
+                and all(c in '0123456789abcdef' for c in blob), 'replay-git-object-name')
+        if blob not in self.blobs:
+            require(len(self.blobs) < 57, 'replay-git-source-count-bound')
+            value = api('git/blobs/' + blob)
+            require(value['sha'] == blob and value['encoding'] == 'base64'
+                    and value['size'] == row['size'], 'replay-git-blob-binding')
+            raw = base64.b64decode(value['content'].replace('\n', ''), validate=True)
+            self.total += len(raw)
+            require(len(raw) == row['size'] and self.total <= 512 * 1024**2
+                    and hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == blob,
+                    'replay-git-blob-object-identity')
+            self.blobs[blob] = raw
+        require(len(self.blobs[blob]) == row['size'], 'replay-git-blob-binding')
+        return self.blobs[blob], blob
 
 
 class Artifact:
@@ -301,7 +363,8 @@ def replay(output):
         source_sha = sources.extract('_temp/go-guest-source.sha', original / 'source.sha', 128)
         require(source_sha.read_text().strip() == ORIGINAL_TESTED, 'replay-source-archive-revision')
         names = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().rstrip('\0').split('\0')
-        proof = prove_source(source_archive, ROOT, names)
+        git_sources = GitSources(commit)
+        proof = prove_source(source_archive, ROOT, names, git_sources)
         record['sourceProof'] = proof
         record['runtimeProductionBytesEqualCurrent'] = proof['runtimeProductionBytesEqualCurrent']
         native = original / 'native'
@@ -391,7 +454,7 @@ def replay(output):
         require(node['status'] == 'passed' and node['goStandardLogging']['status'] == 'passed'
                 and len(node['configuration']['providers']['bindings']) == 14, 'replay-logging-programme-required')
         stage = 'final-source-and-native-recheck'
-        require(prove_source(source_archive, ROOT, names) == proof
+        require(prove_source(source_archive, ROOT, names, git_sources) == proof
                 and record['originalNativeProducts'] == {name: file_identity(path, 256 * 1024**2) for name, path in binaries.items()}
                 and time.monotonic() < commands.deadline, 'replay-final-input-drift')
         record.update(status='passed', loggingNodeReceipt=file_identity(output / 'logging-node/workflow.json'),
