@@ -32,7 +32,10 @@ pub extern "Rust" fn __lsf_std_log_write_v1(level: u8, message: &str) -> u8 {
     if message.len() > 256 {
         return 1;
     }
-    if BUSY.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {
+    if BUSY
+        .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+        .is_err()
+    {
         return 4;
     }
     let _call = Call;
