@@ -90,6 +90,17 @@ def probe(tools: Path, output: Path) -> dict:
             or content_headers["defaultClientComponentQualified"] is not False):
         raise ValueError("http-request-content-headers-probe-assertions")
 
+
+    sync_send = json.loads(commands.run("actual-bcl-sync-send", dotnet, output / "probe/HttpErrorsProbe.dll",
+        "--sync-send", original, sync_derived, output / "actual-bcl-sync-send.json"))
+    if (sync_send["assertions"] != 15 or sync_send["originalSynchronousSendUnsupported"] is not True
+            or sync_send["originalSendAsyncFaultsPreserved"] is not True
+            or sync_send["ordinaryDefaultConstructionPreserved"] is not True
+            or sync_send["nativeSendQualified"] is not False
+            or sync_send["pendingGuestIoQualified"] is not False
+            or sync_send["defaultClientComponentQualified"] is not False):
+        raise ValueError("http-sync-send-probe-assertions")
+
     def rejected(stage, input_path, output_path, receipt_path, *mode):
         count = len(commands.records)
         try:
@@ -131,6 +142,7 @@ def probe(tools: Path, output: Path) -> dict:
     result = {**result, "rewriteDeterministic": True, "fivePreimageAndOwnershipDenials": True,
               "originalAndExistingOutputsUnchanged": True, "commands": commands.records,
               "responseReadErrors": response_errors, "requestContentHeaders": content_headers,
+              "synchronousSend": sync_send,
               "synchronousRead": {**sync_result, "rewriteDeterministic": True,
                   "fivePreimageAndOwnershipDenials": True, "boundedErrorAssertions": combined["assertions"]}}
     write_json(output / "result.json", result)

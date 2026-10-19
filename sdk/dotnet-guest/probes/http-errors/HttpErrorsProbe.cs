@@ -6,6 +6,11 @@ using System.Text.Json;
 // Execute the actual captured WASI BCL in two isolated host load contexts.
 // This verifies its conversion/exception boundary, not a guest scheduler or
 // default-client component. No native WASI import is called by this probe.
+if (args.Length == 4 && args[0] == "--sync-send")
+{
+    HttpSyncSendProbe.Run(args[1..]);
+    return;
+}
 if (args.Length == 4 && args[0] == "--request-content-headers")
 {
     HttpRequestContentHeadersProbe.Run(args[1..]);
@@ -437,5 +442,103 @@ internal static class HttpRequestContentHeadersProbe
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+}
+
+
+internal static class HttpSyncSendProbe
+{
+    // Only invalid requests are executed on the host: their original SendAsync
+    // fails before native WASI I/O. Successful/pending Send requires signed-node
+    // qualification and cannot be inferred from these completed fault paths.
+    internal static void Run(string[] args)
+    {
+        if (args.Length != 3 || File.Exists(args[2]))
+            throw new InvalidDataException("http-sync-send-probe-arguments");
+        string Digest(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+        if (Digest(args[0]) != "3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587")
+            throw new InvalidDataException("http-sync-send-probe-preimage");
+        var originalContext = new AssemblyLoadContext("original-sync-send-control", isCollectible: true);
+        var derivedContext = new AssemblyLoadContext("derived-sync-send-control", isCollectible: true);
+        var owned = new List<IDisposable>();
+        try
+        {
+            var original = originalContext.LoadFromAssemblyPath(Path.GetFullPath(args[0]));
+            var derived = derivedContext.LoadFromAssemblyPath(Path.GetFullPath(args[1]));
+            const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            var assertions = 0;
+            void Equal(object? expected, object? actual)
+            {
+                assertions++;
+                if (!Equals(expected, actual)) throw new InvalidDataException("http-sync-send-probe-mismatch");
+            }
+            object DefaultHandler(Assembly assembly)
+            {
+                var clientType = assembly.GetType("System.Net.Http.HttpClient", throwOnError: true)!;
+                var client = Activator.CreateInstance(clientType)!;
+                owned.Add((IDisposable)client);
+                var outer = clientType.BaseType!.GetField("_handler", Flags)!.GetValue(client)!;
+                Equal("System.Net.Http.HttpClientHandler", outer.GetType().FullName);
+                var handler = outer.GetType().GetField("_underlyingHandler", Flags)!.GetValue(outer)!;
+                Equal("System.Net.Http.WasiHttpHandler", handler.GetType().FullName);
+                return handler;
+            }
+            var originalHandler = DefaultHandler(original);
+            var derivedHandler = DefaultHandler(derived);
+            object? Request(Assembly assembly, bool nullRequest) => nullRequest ? null :
+                Activator.CreateInstance(assembly.GetType("System.Net.Http.HttpRequestMessage", throwOnError: true)!);
+            MethodInfo Method(object handler, string name) => handler.GetType().GetMethods(Flags)
+                .Single(method => method.Name == name && method.GetParameters().Length == 2);
+            Exception Failure(Action action)
+            {
+                try { action(); }
+                catch (Exception error)
+                {
+                    while (error is TargetInvocationException { InnerException: not null } target)
+                        error = target.InnerException!;
+                    return error;
+                }
+                throw new InvalidDataException("http-sync-send-probe-expected-original-fault");
+            }
+            Exception Send(object handler, object? request) => Failure(() =>
+                Method(handler, "Send").Invoke(handler, [request, CancellationToken.None]));
+            Exception SendAsync(object handler, object? request) => Failure(() =>
+                ((Task)Method(handler, "SendAsync").Invoke(handler, [request, CancellationToken.None])!).GetAwaiter().GetResult());
+            foreach (var nullRequest in new[] { true, false })
+                Equal(typeof(PlatformNotSupportedException), Send(originalHandler, Request(original, nullRequest)).GetType());
+            foreach (var nullRequest in new[] { true, false })
+            {
+                var reference = SendAsync(originalHandler, Request(original, nullRequest));
+                var unchanged = SendAsync(derivedHandler, Request(derived, nullRequest));
+                var synchronous = Send(derivedHandler, Request(derived, nullRequest));
+                var expected = nullRequest ? typeof(NullReferenceException) : typeof(ArgumentException);
+                Equal((expected, expected), (reference.GetType(), unchanged.GetType()));
+                Equal(reference.Message, unchanged.Message);
+                Equal(unchanged.GetType(), synchronous.GetType());
+                Equal(unchanged.Message, synchronous.Message);
+            }
+            Equal("System.Net.Http.HttpMessageHandler", Method(derivedHandler, "Send").GetBaseDefinition().DeclaringType!.FullName);
+            var result = new {
+                scope = "captured-wasi-bcl-sync-send-validation-host-controls",
+                assertions,
+                originalDigest = "sha256:" + Digest(args[0]),
+                derivedDigest = "sha256:" + Digest(args[1]),
+                originalSynchronousSendUnsupported = true,
+                originalSendAsyncFaultsPreserved = true,
+                ordinaryDefaultConstructionPreserved = true,
+                nativeSendQualified = false,
+                pendingGuestIoQualified = false,
+                defaultClientComponentQualified = false,
+            };
+            using var output = new FileStream(args[2], FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            JsonSerializer.Serialize(output, result);
+            Console.WriteLine(JsonSerializer.Serialize(result));
+        }
+        finally
+        {
+            foreach (var client in owned) client.Dispose();
+            originalContext.Unload();
+            derivedContext.Unload();
+        }
     }
 }

@@ -302,3 +302,5 @@ Sixteen additional host controls execute the actual derived error helper with
 zero native handles; they do not qualify live error-resource drops or pending
 guest I/O. The unchanged signed fourteen-case HTTP gate and broader #693/#746
 runtime and library requirements still provide the required native evidence.
+
+The coupled compiler also contains the [synchronous HTTP Send derivation](dotnet-wasi-synchronous-send.md). Its new signed-component qualification remains pending.
