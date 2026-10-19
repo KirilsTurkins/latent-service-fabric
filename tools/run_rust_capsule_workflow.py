@@ -44,7 +44,7 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False):
+        captured_rust_matrix=False, go_standard_entropy=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -68,6 +68,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(captured_rust_matrix) is bool and (not captured_rust_matrix or language == "rust")
             and not (captured_rust_matrix and (rust_compatibility or captured_git_component or captured_dependency_recovery)),
             "authoring-Rust-matrix-language")
+    require(type(go_standard_entropy) is bool and (not go_standard_entropy or language == 'go')
+            and not (go_standard_entropy and captured_dependency_recovery), 'authoring-go-standard-entropy-language')
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -144,6 +146,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if language in {"go", "dotnet", "java"}:
                         from tools.guest_runtime_grants import grant
                         grant(client, node, fixture, targets, publications, result, language=language)
+                    if go_standard_entropy:
+                        from tools.go_standard_entropy_probe import admission as entropy_admission
+                        entropy_admission(client, fixture, targets, publications, result)
                     if c_standard_facilities:
                         from tools.c_standard_facilities_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
@@ -161,6 +166,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
                     tutorials(client, targets, result)
+                    if go_standard_entropy:
+                        from tools.go_standard_entropy_probe import probe as entropy_probe
+                        entropy_probe(client, targets['greeting'], probe, result, len(names))
                     if rust_compatibility:
                         from tools.rust_compatibility_probe import probe as probe_compatibility
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))

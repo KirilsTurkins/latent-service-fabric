@@ -27,6 +27,10 @@ on:
       - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
+      - tools/qualify_go_standard_entropy.py
+      - tools/go_standard_entropy_fixture.py
+      - tools/go_standard_entropy_probe.py
+      - tools/tests/test_go_standard_entropy.py
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
@@ -59,6 +63,7 @@ on:
       - schemas/**
       - docs/component-development/go-authoring.md
       - docs/component-development/go-dependencies.md
+      - docs/component-development/go-standard-entropy.md
       - docs/development/go-capsule-qualification.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
@@ -102,6 +107,10 @@ on:
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_go_activation.py
+      - tools/qualify_go_standard_entropy.py
+      - tools/go_standard_entropy_fixture.py
+      - tools/go_standard_entropy_probe.py
+      - tools/tests/test_go_standard_entropy.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
       - tools/tests/test_go_managed_idle.py
@@ -134,6 +143,7 @@ on:
       - docs/component-development/go-authoring.md
       - docs/component-development/go-dependencies.md
       - docs/development/go-capsule-qualification.md
+      - docs/component-development/go-standard-entropy.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
       - crates/latent-control-store/**
@@ -329,6 +339,13 @@ jobs:
       - name: Qualify captured Go libraries in signed components
         run: |
           python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"
+      - name: Test ordinary Go entropy capture and terminal freshness boundaries
+        run: python3 -m unittest tools.tests.test_go_standard_entropy
+      - name: Qualify ordinary crypto/rand and syscall.RandomGet with existing runtime authority
+        run: >-
+          python3 tools/qualify_go_standard_entropy.py
+          --native-qualification "$RUNNER_TEMP/go-capsule-dependencies"
+          --output "$RUNNER_TEMP/go-standard-entropy"
       - name: Locate failed timer Wasm frames using private read-only source overlays
         if: ${{ failure() && steps.standard_timers.outcome == 'failure' }}
         run: |
@@ -346,6 +363,16 @@ jobs:
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/go-standard-entropy/qualification.json
+            ${{ runner.temp }}/go-standard-entropy/FAILED.json
+            ${{ runner.temp }}/go-standard-entropy/capture.json
+            ${{ runner.temp }}/go-standard-entropy/logs/**
+            ${{ runner.temp }}/go-standard-entropy/build/*.json
+            ${{ runner.temp }}/go-standard-entropy/build/component.wasm
+            ${{ runner.temp }}/go-standard-entropy/build/logs/**
+            ${{ runner.temp }}/go-standard-entropy/node/workflow.json
+            ${{ runner.temp }}/go-standard-entropy/node/FAILED.json
+            ${{ runner.temp }}/go-standard-entropy/node/controls/go-entropy-*.json
             ${{ runner.temp }}/go-http-libraries/qualification.json
             ${{ runner.temp }}/go-http-libraries/FAILED.json
             ${{ runner.temp }}/go-http-libraries/*/capture.json
