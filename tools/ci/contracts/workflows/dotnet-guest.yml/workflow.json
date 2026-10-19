@@ -71,16 +71,25 @@
           ".github/workflows/dotnet-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "observe-console-failure": {
+            "default": false,
+            "description": "Replay only the authenticated original Console failure with private trap frames",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "console-private",
     "toolchain"
   ],
-  "reviewReason": "Add explicit ordinary Console logging and captured signed lifecycle campaign; preserve existing BCL/HTTP programmes and all original limits.",
+  "reviewReason": "Explicit diagnostic-only Console selector; preserve original normal job, authenticate original component/native inputs and bound closed trap observations without public error changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

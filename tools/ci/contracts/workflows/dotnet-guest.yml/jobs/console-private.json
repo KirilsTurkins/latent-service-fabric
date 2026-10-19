@@ -1,0 +1,122 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-console-failure }}",
+    "name": "Closed trap variant and numeric frames for original Console failure",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install only existing locked Python dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check private observer bounds and authenticated metadata reconstruction",
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_console_private_diagnostic -v"
+      },
+      {
+        "name": "Preserve fixed observer and generic support outside original checkout",
+        "run": "cp tools/diagnose_dotnet_console_failure.py \"$RUNNER_TEMP/console-observer.py\"\ncp tools/dotnet_console_build_support.py \"$RUNNER_TEMP/console_diagnostic_support.py\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Read only fixed public documents and original binary products",
+        "run": "python3 -B tools/dotnet_console_diagnostic_inputs.py --output \"$RUNNER_TEMP/console-original-inputs\"",
+        "timeout-minutes": 5
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "a1028e1bd854700f27e75017349c58b88b53b0d5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Install only existing private host boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Replay unchanged original component with only private trap overlays",
+        "run": "python3 -B \"$RUNNER_TEMP/console-observer.py\" --acquired \"$RUNNER_TEMP/console-original-inputs\" --output \"$RUNNER_TEMP/console-private-trap\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded private compiler setup diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-console-private-cargo-${{ github.sha }}",
+          "path": "${{ runner.temp }}/console-private-trap/private-build.stderr.txt\n${{ runner.temp }}/console-private-trap/private-build.stdout.txt\n${{ runner.temp }}/console-private-trap/private-fetch.stderr.txt\n${{ runner.temp }}/console-private-trap/private-fetch.stdout.txt\n",
+          "retention-days": 1
+        }
+      },
+      {
+        "if": "always()",
+        "name": "Retain authenticated private binary for exact diagnostic reuse",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-console-private-host-${{ github.sha }}",
+          "path": "${{ runner.temp }}/console-private-trap/private-latentd\n${{ runner.temp }}/console-private-trap/private-host-identity.json\n",
+          "retention-days": 1
+        }
+      },
+      {
+        "if": "always()",
+        "name": "Retain closed observations and original public invocation rows",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-console-private-observation-${{ github.sha }}",
+          "path": "${{ runner.temp }}/console-original-inputs/acquisition.json\n${{ runner.temp }}/console-private-trap/observation.json\n${{ runner.temp }}/console-private-trap/node/observation.json\n${{ runner.temp }}/console-private-trap/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "console-private",
+  "kind": "job",
+  "reviewReason": "Explicit diagnostic-only Console selector; preserve original normal job, authenticate original component/native inputs and bound closed trap observations without public error changes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}

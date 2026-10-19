@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dotnet_console_diagnostic_inputs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Explicit diagnostic-only Console selector; preserve original normal job, authenticate original component/native inputs and bound closed trap observations without public error changes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "de64bc5d5c8e199c2aee19a6e69efb6d7734b3e75e90d83c3660a0c847edfea6"
+}

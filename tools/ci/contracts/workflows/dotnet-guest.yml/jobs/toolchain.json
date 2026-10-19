@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.observe-console-failure }}",
     "name": "NativeAOT component qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -181,7 +182,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Add explicit ordinary Console logging and captured signed lifecycle campaign; preserve existing BCL/HTTP programmes and all original limits.",
+  "reviewReason": "Explicit diagnostic-only Console selector; preserve original normal job, authenticate original component/native inputs and bound closed trap observations without public error changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
