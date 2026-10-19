@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "ActualOutcomeRequirements.test_a_declared_error_or_timeout_cannot_substitute_for_the_terminal_trap",
+    "ActualOutcomeRequirements.test_a_failure_after_trap_cannot_satisfy_fresh_state",
+    "ActualOutcomeRequirements.test_foreign_publication_or_route_generation_cannot_borrow_successful_values",
+    "ActualOutcomeRequirements.test_native_reference_needs_each_exact_result_without_converting_errors",
+    "ActualOutcomeRequirements.test_source_bound_execution_report_does_not_infer_generic_trap_cause_or_elimination",
+    "ActualOutcomeRequirements.test_terminal_trap_is_followed_by_a_distinct_successful_reaped_fresh_invocation",
+    "ActualOutcomeRequirements.test_unexpected_outbound_activity_refuses_before_success_receipt",
+    "ActualOutcomeRequirements.test_wrong_thread_result_cannot_be_called_success_or_catchable_denial",
+    "CapturedCompatibility.test_executable_input_refuses_before_review_or_source_removal",
+    "CapturedCompatibility.test_library_that_is_not_an_application_root_edge_cannot_borrow_unrelated_presence",
+    "CapturedCompatibility.test_normal_authoring_and_review_capture_real_transitive_sources_before_removal",
+    "CapturedCompatibility.test_uncaptured_transitive_callback_or_unapproved_executable_cannot_reach_review"
+  ],
+  "guards": {
+    "ActualOutcomeRequirements.test_a_declared_error_or_timeout_cannot_substitute_for_the_terminal_trap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_a_failure_after_trap_cannot_satisfy_fresh_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_foreign_publication_or_route_generation_cannot_borrow_successful_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_native_reference_needs_each_exact_result_without_converting_errors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_source_bound_execution_report_does_not_infer_generic_trap_cause_or_elimination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_terminal_trap_is_followed_by_a_distinct_successful_reaped_fresh_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_unexpected_outbound_activity_refuses_before_success_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_wrong_thread_result_cannot_be_called_success_or_catchable_denial": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompatibility.test_executable_input_refuses_before_review_or_source_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:a0d5f96fa4a596d378f29a813e10b02ea5f27e6fec1300f6d15442b71576f2fb"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompatibility.test_library_that_is_not_an_application_root_edge_cannot_borrow_unrelated_presence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:a0d5f96fa4a596d378f29a813e10b02ea5f27e6fec1300f6d15442b71576f2fb"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompatibility.test_normal_authoring_and_review_capture_real_transitive_sources_before_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:a0d5f96fa4a596d378f29a813e10b02ea5f27e6fec1300f6d15442b71576f2fb"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompatibility.test_uncaptured_transitive_callback_or_unapproved_executable_cannot_reach_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:a0d5f96fa4a596d378f29a813e10b02ea5f27e6fec1300f6d15442b71576f2fb"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_compatibility.py",
+  "reviewReason": "New qualification cases and source-bound signed target checks; no cases or guards existed for this new module on the baseline commit, and all existing modules remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
