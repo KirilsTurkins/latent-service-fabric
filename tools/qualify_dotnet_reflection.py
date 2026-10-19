@@ -47,9 +47,9 @@ def prepared_inputs(prepared):
     return before, receipt, products
 
 
-def descriptor_material(artifact, assembly):
+def descriptor_material(artifact, assembly, *, roots=ROOTS):
     """Require the actual compiler selection, source preimage and signed material."""
-    identity = {'digest': digest(ROOTS), 'size': len(ROOTS)}
+    identity = {'digest': digest(roots), 'size': len(roots)}
     selected = read_json(artifact / 'nuget-build-inputs.json')
     expected = [{'attributes': {'Include': DESCRIPTOR}, 'active': True, **identity}]
     resources = [{'attributes': {'Include': LOAD_INPUT, 'LogicalName': 'reflection.dynamic-input'},

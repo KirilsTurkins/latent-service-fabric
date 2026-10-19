@@ -45,7 +45,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, standard_typescript_entropy=False):
+        go_standard_logging=False, rust_standard_stdio=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False):
     require(type(standard_typescript_entropy) is bool and (not standard_typescript_entropy or language == 'typescript')
             and not (standard_typescript_entropy and (standard_typescript_console or captured_dependency_recovery
                 or captured_npm_private or approved_typescript_generator)), 'authoring-typescript-standard-entropy-language')
@@ -84,6 +84,11 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
             'authoring-dotnet-standard-logging-language')
     require(type(dotnet_reflection) is bool and (not dotnet_reflection or language == 'dotnet')
             and not (dotnet_reflection and captured_dependency_recovery), 'authoring-dotnet-reflection-language')
+    require(type(dotnet_reflection_boundaries) is bool
+            and (not dotnet_reflection_boundaries or language == 'dotnet')
+            and not (dotnet_reflection_boundaries and (dotnet_reflection or captured_dotnet_private
+                                                      or captured_dependency_recovery)),
+            'authoring-dotnet-reflection-boundaries-language')
     require(type(captured_dotnet_private) is bool and (not captured_dotnet_private or language == 'dotnet')
             and not (captured_dotnet_private and captured_dependency_recovery),
             'authoring-private-NuGet-language')
@@ -268,6 +273,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.rust_dependency_matrix import probe as probe_matrix
                         probe_matrix(client, targets['greeting'], probe, result, len(names),
                                      read_json(fixture / 'matrix-probe.json'))
+                    if dotnet_reflection_boundaries:
+                        from tools.dotnet_reflection_fixture import probe as boundary_probe
+                        boundary_probe(client, targets['greeting'], probe, result, len(names), boundaries=True)
                     if dotnet_reflection:
                         from tools.dotnet_reflection_fixture import probe as reflection_probe
                         reflection_probe(client, targets['greeting'], probe, result, len(names))
