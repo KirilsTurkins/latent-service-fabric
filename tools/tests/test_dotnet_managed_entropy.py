@@ -21,6 +21,7 @@ class ManagedEntropyTests(unittest.TestCase):
     def test_pinned_upstream_algorithms_have_only_the_closed_namespace_and_base_derivation(self):
         files = entropy.verify_source(self.source)
         self.assertEqual(len(files), 17)
+        self.assertIn(b'<UseAppHost>false</UseAppHost>', files['Rewrite.csproj'])
         self.assertEqual(files['HexConverter.cs'], files['upstream/HexConverter.cs'])
         self.assertIn(b'global::System.Security.Cryptography.RandomNumberGenerator', files['RandomNumberGenerator.cs'])
         self.assertNotIn(b'CryptoConfig.CreateFromName', files['RandomNumberGenerator.cs'])

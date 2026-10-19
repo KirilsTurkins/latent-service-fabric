@@ -134,7 +134,7 @@ def prepare(compiler, project, output):
         path.write_bytes(body)
     (staged / 'global.json').write_bytes(read_file(compiler.sdk / 'global.json'))
     for name, destination in (('ManagedEntropy', 'helper'), ('Rewrite', 'rewrite')):
-        compiler.run('managed-entropy-' + name.lower(), compiler.dotnet, 'build', staged / (name + '.csproj'),
+        compiler.run('managed-entropy-build-' + name.lower(), compiler.dotnet, 'build', staged / (name + '.csproj'),
                      '-c', 'Release', '--output', owned / destination,
                      '--artifacts-path', owned / ('artifacts-' + destination),
                      '-p:LsfCecilPath=' + str(cecil), '-p:RestoreConfigFile=' + str(staged / 'nuget.config'),
