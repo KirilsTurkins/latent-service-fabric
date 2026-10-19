@@ -862,9 +862,22 @@ class RepositoryMigrationTests(unittest.TestCase):
                 'cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"',
                 'sha256sum "$out/componentize-go" "$out/wasm-tools"'],
         }
+        # The two explicit private manual modes run only their diagnostic lane.
+        # Normal PR/push runs have no enabled input and retain this required job.
+        # Review only this exact job-level guard change; all command bytes,
+        # step guards, timeouts, environments and historical obligations below
+        # remain independently equal to the immutable original floor.
+        reviewed_typescript_observer_guard = "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}"
+        inputs = data["workflowContracts"][".github/workflows/typescript-guest.yml"]["on"]["workflow_dispatch"]["inputs"]
+        for name in ("observe-failed-fetch", "observe-fetch-boundaries"):
+            self.assertEqual(inputs[name]["type"], "boolean")
+            self.assertIs(inputs[name]["default"], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
+            if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
+                self.assertEqual(value["jobIf"], "success()", key)
+                value["jobIf"] = reviewed_typescript_observer_guard
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.
