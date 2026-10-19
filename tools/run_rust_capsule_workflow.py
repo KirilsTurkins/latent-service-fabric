@@ -44,7 +44,9 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False):
+        captured_rust_matrix=False, standard_typescript_console=False):
+    require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
+            'authoring-typescript-console-language')
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -113,6 +115,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     from tools.c_standard_logging_probe import configure as configure_logging
                     configure_logging(settings)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if standard_typescript_console:
+                    from tools.typescript_console_probe import configure as configure_console
+                    configure_console(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -149,6 +155,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         grant_and_probe(client, node, fixture, targets, publications, result)
                     if c_standard_logging:
                         from tools.c_standard_logging_probe import grant_and_probe
+                        grant_and_probe(client, node, fixture, targets, publications, result)
+                    if standard_typescript_console:
+                        from tools.typescript_console_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
                     if c_standard_combined:
                         from tools.c_standard_combined_probe import grant_and_probe
