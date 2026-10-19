@@ -72,3 +72,24 @@ hash/link/mode failure, stalled handshake and live generation retirement tests.
 They are not passing evidence until actually compiled and executed against the
 qualified parser. Standard socket APIs and each language's guest TLS remain
 separate #741–#746 obligations, not inferred from direct host TLS.
+
+## Current source closure and remaining accounting work
+
+The separately authenticated [0.23.46 capture](../../sdk/host-stream-tls/rustls-0.23.46-bounds/README.md)
+now matches the selected provider pin. Its minimal reference workflow preserves
+the original amplification failure and eight bounded vectors under a fixed
+24-dependency registry closure matching the maintained lock. Native parser
+execution is reported by that lane's receipt; preparing the lane is not passing
+evidence. No host, node or engine build is part of that reference.
+
+`ACCOUNTING_QUALIFIED` remains false. Before changing it, current-source evidence
+must cover the entire connection and trust ownership graph: parser and
+verification work, root representations and clones, plaintext/ciphertext/error
+buffers, native stack and kernel owners, maximum-valid TLS 1.2/1.3 plus hostile
+inputs, and controlled cancellation/currentness/drain/Store-drop barriers.
+Accepted cancellation or logical handle release must not refund still-live
+physical owners. Existing TCP ownership and historical parser measurements do
+not prove these TLS bounds. Protected trust replacement, forged/stale handles,
+wrong hostname, quota/late-completion and fresh cross-tenant signed controls
+remain separate requirements. Production installation stays refused until that
+proof and the independent operator/conformance gates are complete.

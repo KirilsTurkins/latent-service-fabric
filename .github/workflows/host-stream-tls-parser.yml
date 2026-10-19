@@ -1,0 +1,79 @@
+name: Current host TLS parser reference
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/host-stream-tls-parser.yml'
+      - 'sdk/host-stream-tls/rustls-0.23.46-bounds/**'
+      - 'tools/host_stream_tls_patch.py'
+      - 'tools/qualify_host_stream_tls_parser.py'
+      - 'tools/tests/test_host_stream_tls*.py'
+      - 'crates/latent-streams/Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/host-stream-tls-parser.yml'
+      - 'sdk/host-stream-tls/rustls-0.23.46-bounds/**'
+      - 'tools/host_stream_tls_patch.py'
+      - 'tools/qualify_host_stream_tls_parser.py'
+      - 'tools/tests/test_host_stream_tls*.py'
+      - 'crates/latent-streams/Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: host-tls-parser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parser:
+    name: Original amplification refusal and current bounded parser
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Check fixed source, lock and observation refusal controls
+        run: |
+          python3 -m unittest tools.tests.test_host_stream_tls_current_patch tools.tests.test_host_stream_tls_patch tools.tests.test_host_stream_tls_reference tools.tests.test_host_stream_tls_reference_lock tools.tests.test_host_stream_tls_allocation -v
+      - name: Fetch only the checksum-pinned current source archive
+        shell: bash
+        run: |
+          curl --disable --fail --location --proto '=https' --proto-redir '=https' --max-time 60 --max-filesize 8388608 \
+            https://static.crates.io/crates/rustls/rustls-0.23.46.crate \
+            --output "$RUNNER_TEMP/rustls-0.23.46.crate"
+          echo "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf  $RUNNER_TEMP/rustls-0.23.46.crate" | sha256sum --check
+      - name: Execute only original and bounded current parser references
+        shell: bash
+        run: |
+          python3 tools/qualify_host_stream_tls_parser.py \
+            --parser-version 0.23.46 --fetch-current-dependencies \
+            --archive "$RUNNER_TEMP/rustls-0.23.46.crate" \
+            --output "$RUNNER_TEMP/host-tls-parser-reference" \
+            --cargo "$(command -v cargo)" --rustc "$(command -v rustc)"
+      - name: Retain finite parser evidence and compiler failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: host-tls-parser-reference-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/host-tls-parser-reference/receipt.json
+            ${{ runner.temp }}/host-tls-parser-reference/*-stdout.jsonl
+            ${{ runner.temp }}/host-tls-parser-reference/*-stderr.log
+            ${{ runner.temp }}/host-tls-parser-reference/*-build.log
+            ${{ runner.temp }}/host-tls-parser-reference/old/Cargo.lock
+            ${{ runner.temp }}/host-tls-parser-reference/new/Cargo.lock
+          if-no-files-found: warn
+          retention-days: 7
