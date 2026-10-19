@@ -210,6 +210,10 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_c_standard_logging
           python3 tools/qualify_c_standard_facilities.py --standard-logging --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-logging"
+      - name: Execute combined ordinary libc facilities with four explicit grants
+        run: |
+          python3 -m unittest tools.tests.test_c_standard_combined
+          python3 tools/qualify_c_standard_facilities.py --combined-profile --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-combined"
       - name: Retain bounded C standard runtime proof including failures
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -240,5 +244,19 @@ jobs:
             ${{ runner.temp }}/c-standard-logging/builds/*/core-componentization-failed.wasm
             ${{ runner.temp }}/c-standard-logging/builds/*/logs/**
             ${{ runner.temp }}/c-standard-logging/node/public-workflow.json
+            ${{ runner.temp }}/c-standard-combined/qualified.json
+            ${{ runner.temp }}/c-standard-combined/FAILED.json
+            ${{ runner.temp }}/c-standard-combined/logs/**
+            ${{ runner.temp }}/c-standard-combined/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/source-inputs.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/recipe-inputs.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/compiler-inputs.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/component.wasm
+            ${{ runner.temp }}/c-standard-combined/builds/*/core-componentization-failed.wasm
+            ${{ runner.temp }}/c-standard-combined/builds/*/logs/**
+            ${{ runner.temp }}/c-standard-combined/node/public-workflow.json
           if-no-files-found: warn
           retention-days: 7

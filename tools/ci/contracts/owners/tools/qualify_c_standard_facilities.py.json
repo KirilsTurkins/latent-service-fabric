@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_standard_facilities.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add isolated stdio logging profile and actual signed negative cases with every existing C check, execution guard and budget retained",
+  "reviewReason": "Add explicit combined C libc profile and bounded signed composition while preserving individual profiles, original commands and deadlines.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "35201903cffdd3162d08baf57f7f88f67196755c48491a59bac3ecb8fc51b20e"
+  "sha256": "99b4e07eeee537008b9effd7523fd7554e23d7460414595ac8ff561c8acd0152"
 }

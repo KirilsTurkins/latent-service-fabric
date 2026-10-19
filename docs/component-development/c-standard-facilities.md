@@ -100,6 +100,42 @@ The separate [standard stdio logging profile](c-standard-logging.md) selects
 only the bounded log contract; it does not implicitly select these clocks or
 entropy providers.
 
+## Combined ordinary libc facilities
+
+The explicit `c-standard-facilities-v1` profile selects the union of the clock,
+entropy and [standard stdio](c-standard-logging.md) ports. An ordinary captured
+library can use `clock_gettime`, `getentropy`, `printf` and `fprintf(stderr, ...)`
+in the same component, including during its activation-local initializer.
+The compiler selects both existing bridge sources and the existing closed stdio
+adapter; it derives exactly the monotonic, wall, random and log imports. The
+individual profiles and default closed profile keep their existing selections.
+
+Select this profile in both `capsule-project.json` and the application dependency
+selection, then resolve and review changed dependency inputs. Each of the four
+typed capabilities still needs its own installed provider, binding and explicit
+grant. Profile selection supplies no authority and installs no ambient WASI host.
+All existing clock, entropy, log encoding, byte and operation bounds apply.
+
+The contributor qualifier accepts `--combined-profile` alongside the same native
+tuple and compiler arguments above. It captures an outside library, deletes its
+original sources, and builds and signs the five original authoring controls.
+Four activations, each omitting exactly one grant while retaining the other three,
+must be rejected before guest execution
+with zero guest fuel and memory. Six combined cases then check initializer state,
+ordered calls, wall time, stderr and existing entropy/clock errors; ordinary
+tutorial calls also use the combined library. Provider idle samples follow the
+denials and successful combined cases. The original 27 authoring, fault and peer
+outcomes remain required, with clean node and peer shutdown.
+
+The C workflow adds this programme after the original clock/entropy and stdio
+programmes, reusing their exact native tuple within the unchanged job and node
+deadlines. **Combined-profile signed qualification is pending.** Focused source
+controls establish selection, captured closure and command/grant wiring only.
+Historical individual-profile receipts do not qualify this new composition.
+This finite slice advances facility composition in issue #681; concurrency,
+pthreads, asynchronous initialization, full six-language parity and production
+publisher authentication remain separate requirements.
+
 ## Derived WIT source handling
 
 The maintained C standard-profile derivation identifies the selected world and

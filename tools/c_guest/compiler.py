@@ -195,7 +195,7 @@ class Compiler:
         self.run("zig", *command)
         try:
             component_command = ["component", "new", str(core), "-o", str(component)]
-            if runtime_profile == standard_facilities.LOGGING_PROFILE:
+            if runtime_profile in {standard_facilities.LOGGING_PROFILE, standard_facilities.COMBINED_PROFILE}:
                 adapter = destination / "standard-stdio-adapter.wasm"
                 self.run("wasm-tools", "parse", str(self.sdk / "src/standard-stdio.wat"), "-o", str(adapter))
                 component_command.extend(["--adapt", "wasi_snapshot_preview1=" + str(adapter)])
