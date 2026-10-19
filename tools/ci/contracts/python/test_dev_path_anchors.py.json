@@ -1,0 +1,27 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Require one POSIX parent traversal per source read while retaining descriptor cleanup, invalid-leaf refusal and platform substitution guards",
+  "module":"tools/tests/test_dev_path_anchors.py",
+  "cases":["PosixAnchorControl.test_caller_failure_closes_leaf_before_releasing_parent","PosixAnchorControl.test_invalid_leaf_metadata_still_rejects_and_closes_descriptor","PosixAnchorControl.test_posix_read_walks_parent_once_and_uses_that_held_anchor","RealSourceAnchors.test_leaf_and_parent_symlinks_remain_rejected","RealSourceAnchors.test_parent_substitution_cannot_redirect_the_anchored_leaf_open","RealSourceAnchors.test_windows_read_retains_ancestor_and_leaf_rename_guards"],
+  "guards":{
+    "PosixAnchorControl.test_posix_read_walks_parent_once_and_uses_that_held_anchor":
+      "a268c3dc2989d475af19296e4aae1620e3ed21322a71606ada7077bb3e626776",
+    "PosixAnchorControl.test_caller_failure_closes_leaf_before_releasing_parent":
+      "a268c3dc2989d475af19296e4aae1620e3ed21322a71606ada7077bb3e626776",
+    "PosixAnchorControl.test_invalid_leaf_metadata_still_rejects_and_closes_descriptor":
+      "a268c3dc2989d475af19296e4aae1620e3ed21322a71606ada7077bb3e626776",
+    "RealSourceAnchors.test_leaf_and_parent_symlinks_remain_rejected":
+      "9df9cfa3890c30b42e0f372063f27d3140fd33dff218a7e29a81c371c5ad6a31",
+    "RealSourceAnchors.test_parent_substitution_cannot_redirect_the_anchored_leaf_open":
+      "00c4751714dcee325adba06d57af46437bcb0c9cac723357e5087276eb4e9e40",
+    "RealSourceAnchors.test_windows_read_retains_ancestor_and_leaf_rename_guards":
+      "f3bd8578a4893da779b2e42d9ee76fc0b6d5fff4832943f90c14a54b6ae99a3d"
+  },
+  "guardDefinitions":{
+    "a268c3dc2989d475af19296e4aae1620e3ed21322a71606ada7077bb3e626776":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0e284f4c851d39e26345bbca828fbb5dcb46d24034a6dc3ae44e031eaac75a8b","class:setup-sha256:7f2f6006a6332268adabe4026ab16672a9d6ca02296f48a5c278e1ae85de913f"]},
+    "9df9cfa3890c30b42e0f372063f27d3140fd33dff218a7e29a81c371c5ad6a31":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'POSIX no-follow source anchors')"],"skipSites":["skip-control-sha256:35a593be7303b9125de83b352d254e8ff6f48edfa4cc47f8e7a3da67d109acbe","unittest.skipUnless(os.name == 'posix', 'POSIX no-follow source anchors')"],"fixtureGuards":["module:setup-sha256:0e284f4c851d39e26345bbca828fbb5dcb46d24034a6dc3ae44e031eaac75a8b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "00c4751714dcee325adba06d57af46437bcb0c9cac723357e5087276eb4e9e40":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'POSIX parent rename preserves descriptor authority')"],"skipSites":["skip-control-sha256:ba00f90a7c555f96b31a5b5f0db6707f5814a2260a04229c8f0ff3ae49ed0c90","unittest.skipUnless(os.name == 'posix', 'POSIX parent rename preserves descriptor authority')"],"fixtureGuards":["module:setup-sha256:0e284f4c851d39e26345bbca828fbb5dcb46d24034a6dc3ae44e031eaac75a8b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "f3bd8578a4893da779b2e42d9ee76fc0b6d5fff4832943f90c14a54b6ae99a3d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'nt', 'Windows ancestor and leaf rename guards')"],"skipSites":["skip-control-sha256:8609a797908dd63a8a01cea69a210ad59998cace7ad3022b0bea62bff650a0de","unittest.skipUnless(os.name == 'nt', 'Windows ancestor and leaf rename guards')"],"fixtureGuards":["module:setup-sha256:0e284f4c851d39e26345bbca828fbb5dcb46d24034a6dc3ae44e031eaac75a8b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}

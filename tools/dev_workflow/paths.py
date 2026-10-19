@@ -76,15 +76,14 @@ def directory(path: Path):
 def opened(root: Path, name: str):
     relative(name)
     path = absolute(root) / name
-    with directory(path.parent):
+    with directory(path.parent) as parent:
         if os.name == "nt":
             from .windows import open_file
             descriptor = open_file(path)
         else:
             # Open through the held parent, never re-resolve its pathname.
-            with directory(path.parent) as parent:
-                descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC,
-                                     dir_fd=parent)
+            descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC,
+                                 dir_fd=parent)
         try:
             regular(os.fstat(descriptor))
             yield descriptor
