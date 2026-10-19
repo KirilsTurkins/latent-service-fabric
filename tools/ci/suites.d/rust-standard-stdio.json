@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-standard-stdio.lib.latent-standard-stdio",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "sdk/rust-standard-stdio/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-standard-stdio",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_standard_stdio",
+      "timeoutSeconds": 900
+    }
+  ]
+}
