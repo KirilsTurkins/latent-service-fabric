@@ -1,71 +1,71 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Supply actual digest-bound declaration bytes to prior application resource checks; retain all29 cases, assertions and skip conditions.",
+  "reviewReason":"Require actual captured source inventories in resource fixtures and preserve all cases/assertions/skip conditions.",
   "module":"tools/tests/test_guest_resources.py",
   "cases":["DependencyIndexProvenance.test_ambiguous_owner_or_changed_file_inventory_cannot_authenticate_resource","DependencyIndexProvenance.test_bound_lock_document_rejects_malformed_duplicate_nonfinite_and_oversized_input","DependencyIndexProvenance.test_captured_owner_cannot_claim_another_owners_or_unobserved_bytes","DependencyIndexProvenance.test_digest_only_wrong_type_and_substituted_lock_cannot_supply_membership","DependencyIndexProvenance.test_rehashed_owner_must_belong_to_the_actual_bound_lock","DependencyIndexProvenance.test_valid_mixed_origins_and_shared_owner_bytes_keep_index_identity_and_parse_lock_once","ResourceCapture.test_application_origin_requires_bound_manifest_even_after_index_rehash","ResourceCapture.test_case_unicode_and_file_directory_collisions_are_rejected","ResourceCapture.test_count_name_file_and_aggregate_limits_are_enforced","ResourceCapture.test_declared_utf8_and_binary_bytes_preserve_content_and_metadata","ResourceCapture.test_dependency_origin_requires_bound_lock_even_after_index_rehash","ResourceCapture.test_developer_resource_selection_changes_trust_and_bytes_change_watch","ResourceCapture.test_forged_dependency_mapping_without_lock_cannot_package_bytes","ResourceCapture.test_media_and_closed_manifest_schema_cannot_be_extended_implicitly","ResourceCapture.test_missing_file_and_unobserved_host_path_fail_without_reading_host","ResourceCapture.test_missing_or_excluded_resources_cannot_reuse_approved_snapshot","ResourceCapture.test_mixed_origins_bind_both_inputs_and_preserve_shared_immutable_objects","ResourceCapture.test_only_declared_files_are_captured_and_equal_bytes_share_an_object","ResourceCapture.test_rehashed_dependency_index_cannot_adopt_ambiguous_owner","ResourceCapture.test_rehashed_index_cannot_reorder_selected_resources","ResourceCapture.test_rehashed_resource_indexes_cannot_adopt_superscript_device_aliases","ResourceCapture.test_resource_order_has_deterministic_selected_identity","ResourceCapture.test_six_language_package_inputs_include_index_and_original_bytes","ResourceCapture.test_source_component_and_dependency_changes_invalidate_resource_identity","ResourceCapture.test_source_only_and_declared_empty_resource_behavior","ResourceCapture.test_tamper_missing_object_or_unlisted_object_fails_exact_inventory","ResourceCapture.test_transitive_resource_owner_and_bytes_must_belong_to_reviewed_capture","ResourceCapture.test_valid_unicode_and_undeclared_device_names_keep_the_original_selection_rules","ResourceCapture.test_windows_superscript_device_aliases_are_rejected_in_paths_and_sources"],
   "guards":{
     "ResourceCapture.test_windows_superscript_device_aliases_are_rejected_in_paths_and_sources":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_rehashed_resource_indexes_cannot_adopt_superscript_device_aliases":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_valid_unicode_and_undeclared_device_names_keep_the_original_selection_rules":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_declared_utf8_and_binary_bytes_preserve_content_and_metadata":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_only_declared_files_are_captured_and_equal_bytes_share_an_object":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_resource_order_has_deterministic_selected_identity":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_rehashed_index_cannot_reorder_selected_resources":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_missing_file_and_unobserved_host_path_fail_without_reading_host":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_case_unicode_and_file_directory_collisions_are_rejected":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_media_and_closed_manifest_schema_cannot_be_extended_implicitly":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_count_name_file_and_aggregate_limits_are_enforced":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_source_component_and_dependency_changes_invalidate_resource_identity":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_tamper_missing_object_or_unlisted_object_fails_exact_inventory":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_transitive_resource_owner_and_bytes_must_belong_to_reviewed_capture":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_rehashed_dependency_index_cannot_adopt_ambiguous_owner":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_forged_dependency_mapping_without_lock_cannot_package_bytes":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_dependency_origin_requires_bound_lock_even_after_index_rehash":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_application_origin_requires_bound_manifest_even_after_index_rehash":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_mixed_origins_bind_both_inputs_and_preserve_shared_immutable_objects":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_six_language_package_inputs_include_index_and_original_bytes":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_source_only_and_declared_empty_resource_behavior":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_developer_resource_selection_changes_trust_and_bytes_change_watch":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "ResourceCapture.test_missing_or_excluded_resources_cannot_reuse_approved_snapshot":
-      "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0",
+      "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0",
     "DependencyIndexProvenance.test_rehashed_owner_must_belong_to_the_actual_bound_lock":
-      "8ad3c8d6a5f8f85bbe23df43479b208d4445e725f62a03474f9f214ba0ebac81",
+      "47f6aea5d187ce7750d847cc514f206e46d45269bd1410706980754c2e3096d1",
     "DependencyIndexProvenance.test_captured_owner_cannot_claim_another_owners_or_unobserved_bytes":
-      "8ad3c8d6a5f8f85bbe23df43479b208d4445e725f62a03474f9f214ba0ebac81",
+      "47f6aea5d187ce7750d847cc514f206e46d45269bd1410706980754c2e3096d1",
     "DependencyIndexProvenance.test_digest_only_wrong_type_and_substituted_lock_cannot_supply_membership":
-      "8ad3c8d6a5f8f85bbe23df43479b208d4445e725f62a03474f9f214ba0ebac81",
+      "47f6aea5d187ce7750d847cc514f206e46d45269bd1410706980754c2e3096d1",
     "DependencyIndexProvenance.test_bound_lock_document_rejects_malformed_duplicate_nonfinite_and_oversized_input":
-      "8ad3c8d6a5f8f85bbe23df43479b208d4445e725f62a03474f9f214ba0ebac81",
+      "47f6aea5d187ce7750d847cc514f206e46d45269bd1410706980754c2e3096d1",
     "DependencyIndexProvenance.test_ambiguous_owner_or_changed_file_inventory_cannot_authenticate_resource":
-      "8ad3c8d6a5f8f85bbe23df43479b208d4445e725f62a03474f9f214ba0ebac81",
+      "47f6aea5d187ce7750d847cc514f206e46d45269bd1410706980754c2e3096d1",
     "DependencyIndexProvenance.test_valid_mixed_origins_and_shared_owner_bytes_keep_index_identity_and_parse_lock_once":
-      "8ad3c8d6a5f8f85bbe23df43479b208d4445e725f62a03474f9f214ba0ebac81"
+      "47f6aea5d187ce7750d847cc514f206e46d45269bd1410706980754c2e3096d1"
   },
   "guardDefinitions":{
-    "0f729cf09fde7ef9c99bc135b31bff91685f021c18fd84008cb19a68b28fb8b0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8f6e60041145705c7beeac5b642af4fbeb0befbc92b8e1b141f51cea249d03dd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
-    "8ad3c8d6a5f8f85bbe23df43479b208d4445e725f62a03474f9f214ba0ebac81":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8f6e60041145705c7beeac5b642af4fbeb0befbc92b8e1b141f51cea249d03dd","class:setup-sha256:69d337338eea59bf67dc34a5447e3edc06682c6463e65145dc6578730c92f734"]}
+    "1dfd5b6ea81cd9d0fef5ee42cf79dd299f8530fdddc113d48c01ff182c6298a0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:787f636f5ca6d6259683d996d4d7504f848aaec7861f4094c672e8d729ee9024","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "47f6aea5d187ce7750d847cc514f206e46d45269bd1410706980754c2e3096d1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:787f636f5ca6d6259683d996d4d7504f848aaec7861f4094c672e8d729ee9024","class:setup-sha256:59d855dfe391fba0181593e5aabe23d9d041b4012967bed1c4bbd2c0c5573b60"]}
   }
 }

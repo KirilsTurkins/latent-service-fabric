@@ -52,11 +52,29 @@ or replace declaration membership by changing its origin. The manifest is decode
 once; verification opens no host files. Dependency-only indexes without a bound
 manifest keep their existing lock-only verification path.
 
-This proves declaration membership, not an independent reconstruction of the
-original source files. The caller still authenticates the source snapshot and
-component identities; object digests and exact bytes, captured compiler inputs
-and the ordinary signed package retain their existing roles. Manifest source
-paths are validated but never resolved against a host filesystem by verification.
+Application selections also require the actual captured inventory bytes through
+`source_inventory`. Before decoding, the bytes must match the external source
+digest and index binding within the maintained source-inventory read limit of
+4 MiB. The inventory is bounded at the existing 4096 captured-source entry limit.
+Its manifest entry must contain the exact manifest digest and size. Every
+declared source path must contain the exact digest and integer byte size of its
+resource object; renamed inventory entries, changed bytes and malformed selected
+metadata are refused. The inventory is decoded once, with no host path lookup.
+Declared-empty selections still bind their manifest entry. Dependency-only
+selections without a manifest do not need or parse an application inventory.
+
+The shared six-language package assembler performs this verification before
+writing resource layers. Changed source bytes at the same path cannot produce a
+resource package against a stale captured inventory. Equal and empty bytes keep
+their existing object and stream mappings; unselected source files stay absent
+from the resource inventory.
+
+These are membership proofs within externally bound captured inputs. The caller
+still authenticates source, component and graph identities and signatures; the
+ordinary compiler observation and signed package retain their roles. Verification
+does not reconstruct original source files or establish that a component executes
+a language's runtime resource API. Manifest source paths are never resolved
+against a host filesystem by verification.
 
 Verification of a dependency-origin row also requires the actual reviewed lock
 bytes through the explicit `dependency_lock` input, bounded at 8 MiB. The bytes

@@ -10,9 +10,9 @@ import unittest
 from tools import guest_resources as resources
 from tools.dev_workflow.common import digest, encode
 from tools.rust_capsule_build import package_inputs
+from tools.rust_capsule_project import inventory
 
 COMPONENT = b"\0asm component fixture bytes"
-SOURCE = b"captured source inventory"
 
 
 def manifest(rows):
@@ -27,9 +27,17 @@ def captured():
     return {resources.MANIFEST: manifest([row()]), "assets/greeting.txt": "Hallo ☃\n".encode()}
 
 
-def check(packaged, *, source=SOURCE, component=COMPONENT, dependency=None, files=None):
+def source_inputs(files):
+    # This fixture's dependency capture has its own lock binding, separate
+    # from the application snapshot whose resource membership is under test.
+    return inventory({path: data for path, data in files.items()
+                      if path != "latent.dependencies.lock.json" and not path.startswith("dependencies/")})
+
+
+def check(packaged, *, source=None, component=COMPONENT, dependency=None, files=None):
     files = captured() if files is None else files
-    return resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(source),
+    return resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(source_inputs(files) if source is None else source),
+                            source_inventory=source_inputs(files),
                             component_digest=digest(component), manifest_digest=packaged.index["manifestDigest"],
                             dependency_lock_digest=dependency, manifest=files.get(resources.MANIFEST))
 
@@ -49,19 +57,19 @@ class ResourceCapture(unittest.TestCase):
                         original = copy.deepcopy(files)
                         with self.subTest(name=name, field=field):
                             with self.assertRaises(resources.ResourceError) as raised:
-                                resources.capture(files, COMPONENT, SOURCE)
+                                resources.capture(files, COMPONENT, source_inputs(files))
                             self.assertEqual((raised.exception.category, raised.exception.code),
                                              ("denied", "resource-name-alias-or-traversal"))
                             self.assertEqual(files, original)
 
     def test_rehashed_resource_indexes_cannot_adopt_superscript_device_aliases(self):
-        packaged = resources.capture(captured(), COMPONENT, SOURCE)
+        packaged = resources.capture(captured(), COMPONENT, source_inputs(captured()))
         for name in ("COM\u00b9.txt", "LPT\u00b2", "data/COM\u00b3/file.txt"):
             changed = copy.deepcopy(packaged.index)
             changed["resources"][0]["path"] = name
             changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
             with self.subTest(name=name), self.assertRaisesRegex(resources.ResourceError, "alias-or-traversal"):
-                resources.verify(encode(changed), packaged.objects, source_digest=digest(SOURCE),
+                resources.verify(encode(changed), packaged.objects, source_digest=digest(source_inputs(captured())), source_inventory=source_inputs(captured()),
                     component_digest=digest(COMPONENT), manifest_digest=packaged.index["manifestDigest"])
 
     def test_valid_unicode_and_undeclared_device_names_keep_the_original_selection_rules(self):
@@ -70,17 +78,18 @@ class ResourceCapture(unittest.TestCase):
         payload = b"\x00\xffexact immutable bytes\n"
         files = {resources.MANIFEST: manifest([row(path=name, source=source) for name in names]), source: payload,
                  "COM\u00b9.txt": b"undeclared bytes must not be packaged"}
-        packaged = resources.capture(files, COMPONENT, SOURCE)
+        packaged = resources.capture(files, COMPONENT, source_inputs(files))
         self.assertEqual([row["path"] for row in check(packaged, files=files)["resources"]], sorted(names))
         self.assertEqual(list(packaged.objects.values()), [payload])
         self.assertIsNone(resources.select({"COM\u00b9.txt": b"undeclared"}))
-        self.assertIsNone(resources.capture({"LPT\u00b2": b"undeclared"}, COMPONENT, SOURCE))
+        undeclared = {"LPT\u00b2": b"undeclared"}
+        self.assertIsNone(resources.capture(undeclared, COMPONENT, source_inputs(undeclared)))
 
     def test_declared_utf8_and_binary_bytes_preserve_content_and_metadata(self):
         files = captured()
         files[resources.MANIFEST] = manifest([row(), row("binary/data.bin", "assets/data.bin", "application/octet-stream")])
         files["assets/data.bin"] = b"\0\xff\xfe\x80\n"
-        packaged = resources.capture(files, COMPONENT, SOURCE)
+        packaged = resources.capture(files, COMPONENT, source_inputs(files))
         value = check(packaged, files=files)
         self.assertEqual(value["count"], 2)
         self.assertEqual(value["bytes"], len(files["assets/greeting.txt"]) + len(files["assets/data.bin"]))
@@ -92,7 +101,7 @@ class ResourceCapture(unittest.TestCase):
         files = captured()
         files["private.txt"] = b"must not be packaged"
         files[resources.MANIFEST] = manifest([row(), row("copy.txt")])
-        packaged = resources.capture(files, COMPONENT, SOURCE)
+        packaged = resources.capture(files, COMPONENT, source_inputs(files))
         self.assertEqual(len(packaged.objects), 1)
         self.assertNotIn(b"must not be packaged", packaged.objects.values())
         self.assertEqual(check(packaged, files=files)["count"], 2)
@@ -101,11 +110,11 @@ class ResourceCapture(unittest.TestCase):
         files = captured()
         rows = [row(), row("copy.txt")]
         files[resources.MANIFEST] = manifest(rows)
-        first = resources.capture(files, COMPONENT, SOURCE)
+        first = resources.capture(files, COMPONENT, source_inputs(files))
         # Input manifest identity intentionally changes with source order;
         # selected resource/object order remains deterministic.
         files[resources.MANIFEST] = manifest(list(reversed(rows)))
-        second = resources.capture(files, COMPONENT, SOURCE)
+        second = resources.capture(files, COMPONENT, source_inputs(files))
         self.assertEqual(first.index["resources"], second.index["resources"])
         self.assertEqual(first.objects, second.objects)
         self.assertNotEqual(first.index["manifestDigest"], second.index["manifestDigest"])
@@ -113,7 +122,7 @@ class ResourceCapture(unittest.TestCase):
     def test_rehashed_index_cannot_reorder_selected_resources(self):
         files = captured()
         files[resources.MANIFEST] = manifest([row(), row("copy.txt")])
-        packaged = resources.capture(files, COMPONENT, SOURCE)
+        packaged = resources.capture(files, COMPONENT, source_inputs(files))
         self.assertEqual([item["path"] for item in packaged.index["resources"]],
                          ["copy.txt", "data/greeting.txt"])
         changed = copy.deepcopy(packaged.index)
@@ -127,10 +136,10 @@ class ResourceCapture(unittest.TestCase):
         for source in ("missing.txt", "/etc/passwd", "../private.txt", "C:/private.txt", "encoded%2fpath"):
             files[resources.MANIFEST] = manifest([row(source=source)])
             with self.subTest(source=source), self.assertRaises(resources.ResourceError):
-                resources.capture(files, COMPONENT, SOURCE)
+                resources.capture(files, COMPONENT, source_inputs(files))
         files[resources.MANIFEST] = manifest([row(source="missing.txt")])
         try:
-            resources.capture(files, COMPONENT, SOURCE)
+            resources.capture(files, COMPONENT, source_inputs(files))
         except resources.ResourceError as error:
             self.assertEqual(error.category, "missing")
 
@@ -140,7 +149,7 @@ class ResourceCapture(unittest.TestCase):
             files = captured()
             files[resources.MANIFEST] = manifest([row(path=first), row(path=second)])
             with self.subTest(first=first, second=second), self.assertRaises(resources.ResourceError):
-                resources.capture(files, COMPONENT, SOURCE)
+                resources.capture(files, COMPONENT, source_inputs(files))
         with self.assertRaisesRegex(resources.ResourceError, "not-normalized"):
             resources.name("data/cafe\u0301.txt")
         with self.assertRaisesRegex(resources.ResourceError, "encoding"):
@@ -154,45 +163,45 @@ class ResourceCapture(unittest.TestCase):
                       {"schemaVersion": resources.PROFILE, "resources": [row(media="text/plain; private=secret")]}):
             files[resources.MANIFEST] = encode(value)
             with self.assertRaises(resources.ResourceError):
-                resources.capture(files, COMPONENT, SOURCE)
+                resources.capture(files, COMPONENT, source_inputs(files))
 
     def test_count_name_file_and_aggregate_limits_are_enforced(self):
         from unittest.mock import patch
         files = captured()
         files[resources.MANIFEST] = manifest([row(path=str(number)) for number in range(resources.MAX_COUNT + 1)])
         with self.assertRaisesRegex(resources.ResourceError, "count-limit"):
-            resources.capture(files, COMPONENT, SOURCE)
+            resources.capture(files, COMPONENT, source_inputs(files))
         with self.assertRaisesRegex(resources.ResourceError, "name-limit"):
             resources.name("a" * (resources.MAX_NAME + 1))
         files[resources.MANIFEST] = manifest([row()])
         with patch.object(resources, "MAX_FILE", 1), self.assertRaisesRegex(resources.ResourceError, "byte-limit"):
-            resources.capture(files, COMPONENT, SOURCE)
+            resources.capture(files, COMPONENT, source_inputs(files))
         with patch.object(resources, "MAX_TOTAL", 1), self.assertRaisesRegex(resources.ResourceError, "byte-limit"):
-            resources.capture(files, COMPONENT, SOURCE)
+            resources.capture(files, COMPONENT, source_inputs(files))
 
     def test_source_component_and_dependency_changes_invalidate_resource_identity(self):
         files = captured()
-        packaged = resources.capture(files, COMPONENT, SOURCE)
+        packaged = resources.capture(files, COMPONENT, source_inputs(files))
         for values in ({"source": b"different source"}, {"component": b"different component"},
                        {"dependency": digest(b"new lock")}):
             with self.subTest(values=values), self.assertRaisesRegex(resources.ResourceError, "source-binding"):
                 check(packaged, **values)
         with self.assertRaisesRegex(resources.ResourceError, "source-binding"):
-            resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+            resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files),
                 component_digest=digest(COMPONENT), manifest_digest=digest(b"changed declaration manifest"))
 
     def test_tamper_missing_object_or_unlisted_object_fails_exact_inventory(self):
-        packaged = resources.capture(captured(), COMPONENT, SOURCE)
+        packaged = resources.capture(captured(), COMPONENT, source_inputs(captured()))
         path = next(iter(packaged.objects))
         for objects, code in (({path: b"same path new bytes"}, "integrity"), ({}, "missing"),
                               ({**packaged.objects, "extra": b"unlisted"}, "inventory")):
             with self.subTest(code=code), self.assertRaisesRegex(resources.ResourceError, code):
-                resources.verify(encode(packaged.index), objects, source_digest=digest(SOURCE), component_digest=digest(COMPONENT),
+                resources.verify(encode(packaged.index), objects, source_digest=digest(source_inputs(captured())), source_inventory=source_inputs(captured()), component_digest=digest(COMPONENT),
                                  manifest_digest=digest(captured()[resources.MANIFEST]), manifest=captured()[resources.MANIFEST])
         changed = {**packaged.index, "scratchStorage": "host-tmp"}
         changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
         with self.assertRaisesRegex(resources.ResourceError, "profile"):
-            resources.verify(encode(changed), packaged.objects, source_digest=digest(SOURCE), component_digest=digest(COMPONENT),
+            resources.verify(encode(changed), packaged.objects, source_digest=digest(source_inputs(captured())), source_inventory=source_inputs(captured()), component_digest=digest(COMPONENT),
                              manifest_digest=digest(captured()[resources.MANIFEST]))
 
     def test_transitive_resource_owner_and_bytes_must_belong_to_reviewed_capture(self):
@@ -200,14 +209,14 @@ class ResourceCapture(unittest.TestCase):
         lock = {"artifacts": [{"id": "private:transitive:2.0", "files": [{"path": "data.txt", "digest": digest(payload), "size": len(payload)}]}]}
         files = {"latent.dependencies.lock.json": encode(lock), "dependencies/java-resources/data.txt": payload}
         additional = {**row("data.txt", "dependencies/java-resources/data.txt"), "digest": digest(payload), "owner": "private:transitive:2.0"}
-        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
-        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+        packaged = resources.capture(files, COMPONENT, source_inputs(files), additional_resources=[additional])
+        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files),
                                  component_digest=digest(COMPONENT), dependency_lock_digest=digest(files["latent.dependencies.lock.json"]),
                                  dependency_lock=files["latent.dependencies.lock.json"])
         self.assertEqual(value["resources"][0]["origin"], "dependency")
         for key, value in (("owner", "private:not-captured:1.0"), ("digest", digest(b"changed"))):
             with self.subTest(key=key), self.assertRaises(resources.ResourceError):
-                resources.capture(files, COMPONENT, SOURCE, additional_resources=[{**additional, key: value}])
+                resources.capture(files, COMPONENT, source_inputs(files), additional_resources=[{**additional, key: value}])
 
     def test_rehashed_dependency_index_cannot_adopt_ambiguous_owner(self):
         payload = b"captured transitive bytes"
@@ -215,23 +224,23 @@ class ResourceCapture(unittest.TestCase):
         lock = {"artifacts": [{"id": owner, "files": [{"path": "data.txt", "digest": digest(payload), "size": len(payload)}]}]}
         files = {"latent.dependencies.lock.json": encode(lock), "dependencies/java-resources/data.txt": payload}
         additional = {**row("data.txt", "dependencies/java-resources/data.txt"), "digest": digest(payload), "owner": owner}
-        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+        packaged = resources.capture(files, COMPONENT, source_inputs(files), additional_resources=[additional])
         for forged in ("private:other..owner:2.0", "private:other//owner:2.0"):
             changed = copy.deepcopy(packaged.index)
             changed["resources"][0]["owner"] = forged
             changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
             with self.subTest(owner=forged), self.assertRaisesRegex(resources.ResourceError, "resource-index-origin"):
-                resources.verify(encode(changed), packaged.objects, source_digest=digest(SOURCE),
+                resources.verify(encode(changed), packaged.objects, source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files),
                     component_digest=digest(COMPONENT), dependency_lock_digest=digest(files["latent.dependencies.lock.json"]))
 
     def test_forged_dependency_mapping_without_lock_cannot_package_bytes(self):
         files = {"data.txt": b"outside unverified data"}
         additional = {**row("data.txt", "data.txt"), "digest": digest(files["data.txt"]), "owner": "external:unknown:1.0"}
         with self.assertRaisesRegex(resources.ResourceError, "lock-missing"):
-            resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+            resources.capture(files, COMPONENT, source_inputs(files), additional_resources=[additional])
 
     def test_dependency_origin_requires_bound_lock_even_after_index_rehash(self):
-        packaged = resources.capture(captured(), COMPONENT, SOURCE)
+        packaged = resources.capture(captured(), COMPONENT, source_inputs(captured()))
         self.assertEqual(check(packaged)["resources"][0]["origin"], "application")
         self.assertIsNone(packaged.index["dependencyLockDigest"])
         changed = copy.deepcopy(packaged.index)
@@ -248,9 +257,9 @@ class ResourceCapture(unittest.TestCase):
         lock = {"artifacts": [{"id": owner, "files": [{"path": "data.txt", "digest": digest(payload), "size": len(payload)}]}]}
         files = {"latent.dependencies.lock.json": encode(lock), "dependencies/data.txt": payload}
         additional = {**row("data.txt", "dependencies/data.txt"), "digest": digest(payload), "owner": owner}
-        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+        packaged = resources.capture(files, COMPONENT, source_inputs(files), additional_resources=[additional])
         dependency = digest(files["latent.dependencies.lock.json"])
-        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files),
                                  component_digest=digest(COMPONENT), dependency_lock_digest=dependency,
                                  dependency_lock=files["latent.dependencies.lock.json"])
         self.assertEqual(value["resources"][0]["origin"], "dependency")
@@ -260,7 +269,7 @@ class ResourceCapture(unittest.TestCase):
         changed["resources"][0].pop("owner")
         changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
         with self.assertRaises(resources.ResourceError) as raised:
-            check(resources.PackagedResources(changed, packaged.objects), dependency=dependency)
+            check(resources.PackagedResources(changed, packaged.objects), dependency=dependency, files=files)
         self.assertEqual((raised.exception.category, raised.exception.code),
                          ("denied", "resource-index-origin-binding-missing"))
 
@@ -272,8 +281,8 @@ class ResourceCapture(unittest.TestCase):
         files.update({"latent.dependencies.lock.json": encode(lock), "dependencies/data.txt": payload})
         additional = {**row("dependency/data.txt", "dependencies/data.txt"), "digest": digest(payload), "owner": owner}
         before = copy.deepcopy(files)
-        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
-        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+        packaged = resources.capture(files, COMPONENT, source_inputs(files), additional_resources=[additional])
+        value = resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files),
                                  component_digest=digest(COMPONENT), manifest_digest=digest(files[resources.MANIFEST]),
                                  dependency_lock_digest=digest(files["latent.dependencies.lock.json"]),
                                  dependency_lock=files["latent.dependencies.lock.json"], manifest=files[resources.MANIFEST])
@@ -293,7 +302,7 @@ class ResourceCapture(unittest.TestCase):
                          "vendor/lsf/Cargo.toml": b'[workspace.package]\nversion="0.1.0-alpha.5"\n'}
                 project = {"name": "resource-fixture", "tenant": "examples", "service": "examples/resource-fixture",
                            "world": "examples:resource-fixture/service@1.0.0", "version": "1.0.0", "limits": {}}
-                (output / "source-inputs.json").write_bytes(SOURCE)
+                (output / "source-inputs.json").write_bytes(source_inputs(files))
                 package_inputs(output, project, {"imports": [], "exports": []}, files, COMPONENT)
                 source = json.loads((output / "package-source.json").read_bytes())
                 layers = {item["path"]: item for item in source["layers"]}
@@ -301,14 +310,14 @@ class ResourceCapture(unittest.TestCase):
                 index = json.loads((output / resources.INDEX).read_bytes())
                 objects = {item["object"]: (output / item["object"]).read_bytes() for item in index["resources"]}
                 resources.verify((output / resources.INDEX).read_bytes(), objects,
-                                 source_digest=digest(SOURCE), component_digest=digest(COMPONENT),
+                                 source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files), component_digest=digest(COMPONENT),
                                  manifest_digest=digest(files[resources.MANIFEST]), manifest=files[resources.MANIFEST])
                 self.assertEqual(list(objects.values()), [files["assets/greeting.txt"]])
 
     def test_source_only_and_declared_empty_resource_behavior(self):
-        self.assertIsNone(resources.capture({}, COMPONENT, SOURCE))
+        self.assertIsNone(resources.capture({}, COMPONENT, source_inputs({})))
         files = {resources.MANIFEST: manifest([])}
-        packaged = resources.capture(files, COMPONENT, SOURCE)
+        packaged = resources.capture(files, COMPONENT, source_inputs(files))
         self.assertEqual(check(packaged, files=files)["count"], 0)
 
     def test_developer_resource_selection_changes_trust_and_bytes_change_watch(self):
@@ -367,10 +376,10 @@ class DependencyIndexProvenance(unittest.TestCase):
                  "latent.dependencies.lock.json": encode(lock)}
         additional = {**row("dependency/data.bin", "dependencies/data.bin", "application/octet-stream"),
                       "digest": digest(payload), "owner": "external:owner-a:1.0"}
-        return files, resources.capture(files, COMPONENT, SOURCE, additional_resources=[additional])
+        return files, resources.capture(files, COMPONENT, source_inputs(files), additional_resources=[additional])
 
     def verify(self, packaged, files, dependency_lock):
-        return resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(SOURCE),
+        return resources.verify(encode(packaged.index), packaged.objects, source_digest=digest(source_inputs(files)), source_inventory=source_inputs(files),
                                 component_digest=digest(COMPONENT), manifest_digest=digest(files[resources.MANIFEST]),
                                 dependency_lock_digest=digest(files["latent.dependencies.lock.json"]),
                                 dependency_lock=dependency_lock, manifest=files[resources.MANIFEST])
@@ -466,7 +475,7 @@ class DependencyIndexProvenance(unittest.TestCase):
         additional = [{**row("dependency/" + str(number) + ".bin", "dependencies/data.bin", "application/octet-stream"),
                        "digest": digest(payload), "owner": artifact["id"]} for number, artifact in enumerate(lock["artifacts"])]
         before = copy.deepcopy(files)
-        packaged = resources.capture(files, COMPONENT, SOURCE, additional_resources=additional)
+        packaged = resources.capture(files, COMPONENT, source_inputs(files), additional_resources=additional)
         with patch.object(resources, "dependency_artifacts", wraps=resources.dependency_artifacts) as parsed:
             value = self.verify(packaged, files, files["latent.dependencies.lock.json"])
         self.assertEqual(parsed.call_count, 1)
