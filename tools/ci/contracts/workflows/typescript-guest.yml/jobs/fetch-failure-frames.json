@@ -98,6 +98,17 @@
       },
       {
         "if": "always()",
+        "name": "Retain authenticated private observer tuple for exact replay reuse",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-fetch-private-host-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fetch-frames/private-latentd\n${{ runner.temp }}/typescript-fetch-frames/private-host-identity.json\n",
+          "retention-days": 1
+        }
+      },
+      {
+        "if": "always()",
         "name": "Retain only closed observations and original public CLI rows",
         "uses": "actions/upload-artifact",
         "with": {
@@ -112,7 +123,7 @@
   },
   "jobId": "fetch-failure-frames",
   "kind": "job",
-  "reviewReason": "Hydrate only exact original checksummed crates.io lock inputs through data-only locked fetch before unchanged offline private host build; retain setup output and hard bounds.",
+  "reviewReason": "Drain private host stderr through original graceful shutdown, validate multiple closed numeric records under global32-frame bound and retain authenticated private observer tuple for exact reuse.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

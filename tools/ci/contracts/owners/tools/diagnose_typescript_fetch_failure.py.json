@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Hydrate only exact original checksummed crates.io lock inputs through data-only locked fetch before unchanged offline private host build; retain setup output and hard bounds.",
+  "reviewReason": "Drain private host stderr through original graceful shutdown, validate multiple closed numeric records under global32-frame bound and retain authenticated private observer tuple for exact reuse.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cd21f40ed273ff2d7fd43185fb2c249f3611097e171dfc5cd040aa666334c674"
+  "sha256": "b6873e35d7122fbf1a46371c9e064ca514b3ea40d85600eac99d3733b01c1a45"
 }

@@ -640,6 +640,16 @@ jobs:
             ${{ runner.temp }}/typescript-fetch-frames/private-fetch.stdout.txt
           if-no-files-found: warn
           retention-days: 1
+      - name: Retain authenticated private observer tuple for exact replay reuse
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: typescript-fetch-private-host-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-fetch-frames/private-latentd
+            ${{ runner.temp }}/typescript-fetch-frames/private-host-identity.json
+          if-no-files-found: warn
+          retention-days: 1
       - name: Retain only closed observations and original public CLI rows
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

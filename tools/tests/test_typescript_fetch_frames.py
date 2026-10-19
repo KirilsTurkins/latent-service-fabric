@@ -79,7 +79,7 @@ class FetchFailureFrames(unittest.TestCase):
         numeric = {'available': True, 'truncated': False,
                    'frames': [{'functionIndex': 17, 'functionOffset': 23, 'moduleOffset': 101}]}
         service = SimpleNamespace(owner=SimpleNamespace(finished=True), close=Mock(), buffers=[b'',
-            b'PRIVATE credential/path/error\n'+fetch.frames.PREFIX+json.dumps(numeric).encode()+b'\n'])
+            bytearray(b'PRIVATE credential/path/error\n')])
         peer = Mock()
         peer.line.return_value = {'origins': {'primary': {'host': '127.0.0.1', 'port': 12345}}}
         client = Mock()
@@ -94,6 +94,8 @@ class FetchFailureFrames(unittest.TestCase):
                                 ('grants', ([], ['unchanged-grants'])), ('deploy', {'budget': 'original'}), ('call', row)):
                 stack.enter_context(patch.object(fetch.fetch, name, return_value=value))
             called = fetch.fetch.call
+            stopped = stack.enter_context(patch.object(fetch.fetch, 'stop', side_effect=lambda *_:
+                service.buffers[1].__iadd__(fetch.frames.PREFIX+json.dumps(numeric).encode()+b'\n')))
             stack.enter_context(patch.object(fetch, 'Process', return_value=peer))
             stack.enter_context(patch.object(fetch, 'run_bounded_result', return_value=SimpleNamespace(returncode=0)))
             observed = fetch.replay(root/'artifact', binaries, root/'output')
@@ -105,6 +107,7 @@ class FetchFailureFrames(unittest.TestCase):
             self.assertNotIn('PRIVATE', json.dumps(observed))
             self.assertEqual(called.call_args.args[2:], ('typescript-fetch', 'run',
                 [0, 'http://127.0.0.1:12345/conformance/json'], 'fetch-json'))
+            stopped.assert_called_once_with(client, service)
             service.close.assert_called_once()
             peer.close.assert_called_once()
 
@@ -151,6 +154,31 @@ class FetchFailureFrames(unittest.TestCase):
         for raw in (line(good)*17, b'x'*262145, fetch.REGISTER_PREFIX + b'x'*513):
             with self.assertRaises((WorkflowError, ValueError)):
                 fetch.registration_failures(raw)
+
+    def test_numeric_capture_handles_large_nonrecord_output_and_multiple_closed_records(self):
+        value = {'available': True, 'truncated': False, 'frames': [
+            {'functionIndex': 17, 'functionOffset': 23, 'moduleOffset': 101}]*32}
+        line = fetch.frames.PREFIX+json.dumps(value).encode()+b'\n'
+        observed = fetch.frame_capture(b'private-noise\n'*5000+line*2)
+        self.assertEqual(observed['status'], 'observed')
+        self.assertEqual(observed['observedRecords'], 2)
+        self.assertEqual(sum(len(row['frames']) for row in observed['records']), 32)
+        self.assertTrue(observed['records'][1]['truncated'])
+        self.assertNotIn('private-noise', json.dumps(observed))
+        self.assertEqual(fetch.frame_capture(b'other')['status'], 'absent')
+        self.assertEqual(fetch.frame_capture(line*17)['status'], 'refused-record-limit')
+        bad = fetch.frames.PREFIX+json.dumps({**value, 'private': 'secret'}).encode()+b'\n'
+        self.assertEqual(fetch.frame_capture(bad)['status'], 'refused-closed-record')
+        with self.assertRaises(WorkflowError):
+            fetch.frame_capture(b'x'*262145)
+
+    def test_private_host_identity_requires_both_compiled_observer_markers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory)/'owned-private-host'
+            binary.write_bytes(b'x'*65530+fetch.frames.PREFIX+b'padding'+fetch.REGISTER_PREFIX)
+            self.assertEqual(fetch.private_host_markers(binary), {'numericFrames': True, 'registrationFailures': True})
+            binary.write_bytes(fetch.frames.PREFIX)
+            self.assertEqual(fetch.private_host_markers(binary), {'numericFrames': True, 'registrationFailures': False})
 
     def test_private_build_adds_only_the_third_readonly_overlay_to_reviewed_boundary(self):
         root = Path('/owned-workspace')

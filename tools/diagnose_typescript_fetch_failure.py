@@ -117,6 +117,43 @@ def registration_failures(data: bytes) -> dict:
             'qualification': False, 'causeInferredFromAbsence': False}
 
 
+
+def frame_capture(data: bytes) -> dict:
+    """Read bounded closed records, retaining at most 32 numeric frames total."""
+    require(type(data) is bytes and len(data) <= 262144, 'fetch-frame-private-stderr-bound')
+    rows = [line for line in data.splitlines() if line.startswith(frames.PREFIX)]
+    record = {'stderrBytes': len(data), 'observedRecords': len(rows), 'retainedFrameLimit': 32,
+              'records': [], 'status': 'absent' if not rows else 'observed', 'rawOutputRetained': False}
+    if len(rows) > 16:
+        return {**record, 'status': 'refused-record-limit'}
+    remaining = 32
+    for row in rows:
+        try:
+            value = frames.numeric_frames(row+b'\n')
+        except (ValueError, TypeError, KeyError, WorkflowError):
+            return {**record, 'status': 'refused-closed-record', 'records': []}
+        count = len(value['frames'])
+        record['records'].append({**value, 'frames': value['frames'][:remaining],
+                                  'truncated': value['truncated'] or count > remaining})
+        remaining -= min(count, remaining)
+    return record
+
+
+def private_host_markers(binary: Path) -> dict:
+    markers = {'numericFrames': frames.PREFIX, 'registrationFailures': REGISTER_PREFIX}
+    found = {name: False for name in markers}
+    total, carry = 0, b''
+    with binary.open('rb') as source:
+        while chunk := source.read(65536):
+            total += len(chunk)
+            require(total <= 512*1024**2, 'fetch-frame-private-host-size')
+            window = carry+chunk
+            for name, value in markers.items():
+                found[name] = found[name] or value in window
+            carry = window[-max(map(len, markers.values())):]
+    return found
+
+
 def private_build_command(root, overlays, environment, tools, context):
     require(len(overlays) == 3 and [original.relative_to(root).as_posix() for _, original in overlays]
             == [*frames.PATHS, REGISTER_PATH], 'fetch-frame-three-overlay-set')
@@ -214,6 +251,9 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
             require(record['entry']['response']['data']['resolvedRevision']['releaseDigest'] == COMPONENT['sha256'],
                     'fetch-frame-replay-release')
             record['status'] = 'observed'
+            # The ordinary stop/complete path drains both pipes before closing.
+            # Emergency close alone can discard a trailing diagnostic record.
+            fetch.stop(client, service)
     finally:
         if service is not None:
             record['nodeReaped'] = service.owner.finished
@@ -224,9 +264,12 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
             # Only the existing strict numeric parser observes private stderr.
             # No raw buffer is written to any artifact, including failures.
             try:
-                record['numericFrames'] = frames.numeric_frames(bytes(service.buffers[1]))
+                capture = frame_capture(bytes(service.buffers[1]))
+                record['numericFrameCapture'] = capture
+                if capture['status'] == 'observed' and len(capture['records']) == 1:
+                    record['numericFrames'] = capture['records'][0]
             except (ValueError, TypeError, KeyError, WorkflowError):
-                record['frameCapture'] = 'unavailable-or-refused'
+                record['frameCapture'] = 'refused-stream-bound'
         write_json(output/'observation.json', record)
     return record
 
@@ -312,7 +355,7 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
     record = {'schemaVersion': 'latent.typescript.private-fetch-frames.v1',
         'qualification': False, 'status': 'incomplete', 'stage': 'inputs', 'testedCommit': TESTED,
         'component': COMPONENT, 'rawNodeOutputRetained': False, 'privateCompilerOutputRetained': True,
-        'privateBinaryPublished': False,
+        'privateBinaryPublished': True, 'privateBinaryScope': 'authenticated-private-observer-only;not-production',
         'helper': file_identity(Path(__file__)),
         'limits': {'overallSeconds': 600, 'buildSeconds': 450, 'registryFetchSeconds': 60, 'frames': 32, 'registrationFailures': 16, 'ownerCount': 8192}}
     try:
@@ -363,6 +406,12 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         shutil.copy2(target/'debug/latentd', private_host)
         record['privateHost'] = file_identity(private_host, 512*1024**2)
         require(record['privateHost'] != identity['nativeProducts']['latentd'], 'fetch-frame-private-host-unchanged')
+        record['privateHostMarkers'] = private_host_markers(private_host)
+        write_json(output/'private-host-identity.json', {'schemaVersion': 'latent.typescript.private-host.v1',
+            'qualification': False, 'sourceCommit': TESTED, 'component': COMPONENT,
+            'helper': record['helper'], 'sourceOverlays': sources, 'privateHost': record['privateHost'],
+            'markers': record['privateHostMarkers'], 'originalNative': identity})
+        require(all(record['privateHostMarkers'].values()), 'fetch-frame-observer-markers-missing')
         record['stage'] = 'original-package'
         package(artifact, originals['package'], output)
         record['originalBuild'] = fetch.build_evidence(artifact)
@@ -376,7 +425,8 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         known = {'fetch-frame-existing-native-target', 'go-entry-frame-source-set',
                  'go-entry-frame-environment', 'fetch-frame-three-overlay-set', 'fetch-frame-private-host-build',
                   'fetch-frame-locked-registry-hydration', 'fetch-frame-lock-drift-after-fetch',
-                  'fetch-frame-original-lock', 'fetch-frame-checksummed-registry-only'}
+                  'fetch-frame-original-lock', 'fetch-frame-checksummed-registry-only',
+                  'fetch-frame-observer-markers-missing'}
         record['guardReason'] = (error.args[0] if len(error.args) == 1 and type(error.args[0]) is str
                                  and error.args[0] in known else 'other')
     finally:
