@@ -80,6 +80,15 @@
             "default": false,
             "description": "Fresh descriptor reflection using exact already-qualified native products",
             "type": "boolean"
+          },
+          "reflection_suite": {
+            "default": "original",
+            "description": "Explicit reflection programme, used only with reflection_replay",
+            "options": [
+              "original",
+              "boundaries"
+            ],
+            "type": "choice"
           }
         }
       }
@@ -92,7 +101,7 @@
     "reflection-replay",
     "toolchain"
   ],
-  "reviewReason": "Add explicit manual-only original03a native-product reuse and fresh reflected-component build, retaining every normal command and default behavior.",
+  "reviewReason": "Add explicit original versus boundaries manual choice preserving default full qualification",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

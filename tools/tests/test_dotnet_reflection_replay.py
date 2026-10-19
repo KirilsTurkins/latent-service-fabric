@@ -118,5 +118,95 @@ class SourceDelta(unittest.TestCase):
                 self.assertNotEqual(replay.hashlib.sha256(replay.ast.dump(tree).encode()).hexdigest(),replay.ORIGINAL_RUNNER_AST)
 
 
+class BoundaryReplay(unittest.TestCase):
+    def exercise(self, boundaries, *, wrong_probe=False, changed_stage=False):
+        from contextlib import ExitStack
+        import time
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary, ExitStack() as controls:
+            root = Path(temporary)
+            output = root / 'result'
+            products = {name: root / name for name in replay.PRODUCTS}
+            source, receipt = {'frozen': 'source'}, {'sourceIdentityDigest': 'bound', 'binaries': {}}
+            staged = {'inventoryDigest': 'sha256:' + 'a' * 64,
+                      'files': {'tools/dotnet_guest/build.py': {'digest': 'sha256:' + 'b' * 64, 'size': 1}}}
+            calls = []
+            class Commands:
+                def __init__(self, *args, **kwargs): self.deadline = time.monotonic() + 1800
+                def run(self, *args): calls.append(args)
+            def create(path, name):
+                path.mkdir()
+                return path
+            def read(path, *args):
+                if path.name == 'compiler-containment.json':
+                    return {'network': 'denied', 'credentials': 'not-inherited'}
+                if path.name == 'recipe-inputs.json': return staged['files']
+                if path.name == 'BUILD-COMPLETE.json': return {'componentDigest': 'fresh'}
+                if path.name == 'retrieval.json': return {'compiledSource': replay.ORIGINAL_HEAD}
+                self.fail('unexpected reader: ' + path.name)
+            patches = {
+                'Commands': Commands, 'build_environment': lambda path: {},
+                'verify_prepared': lambda path: (source, receipt, products),
+                'inputs': lambda language: source, 'create': create,
+                'source_files': lambda project: {'source': b'owned bytes'},
+                'read_json': read, 'file_identity': lambda *args: {'sha256': 'sha256:' + 'c' * 64, 'bytes': 1},
+            }
+            for name, value in patches.items(): controls.enter_context(patch.object(replay, name, value))
+            controls.enter_context(patch.object(replay.dependencies, 'verify_inputs', return_value=SimpleNamespace(lock={'same': True})))
+            install = controls.enter_context(patch.object(replay, 'install', return_value={'dynamicAssembly': {'digest': 'bound'}}))
+            build = controls.enter_context(patch.object(replay, 'build', return_value=output / 'build'))
+            descriptor = controls.enter_context(patch.object(replay, 'descriptor_material', return_value={'descriptor': 'bound'}))
+            stage = controls.enter_context(patch.object(replay.staging, 'stage', return_value=staged))
+            controls.enter_context(patch.object(replay.staging, 'verify', return_value={} if changed_stage else staged))
+            key = 'dotnetReflectionBoundaries' if boundaries else 'dotnetReflection'
+            node = {'status': 'passed', key: {'status': 'passed', 'cases': list(range(6 if wrong_probe else 7 if boundaries else 4))},
+                    'invocations': list(range(34 if boundaries else 31)),
+                    'nodeShutdown': {'reaped': True, 'record': {'clean': True}}}
+            invoke = controls.enter_context(patch.object(replay, 'node_workflow', return_value=node))
+            result = replay.qualify(root / 'prepared', output, root / 'tools', boundaries=boundaries)
+            return result, calls, install.call_args, build.call_count, descriptor.call_args, stage.call_count, invoke.call_args
+
+    def test_boundary_mode_stages_real_recipe_selects_new_roots_and_requires_seven_cases(self):
+        result, calls, install, builds, descriptor, stages, invoke = self.exercise(True)
+        self.assertEqual(builds, 0)
+        self.assertEqual(stages, 1)
+        self.assertTrue(install.kwargs['boundaries'])
+        self.assertEqual(descriptor.kwargs['roots'], replay.BOUNDARY_ROOTS)
+        self.assertTrue(invoke.kwargs['dotnet_reflection_boundaries'])
+        self.assertNotIn('dotnet_reflection', invoke.kwargs)
+        compile_call, sign_call = calls
+        self.assertEqual(compile_call[:5], ('catalogue-free-native-aot', replay.sys.executable, '-I', '-S', '-B'))
+        self.assertIn('--expect-source-digest', compile_call)
+        self.assertEqual(sign_call[0], 'reflection-sign')
+        self.assertEqual(len(result['cases']), 7)
+        self.assertFalse(result['optionalReferenceDataPresentDuringBuild'])
+        self.assertFalse(result['nativeCargoProductsCompilationPerformed'])
+        self.assertFalse(result['normalQualificationRecreated'])
+        self.assertEqual(result['originalReflectionCasesRetained'], 4)
+
+    def test_default_mode_preserves_original_build_four_cases_and_descriptor(self):
+        result, calls, install, builds, descriptor, stages, invoke = self.exercise(False)
+        self.assertEqual(builds, 1)
+        self.assertEqual(stages, 0)
+        self.assertEqual(install.kwargs, {})
+        self.assertEqual(descriptor.kwargs, {})
+        self.assertTrue(invoke.kwargs['dotnet_reflection'])
+        self.assertNotIn('dotnet_reflection_boundaries', invoke.kwargs)
+        self.assertEqual([row[0] for row in calls], ['reflection-sign'])
+        self.assertEqual(len(result['cases']), 4)
+        self.assertNotIn('stagedBuildSource', result)
+
+    def test_incomplete_node_probe_or_changed_stage_cannot_be_qualified(self):
+        for change in ('wrong_probe', 'changed_stage'):
+            with self.subTest(change=change), self.assertRaises(WorkflowError):
+                self.exercise(True, **{change: True})
+
+    def test_boundary_selector_rejects_non_boolean_before_prepared_or_side_effects(self):
+        for value in ('true', 1, None):
+            with self.subTest(value=value), patch.object(replay, 'fresh') as fresh, self.assertRaises(WorkflowError):
+                replay.qualify(None, None, None, boundaries=value)
+            fresh.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

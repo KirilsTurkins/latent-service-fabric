@@ -61,7 +61,7 @@
       },
       {
         "name": "Test fixed public artifact and package identity controls",
-        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_reflection_replay tools.tests.test_dotnet_reflection\n"
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_reflection_replay tools.tests.test_dotnet_reflection\npython3 -m unittest tools.tests.test_dotnet_reflection_boundaries\n"
       },
       {
         "env": {
@@ -80,8 +80,14 @@
         "shell": "bash"
       },
       {
+        "if": "${{ inputs.reflection_suite != 'boundaries' }}",
         "name": "Compile, sign and execute ordinary descriptor reflection",
         "run": "python3 tools/replay_dotnet_reflection.py --prepared \"$RUNNER_TEMP/reflection-prepared\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-reflection\""
+      },
+      {
+        "if": "${{ inputs.reflection_suite == 'boundaries' }}",
+        "name": "Compile from catalogue-free source, sign and execute explicit reflection boundaries",
+        "run": "python3 tools/replay_dotnet_reflection.py --prepared \"$RUNNER_TEMP/reflection-prepared\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-reflection\" --boundaries"
       },
       {
         "if": "always()",
@@ -90,7 +96,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-reflection-replay-${{ github.sha }}",
-          "path": "${{ runner.temp }}/reflection-prepared/retrieval.json\n${{ runner.temp }}/dotnet-reflection/qualification.json\n${{ runner.temp }}/dotnet-reflection/FAILED.json\n${{ runner.temp }}/dotnet-reflection/capture.json\n${{ runner.temp }}/dotnet-reflection/build/*.json\n${{ runner.temp }}/dotnet-reflection/build/component.wasm\n${{ runner.temp }}/dotnet-reflection/build/logs/**\n${{ runner.temp }}/dotnet-reflection/node/workflow.json\n${{ runner.temp }}/dotnet-reflection/node/FAILED.json\n",
+          "path": "${{ runner.temp }}/reflection-prepared/retrieval.json\n${{ runner.temp }}/dotnet-reflection/qualification.json\n${{ runner.temp }}/dotnet-reflection/FAILED.json\n${{ runner.temp }}/dotnet-reflection/capture.json\n${{ runner.temp }}/dotnet-reflection/catalogue-free-source.json\n${{ runner.temp }}/dotnet-reflection/staged-recipe/BUILD-SOURCE-INVENTORY.json\n${{ runner.temp }}/dotnet-reflection/build/*.json\n${{ runner.temp }}/dotnet-reflection/build/component.wasm\n${{ runner.temp }}/dotnet-reflection/build/logs/**\n${{ runner.temp }}/dotnet-reflection/node/workflow.json\n${{ runner.temp }}/dotnet-reflection/node/FAILED.json\n",
           "retention-days": 3
         }
       }
@@ -99,7 +105,7 @@
   },
   "jobId": "reflection-replay",
   "kind": "job",
-  "reviewReason": "Correct receipt reader to existing 32 MiB producer bound after actual 5410904-byte successful offline build receipt; preserve every containment and runtime assertion.",
+  "reviewReason": "Retain original replay command and add explicit catalogue-free boundary selection and controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

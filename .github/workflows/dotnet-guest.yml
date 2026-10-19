@@ -62,6 +62,13 @@ on:
         description: Fresh descriptor reflection using exact already-qualified native products
         type: boolean
         default: false
+      reflection_suite:
+        description: Explicit reflection programme, used only with reflection_replay
+        type: choice
+        options:
+          - original
+          - boundaries
+        default: original
 
 permissions:
   contents: read
@@ -359,6 +366,7 @@ jobs:
         run: |
           python3 -m pip install -r tools/requirements.lock
           python3 -m unittest tools.tests.test_dotnet_reflection_replay tools.tests.test_dotnet_reflection
+          python3 -m unittest tools.tests.test_dotnet_reflection_boundaries
       - name: Retrieve only exact source-bound native products and companion packages
         env:
           GH_TOKEN: ${{ github.token }}
@@ -382,7 +390,11 @@ jobs:
           python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Compile, sign and execute ordinary descriptor reflection
+        if: ${{ inputs.reflection_suite != 'boundaries' }}
         run: python3 tools/replay_dotnet_reflection.py --prepared "$RUNNER_TEMP/reflection-prepared" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-reflection"
+      - name: Compile from catalogue-free source, sign and execute explicit reflection boundaries
+        if: ${{ inputs.reflection_suite == 'boundaries' }}
+        run: python3 tools/replay_dotnet_reflection.py --prepared "$RUNNER_TEMP/reflection-prepared" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-reflection" --boundaries
       - name: Retain fixed public evidence and owned component intermediates
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -393,6 +405,8 @@ jobs:
             ${{ runner.temp }}/dotnet-reflection/qualification.json
             ${{ runner.temp }}/dotnet-reflection/FAILED.json
             ${{ runner.temp }}/dotnet-reflection/capture.json
+            ${{ runner.temp }}/dotnet-reflection/catalogue-free-source.json
+            ${{ runner.temp }}/dotnet-reflection/staged-recipe/BUILD-SOURCE-INVENTORY.json
             ${{ runner.temp }}/dotnet-reflection/build/*.json
             ${{ runner.temp }}/dotnet-reflection/build/component.wasm
             ${{ runner.temp }}/dotnet-reflection/build/logs/**

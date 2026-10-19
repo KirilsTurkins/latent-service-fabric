@@ -20,7 +20,9 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_dotnet_reflection import PRODUCTS, COMPANIONS, descriptor_material
 from tools.dotnet_reflection_fixture import DESCRIPTOR, LOAD_INPUT, ROOTS
+from tools.dotnet_reflection_fixture import BOUNDARY_ROOTS
 from tools.dotnet_reflection_fixture import install
+from tools import dotnet_catalogue_free_build as staging
 from tools.dotnet_guest.project import create
 from tools.dotnet_guest.build import build
 from tools.dotnet_dependency_authoring import source_files
@@ -187,17 +189,19 @@ class NormalRunner(ast.NodeTransformer):
     def visit_FunctionDef(self, node):
         self.generic_visit(node)
         if node.name == 'run':
-            kept = [(a,d) for a,d in zip(node.args.kwonlyargs,node.args.kw_defaults) if a.arg != 'dotnet_reflection']
+            kept = [(a,d) for a,d in zip(node.args.kwonlyargs,node.args.kw_defaults)
+                    if a.arg not in {'dotnet_reflection', 'dotnet_reflection_boundaries'}]
             node.args.kwonlyargs, node.args.kw_defaults = [a for a,d in kept], [d for a,d in kept]
         return node
     def visit_If(self, node):
-        if isinstance(node.test,ast.Name) and node.test.id == 'dotnet_reflection':
+        if isinstance(node.test,ast.Name) and node.test.id in {'dotnet_reflection', 'dotnet_reflection_boundaries'}:
             require(not node.orelse,'reflection-replay-no-alternative-programme')
             return None
         return self.generic_visit(node)
     def visit_Expr(self, node):
         if (isinstance(node.value,ast.Call) and getattr(node.value.func,'id',None) == 'require'
-                and any(isinstance(n,ast.Name) and n.id=='dotnet_reflection' for n in ast.walk(node))):
+                and any(isinstance(n,ast.Name) and n.id in {'dotnet_reflection', 'dotnet_reflection_boundaries'}
+                        for n in ast.walk(node))):
             return None
         return self.generic_visit(node)
 
@@ -260,7 +264,8 @@ def prepare(output):
 
 
 MATERIALS = ('tools/replay_dotnet_reflection.py', 'tools/qualify_dotnet_reflection.py',
-             'tools/dotnet_reflection_fixture.py', 'tools/run_rust_capsule_workflow.py')
+             'tools/dotnet_reflection_fixture.py', 'tools/run_rust_capsule_workflow.py',
+             'tools/dotnet_catalogue_free_build.py')
 
 
 def verify_prepared(prepared):
@@ -291,7 +296,8 @@ def verify_prepared(prepared):
             'reflection-replay-authenticated-normal-node')
     return inputs('dotnet'),receipt,products
 
-def qualify(prepared, output, tools):
+def qualify(prepared, output, tools, *, boundaries=False):
+    require(type(boundaries) is bool, 'reflection-replay-boundaries-boolean')
     output = fresh(output)
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=1800, command_seconds=900)
     materials = {name: file_identity(ROOT / name) for name in MATERIALS}
@@ -300,32 +306,59 @@ def qualify(prepared, output, tools):
         before, receipt, products = verify_prepared(prepared)
         stage = 'ordinary-capture-and-descriptor-selection'
         project = create(output / 'project', 'greeting')
-        captured = install(project, output / 'outside', tools)
+        captured = install(project, output / 'outside', tools, boundaries=True) if boundaries else install(project, output / 'outside', tools)
         write_json(output / 'capture.json', captured)
         accepted = dependencies.verify_inputs(project, 'dotnet').lock
         observed = inventory(source_files(project))
         stage = 'offline-native-aot-build'
-        artifact = build(project, output / 'build', products['examples/capsule_contracts'],
-            products['examples/package'], 'https://github.com/KirilsTurkins/latent-service-fabric', tools=tools, offline=True)
+        staged_sources = None
+        if boundaries:
+            stage = 'bounded-recipe-and-static-support-staging'
+            staged = output / 'staged-recipe'
+            staged_sources = staging.stage(ROOT, staged)
+            write_json(output / 'catalogue-free-source.json', staged_sources)
+            artifact = output / 'build'
+            stage = 'offline-native-aot-build-from-staged-source-only'
+            commands.run('catalogue-free-native-aot', sys.executable, '-I', '-S', '-B', staged / staging.SELF,
+                '--project', project, '--output', artifact, '--tools', tools,
+                '--contracts-tool', products['examples/capsule_contracts'], '--packager', products['examples/package'],
+                '--repository', 'https://github.com/KirilsTurkins/latent-service-fabric',
+                '--expect-source-digest', staged_sources['inventoryDigest'])
+            require(staging.verify(staged) == staged_sources, 'reflection-replay-staged-source-drift')
+            recipe = read_json(artifact / 'recipe-inputs.json')
+            require(recipe and all(staged_sources['files'].get(name) == row for name, row in recipe.items()),
+                    'reflection-replay-recipe-not-in-staged-closure')
+        else:
+            artifact = build(project, output / 'build', products['examples/capsule_contracts'],
+                products['examples/package'], 'https://github.com/KirilsTurkins/latent-service-fabric', tools=tools, offline=True)
         require(inventory(source_files(project)) == observed
                 and dependencies.verify_inputs(project, 'dotnet').lock == accepted,
                 'reflection-offline-source-or-lock-changed')
         containment = read_json(artifact / 'compiler-containment.json', 32 * 1024 * 1024)
         require(containment['network'] == 'denied' and containment['credentials'] == 'not-inherited',
                 'reflection-compiler-not-contained')
-        binding = descriptor_material(artifact, captured['dynamicAssembly'])
+        binding = (descriptor_material(artifact, captured['dynamicAssembly'], roots=BOUNDARY_ROOTS)
+                   if boundaries else descriptor_material(artifact, captured['dynamicAssembly']))
         stage = 'normal-sign-and-enforced-node'
         require(verify_prepared(prepared)[:2] == (before, receipt), 'reflection-prepared-input-drift')
         signed = output / 'signed'
         commands.run('reflection-sign', products['examples/capsule_authoring'], 'demo-sign', signed, artifact,
                      *(prepared / 'builds' / name for name in COMPANIONS))
+        selection = {'dotnet_reflection_boundaries': True} if boundaries else {'dotnet_reflection': True}
         node = node_workflow(products['latent'], products['latentd'], signed, output / 'node',
-                            language='dotnet', noncrypto_entropy=True, dotnet_reflection=True)
-        require(node['status'] == 'passed' and node['dotnetReflection']['status'] == 'passed'
-                and len(node['dotnetReflection']['cases']) == 4, 'reflection-signed-probe-not-qualified')
+                            language='dotnet', noncrypto_entropy=True, **selection)
+        probe = node['dotnetReflectionBoundaries' if boundaries else 'dotnetReflection']
+        require(node['status'] == probe['status'] == 'passed'
+                and len(probe['cases']) == (7 if boundaries else 4), 'reflection-signed-probe-not-qualified')
+        if boundaries:
+            require(len(node['invocations']) == 34 and node['nodeShutdown']['reaped'] is True
+                    and node['nodeShutdown']['record']['clean'] is True,
+                    'reflection-replay-boundaries-node-not-clean')
         require(before == inputs('dotnet') and verify_prepared(prepared)[:2] == (before, receipt)
                 and materials == {name: file_identity(ROOT / name) for name in MATERIALS}
                 and time.monotonic() < commands.deadline, 'reflection-qualification-input-drift')
+        if boundaries:
+            require(staging.verify(staged) == staged_sources, 'reflection-replay-final-staged-source-drift')
         result = {'schemaVersion':'latent.dotnet.reflection-replay.v1',
             'originalInputs':read_json(prepared/'retrieval.json'),
             'nativeCargoProductsCompilationPerformed':False,
@@ -335,10 +368,15 @@ def qualify(prepared, output, tools):
             'formatVersion': 1, 'status': 'passed', 'capture': captured, 'descriptorMaterial': binding,
             'build': read_json(artifact / 'BUILD-COMPLETE.json'), 'materials': materials,
             'preparedSourceIdentityDigest': receipt['sourceIdentityDigest'], 'nativeBinaries': receipt['binaries'],
-            'nodeReceipt': file_identity(output / 'node/workflow.json'), 'cases': node['dotnetReflection']['cases'],
+            'nodeReceipt': file_identity(output / 'node/workflow.json'), 'cases': probe['cases'],
             'hermetic': False, 'cleanHost': False, 'publisherAuthenticated': False,
             'trapCause': 'not-inferred-from-generic-node-error', 'releasePublication': 'not-performed',
             'jitOrCompleteReflectionSupport': False, 'fullTicketQualification': False}
+        if boundaries:
+            result.update({'stagedBuildSource': staged_sources,
+                'actualRecipe': file_identity(artifact / 'recipe-inputs.json'),
+                'originalReflectionCasesRetained': 4, 'additionalUnsupportedAndFreshCases': 3,
+                'optionalReferenceDataPresentDuringBuild': False, 'catalogueEligibilityCheck': False})
         write_json(output / 'qualification.json', result)
         return result
     except BaseException as error:
@@ -354,10 +392,12 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--prepared', type=Path)
     parser.add_argument('--tools', type=Path)
+    parser.add_argument('--boundaries', action='store_true')
     args = parser.parse_args()
     if args.prepared is None:
+        require(not args.boundaries, 'reflection-replay-boundaries-needs-prepared-inputs')
         result = prepare(args.output.resolve())
     else:
         require(args.tools is not None, 'reflection-replay-explicit-tools')
-        result = qualify(args.prepared.resolve(), args.output.resolve(), args.tools.resolve())
+        result = qualify(args.prepared.resolve(), args.output.resolve(), args.tools.resolve(), boundaries=args.boundaries)
     print(json.dumps({'status':result['status']}))
