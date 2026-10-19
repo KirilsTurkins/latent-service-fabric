@@ -44,7 +44,7 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
+        captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
         go_standard_logging=False, rust_standard_stdio=False, go_standard_entropy=False):
     require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
             'authoring-typescript-console-language')
@@ -73,6 +73,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
             "authoring-Rust-matrix-language")
     require(type(go_standard_entropy) is bool and (not go_standard_entropy or language == 'go')
             and not (go_standard_entropy and (captured_dependency_recovery or go_standard_logging)), 'authoring-go-standard-entropy-language')
+    require(type(dotnet_reflection) is bool and (not dotnet_reflection or language == 'dotnet')
+            and not (dotnet_reflection and captured_dependency_recovery), 'authoring-dotnet-reflection-language')
     require(type(captured_dotnet_private) is bool and (not captured_dotnet_private or language == 'dotnet')
             and not (captured_dotnet_private and captured_dependency_recovery),
             'authoring-private-NuGet-language')
@@ -229,6 +231,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.rust_dependency_matrix import probe as probe_matrix
                         probe_matrix(client, targets['greeting'], probe, result, len(names),
                                      read_json(fixture / 'matrix-probe.json'))
+                    if dotnet_reflection:
+                        from tools.dotnet_reflection_fixture import probe as reflection_probe
+                        reflection_probe(client, targets['greeting'], probe, result, len(names))
                     if captured_dotnet_private:
                         from tools.dotnet_private_feed_fixture import probe as probe_private_nuget
                         probe_private_nuget(client, targets['greeting'], probe, result, len(names),
