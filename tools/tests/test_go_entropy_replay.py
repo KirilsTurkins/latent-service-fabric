@@ -52,10 +52,10 @@ class EntropyReplay(unittest.TestCase):
         value = ci_lane_inventory.workflow_model((ROOT / '.github/workflows/go-guest.yml').read_text())
         self.assertEqual(value['jobs']['upstream-probe']['timeout-minutes'], 45)
         self.assertEqual(value['jobs']['upstream-probe']['if'],
-            "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-entropy-authority }}")
+            "${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained) }}")
         self.assertEqual(value['jobs']['entropy-authority-replay']['timeout-minutes'], 20)
         self.assertEqual(value['jobs']['entropy-authority-replay']['if'],
-            "${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority }}")
+            "${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority && !inputs.qualify-entropy-retained }}")
 
 
     def test_fixed_range_reader_enforces_512_read_bound_before_an_extra_http_request(self):

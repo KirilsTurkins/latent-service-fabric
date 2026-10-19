@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-entropy-authority }}",
+    "if": "${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained) }}",
     "name": "Go runtime and complete capsule qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -227,7 +227,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Reviewed additive union of entropy and merged logging jobs/selectors; retain all original commands/deadlines and add canonical scalar ownership execution.",
+  "reviewReason": "Review bounded independent CPU/native scalar/fresh entropy qualification; original commands and limits preserved; historical source distinguished from current host.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

@@ -88,3 +88,23 @@ nine-buffer terminal probe and cannot qualify the current seventeen-buffer
 provider-exhaustion case. Current host and guest changes require fresh owning
 native and signed execution; those results are pending. Neither historical
 receipt is rewritten or promoted to a current-source qualification.
+
+
+The first scalar-owner repair run at source `79ba084b95` did not reach the
+entropy or native scalar steps: its signed CPU cancellation fixture timed out
+waiting for a live provider call, after all nine signed CPU sibling/recursive
+iterations passed. Compiler checkpoints yield through the canonical dispatcher
+without a pending host call. The repaired fixture observes the same original
+invocation, Store, host state, component instance and cancellation probe, with
+no timer wait, under the unchanged five-second watchdog. All cancellation,
+original-deadline, fresh-activation and uninstrumented negative checks remain.
+
+The explicit `qualify-entropy-retained` manual selection runs that exact CPU
+case, all fifteen native random controls, and entropy independently. The entropy
+lane builds only the current ordinary `latentd`, verifies an authenticated
+historical normal CLI/five component set without rewriting its receipt, runs a
+new normal 27-call programme against the current host, then captures and builds
+only the current entropy greeting offline and requires all 43 outcomes. Its
+receipt distinguishes historical compiler/CLI source, current native host
+source and the fresh component source. Pending jobs establish no acceptance.
+The original complete 45-minute workflow remains mandatory and unchanged.

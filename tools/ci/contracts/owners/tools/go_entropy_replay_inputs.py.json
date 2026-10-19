@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_entropy_replay_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bounded fixed-index artifact replay preserves byte/file caps; closed setup guard/counters replace opaque failure, no runtime or acceptance ceiling changes.",
+  "reviewReason": "Review bounded independent CPU/native scalar/fresh entropy qualification; original commands and limits preserved; historical source distinguished from current host.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fcf1e4e9e96515fecab2f9f6f2f7babb78a666186140a1f56f3c985202a2ada5"
+  "sha256": "91e5f3053a4b3ab273bffb42de2f97925f98f69d81ebbb16bda4972fac2ac027"
 }

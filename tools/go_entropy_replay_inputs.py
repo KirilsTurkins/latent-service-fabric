@@ -59,8 +59,11 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 class Remote(io.RawIOBase):
-    def __init__(self, url: str, size: int):
+    def __init__(self, url: str, size: int, *, maximum_requests=MAX_REQUESTS):
+        require(type(maximum_requests) is int and 1 <= maximum_requests <= 640,
+                'entropy-replay-artifact-request-bound')
         self.url, self.size, self.position = url, size, 0
+        self.maximum_requests = maximum_requests
         self.requests, self.network_bytes = 0, 0
 
     def seekable(self): return True
@@ -79,7 +82,7 @@ class Remote(io.RawIOBase):
         self.requests += 1
         self.network_bytes += count
         PROGRESS.update(rangeRequests=self.requests, networkBytes=self.network_bytes)
-        require(self.requests <= MAX_REQUESTS and self.network_bytes <= 128 * 1024**2, 'entropy-replay-artifact-total-range-bound')
+        require(self.requests <= self.maximum_requests and self.network_bytes <= 128 * 1024**2, 'entropy-replay-artifact-total-range-bound')
         end = self.position + count - 1
         request = urllib.request.Request(self.url, headers={'Range': f'bytes={self.position}-{end}'})
         with urllib.request.urlopen(request, timeout=30) as response:
@@ -91,8 +94,9 @@ class Remote(io.RawIOBase):
         return raw
 
 
-def acquire(output: Path):
+def acquire(output: Path, *, include_normal_greeting=False):
     """No full archive, compiler closure, private source tree or keys are copied."""
+    require(type(include_normal_greeting) is bool, 'entropy-replay-artifact-greeting-selector')
     output = fresh(output)
     credential = os.environ.get('GH_TOKEN')
     require(type(credential) is str and 0 < len(credential) <= 4096, 'entropy-replay-artifact-read-credential')
@@ -120,12 +124,18 @@ def acquire(output: Path):
                  or parsed.hostname.endswith('.githubusercontent.com')), 'entropy-replay-artifact-download-origin')
     del credential, headers
     PROGRESS['stage'] = 'fixed-member-index'
-    remote = Remote(signed_url, metadata['size_in_bytes'])
+    remote = Remote(signed_url, metadata['size_in_bytes'],
+                    maximum_requests=640 if include_normal_greeting else MAX_REQUESTS)
     copied, total = [], 0
     with zipfile.ZipFile(remote) as archive:
         all_names = archive.namelist()
         require(len(all_names) <= 65536 and len(all_names) == len(set(all_names)), 'entropy-replay-artifact-member-index')
-        names = [name for name in all_names if selected(name)]
+        def normal_greeting(name):
+            prefix = 'go-capsule-dependencies/builds/greeting/'
+            suffix = name.removeprefix(prefix)
+            return include_normal_greeting and name.startswith(prefix) and (suffix in PUBLIC
+                or re.fullmatch(r'wit/(?:[a-z0-9-]+/){0,3}[a-z0-9_.-]+\.wit', suffix) is not None)
+        names = [name for name in all_names if selected(name) or normal_greeting(name)]
         require(24 <= len(names) <= 128, 'entropy-replay-artifact-selected-member-count')
         PROGRESS.update(stage='fixed-members', selectedMembers=len(names))
         for name in names:
@@ -149,7 +159,8 @@ def acquire(output: Path):
             PROGRESS['completedMembers'] = len(copied)
     receipt = {'qualification': False, 'artifactId': ARTIFACT, 'testedSource': TESTED,
         'selected': copied, 'networkBytes': remote.network_bytes, 'rangeRequests': remote.requests,
-        'completeArchiveDownloaded': False, 'credentialsRetained': False}
+        'completeArchiveDownloaded': False, 'credentialsRetained': False,
+        'normalGreetingIncluded': include_normal_greeting}
     write_json(output / 'acquisition.json', receipt)
     return receipt
 
@@ -157,9 +168,10 @@ def acquire(output: Path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--include-normal-greeting', action='store_true')
     arguments = parser.parse_args()
     try:
-        observed = acquire(arguments.output)
+        observed = acquire(arguments.output, include_normal_greeting=arguments.include_normal_greeting)
     except Exception as error:
         # urllib errors can contain an expiring signed URL. Never print one.
         guard = error.args[0] if isinstance(error, RuntimeError) and len(error.args) == 1 \

@@ -190,6 +190,11 @@
       },
       "workflow_dispatch": {
         "inputs": {
+          "qualify-entropy-retained": {
+            "default": false,
+            "description": "Fresh current host and entropy component with authenticated historical normal companions",
+            "type": "boolean"
+          },
           "replay-entropy-authority": {
             "default": false,
             "description": "Replay the unchanged 42a entropy component with corrected explicit input authority",
@@ -204,9 +209,12 @@
   },
   "requiredJobs": [
     "entropy-authority-replay",
+    "retained-cpu-checkpoints",
+    "retained-entropy",
+    "retained-scalar-ownership",
     "upstream-probe"
   ],
-  "reviewReason": "Reviewed additive union of entropy and merged logging jobs/selectors; retain all original commands/deadlines and add canonical scalar ownership execution.",
+  "reviewReason": "Review bounded independent CPU/native scalar/fresh entropy qualification; original commands and limits preserved; historical source distinguished from current host.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

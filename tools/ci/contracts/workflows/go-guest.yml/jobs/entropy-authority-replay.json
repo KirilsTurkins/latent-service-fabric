@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority && !inputs.qualify-entropy-retained }}",
     "name": "Same-component Go entropy explicit authority and retirement",
     "permissions": {
       "actions": "read",
@@ -60,7 +60,7 @@
   },
   "jobId": "entropy-authority-replay",
   "kind": "job",
-  "reviewReason": "Bounded fixed-index artifact replay preserves byte/file caps; closed setup guard/counters replace opaque failure, no runtime or acceptance ceiling changes.",
+  "reviewReason": "Review bounded independent CPU/native scalar/fresh entropy qualification; original commands and limits preserved; historical source distinguished from current host.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
