@@ -1,0 +1,30 @@
+<Project>
+  <ItemGroup>
+    <DirectPInvoke Include="System.Native" />
+  </ItemGroup>
+  <!-- Only a trusted private compiler project imports this captured target.
+       It replaces the exact original WASI framework reference, never an
+       application assembly or the shared NuGet installation. -->
+  <Target Name="LsfBindStandardEntropy"
+          AfterTargets="ComputeIlcCompileInputs"
+          BeforeTargets="WriteIlcRspFileForCompilation"
+          Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <ItemGroup>
+      <_LsfEntropyCandidates Include="@(IlcReference)"
+          Condition="'%(IlcReference.Filename)' == 'System.Security.Cryptography' And '%(IlcReference.Extension)' == '.dll'" />
+      <_LsfEntropyExpected Include="$(LsfManagedEntropyOriginalPublic);$(LsfManagedEntropyOriginalPrivate)" />
+      <_LsfEntropyUnknown Include="@(_LsfEntropyCandidates)" Exclude="@(_LsfEntropyExpected)" />
+    </ItemGroup>
+    <Error Condition="'@(_LsfEntropyCandidates->Count())' == '0' Or '@(_LsfEntropyCandidates->Count())' &gt; '2'"
+        Text="managed-entropy-port-framework-reference-count" />
+    <Error Condition="'@(_LsfEntropyUnknown)' != ''" Text="managed-entropy-port-unknown-framework-reference" />
+    <Error Condition="!Exists('$(LsfManagedEntropyAssembly)')" Text="managed-entropy-port-missing-derived-assembly" />
+    <ItemGroup>
+      <IlcReference Remove="@(_LsfEntropyCandidates)" />
+      <IlcReference Include="$(LsfManagedEntropyAssembly)" />
+      <IlcReference Include="$(LsfManagedEntropyHelper)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(LsfManagedEntropyReferenceReceipt)"
+        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+  </Target>
+</Project>
