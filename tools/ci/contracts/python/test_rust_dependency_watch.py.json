@@ -47,7 +47,8 @@
     "RustWatchReviewBoundary.test_actual_watcher_keeps_transient_lock_and_trust_refusals_distinct_without_repeating_them",
     "RustWatchReviewBoundary.test_public_matched_gates_are_closed_bounded_and_omit_private_or_credential_fields",
     "RustWatchReviewBoundary.test_public_matched_gates_never_accept_wrong_refusal_or_uncertain_events",
-    "RustWatchReviewBoundary.test_unreviewed_gate_requires_the_exact_certain_source_lock_failure"
+    "RustWatchReviewBoundary.test_unreviewed_gate_requires_the_exact_certain_source_lock_failure",
+    "RustWatchWrapperDeadline.test_actual_wrapper_timeout_passes_shared_validation_and_retains_cleanup_headroom"
   ],
   "guards": {
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
@@ -625,10 +626,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "RustWatchWrapperDeadline.test_actual_wrapper_timeout_passes_shared_validation_and_retains_cleanup_headroom": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_watch.py",
-  "reviewReason": "Verify the measured one-hour Rust watch boundary still caps late commands, preserves original timeout failure and rejects expired work.",
+  "reviewReason": "Retain deadline guards at 3550 seconds and validate the actual wrapper against the unchanged shared process ceiling",
   "schemaVersion": "latent.ci.contracts.v1"
 }

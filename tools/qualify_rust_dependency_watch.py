@@ -34,7 +34,7 @@ def require(value, reason):
         raise ValueError(reason)
 
 
-TOTAL_BUDGET_SECONDS = 3600
+TOTAL_BUDGET_SECONDS = 3550
 
 
 def command_timeout(began, timeout):

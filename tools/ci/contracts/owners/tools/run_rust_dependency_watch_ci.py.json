@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_rust_dependency_watch_ci.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Allow the private runner wrapper to contain the complete three-build Rust watch within the reviewed one-hour qualifier budget plus bounded cleanup.",
+  "reviewReason": "Keep the wrapper within the existing 3600-second shared process limit while retaining all signed watch and cleanup checks",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "912836c445b0f5b2671aad2d123859f8d8d7c1e0f3a1c65bbc876fe065155e0e"
+  "sha256": "4e0dc69cc7f4bd3742afbeca0e79bf7279b9d098563d489db40c91346a7b1e8c"
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Allow the third unchanged signed Rust watch build within a measured one-hour programme budget; retain per-command, event and public checkpoint bounds.",
+  "reviewReason": "Use the bounded 3550-second programme with 50 seconds of wrapper headroom under the unchanged shared process limit",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8d01f97e288b1f19c7407d2529dec9042af1588d878dd6934108a0c89de5b046"
+  "sha256": "4b95815c3d0c8b38c5fb45399cc5466962ae05a0904b0259a7ecb7e1f9fb65a7"
 }
