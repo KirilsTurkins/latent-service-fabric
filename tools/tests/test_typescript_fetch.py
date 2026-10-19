@@ -571,6 +571,67 @@ await retired.promise;
 assert.equal(drops, 16);
 """)
 
+    def test_completed_exchange_releases_capacity_before_its_consumer_admits_successor(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+const gates = [], events = [];
+let admitted = 0;
+const owner = label => ({[Symbol.dispose]() {events.push('drop:' + label);}});
+installFetch({
+  async open() {const gate = Promise.withResolvers(); gates.push(gate); await gate.promise;
+    return owner('upload:' + ++admitted);},
+  async finish() {return {status: 200, headers: [], body: owner('body')};},
+  async read() {return undefined;}
+}, () => false, target);
+const pending = Array.from({length: 16}, () => target.fetch('https://example.test/'));
+assert.equal(gates.length, 16);
+const successor = pending[0].then(response => {
+  assert.equal(response.status, 200);
+  assert.deepEqual(events, ['drop:body']);
+  return target.fetch('https://example.test/next');
+});
+successor.catch(() => {}); // Keep the old-source refusal observable by the assertion.
+gates[0].resolve();
+// A completed operation has physically dropped its body before the successor
+// is admitted. The other fifteen genuinely pending operations stay charged.
+await new Promise(resolve => setImmediate(resolve));
+assert.equal(gates.length, 17);
+for (const gate of gates) gate.resolve();
+assert.equal((await successor).status, 200);
+assert.equal((await Promise.all(pending)).length, 16);
+assert.equal(admitted, 17);
+assert.equal(events.length, 17);
+""")
+
+    def test_rejected_exchange_releases_capacity_before_rejection_consumer(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+const gates = [];
+installFetch({
+  async open() {const gate = Promise.withResolvers(); gates.push(gate); return await gate.promise;},
+  async finish() {return {status: 200, headers: [], body: {[Symbol.dispose]() {}}};},
+  async read() {return undefined;}
+}, () => false, target);
+const pending = Array.from({length: 16}, () => target.fetch('https://example.test/'));
+const original = {tag: 'connection-failed'};
+const successor = pending[0].catch(error => {
+  assert.equal(error.cause, original);
+  return target.fetch('https://example.test/next');
+});
+successor.catch(() => {});
+gates[0].reject(original);
+await new Promise(resolve => setImmediate(resolve));
+assert.equal(gates.length, 17);
+for (const gate of gates.slice(1)) gate.resolve({[Symbol.dispose]() {}});
+assert.equal((await successor).status, 200);
+assert.equal((await Promise.all(pending.slice(1))).length, 15);
+// Construction errors remain rejected Promises, before any new provider call.
+const invalid = target.fetch('invalid URL');
+assert(invalid instanceof Promise);
+await assert.rejects(invalid, TypeError);
+assert.equal(gates.length, 17);
+""")
+
     def test_redirects_reauthorize_strip_headers_and_mutation_is_never_replayed(self):
         self.run_javascript(r"""
 const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};

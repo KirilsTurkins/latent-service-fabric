@@ -1,0 +1,196 @@
+{
+  "utc": "2026-10-19T21:06:34.757200+00:00",
+  "run": 39322249065,
+  "job": 118298975151,
+  "artifact": 12221956471,
+  "privateHarnessHead": "18fabf6a96a6a4d376d2efd5487184b50f318d40",
+  "candidateSource": "819791f66b2d2fcbe38f2f04259af249f98cfacb",
+  "sdkNativeEngineSource": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "ordinaryGate": "passed",
+  "cases": [
+    "entry",
+    "request-ready",
+    "promise-ready",
+    "request-copy-ready",
+    "json",
+    "http404",
+    "fresh"
+  ],
+  "rows": {
+    "json": {
+      "exitCode": 0,
+      "exactDecodedExpected": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "471367737",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "9508080",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "923812"
+      }
+    },
+    "http404": {
+      "exitCode": 0,
+      "exactDecodedExpected": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "471211467",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "9508080",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "978104"
+      }
+    },
+    "fresh": {
+      "exitCode": 0,
+      "exactDecodedExpected": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "471367737",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "9508080",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "916946"
+      }
+    },
+    "runtime-denied": {
+      "exitCode": 4,
+      "exactDecodedExpected": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "43219051"
+      }
+    },
+    "http-denied": {
+      "exitCode": 4,
+      "exactDecodedExpected": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1054"
+      }
+    }
+  },
+  "peer": {
+    "contacts": 3,
+    "completedResponses": 3,
+    "openConnections": 0,
+    "mutations": 0
+  },
+  "afterFreshActivationTopology": {
+    "execution-cell-leases": "0",
+    "prepared-instance-reservations": "0",
+    "guest-invocations": "0",
+    "guest-stores": "0",
+    "guest-host-states": "0",
+    "guest-component-instances": "0",
+    "guest-value-buffers": "0",
+    "guest-cancellation-probes": "0"
+  },
+  "shutdownClean": true,
+  "noPrivateObserverReplay": true,
+  "component": {
+    "sha256": "sha256:e0e77bb0c5e01ca7476b98629138976631880adfe527e65b3643632497ce2367",
+    "bytes": 12398840
+  },
+  "generatedBindings": {
+    "sha256": "sha256:90a602387b59891362096d2dfaabc2ac2862091eea3a7b6ea21567c4f9e5d5ed",
+    "bytes": 147260
+  },
+  "fullNativeTuple": {
+    "scope": "exact-source-preceding-maintained-qualification",
+    "sourceIdentityDigest": "sha256:5e8090117b663e0b59b04ca258bef892a4c9b1e9014a59b791bc03a2e9e08586",
+    "qualification": {
+      "sha256": "sha256:265e623fd6fc1ec9a68dd56e4d468f9c1a85826a7cc12cab5a214a494b7c9823",
+      "bytes": 19973
+    },
+    "nativeProducts": {
+      "latent": {
+        "sha256": "sha256:3b799d5afec30ada02c382797bfae9e1445a675ba0b838a0681b9cf826aa0ddc",
+        "bytes": 68801608
+      },
+      "latentd": {
+        "sha256": "sha256:8de485de8ce13e162b755d9d3505fdf07b6703d7427de70dd1312c39f135d599",
+        "bytes": 182143440
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+        "bytes": 7224720
+      },
+      "package": {
+        "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+        "bytes": 17726192
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:d560fb7003732efca6477e29bf51aa0510103b903a68a9c71b0a4c49caf1ee43",
+        "bytes": 23847032
+      }
+    }
+  },
+  "sourceAndNativeRestoration": {
+    "preparedSourceValidatedBeforeAndAfterRestoration": true,
+    "originalSourceRestored": true,
+    "originalNativeUnchanged": true
+  },
+  "retainedFileHashes": {
+    "observation.json": "d82d8675805d9c3685b9633ba3b66df19ee843db8718513ce5fa5d4ea48e9389",
+    "attempt/qualification.json": "ca0315616392a688d65c650af1d915e1b5fae95734289c658c449c4b0c5e00b8",
+    "attempt/node/qualification.json": "fb631fcedddc0af2b633faafbe1452e7c58255bdacc597c8d6af906afef3746d",
+    "attempt/node/after-fresh.json": "b620fd440633fb782b5f98c3b7b90a9dc9c1415d839ae6937c2c0b3b7c4000f3",
+    "attempt/node/controls/fetch-json.json": "af893dbc1994a1686391c4fca49b34d9367783362ba3c36ddafb0dd241d53e18",
+    "attempt/node/controls/fetch-http404.json": "85ae1fbc791aead2468128b6945e90c2fcc266cc93d32cf176125113c3d86f2e",
+    "attempt/node/controls/fetch-fresh.json": "25c15c652d238c2a93da8c95cbaf8ade041d644db5ec322ec386fc2f01c094d3",
+    "attempt/node/controls/fetch-runtime-denied.json": "2553a3a069bb87764c62f67f69fdcbfcfebb29c565099190e58802ae90ea6da0",
+    "attempt/node/controls/fetch-http-denied.json": "b1e068e12de786f4ffd809505e53667cedb3edaa7b0080f8b8a33e29b21c40bf"
+  },
+  "currentPrHeadQualification": false,
+  "remainingAcceptance": [
+    "two-unchanged-clients",
+    "private-consumer",
+    "top-level-Request",
+    "Abort-streaming-cancellation-timeout-races",
+    "reaction-timer-memory-limits",
+    "cross-tenant-reuse"
+  ],
+  "fullTicketQualification": false,
+  "schemaVersion": "latent.typescript.fetch-runtime-selected-source-observation.v1",
+  "evidenceScope": "finite ordinary signed Fetch; original SDK/native-engine tuple plus four exact candidate source overlays",
+  "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39322249065/job/118298975151"
+}

@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "TypeScriptFetchRuntimeTests.test_actual_fixture_default_globals_one_shot_body_and_fresh_instance_counter",
+    "TypeScriptFetchRuntimeTests.test_actual_fixture_diagnostics_keep_closed_stages_and_never_observe_private_error_fields",
+    "TypeScriptFetchRuntimeTests.test_closed_guest_diagnostics_cannot_replace_signed_success",
+    "TypeScriptFetchRuntimeTests.test_compiler_only_and_mutated_normal_build_cannot_substitute_for_packaged_evidence",
+    "TypeScriptFetchRuntimeTests.test_configuration_and_grants_keep_authority_exact_service_get_paths_and_owner_limits",
+    "TypeScriptFetchRuntimeTests.test_grant_denial_requires_permission_code_zero_execution_and_reaped_process",
+    "TypeScriptFetchRuntimeTests.test_native_selection_cannot_fall_back_between_prepared_and_ordinary_inputs",
+    "TypeScriptFetchRuntimeTests.test_no_http_promise_and_request_copy_controls_retain_real_thenable_await_and_listener_cleanup",
+    "TypeScriptFetchRuntimeTests.test_normal_captured_fixture_keeps_exact_async_world_sdk_and_original_budget",
+    "TypeScriptFetchRuntimeTests.test_provider_read_window_matches_actual_adapter_without_relaxing_total_body_or_owners",
+    "TypeScriptFetchRuntimeTests.test_real_peer_requires_exact_three_contacts_and_no_denied_contact_or_mutation",
+    "TypeScriptFetchRuntimeTests.test_source_profile_promotion_and_material_substitution_are_rejected",
+    "TypeScriptFetchRuntimeTests.test_success_requires_exact_typed_result_known_outcome_and_one_charged_get"
+  ],
+  "guards": {
+    "TypeScriptFetchRuntimeTests.test_actual_fixture_default_globals_one_shot_body_and_fresh_instance_counter": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_actual_fixture_diagnostics_keep_closed_stages_and_never_observe_private_error_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_closed_guest_diagnostics_cannot_replace_signed_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_compiler_only_and_mutated_normal_build_cannot_substitute_for_packaged_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_configuration_and_grants_keep_authority_exact_service_get_paths_and_owner_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_grant_denial_requires_permission_code_zero_execution_and_reaped_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_native_selection_cannot_fall_back_between_prepared_and_ordinary_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_no_http_promise_and_request_copy_controls_retain_real_thenable_await_and_listener_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_normal_captured_fixture_keeps_exact_async_world_sdk_and_original_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_provider_read_window_matches_actual_adapter_without_relaxing_total_body_or_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_real_peer_requires_exact_three_contacts_and_no_denied_contact_or_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_source_profile_promotion_and_material_substitution_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchRuntimeTests.test_success_requires_exact_typed_result_known_outcome_and_one_charged_get": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_fetch_runtime.py",
+  "reviewReason": "Repair Fetch fixture header to existing peer-authorized x-conformance without widening policy; actual-adapter control binds real peer allowlist and preserves old-source refusal plus exact JSON/body/fresh success. Private diagnostic retains only closed WIT error tags.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

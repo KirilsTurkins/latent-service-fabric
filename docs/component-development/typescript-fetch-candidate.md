@@ -1,5 +1,16 @@
 # Compiler-owned buffered fetch candidate
 
+The first signed-runner attempt on head `b951ef8184c4c40bef55f3d69247d58bcd71fff4`
+passed enforced runtime/HTTP grant denials and its no-I/O async entry, then failed
+the first JSON invocation with a known, reaped `unreachable-code` guest trap and
+zero outbound/child/mutation effects. This does not identify its source cause or
+qualify HTTP behavior. The runner now adds a no-HTTP Request-construction control.
+Its fixture can return only fixed Request/fetch/body-stage and error-class tokens
+when a JavaScript operation throws; it never serializes the exception, message,
+URL or credentials. Every diagnostic value still fails the original exact signed
+success assertion. A hard native trap remains a trap, and all provider, body-use,
+effect, idle-owner and cleanup checks remain required.
+
 The source candidate `lsf-fetch-buffered-v1` installs `fetch`, `Request`,
 `Response` and `Headers` before application and dependency module initialization.
 It is selected automatically when the project explicitly selects
@@ -92,7 +103,7 @@ those mechanisms.
 
 This buffered candidate is not a browser or Node environment. Non-null `.body`
 stream access, Blob/FormData bodies, stream readers, tee, streaming uploads,
-`getSetCookie`, `Response.error` and `Response.redirect` reject explicitly.
+and `getSetCookie` reject explicitly.
 Fetch resolves after complete buffering, so it does not expose header-first
 resolution or network backpressure to application readers. The typed contract
 has no HTTP reason phrase: fetched `statusText` throws a technical unsupported
@@ -220,3 +231,107 @@ values nonnegatively. Node 24.19.0 differs on those two edge cases, so no Node
 parity is claimed for them. Source/mock controls do not establish signed engine,
 component/provider, unchanged-library/private-consumer or lifecycle/cleanup
 qualification; those #691 requirements remain open.
+## Prepared signed-provider runner
+
+`tools/qualify_typescript_fetch_runtime.py` adds a finite execution attempt after
+the actual construction gate. It uses the normal outside-checkout TypeScript
+project, normal package/build observation, explicit demo signing and enforced
+node admission. The hosted lane consumes the same run's source-owned engine and
+splicer and the exact five native products already built by the maintained
+TypeScript boundary job. It does not build another engine or node. Downloaded
+native products must match that successful qualification's complete current
+source capture and binary identities; the separate ordinary-tuple CLI path
+retains its existing feature/ABI/version checks.
+
+The new fixture uses ordinary automatically installed globals in both direct
+and transitive modules. Pure `Headers`/`Response` initialization stays in the
+snapshot; `Request` and its native signal graph are constructed during the
+invocation. A real async export checks entry, GET JSON, HTTP 404 as a response,
+one-shot buffered `json()` consumption and a fresh per-activation counter.
+Before the first HTTP call, additional no-HTTP controls exercise a real
+thenable/Promise/await chain and a copied Request's AbortSignal listener plus
+that same chain. These isolate the native asynchronous/object boundary; they
+do not make a failed JSON call successful. The original typed results and
+physical retirement assertions remain mandatory. A separate manual same-SDK
+experiment can reuse the authenticated earlier SDK engine/compiler/native
+products and compile only the new application. Its receipts explicitly name
+that older SDK tree and never qualify the current PR head; no private-frame
+observation or aggregate diagnostic-job success supplies signed Fetch proof.
+Missing runtime and HTTP grants must refuse before execution with no outbound,
+child or mutation effects. The peer must observe exactly three authorized GETs,
+and every completed control must leave the observed topology, cleanup slots and
+all 18 physical provider counters idle before clean node/peer reaping.
+
+The fixture keeps the existing TypeScript 1,000,000,000-fuel / 128-MiB /
+120-second invocation budget and one outbound request. Its private provider
+allows only the exact primary origin and GET `/conformance/json` and
+`/conformance/status/404`, with 8-KiB responses, 64-KiB read/chunk capacity and two
+outstanding chunks. The capacity matches the existing adapter's 65536-byte read
+request and the provider profile's finite maximum; the previous 4-KiB capacity
+would reject that read before polling the body. Total response bytes stay at
+8 KiB, and the original I/O ledger reserves and charges capacity before
+transport work. This fixes a separate runner-profile mismatch, not a proven
+cause of the earlier zero-outbound first-JSON trap. Activation owner ceilings
+match the maintained TypeScript local-service
+experiment (16 tasks, 2 executors, 16 queued work, 8 waits/timers/results and
+64 native owners). These are finite experimental limits, not new platform
+defaults or native allocator/kernel upper-bound evidence.
+
+The selected-source programme below has actual finite signed execution. Local
+controls alone exercise the JavaScript adapter and peer/evidence predicates;
+they do not execute a Wasm component. The recorded run uses its explicitly
+historical native/engine tuple, rather than qualifying the final integration
+head or every current product. A finite run does not qualify two unchanged
+published clients, a private consumer, top-level `Request`, streaming/tee,
+Abort/timeout races, reaction/timer/memory limits or cross-tenant reuse. The
+engine metadata remains `unknown` / `not-evaluated`; #691 remains open.
+
+The source-owned import compiler fuses its private carrier lift with the typed
+binding's existing await. It rejects an unrecognized generated helper/task/finally
+graph. This removes a redundant compiler Promise while preserving task entry,
+canonical argument/result handling, application-realm Promise projection and
+actual import retirement in the existing finally path. Local controls use an
+actual retained generated `open` binding, including pending work, original native
+rejection, typed `uncertain` and lift failure. These controls alone establish no signed result. The historical Task-owner
+refusals remain real failures; the separate recorded candidate below succeeds
+under those same owner limits.
+
+The selected source-splicer adapter avoids an idle `await null` only when the
+actual private `AsyncTask` is first in the queue. Other callers and contended
+slots keep their asynchronous wait. The actual exited flag is checked before
+slot admission and again after the preserved public `Task.enter` await, so
+closing between these boundaries cannot grant entry. Existing task, queue,
+native-owner, authority and invocation bounds are unchanged; no pending work
+is settled or refunded early. Authentic generated-source controls preserve
+closed first/middle refusal, entry races, live ordering and the retirement-gap
+case. Node-reference allocations fall from 10 to 8 for idle entry; this count
+is not LSF owner accounting or a signed Fetch qualification result.
+
+The same finite adapter also inlines only the authenticated native task-metadata
+wrapper at its existing typed import await. It retains argument validation,
+real contention wait/relock, error propagation and finally-clear, while avoiding
+a second private async Promise around work already awaited by the public async
+binding. Framework callbacks and application-export wrappers stay unchanged. Unknown wrapper text,
+call shapes and captured local names reject. Actual generated-source controls
+cover pending success, native rejection, typed/lift failure and contention.
+These controls alone establish no signed result. The unchanged finite
+ordinary-host gate remains mandatory and has the source-bound result below.
+
+## Actual selected-source signed result
+
+[Run 39322249065, job 118298975151](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39322249065/job/118298975151)
+passed the ordinary signed gate with candidate source
+`819791f66b2d2fcbe38f2f04259af249f98cfacb`. Entry, Request readiness, the
+Promise chain, Request copy, JSON, HTTP 404 and fresh-activation controls passed.
+Missing runtime and HTTP grants both refused with zero guest fuel/outbound work.
+The peer saw exactly three requests, every post-call retirement check passed,
+and the node shut down cleanly. No private observer replay ran.
+
+The [bounded receipt](../testing/evidence/typescript-fetch-signed-owner-slots-2026-10-19.json)
+binds the actual 12,398,840-byte component, generated bindings, source overlays
+and original five native products. Its SDK/native-engine source is
+`0754391a20027a539f1d5b7c0426719a4bd6c3c1`; the four compiler/backend overlays
+are identified separately and all original source/products were rechecked
+before and after restoration. This is a real finite positive under unchanged
+bounds, not a new qualification of the final development integration. The
+remaining #691 criteria and engine `unknown` / `not-evaluated` metadata remain.
