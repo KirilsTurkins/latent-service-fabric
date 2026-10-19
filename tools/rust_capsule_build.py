@@ -18,7 +18,6 @@ from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, f
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 from tools import guest_authoring_frontend, guest_compatibility_build, guest_resources
-from tools import rust_standard_logging_inputs as standard
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
@@ -40,7 +39,34 @@ RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += ('tools/dev_workflow/executable_approval.py',)
 RECIPE += guest_resources.RECIPE
-RECIPE += standard.RECIPE
+STANDARD_RECIPE = (
+    'tools/rust_standard_logging_inputs.py',
+    'tools/rust_standard_sysroot_source.py',
+    'tools/rust_standard_clock_profile.py',
+    'sdk/rust-standard-runtime/clock.rs',
+    'wit/platform/clock/package.wit',
+    'rust-toolchain.toml',
+    'tools/rust_standard_tls_profile.py',
+    'sdk/rust-standard-runtime/tls.rs',
+    'sdk/rust-standard-runtime/activation-abi.json',
+    'sdk/rust-standard-runtime/thread-abi.json',
+    'wit/platform/activation-runtime/package.wit',
+    'rust-toolchain.toml',
+    'tools/rust_standard_logging_profile.py',
+    'sdk/rust-standard-runtime/stdio_closed.rs',
+    'sdk/rust-standard-runtime/stdio_logging.rs',
+    'wit/platform/log/package.wit',
+    'sdk/rust-standard-stdio/Cargo.toml',
+    'sdk/rust-standard-stdio/src/lib.rs',
+    'tools/rust_standard_sysroot_build.py',
+    'tools/rust_capsule_build.py',
+    'tools/build_observation.py',
+    'tools/build_process.py',
+    'tools/build_process_linux.py',
+    'tools/build_process_signals.py',
+    'tools/captured_compiler_isolation.py',
+)
+RECIPE += STANDARD_RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 
@@ -265,6 +291,7 @@ def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict[str, bytes]
 
 
 def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
+    from tools import rust_standard_logging_inputs as standard
     required = {"Cargo.toml", "Cargo.lock", "capsule-project.json", "sdk-lock.json", "src/lib.rs", "rust-toolchain.toml"}
     if not required <= files.keys():
         raise ValueError("incomplete standalone capsule project")
@@ -443,6 +470,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
           standard_runtime: Path | None = None) -> Path:
     # Commands/package_inputs are shared by every language. Only this recipe
     # loads the Rust application graph and executable-input approval consumer.
+    from tools import rust_standard_logging_inputs as standard
+    if standard.RECIPE != STANDARD_RECIPE:
+        raise ValueError('Rust standard recipe input catalogue drift')
     from tools.application_dependencies import prepare, verify_inputs
     from tools.application_dependency_approval import approve as approve_execution, request as execution_request
     from tools.rust_application_dependencies import configure as configure_application
