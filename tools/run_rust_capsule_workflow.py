@@ -44,7 +44,10 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False, go_standard_entropy=False):
+        captured_rust_matrix=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
+        go_standard_logging=False, rust_standard_stdio=False, go_standard_entropy=False):
+    require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
+            'authoring-typescript-console-language')
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -69,7 +72,19 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
             and not (captured_rust_matrix and (rust_compatibility or captured_git_component or captured_dependency_recovery)),
             "authoring-Rust-matrix-language")
     require(type(go_standard_entropy) is bool and (not go_standard_entropy or language == 'go')
-            and not (go_standard_entropy and captured_dependency_recovery), 'authoring-go-standard-entropy-language')
+            and not (go_standard_entropy and (captured_dependency_recovery or go_standard_logging)), 'authoring-go-standard-entropy-language')
+    require(type(captured_dotnet_private) is bool and (not captured_dotnet_private or language == 'dotnet')
+            and not (captured_dotnet_private and captured_dependency_recovery),
+            'authoring-private-NuGet-language')
+    require(type(captured_npm_private) is bool and (not captured_npm_private or language == "typescript"),
+            "authoring-captured-npm-private-language")
+    require(type(go_standard_logging) is bool and (not go_standard_logging or language == 'go'),
+            'authoring-Go-standard-logging-language')
+    require(type(rust_standard_stdio) is bool and (not rust_standard_stdio or language == 'rust')
+            and not (rust_standard_stdio and (captured_rust_matrix or rust_compatibility or captured_git_component
+                                             or captured_dependency_recovery)), 'authoring-Rust-stdio-language')
+    require(type(approved_typescript_generator) is bool and (not approved_typescript_generator or language == 'typescript'),
+            'authoring-TypeScript-generator-language')
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -115,6 +130,18 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     from tools.c_standard_logging_probe import configure as configure_logging
                     configure_logging(settings)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if standard_typescript_console:
+                    from tools.typescript_console_probe import configure as configure_console
+                    configure_console(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if go_standard_logging:
+                    from tools.go_standard_logging_probe import configure as configure_go_logging
+                    configure_go_logging(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if rust_standard_stdio:
+                    from tools.rust_standard_logging_probe import configure as configure_rust_stdio
+                    configure_rust_stdio(settings, fixture)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -143,6 +170,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         result["releases"][template] = published["data"]["operation"]
                         targets[template] = deploy(client, source / "deployment.json", publication)
                     names = population(client, fixture, targets, publications, probe, result)
+                    if rust_standard_stdio:
+                        from tools.rust_standard_logging_probe import grant as grant_rust_stdio
+                        grant_rust_stdio(client, node, fixture, targets, publications, result)
                     if language in {"go", "dotnet", "java"}:
                         from tools.guest_runtime_grants import grant
                         grant(client, node, fixture, targets, publications, result, language=language)
@@ -151,11 +181,17 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         entropy_admission(client, fixture, targets, publications, result)
                         from tools.go_standard_entropy_probe import buffer_authority
                         buffer_authority(client, fixture, targets, publications, result)
+                    if go_standard_logging:
+                        from tools.go_standard_logging_probe import grant as grant_go_logging
+                        grant_go_logging(client, node, fixture, targets, publications, result)
                     if c_standard_facilities:
                         from tools.c_standard_facilities_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
                     if c_standard_logging:
                         from tools.c_standard_logging_probe import grant_and_probe
+                        grant_and_probe(client, node, fixture, targets, publications, result)
+                    if standard_typescript_console:
+                        from tools.typescript_console_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
                     if c_standard_combined:
                         from tools.c_standard_combined_probe import grant_and_probe
@@ -167,20 +203,42 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
-                    tutorials(client, targets, result)
+                    if go_standard_logging:
+                        from tools.go_standard_logging_probe import tutorials as logging_tutorials
+                        logging_tutorials(client, targets, result)
+                    else:
+                        tutorials(client, targets, result)
+                    if go_standard_logging:
+                        from tools.go_standard_logging_probe import probe as probe_go_logging
+                        probe_go_logging(client, targets['greeting'], probe, result, len(names))
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import probe as entropy_probe
                         entropy_probe(client, targets['greeting'], probe, result, len(names))
                     if rust_compatibility:
                         from tools.rust_compatibility_probe import probe as probe_compatibility
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))
+                    if approved_typescript_generator:
+                        from tools.typescript_generator_fixture import probe as generator_probe
+                        generator_probe(client, targets['greeting'], probe, result, len(names),
+                                        read_json(fixture / 'typescript-generator-probe.json'))
+                    if captured_npm_private:
+                        from tools.npm_private_registry_fixture import probe as probe_npm_private
+                        probe_npm_private(client, targets['greeting'], probe, result, len(names),
+                                          read_json(fixture / 'private-npm-probe.json'))
                     if captured_rust_matrix:
                         from tools.rust_dependency_matrix import probe as probe_matrix
                         probe_matrix(client, targets['greeting'], probe, result, len(names),
                                      read_json(fixture / 'matrix-probe.json'))
+                    if captured_dotnet_private:
+                        from tools.dotnet_private_feed_fixture import probe as probe_private_nuget
+                        probe_private_nuget(client, targets['greeting'], probe, result, len(names),
+                                            read_json(fixture / 'private-nuget-probe.json'))
                     if captured_git_component:
                         from tools.rust_git_component_fixture import probe as probe_git_component
                         probe_git_component(client, targets['greeting'], probe, result, len(names))
+                    if rust_standard_stdio:
+                        from tools.rust_standard_logging_probe import probe as probe_rust_stdio
+                        probe_rust_stdio(client, targets['greeting'], fixture, probe, result, len(names))
                     if captured_dependency_recovery:
                         if language == "dotnet":
                             from tools.dotnet_dependency_recovery import recover

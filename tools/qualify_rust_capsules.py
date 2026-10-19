@@ -25,7 +25,7 @@ from tools.check_rust_capsule_ownership import check as ownership
 from tools.phase3_resource_identity import file_identity, inventory as directory_identity, source_identity
 from tools.run_rust_capsule_workflow import run as node_workflow
 from tools.rust_capsule_build import Commands, build
-from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_json, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_file, read_json, write_json
 
 HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py", "qualify_rust_capsules.py",
     "run_rust_capsule_workflow.py", "rust_capsule_cases.py", "rust_capsule_node.py", "check_rust_capsule_ownership.py",
@@ -53,7 +53,7 @@ def inputs(language="rust"):
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/managed_idle.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/managed_idle.py", "go_guest/sdk.py", "go_guest/standard_log.py", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
                     "go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")
@@ -65,7 +65,9 @@ def inputs(language="rust"):
                     "typescript_guest/async_waiters.mjs", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "typescript_application_dependencies.py", "captured_compiler_isolation.py",
-                    "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "guest_authoring_frontend.py")
+                    "typescript_generator_authoring.py", "typescript_generator_fixture.py", "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "typescript_registry_tls.py", "guest_authoring_frontend.py",
+                    "typescript_console_probe.py", "typescript_guest/console_profile.py", "typescript_guest/console.mjs",
+                    "typescript_guest/activation_module.mjs")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/outputs.py", "dotnet_guest/sdk.py",
@@ -73,7 +75,7 @@ def inputs(language="rust"):
                     "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
                     'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
-                    'dotnet_application_dependencies.py', 'dotnet_dependency_fixture.py', 'dotnet_dependency_recovery.py',
+                    'dotnet_application_dependencies.py', 'dotnet_registry_tls.py', 'dotnet_dependency_fixture.py', 'dotnet_dependency_recovery.py',
                     'dotnet_resource_fixture.py', 'dotnet_guest/resources.py', 'guest_resources.py',
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
@@ -117,13 +119,16 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
 
 
 def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None,
-            application_dependencies=False, static_application_dependencies=False, approved_generator=False):
+            application_dependencies=False, static_application_dependencies=False, approved_generator=False,
+            standard_typescript_console=False):
+    if type(standard_typescript_console) is not bool or standard_typescript_console and (language != 'typescript' or application_dependencies):
+        raise ValueError('standard console qualification requires standalone TypeScript')
     if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
     if static_application_dependencies and (language != "c" or not application_dependencies):
         raise ValueError("static application qualification requires captured C source qualification")
-    if approved_generator and (language != "c" or not application_dependencies):
-        raise ValueError("approved generator qualification requires captured C source qualification")
+    if type(approved_generator) is not bool or approved_generator and (language not in {"c", "typescript"} or not application_dependencies):
+        raise ValueError("approved generator qualification requires captured C or TypeScript source qualification")
     if language == "typescript" and typescript_tools is None:
         raise ValueError("explicit pinned TypeScript compiler installation required")
     creator, builder = create, build
@@ -205,6 +210,9 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         (output / "builds").mkdir(mode=0o700)
         for template in TEMPLATES:
             project = creator(output / "projects" / template, template)
+            if standard_typescript_console and template == 'greeting':
+                from tools.typescript_console_probe import prepare as prepare_console
+                result['standardConsole'] = prepare_console(project)
             executable_approval = None
             if language == "dotnet" and template == "greeting":
                 from tools.dotnet_resource_fixture import install as install_resources
@@ -253,6 +261,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 stage = "application-dependency-capture"
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                if approved_generator:
+                    from tools.typescript_generator_fixture import install as install_typescript_generator
+                    stage = "approved-typescript-generator"
+                    result["approvedGenerator"] = install_typescript_generator(project, output / "outside-project-generator")
                 stage = "standalone-builds"
             if language == "go" and application_dependencies and template == "greeting":
                 from tools.go_dependency_fixture import install
@@ -297,15 +309,18 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 stage = "generated-source-offline-rebuild"
                 rebuilt = builder(project, output / "builds/greeting-offline-rebuild",
                     binaries["examples/capsule_contracts"], binaries["examples/package"],
-                    "https://github.com/KirilsTurkins/latent-service-fabric")
+                    "https://github.com/KirilsTurkins/latent-service-fabric",
+                    **({"tools": typescript_tools} if language == "typescript" else {}))
                 original_complete, rebuilt_complete = result["builds"][template], read_json(rebuilt / "BUILD-COMPLETE.json")
                 if any(original_complete[key] != rebuilt_complete[key] for key in ("sourceDigest", "sdkBindingDigest")):
-                    raise ValueError("generated C offline rebuild changed captured source or SDK identity")
+                    raise ValueError("generated source offline rebuild changed captured source or SDK identity")
                 for candidate in (artifact, rebuilt):
                     material = next(item for item in read_json(candidate / "build-observation.json")["materials"]
-                                    if item["name"] == "c-generator-inputs")
-                    if set(material) != {"name", "digest", "size"} or material["digest"] != result["approvedGenerator"]["generatedInputsDigest"]:
-                        raise ValueError("generated C provenance does not bind the signable captured inputs")
+                                    if item["name"] == language + "-generator-inputs")
+                    if material != {"name": language + "-generator-inputs",
+                            "digest": result["approvedGenerator"]["generatedInputsDigest"],
+                            "size": len(read_file(project / (language + '-generated-inputs.json')))}:
+                        raise ValueError("generated source provenance does not bind the signable captured inputs")
                 result["builds"]["greeting-offline-rebuild"] = rebuilt_complete
                 result["approvedGenerator"]["offlineRebuild"] = "same-captured-source-and-sdk"
                 stage = "standalone-builds"
@@ -382,10 +397,24 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                      "--", "--ignored", "--test-threads=1", "--show-output")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
+        if approved_generator and language == 'typescript':
+            write_json(output / 'releases/typescript-generator-probe.json',
+                {key: result['approvedGenerator'][key] for key in ('nonce', 'value')})
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
             language=language, noncrypto_entropy=language == "dotnet",
-            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies)
+            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies,
+            approved_typescript_generator=language == 'typescript' and approved_generator,
+            **({'standard_typescript_console': True} if standard_typescript_console else {}))
+        if approved_generator and language == 'typescript':
+            if (result['node'].get('approvedTypeScriptGenerator', {}).get('status') != 'passed'
+                    or len(result['node']['approvedTypeScriptGenerator']['cases']) != 3):
+                raise ValueError('approved TypeScript generated results were not observed on the signed component')
+            result['approvedGenerator']['signedGeneratedResults'] = result['node']['approvedTypeScriptGenerator']
+        if standard_typescript_console:
+            if len(result['node'].get('typescriptConsoleCases', [])) != 8:
+                raise ValueError('all signed TypeScript console cases must pass')
+            result['standardConsole']['signedExecution'] = 'signed-admitted-component'
         if language == "rust" and application_dependencies:
             from tools.rust_dependency_failures import qualify as qualify_ffi
             stage = "captured-native-ffi-failure"

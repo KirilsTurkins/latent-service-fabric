@@ -12,6 +12,7 @@ import sys
 import tempfile
 from urllib.parse import unquote, urlsplit
 
+from tools import typescript_registry_tls as registry_tls
 from tools.application_dependencies import LOCK, MANIFEST, capture, validate_manifest
 from tools.application_dependency_store import (DependencyError, Store, archive_files, directory_files,
                                                path_name, read_bytes, regular_path, tree_identity)
@@ -168,7 +169,7 @@ def local_path(source: str, project: Path) -> Path:
     return regular_path(project / value).resolve(strict=True)
 
 
-def fetch_environment(owned: Path, registries: dict) -> dict:
+def fetch_environment(owned: Path, registries: dict, *, project: Path | None = None) -> dict:
     cache = owned / 'npm-cache'
     environment = build_environment(owned)
     environment.update(HOME=str(owned / 'home'), USERPROFILE=str(owned / 'home'),
@@ -209,6 +210,10 @@ def fetch_environment(owned: Path, registries: dict) -> dict:
             environment[selected_variable] = secret
             configuration.append('//' + parsed.netloc + parsed.path.rstrip('/') + '/:_authToken=${' + selected_variable + '}')
     (owned / 'registry.npmrc').write_text('\n'.join(configuration) + '\n', encoding='utf-8')
+    if 'tlsTrust' in registries:
+        if project is None:
+            raise DependencyError('npm-registry-public-trust-project-required')
+        registry_tls.prepare(project, owned, registries, environment)
     return environment
 
 
@@ -241,6 +246,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     declaration = decode_json(original['package.json'])
     locked = native_lock(original['package-lock.json'])
     recipe_before = file_identity(Path(__file__), 'npm-capture-recipe')
+    trust_recipe = file_identity(Path(registry_tls.__file__), 'npm-public-trust-recipe')
     node = regular_path(node or Path(shutil.which('node') or 'missing-node')).resolve(strict=True)
     if npm is None:
         located = Path(shutil.which('npm') or 'missing-npm')
@@ -254,13 +260,15 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             raise DependencyError('npm-registry-configuration-must-stay-outside-project')
         registry_bytes = read_bytes(registry_config)
     registries = decode_json(registry_bytes) if registry_bytes is not None else {'registries': []}
-    if set(registries) != {'registries'} or not isinstance(registries['registries'], list) or len(registries['registries']) > 16:
+    if (not isinstance(registries, dict) or set(registries) - {'registries', 'tlsTrust'}
+            or 'registries' not in registries or not isinstance(registries['registries'], list)
+            or len(registries['registries']) > 16):
         raise DependencyError('npm-registry-configuration-invalid')
     with tempfile.TemporaryDirectory(prefix='lsf-npm-resolve-') as temporary:
         owned = Path(temporary)
         work, cache = _mirror(project, owned), owned / 'npm-cache'
         work.mkdir(parents=True)
-        environment = fetch_environment(owned, registries)
+        environment = fetch_environment(owned, registries, project=project)
         # Preserve native relative path semantics in an owned mirror. No project
         # npmrc, global cache, or package lifecycle hook reaches this stage.
         local_paths = {project}
@@ -372,26 +380,38 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             fetchLockDigest=digest(read_bytes(work / 'package-lock.json')),
             configurationDigest=digest(canonical(registries)), filesDigest=digest(canonical([
                 {'path': name, 'digest': digest(data), 'size': len(data)} for name, data in sorted(files.items())])))
+        trust = registry_tls.check(project, owned, registries, environment)
+        native['trustRecipe'] = trust_recipe
+        if trust is not None:
+            native['fetchTrust'] = trust
         native_bytes = canonical(native) + b'\n'
         artifacts.append({'id': 'npm-selected/' + digest(original['package-lock.json'])[7:31], 'role': 'application',
             'format': 'directory', 'mount': 'dependencies/npm/node_modules', 'source': {'path': str(modules)},
             'dependencies': archive_ids, 'metadata': {'ecosystem': 'npm', 'assetType': 'selected-node-modules',
                 'nodeResolution': 'native-lock-physical-tree', 'installScripts': 'never-executed'}})
         prefix = project.relative_to(owner).as_posix() + '/' if owner != project else ''
+        native_names = ['package.json', 'package-lock.json', 'npm-resolved.lock.json']
+        if trust is not None:
+            native_names.append(trust['caFile'])
         manifest = {'formatVersion': 1, 'language': 'typescript', 'selection': selected,
-                    'nativeLocks': [prefix + name for name in ('package.json', 'package-lock.json', 'npm-resolved.lock.json')],
+                    'nativeLocks': [prefix + name for name in native_names],
                     'artifacts': artifacts, 'transformations': []}
         validate_manifest(manifest, 'typescript')
         manifest_bytes = canonical(manifest) + b'\n'
         check = owned / 'capture-inputs'
         check.mkdir(mode=0o700)
         (check / MANIFEST).write_bytes(manifest_bytes)
-        for name, raw in {**original, 'npm-resolved.lock.json': native_bytes}.items():
+        native_inputs = {**original, 'npm-resolved.lock.json': native_bytes}
+        if trust is not None:
+            native_inputs[trust['caFile']] = before[trust['caFile']]
+        for name, raw in native_inputs.items():
             target = check / (prefix + name)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
         result = capture(check, cache=owner / 'dependency-inputs/objects')
         if (source_files(project) != before or file_identity(Path(__file__), 'npm-capture-recipe') != recipe_before
+                or file_identity(Path(registry_tls.__file__), 'npm-public-trust-recipe') != trust_recipe
+                or registry_tls.check(project, owned, registries, environment) != trust
                 or file_identity(node, 'npm-node') != node_before or file_identity(npm, 'npm-cli') != npm_before
                 or (registry_config is not None and read_bytes(registry_config) != registry_bytes)
                 or optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock):

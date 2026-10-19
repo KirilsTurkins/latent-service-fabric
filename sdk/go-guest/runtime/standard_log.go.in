@@ -1,0 +1,37 @@
+// Standard os.Stdout/os.Stderr, fmt and log keep their ordinary caller APIs.
+// Installed by the captured compiler only when the world declares typed log.
+package standardlog
+
+import (
+	"syscall"
+	"unicode/utf8"
+	_ "unsafe" // for linkname
+	raw "wit_component/@raw@"
+)
+
+const maximumWrite = 4096
+
+//go:linkname standardWrite syscall.lsfStandardWrite
+var standardWrite func(int, []byte) (int, error)
+
+//go:linkname install runtime.lsfInstallStandardLog
+func install() { standardWrite = write }
+
+func write(fd int, data []byte) (int, error) {
+	if fd != 1 && fd != 2 { return 0, syscall.EBADF }
+	if len(data) > maximumWrite { return 0, syscall.EINVAL }
+	if !utf8.Valid(data) { return 0, syscall.EILSEQ }
+	if len(data) == 0 { return 0, nil }
+	level := raw.LevelInfo
+	if fd == 2 { level = raw.LevelError }
+	result := raw.Write(level, string(data), nil)
+	if result.IsErr() {
+		switch result.Err().Tag() {
+		case raw.LogErrorBudgetExhausted: return 0, syscall.EAGAIN
+		case raw.LogErrorInvalidField: return 0, syscall.EINVAL
+		default: return 0, syscall.EIO
+		}
+	}
+	if !result.Ok() { return 0, syscall.EIO }
+	return len(data), nil
+}

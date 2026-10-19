@@ -14,7 +14,8 @@ OWNER_ISSUES = {'rust': 743, 'go': 742, 'c': 744, 'typescript': 745}
 PROFILES = {'rust': 'wasm32-unknown-unknown-panic-abort-v1', 'go': 'go-component-async-v1',
             'c': 'closed-synchronous-v1', 'typescript': 'spidermonkey-public-sync-v1'}
 PREFIXES = {
-    'rust': ('vendor/lsf/sdk/rust-guest/', 'vendor/lsf/crates/latent-component-bindings/'),
+    'rust': ('vendor/lsf/sdk/rust-guest/', 'vendor/lsf/sdk/rust-standard-stdio/',
+             'vendor/lsf/crates/latent-component-bindings/'),
     'go': ('vendor/lsf/sdk/go-guest/',),
     'c': ('vendor/lsf/sdk/c-guest/',),
     'typescript': ('vendor/lsf/sdk/typescript-guest/',),
@@ -157,6 +158,12 @@ def read(raw: bytes, **bindings):
 def verify_build(value, language, files, source_inputs, component, materials):
     original, bindings, graph = captured_inputs(language, files, source_inputs)
     profile = graph.get('selection', {}).get('runtimeProfile', PROFILES[language]) if graph is not None else PROFILES[language]
+    if language == 'rust':
+        from tools.rust_standard_logging_inputs import selection
+        project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
+        selected = selection(project)
+        require(graph is None or selected == profile, 'rust-project-and-captured-runtime-profile-disagree')
+        profile = selected
     if language == 'typescript':
         from tools.typescript_guest.runtime_profile import selected_profile
         project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}

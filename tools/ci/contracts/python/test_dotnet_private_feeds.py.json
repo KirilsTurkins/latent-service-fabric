@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "OwnedRestoreTrust.test_default_policy_does_not_add_any_environment_or_trust_file",
+    "OwnedRestoreTrust.test_missing_changed_or_hardlinked_source_refuses_before_owned_environment_mutation",
+    "OwnedRestoreTrust.test_offline_trust_identity_checks_exact_bytes_types_and_closed_profile",
+    "OwnedRestoreTrust.test_other_platform_refuses_explicit_profile_before_any_trust_installation",
+    "OwnedRestoreTrust.test_owned_copy_environment_or_selected_source_drift_refuses",
+    "OwnedRestoreTrust.test_private_keys_invalid_certificates_oversize_and_certificate_count_refuse",
+    "OwnedRestoreTrust.test_selected_public_ca_is_parsed_and_bound_only_to_private_child_environment",
+    "PrivateFeedPolicy.test_explicit_public_ca_selection_preserves_sources_and_redacts_private_credentials",
+    "PrivateFeedPolicy.test_malformed_trust_shape_or_escaping_path_refuses_without_reading_credentials",
+    "RealRestoreBoundary.test_actual_restore_boundary_refuses_ca_mutation_before_candidate_publication",
+    "RealRestoreBoundary.test_real_resolve_capture_and_exact_review_bind_selected_ca_as_native_input"
+  ],
+  "guards": {
+    "OwnedRestoreTrust.test_default_policy_does_not_add_any_environment_or_trust_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:d5033c0cf3d66a74914cbba1c675d7670d033ff9d5628994bc8ee9bd9cf022b7"
+      ],
+      "skipSites": []
+    },
+    "OwnedRestoreTrust.test_missing_changed_or_hardlinked_source_refuses_before_owned_environment_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:d5033c0cf3d66a74914cbba1c675d7670d033ff9d5628994bc8ee9bd9cf022b7"
+      ],
+      "skipSites": []
+    },
+    "OwnedRestoreTrust.test_offline_trust_identity_checks_exact_bytes_types_and_closed_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:d5033c0cf3d66a74914cbba1c675d7670d033ff9d5628994bc8ee9bd9cf022b7"
+      ],
+      "skipSites": []
+    },
+    "OwnedRestoreTrust.test_other_platform_refuses_explicit_profile_before_any_trust_installation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:d5033c0cf3d66a74914cbba1c675d7670d033ff9d5628994bc8ee9bd9cf022b7"
+      ],
+      "skipSites": []
+    },
+    "OwnedRestoreTrust.test_owned_copy_environment_or_selected_source_drift_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:d5033c0cf3d66a74914cbba1c675d7670d033ff9d5628994bc8ee9bd9cf022b7"
+      ],
+      "skipSites": []
+    },
+    "OwnedRestoreTrust.test_private_keys_invalid_certificates_oversize_and_certificate_count_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:d5033c0cf3d66a74914cbba1c675d7670d033ff9d5628994bc8ee9bd9cf022b7"
+      ],
+      "skipSites": []
+    },
+    "OwnedRestoreTrust.test_selected_public_ca_is_parsed_and_bound_only_to_private_child_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:d5033c0cf3d66a74914cbba1c675d7670d033ff9d5628994bc8ee9bd9cf022b7"
+      ],
+      "skipSites": []
+    },
+    "PrivateFeedPolicy.test_explicit_public_ca_selection_preserves_sources_and_redacts_private_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PrivateFeedPolicy.test_malformed_trust_shape_or_escaping_path_refuses_without_reading_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RealRestoreBoundary.test_actual_restore_boundary_refuses_ca_mutation_before_candidate_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:e6b71e86abb65a62d294b3efdd6865268f4cf387199633e23e4d9f7c4a1d4f1a"
+      ],
+      "skipSites": []
+    },
+    "RealRestoreBoundary.test_real_resolve_capture_and_exact_review_bind_selected_ca_as_native_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c22fd3dc5e10364f1d843663000f79296a76387930bf29840b453ca9cca2636",
+        "class:setup-sha256:e6b71e86abb65a62d294b3efdd6865268f4cf387199633e23e4d9f7c4a1d4f1a"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_private_feeds.py",
+  "reviewReason": "Bind explicit public CA capture and authenticated private NuGet offline lifecycle with existing gates",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

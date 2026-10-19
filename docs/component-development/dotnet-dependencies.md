@@ -74,6 +74,13 @@ Package targets, analyzers, source generators and `.resx` processing are executa
 
 For additional local/private feeds, pass `--feed-config` with `{"sources":[{"name":"private","url":"https://feed.example.com/index.json","patterns":["Example.*"],"authorizationEnv":"LSF_PRIVATE_NUGET_AUTH","username":"token"}]}` or a local `path` containing only `.nupkg` files. Feed mappings preserve native package-source selection. Credentials enter only an owned fetch configuration; public fetch receipts retain endpoint/location digests. Offline compilation inherits neither credentials nor feed configuration. `update PROJECT PACKAGE --version EXACT_VERSION` and `remove PROJECT PACKAGE` edit only application package declarations. They preserve SDK packages and the accepted lock; unsupported conditional edits require explicit source review. Resolve with `--update-lock` after a change, inspect the fresh candidate and accept its exact digest with `review-lock`. An old accepted lock remains unusable with changed declarations.
 
+On Linux, optional `"tlsTrust":{"caFile":"feed-trust/public-roots.pem"}`
+selects a complete project-relative public CA bundle for the owned restore child.
+Its exact bytes bind native capture, review and later builds; machine trust and
+certificate/hostname verification remain unchanged. See the
+[private-feed lifecycle programme](../testing/dotnet-private-feed-lifecycle.md)
+for its profile, limits and separate hosted qualification requirements.
+
 Feed names must be unique ignoring ASCII case across the SDK feeds and every
 additional source. NuGet's [source provider](https://github.com/dotnet/dotnet/blob/79c85d969a02abd06c2202949318fd4c21e5e7a0/src/nuget-client/src/NuGet.Core/NuGet.Configuration/PackageSource/PackageSourceProvider.cs#L121)
 selects source names case-insensitively, so `private` and `Private` cannot select

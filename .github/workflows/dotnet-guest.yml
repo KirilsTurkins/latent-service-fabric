@@ -21,6 +21,13 @@ on:
       - 'tools/standard_http/**'
       - 'tools/dotnet_capsule.py'
       - 'tools/dotnet_application_dependencies.py'
+      - 'tools/dotnet_registry_tls.py'
+      - 'tools/dotnet_private_feed_fixture.py'
+      - 'tools/qualify_dotnet_private_dependencies.py'
+      - 'tools/tests/test_dotnet_private_feeds.py'
+      - 'tools/tests/test_dotnet_private_lifecycle.py'
+      - 'tools/tests/fixtures/nuget-public-ca.pem'
+      - 'docs/testing/dotnet-private-feed-lifecycle.md'
       - 'tools/dotnet_dependency_authoring.py'
       - 'tools/dotnet_dependency_fixture.py'
       - 'tools/dotnet_dependency_recovery.py'
@@ -234,12 +241,28 @@ jobs:
       - name: Qualify signed asynchronous HttpClient pre-cancellation without dispatch
         run: |
           python3 tools/qualify_dotnet_standard_http.py --pre-cancelled-async --output "$RUNNER_TEMP/dotnet-standard-http-async-cancel" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Test private NuGet trust and bounded lifecycle controls
+        run: python3 -m unittest tools.tests.test_dotnet_private_feeds tools.tests.test_dotnet_private_lifecycle
+      - name: Qualify authenticated private NuGet capture and signed offline lifecycle
+        run: |
+          python3 tools/qualify_dotnet_private_dependencies.py --prepared-qualification "$RUNNER_TEMP/dotnet-capsule-dependencies" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-private-dependencies"
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/dotnet-private-dependencies/qualification.json
+            ${{ runner.temp }}/dotnet-private-dependencies/FAILED.json
+            ${{ runner.temp }}/dotnet-private-dependencies/capture.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/source-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/build-observation.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/compiler-containment.json
+            ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-private-dependencies/node-*/workflow.json
+            ${{ runner.temp }}/dotnet-private-dependencies/node-*/FAILED.json
             ${{ runner.temp }}/dotnet-standard-resources/**
             ${{ runner.temp }}/dotnet-standard-http/**
             ${{ runner.temp }}/dotnet-standard-http-send/**

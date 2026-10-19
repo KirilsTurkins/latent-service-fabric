@@ -40,6 +40,9 @@ on:
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/qualify_go_standard_logging.py
+      - tools/go_standard_logging_probe.py
+      - tools/tests/test_go_standard_logging.py
       - tools/qualify_go_http_libraries.py
       - tools/go_http_library_fixture.py
       - tools/go_http_library_reference.py
@@ -64,6 +67,7 @@ on:
       - docs/component-development/go-authoring.md
       - docs/component-development/go-dependencies.md
       - docs/component-development/go-standard-entropy.md
+      - docs/component-development/go-standard-logging.md
       - docs/development/go-capsule-qualification.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
@@ -119,6 +123,9 @@ on:
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/qualify_go_standard_logging.py
+      - tools/go_standard_logging_probe.py
+      - tools/tests/test_go_standard_logging.py
       - tools/qualify_go_http_libraries.py
       - tools/go_http_library_fixture.py
       - tools/go_http_library_reference.py
@@ -142,6 +149,7 @@ on:
       - schemas/**
       - docs/component-development/go-authoring.md
       - docs/component-development/go-dependencies.md
+      - docs/component-development/go-standard-logging.md
       - docs/development/go-capsule-qualification.md
       - docs/component-development/go-standard-entropy.md
       - docs/development/go-http-context-cancellation.md
@@ -318,6 +326,10 @@ jobs:
         id: normal_go_qualification
         run: |
           python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
+      - name: Check ordinary Go standard logging installation and frozen products
+        run: python3 -m unittest tools.tests.test_go_standard_logging -v
+      - name: Qualify ordinary captured fmt log and os writes on the signed node
+        run: python3 tools/qualify_go_standard_logging.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-logging"
       - name: Check captured ordinary HTTP fixture and frozen native product ownership
         run: |
           python3 -m unittest tools.tests.test_go_standard_http_gate -v
@@ -381,6 +393,18 @@ jobs:
             ${{ runner.temp }}/go-standard-entropy/node/workflow.json
             ${{ runner.temp }}/go-standard-entropy/node/FAILED.json
             ${{ runner.temp }}/go-standard-entropy/node/controls/go-entropy-*.json
+            ${{ runner.temp }}/go-standard-logging/qualification.json
+            ${{ runner.temp }}/go-standard-logging/FAILED.json
+            ${{ runner.temp }}/go-standard-logging/capture.json
+            ${{ runner.temp }}/go-standard-logging/build/BUILD-*.json
+            ${{ runner.temp }}/go-standard-logging/build/component.wasm
+            ${{ runner.temp }}/go-standard-logging/build/*-inputs.json
+            ${{ runner.temp }}/go-standard-logging/build/application-dependencies.json
+            ${{ runner.temp }}/go-standard-logging/build/go-runtime-transformations.json
+            ${{ runner.temp }}/go-standard-logging/build/logs/**
+            ${{ runner.temp }}/go-standard-logging/logs/**
+            ${{ runner.temp }}/go-standard-logging/node/*.json
+            ${{ runner.temp }}/go-standard-logging/node/controls/**
             ${{ runner.temp }}/go-http-libraries/qualification.json
             ${{ runner.temp }}/go-http-libraries/FAILED.json
             ${{ runner.temp }}/go-http-libraries/*/capture.json

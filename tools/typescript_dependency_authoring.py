@@ -171,6 +171,9 @@ def current_application(app: Path, lock: dict) -> None:
     native_bytes = read_bytes(app / 'package-lock.json')
     native_lock(native_bytes)
     graph = decode_json(read_bytes(app / 'npm-resolved.lock.json', inputs.MAX_LOCK))
+    if isinstance(graph, dict):
+        from tools.typescript_registry_tls import validate as validate_registry_trust
+        validate_registry_trust(app, graph.get('fetchTrust'))
     selected = selection(lock['selection'])
     modules = [row for row in lock['artifacts'] if row['metadata'].get('assetType') == 'selected-node-modules']
     if len(modules) != 1 or modules[0]['format'] != 'directory' or modules[0]['role'] != 'application':

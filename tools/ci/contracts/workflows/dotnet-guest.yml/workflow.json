@@ -37,6 +37,13 @@
           "tools/standard_http/**",
           "tools/dotnet_capsule.py",
           "tools/dotnet_application_dependencies.py",
+          "tools/dotnet_registry_tls.py",
+          "tools/dotnet_private_feed_fixture.py",
+          "tools/qualify_dotnet_private_dependencies.py",
+          "tools/tests/test_dotnet_private_feeds.py",
+          "tools/tests/test_dotnet_private_lifecycle.py",
+          "tools/tests/fixtures/nuget-public-ca.pem",
+          "docs/testing/dotnet-private-feed-lifecycle.md",
           "tools/dotnet_dependency_authoring.py",
           "tools/dotnet_dependency_fixture.py",
           "tools/dotnet_dependency_recovery.py",
@@ -76,7 +83,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Retain current dependency recovery and relocated compiler controls plus the exact reviewed internal IO adapter fixture stage; preserve every original command, skip and resource bound.",
+  "reviewReason": "Preserve ordinary NuGet gates and bind explicit public trust plus authenticated offline lifecycle qualification",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

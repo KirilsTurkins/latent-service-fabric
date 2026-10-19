@@ -48,3 +48,14 @@ TypeScript/component recipe still typechecks and inspects the final module,
 WIT and selected engine profile. Generation does not qualify pending Promise
 exports, standard-runtime operations or a new network/filesystem capability.
 The current ordinary-value profile and default script denial are retained.
+
+The maintained captured-library campaign selects `--approved-generator` explicitly. Its owned launcher
+receives fresh immutable inputs and finite limits, refuses a wrong approval or changed inputs, and
+must fail if it can read an existing parent-only file/environment value or connect to a live parent
+listener. The generator and original inputs are removed before ordinary component compilation.
+Generated request-dependent UTF-16 string-length results are then checked in three fresh signed
+invocations, with the full selected revision, process reaping, original physical-owner samples and
+idle providers. The normal tutorial, fault and HTTP programme remains required. A second offline
+build must preserve source/SDK identities and exact generated-input provenance. Local source and
+approval controls pass; real containment, compilation and signed results require the retained hosted
+campaign receipt. This does not claim pending Promise support or close #685 by itself.

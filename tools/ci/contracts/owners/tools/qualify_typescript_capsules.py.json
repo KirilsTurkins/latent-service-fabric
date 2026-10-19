@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/qualify_typescript_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Exercise signed TypeScript capsules with a reviewed native npm capture.","schemaVersion":"latent.ci.contracts.v1","sha256":"60a26e512ebee69af1decb574692ef6b017843705e003057640b79c6cc7c2533"}
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_capsules.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Compose unchanged TypeScript generator and Console campaigns with all historical commands and case coverage retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "882e8faa16d53be717ec360661ab87081b817e5e37df2f7eaf0465e20bb7143e"
+}
