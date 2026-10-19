@@ -959,3 +959,14 @@ class CargoVendorIntegrity(unittest.TestCase):
                 (self.vendored / '.cargo-checksum.json').write_bytes(checksum)
         with patch.object(native, 'capture', side_effect=swapped):
             self.rejected('cargo-vendor-source-mutated')
+
+
+    def test_disappeared_vendor_file_retains_a_closed_capture_failure(self):
+        from tools import application_dependency_store as storage
+        original_read = storage.read_bytes
+        def removed(path, *args, **kwargs):
+            if path == getattr(self, 'vendored', self.root) / 'src/lib.rs':
+                path.unlink()
+            return original_read(path, *args, **kwargs)
+        with patch.object(storage, 'read_bytes', side_effect=removed):
+            self.rejected('cargo-vendor-source-mutated')

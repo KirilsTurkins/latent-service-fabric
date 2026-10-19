@@ -365,7 +365,10 @@ def selected_graph(metadata: dict, selected: dict, root: Path) -> dict:
 
 def vendor_inventory(directory: Path, checksum: str | None) -> tuple[dict, dict]:
     """Bind native vendor checksums to one bounded original file inventory."""
-    files = directory_files(directory)
+    try:
+        files = directory_files(directory)
+    except OSError:
+        raise DependencyError('cargo-vendor-source-mutated') from None
     try:
         raw = files['.cargo-checksum.json']
         value = native_metadata(raw)
