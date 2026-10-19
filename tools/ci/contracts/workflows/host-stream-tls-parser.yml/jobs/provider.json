@@ -1,0 +1,63 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Bounded provider real-peer ownership controls",
+    "needs": "parser",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-bin": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Check provider receipt refusal controls",
+        "run": "python3 -m unittest tools.tests.test_host_stream_tls_provider_reference -v"
+      },
+      {
+        "name": "Build selected provider and execute all original ownership controls",
+        "run": "python3 tools/qualify_host_stream_tls_provider.py --output \"$RUNNER_TEMP/host-tls-provider-reference\" --source-commit \"${{ github.sha }}\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source-bound provider evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "host-tls-provider-reference-${{ github.sha }}",
+          "path": "${{ runner.temp }}/host-tls-provider-reference/receipt.json\n${{ runner.temp }}/host-tls-provider-reference/cargo.stderr.log\n${{ runner.temp }}/host-tls-provider-reference/tests.stdout.log\n${{ runner.temp }}/host-tls-provider-reference/tests.stderr.log\n${{ runner.temp }}/host-tls-provider-reference/list.stdout.log\n${{ runner.temp }}/host-tls-provider-reference/ignored.stdout.log\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 60
+  },
+  "jobId": "provider",
+  "kind": "job",
+  "reviewReason": "Run actual23 provider cases with unchanged900s suite cap and source-bound Cargo artifacts; reuse existing host-correctness dependency cache only, never cached qualification evidence",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/host-stream-tls-parser.yml"
+}

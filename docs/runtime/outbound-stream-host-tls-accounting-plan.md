@@ -56,6 +56,31 @@ strict currentness before dispatch and possible-write uncertainty. No reconnect,
 request replay, fallback transport, credential inference or quota expansion is
 part of this work.
 
+## Test-only real-provider experiment
+
+A private `cfg(test)` installer can select the already captured bounded provider
+for real-peer unit controls. The public qualification installer and public
+rotation always retain the `ACCOUNTING_QUALIFIED=false` refusal. The private
+installer/rotation symbols and their selector variant are absent from normal and
+`development-outbound` binaries; this is not a runtime enablement switch.
+
+The focused hosted lane builds only the actual `latent-streams` library test
+harness and dependencies, validates its exact Cargo artifact identity and all
+23 registered cases, and executes them with the original 900-second suite cap.
+All 19 earlier active controls remain mandatory, including the public
+unqualified-installation refusal. Four existing TLS peer controls add actual
+exchange, hostname denial, stalled-handshake deadline, and pending epoch
+retirement observations through the private experiment. Original reservations,
+assertions, policy and cleanup paths remain unchanged. Both the bounded provider
+and ordinary upstream peer library identities, complete selected source/lock
+before and after, and test executable identity are retained. A missing case,
+changed ignore state or partial success cannot produce a passing receipt.
+
+This lane has not run until a source-bound hosted receipt says otherwise. Even
+functional success does not establish complete allocator attribution, maximum
+verification/stack/kernel bounds, or signed/real-component qualification, and
+does not justify changing the accounting flag.
+
 ## Functional and coupled proof
 
 First compile the actual bounded provider and retain exact Cargo/source identity.
