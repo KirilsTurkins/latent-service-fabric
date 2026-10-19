@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_standard_facilities.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit combined C libc profile and bounded signed composition while preserving individual profiles, original commands and deadlines.",
+  "reviewReason": "Add explicit C23 captured raw resources and signed trap/fuel retirement while preserving all original C programmes and limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "99b4e07eeee537008b9effd7523fd7554e23d7460414595ac8ff561c8acd0152"
+  "sha256": "7fe9a686c861b529f44d81890ea94c60cda7db0a374c18a6b867f1e1325273f7"
 }

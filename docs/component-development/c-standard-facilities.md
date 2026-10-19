@@ -129,9 +129,15 @@ outcomes remain required, with clean node and peer shutdown.
 
 The C workflow adds this programme after the original clock/entropy and stdio
 programmes, reusing their exact native tuple within the unchanged job and node
-deadlines. **Combined-profile signed qualification is pending.** Focused source
-controls establish selection, captured closure and command/grant wiring only.
-Historical individual-profile receipts do not qualify this new composition.
+deadlines. The [combined-profile signed receipt](../testing/evidence/c-standard-combined-passed-2026-10-19.json)
+records the actual 37 successful outcomes: four independent pre-admission grant
+denials, six combined calls and the 27 original outcomes. All invocation
+processes retired, all 16 sampled provider inventories were idle, and the node
+and three held peer connections shut down cleanly. The compiler library's
+original files were removed before compilation. The original clock/entropy
+38-case and stdio 41-case campaigns also passed on the same ordinary native
+tuple. This evidence retains its exact historical source and component identities;
+it does not qualify later recipe changes or the separate C23 resource campaign.
 This finite slice advances facility composition in issue #681; concurrency,
 pthreads, asynchronous initialization, full six-language parity and production
 publisher authentication remain separate requirements.

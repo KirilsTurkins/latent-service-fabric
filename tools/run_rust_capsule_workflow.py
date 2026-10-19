@@ -43,7 +43,7 @@ def write_workflow_receipt(path, value):
 
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
-        captured_git_component=False, c_standard_combined=False, rust_compatibility=False):
+        captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -54,6 +54,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(c_standard_combined) is bool and (not c_standard_combined or language == "c")
             and not (c_standard_combined and (c_standard_facilities or c_standard_logging)),
             "authoring-c-standard-combined-language")
+    require(type(c_compiled_resources) is bool and (not c_compiled_resources or language == 'c')
+            and not (c_compiled_resources and (c_standard_facilities or c_standard_logging or c_standard_combined)),
+            'authoring-c-compiled-resources-language')
     require(type(captured_dependency_recovery) is bool
             and (not captured_dependency_recovery or language in {"rust", "dotnet", "go"}),
             "authoring-captured-dependency-recovery-language")
@@ -146,6 +149,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if c_standard_combined:
                         from tools.c_standard_combined_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
+                    if c_compiled_resources:
+                        from tools.c_compiled_resource_fixture import probe as compiled_resource_probe
+                        compiled_resource_probe(client, targets['greeting'], probe, result, len(names))
                     if noncrypto_entropy:
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",

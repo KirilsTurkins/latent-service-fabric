@@ -16,12 +16,18 @@ leases until physical retirement, returned buffers have explicit deep close,
 and pages retain their original view. The host owns commitment. The separately
 admitted Phase 4 profile and signed Linux-node matrix are tracked by #389.
 
-The maintained toolchain is Zig 0.16.0 (`zig cc`, C11, `wasm32-wasi`, `-O2`),
+The maintained toolchain is Zig 0.16.0 (`zig cc`, default C11, `wasm32-wasi`, `-O2`),
 wit-bindgen 0.62.0 and wasm-tools 1.254.0. Generated bindings preserve WIT
 identity, async imports, `uint64_t`, UTF-8 strings, records, lists, options,
 results and owned/borrowed resources. They are generated from the selected WIT,
 not a handwritten second ABI. The contract derivation tool explicitly rejects
 unsupported public shapes; see the [guest reference](../../docs/component-development/guest-sdk.md).
+
+An explicit [C23 resource selection](../../docs/component-development/c-compiled-resources.md)
+enables ordinary `#embed` over captured immutable data and projects declared
+dependency resources into the shared package index. It installs no runtime
+filesystem or writable scratch. Its new signed resource campaign is pending;
+the default C11 profile and existing facility receipts keep their own scope.
 
 The reactor has a 64 KiB stack, a finite memory maximum and no thread runtime.
 Zig's bundled libc supplies allocation. Component construction rejects ambient

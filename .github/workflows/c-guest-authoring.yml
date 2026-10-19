@@ -214,6 +214,10 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_c_standard_combined
           python3 tools/qualify_c_standard_facilities.py --combined-profile --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-combined"
+      - name: Execute captured C23 raw resources and physical trap retirement
+        run: |
+          python3 -m unittest tools.tests.test_c_compiled_resources
+          python3 tools/qualify_c_standard_facilities.py --compiled-resources --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-compiled-resources"
       - name: Retain bounded C standard runtime proof including failures
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -258,5 +262,21 @@ jobs:
             ${{ runner.temp }}/c-standard-combined/builds/*/core-componentization-failed.wasm
             ${{ runner.temp }}/c-standard-combined/builds/*/logs/**
             ${{ runner.temp }}/c-standard-combined/node/public-workflow.json
+            ${{ runner.temp }}/c-compiled-resources/qualified.json
+            ${{ runner.temp }}/c-compiled-resources/FAILED.json
+            ${{ runner.temp }}/c-compiled-resources/logs/**
+            ${{ runner.temp }}/c-compiled-resources/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/source-inputs.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/recipe-inputs.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/c-resources.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/resource-index.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/resources/objects/**
+            ${{ runner.temp }}/c-compiled-resources/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/compiler-inputs.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/component.wasm
+            ${{ runner.temp }}/c-compiled-resources/builds/*/logs/**
+            ${{ runner.temp }}/c-compiled-resources/node/public-workflow.json
           if-no-files-found: warn
           retention-days: 7

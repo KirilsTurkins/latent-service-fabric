@@ -104,6 +104,11 @@ def manifest(value: dict) -> dict:
     if (value['selection'].get('target', 'wasm32-wasi') != 'wasm32-wasi'
             or type(runtime_profile) is not str or runtime_profile not in SUPPORTED):
         raise DependencyError('c-dependency-runtime-profile-not-installed')
+    from tools.c_guest.language import selected_standard
+    try:
+        selected_standard(value['selection'])
+    except ValueError:
+        raise DependencyError('c-dependency-language-standard-not-installed') from None
     for artifact in value['artifacts']:
         if artifact['role'] not in {'application', 'resource', 'build-tool'}:
             raise DependencyError('c-dependency-role-not-application-input')
