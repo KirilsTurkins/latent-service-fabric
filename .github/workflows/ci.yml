@@ -64,12 +64,19 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           # Complete ancestry and trees keep offline diff selection authoritative.
-          # Only its current catalogue, manifests and Rust sources need blobs.
+          # Catalogue, manifests, Rust sources and the authenticated vendor closure are required.
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /tools/ci_profile.py
             /tools/ci_suite_inventory.py
+            /tools/host_stream_tls_provider.py
+            /tools/host_stream_tls_patch.py
+            /tools/rust_capsule_project.py
+            /crates/vendor/rustls-outbound/
+            /sdk/host-stream-tls/rustls-0.23.46-bounds/PROVIDER.json
+            /sdk/host-stream-tls/rustls-0.23.46-bounds/PATCH.json
+            /Cargo.lock
             /tools/ci/suites.json
             /tools/ci/suites.d/
             Cargo.toml

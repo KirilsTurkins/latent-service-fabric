@@ -15,9 +15,14 @@
           ".github/workflows/host-stream-tls-parser.yml",
           "sdk/host-stream-tls/rustls-0.23.46-bounds/**",
           "tools/host_stream_tls_patch.py",
+          "tools/host_stream_tls_provider.py",
+          "tools/native_runtime_build.py",
+          "tools/ci_suite_inventory.py",
+          "crates/vendor/rustls-outbound/**",
           "tools/qualify_host_stream_tls_parser.py",
           "tools/tests/test_host_stream_tls*.py",
-          "crates/latent-streams/Cargo.toml",
+          "crates/latent-streams/**",
+          "Cargo.toml",
           "Cargo.lock",
           "rust-toolchain.toml"
         ]
@@ -30,9 +35,14 @@
           ".github/workflows/host-stream-tls-parser.yml",
           "sdk/host-stream-tls/rustls-0.23.46-bounds/**",
           "tools/host_stream_tls_patch.py",
+          "tools/host_stream_tls_provider.py",
+          "tools/native_runtime_build.py",
+          "tools/ci_suite_inventory.py",
+          "crates/vendor/rustls-outbound/**",
           "tools/qualify_host_stream_tls_parser.py",
           "tools/tests/test_host_stream_tls*.py",
-          "crates/latent-streams/Cargo.toml",
+          "crates/latent-streams/**",
+          "Cargo.toml",
           "Cargo.lock",
           "rust-toolchain.toml"
         ]
@@ -46,7 +56,7 @@
   "requiredJobs": [
     "parser"
   ],
-  "reviewReason": "Qualify only the exact current rustls parser with fixed maintained dependency closure and unchanged amplification/refusal vectors; host TLS accounting stays disabled",
+  "reviewReason": "Select only the authenticated excluded bounded TLS dependency with full source/license provenance; preserve all parser and CI controls and keep production accounting disabled",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-tls-parser.yml"
 }

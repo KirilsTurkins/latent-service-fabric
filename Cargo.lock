@@ -2009,6 +2009,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-rustls-outbound"
+version = "0.23.46"
+dependencies = [
+ "once_cell",
+ "ring",
+ "rustls-pki-types",
+ "rustls-webpki",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
 name = "latent-rollout"
 version = "0.1.0-alpha.5"
 dependencies = [
@@ -2152,6 +2164,7 @@ dependencies = [
  "latent-policy",
  "latent-protected-files",
  "latent-routing",
+ "latent-rustls-outbound",
  "rcgen",
  "rustls",
  "serde",
