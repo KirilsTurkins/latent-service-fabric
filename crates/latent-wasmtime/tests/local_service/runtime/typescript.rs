@@ -176,6 +176,26 @@ async fn signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_ru
 #[ignore = "requires current maintained TypeScript retirement compiler outputs with actual build observations"]
 async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_before_fresh_state()
 {
+    async fn retired(f: &Fixture) {
+        f.idle().await;
+        let owners = f.backend.resource_snapshot();
+        assert_eq!(
+            (
+                owners.active_invocations,
+                owners.live_stores,
+                owners.live_host_states,
+                owners.live_component_instances,
+                owners.live_cancellation_probes
+            ),
+            (0, 0, 0, 0, 0)
+        );
+        assert_eq!(
+            f.read_wait
+                .active
+                .load(std::sync::atomic::Ordering::Acquire),
+            0
+        );
+    }
     let root = tempfile::tempdir().unwrap();
     let f = fixture("typescript-runtime-retirement", root.path()).await;
     let request = |identity: &str, mode| {
@@ -197,7 +217,7 @@ async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_
             ),
             42
         );
-        f.idle().await;
+        retired(&f).await;
     }
     let activation = latent_core::ActivationId("typescript-pending-promise-cancel".into());
     let mut invocation = Box::pin(f.manager.start(request(&activation.0, 0)).unwrap());
@@ -215,7 +235,7 @@ async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_
         super::failure(invocation.await).code,
         PlatformErrorCode::Cancelled
     );
-    f.idle().await;
+    retired(&f).await;
     assert_eq!(
         super::value(
             f.manager
@@ -225,14 +245,18 @@ async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_
         ),
         42
     );
-    f.idle().await;
+    retired(&f).await;
     let mut deadline = request("typescript-promise-original-root-deadline", 0);
-    deadline.budget.wall_time_limit_millis = Some(100);
+    deadline.budget.wall_time_limit_millis = Some(1000);
+    let mut deadline_invocation = Box::pin(f.manager.start(deadline).unwrap());
+    // An expired admission or slow preparation is not evidence that a pending
+    // ordinary Promise was retired by its original root deadline.
+    super::pending_timer(deadline_invocation.as_mut(), &f).await;
     assert_eq!(
-        super::failure(f.manager.start(deadline).unwrap().await).code,
+        super::failure(deadline_invocation.await).code,
         PlatformErrorCode::DeadlineExceeded
     );
-    f.idle().await;
+    retired(&f).await;
     assert_eq!(
         super::value(
             f.manager
@@ -242,7 +266,7 @@ async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_
         ),
         42
     );
-    f.idle().await;
+    retired(&f).await;
     let mode = 2;
     assert_eq!(
         super::failure(
@@ -257,7 +281,7 @@ async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_
         .code,
         PlatformErrorCode::GuestTrap
     );
-    f.idle().await;
+    retired(&f).await;
     assert_eq!(
         super::value(
             f.manager
@@ -270,5 +294,5 @@ async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_
         ),
         42
     );
-    f.idle().await;
+    retired(&f).await;
 }

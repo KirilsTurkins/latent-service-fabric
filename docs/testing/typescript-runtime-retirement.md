@@ -34,9 +34,12 @@ cargo test --locked -p latent-wasmtime --test local_service -- \
 
 The case signs and admits the actual products, waits for the original
 Store/read-wait/broker pending-timer witness before root cancellation, and
-checks `Cancelled`. It separately checks the original root deadline and a
-root trap after accepting a timer. Each outcome must retire the original
+checks `Cancelled`. The deadline invocation separately establishes the same
+pending witness before its one-second original root deadline. A third path
+checks a root trap after accepting a timer. Each outcome must retire the original
 activation, Store, call and result owners before a fresh module returns 42.
+Every idle boundary also checks all five original backend owner counters and
+the original read-wait counter are zero.
 The original runtime ceilings, five-second pending witness and two-second
 physical-idle bound remain unchanged.
 
