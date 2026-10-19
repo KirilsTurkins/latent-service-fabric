@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_entropy.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Diagnostic-only manual selector: preserve all ordinary NativeAOT commands and default behavior, independently authenticate original03a products and current e97 scalar host, compile one fresh secure RNG component and retain actual receipts. No native product rebuild or current-qualification rebinding.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "4cf54a04e4bd6de12a10cc82dc912cb688b44d5a1a8b31b84dfa05dbca04a19b"
+}

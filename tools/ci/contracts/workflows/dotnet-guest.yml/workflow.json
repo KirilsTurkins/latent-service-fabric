@@ -85,16 +85,25 @@
           ".github/workflows/dotnet-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "secure_entropy_replay": {
+            "default": false,
+            "description": "Execute one fresh secure RNG component using authenticated native products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "entropy-replay",
     "toolchain"
   ],
-  "reviewReason": "Add explicit pinned secure PAL scalar authority, native C reference and signed outside ordinary RNG gate while preserving every prior command, case, limits and receipt.",
+  "reviewReason": "Diagnostic-only manual secure-entropy selection adds one independent bounded job; all original paths, ordinary commands, permissions and default behavior remain.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

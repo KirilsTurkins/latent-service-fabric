@@ -68,6 +68,11 @@ on:
       - 'crates/latent-wasmtime/**'
       - '.github/workflows/dotnet-guest.yml'
   workflow_dispatch:
+    inputs:
+      secure_entropy_replay:
+        description: Execute one fresh secure RNG component using authenticated native products
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -89,6 +94,7 @@ env:
 
 jobs:
   toolchain:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.secure_entropy_replay }}
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -383,3 +389,100 @@ jobs:
             ${{ runner.temp }}/dotnet-http-error-port/
           if-no-files-found: error
           retention-days: 7
+
+  entropy-replay:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.secure_entropy_replay }}
+    name: Focused secure RNG with authenticated native products
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: 3.13.5
+    - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      with:
+        dotnet-version: 10.0.100
+    - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      with:
+        targets: wasm32-unknown-unknown
+        components: rustfmt
+    - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      with:
+        prefix-key: lsf-ci-dependencies-v2
+        shared-key: host-correctness
+        key: ubuntu-24.04
+        cache-targets: true
+        cache-bin: false
+        cache-workspace-crates: false
+        cache-all-crates: false
+        cache-on-failure: false
+        save-if: false
+    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      with:
+        version: 1.254.0
+    - name: Check exact native PAL and entropy authority controls
+      run: |
+        python3 -m pip install -r tools/requirements.lock
+        python3 -m unittest tools.tests.test_dotnet_noncrypto_entropy tools.tests.test_dotnet_entropy_grants tools.tests.test_dotnet_secure_entropy -v
+    - name: Retrieve only exact source-bound native products and companion packages
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 tools/replay_dotnet_entropy.py --prepare --output "$RUNNER_TEMP/entropy-prepared"
+    - name: Retrieve independently qualified scalar-owner host
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: go-entropy-retained-e97d44ddc744c9bd738d9b3b7a7d8b7234133e36
+        run-id: 39320463437
+        github-token: ${{ github.token }}
+        path: ${{ runner.temp }}/e97-host
+    - name: Install captured NativeAOT namespace and loader inputs
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+    - name: Install the pinned native compiler and closed runtime
+      shell: bash
+      run: |
+        curl --fail --location --max-time 180 \
+          https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+          --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+        printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+        tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+        python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
+        export PATH="$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH"
+        printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
+        python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+    - name: Build one fresh NativeAOT component, sign and execute ordinary secure RNG
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 tools/replay_dotnet_entropy.py --prepared "$RUNNER_TEMP/entropy-prepared" --host "$RUNNER_TEMP/e97-host/go-entropy-retained" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-standard-entropy"
+    - name: Retain bounded source, compiler, component and node evidence
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: dotnet-entropy-focused-${{ github.sha }}
+        path: |-
+          ${{ runner.temp }}/entropy-prepared/retrieval.json
+          ${{ runner.temp }}/dotnet-standard-entropy/qualified.json
+          ${{ runner.temp }}/dotnet-standard-entropy/FAILED.json
+          ${{ runner.temp }}/dotnet-standard-entropy/replay-materials.json
+          ${{ runner.temp }}/dotnet-standard-entropy/logs/**
+          ${{ runner.temp }}/dotnet-standard-entropy/outside/evidence/**
+          ${{ runner.temp }}/dotnet-standard-entropy/build/*.json
+          ${{ runner.temp }}/dotnet-standard-entropy/build/component.wasm
+          ${{ runner.temp }}/dotnet-standard-entropy/build/logs/**
+          ${{ runner.temp }}/dotnet-standard-entropy/node/public-workflow.json
+          ${{ runner.temp }}/dotnet-standard-entropy/node/workflow.json
+          ${{ runner.temp }}/dotnet-standard-entropy/node/FAILED.json
+          ${{ runner.temp }}/dotnet-standard-entropy/node/controls/dotnet-entropy-*.json
+        if-no-files-found: warn
+        retention-days: 3

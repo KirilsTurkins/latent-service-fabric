@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.secure_entropy_replay }}",
     "name": "NativeAOT component qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -209,7 +210,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Add explicit pinned secure PAL scalar authority, native C reference and signed outside ordinary RNG gate while preserving every prior command, case, limits and receipt.",
+  "reviewReason": "Diagnostic-only manual selector: preserve all ordinary NativeAOT commands and default behavior, independently authenticate original03a products and current e97 scalar host, compile one fresh secure RNG component and retain actual receipts. No native product rebuild or current-qualification rebinding.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

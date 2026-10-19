@@ -893,6 +893,14 @@ class RepositoryMigrationTests(unittest.TestCase):
                 # preserve all original step guards, commands and execution fields.
                 self.assertEqual(value['jobIf'], 'success()')
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only) }}"
+            if value['workflow'] == '.github/workflows/dotnet-guest.yml' and value['job'] == 'toolchain':
+                # Diagnostic-only independent replay: the ordinary full job
+                # remains required for push/PR and every other dispatch.
+                self.assertEqual(value['jobIf'], 'success()')
+                replay = data['workflowContracts']['.github/workflows/dotnet-guest.yml']['on']['workflow_dispatch']['inputs']['secure_entropy_replay']
+                self.assertEqual(replay['type'], 'boolean')
+                self.assertIs(replay['default'], False)
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.secure_entropy_replay }}"
             if key == reviewed_go_normal_id:
                 # The independent client gate refers to this unchanged normal
                 # qualification by its stable Actions step id. Retain every
