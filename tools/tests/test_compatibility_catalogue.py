@@ -53,6 +53,18 @@ class Catalogue(unittest.TestCase):
             with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'package-binding'):
                 subject.validate(self.value, DATA)
 
+    def test_changed_original_source_or_artifact_provenance_requires_a_new_entry_key(self):
+        original = copy.deepcopy(self.value)
+        for field, changed in [('source', '1' * 40), ('artifact', 1), ('member', 'different/member.json')]:
+            self.value = copy.deepcopy(original)
+            self.value['documents']['qualification']['origin'][field] = changed
+            self.reseal()
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'document-provenance-drift'):
+                subject.validate(self.value, DATA)
+        self.value['entries'][0]['documentsIdentity'] = subject.identity(self.value['documents'])
+        self.reseal()
+        self.assertNotEqual(original['entries'][0]['identity'], self.value['entries'][0]['identity'])
+
     def test_wrong_engine_graph_patch_and_wit_bindings_cannot_reuse_a_passing_entry(self):
         original = copy.deepcopy(self.value)
         for dimension in subject.DIMENSIONS:

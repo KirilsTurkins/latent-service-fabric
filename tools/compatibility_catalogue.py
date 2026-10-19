@@ -114,12 +114,13 @@ def validate(value, root):
     require(isinstance(value['entries'], list) and len(value['entries']) <= MAX_ENTRIES, 'entries')
     seen = set()
     for entry in value['entries']:
-        fields(entry, {'identity', 'language', 'package', 'status', 'surface', 'construction',
+        fields(entry, {'identity', 'documentsIdentity', 'language', 'package', 'status', 'surface', 'construction',
                        'packageBindings', 'bindings', 'evidence', 'limitations'})
         require(entry['language'] in LANGUAGES and entry['status'] in STATUSES, 'classification')
         require(entry['identity'] == identity({k: v for k, v in entry.items() if k != 'identity'})
                 and entry['identity'] not in seen, 'entry-identity')
         seen.add(entry['identity'])
+        require(entry['documentsIdentity'] == identity(value['documents']), 'document-provenance-drift')
         fields(entry['package'], {'coordinate', 'version', 'artifactDigest'})
         text(entry['package']['coordinate']);text(entry['package']['version'], 128)
         require(bool(DIGEST.fullmatch(entry['package']['artifactDigest'])), 'package-digest')

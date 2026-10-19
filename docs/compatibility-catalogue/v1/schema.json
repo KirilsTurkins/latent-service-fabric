@@ -271,6 +271,10 @@
             "minItems": 1,
             "maxItems": 32,
             "uniqueItems": true
+          },
+          "documentsIdentity": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
           }
         },
         "required": [
@@ -283,7 +287,8 @@
           "construction",
           "bindings",
           "evidence",
-          "limitations"
+          "limitations",
+          "documentsIdentity"
         ],
         "additionalProperties": false
       },

@@ -47,12 +47,15 @@ limitations and observed cases. Calculate the entry identity with
 `identity` field, then run the reader. This calculation is a content key, not an
 execution attestation. Review the original execution and claims before publishing.
 Do not add credentials, protocol payloads, signing material or private locations.
-Changing any scope or claim creates a different entry identity. Preserve original
+Changing any scope, claim or document provenance creates a different entry
+identity. The entry binds the complete document manifest as well as selected values. Preserve original
 receipts and failed/not-run distinctions when adding later observations.
 
 The first entry reuses the original Java HTTP-request execution from run
 38859355061/job116837864409, artifact12033094958, source
-`a77af5963dbfb158101c68331a016f9541bda2ee`. The retained documents are byte-exact
+`160107c857a70f141d2ab74d79fe195d40498ebe`. Actions run, job and artifact
+metadata identify that source. The artifact name retains an older `a77af596` label;
+its filename is not used as source attribution. The retained documents are byte-exact
 public members from that artifact. This is a historical thirteen-case plain HTTP
 observation, not a new run or a current-development qualification. In particular,
 the compiler's original profile document retains `qualification=pending`; its

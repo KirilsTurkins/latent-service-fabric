@@ -2,6 +2,7 @@
   "cases": [
     "Catalogue.test_another_bound_component_or_source_cannot_borrow_the_signed_result",
     "Catalogue.test_changed_coordinate_version_or_artifact_cannot_borrow_another_package_receipt",
+    "Catalogue.test_changed_original_source_or_artifact_provenance_requires_a_new_entry_key",
     "Catalogue.test_document_tampering_absence_links_and_path_escape_fail_only_the_optional_reader",
     "Catalogue.test_native_reference_injection_and_pending_compiler_receipt_cannot_claim_tested_default",
     "Catalogue.test_new_authority_unknown_fields_duplicate_entries_and_unbound_edits_are_rejected",
@@ -24,6 +25,18 @@
       "skipSites": []
     },
     "Catalogue.test_changed_coordinate_version_or_artifact_cannot_borrow_another_package_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dd732eca3e0048448d1e0d3a36d29acb71141acea1a79e0aef9592f1e946f204",
+        "class:setup-sha256:46c655ee4edb6626050b0c41a44b6569fc6c96f117f9660536926bac09000077"
+      ],
+      "skipSites": []
+    },
+    "Catalogue.test_changed_original_source_or_artifact_provenance_requires_a_new_entry_key": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -122,6 +135,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_compatibility_catalogue.py",
-  "reviewReason": "Add optional informational catalogue integrity, exact package/context/evidence bindings, schema/readable consistency and classification refusal controls; no runtime or resolution selector consumes this data.",
+  "reviewReason": "Retain nine prior integrity/classification controls and bind original workflow/artifact document provenance into each content key; reject scope reuse after source metadata changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

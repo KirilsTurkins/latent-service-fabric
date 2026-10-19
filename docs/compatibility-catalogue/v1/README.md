@@ -11,7 +11,7 @@ results to another graph, configuration, compiler, engine, runtime or backend.
 
 ## com.github.kevinsawicki:http-request:6.0
 
-Entry identity: `sha256:0092ae990c87ab412bcfec5bd441fbd10be4e800d46922d59866a8b6adc8907a`.
+Entry identity: `sha256:4cd2469985028d78b670f2c88e6625b3a85493a43a562a0cb1941bf9353990ec`.
 
 Observed:
 - Thirteen signed/admitted cases passed through ordinary client factories and the typed HTTP provider.
