@@ -8,6 +8,23 @@ from tools.phase2_operator_process import WorkflowError
 
 
 class AdversarialHttpEvidence(unittest.TestCase):
+    def test_unchanged_custom_transport_keeps_exact_utf8_domain_payload(self):
+        import json
+        import re
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[2]
+        original = (root / 'sdk/go-guest/runtime/standard-http-conformance/main.go').read_bytes()
+        selected = (root / 'tools/fixtures/go-http-adversarial/main.go').read_bytes()
+        def payload(raw):
+            marker = b'Body:io.NopCloser(bytes.NewBufferString(`'
+            return raw.split(marker, 1)[1].split(b'`)', 1)[0]
+        self.assertEqual(payload(selected), payload(original))
+        decoded = json.loads(payload(selected))
+        self.assertEqual(decoded['name'], 'caf\u00e9')
+        self.assertEqual(decoded['items'], ['\u03bb', ''])
+        self.assertEqual(re.findall(rb'[\x80-\xff]+', selected), re.findall(rb'[\x80-\xff]+', original))
+
+
     def test_secondary_grant_authorizes_only_the_exact_get_target(self):
         primary = {'scheme': 'http', 'host': '127.0.0.1', 'port': 19001}
         secondary = {**primary, 'port': 19002}

@@ -42,3 +42,9 @@ runtime implementation profile and selected v5 host ABI manifest are distinct
 identities. The first661 replay correctly refused a greeting/HTTP recipe equality
 before any HTTP cases; its newly compiled HTTP recipe actually equals the
 original HTTP recipe byte for byte. This correction changes no compiler input.
+
+The subsequent8cba replay passed recipe authentication and reached the original
+standard baseline, which rejected the copied custom-transport Unicode payload.
+Its fixture-only correction restores that line byte for byte from the maintained
+original source. A focused old-source RED/current-source GREEN control also
+checks every non-ASCII byte sequence. No compiler, SDK, host or oracle is changed.
