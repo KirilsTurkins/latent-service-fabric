@@ -163,8 +163,8 @@ class CompiledResources(unittest.TestCase):
         self.assertGreaterEqual(len(commands), 2)
         for row in commands:
             self.assertIn('-std=c23', row)
-            self.assertIn('--embed-dir', row)
-            self.assertEqual(row[row.index('--embed-dir') + 1], str(self.root))
+            self.assertIn('--embed-dir=' + str(self.root), row)
+            self.assertNotIn('--embed-dir', row)
         with self.assertRaisesRegex(ValueError, 'bounded-c23'):
             compiler.compile([source], self.root, 'service', self.root / 'closed', embed_directories=(self.root,))
 

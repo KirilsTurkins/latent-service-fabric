@@ -176,7 +176,7 @@ class Compiler:
         for directory in include_directories:
             command.extend(["-I", str(directory)])
         for directory in embed_directories:
-            command.extend(['--embed-dir', str(directory)])
+            command.append('--embed-dir=' + str(directory))
         command.extend("-D" + define for define in defines)
         command.extend(map(str, static_libraries))
         if trap:
@@ -189,7 +189,7 @@ class Compiler:
             for directory in include_directories:
                 preprocessor.extend(["-I", str(directory)])
             for directory in embed_directories:
-                preprocessor.extend(['--embed-dir', str(directory)])
+                preprocessor.append('--embed-dir=' + str(directory))
             preprocessor.extend("-D" + define for define in defines)
             selected_sources = [*sources, generated / "probe.c"]
             if trap:
