@@ -1,0 +1,103 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority }}",
+    "name": "Current ordinary host normal27 and freshly compiled entropy43",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore only locked dependency compilation cache",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only existing locked Python and compiler namespace prerequisites",
+        "run": "python3 -m pip install -r tools/requirements.lock\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Check historical binding and fresh-host receipt controls",
+        "run": "python3 -B -m unittest tools.tests.test_go_entropy_retained tools.tests.test_go_standard_entropy tools.tests.test_go_entropy_replay -v"
+      },
+      {
+        "name": "Read original pinned compiler and generator from the failed owning run",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "go-guest-tools-72e693bc25fe269bb584feaaf4b7270fa81647df",
+          "path": "${{ runner.temp }}/go-entropy-tools",
+          "run-id": 39310234677
+        }
+      },
+      {
+        "name": "Authenticate original Go archive and prepare only the maintained async compiler",
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-entropy-tools\"\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\npython3 -B -c 'import os; from pathlib import Path; from tools.qualify_go_entropy_retained import compiler_inputs; compiler_inputs(Path(os.environ[\"RUNNER_TEMP\"])/\"go-entropy-tools\")'\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Read only authenticated original public packages and native products",
+        "run": "python3 -B tools/go_entropy_replay_inputs.py --include-normal-greeting --output \"$RUNNER_TEMP/go-entropy-retained-inputs\"",
+        "timeout-minutes": 5
+      },
+      {
+        "name": "Build current ordinary host once then sign and execute normal27 and fresh entropy43",
+        "run": "python3 -B tools/qualify_go_entropy_retained.py --acquired \"$RUNNER_TEMP/go-entropy-retained-inputs\" --output \"$RUNNER_TEMP/go-entropy-retained\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain distinct historical inputs current host fresh component and signed observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-entropy-retained-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-entropy-retained-inputs/acquisition*.json\n${{ runner.temp }}/go-entropy-retained/qualification.json\n${{ runner.temp }}/go-entropy-retained/FAILED.json\n${{ runner.temp }}/go-entropy-retained/current-host.json\n${{ runner.temp }}/go-entropy-retained/current-latentd\n${{ runner.temp }}/go-entropy-retained/capture.json\n${{ runner.temp }}/go-entropy-retained/build/*.json\n${{ runner.temp }}/go-entropy-retained/build/component.wasm\n${{ runner.temp }}/go-entropy-retained/logs/**\n${{ runner.temp }}/go-entropy-retained/node-normal/workflow.json\n${{ runner.temp }}/go-entropy-retained/node-normal/FAILED.json\n${{ runner.temp }}/go-entropy-retained/node-normal/controls/*.json\n${{ runner.temp }}/go-entropy-retained/node-entropy/workflow.json\n${{ runner.temp }}/go-entropy-retained/node-entropy/FAILED.json\n${{ runner.temp }}/go-entropy-retained/node-entropy/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 35
+  },
+  "jobId": "retained-entropy",
+  "kind": "job",
+  "reviewReason": "Review preserved current ordinary binary for exact future source-bound replay and remaining-budget cap within35min owning job.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-guest.yml"
+}

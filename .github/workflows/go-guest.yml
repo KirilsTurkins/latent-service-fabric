@@ -27,6 +27,10 @@ on:
       - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
+      - tools/qualify_go_standard_entropy.py
+      - tools/go_standard_entropy_fixture.py
+      - tools/go_standard_entropy_probe.py
+      - tools/tests/test_go_standard_entropy.py
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
@@ -62,6 +66,7 @@ on:
       - schemas/**
       - docs/component-development/go-authoring.md
       - docs/component-development/go-dependencies.md
+      - docs/component-development/go-standard-entropy.md
       - docs/component-development/go-standard-logging.md
       - docs/development/go-capsule-qualification.md
       - docs/development/go-http-context-cancellation.md
@@ -106,6 +111,10 @@ on:
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_go_activation.py
+      - tools/qualify_go_standard_entropy.py
+      - tools/go_standard_entropy_fixture.py
+      - tools/go_standard_entropy_probe.py
+      - tools/tests/test_go_standard_entropy.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
       - tools/tests/test_go_managed_idle.py
@@ -142,6 +151,7 @@ on:
       - docs/component-development/go-dependencies.md
       - docs/component-development/go-standard-logging.md
       - docs/development/go-capsule-qualification.md
+      - docs/component-development/go-standard-entropy.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
       - crates/latent-control-store/**
@@ -157,6 +167,19 @@ on:
       - tools/toolchain.toml
       - .github/workflows/go-guest.yml
   workflow_dispatch:
+    inputs:
+      replay-entropy-authority:
+        description: Replay the unchanged 42a entropy component with corrected explicit input authority
+        type: boolean
+        default: false
+      qualify-entropy-retained:
+        description: Fresh current host and entropy component with authenticated historical normal companions
+        type: boolean
+        default: false
+      entropy-only:
+        description: Retry only the fresh entropy lane after exact-source CPU and native scalar controls passed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -178,6 +201,7 @@ env:
 
 jobs:
   upstream-probe:
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only) }}
     name: Go runtime and complete capsule qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -341,6 +365,15 @@ jobs:
       - name: Qualify captured Go libraries in signed components
         run: |
           python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"
+      - name: Execute original random provider ownership and canonical scalar lowering controls
+        run: cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test random
+      - name: Test ordinary Go entropy capture and terminal freshness boundaries
+        run: python3 -m unittest tools.tests.test_go_standard_entropy
+      - name: Qualify ordinary crypto/rand and syscall.RandomGet with existing runtime authority
+        run: >-
+          python3 tools/qualify_go_standard_entropy.py
+          --native-qualification "$RUNNER_TEMP/go-capsule-dependencies"
+          --output "$RUNNER_TEMP/go-standard-entropy"
       - name: Locate failed timer Wasm frames using private read-only source overlays
         if: ${{ failure() && steps.standard_timers.outcome == 'failure' }}
         run: |
@@ -358,6 +391,16 @@ jobs:
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/go-standard-entropy/qualification.json
+            ${{ runner.temp }}/go-standard-entropy/FAILED.json
+            ${{ runner.temp }}/go-standard-entropy/capture.json
+            ${{ runner.temp }}/go-standard-entropy/logs/**
+            ${{ runner.temp }}/go-standard-entropy/build/*.json
+            ${{ runner.temp }}/go-standard-entropy/build/component.wasm
+            ${{ runner.temp }}/go-standard-entropy/build/logs/**
+            ${{ runner.temp }}/go-standard-entropy/node/workflow.json
+            ${{ runner.temp }}/go-standard-entropy/node/FAILED.json
+            ${{ runner.temp }}/go-standard-entropy/node/controls/go-entropy-*.json
             ${{ runner.temp }}/go-standard-logging/qualification.json
             ${{ runner.temp }}/go-standard-logging/FAILED.json
             ${{ runner.temp }}/go-standard-logging/capture.json
@@ -540,5 +583,205 @@ jobs:
             ${{ runner.temp }}/go-entry-private-frames/node/entry.json
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
+          if-no-files-found: warn
+          retention-days: 7
+  entropy-authority-replay:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only }}
+    name: Same-component Go entropy explicit authority and retirement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install only existing locked Python dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact-source replay and finite entropy authority controls
+        run: python3 -B -m unittest tools.tests.test_go_standard_entropy tools.tests.test_go_entropy_replay -v
+      - name: Read fixed original public documents and binary products
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/go_entropy_replay_inputs.py --output "$RUNNER_TEMP/go-entropy-original-inputs"
+      - name: Re-sign unchanged component and repeat all original and entropy outcomes
+        run: python3 -B tools/replay_go_standard_entropy.py --acquired "$RUNNER_TEMP/go-entropy-original-inputs" --output "$RUNNER_TEMP/go-entropy-authority-replay"
+      - name: Retain bounded same-component source and signed observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-entropy-authority-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-entropy-original-inputs/acquisition.json
+            ${{ runner.temp }}/go-entropy-original-inputs/acquisition-failure.json
+            ${{ runner.temp }}/go-entropy-authority-replay/qualification.json
+            ${{ runner.temp }}/go-entropy-authority-replay/FAILED.json
+            ${{ runner.temp }}/go-entropy-authority-replay/node/workflow.json
+            ${{ runner.temp }}/go-entropy-authority-replay/node/FAILED.json
+            ${{ runner.temp }}/go-entropy-authority-replay/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7
+  retained-cpu-checkpoints:
+    name: Original signed CPU checkpoint cancellation and deadline controls
+    timeout-minutes: 20
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority && !inputs.entropy-only }}
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore only locked dependency compilation cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Read exact failed-run compiler fixtures without recompilation
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: go-guest-upstream-72e693bc25fe269bb584feaaf4b7270fa81647df
+          run-id: 39310234677
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/go-checkpoint-retained
+      - name: Execute the unchanged complete signed CPU case with the physical original-root witness
+        env:
+          LSF_GUEST_SDK_LANGUAGE: go
+          LSF_GO_CHECKPOINT_FIXTURE: ${{ runner.temp }}/go-checkpoint-retained/go-checkpoints
+          LSF_GO_NO_CHECKPOINT_FIXTURE: ${{ runner.temp }}/go-checkpoint-retained/go-no-checkpoints
+        run: cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation -- --ignored --exact --nocapture
+  retained-scalar-ownership:
+    name: All15 actual random provider ownership and canonical-lowering controls
+    timeout-minutes: 20
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority && !inputs.entropy-only }}
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore only locked dependency compilation cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Execute all original random controls plus scalar lowering and error retirement
+        run: cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test random
+  retained-entropy:
+    name: Current ordinary host normal27 and freshly compiled entropy43
+    timeout-minutes: 35
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority }}
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore only locked dependency compilation cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install only existing locked Python and compiler namespace prerequisites
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Check historical binding and fresh-host receipt controls
+        run: python3 -B -m unittest tools.tests.test_go_entropy_retained tools.tests.test_go_standard_entropy tools.tests.test_go_entropy_replay -v
+      - name: Read original pinned compiler and generator from the failed owning run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: go-guest-tools-72e693bc25fe269bb584feaaf4b7270fa81647df
+          run-id: 39310234677
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/go-entropy-tools
+      - name: Authenticate original Go archive and prepare only the maintained async compiler
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/go-entropy-tools"
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz" | sha256sum --check --strict
+          python3 -B -c 'import os; from pathlib import Path; from tools.qualify_go_entropy_retained import compiler_inputs; compiler_inputs(Path(os.environ["RUNNER_TEMP"])/"go-entropy-tools")'
+          test "$("$out/componentize-go" --version)" = 'componentize-go 0.4.3'
+          tar -xzf "$out/go.tar.gz" -C "$out"
+          python3 -B tools/go_guest/runtime.py --prepare-compiler "$out/go" --output "$out/go-async"
+          echo "$out" >> "$GITHUB_PATH"
+          echo "$out/go-async/bin" >> "$GITHUB_PATH"
+      - name: Read only authenticated original public packages and native products
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/go_entropy_replay_inputs.py --include-normal-greeting --output "$RUNNER_TEMP/go-entropy-retained-inputs"
+      - name: Build current ordinary host once then sign and execute normal27 and fresh entropy43
+        run: python3 -B tools/qualify_go_entropy_retained.py --acquired "$RUNNER_TEMP/go-entropy-retained-inputs" --output "$RUNNER_TEMP/go-entropy-retained"
+      - name: Retain distinct historical inputs current host fresh component and signed observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-entropy-retained-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-entropy-retained-inputs/acquisition*.json
+            ${{ runner.temp }}/go-entropy-retained/qualification.json
+            ${{ runner.temp }}/go-entropy-retained/FAILED.json
+            ${{ runner.temp }}/go-entropy-retained/current-host.json
+            ${{ runner.temp }}/go-entropy-retained/current-latentd
+            ${{ runner.temp }}/go-entropy-retained/capture.json
+            ${{ runner.temp }}/go-entropy-retained/build/*.json
+            ${{ runner.temp }}/go-entropy-retained/build/component.wasm
+            ${{ runner.temp }}/go-entropy-retained/logs/**
+            ${{ runner.temp }}/go-entropy-retained/node-normal/workflow.json
+            ${{ runner.temp }}/go-entropy-retained/node-normal/FAILED.json
+            ${{ runner.temp }}/go-entropy-retained/node-normal/controls/*.json
+            ${{ runner.temp }}/go-entropy-retained/node-entropy/workflow.json
+            ${{ runner.temp }}/go-entropy-retained/node-entropy/FAILED.json
+            ${{ runner.temp }}/go-entropy-retained/node-entropy/controls/*.json
           if-no-files-found: warn
           retention-days: 7
