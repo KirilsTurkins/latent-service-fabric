@@ -1,9 +1,9 @@
 // Source-owned control: ordinary globals, with no transport argument or SDK call.
 const initializedHeaders = new Headers([['x-client', 'ordinary-global']]);
-const initializedRequest = new Request('https://fixture.invalid/not-dispatched', {
-  headers: initializedHeaders,
-});
-if (initializedRequest.headers.get('x-client') !== 'ordinary-global') {
+const initializedResponse = new Response(null, {headers: initializedHeaders});
+if (initializedResponse.status !== 200 || initializedResponse.body !== null ||
+    initializedResponse.headers.get('x-client') !== 'ordinary-global' ||
+    typeof Request !== 'function' || typeof fetch !== 'function') {
   throw new Error('default-fetch-client-initialization');
 }
 

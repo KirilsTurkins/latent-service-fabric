@@ -112,9 +112,16 @@ after the original response, preserving the fact that the original mutation may
 already have occurred.
 
 Snapshot-time network use fails before Promise or provider work is admitted.
-Ordinary construction/lookup is available for library initialization, but no
-request, credential, active Promise or live host resource enters the initialized
-component snapshot. Each invocation receives fresh mutable module/client state.
+Pure `Headers`/`Response` construction and global API lookup are available for
+module initialization. Top-level `new Request(...)` remains unsupported: every
+Request creates a dependent native AbortSignal, whose mutable listener/weak-link
+graph requires invocation admission. The engine refuses that graph while Wizer
+creates a shared snapshot; the Fetch construction fixture must not bypass or
+weaken this refusal. Request construction is exercised inside the async export
+instead. Arbitrary Request-constructing dependency initializers are therefore
+still an unmet #691 compatibility boundary. No request, credential, active
+Promise or live host resource enters the initialized component snapshot. Each
+invocation receives fresh mutable module/client state.
 
 ## Checks and remaining qualification
 
@@ -137,8 +144,14 @@ The `Actual source-owned Fetch component construction` workflow job now consumes
 the exact same-run source-built import engine and compiler splicer. It runs the
 maintained compiler on an outside-checkout project with ordinary global lookup
 in direct and transitive module initializers and a real async typed HTTP import.
-The fixture includes snapshot-time constructor assertions, but its report does
-not observe whether those initializers executed inside the componentizer. The
+The fixture includes direct/transitive `Headers`/`Response` constructor assertions
+and verifies transitive `Request`/`fetch` availability without snapshot-time native
+signal admission. Its report does not independently observe whether those
+initializers executed inside the componentizer. A focused Node adapter control
+models the native signal admission boundary: initialization admits no signal or
+provider work, top-level Request construction still refuses, and invocation
+constructs a real Request and consumes the typed response. That control is source
+evidence, not an emitted-component/provider run. The
 compiler performs generated-declaration typechecking, component validation and
 decoded public-type comparison. It retains the actual component, selected backend and
 bootstrap digests, exact engine/splicer inputs, and before/after source/compiler

@@ -145,6 +145,66 @@ assert.equal(drops, 2); // materialized chunk and body; finish consumed upload.
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
 
+class TypeScriptFetchSnapshotTests(unittest.TestCase):
+    def test_snapshot_initializers_preserve_native_signal_admission_until_invocation(self):
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node host is required for this source control')
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, temporary, backend] = process.argv.slice(2);
+const {installFetch} = await import(pathToFileURL(backend));
+let snapshot = true, admissions = 0, contacts = 0, reads = 0, drops = 0;
+const nativeAny = AbortSignal.any;
+AbortSignal.any = function(signals) {
+  // The real source-owned engine denies mutable native signal graphs while
+  // Wizer creates the snapshot. Model that same boundary in this adapter test.
+  if (snapshot) throw new Error('activation-runtime-native-object-phase-or-admission-denied');
+  admissions++;
+  return Reflect.apply(nativeAny, this, [signals]);
+};
+const owner = () => ({[Symbol.dispose]() {drops++;}});
+installFetch({
+  async open(request) {
+    assert.equal(snapshot, false);
+    contacts++;
+    assert.equal(request.url, 'https://fixture.invalid/conformance/json');
+    assert.deepEqual(request.headers, [{name: 'x-client', value: 'ordinary-global'}]);
+    return owner();
+  },
+  async finish() {return {status: 200, headers: [], body: owner()};},
+  async read() {return reads++ === 0 ? owner() : undefined;},
+  async chunkBytes() {return new TextEncoder().encode('{"message":"fixture"}');},
+}, () => snapshot);
+for (const name of ['default-client', 'main']) {
+  const source = stripTypeScriptTypes(await readFile(fixture + '/' + name + '.ts', 'utf8'));
+  await writeFile(temporary + '/' + name + '.mjs', source.replace("'./default-client.js'", "'./default-client.mjs'"));
+}
+const {api} = await import(pathToFileURL(temporary + '/main.mjs'));
+assert.equal(admissions, 0);
+assert.equal(contacts, 0);
+assert.throws(() => new Request('https://fixture.invalid/not-dispatched'),
+  /activation-runtime-native-object-phase-or-admission-denied/);
+assert.equal(admissions, 0);
+assert.equal(contacts, 0);
+snapshot = false;
+assert.equal(await api.run('https://fixture.invalid/conformance/json'), '200:fixture');
+assert.ok(admissions > 0);
+assert.equal(contacts, 1);
+assert.equal(drops, 2);
+"""
+            entry = root / 'control.mjs'
+            entry.write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(entry), str(fetch.ROOT / fetch.FIXTURE),
+                str(root), str(fetch.ROOT / 'tools/typescript_guest/fetch.mjs')],
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
+
 class TypeScriptFetchManifestTests(unittest.TestCase):
     def large_compiler_manifest(self):
         # The exact first hosted run's source-splicer compiler inventory had
