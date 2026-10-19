@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/host_stream_tls_provider.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Select only the authenticated excluded bounded TLS dependency with full source/license provenance; preserve all parser and CI controls and keep production accounting disabled",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "da7345d4524f85359dba85e837f832118012e70df5890489d412851d0b4aaf81"
+}

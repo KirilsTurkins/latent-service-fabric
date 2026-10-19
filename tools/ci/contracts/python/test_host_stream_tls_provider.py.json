@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "BoundedTlsProviderSource.test_ci_graph_keeps_only_authenticated_excluded_dependency_outside_test_targets",
+    "BoundedTlsProviderSource.test_complete_current_source_and_license_closure_are_authenticated",
+    "BoundedTlsProviderSource.test_global_shadowing_changed_lock_and_accounting_enablement_are_refused",
+    "BoundedTlsProviderSource.test_native_inventory_retains_all_authenticated_local_third_party_licenses",
+    "BoundedTlsProviderSource.test_only_package_name_changes_in_the_exact_upstream_cargo_manifest",
+    "BoundedTlsProviderSource.test_unbounded_old_selection_and_any_mixed_or_extra_source_are_refused"
+  ],
+  "guards": {
+    "BoundedTlsProviderSource.test_ci_graph_keeps_only_authenticated_excluded_dependency_outside_test_targets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a1655385a5acb2681878a8c09f4dbbe6e0ebe299c1307eed274f0f575e6473",
+        "class:setup-sha256:b7a17c69886d72058dc4d6d9ee04a6137136ee90828a956b9157ba80ffd2406e"
+      ],
+      "skipSites": []
+    },
+    "BoundedTlsProviderSource.test_complete_current_source_and_license_closure_are_authenticated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a1655385a5acb2681878a8c09f4dbbe6e0ebe299c1307eed274f0f575e6473",
+        "class:setup-sha256:b7a17c69886d72058dc4d6d9ee04a6137136ee90828a956b9157ba80ffd2406e"
+      ],
+      "skipSites": []
+    },
+    "BoundedTlsProviderSource.test_global_shadowing_changed_lock_and_accounting_enablement_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a1655385a5acb2681878a8c09f4dbbe6e0ebe299c1307eed274f0f575e6473",
+        "class:setup-sha256:b7a17c69886d72058dc4d6d9ee04a6137136ee90828a956b9157ba80ffd2406e"
+      ],
+      "skipSites": []
+    },
+    "BoundedTlsProviderSource.test_native_inventory_retains_all_authenticated_local_third_party_licenses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a1655385a5acb2681878a8c09f4dbbe6e0ebe299c1307eed274f0f575e6473",
+        "class:setup-sha256:b7a17c69886d72058dc4d6d9ee04a6137136ee90828a956b9157ba80ffd2406e"
+      ],
+      "skipSites": []
+    },
+    "BoundedTlsProviderSource.test_only_package_name_changes_in_the_exact_upstream_cargo_manifest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a1655385a5acb2681878a8c09f4dbbe6e0ebe299c1307eed274f0f575e6473",
+        "class:setup-sha256:b7a17c69886d72058dc4d6d9ee04a6137136ee90828a956b9157ba80ffd2406e"
+      ],
+      "skipSites": []
+    },
+    "BoundedTlsProviderSource.test_unbounded_old_selection_and_any_mixed_or_extra_source_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a1655385a5acb2681878a8c09f4dbbe6e0ebe299c1307eed274f0f575e6473",
+        "class:setup-sha256:b7a17c69886d72058dc4d6d9ee04a6137136ee90828a956b9157ba80ffd2406e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_tls_provider.py",
+  "reviewReason": "Select only the authenticated excluded bounded TLS dependency with full source/license provenance; preserve all parser and CI controls and keep production accounting disabled",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

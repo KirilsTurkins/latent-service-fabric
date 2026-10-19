@@ -5,6 +5,8 @@ use latent_capabilities::broker::network::{
     OutboundStreamInvoker, StreamConnectRequest, StreamShutdown,
 };
 use latent_policy::capability::StreamTransport;
+// Peer fixtures keep the ordinary upstream TLS type; only the provider is bounded.
+use rustls_upstream as rustls;
 use sha2::{Digest, Sha256};
 use std::{
     sync::Arc,
