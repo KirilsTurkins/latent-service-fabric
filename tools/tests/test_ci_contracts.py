@@ -874,6 +874,12 @@ class RepositoryMigrationTests(unittest.TestCase):
                     value["run"] = value["run"].replace(
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
+            if value['workflow'] == '.github/workflows/go-guest.yml' and value['job'] == 'upstream-probe':
+                # The reviewed manual replay flags select separate bounded jobs.
+                # Push/PR and ordinary dispatch still require this complete job;
+                # preserve all original step guards, commands and execution fields.
+                self.assertEqual(value['jobIf'], 'success()')
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only) }}"
             if key == reviewed_go_normal_id:
                 # The independent client gate refers to this unchanged normal
                 # qualification by its stable Actions step id. Retain every
