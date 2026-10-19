@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Compose development logging and Console with unchanged private npm capture qualification; preserve every existing command.",
+  "reviewReason": "Exact union of current captured NPM and private NuGet helper identities; preserve all selected runtime and language flags.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "60ba45e10f5b875fdee397999a4bf099f524ea5a5ef0c8f40c6132fef0eddf8a"
+  "sha256": "c54f86e0ec6e7325ba72919052e0bdaf8c84c1eafff429347302687eed41cae3"
 }
