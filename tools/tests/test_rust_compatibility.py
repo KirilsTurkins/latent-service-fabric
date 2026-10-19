@@ -88,7 +88,12 @@ class CapturedCompatibility(unittest.TestCase):
 class ActualOutcomeRequirements(unittest.TestCase):
     def setUp(self):
         self.client, self.target, self.probe = Mock(), {
-            'budget': {'memoryBytes': 65536}, 'publication': 'publication:owned', 'generation': '1'}, Mock()
+            'budget': {'memoryBytes': 65536}, 'publication': 'publication:owned', 'generation': '1',
+            'name': 'my-greeting'}, Mock()
+        self.pin = {'publicationId': 'publication:owned', 'routeGeneration': '18',
+                    'releaseDigest': 'sha256:component', 'revisionId': 'revision:owned'}
+        self.client.call.return_value = {'data': {'snapshot': {'generation': '18', 'services': [
+            {'routeId': 'my-greeting', 'revisions': [self.pin]}]}}}
         self.result = {'invocations': [], 'samples': [], 'providerIdle': []}
         self.rows = []
         for index, (_mode, expected) in enumerate(fixture.CASES):
@@ -97,7 +102,7 @@ class ActualOutcomeRequirements(unittest.TestCase):
                 'response': {'outcomeKnown': True, 'category': 'platform-failure' if expected is None else 'success',
                     'error': {'code': 'guest-trap'} if expected is None else None,
                     'data': {'terminalState': 'guest_trap' if expected is None else 'success',
-                             'resolvedRevision': {'publicationId': 'publication:owned', 'routeGeneration': '1'},
+                             'resolvedRevision': dict(self.pin),
                              'consumption': {'peakMemoryBytes': '4096', 'outboundRequests': 0}}}})
         self.enterContext(patch.object(fixture, 'sample', return_value={'idle': 'modelled'}))
         self.enterContext(patch.object(fixture, 'provider_idle', return_value={'idle': 'modelled'}))
@@ -134,9 +139,23 @@ class ActualOutcomeRequirements(unittest.TestCase):
             self.run_probes()
 
     def test_foreign_publication_or_route_generation_cannot_borrow_successful_values(self):
-        self.rows[0]['response']['data']['resolvedRevision']['publicationId'] = 'publication:foreign'
-        with self.assertRaisesRegex(WorkflowError, 'selected-revision-mismatch'):
-            self.run_probes()
+        for key, foreign in (('publicationId', 'publication:foreign'), ('routeGeneration', '1'),
+                             ('releaseDigest', 'sha256:foreign'), ('revisionId', 'revision:foreign')):
+            with self.subTest(key=key):
+                self.rows[0]['response']['data']['resolvedRevision'] = {**self.pin, key: foreign}
+                with self.assertRaisesRegex(WorkflowError, 'selected-revision-mismatch'):
+                    self.run_probes()
+        self.rows[0]['response']['data']['resolvedRevision'] = dict(self.pin)
+
+    def test_missing_ambiguous_or_invalid_published_snapshot_refuses_before_invocation(self):
+        from tools.rust_capsule_node import selected_revision
+        for snapshot in ({'generation': '18', 'services': []},
+                         {'generation': '18', 'services': [{'routeId': 'my-greeting', 'revisions': []}]},
+                         {'generation': '1.5', 'services': [{'routeId': 'my-greeting', 'revisions': [self.pin]}]}):
+            with self.subTest(snapshot=snapshot):
+                self.client.call.return_value = {'data': {'snapshot': snapshot}}
+                with self.assertRaisesRegex(WorkflowError, 'published-route|published-revision'):
+                    selected_revision(self.client, self.target)
 
     def test_a_declared_error_or_timeout_cannot_substitute_for_the_terminal_trap(self):
         self.rows[2]['response']['error']['code'] = 'deadline-exceeded'

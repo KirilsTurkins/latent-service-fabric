@@ -277,13 +277,16 @@ class RealIntegrityControls(unittest.TestCase):
 class SignedProbe(unittest.TestCase):
     def setUp(self):
         self.value = matrix.specification('abcdef0123456789abcdef01', 0, 0)
-        self.target = {'publication': 'owned-publication', 'generation': '2'}
+        self.target = {'publication': 'owned-publication', 'generation': '2', 'name': 'my-greeting'}
         self.client = Mock()
+        self.pin = {'publicationId': 'owned-publication', 'routeGeneration': '18',
+                    'releaseDigest': 'sha256:component', 'revisionId': 'revision:owned'}
+        self.client.call.return_value = {'data': {'snapshot': {'generation': '18', 'services': [
+            {'routeId': 'my-greeting', 'revisions': [self.pin]}]}}}
         self.result = {'invocations': [], 'samples': [], 'providerIdle': []}
         self.rows = [{'activation': str(index), 'exitCode': 0, 'decoded': [{'ok': matrix.expected(self.value, text)}],
                       'processReaped': True, 'response': {'category': 'success', 'outcomeKnown': True,
-                      'data': {'consumption': {'outboundRequests': 0}, 'resolvedRevision': {
-                      'publicationId': 'owned-publication', 'routeGeneration': '2'}}}}
+                      'data': {'consumption': {'outboundRequests': 0}, 'resolvedRevision': dict(self.pin)}}}
                      for index, text in enumerate(matrix.INPUTS)]
         self.enterContext(patch.object(matrix, 'sample', return_value={'owned': True}))
         self.enterContext(patch.object(matrix, 'provider_idle', return_value={'owned': True}))
@@ -308,6 +311,9 @@ class SignedProbe(unittest.TestCase):
     def test_wrong_revision_unreaped_or_unexpected_outbound_never_count_as_success(self):
         for mutate in (lambda row: row.update(processReaped=False),
                        lambda row: row['response']['data']['resolvedRevision'].update(publicationId='foreign'),
+                       lambda row: row['response']['data']['resolvedRevision'].update(routeGeneration='2'),
+                       lambda row: row['response']['data']['resolvedRevision'].update(releaseDigest='foreign'),
+                       lambda row: row['response']['data']['resolvedRevision'].update(revisionId='foreign'),
                        lambda row: row['response']['data']['consumption'].update(outboundRequests=1)):
             with self.subTest(mutate=mutate):
                 rows = copy.deepcopy(self.rows)

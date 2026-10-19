@@ -287,7 +287,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
-        "class:setup-sha256:094963f38e443bcd17afb5129f356628f775c1266e5587d19875573046eeccc2"
+        "class:setup-sha256:e7dd9eb5129eb92f991bb536052ce2c30cae9c4f8f287ef20076ae325d04b133"
       ],
       "skipSites": []
     },
@@ -299,7 +299,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
-        "class:setup-sha256:094963f38e443bcd17afb5129f356628f775c1266e5587d19875573046eeccc2"
+        "class:setup-sha256:e7dd9eb5129eb92f991bb536052ce2c30cae9c4f8f287ef20076ae325d04b133"
       ],
       "skipSites": []
     },
@@ -311,7 +311,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
-        "class:setup-sha256:094963f38e443bcd17afb5129f356628f775c1266e5587d19875573046eeccc2"
+        "class:setup-sha256:e7dd9eb5129eb92f991bb536052ce2c30cae9c4f8f287ef20076ae325d04b133"
       ],
       "skipSites": []
     },
@@ -323,13 +323,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
-        "class:setup-sha256:094963f38e443bcd17afb5129f356628f775c1266e5587d19875573046eeccc2"
+        "class:setup-sha256:e7dd9eb5129eb92f991bb536052ce2c30cae9c4f8f287ef20076ae325d04b133"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_matrix.py",
-  "reviewReason": "Add 25 bounded source/receipt controls without native execution: generated no_std/alloc/std graphs, exact minimal normal CLI, targets/features/patch bytes, real CAS refusal/restoration, stale review, signed outcome/selector, exact staged-build/sign dispatch and original-error preservation.",
+  "reviewReason": "Explicit fixture review: distinguish global route snapshot18 from object CAS generation1/2, and model full release/revision/publication identity. All prior cases, module fixtures, skips, decorators and eligibility stay intact.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
