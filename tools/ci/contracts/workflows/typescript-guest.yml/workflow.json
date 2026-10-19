@@ -58,6 +58,11 @@
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_standard_entropy.py",
+          "tools/typescript_entropy_probe.py",
+          "tools/tests/test_typescript_entropy.py",
+          "tools/tests/test_typescript_entropy_campaign.py",
+          "docs/component-development/typescript-standard-entropy.md",
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
@@ -123,6 +128,11 @@
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_standard_entropy.py",
+          "tools/typescript_entropy_probe.py",
+          "tools/tests/test_typescript_entropy.py",
+          "tools/tests/test_typescript_entropy_campaign.py",
+          "docs/component-development/typescript-standard-entropy.md",
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
@@ -155,6 +165,11 @@
             "default": false,
             "description": "Compile only new boundary probes using authenticated d412 SDK products",
             "type": "boolean"
+          },
+          "replay-entropy-policy": {
+            "default": false,
+            "description": "Re-sign unchanged02f components and qualify the explicit zero-input policy ceiling",
+            "type": "boolean"
           }
         }
       }
@@ -165,6 +180,7 @@
   },
   "requiredJobs": [
     "boundary",
+    "entropy-policy-replay",
     "fetch-boundaries",
     "fetch-component",
     "fetch-failure-frames",
@@ -172,7 +188,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Union current development and signed Fetch source; preserve every parent case, guard, workflow setting and required command",
+  "reviewReason": "Reviewed default-false signed entropy policy replay with fixed historical products; original ordinary job requirements retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

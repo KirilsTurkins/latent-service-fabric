@@ -12,6 +12,12 @@ const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
 const configuration = configurationPath ? JSON.parse(await readFile(configurationPath, 'utf8')) : {};
 const captured = !!configuration.moduleRoot;
 const standardFetch = configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
+const entropyProfile = configuration.standardEntropyProfile ?? 'lsf-math-random-unsupported-v1';
+const standardEntropy = entropyProfile === 'lsf-math-random-approved-v1';
+if ((!standardEntropy && entropyProfile !== 'lsf-math-random-unsupported-v1') ||
+    standardEntropy !== imports.has('latent:random/random@0.1.0')) {
+  throw new Error('standard-entropy-requires-exact-profile-and-declared-random');
+}
 const standardConsole = configuration.standardConsoleProfile === 'lsf-console-strict-v1';
 if (configuration.standardConsoleProfile !== undefined && (!standardConsole ||
     !imports.has('latent:log/log@0.1.0') || !parserPath)) {
@@ -37,19 +43,22 @@ if (configuration.standardClockProfile !== undefined || configuration.standardCl
   throw new Error('standard-clock-requires-exact-profile-and-declared-clocks');
 }
 const clockProfile = nativeClocks ? 'lsf-standard-clock-native-v1' : 'lsf-standard-clock-unsupported-v1';
-let guard = 'var __lsfSnapshotActive = true;\n' + (captured || standardFetch || standardConsole ? `
-var __lsfOriginalRandom = Math.random;
-Math.random = function() {
-  if (__lsfSnapshotActive) throw new Error('snapshot-time-entropy-observation-unsupported');
-  return __lsfOriginalRandom();
-};
-` : '');
+let guard = 'var __lsfSnapshotActive = true;\n';
 const clockSource = await readFile(new URL('./clock_app.mjs', import.meta.url), 'utf8');
 const clockAnchor = 'export function installApplicationClocks(';
 if (clockSource.split(clockAnchor).length !== 2) throw new Error('compiler-owned-clock-install-shape');
 const clockBackend = clockSource.replace(clockAnchor, 'function __lsfInstallApplicationClocks(') +
   '\n__lsfInstallApplicationClocks(' + nativeClocks + ', () => __lsfSnapshotActive);\n';
 guard += clockBackend;
+const entropySource = await readFile(new URL('./entropy.mjs', import.meta.url), 'utf8');
+const entropyAnchor = 'export function installMathRandom(';
+if (entropySource.split(entropyAnchor).length !== 2) throw new Error('compiler-owned-entropy-install-shape');
+const entropyBackend = (standardEntropy ?
+  "import * as __lsfEntropySource from 'latent:random/random@0.1.0';\n" : '') +
+  entropySource.replace(entropyAnchor, 'function __lsfInstallMathRandom(') +
+  '\n__lsfInstallMathRandom(' + (standardEntropy ? '__lsfEntropySource' : 'null') +
+  ', () => __lsfSnapshotActive);\n';
+guard += entropyBackend;
 let backend = '';
 let consoleBackend = '';
 if (standardFetch) {
@@ -174,6 +183,8 @@ await writeFile(output + '.inputs.json', JSON.stringify({
   standardClockProfile: clockProfile,
   standardClockBackendDigest: 'sha256:' + createHash('sha256').update(clockBackend).digest('hex'),
   snapshotGuardDigest: 'sha256:' + createHash('sha256').update(guard).digest('hex'),
+  standardEntropyProfile: entropyProfile,
+  standardEntropyBackendDigest: 'sha256:' + createHash('sha256').update(entropyBackend).digest('hex'),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,
     standardFetchBackendDigest: 'sha256:' + createHash('sha256').update(backend).digest('hex')} : {}),
   ...(standardConsole ? {standardConsoleProfile: configuration.standardConsoleProfile,

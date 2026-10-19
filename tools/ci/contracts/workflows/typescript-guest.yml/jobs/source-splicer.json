@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}",
+    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}",
     "name": "Source-owned asynchronous import compiler",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -72,7 +72,7 @@
   },
   "jobId": "source-splicer",
   "kind": "job",
-  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
+  "reviewReason": "Reviewed default-false fixed-artifact replay; original full jobs/commands/budgets remain mandatory for normal PR/push and ordinary dispatch.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

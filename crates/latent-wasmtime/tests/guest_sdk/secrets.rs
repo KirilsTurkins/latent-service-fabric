@@ -49,10 +49,12 @@ async fn secret_owner_typed_denial_cancellation_and_cell_recovery() {
             tokio::time::timeout(Duration::from_secs(2), f.gate.entered.notified())
                 .await
                 .unwrap();
-            // Runtime entropy results remain separately charged through
-            // canonical lowering; they are not leaked secret operations.
-            let runtime_calls = f.runtime_entropy_calls() - runtime_calls_before;
-            assert_eq!(f.broker.snapshot().calls as u64, 1 + runtime_calls);
+            // Startup entropy was actually drawn, but each fixed scalar owner
+            // retired after its completed canonical lowering. Only the pending
+            // secret operation remains live at this gate.
+            let completed_runtime_calls = f.runtime_entropy_calls() - runtime_calls_before;
+            assert!(language != "go" || completed_runtime_calls > 0);
+            assert_eq!(f.broker.snapshot().calls, 1);
             control.probe.0.store(true, Ordering::Release);
             f.gate.released.notify_one();
         });

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_reflection.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Match the existing .NET containment producer 32 MiB bound after actual 5410904-byte receipt exceeded default source reader; retain all containment requirements.",
+  "reviewReason": "Accept explicit descriptor bytes for the new opt-in boundary programme; original ROOTS remains default.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1da644e2659492c015773bf2928ff48a7b9e803e560a3235971bcc1bcb8df959"
+  "sha256": "ee7f3361c8ef8655e5ab490eb70e785fc4d80c1b36ad78c51ea7a928864cdc53"
 }

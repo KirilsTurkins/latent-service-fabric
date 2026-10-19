@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "CurrentParserReferenceLock.test_changed_lock_unknown_local_owner_and_foreign_dependency_are_refused",
+    "CurrentParserReferenceLock.test_current_manifest_is_isolated_and_legacy_template_is_unchanged",
+    "CurrentParserReferenceLock.test_legacy_fetch_and_bad_current_lock_fail_before_any_process_or_output",
+    "CurrentParserReferenceLock.test_real_lock_is_fixed_and_all_registry_inputs_match_the_workspace"
+  ],
+  "guards": {
+    "CurrentParserReferenceLock.test_changed_lock_unknown_local_owner_and_foreign_dependency_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7cb5358e6a850854c3f834ac95256f785e2137484b13080c59b629e4cf579fb0",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentParserReferenceLock.test_current_manifest_is_isolated_and_legacy_template_is_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7cb5358e6a850854c3f834ac95256f785e2137484b13080c59b629e4cf579fb0",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentParserReferenceLock.test_legacy_fetch_and_bad_current_lock_fail_before_any_process_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7cb5358e6a850854c3f834ac95256f785e2137484b13080c59b629e4cf579fb0",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentParserReferenceLock.test_real_lock_is_fixed_and_all_registry_inputs_match_the_workspace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7cb5358e6a850854c3f834ac95256f785e2137484b13080c59b629e4cf579fb0",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_tls_reference_lock.py",
+  "reviewReason": "Qualify only the exact current rustls parser with fixed maintained dependency closure and unchanged amplification/refusal vectors; host TLS accounting stays disabled",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
