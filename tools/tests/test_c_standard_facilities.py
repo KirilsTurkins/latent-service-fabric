@@ -79,6 +79,89 @@ class StandardFacilities(unittest.TestCase):
                 facilities.stage(source, 'service', destination, ROOT / 'wit/platform')
             self.assertFalse(destination.exists())
 
+    def test_commented_worlds_do_not_replace_or_duplicate_the_actual_selected_world(self):
+        source = self.root / 'wit'; source.mkdir()
+        path = source / 'app.wit'
+        for number, (comment, declaration) in enumerate((
+                ('// world service { export fake; }\n', 'world service {'),
+                ('/* world service { export fake; } */\n', 'world service {'),
+                ('/* outer /* world service {} */ world service {} */\n', 'world service {'),
+                ('', 'world /* note */ service /* selected */ {'))):
+            text = 'package test:app;\n' + comment + declaration + ' export api; }\ninterface api { run: func(); }\n'
+            path.write_text(text, encoding='utf-8')
+            original = path.read_bytes()
+            destination = self.root / f'derived-{number}'
+            facilities.stage(source, 'test:app/service', destination, ROOT / 'wit/platform')
+            # The insertion point belongs to the actual declaration, not documentation.
+            offset = text.index(declaration, len('package test:app;\n') + len(comment)) + len(declaration)
+            additions = ''.join('\n    import ' + name + ';' for name in facilities.IMPORTS) + '\n'
+            self.assertEqual((destination / path.name).read_text(encoding='utf-8'),
+                             text[:offset] + additions + text[offset:])
+            self.assertEqual(path.read_bytes(), original)
+            self.assertEqual({p.name for p in (destination / 'deps').iterdir()}, {'clock', 'random'})
+
+    def test_comment_imports_cannot_claim_standard_profile_authority(self):
+        source = self.root / 'wit'; source.mkdir()
+        path = source / 'app.wit'
+        for number, profile in enumerate((facilities.PROFILE, facilities.LOGGING_PROFILE)):
+            imports = facilities.PROFILE_IMPORTS[profile]
+            comment = ('// import ' + imports[0] + ';\n'
+                       '/* examples /* import ' + imports[-1] + '; */ end */\n')
+            text = 'package test:app;\n' + comment + 'world service { export api; }\ninterface api { run: func(); }\n'
+            path.write_text(text, encoding='utf-8')
+            original = path.read_bytes()
+            destination = self.root / f'derived-{number}'
+            facilities.stage(source, 'test:app/service', destination, ROOT / 'wit/platform', profile=profile)
+            offset = text.index('world service {') + len('world service {')
+            additions = ''.join('\n    import ' + name + ';' for name in imports) + '\n'
+            self.assertEqual((destination / path.name).read_text(encoding='utf-8'),
+                             text[:offset] + additions + text[offset:])
+            self.assertEqual(path.read_bytes(), original)
+            self.assertEqual({p.name for p in (destination / 'deps').iterdir()},
+                             {'clock', 'random'} if profile == facilities.PROFILE else {'log'})
+
+    def test_comments_cannot_hide_real_profile_imports_or_ambiguous_worlds(self):
+        source = self.root / 'wit'; source.mkdir()
+        path = source / 'app.wit'
+        for number, (body, reason) in enumerate((
+                ('world service { import /* standard */ latent:clock/wall@0.1.0; }',
+                 'imports-must-be-owned-by-profile'),
+                ('world service {} /* world service {} */ world service {}',
+                 'requires-one-selected-world-declaration'),
+                ('/* world service { import latent:clock/wall@0.1.0; } */',
+                 'requires-one-selected-world-declaration'))):
+            path.write_text('package test:app;\n' + body, encoding='utf-8')
+            original = path.read_bytes()
+            destination = self.root / f'derived-{number}'
+            with self.subTest(body=body), self.assertRaisesRegex(ValueError, reason):
+                facilities.stage(source, 'test:app/service', destination, ROOT / 'wit/platform')
+            self.assertFalse(destination.exists())
+            self.assertEqual(path.read_bytes(), original)
+
+    def test_unterminated_block_comment_cannot_publish_a_derived_world(self):
+        source = self.root / 'wit'; source.mkdir()
+        path = source / 'app.wit'
+        for number, suffix in enumerate(('/* unfinished', '/* outer /* nested */ unfinished')):
+            path.write_text('package test:app; world service {}\n' + suffix, encoding='utf-8')
+            original = path.read_bytes()
+            destination = self.root / f'derived-{number}'
+            with self.subTest(suffix=suffix), self.assertRaisesRegex(ValueError, 'unterminated-wit-comment'):
+                facilities.stage(source, 'test:app/service', destination, ROOT / 'wit/platform')
+            self.assertFalse(destination.exists())
+            self.assertEqual(path.read_bytes(), original)
+
+    def test_quoted_comment_markers_and_escapes_cannot_hide_following_code(self):
+        literal = '"world service {} /* not a comment \\" // still quoted */"'
+        declaration = '\r\nworld service { import latent:clock/wall@0.1.0; }\n'
+        text = literal + declaration
+        visible = facilities.code_view(text)
+        self.assertEqual(len(visible), len(text))
+        self.assertEqual(visible[:len(literal)], ' ' * len(literal))
+        self.assertEqual(visible[len(literal):], declaration)
+        for text in ('"unterminated', '"escaped ending \\"'):
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'unterminated-wit-string'):
+                facilities.code_view(text)
+
     def test_dependency_graph_must_select_same_runtime_as_captured_application(self):
         from tools.application_dependency_store import DependencyError
         from tools.c_dependency_authoring import manifest

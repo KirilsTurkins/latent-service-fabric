@@ -99,3 +99,21 @@ See the [C authoring guide](c-authoring.md) and
 The separate [standard stdio logging profile](c-standard-logging.md) selects
 only the bounded log contract; it does not implicitly select these clocks or
 entropy providers.
+
+## Derived WIT source handling
+
+The maintained C standard-profile derivation identifies the selected world and
+profile-owned imports in a same-offset lexical view. Line comments, nested block
+comments and quoted literals cannot impersonate declarations or imports. Comments
+between tokens remain whitespace, following the [WIT lexical structure](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md#lexical-structure).
+The derived file retains the original text and inserts only the selected profile's
+imports at the actual world opening. Captured application/platform files are not
+modified. Real duplicate imports and ambiguous worlds still fail; unterminated
+comments or strings fail before a derived directory is published.
+
+This preliminary selection is not a replacement WIT parser: the pinned generator
+and component validator still enforce the actual contract. It adds no provider,
+grant, WASI fallback, scheduler or ordinary C HTTP implementation. The focused
+source controls qualify derivation only. Fresh C compiler/signed component
+execution of this changed recipe, the two ordinary unchanged default clients,
+readiness, ownership and the full #690 conformance matrix remain unqualified.
