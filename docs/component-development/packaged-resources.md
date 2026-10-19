@@ -35,6 +35,13 @@ lock, component and selected resource inventory. The ordinary signed package
 and build observation cover the index and objects as assets. Missing, changed,
 unlisted or incorrectly attributed bytes fail verification. Index rows are in
 logical-path order; verification rejects a rehashed index with a different order.
+An application-origin row requires a bound declaration-manifest digest; a
+dependency-origin row requires a bound dependency-lock digest. Rehashing an
+index cannot replace either missing input binding by relabelling the origin.
+Application-only, dependency-only and mixed selections retain the same exact
+byte/object inventory rules. These prerequisites do not independently prove an
+owner's membership in a dependency lock; capture still validates that membership
+against the actual reviewed lock, and the signed package authenticates the index.
 
 The developer workflow derives a `resourceInputs` manifest binding and includes
 the manifest and its declared source files in trust/watch snapshots. Changing
