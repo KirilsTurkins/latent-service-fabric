@@ -16,6 +16,11 @@
     "MinimalRecipe.test_added_optional_catalogue_or_modified_recipe_refuses_before_dispatch",
     "MinimalRecipe.test_frontend_always_selects_exact_staged_cli_isolated_no_bytecode_and_rechecks_after",
     "MinimalRecipe.test_real_minimal_recipe_imports_normal_cli_without_optional_qualification_or_catalogues",
+    "NativePatchRelocation.test_actual_native_relative_path_can_advance_only_the_owned_core_patch",
+    "NativePatchRelocation.test_ambiguous_duplicate_string_preimage_refuses_instead_of_rewriting_comments",
+    "NativePatchRelocation.test_extra_patch_fields_or_coordinate_refuse_before_any_write",
+    "NativePatchRelocation.test_foreign_relative_patch_refuses_without_changing_source_or_sdk",
+    "NativePatchRelocation.test_native_unicode_relative_path_retains_normal_toml_identity",
     "RealIntegrityControls.test_failed_diagnostic_write_preserves_original_exception_identity",
     "RealIntegrityControls.test_failure_receipt_keeps_only_closed_stage_and_error_class_without_private_text",
     "RealIntegrityControls.test_missing_and_tampered_transitive_objects_refuse_and_valid_original_is_restored",
@@ -219,6 +224,66 @@
       ],
       "skipSites": []
     },
+    "NativePatchRelocation.test_actual_native_relative_path_can_advance_only_the_owned_core_patch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
+        "class:setup-sha256:2bf7e9afe0a1c788a4b512d695e11e550318632ce069e373ffa791711f1a6eec"
+      ],
+      "skipSites": []
+    },
+    "NativePatchRelocation.test_ambiguous_duplicate_string_preimage_refuses_instead_of_rewriting_comments": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
+        "class:setup-sha256:2bf7e9afe0a1c788a4b512d695e11e550318632ce069e373ffa791711f1a6eec"
+      ],
+      "skipSites": []
+    },
+    "NativePatchRelocation.test_extra_patch_fields_or_coordinate_refuse_before_any_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
+        "class:setup-sha256:2bf7e9afe0a1c788a4b512d695e11e550318632ce069e373ffa791711f1a6eec"
+      ],
+      "skipSites": []
+    },
+    "NativePatchRelocation.test_foreign_relative_patch_refuses_without_changing_source_or_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
+        "class:setup-sha256:2bf7e9afe0a1c788a4b512d695e11e550318632ce069e373ffa791711f1a6eec"
+      ],
+      "skipSites": []
+    },
+    "NativePatchRelocation.test_native_unicode_relative_path_retains_normal_toml_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a988d684da7e545d32dd39186681086a0bf3184a9d3c403ece5b3964c135fd2",
+        "class:setup-sha256:2bf7e9afe0a1c788a4b512d695e11e550318632ce069e373ffa791711f1a6eec"
+      ],
+      "skipSites": []
+    },
     "RealIntegrityControls.test_failed_diagnostic_write_preserves_original_exception_identity": {
       "bases": [
         "unittest.TestCase"
@@ -330,6 +395,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_matrix.py",
-  "reviewReason": "Explicit fixture review: distinguish global route snapshot18 from object CAS generation1/2, and model full release/revision/publication identity. All prior cases, module fixtures, skips, decorators and eligibility stay intact.",
+  "reviewReason": "Preserve25 immutable old cases and add5 exact-owned native relocation adversarial controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }
