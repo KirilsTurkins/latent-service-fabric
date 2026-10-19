@@ -169,7 +169,11 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
-                    tutorials(client, targets, result)
+                    if go_standard_logging:
+                        from tools.go_standard_logging_probe import tutorials as logging_tutorials
+                        logging_tutorials(client, targets, result)
+                    else:
+                        tutorials(client, targets, result)
                     if go_standard_logging:
                         from tools.go_standard_logging_probe import probe as probe_go_logging
                         probe_go_logging(client, targets['greeting'], probe, result, len(names))

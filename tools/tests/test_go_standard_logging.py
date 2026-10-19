@@ -143,11 +143,18 @@ class StandardLogging(unittest.TestCase):
                 builds[name] = {'identity': name}
                 write_json(path / 'BUILD-COMPLETE.json', builds[name])
             receipt = {'schemaVersion': 'latent.go-capsule.qualification.v1', 'status': 'passed',
+                'node': {'status': 'passed', 'invocations': [None] * 27},
                 'sourceIdentityDigest': digest((native / 'source-inputs.json').read_bytes()),
                 'binaries': identities, 'builds': builds}
             write_json(native / 'qualification.json', receipt)
             with patch.object(qualification, 'inputs', return_value=source):
                 self.assertEqual(qualification.frozen(native)[0], receipt)
+                receipt['node']['status'] = 'failed'
+                (native / 'qualification.json').write_text(json.dumps(receipt))
+                with self.assertRaisesRegex(WorkflowError, 'current-normal'):
+                    qualification.frozen(native)
+                receipt['node']['status'] = 'passed'
+                (native / 'qualification.json').write_text(json.dumps(receipt))
                 path = native / 'builds' / next(iter(builds)) / 'BUILD-COMPLETE.json'
                 path.write_text(json.dumps({'identity': 'foreign'}))
                 with self.assertRaisesRegex(WorkflowError, 'companion-build-mismatch'):
@@ -159,6 +166,44 @@ class StandardLogging(unittest.TestCase):
             with patch.object(qualification, 'inputs', return_value={'stale': True}):
                 with self.assertRaisesRegex(WorkflowError, 'current-normal'):
                     qualification.frozen(native)
+
+    def test_real_normal_configuration_plus_logging_keeps_original_sixteen_binding_cap(self):
+        from tools import go_standard_logging_probe as probe
+        from tools.rust_capsule_node import configure
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture, node = root/'fixture', root/'node'
+            fixture.mkdir(); node.mkdir()
+            write_json(fixture/'policy.json', {})
+            _, settings = configure(node, fixture, 1234, language='go', runtime_grants=True)
+            before = list(settings['providers']['bindings'])
+            self.assertEqual(len(before), 16)
+            # This was the actual rejected fixture: the 17th binding exceeds
+            # the existing Rust node parser's fixed capacity ceiling.
+            self.assertGreater(len(before) + 1, 16)
+            probe.configure(settings)
+            after = settings['providers']['bindings']
+            self.assertEqual(len(after), 14)
+            self.assertEqual([row for row in after if row['contract'] == 'latent:log/log@0.1.0'], [{
+                'name': 'log-greeting', 'tenant': 'examples', 'consumerService': 'examples/my-greeting',
+                'providerService': 'runtime-host', 'contract': 'latent:log/log@0.1.0', 'providerBinding': 'log-installed'}])
+            self.assertEqual([row for row in after if row['contract'] != 'latent:log/log@0.1.0'],
+                             [row for row in before if row['consumerService'] != 'examples/my-word-count'])
+            self.assertEqual(len(before), 16)
+            self.assertIn('providers.bindings.capacity() > 16',
+                          (ROOT/'apps/latentd/src/config/providers.rs').read_text())
+
+    def test_sidecampaign_replays_existing_cases_without_invoking_dormant_word_count(self):
+        from tools import go_standard_logging_probe as probe
+        from tools import rust_capsule_node as node
+        targets = {name: name for name in ('greeting', 'shipping', 'word-count')}
+        result = {'invocations': []}
+        with patch.object(node, 'call', return_value={'fixed': True}) as call, patch.object(node, 'assert_value'):
+            probe.tutorials('client', targets, result)
+        self.assertEqual(len(result['invocations']), 8)
+        self.assertEqual({row.args[2] for row in call.call_args_list}, {'greeting', 'shipping'})
+        self.assertEqual(result['goLoggingBaselineScope']['recoveryAndHttpProgramme'], 'unchanged')
+        self.assertEqual(result['goLoggingBaselineScope']['nodeBindingCeiling'], 16)
 
     def test_wrong_language_cannot_enable_signed_logging_programme(self):
         from tools.run_rust_capsule_workflow import run

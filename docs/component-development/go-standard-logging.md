@@ -45,7 +45,12 @@ a shared build snapshot. Strict transaction rules remain enforced by the host.
 The additive programme in [the owning Go workflow](../../.github/workflows/go-guest.yml)
 captures an outside local module, explicitly reviews its lock, removes its
 original source, and builds from the isolated captured graph. It reuses that
-run's unchanged five native tools and four companion builds. It requires a
+run's unchanged five native tools and four companion builds. The exact-source
+normal qualification must already pass its complete node programme. The logging
+sidecampaign keeps word-count dormant, replays greeting/shipping and the original
+recovery/HTTP cases, and uses fourteen exact-service provider bindings within the
+unchanged sixteen-binding node ceiling. Full word-count execution remains in the
+mandatory normal qualification. It requires a
 missing-log-grant denial before guest execution, ordinary initializer/stdout/
 stderr/default-logger results, encoding/size/budget errors, a terminal trap and
 a successful fresh invocation, with original owner-idle and shutdown fences.

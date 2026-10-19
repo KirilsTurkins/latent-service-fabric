@@ -120,10 +120,39 @@ def install(project: Path, outside: Path, go: Path) -> dict:
 def configure(settings):
     providers = settings['providers']
     require('log' not in providers, 'go-standard-log-provider-already-selected')
+    # The exact-source normal qualifier already executes all five templates.
+    # This logging sidecampaign leaves word-count dormant so its additional
+    # exact-service LOG binding fits the unchanged sixteen-binding node cap.
+    removed = [row for row in providers['bindings'] if row['consumerService'] == 'examples/my-word-count'
+               and row['contract'] in {'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0',
+                                       'latent:random/random@0.1.0'}]
+    require(len(removed) == 3, 'go-standard-log-original-runtime-bindings-required')
+    providers['bindings'] = [row for row in providers['bindings'] if row not in removed]
     providers['log'] = {'identity': {'id': 'log', 'tenant': 'examples', 'service': 'runtime-host', 'epoch': 1}}
     providers['bindings'].append({'name': 'log-greeting', 'tenant': 'examples',
         'consumerService': 'examples/my-greeting', 'providerService': 'runtime-host',
         'contract': 'latent:log/log@0.1.0', 'providerBinding': 'log-installed'})
+    require(len(providers['bindings']) == 14, 'go-standard-log-original-binding-ceiling')
+
+
+
+def tutorials(client, targets, result):
+    """Replay greeting/shipping unchanged; full normal baseline owns word-count."""
+    from tools.rust_capsule_cases import TUTORIAL_CASES
+    from tools.rust_capsule_node import assert_value, call
+    for template in ('greeting', 'shipping'):
+        function, cases = TUTORIAL_CASES[template]
+        for ordinal, (arguments, expected, code) in enumerate(cases):
+            row = call(client, targets[template], template, function, arguments, f'authoring-{template}-{ordinal}')
+            result['invocations'].append(row)
+            assert_value(client, row, expected, code)
+        first = cases[0]
+        row = call(client, targets[template], template, function, first[0], f'authoring-{template}-warm')
+        result['invocations'].append(row)
+        assert_value(client, row, first[1])
+    result['goLoggingBaselineScope'] = {'fullNormalProgramme': 'required-by-exact-source-frozen-qualification',
+        'sidecampaignTutorials': ['greeting', 'shipping'], 'wordCount': 'dormant-sidecampaign-only',
+        'recoveryAndHttpProgramme': 'unchanged', 'providerBindings': 14, 'nodeBindingCeiling': 16}
 
 
 def grant(client, node, fixture, targets, publications, result):

@@ -9,7 +9,9 @@
     "StandardLogging.test_hook_is_installed_before_runtime_and_application_initializers",
     "StandardLogging.test_independent_projects_capture_the_new_bridge_without_implicit_log_grant",
     "StandardLogging.test_no_import_keeps_source_and_selection_unchanged",
+    "StandardLogging.test_real_normal_configuration_plus_logging_keeps_original_sixteen_binding_cap",
     "StandardLogging.test_runtime_selection_rejects_non_boolean_before_materializing_overlay",
+    "StandardLogging.test_sidecampaign_replays_existing_cases_without_invoking_dormant_word_count",
     "StandardLogging.test_syscall_write_preserves_non_stdio_path_and_unselected_failure",
     "StandardLogging.test_wrong_language_cannot_enable_signed_logging_programme"
   ],
@@ -122,7 +124,31 @@
       ],
       "skipSites": []
     },
+    "StandardLogging.test_real_normal_configuration_plus_logging_keeps_original_sixteen_binding_cap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e116518d054931341fcdc43c7c497d8909e8b30a38733e455684fabef5a6588d",
+        "class:setup-sha256:a8f2b531ad547d688a4c02b19a8cb283d6298a3659e9a25ec12aa27a03ea6a09"
+      ],
+      "skipSites": []
+    },
     "StandardLogging.test_runtime_selection_rejects_non_boolean_before_materializing_overlay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e116518d054931341fcdc43c7c497d8909e8b30a38733e455684fabef5a6588d",
+        "class:setup-sha256:a8f2b531ad547d688a4c02b19a8cb283d6298a3659e9a25ec12aa27a03ea6a09"
+      ],
+      "skipSites": []
+    },
+    "StandardLogging.test_sidecampaign_replays_existing_cases_without_invoking_dormant_word_count": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -161,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_standard_logging.py",
-  "reviewReason": "Regress the actual create-only JSON fixture failure while retaining all prior logging installation and original-owner checks.",
+  "reviewReason": "Correct observed seventeenth-binding fixture rejection; require exact-source full normal node success and preserve its original cases and all runtime ceilings.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

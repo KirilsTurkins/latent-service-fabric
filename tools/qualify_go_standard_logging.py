@@ -31,6 +31,8 @@ def frozen(native: Path):
     receipt = read_json(native / 'qualification.json')
     require(receipt.get('schemaVersion') == 'latent.go-capsule.qualification.v1'
             and receipt.get('status') == 'passed'
+            and receipt.get('node', {}).get('status') == 'passed'
+            and len(receipt.get('node', {}).get('invocations', [])) >= 27
             and read_json(native / 'source-inputs.json') == inputs('go')
             and digest((native / 'source-inputs.json').read_bytes()) == receipt.get('sourceIdentityDigest'),
             'go-log-current-normal-qualification-required')
@@ -79,6 +81,10 @@ def qualify(output: Path, native: Path):
         receipt, products, companions = frozen(native)
         record['nativeQualification'] = file_identity(native / 'qualification.json')
         record['nativeBinaries'] = receipt['binaries']
+        record['fullNormalBaseline'] = {'status': receipt['node']['status'],
+            'invocations': len(receipt['node']['invocations']),
+            'sourceIdentityDigest': receipt['sourceIdentityDigest'],
+            'qualification': record['nativeQualification']}
         go = Path(shutil.which('go') or 'missing-pinned-go').resolve(strict=True)
         go_before = file_identity(go)
         stage = 'native-reference'
