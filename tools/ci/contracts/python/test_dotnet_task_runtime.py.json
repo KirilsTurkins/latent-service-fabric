@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ManagedTaskProgramme.test_async_activation_declaration_preserves_sdk_and_adds_no_network_or_grants",
+    "ManagedTaskProgramme.test_every_case_requires_known_reaped_bounded_zero_effect_execution_and_retirement",
+    "ManagedTaskProgramme.test_failed_activation_binding_never_adds_grants_or_deploys",
+    "ManagedTaskProgramme.test_wrong_language_combined_campaign_or_nonboolean_selector_refuses_before_inputs"
+  ],
+  "guards": {
+    "ManagedTaskProgramme.test_async_activation_declaration_preserves_sdk_and_adds_no_network_or_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f9dff110b13f943e10cb8333e39fe142785382c04910a70a15f126b29efc27",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedTaskProgramme.test_every_case_requires_known_reaped_bounded_zero_effect_execution_and_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f9dff110b13f943e10cb8333e39fe142785382c04910a70a15f126b29efc27",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedTaskProgramme.test_failed_activation_binding_never_adds_grants_or_deploys": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f9dff110b13f943e10cb8333e39fe142785382c04910a70a15f126b29efc27",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedTaskProgramme.test_wrong_language_combined_campaign_or_nonboolean_selector_refuses_before_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f9dff110b13f943e10cb8333e39fe142785382c04910a70a15f126b29efc27",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_task_runtime.py",
+  "reviewReason": "Add ordinary default Task/ThreadPool/timer campaign with explicit clock/activation authority, original limits and owner cleanup; retain all existing qualification commands and case guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

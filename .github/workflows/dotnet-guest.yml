@@ -20,6 +20,9 @@ on:
       - 'tools/qualify_dotnet_standard_http.py'
       - 'tools/dotnet_standard_entropy*.py'
       - 'tools/qualify_dotnet_standard_entropy.py'
+      - 'tools/dotnet_task_runtime*.py'
+      - 'tools/qualify_dotnet_task_runtime.py'
+      - 'tools/tests/test_dotnet_task_runtime.py'
       - 'tools/tests/test_dotnet_secure_entropy.py'
       - 'tools/tests/test_dotnet_managed_entropy.py'
       - 'tools/dotnet_standard_console*.py'
@@ -286,12 +289,28 @@ jobs:
         run: >-
           python3 tools/qualify_dotnet_standard_entropy.py --output "$RUNNER_TEMP/dotnet-standard-entropy"
           --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Check ordinary managed task authority and retirement gates
+        run: python3 -m unittest tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait -v
+      - name: Qualify captured default Task and ThreadPool progress without HTTP
+        run: >-
+          python3 tools/qualify_dotnet_task_runtime.py --output "$RUNNER_TEMP/dotnet-task-runtime"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/dotnet-task-runtime/qualified.json
+            ${{ runner.temp }}/dotnet-task-runtime/FAILED.json
+            ${{ runner.temp }}/dotnet-task-runtime/logs/**
+            ${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**
+            ${{ runner.temp }}/dotnet-task-runtime/build/*.json
+            ${{ runner.temp }}/dotnet-task-runtime/build/logs/**
+            ${{ runner.temp }}/dotnet-task-runtime/build/component.wasm
+            ${{ runner.temp }}/dotnet-task-runtime/node/workflow.json
+            ${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json
+            ${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json
             ${{ runner.temp }}/dotnet-standard-entropy/qualified.json
             ${{ runner.temp }}/dotnet-standard-entropy/FAILED.json
             ${{ runner.temp }}/dotnet-standard-entropy/logs/**

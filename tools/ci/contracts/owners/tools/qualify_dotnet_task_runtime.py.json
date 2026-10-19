@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_task_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add ordinary default Task/ThreadPool/timer campaign with explicit clock/activation authority, original limits and owner cleanup; retain all existing qualification commands and case guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b080b2e327ee2ae7b76efc510b37f369b319fa24f95d8912e3704cf597068ee3"
+}
