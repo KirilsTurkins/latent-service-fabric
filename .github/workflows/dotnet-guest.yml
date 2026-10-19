@@ -391,7 +391,7 @@ jobs:
           printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
           python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
-      - name: Reproduce private capture and exact offline component equality
+      - name: Qualify both offline outputs against the same captured inputs
         run: python3 tools/qualify_dotnet_private_dependencies.py --prepared-qualification "$RUNNER_TEMP/private-nuget-prepared" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-private-dependencies"
       - name: Retain fixed public evidence and owned component intermediates
         if: always()
@@ -400,6 +400,8 @@ jobs:
           name: dotnet-private-variance-${{ github.sha }}
           path: |
             ${{ runner.temp }}/private-nuget-prepared/retrieval.json
+            ${{ runner.temp }}/dotnet-private-dependencies/node-*/workflow.json
+            ${{ runner.temp }}/dotnet-private-dependencies/node-*/FAILED.json
             ${{ runner.temp }}/dotnet-private-dependencies/qualification.json
             ${{ runner.temp }}/dotnet-private-dependencies/FAILED.json
             ${{ runner.temp }}/dotnet-private-dependencies/capture.json

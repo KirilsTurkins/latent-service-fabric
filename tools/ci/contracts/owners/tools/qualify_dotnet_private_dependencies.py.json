@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Match actual .NET containment material producer 32 MiB bound; preserve isolation assertions and original cases, add actual-reader regressions.",
+  "reviewReason": "Bind equal immutable offline inputs without raw determinism claims; require both initial outputs separately signed/admitted/executed and retain all lifecycle refusals.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "84aa42bdff5c47856fafcf309050dce483a995657e7ed3e7d3981f3224819591"
+  "sha256": "2e192d1c002d3a76d54ed598b025a6dc5db64df3371e1d561fc964bae3678ff3"
 }

@@ -80,7 +80,7 @@
         "shell": "bash"
       },
       {
-        "name": "Reproduce private capture and exact offline component equality",
+        "name": "Qualify both offline outputs against the same captured inputs",
         "run": "python3 tools/qualify_dotnet_private_dependencies.py --prepared-qualification \"$RUNNER_TEMP/private-nuget-prepared\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-private-dependencies\""
       },
       {
@@ -90,7 +90,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-private-variance-${{ github.sha }}",
-          "path": "${{ runner.temp }}/private-nuget-prepared/retrieval.json\n${{ runner.temp }}/dotnet-private-dependencies/qualification.json\n${{ runner.temp }}/dotnet-private-dependencies/FAILED.json\n${{ runner.temp }}/dotnet-private-dependencies/capture.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/component.wasm\n${{ runner.temp }}/dotnet-private-dependencies/build-0/native-aot-raw.wasm\n${{ runner.temp }}/dotnet-private-dependencies/build-0/build-observation.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/source-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/recipe-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/component.wasm\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/native-aot-raw.wasm\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/build-observation.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/source-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/recipe-inputs.json\n",
+          "path": "${{ runner.temp }}/private-nuget-prepared/retrieval.json\n${{ runner.temp }}/dotnet-private-dependencies/node-*/workflow.json\n${{ runner.temp }}/dotnet-private-dependencies/node-*/FAILED.json\n${{ runner.temp }}/dotnet-private-dependencies/qualification.json\n${{ runner.temp }}/dotnet-private-dependencies/FAILED.json\n${{ runner.temp }}/dotnet-private-dependencies/capture.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/component.wasm\n${{ runner.temp }}/dotnet-private-dependencies/build-0/native-aot-raw.wasm\n${{ runner.temp }}/dotnet-private-dependencies/build-0/build-observation.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/source-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/build-0/recipe-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/component.wasm\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/native-aot-raw.wasm\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/build-observation.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/source-inputs.json\n${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/recipe-inputs.json\n",
           "retention-days": 3
         }
       }
@@ -99,7 +99,7 @@
   },
   "jobId": "private-nuget-variance",
   "kind": "job",
-  "reviewReason": "Manual fixed-source30-minute private diagnostic reuses source-bound native5 and companions; normal equality refusal retained.",
+  "reviewReason": "Exact reviewed diagnostic label substitution; all commands/limits/steps retained, plus fixed public four-node receipt uploads.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

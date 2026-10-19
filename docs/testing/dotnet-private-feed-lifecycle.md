@@ -62,9 +62,10 @@ An edit invalidates the old native graph until the new exact candidate is review
 The peer is physically closed and joined, its listener refuses connections and
 all original library sources/packages/key files are removed before application
 compilation. The programme then performs four contained offline NativeAOT builds:
-two identical initial builds, the updated graph and the removed graph. The
+two initial builds with exact captured source/recipe/compiler/asset/binding and
+runtime-input identities, the updated graph and the removed graph. The
 removed graph contains neither private package and uses the ordinary greeting.
-Each of the three states is independently signed, admitted and executed through
+Both initial outputs and the updated/removed outputs are independently signed, admitted and executed through
 the ordinary five-capsule node programme. Additional dynamic calls bind the
 intended publication, actual global route snapshot and exact component revision,
 then observe idle ownership and clean node shutdown.
@@ -93,9 +94,15 @@ the unchanged `prepared_inputs` consumer checks them again before use.
 
 The separate job installs the ordinary pinned NativeAOT tools, then performs
 fresh private capture and offline builds. It does not repeat native application
-compilation, the full SDK programme or the printed guide. The exact component
-identity assertion remains mandatory. Both initial/rebuilt component and raw
+compilation, the full SDK programme or the printed guide. Exact captured-input
+identity checks remain mandatory. Both initial/rebuilt component and raw
 NativeAOT products, observations and input identities are retained for comparison;
 private keys, credentials and raw command streams are excluded from this upload.
-No deterministic-build cause, private signed lifecycle pass, current development
-compilation or whole-ticket completion is implied by this diagnostic.
+The first diagnostic pair differed in 79 bytes: 64 were random owned-directory
+suffixes in `.debug_line`, with another 15 in a 16-byte data value whose producer
+was not established. Executable code/import/export sections were identical.
+The report records both raw component digests and `rawBytesIdentical` without
+claiming deterministic output. Both components must pass their own ordinary
+signing/admission/execution; neither compilation alone nor this comparison
+establishes a private lifecycle pass. Current-development compilation and whole
+ticket completion remain separate.
