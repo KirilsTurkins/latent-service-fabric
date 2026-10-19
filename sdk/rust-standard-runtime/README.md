@@ -124,9 +124,19 @@ component compilation. The existing signed runner retains all 27 original
 outcomes and adds three closed-error/fresh calls, or two pre-admission denials
 and fourteen logging/error/failure/fresh calls. Each new completed/fault call
 requires process reaping and the original idle accounting samples. No original
-job command, limit, signing rule or runtime budget is relaxed. This job is newly
-prepared; no successful component execution is claimed until its actual result
-and retained source/tuple/cleanup receipts have been checked.
+job command, limit, signing rule or runtime budget is relaxed.
+
+The first branch-native campaign at
+[`c0814dbb`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39287224120/job/118189609658)
+built both owned standard libraries. The closed profile compiled, signed and
+completed all 30 required node outcomes with component
+`sha256:573125eb56798d9f26a37800ca4989dacf1d7e21b81ca069a861ca549821baae`.
+The logging application then failed compilation because its app-world macro
+lacked the declared LOG interface mapping. Creators now reuse
+`latent_guest::bindings::log`, preserving existing mappings and template bodies.
+The normal compiler recipe excludes workspace Cargo metadata; explicitly prepared
+standard-runtime profiles still capture and authenticate it. These corrections
+require a fresh campaign; no signed logging pass is claimed.
 
 `tools/qualify_rust_standard_clock.py` prepares an ordinary `SystemTime::now`
 component using that emitted std graph and the pinned bindings/component tool.

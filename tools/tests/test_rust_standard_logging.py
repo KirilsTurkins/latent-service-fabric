@@ -72,6 +72,20 @@ class StandardLogging(unittest.TestCase):
                             'https://example.invalid/source')
             self.assertFalse((Path(directory) / 'output').exists())
 
+    def test_all_logging_creators_map_import_to_existing_sdk_types_and_preserve_template_body(self):
+        mapping = '"latent:log/log@0.1.0": latent_guest::bindings::log,'
+        for template in project.AUTHORING_TEMPLATES:
+            with self.subTest(template=template), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original = project.create(root / 'original', template)
+                selected = project.create(root / 'selected', template, runtime_profile=inputs.PROFILE)
+                before = (original / 'src/lib.rs').read_text()
+                after = (selected / 'src/lib.rs').read_text()
+                self.assertEqual(after.count(mapping), 1)
+                inserted = (' ' + mapping) if 'with: {' in before else (' with: { ' + mapping + ' },')
+                self.assertEqual(after.replace(inserted, '', 1), before)
+                self.assertIn(b'pub use latent::log::log;', (selected / 'vendor/lsf/sdk/rust-guest/src/bindings.rs').read_bytes())
+
     def test_unknown_or_malformed_project_profile_refuses_before_output(self):
         with tempfile.TemporaryDirectory() as directory:
             for value in ('unknown', 1, True, [], {}, None):

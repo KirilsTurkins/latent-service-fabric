@@ -261,6 +261,18 @@ panic = "abort"
             raise ValueError('maintained logging template world shape changed')
         files['wit/world.wit'] = wit.replace(marker, marker + b'\n    import latent:log/log@0.1.0;', 1)
         files['wit/deps/log/package.wit'] = read_file(ROOT / 'wit/platform/log/package.wit')
+        # Reuse the very same typed import as the fixed SDK stdio bridge.
+        # Bindgen does not implicitly generate undeclared `with` mappings.
+        opening = 'wit_bindgen::generate!({'
+        binding_source = files['src/lib.rs'].decode()
+        mapping = '"latent:log/log@0.1.0": latent_guest::bindings::log,'
+        if binding_source.count(opening) != 1 or binding_source.count('with: {') > 1 or 'latent:log/log@' in binding_source:
+            raise ValueError('maintained logging template binding shape changed')
+        if 'with: {' in binding_source:
+            binding_source = binding_source.replace('with: {', 'with: { ' + mapping, 1)
+        else:
+            binding_source = binding_source.replace(opening, opening + ' with: { ' + mapping + ' },', 1)
+        files['src/lib.rs'] = binding_source.encode()
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment
