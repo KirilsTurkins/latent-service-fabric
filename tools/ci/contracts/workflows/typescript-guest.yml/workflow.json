@@ -59,6 +59,8 @@
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/qualify_typescript_dependencies.py",
+          "tools/qualify_typescript_dependency_refusals.py",
+          "tools/tests/test_typescript_dependency_refusals.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
           "tools/qualify_typescript_fetch_runtime.py",
@@ -124,6 +126,8 @@
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/qualify_typescript_dependencies.py",
+          "tools/qualify_typescript_dependency_refusals.py",
+          "tools/tests/test_typescript_dependency_refusals.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
           "tools/qualify_typescript_fetch_runtime.py",
@@ -172,7 +176,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Union current development and signed Fetch source; preserve every parent case, guard, workflow setting and required command",
+  "reviewReason": "Add explicit refusal source and test triggers without removing existing coverage",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
