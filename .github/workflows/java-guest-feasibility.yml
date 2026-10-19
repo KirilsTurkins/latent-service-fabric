@@ -268,12 +268,33 @@ jobs:
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-library-failures.log"
+      - name: Test private HTTP JAR capture and exact provider evidence controls
+        run: python3 -B -m unittest tools.tests.test_java_private_http -v
+      - name: Qualify unknown private HTTP JARs through the shared standard backend
+        run: |
+          python3 -B tools/qualify_java_private_http.py \
+            --output "$RUNNER_TEMP/java-private-http" \
+            --native "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
+            --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/java-private-http/qualification.json
+            ${{ runner.temp }}/java-private-http/FAILED.json
+            ${{ runner.temp }}/java-private-http/variant-*/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/java-private-http/variant-*/build/build-observation.json
+            ${{ runner.temp }}/java-private-http/variant-*/build/source-inputs.json
+            ${{ runner.temp }}/java-private-http/variant-*/build/recipe-inputs.json
+            ${{ runner.temp }}/java-private-http/variant-*/build/java-classpath.json
+            ${{ runner.temp }}/java-private-http/variant-*/build/http-client-profile.json
+            ${{ runner.temp }}/java-private-http/variant-*/node/qualification.json
+            ${{ runner.temp }}/java-private-http/variant-*/node/after-*.json
+            ${{ runner.temp }}/java-private-http/variant-*/node/controls/standard-*.json
             ${{ runner.temp }}/java-library-failures.log
             ${{ runner.temp }}/java-library-failures/qualification.json
             ${{ runner.temp }}/java-library-failures/FAILED.json
