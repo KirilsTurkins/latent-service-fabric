@@ -50,9 +50,9 @@ func Run(mode string) string {
         if mode == "syscall" { count = 4096 }
         if syscall.RandomGet(make([]byte, count)) != nil { panic("ordinary syscall.RandomGet failed") }
     case "budget":
-        // 9 * 4096 bytes exceeds the unchanged 32768-byte random policy.
+        // 17 * 4096 bytes exceeds the unchanged 65536-byte provider allowance.
         // No retry, alternate Reader, seed or clock-derived fallback is used.
-        for index := 0; index < 9; index++ {
+        for index := 0; index < 17; index++ {
             if syscall.RandomGet(make([]byte, 4096)) != nil { panic("bounded random source rejected request") }
         }
         return "entropy-budget-unexpected-success"

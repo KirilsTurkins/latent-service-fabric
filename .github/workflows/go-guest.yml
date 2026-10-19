@@ -345,6 +345,8 @@ jobs:
       - name: Qualify captured Go libraries in signed components
         run: |
           python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"
+      - name: Execute original random provider ownership and canonical scalar lowering controls
+        run: cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test random
       - name: Test ordinary Go entropy capture and terminal freshness boundaries
         run: python3 -m unittest tools.tests.test_go_standard_entropy
       - name: Qualify ordinary crypto/rand and syscall.RandomGet with existing runtime authority

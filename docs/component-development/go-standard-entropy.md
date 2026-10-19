@@ -8,7 +8,8 @@ fixed seed or ambient WASI source. No provider or grant is installed by adding
 a package. This page describes a new qualification campaign; it is not yet a
 signed execution result.
 
-The campaign leaves the backend and compiler unchanged and captures an outside
+The campaign preserves the compiler and routes fixed-size host results through
+the existing canonical-lowering owner wrapper. It captures an outside
 ordinary module plus a transitive `go:embed` resource module. Normal
 add/lock/resolve/exact-review selects both modules, then their original source
 directories are physically removed before isolated offline compilation. There
@@ -36,8 +37,8 @@ grants, then restore the exact original three grants. They must reject before
 guest execution with known outcome, zero fuel/memory/effects and a reaped CLI.
 No extra provider binding or policy is added. The existing runtime policy keeps
 4096 operations, an 8-byte request descriptor, 32768 output bytes and its
-5000-millisecond ceiling. A fixed nine-by-4096-byte syscall programme must
-terminate at the original operation/byte/wall ceiling; if every request succeeds,
+5000-millisecond ceiling. A fixed seventeen-by-4096-byte syscall programme must
+terminate at the original 65536-byte provider activation ceiling; if every request succeeds,
 it returns a distinct value and fails the required terminal assertion. A
 generic public guest trap alone does not classify its private cause.
 
@@ -59,6 +60,31 @@ fresh cross-tenant execution, strict transactional facility behavior and the
 remaining six-language resource/clock/entropy matrix remain separate #681/#736
 requirements. This adds no scratch or filesystem support.
 
-The first exact-source hosted run (`39295191090`, source `42a2dadf`) passed baseline and one-byte `crypto/rand.Read`, then the 257-byte read trapped with no effects. The normal runtime policy has only eight aggregate input bytes; each `u64-value` draw charges eight input bytes, so that policy does not authorize a second draw. The side campaign now explicitly creates a greeting-only random policy with 4,096 operations, 32,768 input bytes, 32,768 output bytes and the unchanged 5,000ms policy wall ceiling. It selects only that publication/service and retains both original clock grants. Generic runtime policies, provider limits, activation caps and the missing-RANDOM denials stay unchanged. This corrected authority still needs a new actual signed result; the original failed run is not passing entropy evidence.
+The first exact-source hosted run (`39295191090`, source `42a2dadf`) passed
+baseline and one-byte `crypto/rand.Read`, then the 257-byte read trapped with
+zero outbound effects. A later unchanged-component replay (`39305716659`,
+source `ba248929`) still failed after an experimental greeting-only input-policy
+increase. Those runs are failures, not entropy qualification. The input-policy
+hypothesis was incorrect: its eight-byte restriction applies separately to each
+call; it is not an aggregate activation budget. The current campaign retains
+the original policy unchanged.
 
-The explicit manual `replay-entropy-authority` job reuses artifact 12212440772 from `42a2dadf`, including the unchanged `72fe32bc...a53a78` entropy component. It checks the original normal 27-call node receipt and five executable digests, four companion markers, original package layers and recreated WIT bytes. Every prepared production-source field must equal the original, except the authenticated two-line runner call selecting the new greeting-only authority. Fresh normal packaging/demo signing repeats all 43 original/new outcomes. It performs no compiler or native host build and retains historical compiled source separately from the current replay source; it never rewrites or synthesizes the old normal receipt. The original 45-minute job and all its commands remain the default. The manual path is not a whole-ticket qualification or an unqualified current-source compilation claim.
+The fixed `u64-value` host path formerly retained every completed broker call
+until Store drop, exhausting the original sixteen-call session bound during a
+257-byte fill. It now returns the existing `Completion` wrapper around only the
+nonallocating generated scalar result. This keeps the original `ProviderCall`
+alive through canonical lowering and releases it on actual completion or failed
+lowering. Variable-length byte results retain their existing Store-owned buffer
+and call lifetime. No capacity, grant, provider or activation budget is raised.
+Native controls require 33 sequential draws in two fresh activations, invalid
+lowering destinations and provider failure followed by a fresh successful
+activation, while retaining the original sixteen-call behavior for lists.
+
+The manual `replay-entropy-authority` lane and its fixed original `72fe32bc`
+component remain historical diagnostic tooling. They authenticate the original
+normal 27-call receipt, native products, companion bytes and package layers,
+then freshly package/sign the same component. That component contains the old
+nine-buffer terminal probe and cannot qualify the current seventeen-buffer
+provider-exhaustion case. Current host and guest changes require fresh owning
+native and signed execution; those results are pending. Neither historical
+receipt is rewritten or promoted to a current-source qualification.

@@ -182,6 +182,10 @@
         "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
       {
+        "name": "Execute original random provider ownership and canonical scalar lowering controls",
+        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test random"
+      },
+      {
         "name": "Test ordinary Go entropy capture and terminal freshness boundaries",
         "run": "python3 -m unittest tools.tests.test_go_standard_entropy"
       },
@@ -215,7 +219,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Explicit default-off replay authenticates historical compiled products and exact authority-only harness delta; original normal programme and caps preserved.",
+  "reviewReason": "Refund only fixed scalar random calls through existing canonical Completion; preserve original per-call policy and native/list/cancel controls, qualify real 33-call ownership and fresh provider exhaustion.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
