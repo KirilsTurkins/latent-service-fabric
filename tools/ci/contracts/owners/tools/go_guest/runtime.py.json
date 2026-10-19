@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve authenticated existing empty GC readiness poll correction together with standard HTTP context instrumentation; production bodies unchanged by common regression integration.",
+  "reviewReason": "Review opt-in Go v5 maintenance reservations, scheduler late-resume fence and additive signed GC/capacity/drain/cancellation gate. Preserve every earlier profile, required command, skip boundary and original operator ceiling.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0185bd10ad54a6e265b4e273819b8313afa1997c022a6f241e4c8c0e3be0c116"
+  "sha256": "abfd542413afc0d21aab028ade0f64543113854a473210586feb20dc02c99d20"
 }

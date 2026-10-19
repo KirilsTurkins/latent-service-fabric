@@ -5,6 +5,10 @@ ordinary goroutines, channel/sync ownership, result drain and `time.Sleep` benea
 unchanged source. This tutorial keeps the existing explicit clock/random profile;
 activation selection requires its own captured WIT import and operator grants.
 
+The optional [maintenance worker profile](../development/go-managed-idle.md)
+adds original-ledger reservations for source-pinned Go runtime workers. Its
+actual signed-node qualification remains a separate gate.
+
 For reviewed module updates and frontend test/watch, use
 [Go application module inputs](go-library-authoring.md).
 

@@ -43,7 +43,7 @@ def selection(value: dict | None = None) -> dict:
         raise DependencyError('go-build-tags-invalid')
     profile = value.get('runtimeProfile', PROFILE)
     if (value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or not isinstance(profile, str)
-            or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}):
+            or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4', 'go-component-activation-v5'}):
         raise DependencyError('go-runtime-profile-not-installed')
     return {'target': 'wasip1/wasm', 'runtimeProfile': profile, 'tags': sorted(set(tags))}
 
