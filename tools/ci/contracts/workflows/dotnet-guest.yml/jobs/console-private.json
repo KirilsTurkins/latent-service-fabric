@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-console-failure }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-console-failure && !inputs.replay-console-closed-io }}",
     "name": "Closed trap variant and numeric frames for original Console failure",
     "permissions": {
       "actions": "read",
@@ -116,7 +116,7 @@
   },
   "jobId": "console-private",
   "kind": "job",
-  "reviewReason": "Fixed authenticated member index requires bounded header/data reads; preserve byte/file caps and publish only closed guard/progress when setup refuses.",
+  "reviewReason": "Explicit bounded same-core Console replay validates actual closed compiler graph composition and truthful fresh metadata-only observation before normal signing; preserve default75 minute and original private observer commands.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ClosedConsoleReplay.test_bad_source_revision_stops_before_any_output_or_original_input_access",
+    "ClosedConsoleReplay.test_foreign_original_component_refuses_before_nested_input_selection",
+    "ClosedConsoleReplay.test_fresh_derivation_observation_never_rebinds_original_compilation_claim",
+    "ClosedConsoleReplay.test_selected_production_helper_is_exact_reviewed_source"
+  ],
+  "guards": {
+    "ClosedConsoleReplay.test_bad_source_revision_stops_before_any_output_or_original_input_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60d7e0da45ff3beaf16bd9db6ba7bbfa967019162a8ef4632f197f2b0ce22417",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClosedConsoleReplay.test_foreign_original_component_refuses_before_nested_input_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60d7e0da45ff3beaf16bd9db6ba7bbfa967019162a8ef4632f197f2b0ce22417",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClosedConsoleReplay.test_fresh_derivation_observation_never_rebinds_original_compilation_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60d7e0da45ff3beaf16bd9db6ba7bbfa967019162a8ef4632f197f2b0ce22417",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClosedConsoleReplay.test_selected_production_helper_is_exact_reviewed_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60d7e0da45ff3beaf16bd9db6ba7bbfa967019162a8ef4632f197f2b0ce22417",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_console_closed_replay.py",
+  "reviewReason": "Explicit bounded same-core Console replay validates actual closed compiler graph composition and truthful fresh metadata-only observation before normal signing; preserve default75 minute and original private observer commands.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

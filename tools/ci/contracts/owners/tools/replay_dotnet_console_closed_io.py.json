@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_console_closed_io.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review exact current metadata-only replay source and mandatory no-NativeAOT derivation material; original commands remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "807d99d6c20cfb39b7a3c238b698b044881385cc0bd1731796f8f8e7686233f7"
+}

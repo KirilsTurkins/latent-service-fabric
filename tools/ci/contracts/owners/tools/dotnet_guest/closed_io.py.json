@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dotnet_guest/closed_io.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Explicit bounded same-core Console replay validates actual closed compiler graph composition and truthful fresh metadata-only observation before normal signing; preserve default75 minute and original private observer commands.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "c0d65d52ef8e30f2930a1dfafd1479d9ff370ad1a3cd54789ceebf7eaa2b0684"
+}

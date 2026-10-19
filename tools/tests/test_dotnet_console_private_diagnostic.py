@@ -159,10 +159,10 @@ class ConsolePrivateDiagnostic(unittest.TestCase):
         model = ci_lanes.workflow_model((ROOT / '.github/workflows/dotnet-guest.yml').read_text())
         toolchain = model['jobs']['toolchain']
         self.assertEqual(toolchain['timeout-minutes'], 75)
-        self.assertEqual(toolchain['if'], "${{ github.event_name != 'workflow_dispatch' || !inputs.observe-console-failure }}")
+        self.assertEqual(toolchain['if'], "${{ github.event_name != 'workflow_dispatch' || (!inputs.observe-console-failure && !inputs.replay-console-closed-io) }}")
         private = model['jobs']['console-private']
         self.assertEqual(private['timeout-minutes'], 20)
-        self.assertEqual(private['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.observe-console-failure }}")
+        self.assertEqual(private['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.observe-console-failure && !inputs.replay-console-closed-io }}")
         self.assertTrue(any('console-observer.py' in step.get('run', '') for step in private['steps']))
 
 

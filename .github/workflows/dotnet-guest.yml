@@ -55,6 +55,11 @@ on:
       - '.github/workflows/dotnet-guest.yml'
   workflow_dispatch:
     inputs:
+      replay-console-closed-io:
+        description: Recompose retained Console cores through the closed IO fix and sign all45 outcomes
+        required: false
+        default: false
+        type: boolean
       observe-console-failure:
         description: Replay only the authenticated original Console failure with private trap frames
         type: boolean
@@ -80,7 +85,7 @@ env:
 
 jobs:
   toolchain:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.observe-console-failure }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.observe-console-failure && !inputs.replay-console-closed-io) }}
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -318,7 +323,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   console-private:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.observe-console-failure }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.observe-console-failure && !inputs.replay-console-closed-io }}
     permissions:
       contents: read
       actions: read
@@ -403,5 +408,67 @@ jobs:
             ${{ runner.temp }}/console-private-trap/observation.json
             ${{ runner.temp }}/console-private-trap/node/observation.json
             ${{ runner.temp }}/console-private-trap/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7
+  console-closed-replay:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-console-closed-io && !inputs.observe-console-failure }}
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    name: Actual closed Console component derivation and signed original programme
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install only existing locked Python dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check original provenance and fresh metadata-only observation controls
+        run: python3 -B -m unittest tools.tests.test_dotnet_console_closed_replay tools.tests.test_dotnet_console_private_diagnostic -v
+      - name: Preserve exact current projection and original reconstruction helper
+        run: |
+          cp tools/replay_dotnet_console_closed_io.py "$RUNNER_TEMP/console-closed-replay.py"
+          cp tools/dotnet_guest/closed_io.py "$RUNNER_TEMP/closed_io.py"
+          cp tools/diagnose_dotnet_console_failure.py "$RUNNER_TEMP/console_original_support.py"
+      - name: Read only fixed public documents and original binary products
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/dotnet_console_diagnostic_inputs.py --output "$RUNNER_TEMP/console-closed-inputs"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: a1028e1bd854700f27e75017349c58b88b53b0d5
+          persist-credentials: false
+      - name: Add only the exact new source helper alongside immutable original compiler code
+        run: |
+          test ! -e tools/dotnet_guest/closed_io.py
+          cp "$RUNNER_TEMP/closed_io.py" tools/dotnet_guest/closed_io.py
+      - name: Validate actual production composition then freshly package sign and execute original45 outcomes
+        run: python3 -B "$RUNNER_TEMP/console-closed-replay.py" --acquired "$RUNNER_TEMP/console-closed-inputs" --output "$RUNNER_TEMP/console-closed-replay" --recipe-source "${{ github.sha }}"
+      - name: Retain bounded original identities new derivation and actual signed observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-console-closed-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/console-closed-inputs/acquisition.json
+            ${{ runner.temp }}/console-closed-inputs/acquisition-failure.json
+            ${{ runner.temp }}/console-closed-replay/qualification.json
+            ${{ runner.temp }}/console-closed-replay/FAILED.json
+            ${{ runner.temp }}/console-closed-replay/build-evidence/*.json
+            ${{ runner.temp }}/console-closed-replay/commands/*.json
+            ${{ runner.temp }}/console-closed-replay/commands/logs/**
+            ${{ runner.temp }}/console-closed-replay/node/workflow.json
+            ${{ runner.temp }}/console-closed-replay/node/FAILED.json
+            ${{ runner.temp }}/console-closed-replay/node/controls/*.json
           if-no-files-found: warn
           retention-days: 7

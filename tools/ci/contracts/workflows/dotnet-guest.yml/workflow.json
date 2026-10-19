@@ -77,6 +77,12 @@
             "default": false,
             "description": "Replay only the authenticated original Console failure with private trap frames",
             "type": "boolean"
+          },
+          "replay-console-closed-io": {
+            "default": false,
+            "description": "Recompose retained Console cores through the closed IO fix and sign all45 outcomes",
+            "required": false,
+            "type": "boolean"
           }
         }
       }
@@ -86,10 +92,11 @@
     }
   },
   "requiredJobs": [
+    "console-closed-replay",
     "console-private",
     "toolchain"
   ],
-  "reviewReason": "Explicit diagnostic-only Console selector; preserve original normal job, authenticate original component/native inputs and bound closed trap observations without public error changes.",
+  "reviewReason": "Explicit bounded same-core Console replay validates actual closed compiler graph composition and truthful fresh metadata-only observation before normal signing; preserve default75 minute and original private observer commands.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

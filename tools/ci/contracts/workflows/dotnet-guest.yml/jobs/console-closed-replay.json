@@ -1,0 +1,89 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-console-closed-io && !inputs.observe-console-failure }}",
+    "name": "Actual closed Console component derivation and signed original programme",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only existing locked Python dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check original provenance and fresh metadata-only observation controls",
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_console_closed_replay tools.tests.test_dotnet_console_private_diagnostic -v"
+      },
+      {
+        "name": "Preserve exact current projection and original reconstruction helper",
+        "run": "cp tools/replay_dotnet_console_closed_io.py \"$RUNNER_TEMP/console-closed-replay.py\"\ncp tools/dotnet_guest/closed_io.py \"$RUNNER_TEMP/closed_io.py\"\ncp tools/diagnose_dotnet_console_failure.py \"$RUNNER_TEMP/console_original_support.py\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Read only fixed public documents and original binary products",
+        "run": "python3 -B tools/dotnet_console_diagnostic_inputs.py --output \"$RUNNER_TEMP/console-closed-inputs\"",
+        "timeout-minutes": 5
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "a1028e1bd854700f27e75017349c58b88b53b0d5"
+        }
+      },
+      {
+        "name": "Add only the exact new source helper alongside immutable original compiler code",
+        "run": "test ! -e tools/dotnet_guest/closed_io.py\ncp \"$RUNNER_TEMP/closed_io.py\" tools/dotnet_guest/closed_io.py\n"
+      },
+      {
+        "name": "Validate actual production composition then freshly package sign and execute original45 outcomes",
+        "run": "python3 -B \"$RUNNER_TEMP/console-closed-replay.py\" --acquired \"$RUNNER_TEMP/console-closed-inputs\" --output \"$RUNNER_TEMP/console-closed-replay\" --recipe-source \"${{ github.sha }}\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded original identities new derivation and actual signed observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-console-closed-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/console-closed-inputs/acquisition.json\n${{ runner.temp }}/console-closed-inputs/acquisition-failure.json\n${{ runner.temp }}/console-closed-replay/qualification.json\n${{ runner.temp }}/console-closed-replay/FAILED.json\n${{ runner.temp }}/console-closed-replay/build-evidence/*.json\n${{ runner.temp }}/console-closed-replay/commands/*.json\n${{ runner.temp }}/console-closed-replay/commands/logs/**\n${{ runner.temp }}/console-closed-replay/node/workflow.json\n${{ runner.temp }}/console-closed-replay/node/FAILED.json\n${{ runner.temp }}/console-closed-replay/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "console-closed-replay",
+  "kind": "job",
+  "reviewReason": "Explicit bounded same-core Console replay validates actual closed compiler graph composition and truthful fresh metadata-only observation before normal signing; preserve default75 minute and original private observer commands.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}
