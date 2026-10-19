@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review opt-in Go v5 maintenance reservations, scheduler late-resume fence and additive signed GC/capacity/drain/cancellation gate. Preserve every earlier profile, required command, skip boundary and original operator ceiling.",
+  "reviewReason": "Capture both logging and v5 helper identities in the unchanged normal Go source identity recipe.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4b1b5b1b2510142eb6f0ed5a01ab6eed66cdd125b525fb5a9e10dceea9e8b2ec"
+  "sha256": "ad2cb9d5251d28234863c75a898212322e7d58e790be8ab20f8471c2e1c62395"
 }
