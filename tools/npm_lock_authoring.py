@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import tempfile
 
+from tools import typescript_registry_tls as registry_tls
 from tools import typescript_dependency_authoring as authoring
 from tools import typescript_application_dependencies as native
 from tools.application_dependency_store import DependencyError, directory_files, read_bytes, regular_path
@@ -121,7 +122,7 @@ def create_lock(project: Path, *, node: Path | None = None, npm: Path | None = N
         npm = regular_path(npm).resolve(strict=True)
         node_before, npm_before = file_identity(node, 'npm-node'), file_identity(npm, 'npm-cli')
         recipes = {'npm-native-lock-authoring': Path(__file__), 'npm-capture-owner': Path(native.__file__),
-                   'npm-review-owner': Path(authoring.__file__)}
+                   'npm-review-owner': Path(authoring.__file__), 'npm-public-trust-owner': Path(registry_tls.__file__)}
         recipe_before = {name: file_identity(path, name) for name, path in recipes.items()}
         policy_bytes = None
         if registry_config is not None:
@@ -130,12 +131,13 @@ def create_lock(project: Path, *, node: Path | None = None, npm: Path | None = N
                 raise DependencyError('npm-registry-configuration-must-stay-outside-project')
             policy_bytes = read_bytes(registry_config)
         policy = decode_json(policy_bytes) if policy_bytes is not None else {'registries': []}
-        if (not isinstance(policy, dict) or set(policy) != {'registries'} or not isinstance(policy['registries'], list)
+        if (not isinstance(policy, dict) or set(policy) - {'registries', 'tlsTrust'} or 'registries' not in policy or not isinstance(policy['registries'], list)
                 or len(policy['registries']) > 16):
             raise DependencyError('npm-registry-configuration-invalid')
         with tempfile.TemporaryDirectory(prefix='lsf-npm-native-lock-') as temporary:
             owned = Path(temporary)
-            environment = native.fetch_environment(owned, policy)
+            environment = native.fetch_environment(owned, policy, project=app)
+            trust = registry_tls.check(app, owned, policy, environment)
             environment['NPM_CONFIG_IGNORE_SCRIPTS'] = 'true'
             for source, original in observed.items():
                 target = native._mirror(source, owned)
@@ -167,11 +169,16 @@ def create_lock(project: Path, *, node: Path | None = None, npm: Path | None = N
                     or {name: file_identity(path, name) for name, path in recipes.items()} != recipe_before
                     or registry_config is not None and read_bytes(registry_config) != policy_bytes):
                 raise DependencyError('npm-native-lock-source-tool-or-policy-mutated')
+            if registry_tls.check(app, owned, policy, environment) != trust:
+                raise DependencyError('npm-registry-public-trust-mutated')
             authoring.unchanged(owner, sdk)
             prefix = app.relative_to(owner).as_posix() + '/' if app != owner else ''
             authoring.replace(owner, private, prefix + 'package-lock.json', raw, previous, sdk)
-            return {'formatVersion': 1, 'stage': 'npm-native-lock', 'status': 'locked',
+            result = {'formatVersion': 1, 'stage': 'npm-native-lock', 'status': 'locked',
                     'nativeLockDigest': digest(raw), 'configurationDigest': digest(before['package.json']), 'fetchPolicyDigest': digest(canonical(policy)),
                     'sdkLockDigest': digest(sdk[0]), 'captureRequired': True, 'reviewRequired': True,
                     'previousLockPreserved': True, 'compilerExecution': False, 'installScripts': 'never-executed',
                     'node': node_before, 'npm': npm_before, 'npmVersion': npm_version, 'recipe': recipe_before}
+            if trust is not None:
+                result['fetchTrust'] = trust
+            return result

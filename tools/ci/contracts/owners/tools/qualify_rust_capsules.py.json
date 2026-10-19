@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve current development helpers plus private NuGet capture source; exact additive merge union.",
+  "reviewReason": "Exact union of current captured NPM and private NuGet helper identities; preserve all selected runtime and language flags.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "eaa21da0dd79cbc5ff2987654f546254a983670e59702358a3d1c2cfd2fef471"
+  "sha256": "c54f86e0ec6e7325ba72919052e0bdaf8c84c1eafff429347302687eed41cae3"
 }

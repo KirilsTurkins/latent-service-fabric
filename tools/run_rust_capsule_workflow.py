@@ -44,7 +44,7 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False, captured_dotnet_private=False, standard_typescript_console=False,
+        captured_rust_matrix=False, captured_dotnet_private=False, captured_npm_private=False, standard_typescript_console=False,
         go_standard_logging=False, rust_standard_stdio=False):
     require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
             'authoring-typescript-console-language')
@@ -74,6 +74,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(captured_dotnet_private) is bool and (not captured_dotnet_private or language == 'dotnet')
             and not (captured_dotnet_private and captured_dependency_recovery),
             'authoring-private-NuGet-language')
+    require(type(captured_npm_private) is bool and (not captured_npm_private or language == "typescript"),
+            "authoring-captured-npm-private-language")
     require(type(go_standard_logging) is bool and (not go_standard_logging or language == 'go'),
             'authoring-Go-standard-logging-language')
     require(type(rust_standard_stdio) is bool and (not rust_standard_stdio or language == 'rust')
@@ -203,6 +205,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if rust_compatibility:
                         from tools.rust_compatibility_probe import probe as probe_compatibility
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))
+                    if captured_npm_private:
+                        from tools.npm_private_registry_fixture import probe as probe_npm_private
+                        probe_npm_private(client, targets['greeting'], probe, result, len(names),
+                                          read_json(fixture / 'private-npm-probe.json'))
                     if captured_rust_matrix:
                         from tools.rust_dependency_matrix import probe as probe_matrix
                         probe_matrix(client, targets['greeting'], probe, result, len(names),
