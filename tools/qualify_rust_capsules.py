@@ -67,7 +67,7 @@ def inputs(language="rust"):
                     "application_dependency_approval.py", "typescript_application_dependencies.py", "captured_compiler_isolation.py",
                     "typescript_generator_authoring.py", "typescript_generator_fixture.py", "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "typescript_registry_tls.py", "guest_authoring_frontend.py",
                     "typescript_console_probe.py", "typescript_guest/console_profile.py", "typescript_guest/console.mjs",
-                    "typescript_guest/activation_module.mjs")
+                    "typescript_guest/activation_module.mjs", "typescript_guest/entropy.mjs", "typescript_guest/entropy_profile.py")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/outputs.py", "dotnet_guest/sdk.py",
