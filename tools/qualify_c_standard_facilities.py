@@ -15,6 +15,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import c_capsule_build, c_capsule_project
+from tools.c_guest.standard_facilities import COMBINED_PROFILE, LOGGING_PROFILE, PROFILE
 from tools.c_standard_facilities_probe import prepare
 from tools.build_observation import build_environment
 from tools.phase2_operator_process import require
@@ -26,12 +27,13 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, read_json, write_json
 
 HELPERS = ('tools/c_standard_facilities_probe.py', 'tools/qualify_c_standard_facilities.py',
-           'tools/c_standard_logging_probe.py',
+           'tools/c_standard_logging_probe.py', 'tools/c_standard_combined_probe.py',
            'tools/run_rust_capsule_workflow.py', 'tools/rust_capsule_node.py',
            'tools/guest_runtime_profiles.py', 'tools/guest_runtime_grants.py',
            'tools/qualify_java_server_lifecycle.py', 'tools/qualify_java_server_lifecycle_suite.py')
 PUBLIC_FIELDS = ('schemaVersion', 'status', 'scope', 'invocations', 'samples', 'providerIdle',
-                 'cStandardGrantSteps', 'cStandardLoggingGrant', 'limits', 'nodeShutdown', 'peerShutdown',
+                 'cStandardGrantSteps', 'cStandardLoggingGrant', 'cStandardCombinedGrantSteps',
+                 'limits', 'nodeShutdown', 'peerShutdown',
                  'cliCalls', 'reason', 'peerFailure')
 
 
@@ -52,7 +54,9 @@ def main(argv=None):
     parser.add_argument('--native-directory', type=Path)
     parser.add_argument('--native-tuple', type=Path)
     parser.add_argument('--build-native', action='store_true')
-    parser.add_argument('--standard-logging', action='store_true')
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument('--standard-logging', action='store_true')
+    profile.add_argument('--combined-profile', action='store_true')
     args = parser.parse_args(argv)
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-standard-unprivileged-linux-python313-required')
@@ -84,7 +88,7 @@ def main(argv=None):
     installed = {'zig': args.zig.resolve(strict=True), 'wit-bindgen': args.wit_bindgen.resolve(strict=True),
                  'wasm-tools': args.wasm_tools.resolve(strict=True)}
     result = {'schemaVersion': 'latent.c-standard-facilities.qualification.v1', 'status': 'in-progress',
-              'profile': 'c-standard-stdio-v1' if args.standard_logging else 'c-standard-clock-entropy-v1',
+              'profile': COMBINED_PROFILE if args.combined_profile else LOGGING_PROFILE if args.standard_logging else PROFILE,
               'source': source, 'nativeTuple': native, 'publisherAuthenticated': False,
               'releasePublished': False, 'builds': {}}
     stage = 'build'
@@ -95,7 +99,10 @@ def main(argv=None):
         for template in TEMPLATES:
             project = c_capsule_project.create(output / 'projects' / template, template)
             if template == 'greeting':
-                if args.standard_logging:
+                if args.combined_profile:
+                    from tools.c_standard_combined_probe import prepare as prepare_combined
+                    result['capturedStandardLibrary'] = prepare_combined(project)
+                elif args.standard_logging:
                     from tools.c_standard_logging_probe import prepare as prepare_logging
                     result['capturedStandardLibrary'] = prepare_logging(project)
                 else:
@@ -109,11 +116,12 @@ def main(argv=None):
         commands.run('demo-sign', owned['capsule_authoring'], 'demo-sign', output / 'releases', *builds)
         stage = 'node'
         observed = run(owned['latent'], owned['latentd'], output / 'releases', output / 'node',
-                       language='c', c_standard_facilities=not args.standard_logging,
-                       c_standard_logging=args.standard_logging)
+                       language='c', c_standard_facilities=not (args.standard_logging or args.combined_profile),
+                       c_standard_logging=args.standard_logging, c_standard_combined=args.combined_profile)
         public = {name: observed[name] for name in PUBLIC_FIELDS if name in observed}
         write_json(output / 'node/public-workflow.json', public)
-        grant_verified = (observed.get('cStandardLoggingGrant', {}).get('capability') == 'latent:log/log@0.1.0'
+        grant_verified = (len(observed.get('cStandardCombinedGrantSteps', [])) == 4 if args.combined_profile else
+                          observed.get('cStandardLoggingGrant', {}).get('capability') == 'latent:log/log@0.1.0'
                           if args.standard_logging else len(observed.get('cStandardGrantSteps', [])) == 3)
         require(observed['status'] == 'passed' and grant_verified,
                 'c-standard-original-authoring-and-grant-matrix-must-pass')

@@ -7,10 +7,14 @@ from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
 PROFILE = 'c-standard-clock-entropy-v1'
 LOGGING_PROFILE = 'c-standard-stdio-v1'
+COMBINED_PROFILE = 'c-standard-facilities-v1'
 DEFAULT = 'closed-synchronous-v1'
 IMPORTS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0')
-SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE))
-PROFILE_IMPORTS = {PROFILE: IMPORTS, LOGGING_PROFILE: ('latent:log/log@0.1.0',)}
+SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE))
+PROFILE_IMPORTS = {PROFILE: IMPORTS, LOGGING_PROFILE: ('latent:log/log@0.1.0',),
+                   COMBINED_PROFILE: (*IMPORTS, 'latent:log/log@0.1.0')}
+PROFILE_SOURCES = {PROFILE: ('standard-clock-entropy.c',), LOGGING_PROFILE: ('standard-stdio.c',),
+                   COMBINED_PROFILE: ('standard-clock-entropy.c', 'standard-stdio.c')}
 RECIPE = ('tools/c_guest/standard_facilities.py',)
 
 

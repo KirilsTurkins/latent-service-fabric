@@ -43,7 +43,7 @@ def write_workflow_receipt(path, value):
 
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
-        captured_git_component=False):
+        captured_git_component=False, c_standard_combined=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -51,6 +51,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
             "authoring-c-standard-facilities-language")
     require(type(c_standard_logging) is bool and (not c_standard_logging or language == "c")
             and not (c_standard_facilities and c_standard_logging), "authoring-c-standard-logging-language")
+    require(type(c_standard_combined) is bool and (not c_standard_combined or language == "c")
+            and not (c_standard_combined and (c_standard_facilities or c_standard_logging)),
+            "authoring-c-standard-combined-language")
     require(type(captured_dependency_recovery) is bool
             and (not captured_dependency_recovery or language in {"rust", "dotnet", "go"}),
             "authoring-captured-dependency-recovery-language")
@@ -95,9 +98,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                                          control_timeout_millis=control_millis)
                 peer, port = start_provider(client, work / "peer", maximum_seconds=seconds)
                 config, settings = configure(work / "node", fixture, port,
-                    runtime_grants=language in {"go", "dotnet", "java"} or c_standard_facilities, language=language,
+                    runtime_grants=language in {"go", "dotnet", "java"} or c_standard_facilities or c_standard_combined, language=language,
                     noncrypto_entropy=noncrypto_entropy)
-                if c_standard_logging:
+                if c_standard_logging or c_standard_combined:
                     from tools.c_standard_logging_probe import configure as configure_logging
                     configure_logging(settings)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
@@ -137,6 +140,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         grant_and_probe(client, node, fixture, targets, publications, result)
                     if c_standard_logging:
                         from tools.c_standard_logging_probe import grant_and_probe
+                        grant_and_probe(client, node, fixture, targets, publications, result)
+                    if c_standard_combined:
+                        from tools.c_standard_combined_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
                     if noncrypto_entropy:
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy

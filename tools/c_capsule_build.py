@@ -116,9 +116,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             sources.extend(application.sources)
             compile_wit, defines = work / "wit", application.defines
             if runtime_profile in standard_facilities.PROFILE_IMPORTS:
-                adapter = ('standard-clock-entropy.c' if runtime_profile == standard_facilities.PROFILE
-                           else 'standard-stdio.c')
-                sources.append(work / "vendor/lsf/sdk/c-guest/src" / adapter)
+                sources.extend(work / "vendor/lsf/sdk/c-guest/src" / adapter
+                               for adapter in standard_facilities.PROFILE_SOURCES[runtime_profile])
                 compile_wit = standard_facilities.stage(compile_wit, project["world"], temporary / "standard-wit",
                                                        work / "vendor/lsf/wit/platform", profile=runtime_profile)
                 profile_defines = ('_POSIX_C_SOURCE=200809L', '_DEFAULT_SOURCE')
