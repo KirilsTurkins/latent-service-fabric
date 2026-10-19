@@ -1213,5 +1213,96 @@ class NugetCanonicalIdentities(unittest.TestCase):
                             for row in rows.values()))
 
 
+class NugetFeedIdentities(unittest.TestCase):
+    def test_application_source_cannot_alias_either_sdk_feed(self):
+        baseline = (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes()
+        for source in ET.fromstring(baseline).find('packageSources').findall('add'):
+            for name in (source.attrib['key'], source.attrib['key'].upper(), source.attrib['key'].title()):
+                policy = {'sources': [{'name': name, 'url': 'https://outside.example.test/index.json'}]}
+                before = copy.deepcopy(policy)
+                with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary, \
+                        self.assertRaisesRegex(DependencyError, '^nuget-explicit-feed-policy-invalid$'):
+                    feed_config(policy, Path(temporary), baseline)
+                self.assertEqual(policy, before)
+        self.assertEqual(baseline, (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes())
+
+    def test_application_feed_aliases_refuse_in_both_orders_and_with_distinct_locations(self):
+        baseline = (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes()
+        for names in (('Private', 'private'), ('PRIVATE', 'Private'), ('private', 'private')):
+            for reverse in (False, True):
+                rows = [{'name': name, 'url': 'https://feed' + str(index) + '.example.test/index.json',
+                         'patterns': ['Outside' + str(index) + '.*']} for index, name in enumerate(names)]
+                if reverse:
+                    rows.reverse()
+                with self.subTest(names=names, reverse=reverse), tempfile.TemporaryDirectory() as temporary, \
+                        self.assertRaisesRegex(DependencyError, '^nuget-explicit-feed-policy-invalid$'):
+                    feed_config({'sources': rows}, Path(temporary), baseline)
+
+    def test_all_feed_names_are_checked_before_any_local_archive_read_or_copy(self):
+        from unittest.mock import patch
+        from tools import dotnet_application_dependencies as native
+        baseline = (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            local = root / 'outside-feed'
+            local.mkdir()
+            owned = root / 'owned'
+            policy = {'sources': [{'name': 'Local', 'path': str(local)},
+                                  {'name': 'Private', 'url': 'https://private.example.test/index.json'},
+                                  {'name': 'PRIVATE', 'url': 'https://other.example.test/index.json'}]}
+            with patch.object(native, 'directory_files', side_effect=AssertionError('unselected feed was read')) as read, \
+                    self.assertRaisesRegex(DependencyError, '^nuget-explicit-feed-policy-invalid$'):
+                feed_config(policy, owned, baseline)
+            read.assert_not_called()
+            self.assertFalse(owned.exists())
+            self.assertEqual(list(local.iterdir()), [])
+
+    def test_all_feed_names_are_checked_before_any_credential_lookup(self):
+        from unittest.mock import Mock, patch
+        from tools import dotnet_application_dependencies as native
+        baseline = (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes()
+        environment = Mock()
+        environment.get.side_effect = AssertionError('unselected credential was read')
+        policy = {'sources': [{'name': 'First', 'url': 'https://first.example.test/index.json',
+                               'authorizationEnv': 'LSF_NUGET_SELECTED_AUTH'},
+                              {'name': 'Private', 'url': 'https://private.example.test/index.json'},
+                              {'name': 'PRIVATE', 'url': 'https://other.example.test/index.json'}]}
+        with tempfile.TemporaryDirectory() as temporary, patch.object(native.os, 'environ', environment), \
+                self.assertRaisesRegex(DependencyError, '^nuget-explicit-feed-policy-invalid$'):
+            feed_config(policy, Path(temporary), baseline)
+        environment.get.assert_not_called()
+
+    def test_unique_mixed_case_feeds_preserve_exact_sdk_mapping_credentials_and_receipt(self):
+        import hashlib
+        from unittest.mock import patch
+        baseline = (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes()
+        original = ET.fromstring(baseline)
+        policy = {'sources': [{'name': 'Private_A', 'url': 'https://a.example.test/index.json',
+                               'patterns': ['Outside.A.*'], 'authorizationEnv': 'LSF_NUGET_SELECTED_AUTH',
+                               'username': 'selected-user'},
+                              {'name': 'private-B', 'url': 'https://b.example.test/index.json',
+                               'patterns': ['Outside.B.*']}]}
+        before = copy.deepcopy(policy)
+        with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {'LSF_NUGET_SELECTED_AUTH': 'selected-private-token'}):
+            config, receipt = feed_config(policy, Path(temporary), baseline)
+            self.assertEqual(list(Path(temporary).iterdir()), [])
+        selected = ET.fromstring(config)
+        expected_sources = [row.attrib for row in original.find('packageSources').findall('add')]
+        expected_sources.extend({'key': row['name'], 'value': row['url']} for row in policy['sources'])
+        self.assertEqual([row.attrib for row in selected.find('packageSources').findall('add')], expected_sources)
+        expected_mappings = [(row.attrib, [child.attrib for child in row]) for row in original.find('packageSourceMapping')]
+        expected_mappings.extend(({'key': row['name']}, [{'pattern': value} for value in row['patterns']]) for row in policy['sources'])
+        self.assertEqual([(row.attrib, [child.attrib for child in row]) for row in selected.find('packageSourceMapping')], expected_mappings)
+        self.assertEqual([row.tag for row in selected.find('packageSourceCredentials')], ['Private_A'])
+        self.assertEqual({row.attrib['key']: row.attrib['value'] for row in selected.find('packageSourceCredentials/Private_A')},
+                         {'Username': 'selected-user', 'ClearTextPassword': 'selected-private-token'})
+        self.assertEqual(receipt, {'sources': [{'name': row['key'], 'kind': 'https',
+                          'sourceIdentityDigest': 'sha256:' + hashlib.sha256(row['value'].encode()).hexdigest()} for row in expected_sources]})
+        for private in ('selected-user', 'selected-private-token', 'a.example.test', 'b.example.test'):
+            self.assertNotIn(private, json.dumps(receipt))
+        self.assertEqual(policy, before)
+        self.assertEqual(baseline, (Path(__file__).resolve().parents[2] / 'sdk/dotnet-guest/nuget.config').read_bytes())
+
+
 if __name__ == '__main__':
     unittest.main()
