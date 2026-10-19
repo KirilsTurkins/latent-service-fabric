@@ -132,3 +132,36 @@ than runtime support. #691 remains open for actual engine/component/provider,
 two unchanged clients/private-dependency controls, broader lifecycle/exhaustion
 and measured ownership evidence. The independent approved socket profile remains
 owned by #737–#740.
+
+## Synthetic response factories
+
+The buffered profile supplies `Response.error()` and
+`Response.redirect(url, status = 302)` from the automatically installed Response
+class. These are pure response constructors: they contact no provider, follow no
+redirect and confer no request authority. `error()` produces status 0, type
+`error`, an empty immutable header list and a null body; public `new Response`
+still requires status 200 to 599. Both factory results and their clones retain the
+immutable header guard. Reading a null body returns empty bytes/text without
+marking it used; parsing that empty text as JSON still rejects.
+
+`redirect()` accepts strings and objects with a string-returning `toString()`,
+including a URL object supplied by a compatible selected library. It supports
+absolute HTTP(S) URLs under the existing 2048-character
+serialized URL bound. It preserves the serialized Location, including its
+fragment, and accepts only redirect statuses 301, 302, 303, 307 and 308 after
+[Web IDL unsigned-short conversion](https://webidl.spec.whatwg.org/#abstract-opdef-converttoint).
+There is no ambient base URL or non-HTTP redirect profile. The object has a null
+body, empty response URL, `redirected: false` and type `default`, as prescribed
+by the [Fetch Response factories](https://fetch.spec.whatwg.org/#response-class).
+It does not enable manual/opaque redirect responses or change fetch's existing
+bounded follow policy, credential stripping, grants or uncertainty behavior.
+A provider failure remains a rejected fetch Promise, never a fabricated success
+or an automatic `Response.error()` return.
+
+Focused controls compare ordinary statuses, URL serialization, null-body reads,
+clones and immutable headers with pinned Node. Normative Web IDL controls are
+separate: ToNumber rejects BigInt and unsigned-short modulo wraps negative
+values nonnegatively. Node 24.19.0 differs on those two edge cases, so no Node
+parity is claimed for them. Source/mock controls do not establish signed engine,
+component/provider, unchanged-library/private-consumer or lifecycle/cleanup
+qualification; those #691 requirements remain open.

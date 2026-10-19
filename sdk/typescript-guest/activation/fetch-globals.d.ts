@@ -56,7 +56,7 @@ declare class Response implements FetchBody {
     readonly ok: boolean;
     readonly url: string;
     readonly redirected: boolean;
-    readonly type: 'default' | 'basic';
+    readonly type: 'default' | 'basic' | 'error';
     readonly bodyUsed: boolean;
     readonly body: null;
     clone(): Response;
@@ -64,5 +64,7 @@ declare class Response implements FetchBody {
     text(): Promise<string>;
     json(): Promise<any>;
     static json(value: any, init?: ResponseInit): Response;
+    static error(): Response;
+    static redirect(url: string | { toString(): string }, status?: number): Response;
 }
 declare function fetch(input: string | Request, init?: RequestInit): Promise<Response>;
