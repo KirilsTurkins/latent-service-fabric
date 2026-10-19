@@ -581,6 +581,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
+      - name: Install the existing locked Python source-control dependencies
+        run: python3 -m pip install -r tools/requirements.lock
       - name: Check bounded replay, package restoration and numeric frame controls
         run: python3 -m unittest tools.tests.test_typescript_fetch_frames -v
       - name: Preserve the reviewed observer outside the original source checkout

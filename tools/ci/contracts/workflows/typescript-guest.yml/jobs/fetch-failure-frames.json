@@ -24,6 +24,10 @@
         }
       },
       {
+        "name": "Install the existing locked Python source-control dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
         "name": "Check bounded replay, package restoration and numeric frame controls",
         "run": "python3 -m unittest tools.tests.test_typescript_fetch_frames -v"
       },
@@ -97,7 +101,7 @@
   },
   "jobId": "fetch-failure-frames",
   "kind": "job",
-  "reviewReason": "Review a manual failure-only exact-d412 artifact replay; preserve all normal signed Fetch gates and retain only bounded numeric frames.",
+  "reviewReason": "Install existing locked Python dependencies before the unchanged private replay controls on a fresh hosted interpreter.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
