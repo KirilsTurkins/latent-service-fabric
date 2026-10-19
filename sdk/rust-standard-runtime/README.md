@@ -107,12 +107,26 @@ grant. The legacy stock profile still uses the unmodified prebuilt standard
 library; no supported logging or concrete-Unsupported stdio claim is made for
 that separate profile.
 
-The seven host tests in `stdio_reference.rs` exercise the actual PAL files with
+The eight host tests in `stdio_reference.rs` exercise the actual PAL files with
 a synthetic bridge. `tools/run_rust_stdio_reference.py` also extracts the three
 exact pinned upstream methods: the old write/write_all/flush Unsupported
 assertions fail and the new reference passes. These controls do not qualify the
 rebuilt std, generated binding, component or signed node. Actual default standard
 logging and fresh-state/failure qualification remain required before acceptance.
+
+The new `Rebuilt Rust standard stdio and signed ordinary libraries` job is an
+independent 20-minute child of the existing authoring job. It reuses only that
+run's exact native five-product tuple and four original companion builds, then
+builds closed and logging std from the authenticated Rust source archive. A
+normal captured outside library calls only ordinary std APIs and a transitive
+`include_str!` resource; original outside sources are removed before offline
+component compilation. The existing signed runner retains all 27 original
+outcomes and adds three closed-error/fresh calls, or two pre-admission denials
+and fourteen logging/error/failure/fresh calls. Each new completed/fault call
+requires process reaping and the original idle accounting samples. No original
+job command, limit, signing rule or runtime budget is relaxed. This job is newly
+prepared; no successful component execution is claimed until its actual result
+and retained source/tuple/cleanup receipts have been checked.
 
 `tools/qualify_rust_standard_clock.py` prepares an ordinary `SystemTime::now`
 component using that emitted std graph and the pinned bindings/component tool.

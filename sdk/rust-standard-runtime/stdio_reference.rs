@@ -1,5 +1,6 @@
 // Host reference of the actual PAL files with a synthetic typed-log bridge.
 // This is not a rebuilt std, generated-binding, component or host qualification.
+#![feature(can_vector)]
 pub use std::{io, str};
 
 #[path = "stdio_closed.rs"]
@@ -8,7 +9,7 @@ mod closed;
 mod logging;
 
 use std::cell::{Cell, RefCell};
-use std::io::{ErrorKind, IoSlice, Read, Write};
+use std::io::{BufRead, ErrorKind, IoSlice, Read, Write};
 
 thread_local! {
     static STATUS: Cell<u8> = const { Cell::new(0) };
@@ -48,6 +49,14 @@ fn default_nonempty_input_is_unsupported_rather_than_invented_eof() {
 }
 
 #[test]
+fn ordinary_buffered_input_does_not_mask_unsupported_as_empty_eof() {
+    let mut input = io::BufReader::with_capacity(closed::STDIN_BUF_SIZE, closed::Stdin::new());
+    assert_eq!(input.read_line(&mut String::new()).unwrap_err().kind(), ErrorKind::Unsupported);
+    let mut input = io::BufReader::with_capacity(logging::STDIN_BUF_SIZE, logging::Stdin::new());
+    assert_eq!(input.fill_buf().unwrap_err().kind(), ErrorKind::Unsupported);
+}
+
+#[test]
 fn ordinary_write_fmt_and_write_all_use_exact_text_and_levels() {
     reset(0);
     write!(logging::Stdout::new(), "outside:{}", 17).unwrap();
@@ -65,6 +74,7 @@ fn ordinary_write_fmt_and_write_all_use_exact_text_and_levels() {
 #[test]
 fn vectors_are_joined_before_utf8_validation_without_heap_or_partial_dispatch() {
     reset(0);
+    assert!(logging::Stdout::new().is_write_vectored());
     let text = [IoSlice::new(b"Gr\xc3"), IoSlice::new(b"\xbc\xc3\x9fe")];
     assert_eq!(logging::Stdout::new().write_vectored(&text).unwrap(), 7);
     CALLS.with(|calls| assert_eq!(*calls.borrow(), vec![(2, "Gr\u{fc}\u{df}e".into())]));
@@ -105,6 +115,6 @@ fn output_drop_has_no_hidden_host_write_or_panic_logger() {
     CALLS.with(|calls| assert!(calls.borrow().is_empty()));
     assert!(logging::panic_output().is_none());
     assert!(!logging::is_ebadf(&io::Error::from(ErrorKind::Unsupported)));
-    assert_eq!(closed::STDIN_BUF_SIZE, 0);
-    assert_eq!(logging::STDIN_BUF_SIZE, 0);
+    assert_eq!(closed::STDIN_BUF_SIZE, 1);
+    assert_eq!(logging::STDIN_BUF_SIZE, 1);
 }

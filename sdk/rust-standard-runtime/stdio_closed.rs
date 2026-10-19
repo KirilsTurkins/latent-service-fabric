@@ -37,7 +37,9 @@ macro_rules! output {
 output!(Stdout);
 output!(Stderr);
 
-pub const STDIN_BUF_SIZE: usize = 0;
+// A zero-capacity outer BufReader can invent EOF without making a read. One
+// bounded byte forces ordinary read_line/fill_buf to observe Unsupported.
+pub const STDIN_BUF_SIZE: usize = 1;
 // The outer std wrapper must not turn our explicit error into a fake write/EOF.
 pub fn is_ebadf(_error: &io::Error) -> bool { false }
 // A failed print must not retry through an implicit panic logger.

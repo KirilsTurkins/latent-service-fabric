@@ -61,6 +61,7 @@ macro_rules! output {
         impl io::Write for $name {
             fn write(&mut self, bytes: &[u8]) -> io::Result<usize> { write($level, bytes) }
             fn write_vectored(&mut self, buffers: &[IoSlice<'_>]) -> io::Result<usize> { vectored($level, buffers) }
+            fn is_write_vectored(&self) -> bool { true }
             // No buffer/worker: successful writes already completed synchronously.
             // This acknowledges current sink acceptance, not remote durability.
             fn flush(&mut self) -> io::Result<()> { Ok(()) }
@@ -70,6 +71,6 @@ macro_rules! output {
 output!(Stdout, 2);
 output!(Stderr, 4);
 
-pub const STDIN_BUF_SIZE: usize = 0;
+pub const STDIN_BUF_SIZE: usize = 1;
 pub fn is_ebadf(_error: &io::Error) -> bool { false }
 pub fn panic_output() -> Option<Stderr> { None }

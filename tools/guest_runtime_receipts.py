@@ -158,6 +158,12 @@ def read(raw: bytes, **bindings):
 def verify_build(value, language, files, source_inputs, component, materials):
     original, bindings, graph = captured_inputs(language, files, source_inputs)
     profile = graph.get('selection', {}).get('runtimeProfile', PROFILES[language]) if graph is not None else PROFILES[language]
+    if language == 'rust':
+        from tools.rust_standard_logging_inputs import selection
+        project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
+        selected = selection(project)
+        require(graph is None or selected == profile, 'rust-project-and-captured-runtime-profile-disagree')
+        profile = selected
     if language == 'typescript':
         from tools.typescript_guest.runtime_profile import selected_profile
         project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}

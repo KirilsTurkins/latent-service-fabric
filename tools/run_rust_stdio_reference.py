@@ -48,6 +48,10 @@ def run(rustc: Path, output: Path):
     source = {name: read_file(ROOT / name) for name in names}
     compiler = file_identity(rustc, 'rustc')
     environment = build_environment(output)
+    # This exact std-internal trait is unstable to application crates. The
+    # reviewed host reference uses the same pinned compiler bootstrap as std's
+    # owned build; no application-selected file or flag reaches this command.
+    environment['RUSTC_BOOTSTRAP'] = '1'
     def command(arguments, expected=0):
         result = run_bounded_result(list(map(str, arguments)), output, environment, 30, 65536)
         require(result.returncode == expected, 'rust-stdio-reference-command-outcome')
@@ -69,13 +73,13 @@ def run(rustc: Path, output: Path):
     (output / 'old.rs').write_bytes(old_source)
     command([rustc, '--edition=2024', '--test', output / 'old.rs', '-o', old_binary])
     old_output = command([old_binary, '--test-threads=1'], 101)
-    require('3 failed' in old_output and '7 passed' in new_output and '0 ignored' in new_output,
+    require('3 failed' in old_output and '8 passed' in new_output and '0 ignored' in new_output,
             'rust-stdio-reference-case-inventory')
     require({n: read_file(ROOT / n) for n in names} == source and file_identity(rustc, 'rustc') == compiler,
             'rust-stdio-reference-input-mutated')
     value = {'schemaVersion': 'latent.rust.stdio-host-reference.v1', 'status': 'passed',
         'oldSource': {'digest': digest(source[names[-1]]), 'result': '3 intended Unsupported assertions failed'},
-        'newSource': {'result': '7 actual PAL tests passed; zero ignored', 'fakeTypedLogSink': True},
+        'newSource': {'result': '8 actual PAL tests passed; zero ignored', 'fakeTypedLogSink': True},
         'sourceDigest': digest(inventory(source)), 'compiler': compiler,
         'rebuiltStdQualified': False, 'generatedBindingQualified': False, 'signedComponentQualified': False}
     write_json(output / 'qualification.json', value)

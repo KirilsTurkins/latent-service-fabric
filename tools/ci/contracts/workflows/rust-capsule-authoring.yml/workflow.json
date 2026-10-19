@@ -25,6 +25,7 @@
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
           "sdk/rust-standard-runtime/**",
+          "sdk/rust-standard-stdio/**",
           "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
@@ -45,6 +46,7 @@
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
           "sdk/rust-standard-runtime/**",
+          "sdk/rust-standard-stdio/**",
           "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
@@ -68,9 +70,10 @@
     "dependency-matrix",
     "git-closure",
     "git-components",
-    "standard-clocks"
+    "standard-clocks",
+    "standard-stdio"
   ],
-  "reviewReason": "Retain every existing Rust job, including signed unsupported-operation compatibility. Require one additive varied dependency graph qualification job using this run's existing public prepared native tuple.",
+  "reviewReason": "Add a separately bounded same-run-products signed standard stdio job; preserve every original job, command, deadline and gate. Rebuild exact owned std and execute captured ordinary transitive-library closed/logging/failure/fresh paths; native results remain pending.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

@@ -156,5 +156,23 @@ class StandardLogging(unittest.TestCase):
             self.assertNotIn(b'standard-logging', files['Cargo.toml'])
             self.assertNotIn(b'latent:log', files['wit/world.wit'])
 
+    def test_uncaptured_profile_receipt_is_verified_against_actual_project_selection(self):
+        from tools import guest_runtime_receipts as receipts
+        files = {'capsule-project.json': encode({'runtimeProfile': inputs.PROFILE}),
+                 'vendor/lsf/sdk/rust-guest/src/lib.rs': b'captured SDK source',
+                 'wit/world.wit': b'package outside:stdio@0.1.0; world guest {}'}
+        source = project.inventory(files)
+        component = b'controlled component identity, not executed'
+        materials = [{'name': 'build-recipe', 'digest': project.digest(b'current recipe'), 'size': 14}]
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            receipts.emit(output, 'rust', inputs.PROFILE, files, source, component, materials,
+                graph=None, binding_digest=project.digest(b'bindings'), configuration={'profile': inputs.PROFILE})
+            value = project.read_json(output / 'standard-runtime-selection.json')
+            receipts.verify_build(value, 'rust', files, source, component, materials)
+            changed = {**files, 'capsule-project.json': encode({'runtimeProfile': inputs.CLOSED})}
+            with self.assertRaisesRegex(DevError, 'stale-'):
+                receipts.verify_build(value, 'rust', changed, project.inventory(changed), component, materials)
+
 
 if __name__ == '__main__': unittest.main()
