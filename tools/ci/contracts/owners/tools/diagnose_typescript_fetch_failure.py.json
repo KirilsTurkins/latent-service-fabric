@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Drain private host stderr through original graceful shutdown, validate multiple closed numeric records under global32-frame bound and retain authenticated private observer tuple for exact reuse.",
+  "reviewReason": "Private exact-component lifetime observation with fixed aliases, closed operation labels, counts and max32 callsite frames; bounded CLI/node pipe pumping preserves original wait/results, deadlines and all runtime owner limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b6873e35d7122fbf1a46371c9e064ca514b3ea40d85600eac99d3733b01c1a45"
+  "sha256": "d3eee15ac5ad4d6f121001222d31102c26cf33397f3f3ed31b219044fba1b11f"
 }

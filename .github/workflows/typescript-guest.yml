@@ -595,7 +595,9 @@ jobs:
       - name: Check bounded replay, package restoration and numeric frame controls
         run: python3 -m unittest tools.tests.test_typescript_fetch_frames -v
       - name: Preserve the reviewed observer outside the original source checkout
-        run: cp tools/diagnose_typescript_fetch_failure.py "$RUNNER_TEMP/diagnose-typescript-fetch.py"
+        run: |
+          cp tools/diagnose_typescript_fetch_failure.py "$RUNNER_TEMP/diagnose-typescript-fetch.py"
+          cp tools/typescript_fetch_owner_trace.rs "$RUNNER_TEMP/typescript_fetch_owner_trace.rs"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: 0754391a20027a539f1d5b7c0426719a4bd6c3c1

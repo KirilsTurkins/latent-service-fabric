@@ -33,7 +33,7 @@
       },
       {
         "name": "Preserve the reviewed observer outside the original source checkout",
-        "run": "cp tools/diagnose_typescript_fetch_failure.py \"$RUNNER_TEMP/diagnose-typescript-fetch.py\""
+        "run": "cp tools/diagnose_typescript_fetch_failure.py \"$RUNNER_TEMP/diagnose-typescript-fetch.py\"\ncp tools/typescript_fetch_owner_trace.rs \"$RUNNER_TEMP/typescript_fetch_owner_trace.rs\"\n"
       },
       {
         "uses": "actions/checkout",
@@ -123,7 +123,7 @@
   },
   "jobId": "fetch-failure-frames",
   "kind": "job",
-  "reviewReason": "Private manual-only exact backend candidate uses existing authenticated compiler/engine/native products, preserves ordinary finite signed gate and strict bounds, and reuses the private observer only after an actual retained failure; no Cargo/engine rebuild or production qualification transfer.",
+  "reviewReason": "Private exact-component owner lifetime observation: fixed Task/QueuedWork aliases and parent relationships, original register/park/wake/settle/close semantics, 96 events and at most32 numeric callsite frames; no raw tokens, names, messages, authority or cap changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

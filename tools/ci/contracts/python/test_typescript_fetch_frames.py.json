@@ -3,6 +3,7 @@
     "FetchFailureFrames.test_candidate_backend_requires_the_exact_reviewed_bytes",
     "FetchFailureFrames.test_candidate_private_observer_rejects_changed_binary_and_wrong_source",
     "FetchFailureFrames.test_changed_component_or_forged_manifest_is_refused_before_restore_or_packager",
+    "FetchFailureFrames.test_cli_pipe_pump_preserves_original_wait_and_drains_node_without_recursion",
     "FetchFailureFrames.test_manual_observer_has_no_gate_substitution_and_downloads_only_the_authenticated_run",
     "FetchFailureFrames.test_missing_target_uses_fresh_private_storage_without_relaxing_offline_build",
     "FetchFailureFrames.test_numeric_capture_handles_large_nonrecord_output_and_multiple_closed_records",
@@ -11,6 +12,8 @@
     "FetchFailureFrames.test_private_cargo_failure_projects_closed_setup_tokens_and_only_stream_digests",
     "FetchFailureFrames.test_private_compiler_output_is_bounded_redacted_and_separate_from_public_receipt",
     "FetchFailureFrames.test_private_host_identity_requires_both_compiled_observer_markers",
+    "FetchFailureFrames.test_private_lifetime_overlay_preserves_source_and_all_original_owner_operations",
+    "FetchFailureFrames.test_private_owner_lifetimes_accept_only_closed_aliases_counts_and_bounded_numeric_sites",
     "FetchFailureFrames.test_private_replay_keeps_original_failed_json_vector_and_never_exports_stderr",
     "FetchFailureFrames.test_reconstructed_wit_bytes_match_all_five_original_d412_package_identities",
     "FetchFailureFrames.test_registration_overlay_is_exact_readonly_and_preserves_original_result",
@@ -43,6 +46,18 @@
       "skipSites": []
     },
     "FetchFailureFrames.test_changed_component_or_forged_manifest_is_refused_before_restore_or_packager": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a25abf43763c5d6ae351b604cea05f41292abded889ab02c6cf6f2e4940e58d9",
+        "class:setup-sha256:59c0ada5c7f6405e086a0c397c5f95eb7a3ac4d40fca7c264894a729af92b417"
+      ],
+      "skipSites": []
+    },
+    "FetchFailureFrames.test_cli_pipe_pump_preserves_original_wait_and_drains_node_without_recursion": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -150,6 +165,30 @@
       ],
       "skipSites": []
     },
+    "FetchFailureFrames.test_private_lifetime_overlay_preserves_source_and_all_original_owner_operations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a25abf43763c5d6ae351b604cea05f41292abded889ab02c6cf6f2e4940e58d9",
+        "class:setup-sha256:59c0ada5c7f6405e086a0c397c5f95eb7a3ac4d40fca7c264894a729af92b417"
+      ],
+      "skipSites": []
+    },
+    "FetchFailureFrames.test_private_owner_lifetimes_accept_only_closed_aliases_counts_and_bounded_numeric_sites": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a25abf43763c5d6ae351b604cea05f41292abded889ab02c6cf6f2e4940e58d9",
+        "class:setup-sha256:59c0ada5c7f6405e086a0c397c5f95eb7a3ac4d40fca7c264894a729af92b417"
+      ],
+      "skipSites": []
+    },
     "FetchFailureFrames.test_private_replay_keeps_original_failed_json_vector_and_never_exports_stderr": {
       "bases": [
         "unittest.TestCase"
@@ -213,6 +252,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch_frames.py",
-  "reviewReason": "Private manual-only exact backend candidate uses existing authenticated compiler/engine/native products, preserves ordinary finite signed gate and strict bounds, and reuses the private observer only after an actual retained failure; no Cargo/engine rebuild or production qualification transfer.",
+  "reviewReason": "Private exact-component lifetime observation with fixed aliases, closed operation labels, counts and max32 callsite frames; bounded CLI/node pipe pumping preserves original wait/results, deadlines and all runtime owner limits.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

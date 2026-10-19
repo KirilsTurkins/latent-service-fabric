@@ -175,10 +175,10 @@ class FetchFailureFrames(unittest.TestCase):
     def test_private_host_identity_requires_both_compiled_observer_markers(self):
         with tempfile.TemporaryDirectory() as directory:
             binary = Path(directory)/'owned-private-host'
-            binary.write_bytes(b'x'*65530+fetch.frames.PREFIX+b'padding'+fetch.REGISTER_PREFIX)
-            self.assertEqual(fetch.private_host_markers(binary), {'numericFrames': True, 'registrationFailures': True})
+            binary.write_bytes(b'x'*65530+fetch.frames.PREFIX+b'padding'+fetch.REGISTER_PREFIX+b'LSF_FETCH_OWNER_EVENT ')
+            self.assertEqual(fetch.private_host_markers(binary), {'numericFrames': True, 'registrationFailures': True, 'ownerLifetimes': True})
             binary.write_bytes(fetch.frames.PREFIX)
-            self.assertEqual(fetch.private_host_markers(binary), {'numericFrames': True, 'registrationFailures': False})
+            self.assertEqual(fetch.private_host_markers(binary), {'numericFrames': True, 'registrationFailures': False, 'ownerLifetimes': False})
 
     def test_private_build_adds_only_the_third_readonly_overlay_to_reviewed_boundary(self):
         root = Path('/owned-workspace')
@@ -317,6 +317,67 @@ class FetchFailureFrames(unittest.TestCase):
             with patch.object(candidate, 'PRIVATE_IDENTITY', candidate.file_identity(path)):
                 with self.assertRaisesRegex(WorkflowError, 'observer-source'):
                     candidate.observer_host(root, {'owned': 'native'})
+
+
+    def test_private_lifetime_overlay_preserves_source_and_all_original_owner_operations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root/fetch.REGISTER_PATH
+            source.parent.mkdir(parents=True)
+            original = read_file(fetch.ROOT/fetch.REGISTER_PATH)
+            source.write_bytes(original)
+            output = root/'overlays';output.mkdir()
+            _records, (private, _) = fetch.registration_overlay(root, output)
+            self.assertEqual(fetch.lifetime_overlay(private), digest(private.read_bytes()))
+            self.assertEqual(source.read_bytes(), original)
+            text = private.read_text()
+            for action in ('"register"', '"park"', '"wake"', '"settle"', '"close"', '"refused"'):
+                self.assertIn(action, text)
+            self.assertIn('drop(table.owners.swap_remove(index));', text)
+            self.assertIn('let owner = registered?;', text)
+            self.assertIn('WasmBacktrace::capture(&store)', text)
+            self.assertNotIn('error.message', text)
+            before = private.read_bytes()
+            with self.assertRaisesRegex(WorkflowError, 'exact-source'):
+                fetch.lifetime_overlay(private)
+            self.assertEqual(private.read_bytes(), before)
+
+    def test_private_owner_lifetimes_accept_only_closed_aliases_counts_and_bounded_numeric_sites(self):
+        def line(prefix, value):
+            return prefix+json.dumps(value).encode()+b'\n'
+        site = {'site': 1, 'frames': [{'functionIndex': 7, 'functionOffset': 9, 'moduleOffset': 11}]}
+        event = {'sequence': 1, 'action': 'register', 'kind': 'task', 'owner': 1, 'parent': 0,
+                 'counts': [1, 0, 0, 0, 0, 0, 0], 'site': 1}
+        prefix = b'LSF_FETCH_OWNER_EVENT '
+        raw = line(b'LSF_FETCH_OWNER_SITE ', site)+line(prefix, event)
+        value = fetch.owner_lifetimes(b'private noise/not retained\n'+raw)
+        self.assertEqual(value['records'], [event])
+        self.assertFalse(value['qualification'])
+        self.assertNotIn('private noise', json.dumps(value))
+        for bad in ({**event, 'generation': 'private'}, {**event, 'action': 'unknown'},
+                    {**event, 'owner': True}, {**event, 'parent': 257}, {**event, 'site': 2},
+                    {**event, 'sequence': 2}, {**event, 'counts': [8192, 1, 0, 0, 0, 0, 0]}):
+            with self.subTest(bad=bad), self.assertRaises((WorkflowError, TypeError, ValueError)):
+                fetch.owner_lifetimes(line(b'LSF_FETCH_OWNER_SITE ', site)+line(prefix, bad))
+        with self.assertRaises(WorkflowError):
+            fetch.owner_lifetimes(raw+line(b'LSF_FETCH_OWNER_SITE ', site))
+        with self.assertRaises(WorkflowError):
+            fetch.owner_lifetimes(b'x'*262145)
+
+    def test_cli_pipe_pump_preserves_original_wait_and_drains_node_without_recursion(self):
+        node = SimpleNamespace(drain=Mock())
+        selected = node
+        process = fetch.pumping_cli_process(lambda: selected)
+        self.assertIs(process.complete, fetch.Process.complete)
+        with patch.object(fetch.Process, 'drain') as original:
+            instance = process.__new__(process)
+            instance.drain()
+            node.drain.assert_called_once_with()
+            self.assertEqual(original.call_count, 1)
+            selected = instance
+            instance.drain()
+            self.assertEqual(original.call_count, 2)
+            node.drain.assert_called_once_with()
 
 
 if __name__ == '__main__':

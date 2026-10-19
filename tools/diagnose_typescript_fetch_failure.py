@@ -13,6 +13,7 @@ import sys
 import tempfile
 import tomllib
 import time
+from unittest.mock import patch
 
 # The workflow preserves this helper outside the checkout before selecting the
 # original tested tree. All runtime/configuration modules below are that tree's.
@@ -21,6 +22,7 @@ sys.path.insert(0, str(Path.cwd()))
 from tools import diagnose_go_entry_frames as frames
 from tools import diagnose_go_timer_failure as host
 from tools import qualify_typescript_fetch_runtime as fetch
+from tools import phase2_operator_process as process_api
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
@@ -100,6 +102,86 @@ def registration_overlay(root: Path, output: Path) -> tuple[dict, tuple[Path, Pa
     return {REGISTER_PATH: {'original': digest(original), 'private': digest(derived)}}, (private, root/REGISTER_PATH)
 
 
+def lifetime_overlay(path: Path) -> str:
+    """Add bounded successful owner transitions only to the private overlay."""
+    source = path.read_text(encoding='utf-8')
+    replacements = [
+        ('pub(crate) const CAPABILITY:',
+         read_file(Path(__file__).with_name('typescript_fetch_owner_trace.rs'), 16384).decode() + '\n'
+         'pub(crate) const CAPABILITY:'),
+        ('                        let result = synchronous(store.data_mut(), $name, $execute);',
+         '                        if $name == "register" {\n'
+         '                            private_fetch_trace::capture(wasmtime::WasmBacktrace::capture(&store));\n'
+         '                        }\n'
+         '                        let result = synchronous(store.data_mut(), $name, $execute);'),
+        ('            let kind_label = match &kind {',
+         '            let private_parent = continuation.as_ref().map(|value| RuntimeToken {\n'
+         '                generation: value.generation, id: value.id,\n'
+         '            });\n'
+         '            let kind_label = match &kind {'),
+        ('            let owner = registered?;',
+         '            if registered.is_err() {\n'
+         '                private_fetch_trace::event("refused", Some(kind_label), None, private_parent, table.runtime.snapshot().owners);\n'
+         '            }\n'
+         '            let owner = registered?;\n'
+         '            private_fetch_trace::event("register", Some(kind_label), Some(owner.token()), private_parent, table.runtime.snapshot().owners);'),
+        ('        table.runtime.park(token(owner))?;',
+         '        let private_owner = token(owner);\n'
+         '        table.runtime.park(private_owner)?;\n'
+         '        private_fetch_trace::event("park", None, Some(private_owner), None, table.runtime.snapshot().owners);'),
+        ('        if table.runtime.wake(token(owner)) {\n            Ok(())',
+         '        let private_owner = token(owner);\n'
+         '        if table.runtime.wake(private_owner) {\n'
+         '            private_fetch_trace::event("wake", None, Some(private_owner), None, table.runtime.snapshot().owners);\n'
+         '            Ok(())'),
+        ('        drop(table.owners.swap_remove(index));',
+         '        drop(table.owners.swap_remove(index));\n'
+         '        private_fetch_trace::event("settle", None, Some(token), None, table.runtime.snapshot().owners);'),
+        ('        table.runtime.close();',
+         '        table.runtime.close();\n'
+         '        private_fetch_trace::event("close", Some("task"), None, None, table.runtime.snapshot().owners);'),
+    ]
+    for before, after in replacements:
+        require(source.count(before) == 1, 'fetch-owner-trace-exact-source')
+        source = source.replace(before, after, 1)
+    path.write_bytes(source.encode())
+    return digest(source.encode())
+
+
+def owner_lifetimes(data: bytes) -> dict:
+    require(type(data) is bytes and len(data) <= 262144, 'fetch-owner-trace-stream-bound')
+    sites, records = {}, []
+    for line in data.splitlines():
+        if line.startswith(b'LSF_FETCH_OWNER_SITE '):
+            value = json.loads(line[len(b'LSF_FETCH_OWNER_SITE '):])
+            require(isinstance(value, dict) and set(value) == {'site', 'frames'}
+                and type(value['site']) is int and 1 <= value['site'] <= 4 and value['site'] not in sites
+                and isinstance(value['frames'], list) and 1 <= len(value['frames']) <= 8,
+                'fetch-owner-trace-site')
+            parsed = frames.numeric_frames(frames.PREFIX + json.dumps({
+                'available': True, 'truncated': False, 'frames': value['frames']}).encode()+b'\n')
+            sites[value['site']] = parsed['frames']
+        elif line.startswith(b'LSF_FETCH_OWNER_EVENT '):
+            require(len(records) < 96 and len(line) <= 512, 'fetch-owner-trace-record-bound')
+            value = json.loads(line[len(b'LSF_FETCH_OWNER_EVENT '):])
+            require(isinstance(value, dict) and set(value) == {
+                'sequence', 'action', 'kind', 'owner', 'parent', 'counts', 'site'}
+                and type(value['sequence']) is int and value['sequence'] == len(records)+1
+                and value['action'] in {'register', 'refused', 'park', 'wake', 'settle', 'close'}
+                and value['kind'] in {'task', 'queued-work'}
+                and all(type(value[key]) is int and 0 <= value[key] <= 256 for key in ('owner', 'parent'))
+                and type(value['site']) is int and (value['site'] == 0 or value['site'] in sites)
+                and isinstance(value['counts'], list) and len(value['counts']) == 7
+                and all(type(n) is int and 0 <= n <= 8192 for n in value['counts'])
+                and sum(value['counts']) <= 8192, 'fetch-owner-trace-closed-record')
+            records.append(value)
+    return {'scope': 'private-exact-owner-aliases-only', 'qualification': False,
+            'rawTokensOrOutputRetained': False, 'recordLimit': 96, 'frameLimit': 32,
+            'status': 'observed' if records else 'absent', 'causeInferredFromAbsence': False,
+            'eventLimitReached': len(records) == 96,
+            'sites': [{'site': key, 'frames': value} for key, value in sites.items()], 'records': records}
+
+
 def registration_failures(data: bytes) -> dict:
     require(type(data) is bytes and len(data) <= 262144, 'fetch-register-capture-limit')
     rows = [line[len(REGISTER_PREFIX):] for line in data.splitlines() if line.startswith(REGISTER_PREFIX)]
@@ -140,7 +222,8 @@ def frame_capture(data: bytes) -> dict:
 
 
 def private_host_markers(binary: Path) -> dict:
-    markers = {'numericFrames': frames.PREFIX, 'registrationFailures': REGISTER_PREFIX}
+    markers = {'numericFrames': frames.PREFIX, 'registrationFailures': REGISTER_PREFIX,
+               'ownerLifetimes': b'LSF_FETCH_OWNER_EVENT '}
     found = {name: False for name in markers}
     total, carry = 0, b''
     with binary.open('rb') as source:
@@ -206,6 +289,17 @@ def package(artifact: Path, binary: Path, output: Path) -> None:
     require(package_materials(artifact) == materials, 'fetch-frame-package-changed-after-rebuild')
 
 
+def pumping_cli_process(node):
+    """Drain bounded node pipes during CLI waits; no new thread or timeout."""
+    class PumpingProcess(Process):
+        def drain(self):
+            service = node()
+            if service is not None and service is not self:
+                service.drain()
+            super().drain()
+    return PumpingProcess
+
+
 def replay(artifact: Path, binaries: dict, output: Path) -> dict:
     """Replay only the failed JSON vector; it can never qualify the real gate."""
     output = fresh(output)
@@ -220,6 +314,7 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
         require(built.returncode == 0, 'fetch-frame-original-signing')
         with tempfile.TemporaryDirectory(prefix='lsf-fetch-frames-') as private, \
                 owned_cancellation() as cancellation, ExitStack() as cleanup:
+            cleanup.enter_context(patch.object(process_api, 'Process', pumping_cli_process(lambda: service)))
             work = Path(private)
             for name in ('client', 'node', 'peer'):
                 (work/name).mkdir(mode=0o700)
@@ -261,6 +356,10 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
                 record['registrationFailures'] = registration_failures(bytes(service.buffers[1]))
             except (ValueError, TypeError, KeyError, WorkflowError):
                 record['registrationCapture'] = 'unavailable-or-refused'
+            try:
+                record['ownerLifetimes'] = owner_lifetimes(bytes(service.buffers[1]))
+            except (ValueError, TypeError, KeyError, WorkflowError):
+                record['ownerLifetimeCapture'] = 'refused-closed-record'
             # Only the existing strict numeric parser observes private stderr.
             # No raw buffer is written to any artifact, including failures.
             try:
@@ -374,6 +473,7 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         overlay_root = fresh(output/'source-overlays')
         sources, overlays = frames.overlay_sources(ROOT, overlay_root)
         registration_sources, registration = registration_overlay(ROOT, overlay_root)
+        registration_sources[REGISTER_PATH]['private'] = lifetime_overlay(registration[0])
         sources.update(registration_sources)
         overlays.append(registration)
         record['sourceOverlays'] = sources
