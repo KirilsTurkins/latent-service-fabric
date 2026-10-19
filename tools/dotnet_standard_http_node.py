@@ -321,6 +321,28 @@ def require_synchronous_peer(observation: dict) -> dict:
         'scope': 'peer-protocol-only'}
 
 
+def retain_peer_observation(raw: bytes, authorization: bytes, output: Path, result: dict, *,
+        synchronous_send: bool) -> None:
+    """Keep bounded protocol evidence even when its acceptance predicates fail."""
+    require(type(raw) is bytes and len(raw) <= 65536, 'standard-dotnet-peer-observation-size')
+    require(type(authorization) is bytes and re.fullmatch(rb'Bearer [a-f0-9]{64}', authorization),
+            'standard-dotnet-peer-observation-credential-shape')
+    observation = json.loads(raw)
+    canonical = json.dumps(observation, ensure_ascii=True).encode('ascii')
+    token = authorization.removeprefix(b'Bearer ')
+    require(all(secret not in encoded for secret in (authorization, token) for encoded in (raw, canonical)),
+            'standard-dotnet-peer-observation-private-value')
+    (output/'peer-observation.json').write_bytes(raw)
+    result['peer'] = observation
+    validate_peer(observation)
+    require(observation['startedRequests'] == 12 and observation['rejectedRequests'] == 0
+        and observation['committedMutations'] == 1
+        and all(row['role'] == 'primary' for row in observation['requests']),
+        'standard-dotnet-peer-contact-count')
+    if synchronous_send:
+        result['synchronousSend']['peer'] = require_synchronous_peer(observation)
+
+
 def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
         synchronous_send: bool = False):
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
@@ -463,16 +485,10 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'], 'standard-dotnet-node-clean-shutdown')
             retain_runtime_owner_refusals(node, output)
             node = None
+            stage = 'peer-observation'
             peer.stop()
-            observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
-            validate_peer(observation)
-            require(observation['startedRequests'] == 12 and observation['rejectedRequests'] == 0
-                and observation['committedMutations'] == 1
-                and all(row['role'] == 'primary' for row in observation['requests']),
-                'standard-dotnet-peer-contact-count')
-            if synchronous_send:
-                result['synchronousSend']['peer'] = require_synchronous_peer(observation)
-            result['peer'] = observation
+            retain_peer_observation(bytes(peer.buffers[0]), credential.read_bytes(), output, result,
+                                    synchronous_send=synchronous_send)
             result['peerReaped'] = peer.owner.finished
             peer = None
         require(before == {name: file_identity(path) for name, path in binaries.items()}, 'standard-dotnet-native-tuple-changed')

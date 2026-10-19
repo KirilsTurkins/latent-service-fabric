@@ -758,5 +758,78 @@ class SynchronousHttpSendQualificationTests(unittest.TestCase):
                 require_synchronous_peer(value)
 
 
+class PeerObservationRetentionTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix='lsf-dotnet-peer-evidence-')
+        self.addCleanup(self.temporary.cleanup)
+        self.output = Path(self.temporary.name)
+        self.authorization = b'Bearer '+b'ab'*32
+
+    def observation(self):
+        from tools.standard_http.peer import Peer
+        peer = Peer(self.authorization)
+        try:
+            peer.close()
+            return peer.observation()
+        finally:
+            peer.close()
+
+    def test_real_peer_failed_contact_assertion_retains_exact_bounded_protocol_evidence(self):
+        from tools.dotnet_standard_http_node import retain_peer_observation
+        value = self.observation()
+        raw = json.dumps(value).encode('ascii')+b'\n'
+        result = {}
+        with self.assertRaisesRegex(RuntimeError, '^standard-dotnet-peer-contact-count$'):
+            retain_peer_observation(raw, self.authorization, self.output, result, synchronous_send=True)
+        self.assertEqual((self.output/'peer-observation.json').read_bytes(), raw)
+        self.assertEqual(result['peer'], value)
+        self.assertEqual(result['peer']['requests'], [])
+        self.assertNotIn(self.authorization, raw)
+        self.assertNotIn(self.authorization.removeprefix(b'Bearer '), raw)
+        self.assertNotIn('synchronousSend', result)
+
+    def test_final_vector_failure_retains_full_raw_observation_without_acceptance_credit(self):
+        from tools.dotnet_standard_http_node import retain_peer_observation
+        from tools.standard_http.observations import validate
+        value = self.observation()
+        rows = SynchronousHttpSendQualificationTests.peer(self)['requests']
+        for row in rows:
+            row.update(role='primary', state='closed', closeReason='fixture-stopped')
+        value.update(requests=rows, acceptedConnections=12, startedRequests=12, committedMutations=1)
+        value['requests'][0]['vector'] = 'unexpected-vector'
+        validate(value)
+        raw = json.dumps(value).encode('ascii')
+        result = {'synchronousSend': {}}
+        with self.assertRaisesRegex(RuntimeError, '^standard-dotnet-send-exact-request-vectors$'):
+            retain_peer_observation(raw, self.authorization, self.output, result, synchronous_send=True)
+        self.assertEqual((self.output/'peer-observation.json').read_bytes(), raw)
+        self.assertEqual(result['peer'], value)
+        self.assertEqual(result['synchronousSend'], {})
+
+    def test_private_full_token_and_json_escaped_values_never_reach_artifacts_or_errors(self):
+        from tools.dotnet_standard_http_node import retain_peer_observation
+        for private in (self.authorization, self.authorization.removeprefix(b'Bearer ')):
+            value = self.observation()
+            value['unexpectedAuthorization'] = private.decode('ascii')
+            plain = json.dumps(value).encode('ascii')
+            escaped = plain.replace(private, ''.join('\\u%04x' % byte for byte in private).encode('ascii'))
+            for raw in (plain, escaped):
+                result = {}
+                with self.subTest(escaped=raw is escaped), self.assertRaisesRegex(
+                        RuntimeError, '^standard-dotnet-peer-observation-private-value$') as caught:
+                    retain_peer_observation(raw, self.authorization, self.output, result, synchronous_send=True)
+                self.assertNotIn(private.decode('ascii'), str(caught.exception))
+                self.assertFalse((self.output/'peer-observation.json').exists())
+                self.assertEqual(result, {})
+
+    def test_oversized_peer_output_fails_before_parsing_or_retention(self):
+        from tools.dotnet_standard_http_node import retain_peer_observation
+        result = {}
+        with self.assertRaisesRegex(RuntimeError, '^standard-dotnet-peer-observation-size$'):
+            retain_peer_observation(b' '*65537, self.authorization, self.output, result, synchronous_send=True)
+        self.assertFalse((self.output/'peer-observation.json').exists())
+        self.assertEqual(result, {})
+
+
 if __name__ == "__main__":
     unittest.main()
