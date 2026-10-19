@@ -42,7 +42,7 @@ typed provider failure, with no socket fallback.
 | --- | --- |
 | `fetch` | Real Promise over async typed open/write/finish/read calls. Resolves after the complete bounded body, including for HTTP 4xx/5xx. |
 | `Request` | Absolute HTTP(S) URLs without embedded credentials; fragments removed; GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS. A body is forbidden on GET/HEAD. |
-| Bodies | Null, UTF-8 strings, ArrayBuffer and ArrayBuffer views; input bytes copied, including view offsets. Null bodies stay unused; non-null bodies are one-shot. |
+| Bodies | Null, UTF-8 strings, ArrayBuffer, ArrayBuffer views and native URLSearchParams; input bytes copied, including view offsets. Null bodies stay unused; non-null bodies are one-shot. |
 | Consumption | Buffered `text`, `json`, `arrayBuffer` and independent buffered clones. JSON parsing errors stay parsing errors. |
 | `Headers` | Records or iterable pairs, case normalization, validated names/values, duplicate combination, sorted iteration, get/set/append/delete/forEach. Fetched response headers are immutable. |
 | Media/idempotency | Content-Type and Idempotency-Key map to the existing dedicated typed metadata. An idempotency key grants no retry. |
@@ -51,6 +51,10 @@ typed provider failure, with no socket fallback.
 | Abort | Each Request and clone owns a native dependent signal, preserving the original reason without sharing signal identity. An already-aborted signal makes zero calls. Later abort rejects and prevents further transfers after the pending call settles; accepted work retains capacity until cleanup. |
 
 Request body replacement follows the [Fetch Standard's constructor order](https://fetch.spec.whatwg.org/#dom-request): an explicit non-null body supplies fresh bytes even when the input Request was consumed. It leaves the input body unchanged. Without a replacement, a successful construction transfers the unused input body exactly once. Rejected construction, including a GET/HEAD body, does not consume an otherwise unused input. A null or omitted replacement cannot revive a consumed body. Cloning still rejects a used body.
+
+Native `URLSearchParams` bodies use the [Fetch Standard's body extraction](https://fetch.spec.whatwg.org/#concept-bodyinit-extract): the existing runtime's native URL-encoded serializer supplies the bytes, with duplicate/order, space/plus and UTF-8 encoding retained. Request and Response constructors copy the encoded bytes immediately; later parameter mutation cannot change a request or clone. An absent Content-Type becomes `application/x-www-form-urlencoded;charset=UTF-8`; explicit media types are preserved. The original 1-MiB ceiling applies to the encoded bytes, and upload chunks remain at most 64 KiB. GET/HEAD still reject even an empty non-null form body. Body extraction does not call an overridden per-object stringifier/iterator or accept a forged tag, and adds no method/destination authority, retry or replay. This is a finite body-type source/reference control, not emitted-component, native URL implementation or signed POST qualification. Streaming, FormData and Blob remain unsupported.
+
+Ordinary encoding, copied-body consumption and media types have Node reference controls. The internal-list control follows the Fetch Standard separately: Node 24.19.0 calls an overridden per-object stringifier, while this profile uses the captured native serializer.
 
 `Headers` accepts two-item iterable pairs as well as arrays and records. Omitted
 or undefined initialization creates empty headers; null and other primitive
