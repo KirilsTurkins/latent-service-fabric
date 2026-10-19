@@ -64,7 +64,7 @@ the source, component, dependency lock and ordinary package identities bind
 those outputs. This is captured-input membership, not independent source
 signature authentication.
 
-For C23, declared resource artifact roots become bounded `--embed-dir` search
+For C23, declared resource artifact roots become bounded `--embed-dir=<directory>` search
 roots, at most 64. Both compilation and the preprocessor dependency observation
 receive the same standard and roots. The compiler records the actual files it
 reads, including embedded files. Normal C11 builds and existing static archive
