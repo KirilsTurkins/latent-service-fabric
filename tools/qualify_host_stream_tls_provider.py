@@ -26,6 +26,10 @@ TLS_CASES = frozenset("tests::tls::" + name for name in (
     "stalled_tls_handshake_uses_original_deadline_and_physical_owner",
     "tls_rotation_preserves_pending_original_owner_until_peer_socket_retires",
 ))
+ACCOUNTING_CASES = frozenset("tests::tls::" + name for name in (
+    "current_maximum_valid_chain_roots_and_stapled_extension_retire_actual_owners",
+    "retained_trust_configuration_refunds_only_after_the_last_physical_owner",
+))
 DENIAL = "tests::tls::unqualified_tls_installation_fails_before_contact_and_leaves_no_owner"
 
 
@@ -52,8 +56,8 @@ def suite_contract(root: Path) -> dict:
     if len(matches) != 1:
         raise ValueError("tls-provider-reference-suite-owner")
     row = matches[0]
-    if (row["minimumCases"] != 23 or len(row["expectedCases"]) != 23
-            or not (TLS_CASES | {DENIAL}) <= set(row["expectedCases"])
+    if (row["minimumCases"] != 25 or len(row["expectedCases"]) != 25
+            or not (TLS_CASES | ACCOUNTING_CASES | {DENIAL}) <= set(row["expectedCases"])
             or row["expectedIgnored"] or row["ignoredLeaves"] or row["timeoutSeconds"] != 900):
         raise ValueError("tls-provider-reference-suite-contract")
     return row
@@ -162,7 +166,7 @@ def main() -> int:
     parser.add_argument("--source-commit", default=os.environ.get("GITHUB_SHA"))
     args = parser.parse_args()
     qualify(provider.ROOT, args.output, args.source_commit)
-    print("Actual bounded TLS provider: 23 cases passed; accounting remains unqualified")
+    print("Actual bounded TLS provider: 25 cases passed; accounting remains unqualified")
     return 0
 
 
