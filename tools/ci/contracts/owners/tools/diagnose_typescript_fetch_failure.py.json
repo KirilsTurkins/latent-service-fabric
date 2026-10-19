@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Private failure-only replay of exact aea signed component and original bounds; fixed host registration kind/code plus seven bounded counts, no raw guest text or qualification credit.",
+  "reviewReason": "Retain only closed private observer guard reason and existing-target boolean; preserve absent-cache hold, no raw exception or fallback build.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0fd4ec3e4f5a4b1cb68f5820c08faeda7a21887aad397bd4ce61f6147e54f90e"
+  "sha256": "1d711a61dc215dbf55a66ba343e282a25b447efa13399ee0cab2cfcfc773ad16"
 }

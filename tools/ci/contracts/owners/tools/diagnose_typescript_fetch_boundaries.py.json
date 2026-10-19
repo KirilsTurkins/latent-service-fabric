@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_boundaries.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Finite failure-preserving same-SDK import-context probes; all original gate, grants, budgets and cleanup remain mandatory.",
+  "reviewReason": "Observe only original host activation seven counters and admission failures at proven private stops; preserve actual failure, bounds, peer/grants and mandatory production JSON gate.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fc671ea5647ff59a9ae90d1ceee993627c36b337f138a1c299ee637b13ac23ce"
+  "sha256": "1fffda03bd2499d61fe5a7ac6aa77147960dd664914d31c24489744582f5fddb"
 }

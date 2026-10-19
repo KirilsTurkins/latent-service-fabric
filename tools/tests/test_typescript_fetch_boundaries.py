@@ -13,7 +13,7 @@ from tools.phase2_operator_process import WorkflowError
 
 class FetchBoundaries(unittest.TestCase):
     def test_old_sdk_wrapper_adds_strict_zero_io_probes_without_replacing_original_json_gate(self):
-        for invalid in (False, True, 'trapped'):
+        for invalid in (False, True):
             with self.subTest(invalid=invalid), tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
                 root = Path(directory)
                 sources = root/'probes'
@@ -44,12 +44,12 @@ class FetchBoundaries(unittest.TestCase):
                 def original_call(client, target, template, function, arguments, activation):
                     calls.append((template, function, arguments, activation))
                     (client.directory/(activation+'-budget.json')).write_text(json.dumps(budget))
-                    if arguments[0] == 0 or (invalid == 'trapped' and arguments[0] == 13):
+                    if arguments[0] == 0:
                         return {'exitCode': 4, 'decoded': None, 'processReaped': True,
                                 'response': {'outcomeKnown': True, 'error': {'code': 'guest-trap'}}}
                     expected = {3: 'promise-ready', 4: 'request-copy-ready', 5: 'typed-invalid-url-ready',
                                 6: 'typed-open-refused:invalid-request', 7: 'typed-open-ready',
-                                8: 'request-typed-open-ready', **{stage + 8: 'frontend-probe-' + str(stage) + '-ready' for stage in range(1, 9)}}[arguments[0]]
+                                8: 'request-typed-open-ready', **{stage + 16: 'owners:1,0,2,0,0,0,10,0' for stage in range(1, 5)}}[arguments[0]]
                     return {'exitCode': 0, 'decoded': ['wrong' if invalid is True else expected], 'processReaped': True,
                         'response': {'outcomeKnown': True, 'data': {'consumption': {
                             'outboundRequests': 1 if arguments[0] in (7, 8, 13, 14, 15, 16) else 0, 'childCalls': 0, 'effectCount': 0}}}}
@@ -82,12 +82,13 @@ class FetchBoundaries(unittest.TestCase):
                 self.assertEqual(record['actualNodeExecutionLimits'], configured)
                 self.assertNotIn('private-never-export', json.dumps(record))
                 self.assertEqual(record['actualInvocationBudgets']['fetch-promise-ready'], budget)
-                self.assertEqual([call[2][0] for call in calls], [3] if invalid is True else [3, 4, 5, 6, 0, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid is True else 15)
+                self.assertEqual([call[2][0] for call in calls], [3] if invalid is True else [3, 4, 5, 6, 0, 7, 8, 17, 18, 19, 20])
+                self.assertEqual(boundaries.fetch.retire.call_count, 0 if invalid is True else 11)
                 if invalid is not True:
                     self.assertEqual(record['actualInvocationBudgets']['fetch-json']['cpuFuel'], 1000000000)
                     self.assertEqual(record['originalJsonFailure']['response']['error']['code'], 'guest-trap')
-                    self.assertEqual(record.get('frontendFailureStages', []), [5] if invalid == 'trapped' else [])
+                    self.assertEqual(len(record['ownerSnapshots']), 4)
+                    self.assertTrue(all(row['tasks'] == 1 and row['nativeOwners'] == 10 for row in record['ownerSnapshots']))
                     self.assertEqual(next(call for call in calls if call[2][0] == 0), ('typescript-fetch', 'run',
                         [0, 'http://127.0.0.1/conformance/json'], 'fetch-json'))
                 self.assertIs(boundaries.fetch.call, original_call)
@@ -107,13 +108,16 @@ class FetchBoundaries(unittest.TestCase):
             b'\n    if (mode === 6) return await typedOpen(url, false);'
             b'\n    if (mode === 7) return await typedOpen(url, true);'
             b'\n    if (mode === 8) return await requestTypedOpen(url);'
-            b'\n    if (mode >= 9 && mode <= 16) return await frontendReady(url, mode - 8);')))
+            b'\n    if (mode >= 9 && mode <= 16) return await frontendReady(url, mode - 8);'
+            b'\n    if (mode >= 17 && mode <= 20) return await ownerReady(url, mode - 16);')))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root/'default-client.ts').write_bytes(derived['default-client.ts'])
             (root/'main.mts').write_bytes(derived['main.ts'].replace(
                 b"'latent:http/streaming@0.3.0'", b"'./typed-http.mjs'").replace(
+                b"'latent:runtime/activation@0.1.0'", b"'./typed-runtime.mjs'").replace(
                 b"'./default-client.js'", b"'./default-client.ts'"))
+            (root/'typed-runtime.mjs').write_text('export function observe(){throw new Error("unused in these typed-import controls");}')
             (root/'typed-http.mjs').write_text('''
 import assert from 'node:assert/strict';
 export async function open(request) {
@@ -178,6 +182,19 @@ assert.equal(globalThis.aborted,3);
                 with self.subTest(value=value), self.assertRaisesRegex(WorkflowError, 'numeric-budget-fields'):
                     boundaries.numeric_fields(path, fields)
 
+    def test_host_owner_counter_projection_is_closed_numeric_bounded_and_not_qualification(self):
+        good = boundaries.owner_counts('owners:1,0,2,0,0,0,64,1')
+        self.assertEqual(good['tasks'], 1)
+        self.assertEqual(good['nativeOwners'], 64)
+        self.assertEqual(good['admissionFailures'], 1)
+        self.assertFalse(good['qualification'])
+        for value in ('private', 'owners:1,2', 'owners:true,0,0,0,0,0,0,0',
+                      'owners:01,0,0,0,0,0,0,0', 'owners:-1,0,0,0,0,0,0,0',
+                      'owners:8193,0,0,0,0,0,0,0', 'owners:8192,1,0,0,0,0,0,0',
+                      'owners:1,0,0,0,0,0,0,0,private', 'owners:'+'1'*81):
+            with self.subTest(value=value), self.assertRaises((WorkflowError, ValueError)):
+                boundaries.owner_counts(value)
+
     def test_actual_public_compiler_bundle_is_exact_and_bounded_before_runtime_setup(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)/'application.mjs'
@@ -205,6 +222,7 @@ assert.equal(globalThis.aborted,3);
         script = '''
 import assert from 'node:assert/strict';
 const target = {TextEncoder,TextDecoder,URL,URLSearchParams,AbortSignal,AbortController};
+let observed=0;const diagnosticRuntime={observe(){observed++;return {tasks:1,executors:0,queuedWork:2,waits:0,timers:0,results:0,nativeOwners:10,admissionFailures:0n};}};
 let opens=0, aborts=0, reads=0;
 const upload = {[Symbol.dispose](){throw new Error('consumed-owner-must-not-drop');}};
 const body = {[Symbol.dispose](){}};
@@ -227,6 +245,14 @@ for(let stage=5;stage<=8;stage++) {
  assert.equal(response.status,204);assert.equal(opens,stage-4);assert.equal(aborts,stage-4);assert.equal(reads,0);
 }
 delete target.__lsfFetchProbe;
+for(let stage=1;stage<=4;stage++) {
+ target.__lsfFetchOwnerProbe=stage;
+ await assert.rejects(target.fetch(new target.Request('http://127.0.0.1/conformance/json',
+  {headers:{'x-conformance':'ordinary-global'}})),error=>error instanceof TypeError && error.message==='lsf-fetch-owner-stop-'+stage);
+ assert.deepEqual(target.__lsfFetchOwnerCounts,[1,0,2,0,0,0,10,0]);
+ delete target.__lsfFetchOwnerProbe;delete target.__lsfFetchOwnerCounts;
+}
+assert.equal(observed,4);assert.equal(opens,4);
 const real=await target.fetch(new target.Request('http://127.0.0.1/conformance/json',{headers:{'x-conformance':'ordinary-global'}}));
 assert.equal(real.status,200);assert.equal(opens,5);assert.equal(aborts,4);assert.equal(reads,1);
 '''

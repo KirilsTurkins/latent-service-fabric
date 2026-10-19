@@ -259,6 +259,7 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         record['stage'] = 'private-build'
         environment = build_environment(output)
         target = Path(os.environ.get('CARGO_TARGET_DIR', str(ROOT/'target'))).resolve()
+        record['existingNativeTarget'] = target.is_dir()
         require(target.is_dir(), 'fetch-frame-existing-native-target')
         environment.update(CARGO_TARGET_DIR=str(target), CARGO_INCREMENTAL='0', CARGO_PROFILE_DEV_DEBUG='0',
             CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
@@ -283,6 +284,10 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
     except Exception as error:
         record['failureClass'] = type(error).__name__ if type(error).__name__ in {
             'WorkflowError', 'ValueError', 'KeyError', 'TypeError', 'OSError', 'FileNotFoundError'} else 'Other'
+        known = {'fetch-frame-existing-native-target', 'go-entry-frame-source-set',
+                 'go-entry-frame-environment', 'fetch-frame-three-overlay-set', 'fetch-frame-private-host-build'}
+        record['guardReason'] = (error.args[0] if len(error.args) == 1 and type(error.args[0]) is str
+                                 and error.args[0] in known else 'other')
     finally:
         if 'sourceOverlays' in record:
             record['originalSourceUnchanged'] = all(digest(read_file(ROOT/name)) == value['original']

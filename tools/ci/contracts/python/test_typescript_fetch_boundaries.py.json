@@ -3,6 +3,7 @@
     "FetchBoundaries.test_actual_public_compiler_bundle_is_exact_and_bounded_before_runtime_setup",
     "FetchBoundaries.test_emitted_budget_capture_preserves_large_fuel_and_rejects_private_unknown_or_noninteger_fields",
     "FetchBoundaries.test_finite_frontend_stops_preserve_normal_fetch_and_exercise_actual_outer_wrapper",
+    "FetchBoundaries.test_host_owner_counter_projection_is_closed_numeric_bounded_and_not_qualification",
     "FetchBoundaries.test_old_sdk_wrapper_adds_strict_zero_io_probes_without_replacing_original_json_gate",
     "FetchBoundaries.test_private_typed_refusal_requires_exact_invalid_url_and_preserves_real_fixture_sources"
   ],
@@ -43,6 +44,18 @@
       ],
       "skipSites": []
     },
+    "FetchBoundaries.test_host_owner_counter_projection_is_closed_numeric_bounded_and_not_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eff5d9eb94a3129a430bc4716829c356392675222f6d9902f7ff7d21a7d05704",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "FetchBoundaries.test_old_sdk_wrapper_adds_strict_zero_io_probes_without_replacing_original_json_gate": {
       "bases": [
         "unittest.TestCase"
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch_boundaries.py",
-  "reviewReason": "Finite failure-preserving same-SDK import-context probes; all original gate, grants, budgets and cleanup remain mandatory.",
+  "reviewReason": "Observe only original host activation seven counters and admission failures at proven private stops; preserve actual failure, bounds, peer/grants and mandatory production JSON gate.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

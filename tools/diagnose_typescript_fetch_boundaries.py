@@ -25,6 +25,7 @@ def typed_refusal_source(source: dict[str, bytes]) -> dict[str, bytes]:
     marker = b'    if (mode === 4) return await requestCopyReady(url);'
     require(source['main.ts'].count(marker) == 1, 'fetch-boundary-exact-probe-dispatch')
     probe = b'''import * as diagnosticHttp from 'latent:http/streaming@0.3.0';
+import * as diagnosticRuntime from 'latent:runtime/activation@0.1.0';
 async function typedInvalidUrl() {
   try {
     const upload = await diagnosticHttp.open({method: 'get', url: 'invalid', headers: [],
@@ -73,6 +74,19 @@ async function requestTypedOpen(url: string) {
     return 'request-typed-open-ready';
   } catch (error) { return 'request-typed-open-refused:' + httpErrorTag(error); }
 }
+async function ownerReady(url: string, stage: number) {
+  const control = globalThis as unknown as Record<string, unknown>;
+  control.__lsfFetchOwnerProbe = stage;
+  try {
+    await fetch(new Request(url, {headers: new Headers([['x-conformance', 'ordinary-global']])}));
+    return 'owner-probe-unexpected';
+  } catch (error) {
+    const counts = control.__lsfFetchOwnerCounts;
+    if (!(error instanceof TypeError) || error.message !== 'lsf-fetch-owner-stop-' + stage || !Array.isArray(counts)
+        || counts.length !== 8 || !counts.every(n => Number.isInteger(n) && n >= 0 && n <= 8192)) return 'owner-probe-other';
+    return 'owners:' + counts.join(',');
+  } finally {delete control.__lsfFetchOwnerProbe;delete control.__lsfFetchOwnerCounts;}
+}
 async function frontendReady(url: string, stage: number) {
   const control = globalThis as unknown as Record<string, unknown>;
   control.__lsfFetchProbe = stage;
@@ -90,7 +104,8 @@ async function frontendReady(url: string, stage: number) {
                  b'\n    if (mode === 6) return await typedOpen(url, false);'
                  b'\n    if (mode === 7) return await typedOpen(url, true);'
                  b'\n    if (mode === 8) return await requestTypedOpen(url);'
-                 b'\n    if (mode >= 9 && mode <= 16) return await frontendReady(url, mode - 8);', 1)}
+                 b'\n    if (mode >= 9 && mode <= 16) return await frontendReady(url, mode - 8);'
+                 b'\n    if (mode >= 17 && mode <= 20) return await ownerReady(url, mode - 16);', 1)}
 
 
 def frontend_bundle(raw: bytes) -> bytes:
@@ -121,7 +136,39 @@ def frontend_bundle(raw: bytes) -> bytes:
     require(selected.count(before) == 1, 'fetch-boundary-scheduling-shape')
     selected = selected.replace(before,
         b'      (target.__lsfFetchProbe === 7 ? Promise.resolve().then(() => perform(request, () => cancelled)) : perform(request, () => cancelled)).then(resolve, error => reject(failure(error))).finally(() => {\n', 1)
+    before = b'  let outstanding = 0;\n'
+    require(selected.count(before) == 1, 'fetch-boundary-owner-observer-install')
+    helper = b'''  function captureOwners(stage, request, abort) {
+    if (target.__lsfFetchOwnerProbe !== stage) return;
+    const value = diagnosticRuntime.observe();
+    target.__lsfFetchOwnerCounts = [value.tasks, value.executors, value.queuedWork, value.waits,
+      value.timers, value.results, value.nativeOwners, Number(value.admissionFailures)];
+    if (stage === 2) {request.signal.removeEventListener('abort', abort);outstanding--;}
+    throw new TypeError('lsf-fetch-owner-stop-' + stage);
+  }
+'''
+    selected = selected.replace(before, before + helper, 1)
+    for anchor, after in (
+        (b'      metadata(request); // Validate before admitting or contacting a provider.\n', b'      captureOwners(1);\n'),
+        (b"      request.signal.addEventListener('abort', abort, {once: true});\n", b'      captureOwners(2, request, abort);\n'),
+        (b'  async function perform(request, cancelled) {\n', b'    captureOwners(3);\n'),
+        (b'  async function exchange(request, cancelled) {\n', b'    captureOwners(4);\n'),
+    ):
+        require(selected.count(anchor) == 1, 'fetch-boundary-owner-observer-location')
+        selected = selected.replace(anchor, anchor + after, 1)
     return raw.replace(original, selected, 1)
+
+
+def owner_counts(value: str) -> dict:
+    require(type(value) is str and value.startswith('owners:') and len(value) <= 80, 'fetch-owner-count-encoding')
+    parts = value[7:].split(',')
+    require(len(parts) == 8 and all(part.isascii() and part.isdecimal() and str(int(part)) == part for part in parts),
+            'fetch-owner-count-encoding')
+    counts = list(map(int, parts))
+    require(all(0 <= count <= 8192 for count in counts) and sum(counts[:7]) <= 8192, 'fetch-owner-count-bound')
+    return {'tasks': counts[0], 'executors': counts[1], 'queuedWork': counts[2], 'waits': counts[3],
+            'timers': counts[4], 'results': counts[5], 'nativeOwners': counts[6], 'admissionFailures': counts[7],
+            'source': 'existing-host-activation-observe', 'qualification': False}
 
 
 def public_bundle(path: Path) -> dict:
@@ -166,7 +213,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             after = frontend_bundle(before)
             record['privateFrontendDerivation'] = {'originalBundleDigest': digest(before),
                 'derivedBundleDigest': digest(after), 'qualification': False,
-                'stopLabels': ['after-metadata', 'after-listener', 'perform-entry', 'exchange-entry', 'nested-open-abort', 'outside-executor', 'deferred-executor', 'application-import-binding']}
+                'stopLabels': ['after-metadata', 'after-listener', 'perform-entry', 'exchange-entry', 'nested-open-abort', 'outside-executor', 'deferred-executor', 'application-import-binding'], 'ownerObservation': 'existing-synchronous-activation-observe-seven-counts-and-admission-failures'}
             bundle.write_bytes(after)
         return result
 
@@ -205,7 +252,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
             'fetch-typed-invalid-url', 'fetch-typed-header-refusal', 'fetch-typed-open',
             'fetch-request-typed-open', 'fetch-frontend-1', 'fetch-frontend-2', 'fetch-frontend-3',
-            'fetch-frontend-4', 'fetch-frontend-5', 'fetch-frontend-6', 'fetch-frontend-7', 'fetch-frontend-8', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
+            'fetch-frontend-4', 'fetch-frontend-5', 'fetch-frontend-6', 'fetch-frontend-7', 'fetch-frontend-8', 'fetch-owners-1', 'fetch-owners-2', 'fetch-owners-3', 'fetch-owners-4', 'fetch-json', 'fetch-http404', 'fetch-fresh'},
             'fetch-boundary-activation-name')
         row = original_call(client, target, template, function, arguments, activation, **kwargs)
         fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
@@ -246,19 +293,16 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
             write_json(output/'probe-request-typed-open.json', record['probes'][-1])
             fetch.require_result(combined, 'request-typed-open-ready', 1)
             fetch.retire(client, probe, target, output, 'request-typed-open')
-            for stage in range(1, 9):
-                tested = invoke(client, target, template, function, [stage + 8, arguments[1]], 'fetch-frontend-' + str(stage))
-                record['probes'].append({'name': 'frontend-' + str(stage), 'mode': stage + 8, 'entry': tested})
-                write_json(output/('probe-frontend-' + str(stage) + '.json'), record['probes'][-1])
-                if (stage >= 5 and tested['exitCode'] == 4 and tested['processReaped'] is True
-                        and tested['response']['outcomeKnown'] is True
-                        and tested['response']['error']['code'] == 'guest-trap'):
-                    # This is retained failure evidence, never a passing control.
-                    # Continue only after the same strict failed-store cleanup.
-                    record.setdefault('frontendFailureStages', []).append(stage)
-                else:
-                    fetch.require_result(tested, 'frontend-probe-' + str(stage) + '-ready', 1 if stage >= 5 else 0)
-                fetch.retire(client, probe, target, output, 'frontend-' + str(stage))
+            for stage in range(1, 5):
+                tested = invoke(client, target, template, function, [stage + 16, arguments[1]], 'fetch-owners-' + str(stage))
+                record['probes'].append({'name': 'owners-' + str(stage), 'mode': stage + 16, 'entry': tested})
+                write_json(output/('probe-owners-' + str(stage) + '.json'), record['probes'][-1])
+                require(tested['exitCode'] == 0 and isinstance(tested['decoded'], list)
+                        and len(tested['decoded']) == 1, 'fetch-owner-observation-result')
+                counts = owner_counts(tested['decoded'][0])
+                record.setdefault('ownerSnapshots', []).append({'stage': stage, **counts})
+                fetch.require_result(tested, tested['decoded'][0], 0)
+                fetch.retire(client, probe, target, output, 'owners-' + str(stage))
         return row
 
     try:
