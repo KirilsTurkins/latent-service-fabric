@@ -1,0 +1,91 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Actual source-owned Fetch component construction",
+    "needs": [
+      "source-splicer",
+      "promise-library"
+    ],
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check exact Fetch compiler handoff and qualification boundaries",
+        "run": "python3 -m unittest tools.tests.test_typescript_fetch_component -v"
+      },
+      {
+        "name": "Install the existing isolated compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the original locked compiler namespace",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-fetch-tools\""
+      },
+      {
+        "name": "Read the source compiler from this exact run",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "typescript-source-splicer-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fetch-splicer"
+        }
+      },
+      {
+        "name": "Read the actual import engine from this exact run",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "typescript-fetch-engine-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fetch-engine"
+        }
+      },
+      {
+        "name": "Compile actual default-global Fetch with the source-owned async engine",
+        "run": "python3 tools/qualify_typescript_fetch_component.py --tools \"$RUNNER_TEMP/typescript-fetch-tools\" --engine \"$RUNNER_TEMP/typescript-fetch-engine\" --splicer \"$RUNNER_TEMP/typescript-fetch-splicer\" --output \"$RUNNER_TEMP/typescript-fetch-component\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain actual component, input identities and failed attempts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-fetch-component-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fetch-component/*.json\n${{ runner.temp }}/typescript-fetch-component/logs/**\n${{ runner.temp }}/typescript-fetch-component/compiled/*.json\n${{ runner.temp }}/typescript-fetch-component/compiled/*.wit\n${{ runner.temp }}/typescript-fetch-component/compiled/application.mjs\n${{ runner.temp }}/typescript-fetch-component/compiled/component.wasm\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "fetch-component",
+  "kind": "job",
+  "reviewReason": "Build an actual Fetch-selected async-import component from same-run source-owned engine and splicer without inferring signed/provider execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

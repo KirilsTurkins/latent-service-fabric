@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "TypeScriptFetchComponentTests.test_actual_fixture_uses_globals_before_module_initialization_and_parses_typed_response",
+    "TypeScriptFetchComponentTests.test_capture_retains_normal_sdk_and_exact_async_http_world",
+    "TypeScriptFetchComponentTests.test_compiled_evidence_never_claims_signed_provider_or_client_execution",
+    "TypeScriptFetchComponentTests.test_core_wasm_cannot_be_reported_as_a_component",
+    "TypeScriptFetchComponentTests.test_missing_automatic_backend_transitive_source_or_bootstrap_digest_is_rejected",
+    "TypeScriptFetchComponentTests.test_public_sync_or_different_engine_cannot_substitute",
+    "TypeScriptFetchComponentTests.test_real_source_splicer_selection_and_exact_core_identity_are_required",
+    "TypeScriptFetchManifestTests.test_large_compiler_manifest_binds_every_row_with_equal_pre_post_summaries",
+    "TypeScriptFetchManifestTests.test_large_containment_manifest_is_fully_bound_under_original_writer_limit",
+    "TypeScriptFetchSnapshotTests.test_snapshot_initializers_preserve_native_signal_admission_until_invocation"
+  ],
+  "guards": {
+    "TypeScriptFetchComponentTests.test_actual_fixture_uses_globals_before_module_initialization_and_parses_typed_response": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:158bfae017c7a367ea0637c2349fa72a5e5fb53c0ccbb6761dda7729401beec8"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchComponentTests.test_capture_retains_normal_sdk_and_exact_async_http_world": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:158bfae017c7a367ea0637c2349fa72a5e5fb53c0ccbb6761dda7729401beec8"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchComponentTests.test_compiled_evidence_never_claims_signed_provider_or_client_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:158bfae017c7a367ea0637c2349fa72a5e5fb53c0ccbb6761dda7729401beec8"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchComponentTests.test_core_wasm_cannot_be_reported_as_a_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:158bfae017c7a367ea0637c2349fa72a5e5fb53c0ccbb6761dda7729401beec8"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchComponentTests.test_missing_automatic_backend_transitive_source_or_bootstrap_digest_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:158bfae017c7a367ea0637c2349fa72a5e5fb53c0ccbb6761dda7729401beec8"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchComponentTests.test_public_sync_or_different_engine_cannot_substitute": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:158bfae017c7a367ea0637c2349fa72a5e5fb53c0ccbb6761dda7729401beec8"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchComponentTests.test_real_source_splicer_selection_and_exact_core_identity_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:158bfae017c7a367ea0637c2349fa72a5e5fb53c0ccbb6761dda7729401beec8"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchManifestTests.test_large_compiler_manifest_binds_every_row_with_equal_pre_post_summaries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:e63cfd2dbf34c25dcfd78e4bd44fdb23d58f6728361b7c363ed91314a1ccb9f1"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchManifestTests.test_large_containment_manifest_is_fully_bound_under_original_writer_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:e63cfd2dbf34c25dcfd78e4bd44fdb23d58f6728361b7c363ed91314a1ccb9f1"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptFetchSnapshotTests.test_snapshot_initializers_preserve_native_signal_admission_until_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d332b0ba744284a07bdaaab835a9b82f694020807b01902231abc8a70b7d036",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_fetch_component.py",
+  "reviewReason": "Retain snapshot native-signal admission while compiling direct/transitive pure globals; add an actual-fixture adapter regression for initialization versus invocation.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

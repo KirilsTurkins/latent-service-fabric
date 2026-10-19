@@ -239,6 +239,121 @@ class TypeScriptRuntimeProfileTests(unittest.TestCase):
             runtime.public_component_graph(changed)
 
 
+class TypeScriptCompiledGraphTests(unittest.TestCase):
+    def observed(self):
+        value = json.loads((FIXTURES/'fetch-component-9dc.json').read_bytes())
+        self.assertEqual(value['parser'], 'wasm-tools1.254.0')
+        for name, expected in value['sourceDigests'].items():
+            self.assertEqual(hashlib.sha256((ROOT/name).read_bytes()).hexdigest(), expected)
+        return value
+
+    def matches(self, value, component=None, **overrides):
+        options = {'profile': runtime.IMPORT_PROFILE, 'engine_input': value['engineInput'],
+                   'source_splicer_digest': value['sourceSplicerInputDigest']}
+        options.update(overrides)
+        return runtime.compiled_world_matches(value['selected'], component or value['component'],
+            runtime.scoped_selected_world('examples:typescript-fetch/service@1.0.0'), **options)
+
+    def full_component(self, value):
+        graph = copy.deepcopy(value['selected'])
+        world = runtime.find_world(graph, runtime.scoped_selected_world('examples:typescript-fetch/service@1.0.0'))
+        # Parser root metadata is the only world identity used by the decoded
+        # component; every versioned interface/type body stays authoritative.
+        self.assertFalse(any('world' in (item.get('owner') or {}) for item in graph['types']))
+        graph['packages'].append({'name': 'root:component'})
+        world['name'], world['package'] = 'root', len(graph['packages']) - 1
+        graph['worlds'] = [world]
+        return graph
+
+    def test_actual_compiled_graph_accepts_only_source_bound_import_profile_pruning(self):
+        value = self.observed()
+        original = copy.deepcopy(value)
+        expected = runtime.public_graph(value['selected'],
+            runtime.scoped_selected_world('examples:typescript-fetch/service@1.0.0'))
+        observed = runtime.public_component_graph(value['component'])
+        self.assertNotEqual(expected, observed)  # Exact strict comparison that failed hosted 9dc.
+        self.assertTrue(self.matches(value))
+        self.assertEqual(value, original)
+        for options in ({'profile': runtime.CLOCK_PROFILE}, {'profile': 'unknown'},
+                {'engine_input': None}, {'source_splicer_digest': None},
+                {'source_splicer_digest': runtime.digest(b'changed source splicer')}):
+            with self.subTest(options=options):
+                self.assertFalse(self.matches(value, **options))
+        for field, replacement in (('schemaVersion', runtime.ENGINE_SCHEMA),
+                ('profile', runtime.CLOCK_PROFILE), ('upstream', {}), ('qualification', 'passed'),
+                ('apiSupport', 'qualified'), ('inputTrust', 'ambient'),
+                ('compilerSplicerInputDigest', runtime.digest(b'different receipt'))):
+            with self.subTest(field=field):
+                self.assertFalse(self.matches(value, engine_input=dict(value['engineInput'], **{field: replacement})))
+        changed = copy.deepcopy(value)
+        activation = next(item for item in changed['selected']['interfaces'] if item['name'] == 'activation')
+        activation['functions']['observe']['result'] = 'u32'
+        self.assertFalse(self.matches(changed))
+
+    def test_complete_activation_surface_keeps_original_strict_graph_comparison(self):
+        value = self.observed()
+        full = self.full_component(value)
+        for profile in runtime.NATIVE_PROFILES:
+            self.assertTrue(self.matches(value, full, profile=profile, engine_input=None,
+                                         source_splicer_digest=None))
+        partial = copy.deepcopy(full)
+        activation = next(item for item in partial['interfaces'] if item['name'] == 'activation')
+        del activation['functions']['observe']
+        self.assertFalse(self.matches(value, partial))
+
+    def test_pruned_activation_keeps_all_eight_signatures_and_three_types_mandatory(self):
+        value = self.observed()
+        activation = next(item for item in value['component']['interfaces'] if item['name'] == 'activation')
+        self.assertEqual(set(activation['functions']), {'register', 'park', 'wake', 'settle', 'close',
+            'timer-start', 'timer-next', 'timer-stop'})
+        self.assertEqual(set(activation['types']), {'owner-kind', 'token', 'error'})
+        for group in ('functions', 'types'):
+            for name in activation[group]:
+                changed = copy.deepcopy(value['component'])
+                item = next(item for item in changed['interfaces'] if item['name'] == 'activation')
+                del item[group][name]
+                with self.subTest(group=group, name=name):
+                    self.assertFalse(self.matches(value, changed))
+        for change in ('async-kind', 'parameter', 'token', 'extra-function', 'extra-type'):
+            changed = copy.deepcopy(value['component'])
+            item = next(item for item in changed['interfaces'] if item['name'] == 'activation')
+            if change == 'async-kind':
+                item['functions']['timer-next']['kind'] = 'freestanding'
+            elif change == 'parameter':
+                item['functions']['register']['params'][0]['type'] = 'u32'
+            elif change == 'token':
+                changed['types'][item['types']['token']]['kind']['record']['fields'][0]['type'] = 'u32'
+            elif change == 'extra-function':
+                item['functions']['extra'] = dict(item['functions']['close'], name='extra')
+            else:
+                item['types']['extra'] = item['types']['token']
+            with self.subTest(change=change):
+                self.assertFalse(self.matches(value, changed))
+
+    def test_private_pruning_never_ignores_http_ownership_clock_export_or_extra_import(self):
+        value = self.observed()
+        for change in ('http-kind', 'ownership', 'clock', 'export', 'extra-import'):
+            changed = copy.deepcopy(value['component'])
+            if change == 'http-kind':
+                item = next(item for item in changed['interfaces'] if item['name'] == 'streaming')
+                item['functions']['open']['kind'] = 'freestanding'
+            elif change == 'ownership':
+                item = next(item for item in changed['types'] if isinstance(item['kind'], dict)
+                    and 'handle' in item['kind'] and 'borrow' in item['kind']['handle'])
+                item['kind']['handle'] = {'own': item['kind']['handle']['borrow']}
+            elif change == 'clock':
+                item = next(item for item in changed['interfaces'] if item['name'] == 'monotonic')
+                item['functions']['now-nanos']['result'] = 'u32'
+            elif change == 'export':
+                item = next(item for item in changed['interfaces'] if item['name'] == 'api')
+                item['functions']['run']['result'] = 'u32'
+            else:
+                changed['worlds'][0]['imports']['unexpected'] = {'function': {
+                    'name': 'unexpected', 'kind': 'freestanding', 'params': [], 'result': None}}
+            with self.subTest(change=change):
+                self.assertFalse(self.matches(value, changed))
+
+
 class TypeScriptAbortSourceTests(unittest.TestCase):
     def test_pinned_timeout_conversion_precedes_signal_graph_allocation(self):
         from tools.typescript_guest.abort_engine import derive_abort_timeout

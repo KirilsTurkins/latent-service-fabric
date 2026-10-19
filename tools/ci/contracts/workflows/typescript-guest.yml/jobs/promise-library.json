@@ -79,6 +79,16 @@
         "run": "python3 tools/build_typescript_native_engine.py --library \"$RUNNER_TEMP/typescript-promise-library\" --source-splicer-build \"$RUNNER_TEMP/typescript-source-splicer-input\" --output \"$RUNNER_TEMP/typescript-native-import-engine\" --wit-bindgen \"$RUNNER_TEMP/typescript-promise-tools/wit-bindgen\""
       },
       {
+        "name": "Freeze the exact engine for actual Fetch component construction",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "typescript-fetch-engine-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-native-import-engine/engine.wasm\n${{ runner.temp }}/typescript-native-import-engine/engine-input.json\n",
+          "retention-days": 7
+        }
+      },
+      {
         "if": "always()",
         "name": "Retain source identities, normal products and failed attempts",
         "uses": "actions/upload-artifact",
@@ -94,7 +104,7 @@
   },
   "jobId": "promise-library",
   "kind": "job",
-  "reviewReason": "Preserve original clock build and60minute budget; add exact-run source compiler consumption and a fresh normal import engine compile with final original codec checks",
+  "reviewReason": "Build an actual Fetch-selected async-import component from same-run source-owned engine and splicer without inferring signed/provider execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

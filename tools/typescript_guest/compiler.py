@@ -357,7 +357,10 @@ class Compiler:
             # Bind an independently decoded final component, not just generated
             # metadata. The existing projection path remains the sync contract.
             final = semantic(json.loads(command.run('final-runtime-types', wasm, 'component', 'wit', component, '--json')))
-            if runtime.public_component_graph(final) != runtime.public_graph(graph, world):
+            if not runtime.compiled_world_matches(graph, final, world, profile=self.runtime_profile,
+                    engine_input=self.engine_metadata,
+                    source_splicer_digest=(digest(self.source_splicer_original[3])
+                        if self.source_splicer_original is not None else None)):
                 raise ValueError('compiled TypeScript selected-world type graph changed')
         return component, first_identity
 

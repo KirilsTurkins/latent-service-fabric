@@ -34,6 +34,8 @@ on:
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
       - 'tools/qualify_typescript_dependencies.py'
+      - 'tools/qualify_typescript_fetch_component.py'
+      - 'tools/tests/test_typescript_fetch_component.py'
       - 'tools/tests/test_typescript_application_dependencies.py'
       - 'tools/*rust_capsule*.py'
       - 'crates/latent-wasmtime/tests/**'
@@ -82,6 +84,8 @@ on:
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
       - 'tools/qualify_typescript_dependencies.py'
+      - 'tools/qualify_typescript_fetch_component.py'
+      - 'tools/tests/test_typescript_fetch_component.py'
       - 'tools/tests/test_typescript_application_dependencies.py'
       - 'tools/*rust_capsule*.py'
       - 'crates/latent-wasmtime/tests/**'
@@ -211,6 +215,15 @@ jobs:
           path: ${{ runner.temp }}/typescript-source-splicer-input
       - name: Link the explicit source-owned asynchronous import engine
         run: python3 tools/build_typescript_native_engine.py --library "$RUNNER_TEMP/typescript-promise-library" --source-splicer-build "$RUNNER_TEMP/typescript-source-splicer-input" --output "$RUNNER_TEMP/typescript-native-import-engine" --wit-bindgen "$RUNNER_TEMP/typescript-promise-tools/wit-bindgen"
+      - name: Freeze the exact engine for actual Fetch component construction
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: typescript-fetch-engine-input-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-native-import-engine/engine.wasm
+            ${{ runner.temp }}/typescript-native-import-engine/engine-input.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Retain source identities, normal products and failed attempts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -249,6 +262,61 @@ jobs:
             ${{ runner.temp }}/typescript-native-import-engine/jobs-generated/**
             ${{ runner.temp }}/typescript-native-import-engine/clocks-generated/**
           if-no-files-found: error
+          retention-days: 7
+  fetch-component:
+    name: Actual source-owned Fetch component construction
+    needs: [source-splicer, promise-library]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Check exact Fetch compiler handoff and qualification boundaries
+        run: python3 -m unittest tools.tests.test_typescript_fetch_component -v
+      - name: Install the existing isolated compiler boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the original locked compiler namespace
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-fetch-tools"
+      - name: Read the source compiler from this exact run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: typescript-source-splicer-input-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-fetch-splicer
+      - name: Read the actual import engine from this exact run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: typescript-fetch-engine-input-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-fetch-engine
+      - name: Compile actual default-global Fetch with the source-owned async engine
+        run: python3 tools/qualify_typescript_fetch_component.py --tools "$RUNNER_TEMP/typescript-fetch-tools" --engine "$RUNNER_TEMP/typescript-fetch-engine" --splicer "$RUNNER_TEMP/typescript-fetch-splicer" --output "$RUNNER_TEMP/typescript-fetch-component"
+      - name: Retain actual component, input identities and failed attempts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: typescript-fetch-component-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-fetch-component/*.json
+            ${{ runner.temp }}/typescript-fetch-component/logs/**
+            ${{ runner.temp }}/typescript-fetch-component/compiled/*.json
+            ${{ runner.temp }}/typescript-fetch-component/compiled/*.wit
+            ${{ runner.temp }}/typescript-fetch-component/compiled/application.mjs
+            ${{ runner.temp }}/typescript-fetch-component/compiled/component.wasm
+          if-no-files-found: warn
           retention-days: 7
   boundary:
     name: TypeScript guest value and ownership boundary

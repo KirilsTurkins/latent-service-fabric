@@ -292,6 +292,47 @@ def public_component_graph(graph: dict) -> dict:
     return public_graph(graph, '', _component_root=True)
 
 
+def compiled_world_matches(selected: dict, component: dict, world: str, *, profile: str,
+                           engine_input: dict | None = None, source_splicer_digest: str | None = None) -> bool:
+    """Bind the complete public graph and the source-owned engine's finite ABI.
+
+    Compiler has already authenticated the engine bytes, SDK and splicer. Only
+    that explicit import profile may omit the three unused legacy readiness
+    methods and their exclusive types when component encoding prunes imports.
+    The full maintained source/derived-world comparison remains unchanged.
+    """
+    expected, actual = public_graph(selected, world), public_component_graph(component)
+    if actual == expected:
+        return True
+    if (profile != IMPORT_PROFILE or not isinstance(engine_input, dict)
+            or engine_input.get('schemaVersion') != IMPORT_ENGINE_SCHEMA
+            or engine_input.get('profile') != IMPORT_PROFILE
+            or engine_input.get('upstream') != SOURCE_PINS
+            or engine_input.get('qualification') != 'unknown'
+            or engine_input.get('apiSupport') != 'not-evaluated'
+            or engine_input.get('inputTrust') != 'operator-asserted'
+            or not isinstance(source_splicer_digest, str) or not DIGEST.fullmatch(source_splicer_digest)
+            or engine_input.get('compilerSplicerInputDigest') != source_splicer_digest):
+        return False
+    activation = expected['imports'].get(ACTIVATION_INTERFACE)
+    if (not isinstance(activation, dict)
+            or set(activation['functions']) != {'register', 'park', 'wake', 'settle', 'close',
+                'observe', 'wait-for', 'wait-until', 'timer-start', 'timer-next', 'timer-stop'}
+            or set(activation['types']) != {'owner-kind', 'token', 'error', 'phase', 'observation'}):
+        return False
+    # Complete, ID-independent maintained ABI observed by wasm-tools 1.254.0.
+    # Even a change to an omitted legacy member requires a fresh source review.
+    if digest(json.dumps(activation, sort_keys=True, separators=(',', ':')).encode()) != (
+            'sha256:42ad98c8a5e38b069ee74926e54dcd710e26b8898792fefbe8baea9cccfc8539'):
+        return False
+    pruned = {'functions': {name: value for name, value in activation['functions'].items()
+                           if name not in {'observe', 'wait-for', 'wait-until'}},
+              'types': {name: value for name, value in activation['types'].items()
+                        if name not in {'phase', 'observation'}}}
+    expected['imports'][ACTIVATION_INTERFACE] = pruned
+    return actual == expected
+
+
 def derive_world(canonical_original: bytes, original_graph: dict, world: str,
                  activation_wit: bytes) -> dict[str, bytes]:
     if not WORLD.fullmatch(world) or world.startswith('lsf:typescript-activation/'):

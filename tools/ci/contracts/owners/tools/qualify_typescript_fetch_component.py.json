@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_fetch_component.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain complete compiler/containment identities as bounded streaming digest summaries without changing full integrity checks or fixture limits; add oversized real-shape controls.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "c802dd1ca9d48d588369b08c1c28480d28d1348ed86291899e0d23f59531085e"
+}

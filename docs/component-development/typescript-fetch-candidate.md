@@ -112,9 +112,16 @@ after the original response, preserving the fact that the original mutation may
 already have occurred.
 
 Snapshot-time network use fails before Promise or provider work is admitted.
-Ordinary construction/lookup is available for library initialization, but no
-request, credential, active Promise or live host resource enters the initialized
-component snapshot. Each invocation receives fresh mutable module/client state.
+Pure `Headers`/`Response` construction and global API lookup are available for
+module initialization. Top-level `new Request(...)` remains unsupported: every
+Request creates a dependent native AbortSignal, whose mutable listener/weak-link
+graph requires invocation admission. The engine refuses that graph while Wizer
+creates a shared snapshot; the Fetch construction fixture must not bypass or
+weaken this refusal. Request construction is exercised inside the async export
+instead. Arbitrary Request-constructing dependency initializers are therefore
+still an unmet #691 compatibility boundary. No request, credential, active
+Promise or live host resource enters the initialized component snapshot. Each
+invocation receives fresh mutable module/client state.
 
 ## Checks and remaining qualification
 
@@ -132,6 +139,50 @@ than runtime support. #691 remains open for actual engine/component/provider,
 two unchanged clients/private-dependency controls, broader lifecycle/exhaustion
 and measured ownership evidence. The independent approved socket profile remains
 owned by #737–#740.
+
+The `Actual source-owned Fetch component construction` workflow job now consumes
+the exact same-run source-built import engine and compiler splicer. It runs the
+maintained compiler on an outside-checkout project with ordinary global lookup
+in direct and transitive module initializers and a real async typed HTTP import.
+The fixture includes direct/transitive `Headers`/`Response` constructor assertions
+and verifies transitive `Request`/`fetch` availability without snapshot-time native
+signal admission. Its report does not independently observe whether those
+initializers executed inside the componentizer. A focused Node adapter control
+models the native signal admission boundary: initialization admits no signal or
+provider work, top-level Request construction still refuses, and invocation
+constructs a real Request and consumes the typed response. That control is source
+evidence, not an emitted-component/provider run. The
+compiler performs generated-declaration typechecking, component validation and
+decoded public-type comparison. It retains the actual component, selected backend and
+bootstrap digests, exact engine/splicer inputs, and before/after source/compiler
+identities. It builds no second engine or native node and preserves the existing
+job deadlines and guards.
+
+The final decoded type comparison retains the complete application HTTP,
+clock and export graphs. For the authenticated source-owned import profile,
+the engine-owned activation interface has two finite accepted encodings: the
+complete maintained ABI, or exactly its eight used functions and three types.
+Component encoding can omit only the unused `observe`, `wait-for`, `wait-until`
+methods and their exclusive `phase`/`observation` types. The complete original
+ABI fingerprint, engine/profile and source-splicer receipt identity are checked
+before accepting that alternative. Missing mandatory members, changed retained
+signatures/ownership, partial omissions, unknown imports and public-contract
+changes still fail. The source/derived-world check remains complete and strict;
+this representation check grants no authority or runtime qualification.
+
+The compiler namespace and containment receipts retain a compact digest of every
+field in their complete canonical JSON manifests. The namespace summary also
+records file count and total content bytes. The compiler still enforces its
+original 32,768-file / 1-GiB bounds and compares the full in-memory identities;
+the qualifier additionally requires identical before/after summaries. This keeps
+the fixture writer's 256-KiB limit unchanged even when an input manifest is larger.
+
+The new job is a qualification attempt until its exact-head hosted result is
+verified. Its report deliberately distinguishes component construction from
+runtime execution: it does not invoke the async export, sign or admit a component,
+contact a real provider, or run unchanged published/private clients. Those gates,
+the HTTP/Abort/body/lifecycle matrix and physical cleanup remain required; engine
+support stays `unknown` / `not-evaluated` after a successful build.
 
 ## Synthetic response factories
 
