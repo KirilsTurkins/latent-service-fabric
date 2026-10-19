@@ -87,15 +87,24 @@ class ActualSelectedGraph(unittest.TestCase):
 
     def test_actual_library_producer_captures_transitive_reference_inside_each_owned_build(self):
         from tools.dotnet_guest.project import create
-        seen = []
+        seen, constructors = [], []
         class SourceOnlyCompiler:
             def __init__(self, tools, commands, vendor, *, offline, captured):
                 self.commands, self.dotnet = commands, Path('never-executed-dotnet')
                 self_outer.assertTrue(offline and captured)
+                # Match the real Compiler -> stage() exclusive owned layout;
+                # a second instance under the same parent must not be hidden.
+                stage = commands.root.parent / 'captured-dotnet-tools'
+                stage.mkdir()
+                constructors.append(stage)
 
             def run(self, stage, executable, *arguments):
                 self_outer.assertEqual(stage, 'private-pure-managed-library')
-                source = self.commands.root
+                source = Path(arguments[1]).parent
+                self_outer.assertEqual(self.commands.root.name, 'leaf-1.0.0')
+                self_outer.assertTrue(source.is_relative_to(self.commands.root.parent))
+                self_outer.assertEqual(arguments[0], 'build')
+                self_outer.assertEqual(arguments[4], '-p:RestoreConfigFile=' + str(source / 'nuget.config'))
                 project = (source / 'Library.csproj').read_text()
                 text = (source / 'Library.cs').read_text()
                 role = 'Main' if 'PrivateMain' in text else 'Leaf'
@@ -122,6 +131,7 @@ class ActualSelectedGraph(unittest.TestCase):
             with patch.object(fixture, 'Compiler', SourceOnlyCompiler):
                 payloads = fixture.libraries(outside, app, root / 'unused-tools', 'a' * 24)
             self.assertEqual(seen, ['Leaf', 'Main', 'Leaf', 'Main'])
+            self.assertEqual(len(constructors), 1)
             self.assertEqual(len(payloads), 4)
             self.assertEqual({version for _name, version in payloads}, set(fixture.VERSIONS))
 

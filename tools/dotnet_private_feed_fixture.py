@@ -65,6 +65,7 @@ def expected(nonce, version, text):
 def libraries(root, project, tools, nonce):
     """Compile ordinary pure managed code; never executes a package build hook."""
     result = {}
+    compiler = None
     for version in VERSIONS:
         leaf_dll = None
         for role in ('Leaf', 'Main'):
@@ -104,10 +105,11 @@ def libraries(root, project, tools, nonce):
                 + extra + '</ItemGroup></Project>', encoding='utf-8')
             (library / 'global.json').write_bytes(read_file(project / 'global.json'))
             (library / 'nuget.config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
-            evidence = root / ('evidence-' + role + '-' + version)
-            evidence.mkdir(mode=0o700)
-            commands = Commands(library, evidence, build_environment(root))
-            compiler = Compiler(tools, commands, project / 'vendor/lsf', offline=True, captured=True)
+            if compiler is None:
+                evidence = root / 'library-evidence'
+                evidence.mkdir(mode=0o700)
+                commands = Commands(library, evidence, build_environment(root))
+                compiler = Compiler(tools, commands, project / 'vendor/lsf', offline=True, captured=True)
             compiler.run('private-pure-managed-library', compiler.dotnet, 'build', library / 'Library.csproj',
                 '-c', 'Release', '-p:RestoreConfigFile=' + str(library / 'nuget.config'), '-p:NuGetAudit=false',
                 '-nodeReuse:false', '-p:UseSharedCompilation=false', '-p:ImportDirectoryBuildProps=false',
