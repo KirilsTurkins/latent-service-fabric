@@ -4,6 +4,7 @@
     "FixedInputs.test_artifact_wrong_head_run_or_selector_refuses_before_payload",
     "FixedInputs.test_fixed_package_layers_are_bound_to_real_marker_and_inventory",
     "FixedInputs.test_noncompanion_and_unsafe_member_names_never_reach_extraction",
+    "FixedInputs.test_normal_greeting_compiler_inputs_are_bound_to_original_observation",
     "FixedInputs.test_range_reader_refuses_unbounded_network_request",
     "FixedInputs.test_range_total_is_finitely_bound_to_fixed_artifact_size_including_rereads"
   ],
@@ -56,6 +57,18 @@
       ],
       "skipSites": []
     },
+    "FixedInputs.test_normal_greeting_compiler_inputs_are_bound_to_original_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f1c0803fa56aa25f3c7371eb6475ec7175f3624d5a4b639c3fd6f8ec13e6adf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "FixedInputs.test_range_reader_refuses_unbounded_network_request": {
       "bases": [
         "unittest.TestCase"
@@ -83,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_npm_private_replay.py",
-  "reviewReason": "Default-false manual private npm replay: retain every normal command and limit; require exact unchanged runtime/SDK/compiler source, native5 and companion package bytes before fresh capture/build/sign/node execution.",
+  "reviewReason": "Bind actual retained _temp artifact prefix, fixed HTTP WIT package and normal greeting compiler inputs to original observation; preserve all six previous refusal controls plus one additive compiler-identity case.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

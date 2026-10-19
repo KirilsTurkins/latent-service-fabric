@@ -150,14 +150,14 @@ def retrieve_build(artifact, template, prepared, expected):
     require(template in COMPANIONS, 'private-replay-fixed-companion-only')
     output = prepared / 'builds' / template
     output.mkdir(mode=0o700, parents=True)
-    prefix = 'typescript-capsule-dependencies/builds/' + template + '/'
+    prefix = '_temp/typescript-capsule-dependencies/builds/' + template + '/'
     for name in BUILD_FILES:
         artifact.extract(prefix + name, output / name)
     require(read_json(output / 'BUILD-COMPLETE.json') == expected, 'private-replay-original-build-marker')
     layers = read_json(output / 'package-source.json')['layers']
     require(1 <= len(layers) <= 32, 'private-replay-package-layer-count')
     allowed = {'component.wasm', 'capsule.json', 'contracts.json', 'wit-lock.json', 'compatibility-report.json',
-               'wit/world.wit', 'wit/deps/clock/package.wit', 'wit/deps/http-v2/package.wit'}
+               'wit/world.wit', 'wit/deps/clock/package.wit', 'wit/deps/http-v2/package.wit', 'wit/deps/http/package.wit'}
     observed = {'package-source.json': (output / 'package-source.json').read_bytes()}
     for layer in layers:
         name = layer['source']
@@ -172,6 +172,18 @@ def retrieve_build(artifact, template, prepared, expected):
             'private-replay-original-package-input-identity')
 
 
+def retrieve_greeting_compiler(artifact, output, expected):
+    prefix = '_temp/typescript-capsule-dependencies/builds/greeting/'
+    for name in ('build-observation.json', 'compiler-inputs.json'):
+        artifact.extract(prefix + name, output / 'builds/greeting' / name)
+    observed = (output / 'builds/greeting/build-observation.json').read_bytes()
+    compiler = (output / 'builds/greeting/compiler-inputs.json').read_bytes()
+    require(digest(observed) == expected['observationDigest'], 'npm-replay-greeting-observation')
+    materials = [row for row in json.loads(observed)['materials'] if row['name'] == 'compiler-inputs']
+    require(len(materials) == 1 and materials[0]['digest'] == digest(compiler)
+            and materials[0]['size'] == len(compiler), 'npm-replay-greeting-compiler-inputs')
+
+
 def prepare(output):
     require(sys.platform == 'linux', 'npm-replay-linux-required')
     output = fresh(output)
@@ -184,7 +196,7 @@ def prepare(output):
     commit = api('git/commits/' + ORIGINAL_HEAD)
     require(commit['sha'] == ORIGINAL_HEAD, 'npm-replay-fixed-source-commit')
     artifact = Artifact('products')
-    prefix = 'typescript-capsule-dependencies/'
+    prefix = '_temp/typescript-capsule-dependencies/'
     for name in ('qualification.json', 'source-inputs.json', 'source-inputs-after.json'):
         artifact.extract(prefix + name, output / name)
     receipt = read_json(output / 'qualification.json')
@@ -204,6 +216,7 @@ def prepare(output):
         target.chmod(0o700)
     for template in COMPANIONS:
         retrieve_build(artifact, template, output, receipt['builds'][template])
+    retrieve_greeting_compiler(artifact, output, receipt['builds']['greeting'])
     node_path = output / 'node/workflow.json'
     artifact.extract(prefix + 'node/workflow.json', node_path, 16*1024**2)
     node_bytes = node_path.read_bytes()

@@ -46,7 +46,7 @@ class FixedInputs(unittest.TestCase):
                                                                   'component.wasm': component})}
                 class Artifact:
                     def extract(self, name, output, maximum=replay.MAX_DOCUMENT):
-                        self_name = name.removeprefix('typescript-capsule-dependencies/builds/word-count/')
+                        self_name = name.removeprefix('_temp/typescript-capsule-dependencies/builds/word-count/')
                         assert self_name in files
                         output.parent.mkdir(parents=True, exist_ok=True)
                         output.write_bytes(files[self_name])
@@ -57,6 +57,26 @@ class FixedInputs(unittest.TestCase):
                 else:
                     replay.retrieve_build(Artifact(), 'word-count', prepared, marker)
                     self.assertEqual((prepared/'builds/word-count/component.wasm').read_bytes(), component)
+
+    def test_normal_greeting_compiler_inputs_are_bound_to_original_observation(self):
+        for changed in (False, True):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temporary:
+                compiler = b'{"compiler":"original"}'
+                observation = json.dumps({'materials': [{'name': 'compiler-inputs',
+                    'digest': replay.digest(compiler), 'size': len(compiler)}]}).encode()
+                class Artifact:
+                    def extract(self, name, output, maximum=replay.MAX_DOCUMENT):
+                        assert name.startswith('_temp/typescript-capsule-dependencies/builds/greeting/')
+                        output.parent.mkdir(parents=True, exist_ok=True)
+                        output.write_bytes(observation if name.endswith('build-observation.json')
+                                           else compiler+b'changed' if changed else compiler)
+                if changed:
+                    with self.assertRaisesRegex(WorkflowError, 'greeting-compiler-inputs'):
+                        replay.retrieve_greeting_compiler(Artifact(), Path(temporary),
+                            {'observationDigest': replay.digest(observation)})
+                else:
+                    replay.retrieve_greeting_compiler(Artifact(), Path(temporary),
+                        {'observationDigest': replay.digest(observation)})
 
     def test_noncompanion_and_unsafe_member_names_never_reach_extraction(self):
         for name in ('greeting', '../word-count', 'word-count/private'):
