@@ -421,6 +421,11 @@ def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
                 or any(item[key] != spec[key] for key in ("role", "format", "mount", "dependencies", "metadata"))
                 or tree_identity(item["files"]) != item["treeDigest"]):
             raise DependencyError("dependency-lock-artifact-drift")
+        source = spec["source"]
+        expected_source = ({"type": "repository", "repository": source["repository"], "path": source["path"]}
+                           if "repository" in source else {"type": "captured-local"})
+        if item["source"] != expected_source:
+            raise DependencyError("dependency-lock-source-drift")
         total_files += len(item["files"])
         total_bytes += sum(row["size"] for row in item["files"])
         if total_files > MAX_CLOSURE_FILES or total_bytes > MAX_CLOSURE_BYTES:

@@ -177,6 +177,90 @@ class Dependencies(unittest.TestCase):
         self.assertEqual(store.get(**rows[0]), data)
         self.assertFalse(list(store.root.rglob(".capture-*")))
 
+    def test_local_lock_source_cannot_relabel_origin_or_publish_private_fields(self):
+        lock = self.lock()
+        original = lock["artifacts"][0]["original"].copy()
+        sources = [{"type": "repository", "repository": "other", "path": "same-library.c"},
+                   {"type": "captured-local", "path": "../outside-private-library"},
+                   {"type": "captured-local", "authorization": "private-test-value"},
+                   {"type": "captured-local", "url": "https://user:private-test-value@example.invalid/"},
+                   {"type": "unknown"}, {}, None, [], "captured-local"]
+        for ordinal, source in enumerate(sources):
+            with self.subTest(source=source):
+                lock["artifacts"][0]["source"] = source
+                rejected = canonical(lock)
+                (self.project / LOCK).write_bytes(rejected)
+                work, output = self.root / f"work-{ordinal}", self.root / f"output-{ordinal}"
+                work.mkdir(); output.mkdir()
+                with patch("tools.application_dependencies.fetch", side_effect=AssertionError("offline verifier fetched")):
+                    with self.assertRaisesRegex(DependencyError, "^dependency-lock-source-drift$"):
+                        prepare(self.project, work, output, "c")
+                self.assertEqual(list(work.iterdir()), [])
+                self.assertEqual(list(output.iterdir()), [])
+                self.assertEqual((self.project / LOCK).read_bytes(), rejected)
+                self.assertEqual(lock["artifacts"][0]["original"], original)
+
+    def test_remote_lock_source_cannot_change_repository_path_or_add_credentials(self):
+        payload = (self.library / "pure.c").read_bytes()
+        declaration = self.manifest["artifacts"][0]
+        declaration["format"], declaration["mount"] = "file", "dependencies/library.c"
+        declaration["source"] = {"repository": "private-alias", "path": "ordinary/library-1.2.c",
+                                 "digest": digest(payload)}
+        self.write()
+        with patch("tools.application_dependencies.fetch", return_value=payload) as fetch:
+            lock = capture(self.project)
+            fetch.assert_called_once_with(declaration["source"], {})
+        expected = {"type": "repository", "repository": "private-alias", "path": "ordinary/library-1.2.c"}
+        self.assertEqual(lock["artifacts"][0]["source"], expected)
+        original = lock["artifacts"][0]["original"].copy()
+        sources = [expected | {"repository": "another-alias"},
+                   expected | {"path": "ordinary/another-version.c"},
+                   expected | {"authorization": "private-test-value"},
+                   expected | {"url": "https://user:private-test-value@example.invalid/"},
+                   {"type": "captured-local"}]
+        for ordinal, source in enumerate(sources):
+            with self.subTest(source=source):
+                lock["artifacts"][0]["source"] = source
+                rejected = canonical(lock)
+                (self.project / LOCK).write_bytes(rejected)
+                work, output = self.root / f"work-{ordinal}", self.root / f"output-{ordinal}"
+                work.mkdir(); output.mkdir()
+                with patch("tools.application_dependencies.fetch", side_effect=AssertionError("offline verifier fetched")):
+                    with self.assertRaisesRegex(DependencyError, "^dependency-lock-source-drift$"):
+                        prepare(self.project, work, output, "c")
+                self.assertEqual(list(work.iterdir()), [])
+                self.assertEqual(list(output.iterdir()), [])
+                self.assertEqual((self.project / LOCK).read_bytes(), rejected)
+                self.assertEqual(lock["artifacts"][0]["original"], original)
+
+    def test_remote_source_provenance_preserved_in_offline_receipt_without_private_configuration(self):
+        payload = (self.library / "pure.c").read_bytes()
+        declaration = self.manifest["artifacts"][0]
+        declaration["format"], declaration["mount"] = "file", "dependencies/library.c"
+        declaration["source"] = {"repository": "private-alias", "path": "ordinary/library-1.2.c",
+                                 "digest": digest(payload)}
+        self.write()
+        private = {"private-alias": {"url": "https://private.example.invalid", "authorizationEnv": "TEST_PRIVATE_TOKEN"}}
+        with patch("tools.application_dependencies.fetch", return_value=payload) as fetch:
+            lock = capture(self.project, repositories=private)
+            fetch.assert_called_once_with(declaration["source"], private)
+        (self.project / LOCK).write_bytes(canonical(lock))
+        (self.library / "pure.c").unlink(); self.library.rmdir()
+        with patch("tools.application_dependencies.fetch", side_effect=AssertionError("offline verifier fetched")):
+            closure = self.build()
+            closure.check_unchanged()
+        self.assertEqual((closure.work / "dependencies/library.c").read_bytes(), payload)
+        encoded = (self.root / "output/application-dependencies.json").read_bytes()
+        receipt = json.loads(encoded)
+        self.assertEqual(receipt["artifacts"][0]["source"], {
+            "type": "repository", "repository": "private-alias", "path": "ordinary/library-1.2.c"})
+        self.assertEqual(receipt["inputIdentity"], closure.identity)
+        self.assertEqual(receipt["lockDigest"], digest((self.project / LOCK).read_bytes()))
+        self.assertFalse(receipt["networkResolution"])
+        self.assertFalse(receipt["hermetic"])
+        for forbidden in (b"private.example.invalid", b"TEST_PRIVATE_TOKEN", str(self.root).encode()):
+            self.assertNotIn(forbidden, encoded)
+
 
 class Archives(unittest.TestCase):
     def zip(self, rows):

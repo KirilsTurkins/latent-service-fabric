@@ -104,6 +104,12 @@ argument. Redirects are denied so authorization cannot move to another origin.
 Only resolution reads this configuration. Local/private source paths are omitted
 from public dependency receipts.
 
+Offline verification also binds each lock artifact's public source record to the
+manifest: an exact repository alias and relative path, or `captured-local` without
+the original local path. Changed origins, extra private configuration and
+malformed source records fail with `dependency-lock-source-drift` before
+materialization or receipt publication, even when the artifact bytes still match.
+
 Normal recipes materialize the reviewed closure from content-addressed objects
 without resolution or provisioning. Missing, changed and uncaptured inputs fail
 with a concrete dependency diagnostic. Builds recheck manifests, native locks,
