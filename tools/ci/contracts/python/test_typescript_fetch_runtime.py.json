@@ -8,6 +8,7 @@
     "TypeScriptFetchRuntimeTests.test_grant_denial_requires_permission_code_zero_execution_and_reaped_process",
     "TypeScriptFetchRuntimeTests.test_native_selection_cannot_fall_back_between_prepared_and_ordinary_inputs",
     "TypeScriptFetchRuntimeTests.test_normal_captured_fixture_keeps_exact_async_world_sdk_and_original_budget",
+    "TypeScriptFetchRuntimeTests.test_provider_read_window_matches_actual_adapter_without_relaxing_total_body_or_owners",
     "TypeScriptFetchRuntimeTests.test_real_peer_requires_exact_three_contacts_and_no_denied_contact_or_mutation",
     "TypeScriptFetchRuntimeTests.test_source_profile_promotion_and_material_substitution_are_rejected",
     "TypeScriptFetchRuntimeTests.test_success_requires_exact_typed_result_known_outcome_and_one_charged_get"
@@ -109,6 +110,18 @@
       ],
       "skipSites": []
     },
+    "TypeScriptFetchRuntimeTests.test_provider_read_window_matches_actual_adapter_without_relaxing_total_body_or_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e5d88fae34291ad36ca795a74a510c01f7683e9f56d8d79bc772d8d2302e06f",
+        "class:setup-sha256:723135e8a21aa27b5794920ff8e76d9646d2efc353346989dd96feb5d747c90b"
+      ],
+      "skipSites": []
+    },
     "TypeScriptFetchRuntimeTests.test_real_peer_requires_exact_three_contacts_and_no_denied_contact_or_mutation": {
       "bases": [
         "unittest.TestCase"
@@ -148,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch_runtime.py",
-  "reviewReason": "Add closed fixture-only Request/fetch/body failure-stage diagnostics after observed signed JSON trap; every diagnostic remains a failing exact-value gate, with no error messages or authority change.",
+  "reviewReason": "Align only the finite signed Fetch runner read window with the existing adapter and provider maximum; preserve all total-body, owner, authority and exact-result gates; add old-mismatch/new-alignment adapter control.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

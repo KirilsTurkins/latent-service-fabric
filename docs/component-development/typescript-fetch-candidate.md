@@ -252,8 +252,14 @@ all 18 physical provider counters idle before clean node/peer reaping.
 The fixture keeps the existing TypeScript 1,000,000,000-fuel / 128-MiB /
 120-second invocation budget and one outbound request. Its private provider
 allows only the exact primary origin and GET `/conformance/json` and
-`/conformance/status/404`, with 8-KiB responses, 4-KiB chunks and two outstanding
-chunks. Activation owner ceilings match the maintained TypeScript local-service
+`/conformance/status/404`, with 8-KiB responses, 64-KiB read/chunk capacity and two
+outstanding chunks. The capacity matches the existing adapter's 65536-byte read
+request and the provider profile's finite maximum; the previous 4-KiB capacity
+would reject that read before polling the body. Total response bytes stay at
+8 KiB, and the original I/O ledger reserves and charges capacity before
+transport work. This fixes a separate runner-profile mismatch, not a proven
+cause of the earlier zero-outbound first-JSON trap. Activation owner ceilings
+match the maintained TypeScript local-service
 experiment (16 tasks, 2 executors, 16 queued work, 8 waits/timers/results and
 64 native owners). These are finite experimental limits, not new platform
 defaults or native allocator/kernel upper-bound evidence.

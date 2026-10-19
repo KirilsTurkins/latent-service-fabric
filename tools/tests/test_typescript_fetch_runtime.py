@@ -173,6 +173,69 @@ class TypeScriptFetchRuntimeTests(unittest.TestCase):
             with patch.object(fetch, 'policy'), self.assertRaisesRegex(WorkflowError, 'provider-profile'):
                 fetch.grants(object(), node, 'publication', origin)
 
+    def test_provider_read_window_matches_actual_adapter_without_relaxing_total_body_or_owners(self):
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root/'node.json'
+            self.write(config, {'cells': [{}], 'execution': {}, 'cache': {}, 'audit': {}})
+            with patch.object(fetch, 'configure_node', return_value=config):
+                value = fetch.read_json(fetch.configuration(root, root/'releases',
+                    {'destinations': [{'name': 'fixed-destination'}]}, root/'authorization'))
+            provider = value['providers']['httpStreaming']
+            self.assertEqual(provider['configuration']['limits'], {'maximumRequestBodyBytes': 4096,
+                'maximumResponseBodyBytes': 8192, 'maximumEncodedResponseBytes': 16384,
+                'maximumHeaderBytes': 4096, 'maximumHeaders': 16, 'maximumRedirects': 0})
+            self.assertEqual(value['providers']['activationRuntime']['limits'], fetch.OWNER_LIMITS)
+            self.write(root/'windows.json', {'actual': provider['limits'],
+                'old': dict(provider['limits'], maximumChunkBytes=4096)})
+            script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, backend, output] = process.argv.slice(2);
+const {installFetch} = await import(pathToFileURL(backend));
+const windows = JSON.parse(await readFile(output+'/windows.json','utf8'));
+for (const name of ['default-client','main']) {
+  const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
+  await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+}
+for (const [label, limits] of Object.entries(windows)) {
+  let contacts=0, reads=0;
+  const events=[], requested=[];
+  const owner=kind=>({[Symbol.dispose]() {events.push('drop-'+kind);}});
+  const upload=owner('upload'), body=owner('body'), chunk=owner('chunk');
+  installFetch({
+    async open() {contacts++;return upload;},
+    async finish(value) {assert.equal(value,upload);events.push('consume-upload');return {status:200,headers:[],body};},
+    async read(value, maximum) {
+      assert.equal(value,body);requested.push(maximum);
+      // Same finite capacity refusal as IoTransfer::output_buffer, before polling.
+      if (maximum===0 || maximum>limits.maximumChunkBytes) throw {tag:'invalid-state'};
+      return reads++===0 ? chunk : undefined;
+    },
+    async chunkBytes(value) {assert.equal(value,chunk);return new TextEncoder().encode('{"message":"window"}');},
+  },()=>false);
+  const {api}=await import(pathToFileURL(output+'/main.mjs').href+'?'+label);
+  assert.equal(await api.run(2,'https://fixture.invalid/conformance/json'),'request-ready');
+  assert.equal(contacts,0);
+  const result=await api.run(0,'https://fixture.invalid/conformance/json');
+  assert.equal(result,label==='old' ? '1:diagnostic:fetch:TypeError' : '1:200:{"message":"window"}:used');
+  assert.equal(contacts,1);
+  assert.deepEqual(requested,label==='old' ? [65536] : [65536,65536]);
+  assert.deepEqual(events,label==='old' ? ['consume-upload','drop-body'] : ['consume-upload','drop-chunk','drop-body']);
+}
+"""
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            result = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE),
+                str(fetch.ROOT/'tools/typescript_guest/fetch.mjs'), str(root)],
+                capture_output=True, text=True, timeout=30, check=False)
+            self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+            self.assertEqual(provider['limits'], {'maximumInputBytes': 4096, 'maximumOutputBytes': 8192,
+                'maximumChunkBytes': 65536, 'maximumOutstandingChunks': 2})
+
     def test_real_peer_requires_exact_three_contacts_and_no_denied_contact_or_mutation(self):
         credential = b'Bearer '+b'0'*64
         with closing(Peer(credential, maximum_seconds=10)) as peer:

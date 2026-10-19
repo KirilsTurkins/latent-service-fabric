@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_fetch_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add closed fixture-only Request/fetch/body failure-stage diagnostics after observed signed JSON trap; every diagnostic remains a failing exact-value gate, with no error messages or authority change.",
+  "reviewReason": "Align only the finite signed Fetch runner read window with the existing adapter and provider maximum; preserve all total-body, owner, authority and exact-result gates; add old-mismatch/new-alignment adapter control.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ea6c0aeb56b298d718dc28d4524000471950f9fa685976b5389aef71d6c5afa0"
+  "sha256": "939b30bc4f9af8361740892400aa47f6d8db605bd69829d755daf5b2e312c031"
 }

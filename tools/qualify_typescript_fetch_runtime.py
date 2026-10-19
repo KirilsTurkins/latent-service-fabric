@@ -86,7 +86,7 @@ def configuration(directory, releases, startup, credential):
                 'maximumEncodedResponseBytes': 16384, 'maximumHeaderBytes': 4096,
                 'maximumHeaders': 16, 'maximumRedirects': 0}, 'extraRoots': [], 'publicRoots': False},
         'limits': {'maximumInputBytes': 4096, 'maximumOutputBytes': 8192,
-                   'maximumChunkBytes': 4096, 'maximumOutstandingChunks': 2}}}
+                   'maximumChunkBytes': 65536, 'maximumOutstandingChunks': 2}}}
     providers = value['providers']
     providers['bindings'].append({'name': 'http-standard', 'tenant': 'examples',
         'consumerService': SERVICE, 'providerService': 'http-host', 'contract': HTTP,
