@@ -50,6 +50,10 @@
         }
       },
       {
+        "name": "Validate explicit Rust entropy profiles and captured backend refusals",
+        "run": "python3 -m unittest tools.tests.test_rust_standard_entropy -v"
+      },
+      {
         "name": "Test pinned stdio source and actual PAL host reference",
         "run": "python3 -m unittest tools.tests.test_rust_standard_logging tools.tests.test_rust_standard_logging_campaign\npython3 tools/run_rust_stdio_reference.py --rustc \"$(rustup which rustc)\" --output \"$RUNNER_TEMP/rust-stdio-reference\"\n"
       },
@@ -73,7 +77,7 @@
   },
   "jobId": "standard-stdio",
   "kind": "job",
-  "reviewReason": "Add a separately bounded same-run-products signed standard stdio job; preserve every original job, command, deadline and gate. Rebuild exact owned std and execute captured ordinary transitive-library closed/logging/failure/fresh paths; native results remain pending.",
+  "reviewReason": "Explicit Rust entropy profiles use current authenticated std and getrandom source derivations; preserve default profiles, all prior commands, isolation and executable-input approval.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

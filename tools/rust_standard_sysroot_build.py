@@ -1,4 +1,4 @@
-"""Build an owned clock-only std sysroot from the authenticated upstream closure.
+"""Build an owned selected std sysroot from the authenticated upstream closure.
 
 This explicit infrastructure build never changes an installed compiler, selects
 an application runtime, or establishes thread/default-executor qualification.
@@ -17,6 +17,7 @@ if __package__ in {None, ''}:
 
 from tools import rust_standard_clock_profile as clock
 from tools import rust_standard_logging_profile as stdio
+from tools import rust_standard_entropy_profile as random_profile
 from tools import rust_standard_sysroot_source as source
 from tools.build_observation import build_environment, file_identity
 from tools.captured_compiler_isolation import distribution
@@ -27,6 +28,8 @@ from tools.rust_capsule_project import checked_path, decode_json, digest, fresh,
 ROOT = source.ROOT
 PROFILE = 'lsf-rust-std-clock-built-source-v1'
 LOGGING_PROFILE = 'lsf-rust-std-clock-logging-built-source-v1'
+ENTROPY_PROFILE = 'lsf-rust-std-clock-entropy-built-source-v1'
+LOGGING_ENTROPY_PROFILE = 'lsf-rust-std-clock-logging-entropy-built-source-v1'
 FLAGS = '-Cpanic=abort -Cembed-bitcode=yes -Zforce-unstable-if-unmarked'
 MAX_ARTIFACT_BYTES = 64 * 1024 * 1024
 RECIPE = ('tools/rust_standard_sysroot_build.py', *source.RECIPE,
@@ -80,9 +83,10 @@ def emitted_libraries(data: bytes, target: Path) -> dict[str, dict]:
     return result
 
 
-def build(archive: Path, output: Path, rust_bin: Path, *, logging=False):
+def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy=False):
     require(type(logging) is bool, 'rust-stdio-selection-invalid')
-    profile = LOGGING_PROFILE if logging else PROFILE
+    require(type(entropy) is bool, 'rust-entropy-selection-invalid')
+    profile = (LOGGING_ENTROPY_PROFILE if logging else ENTROPY_PROFILE) if entropy else (LOGGING_PROFILE if logging else PROFILE)
     archive, rust_bin = checked_path(archive), checked_path(rust_bin)
     original, modes = source.library(archive)
     inputs = {n: read_file(ROOT / n) for n in dict.fromkeys(RECIPE)}
@@ -90,6 +94,8 @@ def build(archive: Path, output: Path, rust_bin: Path, *, logging=False):
     selected.update(clock.overlay({n: original[n] for n in clock.ORIGINALS},
                                   inputs['sdk/rust-standard-runtime/clock.rs']))
     selected.update(stdio.selected(original, inputs, logging=logging))
+    if entropy:
+        selected.update(random_profile.overlay({name: original[name] for name in random_profile.ORIGINALS}, inputs))
     output = fresh(output)
     try:
         with tempfile.TemporaryDirectory(prefix='lsf-rust-clock-std-') as directory:
@@ -125,6 +131,7 @@ def build(archive: Path, output: Path, rust_bin: Path, *, logging=False):
                     'rust-sysroot-build-selected-source-mutated')
             value = {'schemaVersion': 'latent.rust.std-built-source.v1', 'profile': profile,
                 'standardStdio': 'typed-log-v1' if logging else 'explicit-unsupported-v1',
+                'standardEntropy': 'typed-random-u64-v1' if entropy else 'original-unsupported-v1',
                 'target': clock.TARGET, 'rust': clock.RUST, 'rustCommit': clock.RUST_COMMIT,
                 'archiveDigest': 'sha256:' + clock.SOURCE_ARCHIVE_SHA256,
                 'originalInputsDigest': digest(inventory(original)), 'selectedInputsDigest': digest(inventory(selected)),
@@ -156,9 +163,10 @@ def main(argv=None):
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--rust-bin', type=Path, required=True)
     parser.add_argument('--logging', action='store_true', help='Explicit typed LOG PAL; no provider or grant is installed')
+    parser.add_argument('--entropy', action='store_true', help='Explicit typed RANDOM PAL; no provider or grant is installed')
     args = parser.parse_args(argv)
     try:
-        value = build(args.source_archive, args.output, args.rust_bin, logging=args.logging)
+        value = build(args.source_archive, args.output, args.rust_bin, logging=args.logging, entropy=args.entropy)
         print(json.dumps({'profile': value['profile'], 'identity': value['identity'],
                           'libraries': len(value['libraries']), 'qualification': value['qualification']}))
         return 0
