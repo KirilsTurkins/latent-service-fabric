@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add ordinary bounded Go standard logging and its captured signed campaign; preserve original APIs, authority, required commands, deadlines and existing tests.",
+  "reviewReason": "Semantic union of existing logging selection and incoming v5 managed ownership, both default-off guards and source hooks retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "baf7b0fd1111211b35301d57fd8a4cc0f6f6deb3dd9b572a15f68b52525a2ca0"
+  "sha256": "5f101670ec9c415de6d1e2f1a6bc00e44a84ddb3608bbb5fc1ab2440a606ed35"
 }

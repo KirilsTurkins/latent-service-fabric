@@ -6,10 +6,13 @@ resolves packages nor authorizes executable inputs on behalf of an application.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import re
 import shutil
+import tomllib
 
+from tools.application_dependency_store import regular_path
 from tools.build_snapshot import canonical, digest
 from tools.phase2_operator_process import require
 from tools.rust_capsule_node import assert_value, call, provider_idle, sample, selected_revision
@@ -123,10 +126,32 @@ def edit(project: Path, outside: Path, value: dict):
             '    }\n    ').encode() + hook)
         (project / 'src/lib.rs').write_bytes(source)
     else:
-        original = ('\n[patch.crates-io]\n' + name + ' = {path = '
-                    + json.dumps((outside / 'patch-0').as_posix()) + '}\n').encode()
-        require(manifest.count(original) == 1, 'matrix-original-patch-required')
-        manifest = manifest.replace(original, patch)
+        # Normal native authoring relocates paths back from its mirror into
+        # relative application paths. Match the owned selection, not Cargo's
+        # original whitespace or the fixture's initial absolute spelling.
+        document = tomllib.loads(manifest.decode('utf-8'))
+        patches = document.get('patch', {})
+        require(isinstance(patches, dict) and set(patches) == {'crates-io'}
+                and isinstance(patches['crates-io'], dict) and set(patches['crates-io']) == {name}
+                and isinstance(patches['crates-io'][name], dict) and set(patches['crates-io'][name]) == {'path'},
+                'matrix-original-patch-required')
+        row = patches['crates-io'][name]
+        require(isinstance(row['path'], str) and 0 < len(row['path']) <= 4096,
+                'matrix-original-patch-required')
+        try:
+            selected = regular_path(project / row['path']).resolve(strict=False)
+            original = regular_path(outside / 'patch-0').resolve(strict=False)
+            updated = regular_path(outside / 'patch-1').resolve(strict=False)
+        except (OSError, ValueError):
+            require(False, 'matrix-original-patch-required')
+        require(selected == original, 'matrix-original-patch-required')
+        tokens = {json.dumps(row['path'], ensure_ascii=escaped).encode() for escaped in (False, True)}
+        require(sum(manifest.count(token) for token in tokens) == 1, 'matrix-original-patch-required')
+        original_token = next(token for token in tokens if token in manifest)
+        row['path'] = os.path.relpath(updated, project).replace('\\', '/')
+        candidate = manifest.replace(original_token, json.dumps(row['path'], ensure_ascii=False).encode())
+        require(tomllib.loads(candidate.decode('utf-8')) == document, 'matrix-original-patch-required')
+        manifest = candidate
     (project / 'Cargo.toml').write_bytes(manifest)
 
 

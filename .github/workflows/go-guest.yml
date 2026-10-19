@@ -30,6 +30,8 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_managed_idle.py
+      - docs/development/go-managed-idle.md
       - tools/tests/test_go_standard_http.py
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
@@ -106,6 +108,8 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_managed_idle.py
+      - docs/development/go-managed-idle.md
       - tools/tests/test_go_standard_http.py
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
@@ -291,6 +295,10 @@ jobs:
         run: |
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-owned-initializers" --runtime-profile go-component-activation-v4 --fixture initializers
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_INITIALIZER_FIXTURE="$RUNNER_TEMP/go-owned-initializers" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation -- --ignored --exact --nocapture
+      - name: Qualify original Go maintenance capacity and physical retirement
+        run: |
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-idle" --runtime-profile go-component-activation-v5 --fixture managed-idle
+          LSF_GUEST_SDK_LANGUAGE=go LSF_GO_MANAGED_IDLE_FIXTURE="$RUNNER_TEMP/go-managed-idle" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::managed_idle::signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain -- --ignored --exact --nocapture
       - name: Test captured Go native graphs and namespace
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation
@@ -467,6 +475,14 @@ jobs:
             ${{ runner.temp }}/go-owned-initializers/build/component.wit
             ${{ runner.temp }}/go-owned-initializers/build/runtime-overlay/
             ${{ runner.temp }}/go-published-runtime/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-managed-idle/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-managed-idle/src/
+            ${{ runner.temp }}/go-managed-idle/wit/
+            ${{ runner.temp }}/go-managed-idle/logs/
+            ${{ runner.temp }}/go-managed-idle/native-reference/
+            ${{ runner.temp }}/go-managed-idle/build/component.wasm
+            ${{ runner.temp }}/go-managed-idle/build/component.wit
+            ${{ runner.temp }}/go-managed-idle/build/runtime-overlay/
             ${{ runner.temp }}/go-published-runtime/application-dependencies.json
             ${{ runner.temp }}/go-published-runtime/compiler-containment.json
             ${{ runner.temp }}/go-published-runtime/go-module-build-inputs.json

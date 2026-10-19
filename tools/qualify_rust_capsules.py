@@ -53,7 +53,7 @@ def inputs(language="rust"):
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "go_guest/standard_log.py", "../.cargo/managed-guest.toml",
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/managed_idle.py", "go_guest/sdk.py", "go_guest/standard_log.py", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
                     "go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")

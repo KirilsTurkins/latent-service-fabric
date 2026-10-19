@@ -46,6 +46,8 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_http_context.py",
           "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_managed_idle.py",
+          "docs/development/go-managed-idle.md",
           "tools/tests/test_go_standard_http.py",
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
@@ -126,6 +128,8 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_http_context.py",
           "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_managed_idle.py",
+          "docs/development/go-managed-idle.md",
           "tools/tests/test_go_standard_http.py",
           "tools/go_standard_http_node.py",
           "tools/go_standard_http_project.py",
@@ -183,7 +187,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Add ordinary bounded Go standard logging and its captured signed campaign; preserve original APIs, authority, required commands, deadlines and existing tests.",
+  "reviewReason": "Preserve all logging and managed-v5 path triggers and original required native workflow.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

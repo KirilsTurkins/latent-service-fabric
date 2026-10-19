@@ -379,5 +379,85 @@ class SignedOrchestration(unittest.TestCase):
                              ('sign-matrix-fixture', products['examples/capsule_authoring'], 'demo-sign'))
 
 
+class NativePatchRelocation(unittest.TestCase):
+    def prepared(self, directory, outside_name='owned originals'):
+        from tools import rust_application_dependencies as native
+        root = Path(directory)
+        project = create(root / 'app', 'greeting')
+        outside = root / outside_name
+        value = matrix.specification('a' * 24, 0, 0)
+        matrix.edit(project, outside, value)
+        manifest = project / 'Cargo.toml'
+        # This is the same maintained relocation function used by native
+        # authoring when it brings Cargo's manifest back from the owned mirror.
+        path = (outside / 'patch-0').resolve(strict=False)
+        raw = native.selected_manifest(manifest.read_bytes(), manifest, manifest, {path: path})
+        manifest.write_bytes(raw)
+        return project, outside, value, raw
+
+    def test_actual_native_relative_path_can_advance_only_the_owned_core_patch(self):
+        import os
+        import tomllib
+        with tempfile.TemporaryDirectory(prefix='matrix native path ') as directory:
+            project, outside, value, raw = self.prepared(directory)
+            before = snapshot(project)
+            expected = tomllib.loads(raw.decode())
+            name = value['packages']['core']
+            self.assertFalse(Path(expected['patch']['crates-io'][name]['path']).is_absolute())
+            matrix.edit(project, outside, matrix.specification(value['nonce'], 0, 1))
+            actual = tomllib.loads((project / 'Cargo.toml').read_text(encoding='utf-8'))
+            expected['patch']['crates-io'][name]['path'] = os.path.relpath(outside / 'patch-1', project).replace('\\', '/')
+            self.assertEqual(actual, expected)
+            self.assertEqual({p for p in before if before[p] != snapshot(project)[p]}, {'Cargo.toml'})
+
+    def test_foreign_relative_patch_refuses_without_changing_source_or_sdk(self):
+        import tomllib
+        with tempfile.TemporaryDirectory() as directory:
+            project, outside, value, raw = self.prepared(directory)
+            selected = tomllib.loads(raw.decode())['patch']['crates-io'][value['packages']['core']]['path']
+            changed = raw.replace(json.dumps(selected).encode(), b'"../foreign/patch-0"')
+            (project / 'Cargo.toml').write_bytes(changed)
+            before = snapshot(project)
+            with self.assertRaisesRegex(WorkflowError, 'matrix-original-patch-required'):
+                matrix.edit(project, outside, matrix.specification(value['nonce'], 0, 1))
+            self.assertEqual(snapshot(project), before)
+
+    def test_native_unicode_relative_path_retains_normal_toml_identity(self):
+        import tomllib
+        with tempfile.TemporaryDirectory(prefix='matrix \u00e4 path ') as directory:
+            project, outside, value, raw = self.prepared(directory, 'owned \u00e4 originals')
+            before = tomllib.loads(raw.decode())
+            name = value['packages']['core']
+            self.assertIn('\u00e4', before['patch']['crates-io'][name]['path'])
+            matrix.edit(project, outside, matrix.specification(value['nonce'], 0, 1))
+            after = tomllib.loads((project / 'Cargo.toml').read_text(encoding='utf-8'))
+            actual = (project / after['patch']['crates-io'][name]['path']).resolve(strict=False)
+            self.assertEqual(actual, (outside / 'patch-1').resolve(strict=False))
+            after['patch']['crates-io'][name]['path'] = before['patch']['crates-io'][name]['path']
+            self.assertEqual(after, before)
+
+    def test_ambiguous_duplicate_string_preimage_refuses_instead_of_rewriting_comments(self):
+        import tomllib
+        with tempfile.TemporaryDirectory() as directory:
+            project, outside, value, raw = self.prepared(directory)
+            selected = tomllib.loads(raw.decode())['patch']['crates-io'][value['packages']['core']]['path']
+            (project / 'Cargo.toml').write_bytes(raw + b'\n# duplicate ' + json.dumps(selected).encode() + b'\n')
+            before = snapshot(project)
+            with self.assertRaisesRegex(WorkflowError, 'matrix-original-patch-required'):
+                matrix.edit(project, outside, matrix.specification(value['nonce'], 0, 1))
+            self.assertEqual(snapshot(project), before)
+
+    def test_extra_patch_fields_or_coordinate_refuse_before_any_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project, outside, value, raw = self.prepared(directory)
+            for changed in (raw + b'\n[patch.crates-io.foreign]\npath="../foreign"\n',
+                            raw.replace(b' = {path = ', b' = {version="1.0.0", path = ')):
+                (project / 'Cargo.toml').write_bytes(changed)
+                before = snapshot(project)
+                with self.subTest(changed=changed[-100:]), self.assertRaisesRegex(WorkflowError, 'matrix-original-patch-required'):
+                    matrix.edit(project, outside, matrix.specification(value['nonce'], 0, 1))
+                self.assertEqual(snapshot(project), before)
+
+
 if __name__ == '__main__':
     unittest.main()
