@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_rust_standard_entropy.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit historical-material Rust entropy diagnostic; production strict prepared-source path unchanged.",
+  "reviewReason": "Explicit historical-material Rust entropy diagnostic; fingerprint exact LF Git blob. Production strict prepared-source path unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "91ed30e52b939da960b1d75024e047563506ea2ffd020a15f9ad2e3b5529a55d"
+  "sha256": "e805b1ebc32c32a78e8a3f2775d5c43cd654a565fff280e6578b965500ede5fe"
 }
