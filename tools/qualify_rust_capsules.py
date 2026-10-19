@@ -65,7 +65,7 @@ def inputs(language="rust"):
                     "typescript_guest/async_waiters.mjs", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "typescript_application_dependencies.py", "captured_compiler_isolation.py",
-                    "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "guest_authoring_frontend.py",
+                    "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "typescript_registry_tls.py", "guest_authoring_frontend.py",
                     "typescript_console_probe.py", "typescript_guest/console_profile.py", "typescript_guest/console.mjs",
                     "typescript_guest/activation_module.mjs")
     elif language == "dotnet":

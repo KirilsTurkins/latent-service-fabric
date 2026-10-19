@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve current development Go logging and Rust stdio flag/recipe identities alongside the independently signed TypeScript console programme; no implementation, budgets or case omissions.",
+  "reviewReason": "Compose development logging and Console with unchanged private npm capture qualification; preserve every existing command.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ae2528334e246f8b2b8230517e8a10d6747da84cf358f70e34bdf6e9c97d16da"
+  "sha256": "60ba45e10f5b875fdee397999a4bf099f524ea5a5ef0c8f40c6132fef0eddf8a"
 }
