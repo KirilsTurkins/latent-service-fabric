@@ -1,0 +1,67 @@
+{
+  "cases": [
+    "SecureEntropyPort.test_actual_native_reference_checks_lengths_bytes_errors_clear_and_separate_noncrypto",
+    "SecureEntropyPort.test_closed_wasi_secure_random_denial_is_preserved",
+    "SecureEntropyPort.test_descriptor_binds_both_exact_pinned_entrypoints_and_public_scalar_abi",
+    "SecureEntropyPort.test_existing_bytes_policy_must_produce_a_typed_denial_before_secure_grant"
+  ],
+  "guards": {
+    "SecureEntropyPort.test_actual_native_reference_checks_lengths_bytes_errors_clear_and_separate_noncrypto": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'actual C reference requires the Linux toolchain')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2b826c68b48bf754df24c413bdf44158216f918f09c564bf1fe06ad3350b8c77",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:6971c52242bebaeae52a47340278141f80d9df8c77f23a97b13d1a07d84a4e2b",
+        "unittest.skipUnless(os.name == 'posix', 'actual C reference requires the Linux toolchain')"
+      ]
+    },
+    "SecureEntropyPort.test_closed_wasi_secure_random_denial_is_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2b826c68b48bf754df24c413bdf44158216f918f09c564bf1fe06ad3350b8c77",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SecureEntropyPort.test_descriptor_binds_both_exact_pinned_entrypoints_and_public_scalar_abi": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2b826c68b48bf754df24c413bdf44158216f918f09c564bf1fe06ad3350b8c77",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SecureEntropyPort.test_existing_bytes_policy_must_produce_a_typed_denial_before_secure_grant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2b826c68b48bf754df24c413bdf44158216f918f09c564bf1fe06ad3350b8c77",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_secure_entropy.py",
+  "reviewReason": "Add compiler-owned pinned secure PAL wrapper using only explicitly declared typed RANDOM scalar authority, preserve hash-seed body and closed WASI denial, retain real link/source identities and qualify ordinary outside BCL APIs, errors and fresh cleanup.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "ManagedEntropyTests.test_both_exact_private_assemblies_are_observed_once",
+    "ManagedEntropyTests.test_changed_derived_algorithm_refuses",
+    "ManagedEntropyTests.test_changed_upstream_bytes_or_descriptor_refuse",
+    "ManagedEntropyTests.test_generated_material_target_or_captured_source_drift_refuses",
+    "ManagedEntropyTests.test_missing_duplicate_or_original_native_reference_refuses",
+    "ManagedEntropyTests.test_pinned_upstream_algorithms_have_only_the_closed_namespace_and_base_derivation",
+    "ManagedEntropyTests.test_rewriter_reference_uses_the_authenticated_captured_support_copy",
+    "ManagedEntropyTests.test_unselected_framework_preimage_refuses"
+  ],
+  "guards": {
+    "ManagedEntropyTests.test_both_exact_private_assemblies_are_observed_once": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_changed_derived_algorithm_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_changed_upstream_bytes_or_descriptor_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_generated_material_target_or_captured_source_drift_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_missing_duplicate_or_original_native_reference_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_pinned_upstream_algorithms_have_only_the_closed_namespace_and_base_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_rewriter_reference_uses_the_authenticated_captured_support_copy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_unselected_framework_preimage_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_managed_entropy.py",
+  "reviewReason": "Add captured namespace Cecil regression; reviewed two standard-library imports changing only module setup hash. Preserve prior seven cases, setUp, bases, decorators and skips.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
