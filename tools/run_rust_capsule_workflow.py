@@ -149,6 +149,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import admission as entropy_admission
                         entropy_admission(client, fixture, targets, publications, result)
+                        from tools.go_standard_entropy_probe import buffer_authority
+                        buffer_authority(client, fixture, targets, publications, result)
                     if c_standard_facilities:
                         from tools.c_standard_facilities_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)

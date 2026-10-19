@@ -31,6 +31,36 @@ def admission(client, fixture, targets, publications, result):
         'additionalProviderBindings': 0, 'policyChanged': False}
 
 
+def buffer_authority(client, fixture, targets, publications, result):
+    """An explicit greeting-only policy; ordinary runtime policies stay intact."""
+    from tools.phase2_operator_process import write_json
+    from tools.rust_capsule_node import deploy
+    target = targets['greeting']
+    original = target['grants']
+    require(len(original) == 3 and {row['capability'] for row in original} == CLOCKS | {RANDOM}
+            and [row for row in original if row['capability'] == RANDOM] ==
+                [{'capability': RANDOM, 'policy': 'random-allow'}], 'go-entropy-original-random-policy')
+    ceiling = {'operations': 4096, 'inputBytes': 32768, 'outputBytes': 32768, 'wallTimeMillis': 5000}
+    policy = client.directory / 'go-entropy-buffer-policy.json'
+    document = {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
+        'id': 'ordinary-buffer', 'effect': 'allow',
+        'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
+        'services': [target['service']], 'publications': [publications['greeting']],
+        'capability': RANDOM, 'operations': ['u64-value'], 'resources': {'kind': 'random'},
+        'ceiling': ceiling}]}
+    write_json(policy, document)
+    client.call('policy', 'apply', '--id', 'go-entropy-buffer-allow', '--file', policy,
+                '--operation-id', 'go-entropy-buffer-authority', '--expected-generation', '0')
+    selected = [dict(row, policy='go-entropy-buffer-allow') if row['capability'] == RANDOM else row
+                for row in original]
+    targets['greeting'] = deploy(client, fixture / 'my-greeting/deployment.json', publications['greeting'],
+        generation=str(target['generation']), grants=selected)
+    result['goStandardEntropyBufferAuthority'] = {'policy': document, 'originalGrants': original,
+        'selectedGrants': selected, 'originalAggregateRandomInputBytes': 8,
+        'inputBytesPerU64Draw': 8, 'genericRuntimePolicyChanged': False,
+        'additionalProviderBindings': 0, 'providerAndActivationLimitsChanged': False}
+
+
 def probe(client, target, accounting, result, population):
     from tools.rust_capsule_node import assert_value, call, provider_idle, sample
     rows, recovery = [], []

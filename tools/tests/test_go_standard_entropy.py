@@ -157,6 +157,38 @@ class StandardEntropy(unittest.TestCase):
                         go_standard_entropy=flag, captured_dependency_recovery=recovery)
                 self.assertFalse(output.exists())
 
+
+    def test_explicit_buffer_authority_is_greeting_only_and_preserves_other_bounds_and_policies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            client = SimpleNamespace(directory=directory, call=Mock())
+            original = [{'capability': name, 'policy': 'random-allow' if name == probe.RANDOM else 'clock-allow'}
+                        for name in sorted(probe.CLOCKS | {probe.RANDOM})]
+            target = {'generation': '6', 'service': 'examples/my-greeting', 'grants': original}
+            companion = {'service': 'examples/my-shipping', 'grants': copy.deepcopy(original)}
+            targets = {'greeting': target, 'shipping': companion}; result = {}
+            before = (qualification.ROOT / 'tools/guest_runtime_grants.py').read_bytes()
+            with patch('tools.rust_capsule_node.deploy', return_value={'generation': '7'}) as deployed:
+                probe.buffer_authority(client, directory, targets, {'greeting': 'exact-publication'}, result)
+            selected = json.loads((directory / 'go-entropy-buffer-policy.json').read_bytes())['rules'][0]
+            self.assertEqual(selected['ceiling'], {'operations': 4096, 'inputBytes': 32768,
+                'outputBytes': 32768, 'wallTimeMillis': 5000})
+            self.assertEqual(selected['services'], ['examples/my-greeting'])
+            self.assertEqual(selected['publications'], ['exact-publication'])
+            self.assertEqual(selected['operations'], ['u64-value'])
+            self.assertEqual(selected['resources'], {'kind': 'random'})
+            grants = deployed.call_args.kwargs['grants']
+            self.assertEqual([row for row in grants if row['capability'] != probe.RANDOM],
+                             [row for row in original if row['capability'] != probe.RANDOM])
+            self.assertEqual([row for row in grants if row['capability'] == probe.RANDOM],
+                             [{'capability': probe.RANDOM, 'policy': 'go-entropy-buffer-allow'}])
+            self.assertEqual(targets['shipping'], companion)
+            self.assertEqual(target['grants'], original)
+            self.assertEqual((qualification.ROOT / 'tools/guest_runtime_grants.py').read_bytes(), before)
+            self.assertIn(b'"inputBytes": 8 if kind == "random" else 0', before)
+            self.assertFalse(result['goStandardEntropyBufferAuthority']['genericRuntimePolicyChanged'])
+            self.assertEqual(client.call.call_args.args[-2:], ('--expected-generation', '0'))
+
     def test_unmodified_standard_apis_have_no_reader_injection_or_recorded_entropy_payload(self):
         for spelling in ('rand.Read(', 'io.ReadFull(rand.Reader,', 'rand.Text()', 'syscall.RandomGet('):
             self.assertIn(spelling, fixture.LIBRARY)

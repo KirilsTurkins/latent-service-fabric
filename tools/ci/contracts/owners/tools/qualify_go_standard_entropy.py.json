@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_standard_entropy.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add an ordinary crypto/rand and syscall.RandomGet captured-library signed campaign using exact current qualified products, preserving all original Go gates and limits; native result remains pending.",
+  "reviewReason": "Greeting-only explicit entropy input authority matches existing u64 operation accounting; generic baseline, provider and activation limits remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ebaadb40b02032a05e0d6f7b3b43d658f4e1ca40b2d74895ceae34f57c98044f"
+  "sha256": "5b027cf7856bcbe51a106df4aaecd0cfc9465ba2e9ab16b872fcc56e2b647ad6"
 }

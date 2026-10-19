@@ -58,3 +58,5 @@ component results are pending. Concurrent Reader use, cancellation callbacks,
 fresh cross-tenant execution, strict transactional facility behavior and the
 remaining six-language resource/clock/entropy matrix remain separate #681/#736
 requirements. This adds no scratch or filesystem support.
+
+The first exact-source hosted run (`39295191090`, source `42a2dadf`) passed baseline and one-byte `crypto/rand.Read`, then the 257-byte read trapped with no effects. The normal runtime policy has only eight aggregate input bytes; each `u64-value` draw charges eight input bytes, so that policy does not authorize a second draw. The side campaign now explicitly creates a greeting-only random policy with 4,096 operations, 32,768 input bytes, 32,768 output bytes and the unchanged 5,000ms policy wall ceiling. It selects only that publication/service and retains both original clock grants. Generic runtime policies, provider limits, activation caps and the missing-RANDOM denials stay unchanged. This corrected authority still needs a new actual signed result; the original failed run is not passing entropy evidence.

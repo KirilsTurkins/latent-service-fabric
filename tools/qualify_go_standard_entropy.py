@@ -81,7 +81,7 @@ def qualify(output: Path, native_qualification: Path):
         'fullTicketQualification': False, 'publisherAuthenticated': False, 'releasePublished': False,
         'randomPayloadRetained': False, 'fipsCertification': False,
         'limits': {'componentOverallSeconds': 900, 'nodeOverallSeconds': 900,
-                   'randomPolicyOperations': 4096, 'randomPolicyOutputBytes': 32768}}
+                   'randomPolicyOperations': 4096, 'randomPolicyInputBytes': 32768, 'randomPolicyOutputBytes': 32768}}
     stage = 'prepared-products'
     try:
         binaries, companions, inherited = prepared(native_qualification)
