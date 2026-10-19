@@ -75,7 +75,7 @@ prost = "=0.14.4"
 redb = "=4.3.0"
 protoc-bin-vendored = "=3.2.0"
 serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = { version = "=1.0.151", features = ["raw_value"] }
+serde_json = { version = "=1.0.154", features = ["raw_value"] }
 sha2 = "=0.11.0"
 hyper-util = { version = "=0.1.21", features = ["tokio"] }
 http-body = "=1.1.0"
