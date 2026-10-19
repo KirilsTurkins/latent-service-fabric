@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "MemberFence.test_fixed_member_extractor_does_not_accept_links_or_oversized_data",
+    "MemberFence.test_range_reader_refuses_an_unbounded_read_without_network",
+    "SourceFence.test_actual_source_bytes_and_only_configure_or_tutorial_fixture_changes_are_allowed",
+    "SourceFence.test_changed_added_removed_production_inputs_refuse_before_any_execution",
+    "SourceFence.test_fixed_member_names_reject_aliases_parent_escape_and_windows_paths",
+    "SourceFence.test_link_source_archive_refuses_without_extracting_a_target"
+  ],
+  "guards": {
+    "MemberFence.test_fixed_member_extractor_does_not_accept_links_or_oversized_data": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "MemberFence.test_range_reader_refuses_an_unbounded_read_without_network": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceFence.test_actual_source_bytes_and_only_configure_or_tutorial_fixture_changes_are_allowed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:1a0ccd30a149f4d8edaca73d7bd8c3c86c9aa3e6a194722971df1a9e3833993f"
+      ],
+      "skipSites": []
+    },
+    "SourceFence.test_changed_added_removed_production_inputs_refuse_before_any_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:1a0ccd30a149f4d8edaca73d7bd8c3c86c9aa3e6a194722971df1a9e3833993f"
+      ],
+      "skipSites": []
+    },
+    "SourceFence.test_fixed_member_names_reject_aliases_parent_escape_and_windows_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:1a0ccd30a149f4d8edaca73d7bd8c3c86c9aa3e6a194722971df1a9e3833993f"
+      ],
+      "skipSites": []
+    },
+    "SourceFence.test_link_source_archive_refuses_without_extracting_a_target": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01de38a97fee0883b51ef47927e6ebbdcd10c221c75c0d44aafde560b014640d",
+        "class:setup-sha256:1a0ccd30a149f4d8edaca73d7bd8c3c86c9aa3e6a194722971df1a9e3833993f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_logging_replay.py",
+  "reviewReason": "Explicit default-off bounded exact-source diagnostic; preserve all original normal Go steps and limits; no fabricated normal qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

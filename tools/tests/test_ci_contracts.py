@@ -865,6 +865,11 @@ class RepositoryMigrationTests(unittest.TestCase):
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
+            if value["workflow"] == ".github/workflows/go-guest.yml" and value["job"] == "upstream-probe":
+                # Only explicit manual replay bypasses the unchanged full job.
+                # Preserve every original command and other execution field.
+                self.assertEqual(value["jobIf"], "success()", key)
+                value["jobIf"] = "${{ !inputs.fast_logging_replay }}"
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.

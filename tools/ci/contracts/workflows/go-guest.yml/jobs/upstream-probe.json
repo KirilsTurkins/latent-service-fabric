@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ !inputs.fast_logging_replay }}",
     "name": "Go runtime and complete capsule qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -210,7 +211,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Add ordinary bounded Go standard logging and its captured signed campaign; preserve original APIs, authority, required commands, deadlines and existing tests.",
+  "reviewReason": "Explicit default-off bounded exact-source diagnostic; preserve all original normal Go steps and limits; no fabricated normal qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

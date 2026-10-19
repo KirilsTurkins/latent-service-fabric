@@ -153,6 +153,11 @@ on:
       - tools/toolchain.toml
       - .github/workflows/go-guest.yml
   workflow_dispatch:
+    inputs:
+      fast_logging_replay:
+        description: Reuse one exact-source retained native set; build only current logging greeting
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -174,6 +179,7 @@ env:
 
 jobs:
   upstream-probe:
+    if: ${{ !inputs.fast_logging_replay }}
     name: Go runtime and complete capsule qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -199,6 +205,7 @@ jobs:
             ${{ runner.temp }}/go-guest-source.sha
           if-no-files-found: error
           retention-days: 7
+
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
@@ -526,3 +533,52 @@ jobs:
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn
           retention-days: 7
+
+  fast-logging-replay:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.fast_logging_replay }}
+    name: Exact-source Go logging diagnostic replay
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Check fixed source and archive refusal controls
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_go_logging_replay
+      - name: Prepare existing compiler namespace without installing a compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Replay the normal baseline then build only current logging
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/replay_go_standard_logging.py --output "$RUNNER_TEMP/go-logging-replay"
+      - name: Retain bounded replay observations without signing keys or raw streams
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-logging-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-logging-replay/replay.json
+            ${{ runner.temp }}/go-logging-replay/FAILED.json
+            ${{ runner.temp }}/go-logging-replay/original/logging-FAILED.json
+            ${{ runner.temp }}/go-logging-replay/original/logging-node-FAILED.json
+            ${{ runner.temp }}/go-logging-replay/original/native/qualification.json
+            ${{ runner.temp }}/go-logging-replay/normal-node/workflow.json
+            ${{ runner.temp }}/go-logging-replay/normal-node/FAILED.json
+            ${{ runner.temp }}/go-logging-replay/logging-build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/go-logging-replay/logging-build/BUILD-FAILED.json
+            ${{ runner.temp }}/go-logging-replay/logging-build/build-observation.json
+            ${{ runner.temp }}/go-logging-replay/logging-node/workflow.json
+            ${{ runner.temp }}/go-logging-replay/logging-node/FAILED.json
+          if-no-files-found: warn
+          retention-days: 3

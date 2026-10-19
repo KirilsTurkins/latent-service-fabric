@@ -174,16 +174,25 @@
           ".github/workflows/go-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "fast_logging_replay": {
+            "default": false,
+            "description": "Reuse one exact-source retained native set; build only current logging greeting",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "fast-logging-replay",
     "upstream-probe"
   ],
-  "reviewReason": "Add ordinary bounded Go standard logging and its captured signed campaign; preserve original APIs, authority, required commands, deadlines and existing tests.",
+  "reviewReason": "Explicit default-off bounded exact-source diagnostic; preserve all original normal Go steps and limits; no fabricated normal qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
