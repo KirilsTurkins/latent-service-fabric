@@ -256,6 +256,10 @@ jobs:
             ${{ runner.temp }}/dotnet-private-dependencies/FAILED.json
             ${{ runner.temp }}/dotnet-private-dependencies/capture.json
             ${{ runner.temp }}/dotnet-private-dependencies/build-*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/source-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/build-observation.json
+            ${{ runner.temp }}/dotnet-private-dependencies/build-*/compiler-containment.json
             ${{ runner.temp }}/dotnet-private-dependencies/offline-rebuild/BUILD-COMPLETE.json
             ${{ runner.temp }}/dotnet-private-dependencies/node-*/workflow.json
             ${{ runner.temp }}/dotnet-private-dependencies/node-*/FAILED.json

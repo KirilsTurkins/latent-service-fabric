@@ -153,7 +153,16 @@ def capture(root, tools, commands):
     nonce = secrets.token_hex(12)
     main, child = ('outside.private.' + nonce + '.' + role for role in ('main', 'leaf'))
     token, wrong = 'fixture-' + secrets.token_hex(24), 'incorrect-' + secrets.token_hex(24)
-    controls, phases = [], []
+    controls, phases, identities = [], [], []
+    def observe(lock, phase):
+        native = read_json(app / 'nuget-resolved.lock.json', dependencies.MAX_LOCK)
+        identities.append({'phase': phase, 'acceptedLockDigest': digest(read_file(app / dependencies.LOCK)),
+            'nativeLockDigest': digest(read_file(app / 'packages.lock.json')),
+            'nativeGraphDigest': digest(read_file(app / 'nuget-resolved.lock.json')),
+            'selection': lock['selection'], 'publicTrust': native['fetchPolicy'].get('tlsTrust'),
+            'packages': [{'id': row['id'], 'original': row['original'], 'treeDigest': row['treeDigest'],
+                          'dependencies': row['dependencies']} for row in lock['artifacts']],
+            'executableInputs': lock['executableInputs']})
     with tempfile.TemporaryDirectory(prefix='lsf-private-nuget-peer-') as temporary:
         owned = Path(temporary)
         payloads = libraries(owned, app, tools, nonce)
@@ -203,6 +212,7 @@ def capture(root, tools, commands):
                                  'peerRequests': len(observed), 'acceptedLockPreserved': True})
             controls.extend(integrity_controls(app, lock))
             phases.append((preserved(app, root / 'initial-project', lock, confidential), lock, VERSIONS[0], False))
+            observe(lock, 'initial')
             # An explicit native editor changes declarations; stale accepted
             # material must refuse until a new exact candidate is reviewed.
             for phase, version in (('updated', VERSIONS[1]), ('removed', VERSIONS[1])):
@@ -223,15 +233,18 @@ def capture(root, tools, commands):
                     require(not lock['artifacts'] and not lock['executableInputs'], 'private-NuGet-removal-retained-package')
                 original = accepted(app)
                 phases.append((preserved(app, root / (phase + '-project'), lock, confidential), lock, version, phase == 'removed'))
+                observe(lock, phase)
             observations = list(feed.observations)
             require(any(row['authorized'] and row['asset'] == 'package' and row['status'] == 200
                         for row in observations), 'private-NuGet-no-authenticated-package')
+            require(all(secret not in canonical(identities + controls + observations) for secret in confidential),
+                    'private-NuGet-public-identity-secret')
         compiler.check_unchanged()
         require(read_file(app / 'sdk-lock.json') == sdk, 'private-NuGet-sdk-lock-changed')
         # All original archives/libraries and the private TLS key disappear
         # when this owned temporary peer scope exits, before any app build.
     return phases, {'status': 'passed', 'nonce': nonce, 'packages': [main, child],
-        'versions': list(VERSIONS), 'controls': controls, 'requests': observations,
+        'versions': list(VERSIONS), 'phases': identities, 'controls': controls, 'requests': observations,
         'peerPhysicallyReaped': True, 'originalPackagesUnavailableBeforeBuild': True,
         'credentialsCaptured': False, 'privateKeyCaptured': False, 'sdkLockDigest': digest(sdk)}
 
