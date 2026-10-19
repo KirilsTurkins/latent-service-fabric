@@ -240,6 +240,13 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
             covered.update(cargo_paths)
             records.append(record)
             continue
+        if entry["kind"] == "bounded-rustls":
+            from tools.security_tls_provider import inventory_record
+            origin, record = inventory_record(repo, entry, paths)
+            packages.append(Package("crates.io", origin["name"], origin["version"], path))
+            covered.update({path, entry["lock"]})
+            records.append(record)
+            continue
         if entry["kind"] == "npm":
             current = npm_packages(repo, entry)
             covered.add(entry["lock"])

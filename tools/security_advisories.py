@@ -75,7 +75,8 @@ def audit_lock(payload: bytes, path: str, binary: Path, database: Path, identity
 
 
 def rustsec(repo: Path, scratch: Path, tools: Path) -> tuple[list[Finding], dict]:
-    paths = sorted(path for path in tracked_paths(repo) if Path(path).name == "Cargo.lock")
+    tracked = tracked_paths(repo)
+    paths = sorted(path for path in tracked if Path(path).name == "Cargo.lock")
     require("Cargo.lock" in paths and 0 < len(paths) <= 32, "missing-or-excessive-rust-lockfiles")
     binary = verify_tool("cargo-audit", tools)
     database, identity = fetch_rustsec(scratch)
@@ -84,6 +85,13 @@ def rustsec(repo: Path, scratch: Path, tools: Path) -> tuple[list[Finding], dict
         current, record = audit_lock(read_file(repo, path), path, binary, database, identity, scratch)
         findings.extend(current)
         locks.append({"path": path, **record})
+    from tools.security_tls_provider import MANIFEST, advisory_lock, origin
+    checked = origin(repo, tracked)
+    if checked is not None:
+        current, record = audit_lock(advisory_lock(checked), MANIFEST, binary, database, identity, scratch)
+        findings.extend(current)
+        locks.append({"path": MANIFEST, "coverage": "authenticated-upstream-advisory-coordinate",
+                      "notBuildLock": True, "origin": checked, **record})
     return findings, {"database": identity, "locks": locks}
 
 
