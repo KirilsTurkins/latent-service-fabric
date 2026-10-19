@@ -166,6 +166,31 @@ class FetchFailureFrames(unittest.TestCase):
                 fetch.private_build_command(root, overlays[:2], {}, {}, {})
             self.assertEqual(build.call_count, 1)
 
+    def test_missing_target_uses_fresh_private_storage_without_relaxing_offline_build(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root/'output'
+            output.mkdir()
+            existing = root/'cached-target'
+            existing.mkdir()
+            marker = existing/'cached-input'
+            marker.write_bytes(b'unchanged')
+            self.assertEqual(fetch.private_target(root, output, {'CARGO_TARGET_DIR': str(existing)}),
+                             (existing.resolve(), 'existing-target'))
+            self.assertEqual(marker.read_bytes(), b'unchanged')
+            target, source = fetch.private_target(root, output, {})
+            self.assertEqual(target, output/'private-target')
+            self.assertEqual(source, 'fresh-private-target')
+            self.assertTrue(target.is_dir())
+            self.assertEqual(list(target.iterdir()), [])
+            with self.assertRaises((WorkflowError, FileExistsError, ValueError)):
+                fetch.private_target(root, output, {})
+            original = read_file(fetch.ROOT/'tools/diagnose_go_entry_frames.py').decode()
+            self.assertIn("'build', '--offline', '--locked'", original)
+            helper = read_file(Path(fetch.__file__)).decode()
+            self.assertIn('min(450, deadline-time.monotonic())', helper)
+            self.assertIn('deadline = time.monotonic()+600', helper)
+
     def test_manual_observer_has_no_gate_substitution_and_downloads_only_the_authenticated_run(self):
         workflow = yaml.safe_load(read_file(fetch.ROOT/'.github/workflows/typescript-guest.yml'))
         jobs = workflow['jobs']

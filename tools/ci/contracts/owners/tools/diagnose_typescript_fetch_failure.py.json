@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain only closed private observer guard reason and existing-target boolean; preserve absent-cache hold, no raw exception or fallback build.",
+  "reviewReason": "Permit a fresh owned private target after observed absent native outputs; preserve offline locked build, exact replay, source overlays and 450/600-second bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1d711a61dc215dbf55a66ba343e282a25b447efa13399ee0cab2cfcfc773ad16"
+  "sha256": "b35400198b34995aa511b98372f879817d74e0d6866c3a9b54091883c8779081"
 }

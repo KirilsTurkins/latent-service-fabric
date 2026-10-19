@@ -2,6 +2,7 @@
   "cases": [
     "FetchFailureFrames.test_changed_component_or_forged_manifest_is_refused_before_restore_or_packager",
     "FetchFailureFrames.test_manual_observer_has_no_gate_substitution_and_downloads_only_the_authenticated_run",
+    "FetchFailureFrames.test_missing_target_uses_fresh_private_storage_without_relaxing_offline_build",
     "FetchFailureFrames.test_only_fully_authenticated_materials_are_restored_and_rechecked",
     "FetchFailureFrames.test_private_build_adds_only_the_third_readonly_overlay_to_reviewed_boundary",
     "FetchFailureFrames.test_private_replay_keeps_original_failed_json_vector_and_never_exports_stderr",
@@ -23,6 +24,18 @@
       "skipSites": []
     },
     "FetchFailureFrames.test_manual_observer_has_no_gate_substitution_and_downloads_only_the_authenticated_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a25abf43763c5d6ae351b604cea05f41292abded889ab02c6cf6f2e4940e58d9",
+        "class:setup-sha256:59c0ada5c7f6405e086a0c397c5f95eb7a3ac4d40fca7c264894a729af92b417"
+      ],
+      "skipSites": []
+    },
+    "FetchFailureFrames.test_missing_target_uses_fresh_private_storage_without_relaxing_offline_build": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -109,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_fetch_frames.py",
-  "reviewReason": "Private failure-only replay of exact aea signed component and original bounds; fixed host registration kind/code plus seven bounded counts, no raw guest text or qualification credit.",
+  "reviewReason": "Permit a fresh owned private target after observed absent native outputs; preserve offline locked build, exact replay, source overlays and 450/600-second bounds.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

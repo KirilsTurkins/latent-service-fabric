@@ -229,6 +229,19 @@ def replay(artifact: Path, binaries: dict, output: Path) -> dict:
     return record
 
 
+def private_target(root: Path, output: Path, environment: dict) -> tuple[Path, str]:
+    """Use cached outputs when present, otherwise build only in fresh private storage.
+
+    Registry inputs must already be cached: the unchanged command remains
+    offline/locked and the same 450-second build and 600-second overall limits
+    apply. A cache miss grants neither network acquisition nor passing credit.
+    """
+    target = Path(environment.get('CARGO_TARGET_DIR', str(root/'target'))).resolve()
+    if target.is_dir():
+        return target, 'existing-target'
+    return fresh(output/'private-target'), 'fresh-private-target'
+
+
 def diagnose(attempt: Path, native: Path, output: Path) -> dict:
     output = fresh(output)
     deadline = time.monotonic()+600
@@ -258,9 +271,9 @@ def diagnose(attempt: Path, native: Path, output: Path) -> dict:
         record['sourceOverlays'] = sources
         record['stage'] = 'private-build'
         environment = build_environment(output)
-        target = Path(os.environ.get('CARGO_TARGET_DIR', str(ROOT/'target'))).resolve()
-        record['existingNativeTarget'] = target.is_dir()
-        require(target.is_dir(), 'fetch-frame-existing-native-target')
+        target, target_source = private_target(ROOT, output, os.environ)
+        record['existingNativeTarget'] = target_source == 'existing-target'
+        record['nativeTargetSource'] = target_source
         environment.update(CARGO_TARGET_DIR=str(target), CARGO_INCREMENTAL='0', CARGO_PROFILE_DEV_DEBUG='0',
             CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
             CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true', CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
