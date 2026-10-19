@@ -29,12 +29,12 @@ impl cli::stdin::Guest for ClosedRuntime {
 }
 impl cli::stdout::Guest for ClosedRuntime {
     fn get_stdout() -> io::streams::OutputStream {
-        io::streams::OutputStream::new(ClosedOutput::closed())
+        io::streams::OutputStream::new(ClosedOutput::stdout())
     }
 }
 impl cli::stderr::Guest for ClosedRuntime {
     fn get_stderr() -> io::streams::OutputStream {
-        io::streams::OutputStream::new(ClosedOutput::closed())
+        io::streams::OutputStream::new(ClosedOutput::stderr())
     }
 }
 impl cli::terminal_input::Guest for ClosedRuntime {

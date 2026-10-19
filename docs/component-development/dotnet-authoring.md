@@ -22,6 +22,9 @@ Current source also binds the verified resource selection to ordinary
 [Packaged resources](packaged-resources.md) describes the focused signed evidence;
 broader .NET library/runtime and installed distribution qualification stays
 separate from those controls.
+The [ordinary Console source profile](dotnet-standard-console.md) separately
+requires explicit log authority and actual emitted stdout/stderr imports; its
+new signed NativeAOT campaign remains pending.
 Run from the checkout after installing the pinned .NET and Rust SDKs:
 
 ```sh

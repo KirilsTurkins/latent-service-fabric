@@ -112,7 +112,7 @@ A package name alone cannot make an unobserved file a trusted resource.
 | Language | Compile-time data path | Standard runtime lookup qualification |
 | --- | --- | --- |
 | Rust | Captured data selected by `include_bytes!` / `include_str!` | No general runtime filesystem lookup advertised |
-| C | Captured constant data; explicit [C23 `#embed`](c-compiled-resources.md) and declared dependency resource objects | No runtime filesystem lookup advertised; new C23 signed campaign pending |
+| C | Captured constant data; explicit [C23 `#embed`](c-compiled-resources.md) and declared dependency resource objects | Signed C23 exact bytes/aliases/empty/missing and trap/fuel fresh-state controls; no runtime filesystem lookup |
 | TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
 | Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
 | Java | Captured selected classpath resource bytes | Selected `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` signed-node cases; broader lookup APIs pending |
