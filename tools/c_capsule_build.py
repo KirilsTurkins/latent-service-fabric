@@ -204,8 +204,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "source": {"repository": repository, "revision": digest(source_inputs)[7:], "snapshotDigest": digest(source_inputs),
                            "repositoryTrust": "operator-asserted", "capture": "explicit-input-files"},
                 "componentDigest": digest(component), "componentSize": len(component), "materials": sorted(materials, key=lambda row: row["name"]),
-                "parameters": {"compiler": "zig-cc", "fixture": "application", "target": "wasm32-wasi", "optimization": "O2",
-                               "languageStandard": language_standard},
+                "parameters": {"compiler": "zig-cc", "fixture": "application", "target": "wasm32-wasi", "optimization": "O2"},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
             guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)

@@ -219,6 +219,33 @@ class CompiledResources(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'failure-shape'): observe(reaped=False)
         with self.assertRaisesRegex(RuntimeError, 'original-fuel-bound'): observe(fuel=9_999_999)
 
+    def test_emitted_c_parameters_match_the_closed_signer_schema_for_both_standards(self):
+        import ast
+        import inspect
+        from jsonschema import Draft202012Validator, ValidationError
+        from tools import c_capsule_build
+        tree = ast.parse(inspect.getsource(c_capsule_build.build))
+        observations = [node.args[1] for node in ast.walk(tree) if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name) and node.func.id == 'write_json' and node.args
+            and isinstance(node.args[0], ast.BinOp) and isinstance(node.args[0].right, ast.Constant)
+            and node.args[0].right.value == 'build-observation.json']
+        self.assertEqual(len(observations), 1)
+        fields = {key.value: value for key, value in zip(observations[0].keys, observations[0].values)}
+        schema = json.loads((project.ROOT / 'schemas/build-observation.schema.json').read_bytes())
+        c_schema = next(row['then']['properties']['parameters'] for row in schema['allOf']
+            if row['if']['properties']['buildType']['const'] == c_capsule_build.BUILD_TYPE)
+        validator = Draft202012Validator(c_schema)
+        for standard in ('c11', 'c23'):
+            # Read the actual producer's wire-map without executing compiler code.
+            parameters = {key.value: standard if isinstance(value, ast.Name) and value.id == 'language_standard'
+                          else ast.literal_eval(value) for key, value in zip(fields['parameters'].keys, fields['parameters'].values)}
+            validator.validate(parameters)
+            with self.assertRaises(ValidationError):
+                validator.validate({**parameters, 'languageStandard': standard})
+        config = [node for node in ast.walk(tree) if isinstance(node, ast.keyword) and node.arg == 'configuration']
+        self.assertEqual(len(config), 1)
+        self.assertIn('languageStandard', [key.value for key in config[0].value.keys])
+
     def test_compiled_resource_execution_flag_cannot_enable_another_language_or_facility_profile(self):
         from tools.run_rust_capsule_workflow import run
         for language_name, flag, others in (('java', True, {}), ('c', 1, {}), ('c', True, {'c_standard_combined': True})):
