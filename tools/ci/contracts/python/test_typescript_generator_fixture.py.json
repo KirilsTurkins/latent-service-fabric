@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "ActualGeneratedSource.test_actual_generator_cannot_read_live_parent_listener_canaries_and_is_captured_offline",
+    "GeneratedTypeScriptFixture.test_changed_template_stops_before_any_generator_request",
+    "GeneratedTypeScriptFixture.test_generator_program_is_valid_and_uses_only_selected_inputs_for_outputs",
+    "GeneratedTypeScriptFixture.test_real_cli_exact_request_negatives_adoption_and_offline_validation",
+    "SignedGeneratedResults.test_exact_generated_utf16_dependent_values_and_identity_are_observed_with_normal_idle",
+    "SignedGeneratedResults.test_malformed_or_unknown_selection_refuses_before_any_node_call",
+    "SignedGeneratedResults.test_new_runner_selector_is_default_off_strict_boolean_and_typescript_only_before_effects",
+    "SignedGeneratedResults.test_qualification_requires_explicit_c_or_typescript_captured_selection_before_dispatch",
+    "SignedGeneratedResults.test_stale_route_unreaped_or_effectful_results_refuse",
+    "SignedGeneratedResults.test_wrong_values_or_byte_counts_cannot_replace_generated_string_lengths"
+  ],
+  "guards": {
+    "ActualGeneratedSource.test_actual_generator_cannot_read_live_parent_listener_canaries_and_is_captured_offline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:bcfc401140e9057c74cc78acdbaf8cdd9be2928bd5c80fd4ab134dad9670b3da"
+      ],
+      "skipSites": []
+    },
+    "GeneratedTypeScriptFixture.test_changed_template_stops_before_any_generator_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GeneratedTypeScriptFixture.test_generator_program_is_valid_and_uses_only_selected_inputs_for_outputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GeneratedTypeScriptFixture.test_real_cli_exact_request_negatives_adoption_and_offline_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_exact_generated_utf16_dependent_values_and_identity_are_observed_with_normal_idle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:d013cf5fbd2a39e2ee915e9c47a289ae4283b74b7f19e4aae0c0b465cde0f1cc"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_malformed_or_unknown_selection_refuses_before_any_node_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:d013cf5fbd2a39e2ee915e9c47a289ae4283b74b7f19e4aae0c0b465cde0f1cc"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_new_runner_selector_is_default_off_strict_boolean_and_typescript_only_before_effects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:d013cf5fbd2a39e2ee915e9c47a289ae4283b74b7f19e4aae0c0b465cde0f1cc"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_qualification_requires_explicit_c_or_typescript_captured_selection_before_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:d013cf5fbd2a39e2ee915e9c47a289ae4283b74b7f19e4aae0c0b465cde0f1cc"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_stale_route_unreaped_or_effectful_results_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:d013cf5fbd2a39e2ee915e9c47a289ae4283b74b7f19e4aae0c0b465cde0f1cc"
+      ],
+      "skipSites": []
+    },
+    "SignedGeneratedResults.test_wrong_values_or_byte_counts_cannot_replace_generated_string_lengths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4f88593df7bf478c211ee1edf9515e4f02068b65cd6243e7fe3c2c08923035a",
+        "class:setup-sha256:d013cf5fbd2a39e2ee915e9c47a289ae4283b74b7f19e4aae0c0b465cde0f1cc"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_generator_fixture.py",
+  "reviewReason": "Explicit TypeScript generator qualification preserves the original normal programme and limits, adds exact source approval and signed request-dependent values; existing C generator acceptance remains required.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
