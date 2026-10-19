@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "DependencyRefusalEvidence.test_all_five_fixed_cases_have_distinct_reachable_original_package_inputs",
+    "DependencyRefusalEvidence.test_closed_evidence_distinguishes_bundle_from_actual_snapshot_refusals",
+    "DependencyRefusalEvidence.test_compiler_advance_or_malformed_nonfinite_timing_cannot_masquerade_as_early_refusal",
+    "DependencyRefusalEvidence.test_failed_observer_never_replaces_the_original_qualification_error",
+    "DependencyRefusalEvidence.test_generic_error_missing_marker_or_wrong_build_stage_cannot_qualify",
+    "DependencyRefusalEvidence.test_normal_native_authoring_commands_precede_owned_original_removal",
+    "DependencyRefusalEvidence.test_original_template_hook_cannot_silently_disappear_before_capture",
+    "DependencyRefusalEvidence.test_private_streams_paths_and_exception_messages_are_not_projected",
+    "DependencyRefusalEvidence.test_success_or_partial_publication_is_not_a_negative_even_with_the_expected_message",
+    "DependencyRefusalEvidence.test_unknown_case_and_non_linux_execution_refuse_before_workspace_creation"
+  ],
+  "guards": {
+    "DependencyRefusalEvidence.test_all_five_fixed_cases_have_distinct_reachable_original_package_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_closed_evidence_distinguishes_bundle_from_actual_snapshot_refusals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_compiler_advance_or_malformed_nonfinite_timing_cannot_masquerade_as_early_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_failed_observer_never_replaces_the_original_qualification_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_generic_error_missing_marker_or_wrong_build_stage_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_normal_native_authoring_commands_precede_owned_original_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_original_template_hook_cannot_silently_disappear_before_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_private_streams_paths_and_exception_messages_are_not_projected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_success_or_partial_publication_is_not_a_negative_even_with_the_expected_message": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    },
+    "DependencyRefusalEvidence.test_unknown_case_and_non_linux_execution_refuse_before_workspace_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7445b98de711ce8186b6e33bdd0def91da332b2dff43d01c2a36ead8b69eeec",
+        "class:setup-sha256:8c7a1e9c616bc8b3457cd2ae328ad68b198fa570d886fe888f6fb9ae15e35ba9"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_dependency_refusals.py",
+  "reviewReason": "Add ten bounded compiler-refusal evidence controls without changing prior cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
