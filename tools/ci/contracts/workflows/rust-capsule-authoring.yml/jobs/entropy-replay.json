@@ -71,7 +71,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "rust-entropy-focused-${{ github.sha }}",
-          "path": "${{ runner.temp }}/rust-entropy-prepared/retrieval.json\n${{ runner.temp }}/rust-entropy-prepared/host/host-retrieval.json\n${{ runner.temp }}/rust-standard-entropy/replay-materials.json\n${{ runner.temp }}/rust-standard-entropy/qualification.json\n${{ runner.temp }}/rust-standard-entropy/FAILED.json\n${{ runner.temp }}/rust-standard-entropy/capture.json\n${{ runner.temp }}/rust-standard-entropy/logs/**\n${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json\n${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**\n${{ runner.temp }}/rust-standard-entropy/approval-required/*.json\n${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/*.json\n${{ runner.temp }}/rust-standard-entropy/build/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/component.wasm\n${{ runner.temp }}/rust-standard-entropy/node/workflow.json\n${{ runner.temp }}/rust-standard-entropy/node/FAILED.json\n",
+          "path": "${{ runner.temp }}/rust-entropy-prepared/retrieval.json\n${{ runner.temp }}/rust-entropy-prepared/host/host-retrieval.json\n${{ runner.temp }}/rust-standard-entropy/replay-materials.json\n${{ runner.temp }}/rust-standard-entropy/qualification.json\n${{ runner.temp }}/rust-standard-entropy/FAILED.json\n${{ runner.temp }}/rust-standard-entropy/capture.json\n${{ runner.temp }}/rust-standard-entropy/outside/executable-inputs.json\n${{ runner.temp }}/rust-standard-entropy/logs/**\n${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json\n${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**\n${{ runner.temp }}/rust-standard-entropy/approval-required/*.json\n${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/*.json\n${{ runner.temp }}/rust-standard-entropy/build/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/component.wasm\n${{ runner.temp }}/rust-standard-entropy/node/workflow.json\n${{ runner.temp }}/rust-standard-entropy/node/FAILED.json\n",
           "retention-days": 3
         }
       }
@@ -80,7 +80,7 @@
   },
   "jobId": "entropy-replay",
   "kind": "job",
-  "reviewReason": "Explicit manual-only entropy replay; retain every ordinary command, budget, guard and producer dependency.",
+  "reviewReason": "Retain the entire normal captured executable closure, including compiler transitive build scripts and macros, for failed and passing focused runs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
