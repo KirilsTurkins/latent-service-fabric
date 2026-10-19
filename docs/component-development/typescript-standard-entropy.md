@@ -17,7 +17,7 @@ that job's authenticated current native five products and three unchanged
 companions, compiling only a selected greeting and an unselected word-count.
 The normal27 calls remain, followed by one before-guest RANDOM denial and six
 strict outcomes: undeclared Unsupported, one draw,33 sequential draws,256 range
-and high53-bit checks, original65536-byte provider exhaustion, and fresh state.
+and high53-bit checks, typed BudgetExhausted under an explicit zero-input per-operation policy ceiling, and fresh state.
 All34 outcomes require physical process retirement and clean node shutdown;
 additional idle/provider snapshots follow every entropy case. No random
 payload is exported. A local transitive source module exercises the standard
@@ -29,3 +29,5 @@ retain their old lifetime and limits. The actual Go native15 case passed at
 `1cde96d92c`; the TypeScript owning job also selects all15 rather than assuming
 source equality establishes its component campaign. Local source/Node/codec
 controls and pending signed qualification are separate evidence.
+
+The original signed run [39319524998](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39319524998) passed native15 and the one/33/256-draw cases, but its 8193-draw aggregate-exhaustion attempt reached the original 1,000,000,000 fuel ceiling first. This failed result remains historical evidence; it does not qualify aggregate exhaustion. The corrected programme keeps the compiled guest unchanged, selects a separate zero-input per-operation policy for the budget case, and explicitly redeploys with the original eight-byte policy before the fresh call. The provider aggregate stays65,536 bytes, all original activation budgets stay unchanged, and no aggregate-exhaustion pass is claimed. Actual corrected signed execution remains pending.

@@ -863,14 +863,14 @@ class RepositoryMigrationTests(unittest.TestCase):
                 'cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"',
                 'sha256sum "$out/componentize-go" "$out/wasm-tools"'],
         }
-        # The two explicit private manual modes run only their diagnostic lane.
+        # The explicit private/replay manual modes run only their bounded lane.
         # Normal PR/push runs have no enabled input and retain this required job.
         # Review only this exact job-level guard change; all command bytes,
         # step guards, timeouts, environments and historical obligations below
         # remain independently equal to the immutable original floor.
-        reviewed_typescript_observer_guard = "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}"
+        reviewed_typescript_observer_guard = "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}"
         inputs = data["workflowContracts"][".github/workflows/typescript-guest.yml"]["on"]["workflow_dispatch"]["inputs"]
-        for name in ("observe-failed-fetch", "observe-fetch-boundaries"):
+        for name in ("observe-failed-fetch", "observe-fetch-boundaries", "replay-entropy-policy"):
             self.assertEqual(inputs[name]["type"], "boolean")
             self.assertIs(inputs[name]["default"], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")

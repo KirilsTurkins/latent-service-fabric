@@ -79,6 +79,31 @@ class EntropyCampaign(unittest.TestCase):
             self.assertEqual(policy['services'], ['examples/my-greeting'])
             self.assertEqual(policy['ceiling'], {'operations': 4096, 'inputBytes': 8, 'outputBytes': 8, 'wallTimeMillis': 5000})
 
+    def test_policy_ceiling_is_separate_zero_input_authority_and_leaves_normal_provider_limits_unchanged(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            client = SimpleNamespace(directory=Path(temporary), call=lambda *a, **k: None)
+            descriptor = {'id': 'ts-entropy', 'capability': probe.RANDOM, 'profile': 'system-random-v1',
+                          'tenant': 'examples', 'service': 'entropy-host', 'configurationDigest': 'sha256:'+'a'*64}
+            node = SimpleNamespace(startup_record={'providers': [descriptor]})
+            target = {'service': 'examples/my-greeting', 'generation': '1', 'grants': [{'capability': 'existing', 'policy': 'kept'}]}
+            targets = {'greeting': target};result = {'invocations': [], 'providerIdle': []}
+            denied = {'exitCode': 4, 'processReaped': True, 'response': {'outcomeKnown': True,
+                'error': {'code': 'permission-denied'}, 'data': {'terminalState': 'rejected',
+                'consumption': {'cpuFuel': '0', 'peakMemoryBytes': '0'}}}}
+            with patch('tools.rust_capsule_node.call', return_value=denied), \
+                    patch('tools.rust_capsule_node.provider_idle', return_value={}), \
+                    patch('tools.rust_capsule_node.deploy', return_value=target):
+                probe.grant(client, node, Path('fixture'), targets, {'greeting': 'published'}, result)
+            normal = json.loads((client.directory/'entropy-policy.json').read_bytes())
+            ceiling = json.loads((client.directory/'entropy-policy-ceiling.json').read_bytes())
+            self.assertEqual(ceiling['rules'][0]['ceiling']['inputBytes'], 0)
+            ceiling['rules'][0]['ceiling']['inputBytes'] = 8
+            self.assertEqual(ceiling, normal)
+            settings = {'providers': {'bindings': []}}
+            probe.configure(settings)
+            self.assertEqual(set(settings['providers']['random']), {'identity'})
+            self.assertIn('index < 8193', probe.LIBRARY)  # Original compiled guest stays byte-identical.
+
     def test_real_programme_requires_all_six_values_original_budgets_and_retirement_samples(self):
         def invocation(client, target, template, function, arguments, label):
             mode = arguments[0].split(':')[1]
@@ -88,16 +113,25 @@ class EntropyCampaign(unittest.TestCase):
                     'outboundRequests': 0, 'childCalls': 0, 'logBytes': '0', 'effectCount': 0}}}}
         def expected(client, row, value): self.assertEqual(row['decoded'], value)
         result = {'invocations': [], 'samples': [], 'providerIdle': []}
-        target = {'budget': {'cpuFuel': 100, 'memoryBytes': 4096}}
+        target = {'budget': {'cpuFuel': 100, 'memoryBytes': 4096}, 'generation': '1',
+                  'grants': [{'capability': 'existing', 'policy': 'kept'},
+                             {'capability': probe.RANDOM, 'policy': 'typescript-entropy'}]}
         with patch('tools.rust_capsule_node.call', side_effect=invocation), \
                 patch('tools.rust_capsule_node.assert_value', side_effect=expected), \
                 patch('tools.rust_capsule_node.provider_idle', return_value={}), \
-                patch('tools.rust_capsule_node.sample', return_value={}) as sampled:
-            probe.probe(None, {'greeting': target, 'word-count': target}, None, result, 5)
+                patch('tools.rust_capsule_node.sample', return_value={}) as sampled, \
+                patch('tools.rust_capsule_node.deploy', side_effect=lambda *a, **k: {**target, 'grants': k['grants']}) as deployed:
+            probe.probe(None, {'greeting': target, 'word-count': target}, None, result, 5, Path('fixture'), {'greeting': 'published'})
         self.assertEqual([row['case'] for row in result['typescriptStandardEntropy']['cases']], ['undeclared', *probe.CASES])
         self.assertEqual(len(result['invocations']), 6)
         self.assertEqual(sampled.call_count, 6)
         self.assertFalse(result['typescriptStandardEntropy']['cryptographicAPI'])
+        self.assertEqual(deployed.call_count, 2)
+        self.assertEqual(deployed.call_args_list[0].kwargs['grants'], [target['grants'][0],
+            {'capability': probe.RANDOM, 'policy': 'typescript-entropy-policy-ceiling'}])
+        self.assertEqual(deployed.call_args_list[1].kwargs['grants'], target['grants'])
+        self.assertFalse(result['typescriptStandardEntropy']['providerAggregateExhaustionQualified'])
+        self.assertEqual([row['randomInputBytesPerCall'] for row in result['typescriptStandardEntropy']['policyTransitions']], [0, 8])
 
     def test_selector_refuses_other_languages_aliases_and_competing_programmes_before_output(self):
         from tools.run_rust_capsule_workflow import run

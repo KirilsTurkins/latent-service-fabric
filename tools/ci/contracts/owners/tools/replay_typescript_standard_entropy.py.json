@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_typescript_standard_entropy.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed exact current application byte guards in addition to original components, public package layers and scalar/backend identities.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "04ea141c3d075af80e9890c5cc8c08e55c5d1fb3e0d22a73b0e43ae0bc7451e5"
+}

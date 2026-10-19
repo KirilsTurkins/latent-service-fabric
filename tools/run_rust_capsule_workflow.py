@@ -260,7 +260,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))
                     if standard_typescript_entropy:
                         from tools.typescript_entropy_probe import probe as probe_typescript_entropy
-                        probe_typescript_entropy(client, targets, probe, result, len(names))
+                        probe_typescript_entropy(client, targets, probe, result, len(names), fixture, publications)
                     if approved_typescript_generator:
                         from tools.typescript_generator_fixture import probe as generator_probe
                         generator_probe(client, targets['greeting'], probe, result, len(names),

@@ -2,6 +2,7 @@
   "cases": [
     "EntropyCampaign.test_authority_preserves_existing_grants_and_restricts_real_installed_random_to_scalar_calls",
     "EntropyCampaign.test_configuration_has_one_explicit_greeting_binding_and_does_not_replace_existing_providers",
+    "EntropyCampaign.test_policy_ceiling_is_separate_zero_input_authority_and_leaves_normal_provider_limits_unchanged",
     "EntropyCampaign.test_real_programme_requires_all_six_values_original_budgets_and_retirement_samples",
     "EntropyCampaign.test_selected_greeting_preserves_original_body_and_installs_only_the_exact_random_declaration",
     "EntropyCampaign.test_selector_refuses_other_languages_aliases_and_competing_programmes_before_output",
@@ -21,6 +22,18 @@
       "skipSites": []
     },
     "EntropyCampaign.test_configuration_has_one_explicit_greeting_binding_and_does_not_replace_existing_providers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fb54ad636a202961861fd45bae2c32135d4322440647a5a5b3c30d4747113016",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EntropyCampaign.test_policy_ceiling_is_separate_zero_input_authority_and_leaves_normal_provider_limits_unchanged": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -83,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_entropy_campaign.py",
-  "reviewReason": "Review explicit exact-RANDOM Math.random lowering and concrete undeclared/snapshot refusal; additive actual34-outcome same-products programme and original native15 controls, original75min/allrequired commands unchanged.",
+  "reviewReason": "Add zero-input per-operation policy admission regression; all original cases and execution guards retained.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

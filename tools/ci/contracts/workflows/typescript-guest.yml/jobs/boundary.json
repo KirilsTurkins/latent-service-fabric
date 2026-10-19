@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}",
+    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}",
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -184,7 +184,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Review additive Fetch39-path and approved-entropy union; retain both parent commands, exact authority/profile validation, native freezing, limits and all historical obligations.",
+  "reviewReason": "Reviewed default-false fixed-artifact replay; original full jobs/commands/budgets remain mandatory for normal PR/push and ordinary dispatch.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

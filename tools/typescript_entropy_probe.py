@@ -113,15 +113,34 @@ def grant(client, node, fixture, targets, publications, result):
         'ceiling': {'operations': 4096, 'inputBytes': 8, 'outputBytes': 8, 'wallTimeMillis': 5000}}]})
     client.call('policy', 'apply', '--id', 'typescript-entropy', '--file', policy,
         '--operation-id', 'grant-typescript-entropy', '--expected-generation', '0')
+    # Policy ceilings are per operation, independently of the unchanged 65536-byte provider aggregate.
+    ceiling = json.loads(read_file(policy))
+    ceiling['rules'][0]['ceiling']['inputBytes'] = 0
+    ceiling_path = client.directory/'entropy-policy-ceiling.json'
+    write_json(ceiling_path, ceiling)
+    client.call('policy', 'apply', '--id', 'typescript-entropy-policy-ceiling', '--file', ceiling_path,
+        '--operation-id', 'grant-typescript-entropy-policy-ceiling', '--expected-generation', '0')
     targets['greeting'] = deploy(client, fixture/'my-greeting/deployment.json', publications['greeting'],
         generation=str(target['generation']), grants=[*target['grants'], {'capability': RANDOM, 'policy': 'typescript-entropy'}])
     result['typescriptEntropyDenial'] = denied
 
 
-def probe(client, targets, accounting, result, population):
-    from tools.rust_capsule_node import assert_value, call, provider_idle, sample
-    rows = []
+def probe(client, targets, accounting, result, population, fixture, publications):
+    from tools.rust_capsule_node import assert_value, call, deploy, provider_idle, sample
+    original = targets['greeting']['grants']
+    require([row for row in original if row['capability'] == RANDOM] ==
+            [{'capability': RANDOM, 'policy': 'typescript-entropy'}], 'typescript-entropy-original-policy')
+    rows, authority = [], []
     for mode in ('undeclared', *CASES):
+        if mode in {'budget', 'fresh'}:
+            grants = [{**row, 'policy': 'typescript-entropy-policy-ceiling'} if row['capability'] == RANDOM
+                      else row for row in original] if mode == 'budget' else original
+            target = targets['greeting']
+            targets['greeting'] = deploy(client, fixture/'my-greeting/deployment.json', publications['greeting'],
+                generation=str(target['generation']), grants=grants)
+            authority.append({'case': 'policy-ceiling' if mode == 'budget' else 'fresh',
+                'randomInputBytesPerCall': 0 if mode == 'budget' else 8,
+                'generation': targets['greeting']['generation'], 'grants': grants})
         template, function = ('word-count', 'count') if mode == 'undeclared' else ('greeting', 'greet')
         target = targets[template]
         row = call(client, target, template, function, ['entropy:'+mode], 'ts-entropy-'+mode)
@@ -138,4 +157,6 @@ def probe(client, targets, accounting, result, population):
         rows.append({'case': mode, 'decoded': row['decoded'], 'activation': row['activation']})
     result['typescriptStandardEntropy'] = {'status': 'passed', 'cases': rows,
         'cryptographicAPI': False, 'statisticalQualityTest': False, 'randomPayloadRetained': False,
-        'publishedLibraryQualification': False, 'providerAggregateBytesUnchanged': 65536}
+        'publishedLibraryQualification': False, 'providerAggregateBytesUnchanged': 65536,
+        'providerAggregateExhaustionQualified': False, 'budgetCase': 'zero-input-per-operation-policy-ceiling',
+        'policyTransitions': authority, 'originalPolicyRestoredBeforeFresh': True}

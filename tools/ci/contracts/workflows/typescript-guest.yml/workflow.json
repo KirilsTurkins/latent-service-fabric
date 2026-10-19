@@ -165,6 +165,11 @@
             "default": false,
             "description": "Compile only new boundary probes using authenticated d412 SDK products",
             "type": "boolean"
+          },
+          "replay-entropy-policy": {
+            "default": false,
+            "description": "Re-sign unchanged02f components and qualify the explicit zero-input policy ceiling",
+            "type": "boolean"
           }
         }
       }
@@ -175,6 +180,7 @@
   },
   "requiredJobs": [
     "boundary",
+    "entropy-policy-replay",
     "fetch-boundaries",
     "fetch-component",
     "fetch-failure-frames",
@@ -182,7 +188,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Review additive Fetch39-path and approved-entropy union; retain both parent commands, exact authority/profile validation, native freezing, limits and all historical obligations.",
+  "reviewReason": "Reviewed default-false signed entropy policy replay with fixed historical products; original ordinary job requirements retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

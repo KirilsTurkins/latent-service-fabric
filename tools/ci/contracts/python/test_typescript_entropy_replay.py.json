@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "EntropyReplay.test_actual_package_layers_require_exact_membership_and_digest",
+    "EntropyReplay.test_fixed_selection_keeps_only_public_products_and_rejects_private_or_foreign_members",
+    "EntropyReplay.test_historical_qualification_is_pinned_before_native_execution",
+    "EntropyReplay.test_package_paths_fail_closed_before_reading_an_external_file"
+  ],
+  "guards": {
+    "EntropyReplay.test_actual_package_layers_require_exact_membership_and_digest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cdd118194241c189589640fe7a1be8998dd20ceade9b5c6a9b346236081398",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EntropyReplay.test_fixed_selection_keeps_only_public_products_and_rejects_private_or_foreign_members": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cdd118194241c189589640fe7a1be8998dd20ceade9b5c6a9b346236081398",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EntropyReplay.test_historical_qualification_is_pinned_before_native_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cdd118194241c189589640fe7a1be8998dd20ceade9b5c6a9b346236081398",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EntropyReplay.test_package_paths_fail_closed_before_reading_an_external_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cdd118194241c189589640fe7a1be8998dd20ceade9b5c6a9b346236081398",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_entropy_replay.py",
+  "reviewReason": "New fixed artifact controls and exact manual selector assertion; all historical cases/decorators/skips retained.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
