@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_candidate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Privately select immutable idle-only candidate c08 with exact original compiler and two changed adapter sources, leaving experimental fusion unselected; full native/source guards and finite original signed gate retained.",
+  "reviewReason": "Select immutable combined idle Task entry and exact carrier await fusion, with unchanged native tuple, source restoration, finite ordinary signed gate and separate private observation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "38d5787688f674c7e43263d1e3cea3cbdea431c655a2231eeec1784c5aa59b82"
+  "sha256": "d70d14f67471eca2e8ad2c6aaf2bfa5debfe0ef47a20797ab9c0e86115cdd0f0"
 }
