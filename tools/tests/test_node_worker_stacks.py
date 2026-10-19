@@ -64,6 +64,20 @@ class NodeWorkerStackReference(unittest.TestCase):
         with self.assertRaises(ValueError):
             reference.measurements(new.replace(str(reference.STACK - 4096).encode(), str(reference.AMBIENT).encode()), old=False)
 
+    def test_same_target_executable_alias_and_later_overwrite_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            old, new = Path(temporary) / "old", Path(temporary) / "new"
+            old.write_bytes(b"original ambient source executable")
+            new.write_bytes(b"bounded production source executable")
+            paths = {"old": old, "new": new}
+            identities = {label: reference.digest(path, 4096) for label, path in paths.items()}
+            reference.verify_executables(paths, identities)
+            with self.assertRaisesRegex(ValueError, "alias"):
+                reference.verify_executables({"old": new, "new": new}, identities)
+            old.write_bytes(new.read_bytes())
+            with self.assertRaisesRegex(ValueError, "changed"):
+                reference.verify_executables(paths, identities)
+
     def test_unsupported_platform_refuses_before_output_or_native_process(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "not-created"

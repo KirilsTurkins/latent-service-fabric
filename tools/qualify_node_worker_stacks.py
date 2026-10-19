@@ -104,6 +104,16 @@ def measurements(raw: bytes, *, old: bool) -> list[dict]:
     return result
 
 
+def verify_executables(executables: dict[str, Path], identities: dict[str, str]) -> None:
+    if set(executables) != {"old", "new"} or set(identities) != set(executables):
+        raise ValueError("stack-reference-executable-set")
+    if len({binary.resolve(strict=True) for binary in executables.values()}) != 2:
+        raise ValueError("stack-reference-executable-alias")
+    for label, binary in executables.items():
+        if digest(binary, 256 * 1024 * 1024) != identities[label]:
+            raise ValueError("stack-reference-executable-changed")
+
+
 def qualify(root: Path, output: Path, revision: str) -> dict:
     environment = {**os.environ, "RUST_MIN_STACK": str(AMBIENT), "CARGO_BUILD_JOBS": "2", "CARGO_INCREMENTAL": "0"}
     artifacts.require_source(root, revision, environment)
@@ -116,8 +126,6 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     if not re.fullmatch(r"[A-Za-z0-9_.+-]{1,128}", kernel):
         raise ValueError("stack-reference-kernel-label")
     output = fresh(output)
-    target = output / "target"
-    environment["CARGO_TARGET_DIR"] = str(target)
 
     def command(args: list[str], label: str, timeout: int, maximum: int):
         try:
@@ -135,10 +143,13 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     compiler = command(["rustc", "--version"], "compiler", 30, 4096).output.decode().strip()
     if not compiler.startswith("rustc 1.97.1 "):
         raise ValueError("stack-reference-compiler")
-    executables, copied = {}, {}
+    executables, copied, executable_identities = {}, {}, {}
     descriptor = artifacts.Suite("Cargo.toml", "node_worker_stack_reference", "src/lib.rs", "", CASES, False)
     for label, selected in (("old", old), ("new", source)):
         project = output / label
+        # Same-name Cargo packages can reuse an executable path in one target.
+        target = output / (label + "-target")
+        environment["CARGO_TARGET_DIR"] = str(target)
         (project / "src/worker_stacks").mkdir(parents=True)
         (project / "Cargo.toml").write_bytes(MANIFEST)
         (project / "Cargo.lock").write_bytes(lock)
@@ -155,15 +166,21 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
         if (project / "Cargo.lock").read_bytes() != lock:
             raise ValueError("stack-reference-lock-changed")
         executables[label] = executable.executable
-    old_run = command([str(executables["old"]), ACTUAL, "--exact", "--show-output", "--test-threads=1"], "old-run", 30, 1024 * 1024)
+        executable_identities[label] = digest(executable.executable, 256 * 1024 * 1024)
+
+    def checked_executable(label: str) -> str:
+        verify_executables(executables, executable_identities)
+        return str(executables[label])
+
+    old_run = command([checked_executable("old"), ACTUAL, "--exact", "--show-output", "--test-threads=1"], "old-run", 30, 1024 * 1024)
     if old_run.returncode != 101 or b"1 failed" not in old_run.output:
         raise ValueError("stack-reference-original-not-red")
     old_mappings = measurements(old_run.output, old=True)
-    listed = command([str(executables["new"]), "--list"], "new-list", 30, 65536)
-    ignored = command([str(executables["new"]), "--ignored", "--list"], "new-ignored", 30, 65536)
+    listed = command([checked_executable("new"), "--list"], "new-list", 30, 65536)
+    ignored = command([checked_executable("new"), "--ignored", "--list"], "new-ignored", 30, 65536)
     if listed.returncode or ignored.returncode or discovery.listing(listed.output) != CASES or discovery.listing(ignored.output):
         raise ValueError("stack-reference-case-inventory")
-    new_run = command([str(executables["new"]), "--show-output", "--test-threads=1"], "new-run", 30, 1024 * 1024)
+    new_run = command([checked_executable("new"), "--show-output", "--test-threads=1"], "new-run", 30, 1024 * 1024)
     if new_run.returncode != 0:
         raise ValueError("stack-reference-new-failed")
     cases = evidence(new_run.output, set(CASES))
@@ -174,6 +191,7 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     after = {name: hashlib.sha256(read(root, name)).hexdigest() for name in INPUTS}
     if before != after:
         raise ValueError("stack-reference-source-changed")
+    verify_executables(executables, executable_identities)
     receipt = {"schemaVersion": "lsf.node-worker-stack-reference.v1", "sourceRevision": revision,
                "compiler": compiler, "kernelRelease": kernel,
                "sourceBefore": before, "sourceAfter": after,
@@ -182,7 +200,7 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
                "ambientMinimumStackBytes": AMBIENT, "oldSemanticDerivation": "remove-only-explicit-thread-stack-size",
                "oldExitCode": old_run.returncode, "oldMappings": old_mappings,
                "newExitCode": new_run.returncode, "newMappings": observed, "cases": cases, "ignored": [],
-               "testExecutableSha256": {label: digest(binary, 256 * 1024 * 1024) for label, binary in executables.items()},
+               "separateCargoTargets": True, "testExecutableSha256": executable_identities,
                "fullNodeQualified": False, "fullTlsAccountingQualified": False, "kernelAccountingQualified": False}
     (output / "receipt.json").write_bytes((json.dumps(receipt, indent=2) + "\n").encode())
     return receipt
