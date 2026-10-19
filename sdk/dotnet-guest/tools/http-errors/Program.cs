@@ -82,6 +82,7 @@ internal static class Program
                 syncRead["requestContentHeaders"] = JsonSerializer.SerializeToNode(HttpRequestContentHeaders.Apply(module, original));
                 syncRead["synchronousSend"] = JsonSerializer.SerializeToNode(HttpSyncSend.Apply(module));
                 syncRead["defaultHandlerSynchronousSend"] = JsonSerializer.SerializeToNode(HttpDefaultSyncSend.Apply(module));
+                syncRead["asynchronousPreCancellation"] = JsonSerializer.SerializeToNode(HttpAsyncPreCancellation.Apply(module, original));
             }
 
             // Keep the payload access in its declaring type. Only these finite
@@ -616,6 +617,73 @@ internal static class HttpSyncSend
 // The outer default handler has its own authenticated WASI unsupported throw.
 // Delegate to its unchanged async method so the original lazy Handler chain,
 // validation, telemetry and request/cancellation identity remain authoritative.
+// Returning the original CoreLib cancelled Task keeps the asynchronous contract
+// without entering the WASI state machine or constructing outgoing resources.
+internal static class HttpAsyncPreCancellation
+{
+    private const string CoreLib = "System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e";
+    private const string Method = "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.WasiHttpHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)";
+    private const string OriginalIlDigest = "7b7f39644060fdb94e9dc4d970fd4b7239b5a6a629d2986aceea862463ee692b";
+    private static void Require(bool condition)
+    {
+        if (!condition) throw new InvalidDataException("http-async-pre-cancellation-preimage-or-shape");
+    }
+
+    internal static object Apply(ModuleDefinition module, string originalPath)
+    {
+        var handler = module.Types.Single(type => type.FullName == "System.Net.Http.WasiHttpHandler");
+        var method = handler.Methods.Single(candidate => candidate.FullName == Method);
+        Require(handler.IsSealed && method.IsFamilyOrAssembly && method.IsVirtual && !method.IsStatic &&
+            method.HasBody && method.Parameters.Count == 2 && method.Body.Instructions.Count == 20 &&
+            method.Body.Variables.Count == 1 && method.Body.ExceptionHandlers.Count == 0);
+        using (var input = File.OpenRead(originalPath))
+        using (var pe = new PEReader(input))
+        {
+            var code = System.Reflection.Metadata.PEReaderExtensions.GetMethodBody(pe, checked((int)method.RVA)).GetILBytes();
+            Require(code is not null && code.Length == 63 &&
+                Convert.ToHexString(SHA256.HashData(code)).ToLowerInvariant() == OriginalIlDigest);
+        }
+        var references = module.GetMemberReferences().OfType<MethodReference>().ToArray();
+        var cancelled = references.Single(candidate => candidate.FullName ==
+            "System.Boolean System.Threading.CancellationToken::get_IsCancellationRequested()");
+        var fromCancelled = references.Single(candidate => candidate.FullName ==
+            "System.Threading.Tasks.Task`1<!!0> System.Threading.Tasks.Task::FromCanceled(System.Threading.CancellationToken)");
+        Require(cancelled.HasThis && cancelled.Parameters.Count == 0 && cancelled.DeclaringType.IsValueType &&
+            cancelled.DeclaringType.Scope is AssemblyNameReference tokenScope && tokenScope.FullName == CoreLib &&
+            method.Parameters[1].ParameterType.FullName == cancelled.DeclaringType.FullName &&
+            method.Parameters[1].ParameterType.Scope is AssemblyNameReference parameterScope && parameterScope.FullName == CoreLib &&
+            !fromCancelled.HasThis && fromCancelled.GenericParameters.Count == 1 && fromCancelled.Parameters.Count == 1 &&
+            fromCancelled.Parameters[0].ParameterType.FullName == cancelled.DeclaringType.FullName &&
+            fromCancelled.DeclaringType.Scope is AssemblyNameReference taskScope && taskScope.FullName == CoreLib &&
+            fromCancelled.ReturnType is GenericInstanceType returned && returned.ElementType.FullName == "System.Threading.Tasks.Task`1" &&
+            returned.GenericArguments.Count == 1 && returned.GenericArguments[0] is GenericParameter {
+                Position: 0, Type: GenericParameterType.Method });
+        var closed = new GenericInstanceMethod(fromCancelled);
+        closed.GenericArguments.Add(module.Types.Single(type => type.FullName == "System.Net.Http.HttpResponseMessage"));
+        var original = module.GetTypes().SelectMany(type => type.Methods)
+            .ToDictionary(candidate => candidate, candidate => TaskWait.BodyIdentity(candidate));
+        var il = method.Body.GetILProcessor();
+        var begin = method.Body.Instructions[0];
+        var prefix = new[] {
+            il.Create(OpCodes.Ldarga, method.Parameters[1]), il.Create(OpCodes.Call, cancelled),
+            il.Create(OpCodes.Brfalse, begin), il.Create(OpCodes.Ldarg_2),
+            il.Create(OpCodes.Call, closed), il.Create(OpCodes.Ret),
+        };
+        foreach (var instruction in prefix) il.InsertBefore(begin, instruction);
+        Require(TaskWait.BodyIdentity(method, prefix.Length) == original[method] &&
+            original.Where(item => item.Key != method).All(item => TaskWait.BodyIdentity(item.Key) == item.Value));
+        return new {
+            profile = "dotnet-wasi-async-pre-cancellation-v1", method = Method,
+            originalIlBytes = 63, originalIlDigest = "sha256:" + OriginalIlDigest,
+            cancellationCheck = "original-CoreLib-CancellationToken.IsCancellationRequested",
+            cancelledResult = "original-CoreLib-Task.FromCanceled<HttpResponseMessage>",
+            uncancelled = "complete-original-method-body", originalAsyncStateMachine = "unchanged",
+            modifiedOriginalMethods = 1, generatedHelpers = 0, newHostImports = 0,
+            preCancelledGuestIoQualified = false, pendingGuestIoQualified = false,
+        };
+    }
+}
+
 internal static class HttpDefaultSyncSend
 {
     private const string Handler = "System.Net.Http.HttpClientHandler";

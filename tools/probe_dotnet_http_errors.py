@@ -124,6 +124,31 @@ def probe(tools: Path, output: Path) -> dict:
         raise ValueError("http-default-sync-send-original-negative-control-accepted")
     default_send["originalAsDerivedRejected"] = True
 
+    async_cancelled = json.loads(commands.run("actual-bcl-async-pre-cancellation", dotnet,
+        output / "probe/HttpErrorsProbe.dll", "--async-pre-cancellation", original, sync_derived,
+        output / "actual-bcl-async-pre-cancellation.json"))
+    if (async_cancelled["assertions"] != 17
+            or async_cancelled["originalDigest"] != http_errors.SOURCE_DIGEST
+            or async_cancelled["derivedDigest"] != digest(read_file(sync_derived, http_errors.MAX_ASSEMBLY))
+            or any(async_cancelled[key] is not True for key in (
+                "originalEntersAsyncBodyDespitePreCancellation", "preCancelledTaskPreservesOriginalToken",
+                "outerNullValidationPreserved", "uncancelledFaultsPreserved"))
+            or any(async_cancelled[key] is not False for key in (
+                "preCancelledGuestIoQualified", "pendingGuestIoQualified", "defaultClientComponentQualified"))):
+        raise ValueError("http-async-pre-cancellation-probe-assertions")
+    count = len(commands.records)
+    async_original_control = output / "original-async-pre-cancellation.json"
+    try:
+        commands.run("original-async-pre-cancellation-rejected", dotnet, output / "probe/HttpErrorsProbe.dll",
+            "--async-pre-cancellation", original, original, async_original_control)
+    except ValueError:
+        if (len(commands.records) != count + 1 or commands.records[-1]["exitCode"] != 1
+                or async_original_control.exists()):
+            raise
+    else:
+        raise ValueError("http-async-pre-cancellation-original-negative-control-accepted")
+    async_cancelled["originalAsDerivedRejected"] = True
+
     def rejected(stage, input_path, output_path, receipt_path, *mode):
         count = len(commands.records)
         try:
@@ -167,6 +192,7 @@ def probe(tools: Path, output: Path) -> dict:
               "responseReadErrors": response_errors, "requestContentHeaders": content_headers,
               "synchronousSend": sync_send,
               "defaultHandlerSynchronousSend": default_send,
+              "asynchronousPreCancellation": async_cancelled,
               "synchronousRead": {**sync_result, "rewriteDeterministic": True,
                   "fivePreimageAndOwnershipDenials": True, "boundedErrorAssertions": combined["assertions"]}}
     write_json(output / "result.json", result)

@@ -23,14 +23,16 @@ NATIVE_NAMES = {'latent': 'latent', 'latentd': 'latentd', 'package': 'examples/p
                 'capsule_contracts': 'examples/capsule_contracts', 'capsule_authoring': 'examples/capsule_authoring'}
 
 
-def qualify(output: Path, tools: Path, native_qualification: Path, *, synchronous_send: bool = False):
+def qualify(output: Path, tools: Path, native_qualification: Path, *, synchronous_send: bool = False,
+            pre_cancelled_async: bool = False):
     output = fresh(output)
     deadline = time.monotonic()+1200
     record = {'schemaVersion': 'latent.dotnet.standard-http.build-qualification.v1', 'status': 'in-progress',
         'commandLimits': {'overallSeconds': 1200, 'compileSeconds': 900, 'nodeSeconds': 300},
         'defaultClient': 'System.Net.Http.HttpClient', 'applicationHandlerInjection': False,
         'fullTicketQualification': False}
-    if type(synchronous_send) is not bool:
+    if (type(synchronous_send) is not bool or type(pre_cancelled_async) is not bool
+            or (synchronous_send and pre_cancelled_async)):
         raise ValueError('standard-dotnet-request-api-selection')
     record['requestApi'] = 'HttpClient.Send' if synchronous_send else 'HttpClient.SendAsync'
     stage = 'native-products'
@@ -46,7 +48,7 @@ def qualify(output: Path, tools: Path, native_qualification: Path, *, synchronou
                 'standard-dotnet-frozen-native-products-mismatch')
         record.update(nativeQualification=before, binaries=identities)
         stage = 'source-capture'
-        app = project(output/'project', synchronous_send=synchronous_send)
+        app = project(output/'project', synchronous_send=synchronous_send, pre_cancelled_async=pre_cancelled_async)
         captured = inventory(snapshot(app))
         record['projectSourceSnapshotDigest'] = digest(captured)
         stage = 'normal-native-aot-build'
@@ -64,7 +66,8 @@ def qualify(output: Path, tools: Path, native_qualification: Path, *, synchronou
                 'standard-dotnet-compiler-source-capture-mismatch')
         stage = 'signed-ordinary-node'
         record['node'] = run(output/'build', {name: binaries[name] for name in ('latent', 'latentd', 'capsule_authoring')},
-                             output/'node', deadline=deadline, synchronous_send=synchronous_send)
+                             output/'node', deadline=deadline, synchronous_send=synchronous_send,
+                             pre_cancelled_async=pre_cancelled_async)
         stage = 'final-integrity'
         require(before == file_identity(receipt_path)
                 and identities == {name: file_identity(path, 512*1024*1024) for name, path in binaries.items()},
@@ -85,6 +88,8 @@ if __name__ == '__main__':
     parser.add_argument('--native-qualification', required=True, type=Path)
     parser.add_argument('--synchronous-send', action='store_true',
                         help='Compile and sign the ordinary synchronous Send fixture separately')
+    parser.add_argument('--pre-cancelled-async', action='store_true',
+                        help='Add a zero-dispatch asynchronous pre-cancellation case separately')
     args = parser.parse_args()
     print(json.dumps(qualify(args.output.resolve(), args.tools.resolve(), args.native_qualification.resolve(),
-                             synchronous_send=args.synchronous_send)))
+                             synchronous_send=args.synchronous_send, pre_cancelled_async=args.pre_cancelled_async)))

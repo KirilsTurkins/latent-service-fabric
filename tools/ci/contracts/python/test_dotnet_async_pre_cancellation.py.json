@@ -1,0 +1,22 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Require closed async pre-cancellation provenance, original API source binding and exact integer zero-dispatch admission",
+  "module":"tools/tests/test_dotnet_async_pre_cancellation.py",
+  "cases":["AsyncPreCancellation.test_actual_api_binding_rejects_an_original_fixture_as_the_extra_programme","AsyncPreCancellation.test_async_selection_adds_only_pre_cancelled_mode_and_keeps_async_api","AsyncPreCancellation.test_pre_cancelled_request_requires_integer_zero_outbound_attempts","AsyncPreCancellation.test_receipt_rejects_missing_foreign_and_type_confused_fields","AsyncPreCancellation.test_selection_rejects_mixed_non_boolean_or_ambiguous_request_modes"],
+  "guards":{
+    "AsyncPreCancellation.test_receipt_rejects_missing_foreign_and_type_confused_fields":
+      "d059180e88928f69f7c50331e214a538d48f08337d1ad0f8710e959dc546a70d",
+    "AsyncPreCancellation.test_async_selection_adds_only_pre_cancelled_mode_and_keeps_async_api":
+      "d059180e88928f69f7c50331e214a538d48f08337d1ad0f8710e959dc546a70d",
+    "AsyncPreCancellation.test_selection_rejects_mixed_non_boolean_or_ambiguous_request_modes":
+      "d059180e88928f69f7c50331e214a538d48f08337d1ad0f8710e959dc546a70d",
+    "AsyncPreCancellation.test_actual_api_binding_rejects_an_original_fixture_as_the_extra_programme":
+      "d059180e88928f69f7c50331e214a538d48f08337d1ad0f8710e959dc546a70d",
+    "AsyncPreCancellation.test_pre_cancelled_request_requires_integer_zero_outbound_attempts":
+      "d059180e88928f69f7c50331e214a538d48f08337d1ad0f8710e959dc546a70d"
+  },
+  "guardDefinitions":{
+    "d059180e88928f69f7c50331e214a538d48f08337d1ad0f8710e959dc546a70d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:3af6c1801085f5b637045e00c465c96ebc7299aff0aa443aa6623561d5723f00","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}
