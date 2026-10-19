@@ -64,6 +64,8 @@
           "tools/tests/test_typescript_entropy_campaign.py",
           "docs/component-development/typescript-standard-entropy.md",
           "tools/qualify_typescript_dependencies.py",
+          "tools/qualify_typescript_dependency_refusals.py",
+          "tools/tests/test_typescript_dependency_refusals.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
           "tools/qualify_typescript_fetch_runtime.py",
@@ -134,6 +136,8 @@
           "tools/tests/test_typescript_entropy_campaign.py",
           "docs/component-development/typescript-standard-entropy.md",
           "tools/qualify_typescript_dependencies.py",
+          "tools/qualify_typescript_dependency_refusals.py",
+          "tools/tests/test_typescript_dependency_refusals.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
           "tools/qualify_typescript_fetch_runtime.py",
@@ -188,7 +192,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Reviewed default-false signed entropy policy replay with fixed historical products; original ordinary job requirements retained.",
+  "reviewReason": "Union explicit dependency-negative source triggers and default-false entropy replay; retain all original jobs/events.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

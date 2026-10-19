@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_dependency_refusals.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Observe exact actual captured bundle and snapshot refusals with original build gates",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8b4e1feff2c1a3c586ad6805f0d4bb0fc9c7870149004a25160069328db84e47"
+}
