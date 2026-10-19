@@ -1,0 +1,2002 @@
+{
+  "schemaVersion": "latent.rust.standard-entropy.merge-evidence.v1",
+  "status": "passed",
+  "executedSource": "4014c7381a4a9bac9860bcb4b08f68dcb918264d",
+  "featureIntegrationSource": "46eca716696885e1f0e1bbdfd46310c8bc886bf8",
+  "run": 39341096377,
+  "job": 118362565604,
+  "artifact": {
+    "id": 12229626460,
+    "sha256": "sha256:220eeb916821e75ad1971745a8c1cad09b52cb666b7c5272a4cedc2ea52ae7b4",
+    "bytes": 2429339
+  },
+  "qualification": {
+    "sha256": "sha256:a7aad7c39d1e6ef872744c6eb0cb09309069b439ec47a5d07ff413c2e1eba1dc",
+    "bytes": 72348
+  },
+  "workflow": {
+    "sha256": "sha256:e23634c2e27da629e9c037faffa1a1d9900a07528177a255ef5009ca8e2b46ce",
+    "bytes": 446455
+  },
+  "component": {
+    "sha256": "sha256:332def922235048ba1b8613918440f99ffe6300c89fc7e1b1154a579ca371660",
+    "bytes": 49349
+  },
+  "runtimeProfile": "rust-standard-entropy-v1",
+  "sysrootIdentity": "sha256:f4c8092f00114e24ab2c5f7fe402464134924c949a77919db57a699c020b55aa",
+  "capture": {
+    "formatVersion": 1,
+    "runtimeProfile": "rust-standard-entropy-v1",
+    "libraryDigest": "sha256:e600fdde8d1c44b84bdca665b67de945a58957abc3207cfb15c40783fb5dd5b9",
+    "sourceDigest": "sha256:4d45e032d57dd77f63a9e74d7e7216cf810bd621ba9e0c45f549c51a6e92b962",
+    "textDigest": "sha256:f83e039796c6453a10f5519e39fd113901572316a1a8ea07cb525d2801dfd074",
+    "binaryDigest": "sha256:89273d2f70b93285bb7ddb4bcee86a5347ca7159352e3cbdd20c23e9d1e507d3",
+    "candidateDigest": "sha256:451bb6affa1312026cc0010a07b57836e1b160242612cedd0a8bfa9a3fe370b0",
+    "sdkLockDigest": "sha256:49455129f96d6f33a3d4e5a65f61dc193db26c9da4b720da6f34557488d48291",
+    "originalsRemoved": true,
+    "catalogueRegistration": false,
+    "normalExecutableApprovalRequired": true,
+    "capturedExecutableInputs": [
+      {
+        "id": "getrandom/0.3.4/20a4721bd8a6048c",
+        "package": "getrandom",
+        "version": "0.3.4",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "id": "wit-bindgen/0.57.1/2644a2286b81c7c6",
+        "package": "wit-bindgen",
+        "version": "0.57.1",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      }
+    ],
+    "ordinaryAPIs": [
+      "getrandom::fill",
+      "getrandom::fill_uninit",
+      "getrandom::u32",
+      "getrandom::u64",
+      "rand_core::OsRng",
+      "std::collections::HashMap"
+    ]
+  },
+  "normalExecutableApproval": {
+    "identity": "sha256:73aff131254e6e346977ed51363b016d0fad77441470cb4b1ba384317f884e14",
+    "inputIdentity": "sha256:9676999de2d9cdf8b43c33697eecb5d9665b43924323f2d377c094f4645afa68",
+    "inputCount": 2,
+    "unapprovedBuildRefused": true
+  },
+  "materials": {
+    "tools/qualify_rust_standard_entropy.py": {
+      "executed": {
+        "sha256": "sha256:3ff9b1ce7cbe612dfd0218403d599dd62a7b6000da0faa6c793b80389803eb73",
+        "bytes": 8918
+      },
+      "current": {
+        "sha256": "sha256:3ff9b1ce7cbe612dfd0218403d599dd62a7b6000da0faa6c793b80389803eb73",
+        "bytes": 8918
+      }
+    },
+    "tools/rust_standard_entropy_fixture.py": {
+      "executed": {
+        "sha256": "sha256:3285686521b87df77fa78e2474b21d30143200f7b931ecca65d1bf191b3b9007",
+        "bytes": 8183
+      },
+      "current": {
+        "sha256": "sha256:3285686521b87df77fa78e2474b21d30143200f7b931ecca65d1bf191b3b9007",
+        "bytes": 8183
+      }
+    },
+    "tools/rust_standard_entropy_probe.py": {
+      "executed": {
+        "sha256": "sha256:7415b252272091b079ba68b5fe0c1b1f2292531f4afe3dc60a908c5136f74563",
+        "bytes": 7314
+      },
+      "current": {
+        "sha256": "sha256:7415b252272091b079ba68b5fe0c1b1f2292531f4afe3dc60a908c5136f74563",
+        "bytes": 7314
+      }
+    },
+    "tools/rust_standard_entropy_profile.py": {
+      "executed": {
+        "sha256": "sha256:aeb72ddbbd5cd894ba00413c576d34a1d62a1e5725ec841a6feb9648fbde97ef",
+        "bytes": 7712
+      },
+      "current": {
+        "sha256": "sha256:aeb72ddbbd5cd894ba00413c576d34a1d62a1e5725ec841a6feb9648fbde97ef",
+        "bytes": 7712
+      }
+    },
+    "tools/qualify_rust_git_components.py": {
+      "executed": {
+        "sha256": "sha256:906a2782268403e60714b9ba0ec869a8fba6eb964f46bd94742c04b696fdab87",
+        "bytes": 9524
+      },
+      "current": {
+        "sha256": "sha256:906a2782268403e60714b9ba0ec869a8fba6eb964f46bd94742c04b696fdab87",
+        "bytes": 9524
+      }
+    },
+    "tools/qualify_rust_standard_clocks.py": {
+      "executed": {
+        "sha256": "sha256:e38b723e63a31f736f3fe26a85d7997afc36ed5bf28431edc9130714cb65bf20",
+        "bytes": 5956
+      },
+      "current": {
+        "sha256": "sha256:e38b723e63a31f736f3fe26a85d7997afc36ed5bf28431edc9130714cb65bf20",
+        "bytes": 5956
+      }
+    },
+    "tools/qualify_rust_standard_clock.py": {
+      "executed": {
+        "sha256": "sha256:355f5d2bb0f037625004c65c238d2ac7ab2c649a0291dd0194e80e09bf03108c",
+        "bytes": 10882
+      },
+      "current": {
+        "sha256": "sha256:355f5d2bb0f037625004c65c238d2ac7ab2c649a0291dd0194e80e09bf03108c",
+        "bytes": 10882
+      }
+    },
+    "tools/qualify_rust_capsules.py": {
+      "executed": {
+        "sha256": "sha256:fac4196052dc39012bed473194f9b91757396769be2967177a9cae87fb0395c6",
+        "bytes": 36770
+      },
+      "current": {
+        "sha256": "sha256:fac4196052dc39012bed473194f9b91757396769be2967177a9cae87fb0395c6",
+        "bytes": 36770
+      }
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "executed": {
+        "sha256": "sha256:c6c498cf2cd8ed36e3a19256ff302cef69b21169297762d490e76a01316429a4",
+        "bytes": 27064
+      },
+      "current": {
+        "sha256": "sha256:944f5652a383c58069ddec54fdbf1afaaf0312a3dc447d94f4a6183d2181416f",
+        "bytes": 27895
+      }
+    },
+    "tools/rust_standard_logging_inputs.py": {
+      "executed": {
+        "sha256": "sha256:3a5b3e00dfcd0dd287705b7e86abf5304853798888c313c0f23616c7480a889e",
+        "bytes": 7783
+      },
+      "current": {
+        "sha256": "sha256:3a5b3e00dfcd0dd287705b7e86abf5304853798888c313c0f23616c7480a889e",
+        "bytes": 7783
+      }
+    },
+    "tools/rust_standard_sysroot_source.py": {
+      "executed": {
+        "sha256": "sha256:838ce7b8a6725acc48d7db3db4c0e27f15e3df55d1f986989f54ed8cc15698f1",
+        "bytes": 8060
+      },
+      "current": {
+        "sha256": "sha256:838ce7b8a6725acc48d7db3db4c0e27f15e3df55d1f986989f54ed8cc15698f1",
+        "bytes": 8060
+      }
+    },
+    "tools/rust_standard_clock_profile.py": {
+      "executed": {
+        "sha256": "sha256:c6990912703d9057446781654cf775961c60f4618f0baddb903e4bb028c300b2",
+        "bytes": 6194
+      },
+      "current": {
+        "sha256": "sha256:c6990912703d9057446781654cf775961c60f4618f0baddb903e4bb028c300b2",
+        "bytes": 6194
+      }
+    },
+    "sdk/rust-standard-runtime/clock.rs": {
+      "executed": {
+        "sha256": "sha256:12f62eb651f6c7cb653a9a7e0aba635e5b47cf3a2646ef4f57df9d513c62a071",
+        "bytes": 2347
+      },
+      "current": {
+        "sha256": "sha256:12f62eb651f6c7cb653a9a7e0aba635e5b47cf3a2646ef4f57df9d513c62a071",
+        "bytes": 2347
+      }
+    },
+    "wit/platform/clock/package.wit": {
+      "executed": {
+        "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "bytes": 139
+      },
+      "current": {
+        "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "bytes": 139
+      }
+    },
+    "rust-toolchain.toml": {
+      "executed": {
+        "sha256": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+        "bytes": 140
+      },
+      "current": {
+        "sha256": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+        "bytes": 140
+      }
+    },
+    "tools/rust_standard_tls_profile.py": {
+      "executed": {
+        "sha256": "sha256:0222664874b26dc3b6381260169fdfe88dd11dd0418ac51038c911807061b6ea",
+        "bytes": 8525
+      },
+      "current": {
+        "sha256": "sha256:0222664874b26dc3b6381260169fdfe88dd11dd0418ac51038c911807061b6ea",
+        "bytes": 8525
+      }
+    },
+    "sdk/rust-standard-runtime/tls.rs": {
+      "executed": {
+        "sha256": "sha256:b198ed15262ba83c837936955349ebf9faddff71a20e88ae3b4052dbc3dce540",
+        "bytes": 24994
+      },
+      "current": {
+        "sha256": "sha256:b198ed15262ba83c837936955349ebf9faddff71a20e88ae3b4052dbc3dce540",
+        "bytes": 24994
+      }
+    },
+    "sdk/rust-standard-runtime/activation-abi.json": {
+      "executed": {
+        "sha256": "sha256:78daf134676c77bb7a805a251b3344ad9e6358f587d1b0edcb2a0646e0e6ac50",
+        "bytes": 1238
+      },
+      "current": {
+        "sha256": "sha256:78daf134676c77bb7a805a251b3344ad9e6358f587d1b0edcb2a0646e0e6ac50",
+        "bytes": 1238
+      }
+    },
+    "sdk/rust-standard-runtime/thread-abi.json": {
+      "executed": {
+        "sha256": "sha256:0d4a19a81cfc2841b005befe6e2570593268a167bd0ef37e14f01078e2aa653e",
+        "bytes": 3540
+      },
+      "current": {
+        "sha256": "sha256:0d4a19a81cfc2841b005befe6e2570593268a167bd0ef37e14f01078e2aa653e",
+        "bytes": 3540
+      }
+    },
+    "wit/platform/activation-runtime/package.wit": {
+      "executed": {
+        "sha256": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+        "bytes": 2539
+      },
+      "current": {
+        "sha256": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+        "bytes": 2539
+      }
+    },
+    "tools/rust_standard_logging_profile.py": {
+      "executed": {
+        "sha256": "sha256:cb142e8a3abe648293c3ffa0aa23bad842a3c5c730b7e3fe08093c021f04083e",
+        "bytes": 2324
+      },
+      "current": {
+        "sha256": "sha256:cb142e8a3abe648293c3ffa0aa23bad842a3c5c730b7e3fe08093c021f04083e",
+        "bytes": 2324
+      }
+    },
+    "sdk/rust-standard-runtime/stdio_closed.rs": {
+      "executed": {
+        "sha256": "sha256:bffe2b477c450098fed9584f34e725232f5dcbdfc655e27851f9b1fd8354f37c",
+        "bytes": 1794
+      },
+      "current": {
+        "sha256": "sha256:bffe2b477c450098fed9584f34e725232f5dcbdfc655e27851f9b1fd8354f37c",
+        "bytes": 1794
+      }
+    },
+    "sdk/rust-standard-runtime/stdio_logging.rs": {
+      "executed": {
+        "sha256": "sha256:b89538d84aa980c5908a2b7a4d422ceca31deaae00de5fd2fdc82d1d8b89f62e",
+        "bytes": 3493
+      },
+      "current": {
+        "sha256": "sha256:b89538d84aa980c5908a2b7a4d422ceca31deaae00de5fd2fdc82d1d8b89f62e",
+        "bytes": 3493
+      }
+    },
+    "wit/platform/log/package.wit": {
+      "executed": {
+        "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+        "bytes": 418
+      },
+      "current": {
+        "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+        "bytes": 418
+      }
+    },
+    "sdk/rust-standard-stdio/Cargo.toml": {
+      "executed": {
+        "sha256": "sha256:78c8851da50565be17c998bec34ff64ee2ac010fc0680257acc98150842afb0f",
+        "bytes": 640
+      },
+      "current": {
+        "sha256": "sha256:78c8851da50565be17c998bec34ff64ee2ac010fc0680257acc98150842afb0f",
+        "bytes": 640
+      }
+    },
+    "sdk/rust-standard-stdio/src/lib.rs": {
+      "executed": {
+        "sha256": "sha256:e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731",
+        "bytes": 1594
+      },
+      "current": {
+        "sha256": "sha256:e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731",
+        "bytes": 1594
+      }
+    },
+    "sdk/rust-standard-runtime/entropy_core.rs": {
+      "executed": {
+        "sha256": "sha256:d6bac09e9c28fab6a80a7bd16b3ea39153aa12a4ba4fb43d93e7ade8c6b468d4",
+        "bytes": 1600
+      },
+      "current": {
+        "sha256": "sha256:d6bac09e9c28fab6a80a7bd16b3ea39153aa12a4ba4fb43d93e7ade8c6b468d4",
+        "bytes": 1600
+      }
+    },
+    "sdk/rust-standard-runtime/entropy_std.rs": {
+      "executed": {
+        "sha256": "sha256:384c39c2a5dd5447fdbebe20fa70cf8f3ef11ddc95a32efe8476776a3330be77",
+        "bytes": 515
+      },
+      "current": {
+        "sha256": "sha256:384c39c2a5dd5447fdbebe20fa70cf8f3ef11ddc95a32efe8476776a3330be77",
+        "bytes": 515
+      }
+    },
+    "sdk/rust-standard-runtime/entropy_getrandom_03.rs": {
+      "executed": {
+        "sha256": "sha256:963db4b367321c596a6c79f026787f8995d7f5e4f2d3031627fbd6029654faec",
+        "bytes": 902
+      },
+      "current": {
+        "sha256": "sha256:963db4b367321c596a6c79f026787f8995d7f5e4f2d3031627fbd6029654faec",
+        "bytes": 902
+      }
+    },
+    "sdk/rust-standard-runtime/entropy-getrandom-03.json": {
+      "executed": {
+        "sha256": "sha256:6bfc187447ceb857008ed6b20ddc1679ff068a4983b6d2bf2ac7348d2b3cd018",
+        "bytes": 900
+      },
+      "current": {
+        "sha256": "sha256:6bfc187447ceb857008ed6b20ddc1679ff068a4983b6d2bf2ac7348d2b3cd018",
+        "bytes": 900
+      }
+    },
+    "wit/platform/random/package.wit": {
+      "executed": {
+        "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+        "bytes": 272
+      },
+      "current": {
+        "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+        "bytes": 272
+      }
+    },
+    "tools/rust_standard_sysroot_build.py": {
+      "executed": {
+        "sha256": "sha256:a2ad9f2540babf6b3f10530547583d0dee81f05d160ccd8d8f8106998528d6db",
+        "bytes": 10999
+      },
+      "current": {
+        "sha256": "sha256:a2ad9f2540babf6b3f10530547583d0dee81f05d160ccd8d8f8106998528d6db",
+        "bytes": 10999
+      }
+    },
+    "tools/rust_capsule_build.py": {
+      "executed": {
+        "sha256": "sha256:a00cb2afce425556cc0a9a776c5a23f757c3012f3440eda6c0e1cc709e0a2948",
+        "bytes": 45923
+      },
+      "current": {
+        "sha256": "sha256:a00cb2afce425556cc0a9a776c5a23f757c3012f3440eda6c0e1cc709e0a2948",
+        "bytes": 45923
+      }
+    },
+    "tools/build_observation.py": {
+      "executed": {
+        "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+        "bytes": 7868
+      },
+      "current": {
+        "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+        "bytes": 7868
+      }
+    },
+    "tools/build_process.py": {
+      "executed": {
+        "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+        "bytes": 9063
+      },
+      "current": {
+        "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+        "bytes": 9063
+      }
+    },
+    "tools/build_process_linux.py": {
+      "executed": {
+        "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "bytes": 3853
+      },
+      "current": {
+        "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "bytes": 3853
+      }
+    },
+    "tools/build_process_signals.py": {
+      "executed": {
+        "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "bytes": 3012
+      },
+      "current": {
+        "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "bytes": 3012
+      }
+    },
+    "tools/captured_compiler_isolation.py": {
+      "executed": {
+        "sha256": "sha256:061f3e31f567871e7f3b0d8e8a402077d036b3327ccd2d7455294ec7bf28af15",
+        "bytes": 14529
+      },
+      "current": {
+        "sha256": "sha256:061f3e31f567871e7f3b0d8e8a402077d036b3327ccd2d7455294ec7bf28af15",
+        "bytes": 14529
+      }
+    }
+  },
+  "runnerComposition": "Only default-off .NET secure entropy flag, guard, grant and probe additions differ. Independently removing these exact AST nodes yields the identical entire executed module.",
+  "historicalNativeAttribution": {
+    "schemaVersion": "latent.rust.entropy-replay-materials.v1",
+    "originalCompiledSource": "6ffab636e647f93bfa12fda12a0383316f8dce8d",
+    "originalRun": 39293312298,
+    "originalJob": 118199288801,
+    "originalArtifact": 12207589449,
+    "originalArchive": {
+      "sha256": "sha256:546b5fc4f2dc2d9646150ac2964fc397fdd1c20a93ec68000bec39fbfb945cb6",
+      "bytes": 66891464
+    },
+    "originalNativeSourceIdentity": {
+      "sha256": "sha256:3df270a85649e9b9d9cd6900195eae101ff84ef5123239a960796010e0d6819f",
+      "files": 3168,
+      "bytes": 23907276,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "originalQualification": {
+      "sha256": "sha256:a6005a5b11e92ea2bad0885774d72a96704e578355804c6fdeba5f987e9a7ecf",
+      "bytes": 24078
+    },
+    "originalSource": {
+      "sha256": "sha256:1acedf7ad8b3516a495fdabb68c2782da548d4987fbad448a0d23d5a0517cc03",
+      "bytes": 25398
+    },
+    "historicalNormalNode": {
+      "status": "passed",
+      "receiptDigest": "sha256:b37b3472788c395f168012fb2cbaacb391460ab1338ee7f57e99d1ef783abb59"
+    },
+    "originalBinaries": {
+      "latent": {
+        "sha256": "sha256:95274024dc0fc8e058146f91a3eefed346f870f469de0d46e8536e60c572f8eb",
+        "bytes": 71460040
+      },
+      "latentd": {
+        "sha256": "sha256:3860710480495ef02154e75a1f5618d3c10b1b6bf09e09ea59780399847800f8",
+        "bytes": 184272784
+      },
+      "examples/package": {
+        "sha256": "sha256:04fb6b4c782cfb289610ba118d70b4f27497069b95190a022d0e1690c23e5fc1",
+        "bytes": 20465792
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:ec6c9e629da7ae6f1503bec81ec4889e1cfb745c93e0db68fe7dcb5e7044bcaf",
+        "bytes": 8030384
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:aeb214164266515dff39cb8879b3f5ec7479305b5bb08841253be78a12ce7b68",
+        "bytes": 26401312
+      }
+    },
+    "originalCompanions": {
+      "word-count/component.wasm": "sha256:d6007ee3a926baf9aa86bc782546cac8662bbeefbd5fa19b07bee5c6011533b9",
+      "word-count/source-inputs.json": "sha256:9ce46c5bcbd42de89b10b1fe861974f94e32fd947736f856c6757b80612e7fc8",
+      "word-count/build-observation.json": "sha256:2875da829acbc5a3cb70e143f890361c263bedb3c001707ecbb43b0a228e20bd",
+      "shipping/component.wasm": "sha256:52d727cdca49053a92807f0cad7a7be8eed35b7f2dc206889e89ba6d5677925c",
+      "shipping/source-inputs.json": "sha256:2fba0e9c1eb9e4318e3162619d0cf56f367f19c46eee8eb5bfe5ce1b7f58215a",
+      "shipping/build-observation.json": "sha256:fefb2951f78988435c22cc30f700f10db2de056d2f54cbb72f843e20432a50e7",
+      "http-status/component.wasm": "sha256:8494755c5de3d8d576ab84ebb488cbea94bd9978fa7ce0c93e3b723f3da0b5e1",
+      "http-status/source-inputs.json": "sha256:1341e4f3a2af59cf1dc1db465c9caa09632036a7aa38645fbac27c3935bb5087",
+      "http-status/build-observation.json": "sha256:9b628abad63f9542e2ed7de78c403da97f098471adee0b5718d3acce459221b5",
+      "recovery/component.wasm": "sha256:268c5c210b31e3afe5d4fb5cd63dceb629f8e4bbbbf43fe83115c76b8b48163d",
+      "recovery/source-inputs.json": "sha256:803c6935ce77e7272770bd7f4789cc07d3e6dbd2dff02e0652ea1d2cf1b0be45",
+      "recovery/build-observation.json": "sha256:d6c7f4ca74836ee69472d0d6cd1f6add2fc873195a86dfffd1011ea6af97110d"
+    },
+    "selectedHost": {
+      "compiledSource": "e97d44ddc744c9bd738d9b3b7a7d8b7234133e36",
+      "compiledTree": "f4823942c5eb9461f8a2bf26bc4bbe4e74584e85",
+      "sourceIdentity": {
+        "sha256": "sha256:db1b074b88c12884ac449bb873357759ab3807bcce79135c1ec45e705e84e92a",
+        "files": 3168,
+        "bytes": 23911170,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "binary": {
+        "sha256": "sha256:1ade67dfc9c461068ac7680a397f310eaf31e0e97b671a4dafd16ad710e1d050",
+        "bytes": 184227152
+      },
+      "features": [],
+      "ordinaryDefaults": true,
+      "origin": {
+        "artifact": 12220651992,
+        "archiveDigest": "sha256:a138d432358bda73357e0d887310c3cb97e1c8d1065f664c526870a2c3c52e8a",
+        "selected": {
+          "go-entropy-retained/current-host.json": {
+            "sha256": "sha256:5ba16fb3fbb739e3c75280211e6b522002abb2e58d62b5db12c5988ee6c0d8f3",
+            "bytes": 733
+          },
+          "go-entropy-retained/current-latentd": {
+            "sha256": "sha256:1ade67dfc9c461068ac7680a397f310eaf31e0e97b671a4dafd16ad710e1d050",
+            "bytes": 184227152
+          }
+        },
+        "rangeBytes": 38294026,
+        "rangeRequests": 172,
+        "wholeArchiveRetained": false
+      },
+      "currentDevelopmentCompilationClaimed": false
+    },
+    "nativeRecompiled": false,
+    "originalHostOverwritten": false,
+    "currentDevelopmentCompilationClaimed": false,
+    "wholeNativeTupleClaimed": false,
+    "freshOwnedStdAndApplicationRequired": true,
+    "qualification": {
+      "sha256": "sha256:a7aad7c39d1e6ef872744c6eb0cb09309069b439ec47a5d07ff413c2e1eba1dc",
+      "bytes": 72348
+    },
+    "selectedBinaries": {
+      "latent": {
+        "sha256": "sha256:95274024dc0fc8e058146f91a3eefed346f870f469de0d46e8536e60c572f8eb",
+        "bytes": 71460040
+      },
+      "latentd": {
+        "sha256": "sha256:1ade67dfc9c461068ac7680a397f310eaf31e0e97b671a4dafd16ad710e1d050",
+        "bytes": 184227152
+      },
+      "examples/package": {
+        "sha256": "sha256:04fb6b4c782cfb289610ba118d70b4f27497069b95190a022d0e1690c23e5fc1",
+        "bytes": 20465792
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:ec6c9e629da7ae6f1503bec81ec4889e1cfb745c93e0db68fe7dcb5e7044bcaf",
+        "bytes": 8030384
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:aeb214164266515dff39cb8879b3f5ec7479305b5bb08841253be78a12ce7b68",
+        "bytes": 26401312
+      }
+    },
+    "freshSignedInvocations": 45
+  },
+  "authority": {
+    "missingGrantDenials": 2,
+    "providerAggregateBytes": 65536,
+    "aggregateExhaustionClaimed": false
+  },
+  "observations": {
+    "invocations": [
+      {
+        "activation": "rust-entropy-no-grant-ordinary",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "permission-denied",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "105715"
+        }
+      },
+      {
+        "activation": "rust-entropy-no-grant-library",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "permission-denied",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "646"
+        }
+      },
+      {
+        "activation": "authoring-greeting-0",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "Hello, Ada!"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1544",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1967"
+        }
+      },
+      {
+        "activation": "authoring-greeting-1",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "Hello, Grüße!"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1614",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1920"
+        }
+      },
+      {
+        "activation": "authoring-greeting-2",
+        "exitCode": 3,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "err": "Please enter a name."
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "934",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2199"
+        }
+      },
+      {
+        "activation": "authoring-greeting-warm",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "Hello, Ada!"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1544",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1571"
+        }
+      },
+      {
+        "activation": "authoring-word-count-0",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 3
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1288",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "45713"
+        }
+      },
+      {
+        "activation": "authoring-word-count-1",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 3
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1418",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1259"
+        }
+      },
+      {
+        "activation": "authoring-word-count-2",
+        "exitCode": 3,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "err": "Use text of at most 4096 bytes."
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "919",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1026"
+        }
+      },
+      {
+        "activation": "authoring-word-count-warm",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 3
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1288",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "935"
+        }
+      },
+      {
+        "activation": "authoring-shipping-0",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 650
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "38",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "42947"
+        }
+      },
+      {
+        "activation": "authoring-shipping-1",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 8700
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "38",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1042"
+        }
+      },
+      {
+        "activation": "authoring-shipping-2",
+        "exitCode": 3,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "err": "Choose between 1 and 100 items."
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "561",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "923"
+        }
+      },
+      {
+        "activation": "authoring-shipping-warm",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 650
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "38",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "869"
+        }
+      },
+      {
+        "activation": "rust-entropy-empty",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:empty|count=0|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1971",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "100819"
+        }
+      },
+      {
+        "activation": "rust-entropy-one",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:one|count=1|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2365"
+        }
+      },
+      {
+        "activation": "rust-entropy-wide",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:wide|count=257|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "7873",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "5666"
+        }
+      },
+      {
+        "activation": "rust-entropy-uninit",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:uninit|count=33|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2854",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2711"
+        }
+      },
+      {
+        "activation": "rust-entropy-scalar",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:scalar|count=2|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2391",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2346"
+        }
+      },
+      {
+        "activation": "rust-entropy-os-rng",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:os-rng|count=33|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2878",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2383"
+        }
+      },
+      {
+        "activation": "rust-entropy-hashmap",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:hashmap|count=257|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "275371",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2694"
+        }
+      },
+      {
+        "activation": "rust-entropy-large",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:large|count=4096|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "88593",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "47002"
+        }
+      },
+      {
+        "activation": "rust-entropy-too-large",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:too-large|count=65537|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1182052",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1310720",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2188"
+        }
+      },
+      {
+        "activation": "rust-entropy-typed-budget-denial",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:denied|typed=budget-exhausted|cleared=1|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1800",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2241"
+        }
+      },
+      {
+        "activation": "rust-entropy-std-denied",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "guest-trap",
+          "details": [
+            {
+              "fields": {
+                "code": "guest-trap"
+              },
+              "kind": "activation.guest-trap"
+            },
+            {
+              "fields": {
+                "kind": "unreachable-code"
+              },
+              "kind": "activation.guest-trap-kind"
+            }
+          ],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "733",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1941"
+        }
+      },
+      {
+        "activation": "rust-entropy-budget-fresh",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:wide|count=257|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "7873",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "5557"
+        }
+      },
+      {
+        "activation": "rust-entropy-trap",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "guest-trap",
+          "details": [
+            {
+              "fields": {
+                "code": "guest-trap"
+              },
+              "kind": "activation.guest-trap"
+            },
+            {
+              "fields": {
+                "kind": "unreachable-code"
+              },
+              "kind": "activation.guest-trap-kind"
+            }
+          ],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1506",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2832"
+        }
+      },
+      {
+        "activation": "rust-entropy-trap-fresh",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:one|count=1|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2554"
+        }
+      },
+      {
+        "activation": "rust-entropy-fuel",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "resource-exhausted",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "100000000",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "83176"
+        }
+      },
+      {
+        "activation": "rust-entropy-fuel-fresh",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": "ordinary-entropy:one|count=1|assets=7+4|fresh=1"
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2388"
+        }
+      },
+      {
+        "activation": "authoring-fault-0",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          1
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "30",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "42640"
+        }
+      },
+      {
+        "activation": "authoring-fault-1",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "guest-trap",
+          "details": [
+            {
+              "fields": {
+                "code": "guest-trap"
+              },
+              "kind": "activation.guest-trap"
+            },
+            {
+              "fields": {
+                "kind": "unreachable-code"
+              },
+              "kind": "activation.guest-trap-kind"
+            }
+          ],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "164",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1453"
+        }
+      },
+      {
+        "activation": "authoring-fault-2",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          1
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "30",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1207"
+        }
+      },
+      {
+        "activation": "authoring-fault-3",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "resource-exhausted",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "20",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1078"
+        }
+      },
+      {
+        "activation": "authoring-fault-4",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          1
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "30",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1329"
+        }
+      },
+      {
+        "activation": "authoring-fault-5",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "resource-exhausted",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "100000000",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "98728"
+        }
+      },
+      {
+        "activation": "authoring-fault-6",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          1
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "30",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1114112",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1235"
+        }
+      },
+      {
+        "activation": "authoring-http-0",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 201
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "6166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "106463"
+        }
+      },
+      {
+        "activation": "authoring-http-1",
+        "exitCode": 3,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "err": {
+              "case": "permission-denied"
+            }
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2996",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "2155"
+        }
+      },
+      {
+        "activation": "authoring-http-2",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 201
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "6166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "3969"
+        }
+      },
+      {
+        "activation": "authoring-deadline",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "deadline-exceeded",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2416",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "101194"
+        }
+      },
+      {
+        "activation": "authoring-after-deadline",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 201
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "6166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "4285"
+        }
+      },
+      {
+        "activation": "authoring-cancel",
+        "exitCode": 4,
+        "known": true,
+        "reaped": true,
+        "decoded": null,
+        "error": {
+          "code": "cancelled",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "2416",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "35280"
+        }
+      },
+      {
+        "activation": "authoring-after-cancel",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 201
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "6166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "4245"
+        }
+      },
+      {
+        "activation": "authoring-after-disconnect",
+        "exitCode": 0,
+        "known": true,
+        "reaped": true,
+        "decoded": [
+          {
+            "ok": 201
+          }
+        ],
+        "error": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "6166",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "4072"
+        }
+      }
+    ],
+    "providerIdleSamples": 24,
+    "allOriginalActiveCountersZero": [
+      "broker_sessions",
+      "broker_handles",
+      "broker_calls",
+      "broker_results",
+      "broker_buffer_bytes",
+      "pool_active_connections",
+      "pool_connecting_connections",
+      "pool_pending_requests",
+      "pool_running_requests",
+      "pool_workers",
+      "pool_cleanup_jobs",
+      "io_calls",
+      "io_occupied_running_slots",
+      "io_queued_calls",
+      "io_staged_bytes",
+      "io_result_bytes",
+      "io_buffers",
+      "io_streams"
+    ],
+    "physicalSamples": 40,
+    "physicalSamplePhases": [
+      "empty",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "rust-entropy-empty-retired",
+      "rust-entropy-one-retired",
+      "rust-entropy-wide-retired",
+      "rust-entropy-uninit-retired",
+      "rust-entropy-scalar-retired",
+      "rust-entropy-os-rng-retired",
+      "rust-entropy-hashmap-retired",
+      "rust-entropy-large-retired",
+      "rust-entropy-too-large-retired",
+      "rust-entropy-typed-budget-denial-retired",
+      "rust-entropy-std-denied-retired",
+      "rust-entropy-budget-fresh-retired",
+      "rust-entropy-trap-retired",
+      "rust-entropy-trap-fresh-retired",
+      "rust-entropy-fuel-retired",
+      "rust-entropy-fuel-fresh-retired",
+      "after-tutorials",
+      "after-fault-0",
+      "after-fault-1",
+      "after-fault-0",
+      "after-fault-2",
+      "after-fault-0",
+      "after-fault-3",
+      "after-fault-0",
+      "after-deadline",
+      "active-cancel",
+      "after-cancel",
+      "active-disconnect",
+      "after-disconnect",
+      "after-delete"
+    ],
+    "nodeShutdown": {
+      "processId": 5165,
+      "reaped": true,
+      "record": {
+        "schemaVersion": "latent.standalone.status.v1",
+        "event": "stopped",
+        "clean": true,
+        "report": {
+          "audit": {
+            "workerJoined": true,
+            "queuedOperations": 0,
+            "queryOwners": 0,
+            "queryBytes": 0,
+            "pendingAttempts": 0,
+            "reservedRecords": 0,
+            "stageBytes": 0,
+            "recoveryPending": false,
+            "unknownOutcomes": 0,
+            "previousSessionLossUnknown": false
+          },
+          "rollouts": {
+            "workerJoined": true,
+            "workerLive": false,
+            "queuedCommands": 0,
+            "activeCommands": 0,
+            "retainedRequestBytes": 0,
+            "responseOwners": 0,
+            "responseBytes": 0,
+            "failed": false,
+            "canary": {
+              "retainedWindows": 0,
+              "retainedSamples": 0,
+              "liveSamples": 0,
+              "snapshotOwners": 0
+            }
+          },
+          "policies": {
+            "workCompleted": true,
+            "activeJobs": 0,
+            "retainedReadOwners": 0
+          },
+          "providers": {
+            "clean": true,
+            "controlOwners": 0,
+            "connections": 0,
+            "pendingRequests": 0,
+            "runningRequests": 0,
+            "workers": 0,
+            "cleanupJobs": 0,
+            "failedCleanup": 0,
+            "sessions": 0,
+            "handles": 0,
+            "calls": 0,
+            "results": 0,
+            "ioCalls": 0,
+            "ioRetainedBytes": 0,
+            "blobStages": 0,
+            "blobHandles": 0,
+            "blobWork": 0,
+            "secretGenerations": 0,
+            "secretReferences": 0,
+            "streamOwners": 0,
+            "streamConnections": 0,
+            "streamPendingOperations": 0,
+            "streamRetainedChunks": 0,
+            "streamMaintenanceOwners": 0
+          },
+          "clean": true,
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0,
+          "telemetryRetainedEntries": 842,
+          "telemetryFlushed": true,
+          "epochHelperJoined": true,
+          "compiler": {
+            "maximum_jobs": 1,
+            "maximum_workers": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_waiters": 3,
+            "maximum_waiters_per_job": 3,
+            "maximum_ready_preparations": 3,
+            "maximum_document_bytes": 5308416,
+            "assigned_jobs": 0,
+            "running_jobs": 0,
+            "queued_jobs": 0,
+            "waiting_callers": 0,
+            "ready_preparations": 0,
+            "ready_metadata_bytes": 0,
+            "ready_compiled_image_bytes": 0,
+            "reserved_document_bytes": 0,
+            "workers_live": 0,
+            "workers_quiescent": 1,
+            "workers_joined": 1,
+            "accepting": false,
+            "failed": false,
+            "jobs_started": 6,
+            "jobs_completed": 6,
+            "jobs_failed": 0,
+            "jobs_abandoned": 0,
+            "coalesced_waiters": 0,
+            "queue_rejected": 0,
+            "waiter_rejected": 0,
+            "ready_rejected": 0,
+            "cancelled_waiters": 0,
+            "discarded_results": 0
+          },
+          "cleanup": {
+            "capacity": 4,
+            "accepting": false,
+            "driverAlive": false,
+            "driverJoined": true,
+            "reserved": 0,
+            "queued": 0,
+            "running": 0,
+            "handoffs": 1,
+            "completed": 1,
+            "timedOut": 0,
+            "panicked": 0,
+            "fallbacks": 0,
+            "failed": false
+          }
+        }
+      }
+    },
+    "peerShutdown": {
+      "requests": 8,
+      "authorized": 8,
+      "unexpected": 0,
+      "holds": 3,
+      "closedHolds": 3
+    }
+  },
+  "priorFailure": {
+    "source": "28cc56dd40387497b63cc1205b1b17a387c03262",
+    "run": 39337939302,
+    "job": 118352029972,
+    "reason": "Fixture expected only getrandom executable; normal compiler transitive wit-bindgen0.57.1 also requires full exact approval. No component built.",
+    "fixedBy": "369480d9e383fd8f8d62a71ad245488f559d7c47"
+  },
+  "limitations": {
+    "full681Qualification": false,
+    "concurrencyQualified": false,
+    "transactionalReplayQualified": false,
+    "aggregateExhaustionClaimed": false,
+    "fipsCertification": false,
+    "currentNativeHostCompiled": false,
+    "releasePublished": false
+  }
+}

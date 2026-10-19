@@ -30,9 +30,7 @@ Provider and activation limits remain separate from the request bound.
 
 Source controls and a standalone Rust reference exercise scalar layout, lengths,
 all three provider error ordinals, clearing, guard bytes and fresh source calls.
-These are not signed component qualification. A fresh owned sysroot, actual
-offline dependency build and signed ordinary-library programme remain required
-before this source delivery can satisfy the facility execution gate. No FIPS,
+Their scope is separate from the actual signed programme below. No FIPS,
 statistical quality, concurrency or transactional replay claim is made.
 
 
@@ -54,6 +52,12 @@ restoration; and fresh activation after denial, trap and fuel exhaustion. Each
 executed call must have known outcome, bounded fuel/memory, zero unrelated
 outbound/log/effect use and physical process/provider retirement. The 65536-byte
 provider aggregate and original invocation budgets are unchanged. This programme
-does not claim aggregate-quota exhaustion. Its source/protocol controls pass;
-actual owned-std compilation and signed execution remain pending until a
-source-bound passing receipt is retained.
+does not claim aggregate-quota exhaustion. The actual owned-std and signed programme passed all 45 invocations in
+[run 39341096377](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39341096377/job/118362565604).
+The [retained proof](../testing/evidence/rust-standard-entropy-signed-2026-10-20.json)
+binds source, compiler, component, all invocations, 24 provider-idle samples,
+40 physical observations and clean reaped shutdown. Exact normal approval covered
+both getrandom and the resolved wit-bindgen build scripts. Native helpers and
+companions retain historical source attribution; this run does not compile a new
+native host. The final runner composition adds only the separately qualified,
+default-off .NET entropy campaign. Broader #681 requirements remain open.
