@@ -176,6 +176,9 @@ class StandardConsole(unittest.TestCase):
                 self.assertFalse(destination.exists())
 
     def test_reused_companions_and_native_tuple_require_original_receipt_and_exact_build_bytes(self):
+        current = {'source': 'current'}
+        expected = patch('tools.qualify_dotnet_standard_console.inputs', return_value=current)
+        expected.start(); self.addCleanup(expected.stop)
         with tempfile.TemporaryDirectory() as owned:
             root = Path(owned)
             from tools.qualify_dotnet_standard_console import NATIVE_NAMES
@@ -196,6 +199,8 @@ class StandardConsole(unittest.TestCase):
                 builds[template] = row
             receipt = {'schemaVersion': 'latent.dotnet-capsule.qualification.v1', 'status': 'passed',
                        'binaries': native, 'builds': builds}
+            source = root / 'source-inputs.json'; source.write_text(json.dumps(current), encoding='utf-8')
+            receipt['sourceIdentityDigest'] = digest(source.read_bytes())
             receipt_path = root / 'qualification.json'; receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
             paths, companions, before = inherited(root)
             self.assertEqual(len(paths), 5); self.assertEqual(len(companions), 4)
@@ -204,6 +209,13 @@ class StandardConsole(unittest.TestCase):
                 changed = copy.deepcopy(receipt); changed[field] = value
                 receipt_path.write_text(json.dumps(changed), encoding='utf-8')
                 with self.assertRaisesRegex(RuntimeError, 'observed-native-qualification-required'): inherited(root)
+            receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
+            source.write_text('{"source":"foreign"}', encoding='utf-8')
+            with self.assertRaisesRegex(RuntimeError, 'prepared-source-mismatch'): inherited(root)
+            changed = copy.deepcopy(receipt); changed['sourceIdentityDigest'] = digest(source.read_bytes())
+            receipt_path.write_text(json.dumps(changed), encoding='utf-8')
+            with self.assertRaisesRegex(RuntimeError, 'prepared-source-mismatch'): inherited(root)
+            source.write_text(json.dumps(current), encoding='utf-8')
             receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
             selected = next(iter(companions.values())) / 'component.wasm'
             old = selected.read_bytes(); selected.write_bytes(b'changed-component')

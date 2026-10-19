@@ -59,7 +59,9 @@ validation or remote delivery acknowledgment at `Flush` or disposal.
 and transitive child with an embedded UTF-8 resource, uses normal dependency
 add/resolve/exact-review, removes the original library and feed, then compiles
 the actual component offline. It reuses the identity-checked native tuple and
-four unchanged companion builds from the ordinary .NET qualification. It signs
+four unchanged companion builds from the ordinary .NET qualification only after
+the prepared source inventory matches its recorded digest and the current .NET
+qualification inputs exactly. It signs
 the five-build release set and retains all original 27 node outcomes before
 adding two missing-log-grant denials and twelve Console outcomes: eight ordinary
 API/error cases plus trap/fuel and fresh-Store recovery. Each added completed

@@ -17,6 +17,7 @@ from tools.dotnet_guest.compiler import runtime_inputs
 from tools.dotnet_standard_console_fixture import CASES, prepare
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
+from tools.qualify_rust_capsules import inputs
 from tools.run_rust_capsule_workflow import run
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_json, snapshot, write_json
@@ -33,6 +34,9 @@ def inherited(native_qualification: Path):
     receipt = read_json(path)
     require(receipt['status'] == 'passed' and receipt['schemaVersion'] == 'latent.dotnet-capsule.qualification.v1',
             'dotnet-Console-observed-native-qualification-required')
+    source = native_qualification / 'source-inputs.json'
+    require(digest(source.read_bytes()) == receipt['sourceIdentityDigest']
+            and read_json(source) == inputs('dotnet'), 'dotnet-Console-prepared-source-mismatch')
     binaries = {name: native_qualification / 'native-binaries' / key.replace('/', '-')
                 for name, key in NATIVE_NAMES.items()}
     identities = {name: file_identity(binary, 512 * 1024 * 1024) for name, binary in binaries.items()}
@@ -51,7 +55,8 @@ def inherited(native_qualification: Path):
         require(all(original[template][name]['sha256'] == complete[field] for name, field in (
             ('component.wasm', 'componentDigest'), ('source-inputs.json', 'sourceDigest'),
             ('build-observation.json', 'observationDigest'))), 'dotnet-Console-companion-bytes-mismatch')
-    return binaries, companions, {'qualification': file_identity(path), 'binaries': identities, 'companions': original}
+    return binaries, companions, {'qualification': file_identity(path), 'sourceInputs': file_identity(source),
+                                 'binaries': identities, 'companions': original}
 
 
 def qualify(output: Path, tools: Path, native_qualification: Path):
