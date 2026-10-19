@@ -53,3 +53,9 @@ world wall {
     import latent:clock/wall@0.1.0;
     export wasi:clocks/wall-clock@0.2.6;
 }
+
+// Ordinary standard output is enabled only by an exact declared log capability.
+// These primary variants keep each WASI resource family on its existing owner.
+world closed-logging { include closed; import latent:log/log@0.1.0; }
+world runtime-logging { include runtime; import latent:log/log@0.1.0; }
+world http-logging { include http; import latent:log/log@0.1.0; }

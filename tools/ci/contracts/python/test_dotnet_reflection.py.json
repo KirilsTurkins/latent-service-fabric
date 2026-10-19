@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "ActualProducerBoundary.test_actual_installer_reaches_normal_native_resolve_with_captured_descriptor_and_pure_library",
+    "ActualProducerBoundary.test_capture_requires_exact_ordinary_original_and_no_hidden_graph_or_executable",
+    "DescriptorEvidence.test_actual_source_compiler_selection_and_build_material_must_bind_same_descriptor",
+    "DescriptorEvidence.test_failed_public_observer_preserves_the_original_exception_identity",
+    "DescriptorEvidence.test_prepared_qualification_rechecks_current_source_and_the_exact_completed_native_products",
+    "SelectedDescriptor.test_actual_project_selects_real_descriptor_without_sdk_or_wit_changes",
+    "SelectedDescriptor.test_changed_or_missing_descriptor_refuses_at_the_actual_compiler_consumer",
+    "SelectedDescriptor.test_repeated_or_foreign_project_selection_refuses_instead_of_replacing_inputs",
+    "SignedBoundary.test_caught_refusal_terminal_trap_and_fresh_supported_reflection_are_distinct",
+    "SignedBoundary.test_resource_exhaustion_is_never_accepted_as_the_uncaught_operation_trap",
+    "SignedBoundary.test_selector_is_default_off_strict_bool_dotnet_only_before_any_effect",
+    "SignedBoundary.test_stale_global_revision_refuses_even_when_deployment_object_generation_matches",
+    "SignedBoundary.test_uncertain_terminal_result_refuses",
+    "SignedBoundary.test_unreaped_invocation_refuses"
+  ],
+  "guards": {
+    "ActualProducerBoundary.test_actual_installer_reaches_normal_native_resolve_with_captured_descriptor_and_pure_library": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ActualProducerBoundary.test_capture_requires_exact_ordinary_original_and_no_hidden_graph_or_executable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DescriptorEvidence.test_actual_source_compiler_selection_and_build_material_must_bind_same_descriptor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DescriptorEvidence.test_failed_public_observer_preserves_the_original_exception_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DescriptorEvidence.test_prepared_qualification_rechecks_current_source_and_the_exact_completed_native_products": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SelectedDescriptor.test_actual_project_selects_real_descriptor_without_sdk_or_wit_changes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SelectedDescriptor.test_changed_or_missing_descriptor_refuses_at_the_actual_compiler_consumer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SelectedDescriptor.test_repeated_or_foreign_project_selection_refuses_instead_of_replacing_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SignedBoundary.test_caught_refusal_terminal_trap_and_fresh_supported_reflection_are_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:21634fa2e10201a2d8b804fa6b2687350dd347f3b62444580c6668979329f195"
+      ],
+      "skipSites": []
+    },
+    "SignedBoundary.test_resource_exhaustion_is_never_accepted_as_the_uncaught_operation_trap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:21634fa2e10201a2d8b804fa6b2687350dd347f3b62444580c6668979329f195"
+      ],
+      "skipSites": []
+    },
+    "SignedBoundary.test_selector_is_default_off_strict_bool_dotnet_only_before_any_effect": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:21634fa2e10201a2d8b804fa6b2687350dd347f3b62444580c6668979329f195"
+      ],
+      "skipSites": []
+    },
+    "SignedBoundary.test_stale_global_revision_refuses_even_when_deployment_object_generation_matches": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:21634fa2e10201a2d8b804fa6b2687350dd347f3b62444580c6668979329f195"
+      ],
+      "skipSites": []
+    },
+    "SignedBoundary.test_uncertain_terminal_result_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:21634fa2e10201a2d8b804fa6b2687350dd347f3b62444580c6668979329f195"
+      ],
+      "skipSites": []
+    },
+    "SignedBoundary.test_unreaped_invocation_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e11503e964cebd0054652bade44e8e0e139a31da1106d1b190d54ebba36cd4e1",
+        "class:setup-sha256:21634fa2e10201a2d8b804fa6b2687350dd347f3b62444580c6668979329f195"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_reflection.py",
+  "reviewReason": "Add source-bound descriptor reflection campaign controls without changing existing cases or guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

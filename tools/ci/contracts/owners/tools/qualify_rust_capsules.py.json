@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Import the existing bounded reader used by generator material size validation; preserve all generator checks and owning commands.",
+  "reviewReason": "Preserve C and TypeScript generators and Console selectors while adding explicit Go generator source/results; all defaults remain false.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8bb5994da580ca0b40e4571f81175b26efc7fe5c6539bc26ba95165e7304f1e3"
+  "sha256": "7636fe5ca55f47dfde5938808637f06ef5879fdbb6f8fbe6c94688347204e185"
 }

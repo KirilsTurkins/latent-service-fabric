@@ -364,6 +364,65 @@ def capture(output, commands, go):
         'credentialsCaptured': False, 'privateKeyCaptured': False, 'sdkLockDigest': digest(sdk)}
 
 
+
+COMPILER_INPUTS = frozenset(('go', 'componentize-go', 'wasm-tools', 'contracts-tool', 'packager',
+                             'toolchain-config', 'dependency-lock'))
+
+
+def offline_rebuild(first, second, project):
+    """Bind two real offline observations; raw byte equality is not qualification."""
+    from tools import guest_dependency_inputs, guest_runtime_receipts as runtime
+    captured = guest_dependency_inputs.capture_source(project, 'go')
+    source = inventory(captured.files)
+    identities, outputs, components = [], [], []
+    for artifact in (first, second):
+        require(read_file(artifact / 'source-inputs.json') == source, 'private-Go-offline-source-drift')
+        recipe = read_file(artifact / 'recipe-inputs.json')
+        bindings = read_json(artifact / 'bindings.json', 16 * 1024 * 1024)
+        binding = digest(json.dumps(bindings, sort_keys=True, separators=(',', ':')).encode())
+        dependency_raw = read_file(artifact / 'application-dependencies.json', 16 * 1024 * 1024)
+        require(read_json(artifact / 'application-dependencies.json', 16 * 1024 * 1024)['networkResolution'] is False,
+                'private-Go-offline-compiler-required')
+        component = read_file(artifact / 'component.wasm', 64 * 1024 * 1024)
+        observed = read_file(artifact / 'build-observation.json')
+        observation, complete = read_json(artifact / 'build-observation.json'), read_json(artifact / 'BUILD-COMPLETE.json')
+        require(complete['sourceDigest'] == observation['source']['snapshotDigest'] == digest(source)
+                and complete['componentDigest'] == observation['componentDigest'] == digest(component)
+                and complete['observationDigest'] == digest(observed) and complete['sdkBindingDigest'] == binding,
+                'private-Go-offline-observation-binding')
+        materials = observation['materials']
+        for name, raw in (('source-snapshot', source), ('build-recipe', recipe),
+                          ('application-dependencies', dependency_raw)):
+            require([row for row in materials if row['name'] == name]
+                    == [{'name': name, 'digest': digest(raw), 'size': len(raw)}],
+                    'private-Go-offline-material-binding')
+        fixed = sorted((row for row in materials if row['name'] in COMPILER_INPUTS), key=lambda row: row['name'])
+        require(len(fixed) == len(COMPILER_INPUTS) and {row['name'] for row in fixed} == COMPILER_INPUTS,
+                'private-Go-offline-compiler-materials')
+        raw = read_file(artifact / 'standard-runtime-selection.json', runtime.MAX_BYTES)
+        material = {'name': 'standard-runtime-selection', 'digest': digest(raw), 'size': len(raw)}
+        require([row for row in materials if row['name'] == material['name']] == [material],
+                'private-Go-offline-runtime-material')
+        value = runtime.read(raw)
+        runtime.verify_build(value, 'go', captured.files, source, component,
+                             [row for row in materials if row['name'] != material['name']])
+        graph = runtime.captured_graph(captured.files)
+        document = json.loads(captured.files['capsule-project.json'])
+        runtime.validate(value, result=binding, configuration={'profile': value['profile'], 'world': document['world'],
+            'target': 'wasip1/wasm', 'selection': graph['selection'] if graph is not None else {}})
+        require(observation['parameters']['locked'] is True and observation['parameters']['ambientWasi'] is False
+                and observation['parameters']['runtime'] == value['profile'], 'private-Go-offline-profile')
+        identities.append({'sourceDigest': digest(source), 'recipeDigest': digest(recipe), 'bindingDigest': binding,
+            'capturedClosureDigest': digest(dependency_raw), 'compilerMaterials': fixed, 'runtimeProfile': value['profile']})
+        outputs.append({'component': {'digest': digest(component), 'size': len(component)},
+            'observationDigest': digest(observed), 'runtimeSelectionDigest': material['digest']})
+        components.append(component)
+    require(identities[0] == identities[1], 'private-Go-offline-immutable-input-drift')
+    captured.check_unchanged()
+    return {'schemaVersion': 'latent.go.private-offline-rebuild.v1', 'inputs': identities[0], 'outputs': outputs,
+        'rawBytesIdentical': components[0] == components[1], 'componentReproducibility': 'not-claimed',
+        'bothSignedExecutionsRequired': True}
+
 def qualify(prepared, output):
     output = fresh(output)
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=1800, command_seconds=600)
@@ -376,7 +435,7 @@ def qualify(prepared, output):
         stage = 'actual-authenticated-native-acquisition'
         phases, acquired = capture(output, commands, go)
         write_json(output / 'capture.json', acquired)
-        builds, nodes = [], []
+        builds, nodes, rebuilt_evidence = [], [], None
         for ordinal, (app, lock, version, removed) in enumerate(phases):
             stage = 'offline-build-' + str(ordinal)
             before = inventory(source_files(app))
@@ -386,27 +445,31 @@ def qualify(prepared, output):
                     'private-Go-offline-build-mutated-inputs')
             require(read_json(artifact / 'application-dependencies.json')['networkResolution'] is False,
                     'private-Go-offline-compiler-required')
+            artifacts = [(str(ordinal), artifact)]
             if ordinal == 0:
                 rebuilt = build(app, output / 'offline-rebuild', products['capsule_contracts'], products['package'],
                     'https://github.com/KirilsTurkins/latent-service-fabric')
-                require(read_json(artifact / 'BUILD-COMPLETE.json')['componentDigest']
-                        == read_json(rebuilt / 'BUILD-COMPLETE.json')['componentDigest'], 'private-Go-offline-component-not-identical')
-            stage = 'sign-and-enforced-node-' + str(ordinal)
-            require(frozen(prepared)[0] == receipt, 'private-Go-original-inputs-drift')
-            signed = output / ('signed-' + str(ordinal))
-            commands.run('private-Go-sign-' + str(ordinal), products['capsule_authoring'], 'demo-sign', signed, artifact, *companions)
-            write_json(signed / 'private-go-probe.json', {'nonce': acquired['nonce'], 'version': version, 'removed': removed})
-            node = node_workflow(products['latent'], products['latentd'], signed, output / ('node-' + str(ordinal)),
-                                 language='go', captured_go_private=True)
-            require(node['status'] == 'passed' and node['capturedGoPrivate']['status'] == 'passed'
-                    and len(node['capturedGoPrivate']['cases']) == 3, 'private-Go-actual-signed-programme-required')
-            builds.append(read_json(artifact / 'BUILD-COMPLETE.json'))
-            nodes.append(file_identity(output / ('node-' + str(ordinal)) / 'workflow.json'))
+                rebuilt_evidence = offline_rebuild(artifact, rebuilt, app)
+                write_json(output / 'offline-rebuild-evidence.json', rebuilt_evidence)
+                artifacts.append(('initial-rebuilt', rebuilt))
+            for label, selected in artifacts:
+                stage = 'sign-and-enforced-node-' + label
+                require(frozen(prepared)[0] == receipt, 'private-Go-original-inputs-drift')
+                signed = output / ('signed-' + label)
+                commands.run('private-Go-sign-' + label, products['capsule_authoring'], 'demo-sign', signed, selected, *companions)
+                write_json(signed / 'private-Go-probe.json', {'nonce': acquired['nonce'], 'version': version, 'removed': removed})
+                node = node_workflow(products['latent'], products['latentd'], signed, output / ('node-' + label),
+                                     language='go', captured_go_private=True)
+                require(node['status'] == 'passed' and node['capturedGoPrivate']['status'] == 'passed'
+                        and len(node['capturedGoPrivate']['cases']) == 3, 'private-Go-actual-signed-programme-required')
+                builds.append(read_json(selected / 'BUILD-COMPLETE.json'))
+                nodes.append(file_identity(output / ('node-' + label) / 'workflow.json'))
         require(frozen(prepared)[0] == receipt and original_go == file_identity(go)
                 and materials == {name: file_identity(ROOT / name) for name in MATERIALS}
                 and time.monotonic() < commands.deadline, 'private-Go-final-inputs-drift')
         result = {'schemaVersion': 'latent.go.private-dependencies.qualification.v1', 'status': 'passed',
             'capture': acquired, 'builds': builds, 'nodeReceipts': nodes, 'materials': materials,
+            'offlineRebuild': rebuilt_evidence, 'componentReproducibility': 'not-claimed',
             'preparedSourceIdentityDigest': receipt['sourceIdentityDigest'], 'nativeBinaries': receipt['binaries'],
             'hermetic': False, 'cleanHost': False, 'publisherAuthenticated': False,
             'releasePublication': 'not-performed', 'generatorQualification': 'separate', 'fullTicketQualification': False}

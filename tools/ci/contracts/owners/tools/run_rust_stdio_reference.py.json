@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_rust_stdio_reference.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add a separately bounded same-run-products signed standard stdio job; preserve every original job, command, deadline and gate. Rebuild exact owned std and execute captured ordinary transitive-library closed/logging/failure/fresh paths; native results remain pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6fefab3735a8bb7e4e77ecda48097412126f71e59debaf674b57d31ab767ebe9"
+}

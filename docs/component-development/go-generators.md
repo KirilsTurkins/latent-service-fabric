@@ -64,3 +64,8 @@ approval, adoption and later source validation. They do not establish actual
 namespace execution or emitted-component compatibility. Only a successful
 exact-source hosted qualification supplies those results. This is a finite
 generator/dependency slice for #678/#686; both broader tickets remain open.
+
+Actual evidence: [run39316026182/job118277596859](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39316026182/job/118277596859), fixture `ba6e72625c16e523178b20ece48a58eaf89cc10f`, artifact `12218561654`.
+The fresh normal27-call programme passed, followed by two separately signed generated outputs (60calls, six request-derived generated cases); both nodes ended cleanly and were physically reaped.
+The native products were compiled at original source `3050cd9d33d74eed5d746f13fbb0e9125376a3b3`; current generation/capture/build/sign used the pinned tools and exact verified SDK/compiler preimages plus the explicitly reviewed authoring authority correction. This is no new current-development native compilation claim.
+The same run's private capture and two initial offline components passed their input/runtime checks, then an added raw-byte equality assertion refused differing components. The corrected private programme requires exact immutable inputs and separately signs/executes both initial outputs before update/removal; its actual four-node result is pending. No byte-reproducibility or full #686 qualification is claimed.

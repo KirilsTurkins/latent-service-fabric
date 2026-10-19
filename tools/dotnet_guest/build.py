@@ -26,6 +26,7 @@ RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dot
     "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/task_wait.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/dotnet_guest/async_exports.py",
     "tools/dotnet_guest/internal_io.py",
+    "tools/dotnet_guest/closed_io.py",
     "tools/dotnet_guest/retirement.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
@@ -34,7 +35,7 @@ RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dot
     "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_store.py', 'tools/application_dependency_tools.py',
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
-           'tools/dotnet_application_dependencies.py', 'tools/dotnet_dependency_authoring.py')
+           'tools/dotnet_application_dependencies.py', 'tools/dotnet_dependency_authoring.py', 'tools/dotnet_registry_tls.py')
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE

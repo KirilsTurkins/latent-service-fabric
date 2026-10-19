@@ -6,12 +6,17 @@ WALL = "latent:clock/wall@0.1.0"
 ACTIVATION = "latent:runtime/activation@0.1.0"
 HTTP = "latent:http/streaming@0.3.0"
 RANDOM = "latent:random/random@0.1.0"
+LOG = "latent:log/log@0.1.0"
+WASI_STDIO = frozenset({"wasi:cli/stdout@0.2.6", "wasi:cli/stderr@0.2.6"})
 ADAPTERS = {
     "closed": ("dotnet-closed-runtime", "runtime.wasm"),
     "runtime": ("dotnet-activation-runtime", "activation-runtime.wasm"),
     "http": ("dotnet-http-runtime", "http-runtime.wasm"),
     "entropy": ("dotnet-noncrypto-entropy", "noncrypto-entropy.wasm"),
     "wall": ("dotnet-wall-clock-runtime", "wall-clock-runtime.wasm"),
+    "closed-logging": ("dotnet-closed-logging-runtime", "closed-logging-runtime.wasm"),
+    "runtime-logging": ("dotnet-activation-logging-runtime", "activation-logging-runtime.wasm"),
+    "http-logging": ("dotnet-http-logging-runtime", "http-logging-runtime.wasm"),
 }
 EXAMPLES = tuple("tools/toolchain-smoke/examples/" + example.replace("-", "_") + ".rs"
                  for example, _binary in ADAPTERS.values())
@@ -56,6 +61,8 @@ def select(declared: list[str], emitted: list[str]) -> str:
             raise ValueError("dotnet-runtime-unsupported-http-version:" + name)
         if name.startswith("latent:random/random@") and name != RANDOM:
             raise ValueError("dotnet-runtime-unsupported-entropy-version:" + name)
+        if name.startswith("latent:log/log@") and name != LOG:
+            raise ValueError("dotnet-runtime-unsupported-log-version:" + name)
         if name.startswith("latent:clock/wall@") and name != WALL:
             raise ValueError("dotnet-runtime-unsupported-wall-clock-version:" + name)
     if WASI_INSECURE_IMPORTS & actual and RANDOM not in declarations:
@@ -67,8 +74,10 @@ def select(declared: list[str], emitted: list[str]) -> str:
     if HTTP in declarations and ACTIVATION in declarations and WASI_HTTP_IMPORTS <= actual:
         if WASI_WALL in actual and WALL not in declarations:
             raise ValueError("dotnet-runtime-http-wall-clock-requires-declaration")
-        return "http"
-    return "runtime" if ACTIVATION in declarations else "closed"
+        profile = "http"
+    else:
+        profile = "runtime" if ACTIVATION in declarations else "closed"
+    return profile + "-logging" if LOG in declarations and WASI_STDIO & actual else profile
 
 
 def additional(declared: list[str], emitted: list[str]) -> tuple[str, ...]:

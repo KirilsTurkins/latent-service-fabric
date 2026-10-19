@@ -46,10 +46,15 @@ This is not permission to turn asynchronous operations into blocking host I/O.
 NativeAOT has no JIT or dynamic assembly loading. The compiled profile probe
 checks dynamic-code flags, UTF-8 library round-trips, completed/uncompleted
 activation-local tasks and explicit GC collection. WIT exports remain rooted
-after trimming. Runtime reflection/member lookup is unsupported: even
-`GetMethod` for a statically named method requests ambient hash-seed entropy
-in this pinned runtime and traps. A separate negative probe and fresh-state
-invocation check that boundary; reflection failure is not a supported return.
+after trimming. Descriptor-selected reflection is qualified for the finite
+`Assembly.GetType` / `Type.GetMethod` / `MethodInfo.Invoke` path described in
+[the reflection programme](../../docs/testing/dotnet-reflection-qualification.md).
+It requires the reviewed trimming descriptor and an explicitly declared and
+granted random capability for this runtime's noncrypto hash-seed initialization.
+The closed profile without that authority still refuses the operation.
+Loading captured valid managed bytes with `Assembly.Load(byte[])` is explicitly
+unsupported: the signed probe catches `PlatformNotSupportedException`, separately
+checks the uncaught terminal trap, then verifies fresh reflected state.
 Reflection.Emit, application threads, timers, task schedulers and a CLR host
 event loop are outside this profile. An unresolved managed task may belong
 to an activation, but cannot preserve an application after its activation
@@ -91,6 +96,15 @@ NativeAOT GC monotonic time is routed through
 `latent:clock/monotonic@0.1.0`, declared in WIT and separately granted by
 the operator. Missing authority fails closed. Host calls share the activation's
 budget and deadline; wrappers do not retry or widen them.
+
+An explicitly declared `latent:log/log@0.1.0` can select the
+[ordinary Console source profile](../../docs/component-development/dotnet-standard-console.md)
+when NativeAOT actually emits stdout/stderr imports. It preserves BCL formatting
+and routes bounded UTF-8 through the existing typed log capability; it creates
+no provider or grant. Provider rejection and canonical incomplete flush fail
+strictly; the unchanged BCL raw Console stream's flush remains a no-op.
+The new signed Console campaign is pending; local port references do not qualify
+the BCL/ABI or the broader asynchronous runtime.
 
 Standalone capsules use a 128 MiB memory ceiling, finite one-billion fuel
 ceiling and explicit 120-second cold invocation ceiling. The all-SDK harness

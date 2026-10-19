@@ -24,7 +24,8 @@ from tools.build_process_signals import owned_cancellation
 # benchmark evidence, docs and generated/ignored target trees.
 SOURCE_ALLOWLIST = (
     ".cargo", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml",
-    "apps", "crates", "tools", "schemas", "wit", "api", "sdk/rust", "sdk/rust-guest", "examples",
+    "apps", "crates", "tools", "schemas", "wit", "api", "sdk/rust", "sdk/rust-guest",
+    "sdk/rust-standard-stdio", "examples",
 )
 REVISION = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})\Z")
 SEGMENT = re.compile(r"[A-Za-z0-9._-]{1,128}\Z")

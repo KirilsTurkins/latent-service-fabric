@@ -25,6 +25,7 @@ on:
       - tools/qualify_go_private_dependencies.py
       - tools/tests/test_go_proxy_tls.py
       - tools/tests/test_go_private_proxy.py
+      - tools/tests/test_go_private_rebuild.py
       - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
@@ -111,6 +112,7 @@ on:
       - tools/qualify_go_private_dependencies.py
       - tools/tests/test_go_proxy_tls.py
       - tools/tests/test_go_private_proxy.py
+      - tools/tests/test_go_private_rebuild.py
       - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
@@ -569,6 +571,8 @@ jobs:
             ${{ runner.temp }}/go-private-dependencies/*-native-reference.json
             ${{ runner.temp }}/go-private-dependencies/build-*/BUILD-COMPLETE.json
             ${{ runner.temp }}/go-private-dependencies/offline-rebuild/BUILD-COMPLETE.json
+            ${{ runner.temp }}/go-private-dependencies/offline-rebuild/build-observation.json
+            ${{ runner.temp }}/go-private-dependencies/offline-rebuild-evidence.json
             ${{ runner.temp }}/go-private-dependencies/node-*/workflow.json
             ${{ runner.temp }}/go-private-dependencies/node-*/FAILED.json
             ${{ runner.temp }}/go-capsule-dependencies/**

@@ -41,6 +41,7 @@
           "tools/qualify_go_private_dependencies.py",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
+          "tools/tests/test_go_private_rebuild.py",
           "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -131,6 +132,7 @@
           "tools/qualify_go_private_dependencies.py",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
+          "tools/tests/test_go_private_rebuild.py",
           "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -203,7 +205,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Union of private, approved generator, logging and managed-v5 triggers; original native workflow remains mandatory.",
+  "reviewReason": "Trigger normal owning Go qualification for explicit private/generator source and focused controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

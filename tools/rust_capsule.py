@@ -19,6 +19,8 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=project.AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
+    new.add_argument('--runtime-profile', choices=('wasm32-unknown-unknown-panic-abort-v1', 'rust-standard-closed-v1', 'rust-standard-logging-v1'),
+                     help='Explicit owned standard runtime selection; installs no authority')
     for operation in ('add', 'update', 'remove', 'lock'):
         native = commands.add_parser(operation, help='Explicit native Cargo declaration/lock authoring in a controlled fetch stage')
         native.add_argument('project', type=Path)
@@ -76,6 +78,7 @@ def parser() -> argparse.ArgumentParser:
     packaging.add_argument("--package-inputs-only", action="store_true", help="Emit checked bytes for a separately invoked packager")
     compile_.add_argument("--offline", action="store_true", help="Use already-cached pinned Cargo dependencies only")
     compile_.add_argument("--executable-approval", help="Exact captured build-script/proc-macro compiler/profile approval digest")
+    compile_.add_argument('--standard-runtime', type=Path, help='Exact prepared standard logging sysroot; requires explicit matching project profile')
     return parser
 
 
@@ -84,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     authoring = args.command in {"add", "update", "remove", "lock", "resolve", "review-lock", "dependencies", "test", "watch"}
     try:
         if args.command == "new":
-            result = project.create(args.directory, args.template, args.name)
+            result = project.create(args.directory, args.template, args.name, runtime_profile=args.runtime_profile)
         elif authoring:
             from tools import rust_dependency_authoring as dependencies
             from tools.build_snapshot import canonical
@@ -138,7 +141,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         else:
             result = build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager,
-                           args.repository, offline=args.offline, executable_approval=args.executable_approval)
+                           args.repository, offline=args.offline, executable_approval=args.executable_approval,
+                           standard_runtime=args.standard_runtime)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError, KeyError, TypeError) as error:

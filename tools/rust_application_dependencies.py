@@ -564,19 +564,21 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     original_lock = read_bytes(project / 'Cargo.lock')
     pins = tomllib.loads(read_bytes(project / 'vendor/lsf/rust-toolchain.toml').decode())
     selected = dict(selection or {})
+    from tools.rust_standard_logging_inputs import selection as runtime_selection
+    runtime_profile = runtime_selection(json.loads(before['capsule-project.json']))
     if set(selected) - {'features', 'allFeatures', 'noDefaultFeatures', 'runtimeProfile', 'target'}:
         raise DependencyError('cargo-selection-fields-invalid')
     if selected.get('target', 'wasm32-unknown-unknown') != 'wasm32-unknown-unknown':
         raise DependencyError('cargo-target-profile-not-maintained')
-    if selected.get('runtimeProfile', 'wasm32-unknown-unknown-panic-abort-v1') != 'wasm32-unknown-unknown-panic-abort-v1':
-        raise DependencyError('cargo-runtime-profile-not-installed')
+    if selected.get('runtimeProfile', runtime_profile) != runtime_profile:
+        raise DependencyError('cargo-runtime-profile-differs-from-project')
     features = selected.get('features', [])
     if (not isinstance(features, list) or len(features) > 256 or any(not isinstance(value, str)
             or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_./+-]{0,127}', value) for value in features)
             or any(type(selected.get(name, False)) is not bool for name in ('allFeatures', 'noDefaultFeatures'))):
         raise DependencyError('cargo-feature-selection-invalid')
     selected.update(target='wasm32-unknown-unknown', features=sorted(set(features)),
-                    runtimeProfile=selected.get('runtimeProfile', 'wasm32-unknown-unknown-panic-abort-v1'))
+                    runtimeProfile=runtime_profile)
     located = cargo
     if located is None and (rustup := shutil.which('rustup')):
         located = run_bounded([rustup, 'which', '--toolchain', pins['toolchain']['channel'], 'cargo'],
