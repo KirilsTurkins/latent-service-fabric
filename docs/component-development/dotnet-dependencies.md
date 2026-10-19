@@ -48,6 +48,13 @@ Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="exampl
 
 `TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.
 
+The [descriptor reflection qualification](../testing/dotnet-reflection-qualification.md)
+uses an ordinary captured outside DLL, runtime-selected type/member names and
+the exact descriptor material. Its signed component programme distinguishes a
+caught dynamic-load refusal, an uncaught terminal trap and a fresh successful
+reflection call. Source controls alone do not qualify that runtime behaviour;
+use its successful exact-source hosted receipt before making that claim.
+
 Immediately before locked restore, the captured recipe verifies each active
 trimming descriptor and project-declared embedded resource against its reviewed
 digest and size. A path overwritten by canonical WIT, project generation or
