@@ -144,7 +144,7 @@ def server(root, commands, payloads, token):
                 connection.do_handshake()
                 return connection, address
             except BaseException as error:
-                if isinstance(error, ssl.SSLError):
+                if isinstance(error, OSError):
                     with feed.lock:
                         feed.handshake_failures += 1
                 connection.close()

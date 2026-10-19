@@ -59,15 +59,22 @@ def author(commands, stage, *arguments, token=None, expected=0, confidential=())
         commands.environment[TOKEN_SLOT] = token
     try:
         try:
-            commands.run(stage, sys.executable, ROOT / 'tools/go_capsule.py', *arguments)
-        except ValueError:
-            require(len(commands.records) == ordinal + 1
-                    and commands.records[-1]['exitCode'] == expected and expected != 0,
-                    'private-Go-unexpected-native-command-failure')
-        require(commands.records[-1]['exitCode'] == expected, 'private-Go-native-command-outcome')
-        for stream in ('stdout', 'stderr'):
-            raw = read_file(commands.output / 'logs' / f'{ordinal:02d}-{stage}.{stream}.txt')
-            require(all(secret not in raw for secret in confidential), 'private-Go-public-command-secret')
+            try:
+                commands.run(stage, sys.executable, ROOT / 'tools/go_capsule.py', *arguments)
+            except ValueError:
+                require(len(commands.records) == ordinal + 1
+                        and commands.records[-1]['exitCode'] == expected and expected != 0,
+                        'private-Go-unexpected-native-command-failure')
+            require(commands.records[-1]['exitCode'] == expected, 'private-Go-native-command-outcome')
+        finally:
+            # Sanitize retained streams even when the native command fails unexpectedly.
+            exposed = False
+            for stream in ('stdout', 'stderr'):
+                path = commands.output / 'logs' / f'{ordinal:02d}-{stage}.{stream}.txt'
+                if path.is_file() and any(secret in read_file(path) for secret in confidential):
+                    path.write_bytes(b'private-command-output-redacted\n')
+                    exposed = True
+            require(not exposed, 'private-Go-public-command-secret')
     finally:
         commands.environment.pop(TOKEN_SLOT, None)
         if previous is not None:

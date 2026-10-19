@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind reviewed unchanged qualifier to exact committed LF source bytes; correct Windows physical CRLF fingerprint.",
+  "reviewReason": "Always sanitize confidential streams in native authoring finally before artifact retention; credentials restored and native outcome gates unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3c8fc7cbafc598d474b396d33765682947e8c5af9c8d9f2c30f0df793c40a1d6"
+  "sha256": "fd51ee3276fcb8f33f36f2e4daa16157834d8bbbc86225bb716295f186a3998a"
 }

@@ -11,7 +11,9 @@
     "PrivateProxy.test_probe_metadata_is_closed_and_validated_before_any_invocation",
     "PrivateProxy.test_signed_values_use_full_route_tuple_and_original_physical_idle",
     "PrivateProxy.test_unknown_coordinates_versions_and_zip_members_retain_native_go_sources",
-    "PrivateProxy.test_wrong_revision_unreaped_or_effectful_calls_never_qualify"
+    "PrivateProxy.test_wrong_revision_unreaped_or_effectful_calls_never_qualify",
+    "RetainedPrivateOutput.test_tls_handshake_transport_errors_are_counted_and_connection_closed",
+    "RetainedPrivateOutput.test_unexpected_failures_sanitize_both_streams_and_restore_previous_authority"
   ],
   "guards": {
     "PrivateProxy.test_authority_is_child_only_and_previous_environment_restored": {
@@ -157,10 +159,34 @@
         "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
       ],
       "skipSites": []
+    },
+    "RetainedPrivateOutput.test_tls_handshake_transport_errors_are_counted_and_connection_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RetainedPrivateOutput.test_unexpected_failures_sanitize_both_streams_and_restore_previous_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_private_proxy.py",
-  "reviewReason": "Preserve original capture/compiler/cleanup failure when bounded FAILED observer itself errors; add original exception identity controls without changing positive campaign.",
+  "reviewReason": "Always redact confidential retained streams after unexpected native failure; preserve all old cases/guards and verify bounded handshake transport accounting.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

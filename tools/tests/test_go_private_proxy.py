@@ -205,5 +205,87 @@ class PrivateProxy(unittest.TestCase):
             self.assertFalse(failed['fullTicketQualification'])
 
 
+class RetainedPrivateOutput(unittest.TestCase):
+    def test_unexpected_failures_sanitize_both_streams_and_restore_previous_authority(self):
+        for original in (ValueError('unexpected-native-outcome'), RuntimeError('unexpected-observer')):
+            for exposed in (False, True):
+                with self.subTest(error=type(original).__name__, exposed=exposed), \
+                     tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary); (root/'logs').mkdir()
+                    commands = SimpleNamespace(records=[], environment={fixture.TOKEN_SLOT: 'previous'}, output=root)
+                    def run(stage, *args):
+                        commands.records.append({'exitCode': 2})
+                        for stream in ('stdout', 'stderr'):
+                            (root/'logs'/('00-'+stage+'.'+stream+'.txt')).write_bytes(
+                                b'opaque-credential' if exposed else b'fixed-public-output')
+                        raise original
+                    commands.run = run
+                    if exposed:
+                        with self.assertRaisesRegex(WorkflowError, 'public-command-secret'):
+                            gate.author(commands, 'negative', expected=1, token='opaque-credential',
+                                        confidential=(b'opaque-credential',))
+                    elif isinstance(original, ValueError):
+                        with self.assertRaisesRegex(WorkflowError, 'unexpected-native-command-failure'):
+                            gate.author(commands, 'negative', expected=1, token='opaque-credential',
+                                        confidential=(b'opaque-credential',))
+                    else:
+                        with self.assertRaises(RuntimeError) as raised:
+                            gate.author(commands, 'negative', expected=1, token='opaque-credential',
+                                        confidential=(b'opaque-credential',))
+                        self.assertIs(raised.exception, original)
+                    for path in (root/'logs').iterdir():
+                        self.assertEqual(path.read_bytes(), b'private-command-output-redacted\n'
+                                         if exposed else b'fixed-public-output')
+                    self.assertEqual(commands.environment, {fixture.TOKEN_SLOT: 'previous'})
+
+    def test_tls_handshake_transport_errors_are_counted_and_connection_closed(self):
+        from unittest.mock import Mock
+        for original in (fixture.ssl.SSLError('closed TLS'), ConnectionResetError('closed peer'),
+                         TimeoutError('bounded handshake')):
+            with self.subTest(error=type(original).__name__), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                connection = Mock()
+                connection.do_handshake.side_effect = original
+                listener = Mock()
+                listener.accept.return_value = (connection, ('127.0.0.1', 1))
+                context = Mock()
+                context.wrap_socket.return_value = connection
+                observed = []
+                def initialize(peer, *args):
+                    peer.socket = listener
+                    peer.server_address = ('127.0.0.1', 1)
+                class Owner:
+                    def __init__(self, target, **kwargs):
+                        self.peer = target.__self__
+                    def start(self):
+                        try:
+                            self.peer.get_request()
+                        except OSError as error:
+                            observed.append(error)
+                    def join(self, **kwargs):
+                        pass
+                    def is_alive(self):
+                        return False
+                def certificate(*args):
+                    (root/'key.pem').write_bytes(b'owned-private-key-fixture')
+                    (root/'certificate.pem').write_bytes(b'owned-public-ca-fixture')
+                check = Mock()
+                check.__enter__ = Mock(return_value=check)
+                check.__exit__ = Mock(return_value=False)
+                check.connect_ex.return_value = 1
+                with patch.object(fixture.ssl, 'SSLContext', return_value=context), \
+                     patch.object(fixture.http.server.ThreadingHTTPServer, '__init__', initialize), \
+                     patch.object(fixture.http.server.ThreadingHTTPServer, 'shutdown'), \
+                     patch.object(fixture.http.server.ThreadingHTTPServer, 'server_close'), \
+                     patch.object(fixture.threading, 'Thread', Owner), \
+                     patch.object(fixture.socket, 'socket', return_value=check):
+                    with fixture.server(root, SimpleNamespace(run=certificate), {}, 'opaque') as (feed, *_):
+                        self.assertEqual(feed.handshake_failures, 1)
+                        self.assertEqual(feed.observations, [])
+                self.assertEqual(observed, [original])
+                connection.settimeout.assert_called_once_with(3)
+                connection.close.assert_called_once_with()
+
+
 if __name__ == '__main__':
     unittest.main()
