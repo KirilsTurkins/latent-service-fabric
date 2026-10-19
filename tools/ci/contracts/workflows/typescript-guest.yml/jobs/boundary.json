@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ !inputs.generator_replay }}",
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -149,7 +150,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Explicit TypeScript generator qualification preserves the original normal programme and limits, adds exact source approval and signed request-dependent values; existing C generator acceptance remains required.",
+  "reviewReason": "Default-false source-bound generator replay retains every normal command and limit, all native/SDK/compiler source and original27-call receipts; only exact pinned missing-reader import differs, both fresh generated components must pass signed30-call programmes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

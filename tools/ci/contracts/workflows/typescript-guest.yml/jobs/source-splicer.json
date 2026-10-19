@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ !inputs.generator_replay }}",
     "name": "Source-owned asynchronous import compiler",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -71,7 +72,7 @@
   },
   "jobId": "source-splicer",
   "kind": "job",
-  "reviewReason": "Retain original source compiler commands and failure evidence while freezing reusable exact-run compiler inputs",
+  "reviewReason": "Default-false source-bound generator replay retains every normal command and limit, all native/SDK/compiler source and original27-call receipts; only exact pinned missing-reader import differs, both fresh generated components must pass signed30-call programmes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

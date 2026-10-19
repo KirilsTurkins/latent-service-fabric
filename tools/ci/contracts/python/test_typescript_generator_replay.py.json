@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "FixedInputs.test_archive_link_and_expanded_bound_refuse_without_creating_output",
+    "FixedInputs.test_artifact_wrong_head_run_or_selector_refuses_before_payload",
+    "FixedInputs.test_fixed_package_layers_are_bound_to_real_marker_and_inventory",
+    "FixedInputs.test_noncompanion_and_unsafe_member_names_never_reach_extraction",
+    "FixedInputs.test_normal_greeting_compiler_inputs_are_bound_to_original_observation",
+    "FixedInputs.test_only_the_proven_missing_reader_import_is_an_allowed_source_delta",
+    "FixedInputs.test_range_reader_refuses_unbounded_network_request",
+    "FixedInputs.test_range_total_is_finitely_bound_to_fixed_artifact_size_including_rereads"
+  ],
+  "guards": {
+    "FixedInputs.test_archive_link_and_expanded_bound_refuse_without_creating_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedInputs.test_artifact_wrong_head_run_or_selector_refuses_before_payload": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedInputs.test_fixed_package_layers_are_bound_to_real_marker_and_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedInputs.test_noncompanion_and_unsafe_member_names_never_reach_extraction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedInputs.test_normal_greeting_compiler_inputs_are_bound_to_original_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedInputs.test_only_the_proven_missing_reader_import_is_an_allowed_source_delta": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedInputs.test_range_reader_refuses_unbounded_network_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedInputs.test_range_total_is_finitely_bound_to_fixed_artifact_size_including_rereads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6001f7825b9c889d388bd3e49fd526b5fd0dad713d59879ead32992a9b47e076",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_generator_replay.py",
+  "reviewReason": "Default-false source-bound generator replay retains every normal command and limit, all native/SDK/compiler source and original27-call receipts; only exact pinned missing-reader import differs, both fresh generated components must pass signed30-call programmes.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

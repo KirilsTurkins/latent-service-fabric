@@ -25,7 +25,7 @@ from tools.check_rust_capsule_ownership import check as ownership
 from tools.phase3_resource_identity import file_identity, inventory as directory_identity, source_identity
 from tools.run_rust_capsule_workflow import run as node_workflow
 from tools.rust_capsule_build import Commands, build
-from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_json, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_file, read_json, write_json
 
 HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py", "qualify_rust_capsules.py",
     "run_rust_capsule_workflow.py", "rust_capsule_cases.py", "rust_capsule_node.py", "check_rust_capsule_ownership.py",

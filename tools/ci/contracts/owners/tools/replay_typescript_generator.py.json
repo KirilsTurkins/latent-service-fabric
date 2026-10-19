@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_typescript_generator.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Default-false source-bound generator replay retains every normal command and limit, all native/SDK/compiler source and original27-call receipts; only exact pinned missing-reader import differs, both fresh generated components must pass signed30-call programmes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "944d7f714011f68bbcaf3fda00ab4b97bdbddd394b9e2d547763704be69bde22"
+}

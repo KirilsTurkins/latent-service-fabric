@@ -1,0 +1,83 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.generator_replay }}",
+    "name": "Fresh approved TypeScript generation with exact retained native products",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check fixed source and public package identity controls",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_typescript_generator_replay tools.tests.test_typescript_generator_authoring tools.tests.test_typescript_generator_fixture\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve original native products and companion capsules",
+        "run": "python3 tools/replay_typescript_generator.py --output \"$RUNNER_TEMP/typescript-generator-prepared\""
+      },
+      {
+        "name": "Install the existing isolated compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the reviewed JavaScript compiler inputs",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\""
+      },
+      {
+        "name": "Generate approved TypeScript and qualify both offline components",
+        "run": "python3 tools/replay_typescript_generator.py --prepared \"$RUNNER_TEMP/typescript-generator-prepared\" --tools \"$RUNNER_TEMP/typescript-guest-tools\" --output \"$RUNNER_TEMP/typescript-generator-replay\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain public exact-source evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-generator-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-generator-prepared/retrieval.json\n${{ runner.temp }}/typescript-generator-replay/qualification.json\n${{ runner.temp }}/typescript-generator-replay/normal-node/workflow.json\n${{ runner.temp }}/typescript-generator-replay/node-*/workflow.json\n${{ runner.temp }}/typescript-generator-replay/node-*/FAILED.json\n${{ runner.temp }}/typescript-generator-replay/build-*/*.json\n${{ runner.temp }}/typescript-generator-replay/build-*/component.wasm\n${{ runner.temp }}/typescript-generator-replay/build-*/logs/**\n${{ runner.temp }}/typescript-generator-replay/outside-generator/GENERATOR-COMPLETE.json\n${{ runner.temp }}/typescript-generator-replay/logs/**\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "generator-replay",
+  "kind": "job",
+  "reviewReason": "Default-false source-bound generator replay retains every normal command and limit, all native/SDK/compiler source and original27-call receipts; only exact pinned missing-reader import differs, both fresh generated components must pass signed30-call programmes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}
