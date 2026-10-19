@@ -20,7 +20,12 @@
     "NpmDependencyAuthoring.test_symbolic_local_dependency_is_rejected_before_native_dispatch",
     "NpmDependencyAuthoring.test_test_and_watch_use_maintained_parser_and_preserve_uncertain_receipt_failure",
     "NpmDependencyAuthoring.test_unreviewed_resolution_cannot_be_rebound_into_a_success_receipt",
-    "NpmDependencyAuthoring.test_update_and_remove_preserve_old_lock_until_each_exact_review"
+    "NpmDependencyAuthoring.test_update_and_remove_preserve_old_lock_until_each_exact_review",
+    "NpmRegistryScopes.test_capture_duplicate_scope_preserves_accepted_inputs_and_never_dispatches_node",
+    "NpmRegistryScopes.test_cli_duplicate_scope_retains_closed_failure_without_credentials_candidate_or_replay",
+    "NpmRegistryScopes.test_default_and_distinct_scopes_keep_explicit_opaque_tokens_and_drop_ambient_configuration",
+    "NpmRegistryScopes.test_duplicate_default_and_scoped_registries_refuse_before_writing_native_configuration",
+    "NpmRegistryScopes.test_native_lock_duplicate_default_preserves_original_lock_and_never_dispatches_node"
   ],
   "guards": {
     "NpmDependencyAuthoring.test_actual_staged_recipe_captures_reviews_verifies_and_requires_explicit_frontend": {
@@ -277,10 +282,70 @@
         "class:setup-sha256:a025a3d8454a50d7f281a780bcf3c7c637132b3fdd903c71de97e0668689c4b9"
       ],
       "skipSites": []
+    },
+    "NpmRegistryScopes.test_capture_duplicate_scope_preserves_accepted_inputs_and_never_dispatches_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:38281b89d084911e1e1a6bad0f16c83bb49e18369b30d7b9c0fa09d74ec01732",
+        "class:setup-sha256:60f294fd5678f51f6addd4f70c2104105d1f3343e775b94776e9a1712b7f3305"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryScopes.test_cli_duplicate_scope_retains_closed_failure_without_credentials_candidate_or_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:38281b89d084911e1e1a6bad0f16c83bb49e18369b30d7b9c0fa09d74ec01732",
+        "class:setup-sha256:60f294fd5678f51f6addd4f70c2104105d1f3343e775b94776e9a1712b7f3305"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryScopes.test_default_and_distinct_scopes_keep_explicit_opaque_tokens_and_drop_ambient_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:38281b89d084911e1e1a6bad0f16c83bb49e18369b30d7b9c0fa09d74ec01732",
+        "class:setup-sha256:60f294fd5678f51f6addd4f70c2104105d1f3343e775b94776e9a1712b7f3305"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryScopes.test_duplicate_default_and_scoped_registries_refuse_before_writing_native_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:38281b89d084911e1e1a6bad0f16c83bb49e18369b30d7b9c0fa09d74ec01732",
+        "class:setup-sha256:60f294fd5678f51f6addd4f70c2104105d1f3343e775b94776e9a1712b7f3305"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryScopes.test_native_lock_duplicate_default_preserves_original_lock_and_never_dispatches_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:38281b89d084911e1e1a6bad0f16c83bb49e18369b30d7b9c0fa09d74ec01732",
+        "class:setup-sha256:60f294fd5678f51f6addd4f70c2104105d1f3343e775b94776e9a1712b7f3305"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_dependency_authoring.py",
-  "reviewReason": "Reject raw URL configuration injection before native execution, preserving all original cases and guards",
+  "reviewReason": "Reject duplicate explicit npm registry scopes before lock or capture native dispatch; preserve all existing test bodies, setup and skip guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

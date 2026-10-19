@@ -457,5 +457,127 @@ class NpmDependencyAuthoring(unittest.TestCase):
             self.assertEqual(code, 5); dispatched.assert_called_once()
 
 
+class NpmRegistryScopes(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        NpmDependencyAuthoring.setUpClass.__func__(cls)
+
+    def setUp(self):
+        self.fixture = NpmDependencyAuthoring('test_exact_capture_review_and_offline_resource_after_originals_are_removed')
+        self.fixture.original = self.original
+        self.fixture.setUp()
+        self.addCleanup(self.fixture.doCleanups)
+
+    def policy(self, scope='@team'):
+        return {'registries': [
+            {'scope': scope, 'url': 'https://first.example.invalid/npm/'},
+            {'scope': scope, 'url': 'https://second.example.invalid/npm/'}]}
+
+    def accepted(self):
+        return {name: (self.fixture.app / name).read_bytes() for name in
+                ('package.json', 'package-lock.json', 'sdk-lock.json', 'capsule-project.json',
+                 inputs.MANIFEST, inputs.LOCK, 'npm-resolved.lock.json')}
+
+    def test_duplicate_default_and_scoped_registries_refuse_before_writing_native_configuration(self):
+        for ordinal, scopes in enumerate(((None, None), (None, ''), ('@team', '@team'))):
+            for same_endpoint in (False, True):
+                rows = self.policy()['registries']
+                for row, scope in zip(rows, scopes):
+                    if scope is None:
+                        row.pop('scope')
+                    else:
+                        row['scope'] = scope
+                if same_endpoint:
+                    rows[1]['url'] = rows[0]['url']
+                owned = self.fixture.root / f'policy-{ordinal}-{same_endpoint}'
+                owned.mkdir()
+                with self.subTest(scopes=scopes, same_endpoint=same_endpoint):
+                    with self.assertRaisesRegex(DependencyError, '^npm-registry-scope-ambiguous$'):
+                        native.fetch_environment(owned, {'registries': rows})
+                    self.assertFalse((owned / 'registry.npmrc').exists())
+
+    def test_default_and_distinct_scopes_keep_explicit_opaque_tokens_and_drop_ambient_configuration(self):
+        owned = self.fixture.root / 'distinct-scopes'
+        owned.mkdir()
+        rows = [{'url': 'https://public.example.invalid/'},
+                {'scope': '@first', 'url': 'https://first.example.invalid/npm/', 'authorizationEnv': 'APP_FIRST_TOKEN'},
+                {'scope': '@second', 'url': 'https://second.example.invalid/npm/', 'authorizationEnv': 'APP_SECOND_TOKEN'}]
+        secrets = {'APP_FIRST_TOKEN': 'opaque-control-first', 'APP_SECOND_TOKEN': 'opaque-control-second'}
+        with patch.dict(os.environ, {**secrets, 'NPM_CONFIG_REGISTRY': 'https://ambient.example.invalid/',
+                                     'NODE_OPTIONS': '--require /unselected/control.cjs'}):
+            environment = native.fetch_environment(owned, {'registries': rows})
+        text = (owned / 'registry.npmrc').read_text()
+        self.assertEqual([line for line in text.splitlines() if 'registry=' in line],
+                         ['registry=https://public.example.invalid/',
+                          '@first:registry=https://first.example.invalid/npm/',
+                          '@second:registry=https://second.example.invalid/npm/'])
+        self.assertEqual(environment['LSF_NPM_REGISTRY_TOKEN_1'], secrets['APP_FIRST_TOKEN'])
+        self.assertEqual(environment['LSF_NPM_REGISTRY_TOKEN_2'], secrets['APP_SECOND_TOKEN'])
+        for key in (*secrets, 'NPM_CONFIG_REGISTRY', 'NODE_OPTIONS'):
+            self.assertNotIn(key, environment)
+        self.assertNotIn('ambient.example.invalid', text)
+        self.assertTrue(all(value not in text for value in secrets.values()))
+
+    def test_capture_duplicate_scope_preserves_accepted_inputs_and_never_dispatches_node(self):
+        fixture = self.fixture
+        fixture.reviewed()
+        before = self.accepted()
+        policy = fixture.root / 'duplicate-capture-policy.json'
+        policy.write_bytes(canonical(self.policy()))
+        candidate = fixture.root / 'duplicate-capture-candidate.json'
+        with patch.object(native, 'run_bounded', side_effect=fixture.resolver_command) as dispatched:
+            with self.assertRaisesRegex(DependencyError, '^npm-registry-scope-ambiguous$'):
+                native.resolve(fixture.owner, candidate, node=fixture.node, npm=fixture.npm, registry_config=policy)
+        dispatched.assert_not_called()
+        self.assertFalse(candidate.exists())
+        self.assertEqual(self.accepted(), before)
+
+    def test_native_lock_duplicate_default_preserves_original_lock_and_never_dispatches_node(self):
+        from tools import npm_lock_authoring as locking
+        from tools.tests.test_npm_lock_authoring import NpmLockAuthoring
+        fixture = self.fixture
+        fixture.reviewed()
+        before = self.accepted()
+        fixture.native_commands, fixture.after, fixture.unobserved = [], None, False
+        policy = fixture.root / 'duplicate-native-lock-policy.json'
+        policy.write_bytes(canonical(self.policy('')))
+        def command(*arguments):
+            return NpmLockAuthoring.command(fixture, *arguments)
+        with patch.object(locking, 'run_bounded', side_effect=command) as dispatched:
+            with self.assertRaisesRegex(DependencyError, '^npm-registry-scope-ambiguous$'):
+                locking.create_lock(fixture.owner, node=fixture.node, npm=fixture.npm, registry_config=policy)
+        dispatched.assert_not_called()
+        self.assertEqual(self.accepted(), before)
+
+    def test_cli_duplicate_scope_retains_closed_failure_without_credentials_candidate_or_replay(self):
+        fixture = self.fixture
+        fixture.reviewed()
+        before = self.accepted()
+        policy = fixture.root / 'private-duplicate-policy.json'
+        rows = self.policy()['registries']
+        rows[0]['authorizationEnv'], rows[1]['authorizationEnv'] = 'APP_FIRST_TOKEN', 'APP_SECOND_TOKEN'
+        policy.write_bytes(canonical({'registries': rows}))
+        candidate = fixture.root / 'duplicate-cli-candidate.json'
+        secrets = {'APP_FIRST_TOKEN': 'opaque-control-first', 'APP_SECOND_TOKEN': 'opaque-control-second'}
+        with patch.dict(os.environ, secrets), \
+                patch.object(native, 'run_bounded', side_effect=fixture.resolver_command) as dispatched:
+            code, out, err = fixture.call('resolve', fixture.owner, '--candidate', candidate,
+                '--node', fixture.node, '--npm', fixture.npm, '--registry-config', policy)
+        self.assertEqual(code, 1)
+        self.assertEqual(out, '')
+        result = json.loads(err)
+        self.assertEqual(result['reason'], 'npm-registry-scope-ambiguous')
+        self.assertFalse(result['automaticReplay'])
+        self.assertFalse(result['compilerExecution'])
+        dispatched.assert_not_called()
+        self.assertFalse(candidate.exists())
+        failure = candidate.with_name(candidate.name + '.failed.json').read_bytes()
+        self.assertEqual(json.loads(failure), result)
+        for value in (*secrets.values(), *(row['url'] for row in rows)):
+            self.assertNotIn(value, err)
+            self.assertNotIn(value.encode(), failure)
+        self.assertEqual(self.accepted(), before)
+
+
 if __name__ == '__main__':
     unittest.main()
