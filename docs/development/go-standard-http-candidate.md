@@ -8,10 +8,14 @@ required. Original Go source files and captured dependencies remain unchanged;
 the private overlay and SDK backend are captured compiler inputs. The original
 complete Client and Request implementations are authenticated and kept intact.
 
-This is a draft compile candidate for [#692](https://github.com/KirilsTurkins/latent-service-fabric/issues/692).
-The runtime parent, actual component build, signed provider cases, two unchanged
-independent libraries and outside-checkout developer module remain required.
-Source controls do not establish runtime qualification or close the ticket.
+The finite standard path and two captured clients have signed qualification in
+[PR #1043](https://github.com/KirilsTurkins/latent-service-fabric/pull/1043):
+[the recorded owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39178228657/job/117825251956)
+ran the 33 standard cases and 30 cases each for Sling and Requests, including
+renamed outside modules with unavailable original inputs. Those results retain
+their original source identities. They establish this selected HTTP profile;
+[#692](https://github.com/KirilsTurkins/latent-service-fabric/issues/692) still
+requires the remaining explicit redirect, lifecycle and isolation matrix.
 
 The ordinary engine's finite table ceiling is 12,000 entries. The captured Go
 linker reserves 4,096 slots before its function entries: the observed standard
@@ -211,10 +215,59 @@ command limits. The new gate bounds the node/peer to 300 seconds under a
 and retains every previous command and the original 45-minute workflow limit.
 Source controls reject changed vendored SDK/native products before execution,
 and authenticate the default backend initializer without admitting custom dialers.
-This signed gate has been added and has not yet executed. HTTPS, published
-default-client consumers, the wider matrix and complete #692 acceptance remain
-required; no full-ticket result follows from this candidate.
+The retained signed observation below passes the original 33 cases on the new
+ordinary fixture. HTTPS, the wider default-client/runtime matrix and complete
+#692 acceptance remain separate; no full-ticket result follows from this slice.
 
 The [two published client capture gate](go-default-http-libraries.md) adds
 ordinary library request/JSON paths and private transitive workers as a separate
 pending qualification. It preserves this original standard-API gate.
+
+## Additional lifecycle and redirect gate
+
+The separate `qualify_go_http_adversarial.py` gate authenticates the original
+33-case qualification and native products, then compiles one additional ordinary
+application fixture. The SDK/runtime source is unchanged; no native products are
+rebuilt. Its nine cases cover client-level redirect refusal, an
+ordinary `CheckRedirect` stop, cookie-jar refusal, explicit proxy destination refusal,
+two sequential default-client requests, root return and root panic with an
+accepted child response body, fresh invocation after the panic, and an explicitly
+authorised redirect. The pending-child cases disable the client timer and run no user cancellation
+or child join. Every case must retire activation and physical provider owners
+before the next call. The panic must be a certain guest trap; timeout,
+cancellation, excess consumption or an unknown result cannot qualify it.
+
+The redirect fixture installs `referer` only for its two controlled origins,
+while retaining host redirect count zero and the original provider limits.
+The client performs each redirect as a new capability operation. Only the last
+case receives an explicit second-origin grant, restricted to GET and the exact
+`/conformance/redirect-target` path, service and publication. The primary host
+credential is installed solely on destination zero. The peer must observe
+exactly nine contacts, eight primary and one secondary, with no secondary
+authorization, cookies or proxy authorization, no denied-target contact, no
+replayed mutation and no open connection at shutdown.
+
+[Actual run 39319792864/job 118290595886](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39319792864/job/118290595886)
+passed a fresh normal 27, all original 33 standard cases and all nine additional
+cases. [The retained observation](../testing/evidence/go-http-adversarial-2026-10-19.json)
+binds the actual component, frozen native/compiler source, immutable original
+HTTP recipe, fixture/runner sources and public qualification documents. All three
+nodes shut down cleanly. The adversarial peer observed eight primary contacts and
+one separately authorized secondary contact, no forwarded credentials, no mutation
+and zero open connections. Root-return and root-trap cases retired the accepted
+body without a user cancellation, timer or join; the fresh invocation passed.
+
+The first 661 replay stopped before HTTP execution because it compared the new
+HTTP recipe with the old greeting recipe. The new bytes equal the original HTTP
+recipe exactly; that distinct recipe adds only the frozen declared v5 host
+manifest. The next 8cba replay caught encoding drift in the copied custom-transport
+payload before additional cases. Its correction restores that line byte for byte
+from the maintained fixture; the old-source regression is RED and corrected
+source GREEN. Neither failure is passing qualification.
+
+No native products were rebuilt. Original source 3050 compiler/SDK identities,
+new fixture source 86b and current production source stay distinct. The Go SDK tree
+and five fixture/runner files match the passed replay exactly. This is not a fresh
+current-native or current-compiler observation. The two captured-client programmes
+retain their own receipts and bounds. Cross-tenant isolation, catalogue-removal
+qualification and the remaining #692/#742 requirements remain separate.

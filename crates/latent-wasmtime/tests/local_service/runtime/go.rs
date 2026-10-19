@@ -499,13 +499,23 @@ async fn signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_a
         Duration::from_secs(5),
         std::future::poll_fn(|context| match invocation.as_mut().poll(context) {
             Poll::Ready(receipt) => panic!("CPU checkpoint should yield: {:?}", receipt.outcome),
-            Poll::Pending
-                if f.backend.resource_snapshot().live_stores == 1
-                    && f.broker.snapshot().calls != 0 =>
-            {
-                Poll::Ready(())
+            Poll::Pending => {
+                // A CPU checkpoint yields through the canonical dispatcher, with
+                // no pending provider operation. Completed calls must be free to
+                // retire; they are not a witness that this original root is live.
+                let owners = f.backend.resource_snapshot();
+                if owners.active_invocations == 1
+                    && owners.live_stores == 1
+                    && owners.live_host_states == 1
+                    && owners.live_component_instances == 1
+                    && owners.live_cancellation_probes == 1
+                    && f.read_wait.active.load(Ordering::Acquire) == 0
+                {
+                    Poll::Ready(())
+                } else {
+                    Poll::Pending
+                }
             }
-            Poll::Pending => Poll::Pending,
         }),
     )
     .await

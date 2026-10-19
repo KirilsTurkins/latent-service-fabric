@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_http_adversarial.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve original standard33, library and native commands; add nine signed application-fixture cases with authenticated existing native products and unchanged SDK/runtime sources.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "fd1701af280ffb81798861bb645d4ae3ff48c8937bc8c6f7cbe0a5960cfdcd45"
+}
