@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_published_http.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add mandatory published-client capture/provider qualification without changing compiler eligibility",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "232be158b867d02cb2aa23c43b27bf1f9368f337997e46558328d3daa2e9a48d"
+}

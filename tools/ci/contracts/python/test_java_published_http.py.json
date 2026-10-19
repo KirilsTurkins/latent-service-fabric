@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "PublishedJavaHttp.test_changed_published_original_refuses_before_review_and_preserves_accepted_lock",
+    "PublishedJavaHttp.test_exact_transitive_jar_selection_rejects_changed_coordinates_edges_and_duplicates",
+    "PublishedJavaHttp.test_failed_receipt_observer_preserves_original_execution_exception_identity",
+    "PublishedJavaHttp.test_nonlinux_refuses_before_output_native_or_command_effects",
+    "PublishedJavaHttp.test_real_project_installs_normal_maven_declaration_and_unmodified_application",
+    "PublishedJavaHttp.test_selected_native_tool_or_metadata_cannot_substitute_for_application_jar",
+    "PublishedJavaHttp.test_sha256_cas_refusal_precedes_published_checksum_or_lock_review"
+  ],
+  "guards": {
+    "PublishedJavaHttp.test_changed_published_original_refuses_before_review_and_preserves_accepted_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaHttp.test_exact_transitive_jar_selection_rejects_changed_coordinates_edges_and_duplicates": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaHttp.test_failed_receipt_observer_preserves_original_execution_exception_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaHttp.test_nonlinux_refuses_before_output_native_or_command_effects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaHttp.test_real_project_installs_normal_maven_declaration_and_unmodified_application": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaHttp.test_selected_native_tool_or_metadata_cannot_substitute_for_application_jar": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaHttp.test_sha256_cas_refusal_precedes_published_checksum_or_lock_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_published_http.py",
+  "reviewReason": "Add published capture CAS and exact-closure/refusal controls",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

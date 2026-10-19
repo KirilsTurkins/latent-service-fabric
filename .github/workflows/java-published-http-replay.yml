@@ -1,0 +1,114 @@
+name: Focused published Java HTTP replay
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - 'sdk/java-guest/**'
+      - 'examples/java-http-request/**'
+      - 'examples/java-david-webb/**'
+      - 'tools/java*.py'
+      - 'tools/java_guest/**'
+      - 'tools/qualify_java_published_http.py'
+      - 'tools/replay_java_published_http.py'
+      - 'tools/tests/test_java_published*.py'
+      - '.github/workflows/java-published-http-replay.yml'
+  workflow_dispatch:
+    inputs:
+      published_http_replay:
+        description: Fresh published client components with authenticated historical native products
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: java-published-http-replay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  published-http-replay:
+    if: ${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/java-published-webb-http-20261020') || (github.event_name == 'workflow_dispatch' && inputs.published_http_replay) }}
+    name: Focused Java published HTTP with authenticated historical native products
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch only the exact historical compiled source commits
+        run: >-
+          git fetch --no-tags --depth=1 origin
+          e97d44ddc744c9bd738d9b3b7a7d8b7234133e36
+          03a3f74598f2abfd0224169ae2871818f6c8419d
+          0e46e59358bb4bae16169690041daacbf113555a
+      - name: Check source, product selection and unchanged provider gates
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_published_http_replay tools.tests.test_java_private_http -v
+      - name: Retrieve only the fixed e97 host and four original03a helper binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_java_published_http.py --prepare --output "$RUNNER_TEMP/java-published-http-prepared"
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install the same pinned Java compiler tools without any native Cargo build
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Acquire one pinned compiler cache and execute two fresh captured HTTP components
+        run: >-
+          python3 -B tools/replay_java_published_http.py
+          --prepared "$RUNNER_TEMP/java-published-http-prepared"
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+          --output "$RUNNER_TEMP/java-published-http-replay"
+      - name: Retain bounded source-specific replay evidence without credentials or keys
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-published-http-replay-${{ github.sha }}
+          path: |-
+            ${{ runner.temp }}/java-published-http-prepared/retrieval.json
+            ${{ runner.temp }}/java-published-http-prepared/host/host-retrieval.json
+            ${{ runner.temp }}/java-published-http-replay/qualification.json
+            ${{ runner.temp }}/java-published-http-replay/FAILED.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/qualification.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/http-request/qualification.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/http-request/build/*.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/qualification.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/after-*.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/controls/standard-*.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/webb-build/*.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/webb-node/qualification.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/webb-node/after-*.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/webb-node/controls/standard-*.json
+            ${{ runner.temp }}/java-published-http-replay/campaign/compiler/compiler-cache-selection.json
+          if-no-files-found: warn
+          retention-days: 3
