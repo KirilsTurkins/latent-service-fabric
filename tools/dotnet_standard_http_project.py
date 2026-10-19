@@ -10,10 +10,31 @@ from tools.dotnet_guest.project import create
 from tools.rust_capsule_project import ROOT, digest, read_file, snapshot
 
 
-def project(directory: Path) -> Path:
+def managed_source(*, synchronous_send: bool = False) -> bytes:
+    if type(synchronous_send) is not bool:
+        raise ValueError('standard-dotnet-request-api-selection')
+    managed = read_file(ROOT/'examples/dotnet-standard-http/Main.cs')
+    if not synchronous_send:
+        return managed
+    newline = b'\r\n' if b'\r\n' in managed else b'\n'
+    original = (b'client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,' + newline
+        + b'                cancellation.Token).GetAwaiter().GetResult()')
+    selected = (b'client.Send(request, HttpCompletionOption.ResponseHeadersRead,' + newline
+        + b'                cancellation.Token)')
+    cancellation = b'        if (which == 4) cancellation.CancelAfter(100);'
+    if managed.count(original) != 1 or managed.count(cancellation) != 1:
+        raise ValueError('standard-dotnet-synchronous-send-fixture-shape')
+    # Only this maintained application fixture changes. The default fixture,
+    # framework handler, original async body and third-party code stay intact.
+    return managed.replace(original, selected).replace(cancellation,
+        cancellation + newline + b'        if (which == 6) cancellation.Cancel();')
+
+
+def project(directory: Path, *, synchronous_send: bool = False) -> Path:
+    managed = managed_source(synchronous_send=synchronous_send)
     app = create(directory, 'greeting', 'dotnet-standard-http')
     source = ROOT/'examples/dotnet-standard-http'
-    managed, wit = read_file(source/'Main.cs'), read_file(source/'world.wit')
+    wit = read_file(source/'world.wit')
     (app/'src/Main.cs').write_bytes(managed)
     (app/'wit/world.wit').write_bytes(wit)
     for package in ('activation-runtime', 'http-v3', 'random'):

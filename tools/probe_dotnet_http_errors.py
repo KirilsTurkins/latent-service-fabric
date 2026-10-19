@@ -101,6 +101,29 @@ def probe(tools: Path, output: Path) -> dict:
             or sync_send["defaultClientComponentQualified"] is not False):
         raise ValueError("http-sync-send-probe-assertions")
 
+    default_send = json.loads(commands.run("actual-bcl-default-sync-send", dotnet, output / "probe/HttpErrorsProbe.dll",
+        "--default-sync-send", original, sync_derived, output / "actual-bcl-default-sync-send.json"))
+    if (default_send["assertions"] != 19 or default_send["originalSynchronousSendUnsupported"] is not True
+            or default_send["originalSendAsyncFaultsPreserved"] is not True
+            or default_send["ordinaryDefaultConstructionPreserved"] is not True
+            or default_send["preCancelledTokenRejectedBeforeOriginalAsync"] is not True
+            or default_send["nativeSendQualified"] is not False
+            or default_send["pendingGuestIoQualified"] is not False
+            or default_send["defaultClientComponentQualified"] is not False):
+        raise ValueError("http-default-sync-send-probe-assertions")
+    count = len(commands.records)
+    original_control = output / "original-default-sync-send.json"
+    try:
+        commands.run("original-default-send-stays-unsupported", dotnet, output / "probe/HttpErrorsProbe.dll",
+                     "--default-sync-send", original, original, original_control)
+    except ValueError:
+        if (len(commands.records) != count + 1 or commands.records[-1]["exitCode"] != 1
+                or original_control.exists()):
+            raise
+    else:
+        raise ValueError("http-default-sync-send-original-negative-control-accepted")
+    default_send["originalAsDerivedRejected"] = True
+
     def rejected(stage, input_path, output_path, receipt_path, *mode):
         count = len(commands.records)
         try:
@@ -143,6 +166,7 @@ def probe(tools: Path, output: Path) -> dict:
               "originalAndExistingOutputsUnchanged": True, "commands": commands.records,
               "responseReadErrors": response_errors, "requestContentHeaders": content_headers,
               "synchronousSend": sync_send,
+              "defaultHandlerSynchronousSend": default_send,
               "synchronousRead": {**sync_result, "rewriteDeterministic": True,
                   "fivePreimageAndOwnershipDenials": True, "boundedErrorAssertions": combined["assertions"]}}
     write_json(output / "result.json", result)

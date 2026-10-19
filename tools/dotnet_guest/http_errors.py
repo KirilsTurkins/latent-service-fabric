@@ -80,6 +80,15 @@ SYNC_SEND = {
 }
 
 
+DEFAULT_SYNC_SEND = {
+    **SYNC_SEND,
+    "profile": "dotnet-default-httpclient-sync-send-v1",
+    "method": "System.Net.Http.HttpResponseMessage System.Net.Http.HttpClientHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+    "asyncMethod": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.HttpClientHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+    "preCancellation": "original-CancellationToken.ThrowIfCancellationRequested-before-SendAsync",
+}
+
+
 SYNC_READ = {
     "profile": "dotnet-wasi-sync-response-read-v1",
     "method": "System.Int32 System.Net.Http.WasiInputStream::Read(System.Byte[],System.Int32,System.Int32)",
@@ -95,6 +104,7 @@ SYNC_READ = {
     "responseReadErrors": RESPONSE_READ_ERRORS,
     "requestContentHeaders": REQUEST_CONTENT_HEADERS,
     "synchronousSend": SYNC_SEND,
+    "defaultHandlerSynchronousSend": DEFAULT_SYNC_SEND,
 }
 
 
@@ -121,6 +131,13 @@ def validate_sync_send(value: dict) -> None:
         raise ValueError("http-sync-send-rewrite-receipt")
 
 
+def validate_default_sync_send(value: dict) -> None:
+    if (type(value) is not dict or set(value) != set(DEFAULT_SYNC_SEND)
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in DEFAULT_SYNC_SEND.items())):
+        raise ValueError("http-default-sync-send-rewrite-receipt")
+
+
 def validate_sync_read(value: dict) -> None:
     digests = {"originalReadBodyDigest", "originalAsyncBodyDigest"}
     if (type(value) is not dict or set(value) != set(SYNC_READ) | digests | {"unchangedOriginalMethods"}
@@ -134,6 +151,7 @@ def validate_sync_read(value: dict) -> None:
     validate_response_read_errors(value["responseReadErrors"])
     validate_request_content_headers(value["requestContentHeaders"])
     validate_sync_send(value["synchronousSend"])
+    validate_default_sync_send(value["defaultHandlerSynchronousSend"])
 
 
 def source_paths(tools: Path) -> tuple[Path, Path]:

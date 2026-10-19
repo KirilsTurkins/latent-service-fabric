@@ -81,6 +81,7 @@ internal static class Program
                 syncRead["responseReadErrors"] = JsonSerializer.SerializeToNode(HttpReadErrors.Apply(module, original));
                 syncRead["requestContentHeaders"] = JsonSerializer.SerializeToNode(HttpRequestContentHeaders.Apply(module, original));
                 syncRead["synchronousSend"] = JsonSerializer.SerializeToNode(HttpSyncSend.Apply(module));
+                syncRead["defaultHandlerSynchronousSend"] = JsonSerializer.SerializeToNode(HttpDefaultSyncSend.Apply(module));
             }
 
             // Keep the payload access in its declaring type. Only these finite
@@ -603,6 +604,120 @@ internal static class HttpSyncSend
             defaultConstruction = "original-HttpClient-HttpClientHandler-WasiHttpHandler",
             completion = "original-SendAsync-TaskAwaiter",
             requestAndCancellation = "original-arguments",
+            modifiedOriginalMethods = 1,
+            generatedHelpers = 0,
+            newHostImports = 0,
+            nativeSendQualified = false,
+        };
+    }
+}
+
+
+// The outer default handler has its own authenticated WASI unsupported throw.
+// Delegate to its unchanged async method so the original lazy Handler chain,
+// validation, telemetry and request/cancellation identity remain authoritative.
+internal static class HttpDefaultSyncSend
+{
+    private const string Handler = "System.Net.Http.HttpClientHandler";
+    private const string CoreLib = "System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e";
+    private const string Send = "System.Net.Http.HttpResponseMessage System.Net.Http.HttpClientHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)";
+    private const string SendAsync = "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.HttpClientHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)";
+
+    private static void Require(bool condition)
+    {
+        if (!condition) throw new InvalidDataException("http-default-sync-send-preimage-or-shape");
+    }
+
+    private static bool ClosedType(TypeReference type, string name, string argument) =>
+        type is GenericInstanceType generic && generic.ElementType.FullName == name &&
+        generic.GenericArguments.Count == 1 && generic.GenericArguments[0].FullName == argument &&
+        generic.ElementType.Scope is AssemblyNameReference scope && scope.FullName == CoreLib;
+
+    internal static object Apply(ModuleDefinition module)
+    {
+        var handler = module.Types.Single(type => type.FullName == Handler);
+        var send = handler.Methods.Single(method => method.FullName == Send);
+        var sendAsync = handler.Methods.Single(method => method.FullName == SendAsync);
+        Require(!handler.IsSealed && handler.IsPublic && handler.BaseType.FullName == "System.Net.Http.HttpMessageHandler" &&
+            handler.BaseType.Scope == module && send.IsFamilyOrAssembly && send.IsVirtual && !send.IsNewSlot &&
+            !send.IsStatic && send.HasBody && send.Parameters.Count == 2 &&
+            send.Body.Variables.Count == 0 && send.Body.ExceptionHandlers.Count == 0 &&
+            send.Body.Instructions.Count == 2 && send.Body.Instructions[0].OpCode == OpCodes.Newobj &&
+            send.Body.Instructions[0].Operand is MethodReference unsupported &&
+            unsupported.FullName == "System.Void System.PlatformNotSupportedException::.ctor()" &&
+            unsupported.DeclaringType.Scope is AssemblyNameReference scope && scope.FullName == CoreLib &&
+            send.Body.Instructions[1].OpCode == OpCodes.Throw &&
+            sendAsync.IsFamilyOrAssembly && sendAsync.IsVirtual && !sendAsync.IsStatic && sendAsync.HasBody &&
+            sendAsync.Parameters.Count == 2 &&
+            ClosedType(sendAsync.ReturnType, "System.Threading.Tasks.Task`1", "System.Net.Http.HttpResponseMessage") &&
+            send.Parameters.Select(parameter => parameter.ParameterType.FullName).SequenceEqual(
+                sendAsync.Parameters.Select(parameter => parameter.ParameterType.FullName)));
+        // Check the unchanged ordinary construction path, not an injected
+        // handler or a package-selected factory replacement.
+        var client = module.Types.Single(type => type.FullName == "System.Net.Http.HttpClient");
+        var clientHandler = module.Types.Single(type => type.FullName == "System.Net.Http.HttpClientHandler");
+        var clientConstructor = client.Methods.Single(method => method.IsConstructor && !method.IsStatic && method.Parameters.Count == 0);
+        var handlerConstructor = clientHandler.Methods.Single(method => method.IsConstructor && !method.IsStatic && method.Parameters.Count == 0);
+        Require(clientConstructor.HasBody && handlerConstructor.HasBody &&
+            clientConstructor.Body.Instructions.Any(instruction => instruction.OpCode == OpCodes.Newobj &&
+                instruction.Operand is MethodReference target && target.FullName == "System.Void System.Net.Http.HttpClientHandler::.ctor()") &&
+            handlerConstructor.Body.Instructions.Any(instruction => instruction.OpCode == OpCodes.Newobj &&
+                instruction.Operand is MethodReference target && target.FullName == "System.Void System.Net.Http.WasiHttpHandler::.ctor()"));
+        var references = module.GetMemberReferences().OfType<MethodReference>().ToArray();
+        var cancellationThrow = references.Single(method => method.FullName ==
+            "System.Void System.Threading.CancellationToken::ThrowIfCancellationRequested()");
+        Require(cancellationThrow.HasThis && cancellationThrow.Parameters.Count == 0 &&
+            cancellationThrow.DeclaringType.IsValueType &&
+            cancellationThrow.DeclaringType.Scope is AssemblyNameReference cancellationScope &&
+            cancellationScope.FullName == CoreLib &&
+            send.Parameters[1].ParameterType.FullName == cancellationThrow.DeclaringType.FullName &&
+            send.Parameters[1].ParameterType.Scope is AssemblyNameReference parameterScope && parameterScope.FullName == CoreLib);
+        var awaiterTemplate = references.Single(method => method.Name == "GetAwaiter" &&
+            ClosedType(method.DeclaringType, "System.Threading.Tasks.Task`1", "System.Net.Http.HttpResponseMessage"));
+        var resultTemplate = references.Single(method => method.Name == "GetResult" &&
+            ClosedType(method.DeclaringType, "System.Runtime.CompilerServices.TaskAwaiter`1", "System.Net.Http.HttpResponseMessage"));
+        Require(awaiterTemplate.HasThis && awaiterTemplate.Parameters.Count == 0 &&
+            awaiterTemplate.ReturnType is GenericInstanceType templateReturn &&
+            templateReturn.ElementType.FullName == "System.Runtime.CompilerServices.TaskAwaiter`1" &&
+            templateReturn.GenericArguments.Count == 1 &&
+            templateReturn.GenericArguments[0] is GenericParameter { Position: 0, Type: GenericParameterType.Type } &&
+            resultTemplate.HasThis && resultTemplate.Parameters.Count == 0 &&
+            resultTemplate.ReturnType is GenericParameter { Position: 0, Type: GenericParameterType.Type });
+        var original = module.GetTypes().SelectMany(type => type.Methods)
+            .ToDictionary(method => method, method => TaskWait.BodyIdentity(method));
+        var awaiterType = new GenericInstanceType(((GenericInstanceType)awaiterTemplate.ReturnType).ElementType);
+        awaiterType.GenericArguments.Add(send.ReturnType);
+        var getAwaiter = new MethodReference("GetAwaiter", awaiterTemplate.ReturnType, sendAsync.ReturnType) {
+            HasThis = true, CallingConvention = awaiterTemplate.CallingConvention,
+        };
+        var getResult = new MethodReference("GetResult", resultTemplate.ReturnType, awaiterType) {
+            HasThis = true, CallingConvention = resultTemplate.CallingConvention,
+        };
+        send.Body = new MethodBody(send) { InitLocals = true, MaxStackSize = 3 };
+        var awaiter = new VariableDefinition(awaiterType);
+        send.Body.Variables.Add(awaiter);
+        var il = send.Body.GetILProcessor();
+        il.Emit(OpCodes.Ldarga, send.Parameters[1]);
+        il.Emit(OpCodes.Call, cancellationThrow);
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1);
+        il.Emit(OpCodes.Ldarg_2);
+        il.Emit(OpCodes.Callvirt, sendAsync);
+        il.Emit(OpCodes.Callvirt, getAwaiter);
+        il.Emit(OpCodes.Stloc, awaiter);
+        il.Emit(OpCodes.Ldloca, awaiter);
+        il.Emit(OpCodes.Call, getResult);
+        il.Emit(OpCodes.Ret);
+        Require(original.Where(item => item.Key != send).All(item => TaskWait.BodyIdentity(item.Key) == item.Value));
+        return new {
+            profile = "dotnet-default-httpclient-sync-send-v1",
+            method = send.FullName,
+            asyncMethod = sendAsync.FullName,
+            originalBody = "authenticated-PlatformNotSupportedException-throw",
+            defaultConstruction = "original-HttpClient-HttpClientHandler-WasiHttpHandler",
+            completion = "original-SendAsync-TaskAwaiter",
+            requestAndCancellation = "original-arguments",
+            preCancellation = "original-CancellationToken.ThrowIfCancellationRequested-before-SendAsync",
             modifiedOriginalMethods = 1,
             generatedHelpers = 0,
             newHostImports = 0,

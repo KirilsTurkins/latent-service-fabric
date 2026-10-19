@@ -16,20 +16,23 @@ from tools.dotnet_standard_http_project import project
 from tools.dotnet_standard_http_node import run
 from tools.phase2_operator_process import read_json, require, write_json
 from tools.phase3_resource_identity import file_identity
-from tools.rust_capsule_project import ROOT, fresh
+from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot
 
 
 NATIVE_NAMES = {'latent': 'latent', 'latentd': 'latentd', 'package': 'examples/package',
                 'capsule_contracts': 'examples/capsule_contracts', 'capsule_authoring': 'examples/capsule_authoring'}
 
 
-def qualify(output: Path, tools: Path, native_qualification: Path):
+def qualify(output: Path, tools: Path, native_qualification: Path, *, synchronous_send: bool = False):
     output = fresh(output)
     deadline = time.monotonic()+1200
     record = {'schemaVersion': 'latent.dotnet.standard-http.build-qualification.v1', 'status': 'in-progress',
         'commandLimits': {'overallSeconds': 1200, 'compileSeconds': 900, 'nodeSeconds': 300},
         'defaultClient': 'System.Net.Http.HttpClient', 'applicationHandlerInjection': False,
         'fullTicketQualification': False}
+    if type(synchronous_send) is not bool:
+        raise ValueError('standard-dotnet-request-api-selection')
+    record['requestApi'] = 'HttpClient.Send' if synchronous_send else 'HttpClient.SendAsync'
     stage = 'native-products'
     try:
         receipt_path = native_qualification/'qualification.json'
@@ -43,7 +46,9 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
                 'standard-dotnet-frozen-native-products-mismatch')
         record.update(nativeQualification=before, binaries=identities)
         stage = 'source-capture'
-        app = project(output/'project')
+        app = project(output/'project', synchronous_send=synchronous_send)
+        captured = inventory(snapshot(app))
+        record['projectSourceSnapshotDigest'] = digest(captured)
         stage = 'normal-native-aot-build'
         command = [sys.executable, str(ROOT/'tools/dotnet_capsule.py'), 'build', str(app),
             '--tools', str(tools), '--output', str(output/'build'), '--repository',
@@ -55,9 +60,11 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         for name in ('stdout', 'stderr'):
             (output/('compiler.'+name+'.txt')).write_bytes(getattr(result, name))
         require(result.returncode == 0, 'standard-dotnet-component-build-failed')
+        require(read_file(output/'build/source-inputs.json') == captured,
+                'standard-dotnet-compiler-source-capture-mismatch')
         stage = 'signed-ordinary-node'
         record['node'] = run(output/'build', {name: binaries[name] for name in ('latent', 'latentd', 'capsule_authoring')},
-                             output/'node', deadline=deadline)
+                             output/'node', deadline=deadline, synchronous_send=synchronous_send)
         stage = 'final-integrity'
         require(before == file_identity(receipt_path)
                 and identities == {name: file_identity(path, 512*1024*1024) for name, path in binaries.items()},
@@ -76,5 +83,8 @@ if __name__ == '__main__':
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--tools', required=True, type=Path)
     parser.add_argument('--native-qualification', required=True, type=Path)
+    parser.add_argument('--synchronous-send', action='store_true',
+                        help='Compile and sign the ordinary synchronous Send fixture separately')
     args = parser.parse_args()
-    print(json.dumps(qualify(args.output.resolve(), args.tools.resolve(), args.native_qualification.resolve())))
+    print(json.dumps(qualify(args.output.resolve(), args.tools.resolve(), args.native_qualification.resolve(),
+                             synchronous_send=args.synchronous_send)))

@@ -222,6 +222,9 @@ jobs:
       - name: Qualify ordinary default HttpClient, JSON parsing, disposal and cancellation
         run: |
           python3 tools/qualify_dotnet_standard_http.py --output "$RUNNER_TEMP/dotnet-standard-http" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Qualify signed ordinary synchronous HttpClient.Send and pending cancellation
+        run: |
+          python3 tools/qualify_dotnet_standard_http.py --synchronous-send --output "$RUNNER_TEMP/dotnet-standard-http-send" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Qualify captured NuGet libraries and embedded resources
         run: |
           python3 -m unittest tools.tests.test_dotnet_dependency_recovery
@@ -236,6 +239,7 @@ jobs:
           path: |
             ${{ runner.temp }}/dotnet-standard-resources/**
             ${{ runner.temp }}/dotnet-standard-http/**
+            ${{ runner.temp }}/dotnet-standard-http-send/**
             ${{ runner.temp }}/transaction-guests-dotnet/**/report.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/recipe-inputs.json
