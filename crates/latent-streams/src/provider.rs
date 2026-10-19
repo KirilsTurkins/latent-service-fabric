@@ -176,7 +176,7 @@ impl StreamProvider {
                 .inner
                 .connections
                 .try_lock()
-                .map_err(|_| error(StreamErrorCode::Exhausted))?[index]
+                .map_err(crate::snapshot_lock_error)?[index]
                 .upgrade();
             if let Some(connection) = connection {
                 let usage = connection.usage()?;

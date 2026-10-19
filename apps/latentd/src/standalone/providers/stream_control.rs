@@ -43,6 +43,30 @@ fn status_busy() -> PlatformError {
     }
 }
 
+async fn observe_stream_control_status<T>(
+    deadline: tokio::time::Instant,
+    mut observe: impl FnMut() -> Result<T, PlatformError>,
+) -> Result<T, PlatformError> {
+    loop {
+        match observe() {
+            Err(error)
+                if error.code == PlatformErrorCode::ResourceExhausted
+                    && error.message == "stream-control-status-busy" =>
+            {
+                let now = tokio::time::Instant::now();
+                if now >= deadline {
+                    return Err(error);
+                }
+                tokio::time::sleep_until(deadline.min(now + Duration::from_millis(1))).await;
+                if tokio::time::Instant::now() >= deadline {
+                    return Err(error);
+                }
+            }
+            result => return result,
+        }
+    }
+}
+
 impl ProviderRuntime {
     fn stream_index(&self) -> Result<usize, PlatformError> {
         let mut indices = self
@@ -121,19 +145,11 @@ impl ProviderRuntime {
     ) -> Result<StreamControlStatus, PlatformError> {
         // A retired connection can briefly hold the snapshot lock after the
         // catalog commit. Retry only that observation, never the publication.
-        let deadline = Instant::now() + Duration::from_millis(100);
-        loop {
-            match self.stream_control_status(operation, outcome, failure) {
-                Err(error)
-                    if error.code == PlatformErrorCode::ResourceExhausted
-                        && error.message == "stream-control-status-busy"
-                        && Instant::now() < deadline =>
-                {
-                    tokio::time::sleep(Duration::from_millis(1)).await;
-                }
-                result => return result,
-            }
-        }
+        observe_stream_control_status(
+            tokio::time::Instant::now() + Duration::from_millis(100),
+            || self.stream_control_status(operation, outcome, failure),
+        )
+        .await
     }
 
     /// The config file's epoch must strictly increase. A repeated signal cannot

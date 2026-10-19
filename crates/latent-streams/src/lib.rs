@@ -34,6 +34,13 @@ fn error(code: StreamErrorCode) -> StreamError {
     StreamError::new(code)
 }
 
+fn snapshot_lock_error<T>(failure: std::sync::TryLockError<T>) -> StreamError {
+    match failure {
+        std::sync::TryLockError::WouldBlock => error(StreamErrorCode::Exhausted),
+        std::sync::TryLockError::Poisoned(_) => error(StreamErrorCode::Revoked),
+    }
+}
+
 fn inspection_unavailable(_: StreamError) -> latent_core::PlatformError {
     latent_core::PlatformError {
         code: latent_core::PlatformErrorCode::ResourceExhausted,

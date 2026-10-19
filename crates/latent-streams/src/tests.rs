@@ -75,3 +75,33 @@ fn unimplemented_host_tls_is_never_silently_replaced_with_tcp() {
         StreamErrorCode::Unsupported
     );
 }
+
+#[test]
+fn snapshot_lock_errors_distinguish_contention_from_permanent_poison() {
+    let state = std::sync::Mutex::new(0_u8);
+    let held = state.lock().unwrap();
+    assert_eq!(
+        state
+            .try_lock()
+            .map_err(snapshot_lock_error)
+            .unwrap_err()
+            .code,
+        StreamErrorCode::Exhausted
+    );
+    drop(held);
+    assert!(std::panic::catch_unwind(|| {
+        let _held = state.lock().unwrap();
+        panic!("snapshot poison fixture");
+    })
+    .is_err());
+    assert!(state.is_poisoned());
+    assert_eq!(
+        state
+            .try_lock()
+            .map_err(snapshot_lock_error)
+            .unwrap_err()
+            .code,
+        StreamErrorCode::Revoked
+    );
+    assert!(state.is_poisoned());
+}

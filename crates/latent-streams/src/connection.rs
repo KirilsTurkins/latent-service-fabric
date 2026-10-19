@@ -553,10 +553,7 @@ impl Connection {
         }
     }
     pub(crate) fn usage(&self) -> Result<StreamUsage, StreamError> {
-        let state = self
-            .state
-            .try_lock()
-            .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
         Ok(StreamUsage {
             owners: 1,
             connections: usize::from(state.socket.is_some()),

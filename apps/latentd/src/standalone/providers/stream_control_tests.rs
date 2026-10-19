@@ -567,3 +567,105 @@ fn catalog_rejects_equal_public_descriptor_from_another_actual_provider_owner() 
     control.shutdown_timeout(Duration::from_secs(5));
     invocation.shutdown_timeout(Duration::from_secs(5));
 }
+
+#[test]
+fn busy_status_observation_preserves_the_committed_result_without_republishing() {
+    let runtime = Builder::new_current_thread()
+        .enable_time()
+        .start_paused(true)
+        .build()
+        .unwrap();
+    runtime.block_on(async {
+        let committed = (
+            "reload",
+            "installed-generation-binding-publication-unconfirmed",
+            Some(PlatformErrorCode::DeadlineExceeded),
+            2_u64,
+            1_u64,
+        );
+        let started = tokio::time::Instant::now();
+        let mut probes = 0;
+        let observed =
+            super::observe_stream_control_status(started + Duration::from_millis(100), || {
+                probes += 1;
+                if probes <= 2 {
+                    Err(super::status_busy())
+                } else {
+                    Ok(&committed)
+                }
+            })
+            .await
+            .unwrap();
+        assert!(std::ptr::eq(observed, &committed));
+        assert_eq!(probes, 3);
+        assert_eq!(started.elapsed(), Duration::from_millis(2));
+        assert_eq!(observed.0, "reload");
+        assert_eq!(
+            observed.1,
+            "installed-generation-binding-publication-unconfirmed"
+        );
+        assert_eq!(observed.2, Some(PlatformErrorCode::DeadlineExceeded));
+        assert_eq!((observed.3, observed.4), (2, 1));
+    });
+}
+
+#[test]
+fn status_observation_returns_permanent_and_unrelated_errors_without_retry() {
+    let runtime = Builder::new_current_thread()
+        .enable_time()
+        .start_paused(true)
+        .build()
+        .unwrap();
+    runtime.block_on(async {
+        let mut other_exhaustion = super::status_busy();
+        other_exhaustion.message = "unrelated-capacity-refusal".into();
+        for original in [super::unavailable(), other_exhaustion] {
+            let started = tokio::time::Instant::now();
+            let mut probes = 0;
+            let returned = super::observe_stream_control_status::<()>(
+                started + Duration::from_millis(100),
+                || {
+                    probes += 1;
+                    Err(original.clone())
+                },
+            )
+            .await
+            .unwrap_err();
+            assert_eq!(returned, original);
+            assert_eq!(probes, 1);
+            assert_eq!(started.elapsed(), Duration::ZERO);
+        }
+    });
+}
+
+#[test]
+fn busy_status_observation_is_bounded_and_never_probes_after_its_deadline() {
+    let runtime = Builder::new_current_thread()
+        .enable_time()
+        .start_paused(true)
+        .build()
+        .unwrap();
+    runtime.block_on(async {
+        for (budget, expected_probes) in [(0, 1), (3, 3)] {
+            let started = tokio::time::Instant::now();
+            let original = super::status_busy();
+            let mut probes = 0;
+            let returned = super::observe_stream_control_status::<()>(
+                started + Duration::from_millis(budget),
+                || {
+                    probes += 1;
+                    assert!(
+                        probes <= expected_probes,
+                        "status probe crossed its deadline"
+                    );
+                    Err(original.clone())
+                },
+            )
+            .await
+            .unwrap_err();
+            assert_eq!(returned, original);
+            assert_eq!(probes, expected_probes);
+            assert_eq!(started.elapsed(), Duration::from_millis(budget));
+        }
+    });
+}

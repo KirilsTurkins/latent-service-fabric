@@ -12,6 +12,7 @@
         "tests::maintenance::dns_authority_expiry_retires_inactive_socket_without_another_guest_call",
         "tests::maintenance::idle_expiry_retires_inactive_socket_on_one_weak_owned_driver",
         "tests::opaque_transport_requires_exact_special_address_authority",
+        "tests::snapshot_lock_errors_distinguish_contention_from_permanent_poison",
         "tests::sockets::actual_tcp_partial_reads_eof_and_send_half_close",
         "tests::sockets::dropped_facade_does_not_refund_an_unpolled_pending_socket",
         "tests::sockets::retained_chunks_keep_original_charges_after_socket_close",
@@ -28,7 +29,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 18,
+      "minimumCases": 19,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [
