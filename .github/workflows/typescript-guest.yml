@@ -111,6 +111,11 @@ on:
       - 'examples/renderer-profile/package*.json'
       - '.github/workflows/typescript-guest.yml'
   workflow_dispatch:
+    inputs:
+      private_npm_replay:
+        description: Run fresh private packages with exact source-bound retained native products
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -132,6 +137,7 @@ env:
 
 jobs:
   source-splicer:
+    if: ${{ !inputs.private_npm_replay }}
     name: Source-owned asynchronous import compiler
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -182,6 +188,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   promise-library:
+    if: ${{ !inputs.private_npm_replay }}
     name: Patched SpiderMonkey intrinsic Promise library
     needs: [source-splicer]
     runs-on: ubuntu-24.04
@@ -274,6 +281,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   fetch-component:
+    if: ${{ !inputs.private_npm_replay }}
     name: Actual source-owned Fetch component construction
     needs: [source-splicer, promise-library]
     runs-on: ubuntu-24.04
@@ -329,6 +337,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   boundary:
+    if: ${{ !inputs.private_npm_replay }}
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -505,3 +514,64 @@ jobs:
             ${{ runner.temp }}/typescript-library-integrity/node/**/*.json
           if-no-files-found: warn
           retention-days: 7
+
+  private-npm:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.private_npm_replay }}
+    name: Fresh private npm lifecycle with exact retained native products
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Check fixed source and public package identity controls
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_npm_private_replay tools.tests.test_npm_private_registry
+      - name: Retrieve original native products and companion capsules
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/replay_npm_private_dependencies.py --output "$RUNNER_TEMP/npm-private-prepared"
+      - name: Install the existing isolated compiler boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the reviewed JavaScript compiler inputs
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
+      - name: Capture fresh private packages and execute the signed offline lifecycle
+        run: python3 tools/qualify_npm_private_dependencies.py --native-qualification "$RUNNER_TEMP/npm-private-prepared" --tools "$RUNNER_TEMP/typescript-guest-tools" --output "$RUNNER_TEMP/npm-private-dependencies"
+      - name: Retain public exact-source evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-private-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/npm-private-prepared/retrieval.json
+            ${{ runner.temp }}/npm-private-dependencies/capture.json
+            ${{ runner.temp }}/npm-private-dependencies/qualification.json
+            ${{ runner.temp }}/npm-private-dependencies/FAILED.json
+            ${{ runner.temp }}/npm-private-dependencies/logs/**
+            ${{ runner.temp }}/npm-private-dependencies/build-*/*.json
+            ${{ runner.temp }}/npm-private-dependencies/build-*/component.wasm
+            ${{ runner.temp }}/npm-private-dependencies/build-*/logs/**
+            ${{ runner.temp }}/npm-private-dependencies/offline-rebuild/*.json
+            ${{ runner.temp }}/npm-private-dependencies/offline-rebuild/component.wasm
+            ${{ runner.temp }}/npm-private-dependencies/node-*/workflow.json
+            ${{ runner.temp }}/npm-private-dependencies/node-*/FAILED.json
+          if-no-files-found: warn
+          retention-days: 3

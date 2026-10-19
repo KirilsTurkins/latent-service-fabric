@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ !inputs.private_npm_replay }}",
     "name": "Actual source-owned Fetch component construction",
     "needs": [
       "source-splicer",
@@ -85,7 +86,7 @@
   },
   "jobId": "fetch-component",
   "kind": "job",
-  "reviewReason": "Build an actual Fetch-selected async-import component from same-run source-owned engine and splicer without inferring signed/provider execution.",
+  "reviewReason": "Default-false manual private npm replay: retain every normal command and limit; require exact unchanged runtime/SDK/compiler source, native5 and companion package bytes before fresh capture/build/sign/node execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

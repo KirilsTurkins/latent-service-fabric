@@ -1,0 +1,83 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.private_npm_replay }}",
+    "name": "Fresh private npm lifecycle with exact retained native products",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check fixed source and public package identity controls",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_npm_private_replay tools.tests.test_npm_private_registry\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve original native products and companion capsules",
+        "run": "python3 tools/replay_npm_private_dependencies.py --output \"$RUNNER_TEMP/npm-private-prepared\""
+      },
+      {
+        "name": "Install the existing isolated compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the reviewed JavaScript compiler inputs",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\""
+      },
+      {
+        "name": "Capture fresh private packages and execute the signed offline lifecycle",
+        "run": "python3 tools/qualify_npm_private_dependencies.py --native-qualification \"$RUNNER_TEMP/npm-private-prepared\" --tools \"$RUNNER_TEMP/typescript-guest-tools\" --output \"$RUNNER_TEMP/npm-private-dependencies\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain public exact-source evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "npm-private-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/npm-private-prepared/retrieval.json\n${{ runner.temp }}/npm-private-dependencies/capture.json\n${{ runner.temp }}/npm-private-dependencies/qualification.json\n${{ runner.temp }}/npm-private-dependencies/FAILED.json\n${{ runner.temp }}/npm-private-dependencies/logs/**\n${{ runner.temp }}/npm-private-dependencies/build-*/*.json\n${{ runner.temp }}/npm-private-dependencies/build-*/component.wasm\n${{ runner.temp }}/npm-private-dependencies/build-*/logs/**\n${{ runner.temp }}/npm-private-dependencies/offline-rebuild/*.json\n${{ runner.temp }}/npm-private-dependencies/offline-rebuild/component.wasm\n${{ runner.temp }}/npm-private-dependencies/node-*/workflow.json\n${{ runner.temp }}/npm-private-dependencies/node-*/FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "private-npm",
+  "kind": "job",
+  "reviewReason": "Default-false manual private npm replay: retain every normal command and limit; require exact unchanged runtime/SDK/compiler source, native5 and companion package bytes before fresh capture/build/sign/node execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

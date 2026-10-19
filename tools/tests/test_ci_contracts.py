@@ -873,6 +873,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                     value["run"] = value["run"].replace(
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
+            if value["workflow"] == ".github/workflows/typescript-guest.yml":
+                self.assertEqual(value["jobIf"], "success()")
+                value["jobIf"] = "${{ !inputs.private_npm_replay }}"
             if key == reviewed_go_normal_id:
                 # The independent client gate refers to this unchanged normal
                 # qualification by its stable Actions step id. Retain every

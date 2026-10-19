@@ -132,7 +132,15 @@
           ".github/workflows/typescript-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "private_npm_replay": {
+            "default": false,
+            "description": "Run fresh private packages with exact source-bound retained native products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -141,10 +149,11 @@
   "requiredJobs": [
     "boundary",
     "fetch-component",
+    "private-npm",
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Add bounded authenticated npm lifecycle with frozen exact native inputs; preserve all original workflow events, jobs, commands, tests, guards and production limits.",
+  "reviewReason": "Default-false manual private npm replay: retain every normal command and limit; require exact unchanged runtime/SDK/compiler source, native5 and companion package bytes before fresh capture/build/sign/node execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ !inputs.private_npm_replay }}",
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -153,7 +154,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Add bounded authenticated npm lifecycle with frozen exact native inputs; preserve all original workflow events, jobs, commands, tests, guards and production limits.",
+  "reviewReason": "Default-false manual private npm replay: retain every normal command and limit; require exact unchanged runtime/SDK/compiler source, native5 and companion package bytes before fresh capture/build/sign/node execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

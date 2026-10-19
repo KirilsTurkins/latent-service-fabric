@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_npm_private_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fixed-source artifact retrieval and actual27-call normal node receipt are required before fresh private qualification; preserve all source/native/package equality checks.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d71e25aa9ac7db993ee6502bcd3570dbb98b058858c75c6b9e6610e2aa425704"
+}
