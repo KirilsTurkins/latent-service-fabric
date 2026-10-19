@@ -16,6 +16,7 @@ from tools import ci_suite_inventory as registry
 from tools.build_process import BuildProcessError, run_bounded
 from tools.ci_rust_artifacts import ArtifactError, require_source, run_owned
 from tools.ci_suite_discovery import discover
+from tools.ci_cargo import format_command
 from tools.owned_test_process import MAX_OUTPUT as OWNED_OUTPUT_LIMIT
 
 
@@ -72,7 +73,7 @@ def main() -> int:
         if args.msrv:
             command(["cargo", "+1.95.0", "check", *recipe], "msrv")
         else:
-            command(["cargo", "fmt", "--all", "--check"], "format")
+            command(format_command(registry.ROOT), "format")
             command(["cargo", "check", *recipe], "check")
             command(["cargo", "clippy", *recipe], "clippy")
             if "latent-admission" in packages:
