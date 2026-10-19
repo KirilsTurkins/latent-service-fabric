@@ -114,20 +114,29 @@ def acquire(output):
     return record
 
 
+def normal_proof(receipt, source, after, node_raw):
+    node = json.loads(node_raw)
+    require(receipt['status'] == 'passed' and source == after
+            and digest(source) == receipt['sourceIdentityDigest']
+            and digest(node_raw) == receipt['node']['receiptDigest']
+            and node['status'] == 'passed' and len(node['invocations']) == 30
+            and all(row['processReaped'] for row in node['invocations'])
+            and node['nodeShutdown']['reaped'] and node['nodeShutdown']['record']['clean'],
+            'typescript-entropy-replay-historical-normal-proof')
+
+
+def failure_reason(error):
+    value = error.args[0] if len(error.args) == 1 and isinstance(error.args[0], str) else ''
+    return value if re.fullmatch(r'(?:typescript-entropy-replay|entropy-replay-artifact)-[a-z0-9-]{1,96}', value) else 'other'
+
+
 def historical(acquired):
     normal = acquired/NORMAL
     require(digest(read_file(normal/'qualification.json')) == QUALIFICATION, 'typescript-entropy-replay-qualified-receipt-preimage')
     receipt = read_json(normal/'qualification.json')
     source = read_file(normal/'source-inputs.json')
     node_path = normal/'node/workflow.json'
-    node = read_json(node_path)
-    require(receipt['status'] == 'passed' and source == read_file(normal/'source-inputs-after.json')
-            and digest(source) == receipt['sourceIdentityDigest']
-            and digest(read_file(node_path)) == receipt['node']['receiptDigest']
-            and node['status'] == 'passed' and len(node['invocations']) == 27
-            and all(row['processReaped'] for row in node['invocations'])
-            and node['nodeShutdown']['reaped'] and node['nodeShutdown']['record']['clean'],
-            'typescript-entropy-replay-historical-normal-proof')
+    normal_proof(receipt, source, read_file(normal/'source-inputs-after.json'), read_file(node_path))
     binaries = {name: normal/'native-binaries'/name.replace('/', '-') for name in PRODUCTS}
     identities = {name: file_identity(path, 512*1024**2) for name, path in binaries.items()}
     require(identities == receipt['binaries'], 'typescript-entropy-replay-historical-native-five')
@@ -137,7 +146,7 @@ def historical(acquired):
     return binaries, receipt, {'compiledSourceMerge': COMPILED_MERGE, 'originalPrHead': TESTED,
         'qualification': file_identity(normal/'qualification.json'),
         'sourceInputs': file_identity(normal/'source-inputs.json'), 'normalNode': file_identity(node_path),
-        'nativeBinaries': identities, 'currentNormalReceiptFabricated': False}
+        'nativeBinaries': identities, 'historicalNormalOutcomes': 30, 'currentNormalReceiptFabricated': False}
 
 
 def package_inputs(directory):
@@ -223,7 +232,7 @@ def replay(acquired, output):
         write_json(output/'qualification.json', record)
         return record
     except BaseException as error:
-        record.update(status='failed', stage=stage, errorCategory=type(error).__name__)
+        record.update(status='failed', stage=stage, errorCategory=type(error).__name__, guardReason=failure_reason(error))
         write_json(output/'FAILED.json', record)
         raise
 
@@ -243,5 +252,5 @@ if __name__ == '__main__':
             print(json.dumps({'status': replay(args.inputs, args.output)['status']}))
     except Exception as error:
         # Download errors may contain signed URLs; retain only the closed category.
-        print(json.dumps({'status': 'failed', 'errorCategory': type(error).__name__}))
+        print(json.dumps({'status': 'failed', 'errorCategory': type(error).__name__, 'guardReason': failure_reason(error)}))
         raise SystemExit(1)

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_typescript_standard_entropy.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind source pins directly in shallow checkout; actual compiled merge2cd is separately authenticated by original checkout log, original PR head02f retained.",
+  "reviewReason": "Exact actual historical30 baseline/library outcomes; reject count drift, missing retirement and raw failure content while retaining unchanged fresh34 acceptance.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "677252cced6bc1ebd26ffbf43e3d5b33bc687b7ad33003d2cc48bdc5e99ecc72"
+  "sha256": "6acf0458ec1798952b625045d79059c7e2820d96f4a5e1c53bd2c9d194dd771d"
 }

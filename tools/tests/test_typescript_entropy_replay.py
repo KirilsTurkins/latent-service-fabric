@@ -38,6 +38,33 @@ class EntropyReplay(unittest.TestCase):
                 (root/'package-source.json').write_text(json.dumps({'layers': [{'source': name}]}), encoding='utf-8')
                 with self.assertRaisesRegex(RuntimeError, 'package-paths'): replay.package_inputs(root)
 
+    def test_historical_original27_plus_captured_library_three_requires_exact30_reaped_outcomes(self):
+        source = b'{"immutable":"compiled-source"}'
+        node = {'status': 'passed', 'invocations': [{'processReaped': True} for _ in range(30)],
+                'nodeShutdown': {'reaped': True, 'record': {'clean': True}}}
+        raw = json.dumps(node).encode()
+        receipt = {'status': 'passed', 'sourceIdentityDigest': digest(source), 'node': {'receiptDigest': digest(raw)}}
+        replay.normal_proof(receipt, source, source, raw)
+        for count in (27, 29, 31):
+            changed = {**node, 'invocations': [{'processReaped': True} for _ in range(count)]}
+            payload = json.dumps(changed).encode()
+            bound = {**receipt, 'node': {'receiptDigest': digest(payload)}}
+            with self.assertRaisesRegex(RuntimeError, 'historical-normal-proof'):
+                replay.normal_proof(bound, source, source, payload)
+        node['invocations'][0]['processReaped'] = False
+        payload = json.dumps(node).encode()
+        with self.assertRaisesRegex(RuntimeError, 'historical-normal-proof'):
+            replay.normal_proof({**receipt, 'node': {'receiptDigest': digest(payload)}}, source, source, payload)
+        with self.assertRaisesRegex(RuntimeError, 'historical-normal-proof'):
+            replay.normal_proof(receipt, source, b'changed', raw)
+
+    def test_failure_detail_is_only_a_closed_guard_never_a_signed_url_or_message(self):
+        self.assertEqual(replay.failure_reason(RuntimeError('typescript-entropy-replay-historical-normal-proof')),
+                         'typescript-entropy-replay-historical-normal-proof')
+        for error in (ValueError('https://private.invalid/?token=not-a-secret'), ValueError('raw entropy payload'),
+                      ValueError('typescript-entropy-replay-space message'), ValueError('a', 'b')):
+            self.assertEqual(replay.failure_reason(error), 'other')
+
     def test_historical_qualification_is_pinned_before_native_execution(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
