@@ -12,7 +12,7 @@ import shutil
 
 from tools.build_snapshot import canonical, digest
 from tools.phase2_operator_process import require
-from tools.rust_capsule_node import assert_value, call, provider_idle, sample
+from tools.rust_capsule_node import assert_value, call, provider_idle, sample, selected_revision
 from tools.rust_capsule_project import read_file, snapshot
 
 PREFIX = 'dependency-matrix:'
@@ -184,15 +184,14 @@ def captured(lock: dict, graph: dict, value: dict) -> dict:
 def probe(client, target, ownership_probe, result, population, value):
     value = validate(value)
     cases = []
+    expected_revision = selected_revision(client, target)
     for index, text in enumerate(INPUTS):
         row = call(client, target, 'greeting', 'greet', [PREFIX + text], 'rust-matrix-' + str(index))
         result['invocations'].append(row)
         answer = expected(value, text)
         assert_value(client, row, [{'ok': answer}])
         revision = row['response']['data'].get('resolvedRevision')
-        require(row['processReaped'] and isinstance(revision, dict)
-                and revision.get('publicationId') == target['publication']
-                and revision.get('routeGeneration') == str(target['generation'])
+        require(row['processReaped'] and revision == expected_revision
                 and int(row['response']['data']['consumption']['outboundRequests']) == 0,
                 'matrix-invocation-revision-or-ownership-mismatch')
         result['samples'].append(sample(client, ownership_probe, 'after-rust-matrix-' + str(index), population))

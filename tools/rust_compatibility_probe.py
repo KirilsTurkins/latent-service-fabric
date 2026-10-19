@@ -10,7 +10,7 @@ from tools import rust_application_dependencies as native
 from tools import rust_dependency_authoring as review
 from tools.build_snapshot import canonical, digest
 from tools.phase2_operator_process import require
-from tools.rust_capsule_node import assert_value, call, provider_idle, sample
+from tools.rust_capsule_node import assert_value, call, provider_idle, sample, selected_revision
 from tools.rust_dependency_recovery import failed
 from tools.rust_dependency_fixture import direct_libraries
 from tools.rust_capsule_project import snapshot
@@ -101,6 +101,7 @@ def install(project: Path, outside: Path, cargo: Path) -> dict:
 def probe(client, target, ownership_probe, result, population):
     """Observe exact values and a terminal failure; never continue a trapped call."""
     observations = []
+    expected_revision = selected_revision(client, target)
     for index, (mode, expected) in enumerate(CASES):
         row = call(client, target, 'greeting', 'greet', ['compatibility:' + mode],
                    'rust-compatibility-' + str(index))
@@ -111,8 +112,7 @@ def probe(client, target, ownership_probe, result, population):
             assert_value(client, row, [{'ok': expected}])
             require(row['processReaped'], 'compatibility-probe-client-not-reaped')
         revision = row['response']['data'].get('resolvedRevision')
-        require(isinstance(revision, dict) and revision.get('publicationId') == target['publication']
-                and revision.get('routeGeneration') == str(target['generation']),
+        require(revision == expected_revision,
                 'compatibility-probe-selected-revision-mismatch')
         require(int(row['response']['data']['consumption']['outboundRequests']) == 0,
                 'compatibility-probe-unexpected-outbound')

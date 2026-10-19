@@ -3,6 +3,7 @@
     "ActualOutcomeRequirements.test_a_declared_error_or_timeout_cannot_substitute_for_the_terminal_trap",
     "ActualOutcomeRequirements.test_a_failure_after_trap_cannot_satisfy_fresh_state",
     "ActualOutcomeRequirements.test_foreign_publication_or_route_generation_cannot_borrow_successful_values",
+    "ActualOutcomeRequirements.test_missing_ambiguous_or_invalid_published_snapshot_refuses_before_invocation",
     "ActualOutcomeRequirements.test_native_reference_needs_each_exact_result_without_converting_errors",
     "ActualOutcomeRequirements.test_source_bound_execution_report_does_not_infer_generic_trap_cause_or_elimination",
     "ActualOutcomeRequirements.test_terminal_trap_is_followed_by_a_distinct_successful_reaped_fresh_invocation",
@@ -22,7 +23,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -34,7 +35,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -46,7 +47,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
+      ],
+      "skipSites": []
+    },
+    "ActualOutcomeRequirements.test_missing_ambiguous_or_invalid_published_snapshot_refuses_before_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -58,7 +71,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -70,7 +83,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -82,7 +95,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -94,7 +107,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -106,7 +119,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:0694372ae644703f15ec8390e8f7db1ee1bdcae02c86e8654cb12f99180be951",
-        "class:setup-sha256:5a92dd7ae7245aad53c55b0fe3eb54343e54f831fd94989dc15a08855a66d3e0"
+        "class:setup-sha256:a7f775d5dd4eef84cb235319e50fbeafe64e7da51bb182f0cf960ff67d848681"
       ],
       "skipSites": []
     },
@@ -161,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_compatibility.py",
-  "reviewReason": "New qualification cases and source-bound signed target checks; no cases or guards existed for this new module on the baseline commit, and all existing modules remain unchanged.",
+  "reviewReason": "Explicit fixture review: distinguish global route snapshot18 from object CAS generation1/2, and model full release/revision/publication identity. All prior cases, module fixtures, skips, decorators and eligibility stay intact.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
