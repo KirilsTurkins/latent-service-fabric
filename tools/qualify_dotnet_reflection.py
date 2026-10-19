@@ -85,7 +85,7 @@ def qualify(prepared, output, tools):
         require(inventory(source_files(project)) == observed
                 and dependencies.verify_inputs(project, 'dotnet').lock == accepted,
                 'reflection-offline-source-or-lock-changed')
-        containment = read_json(artifact / 'compiler-containment.json')
+        containment = read_json(artifact / 'compiler-containment.json', 32 * 1024 * 1024)
         require(containment['network'] == 'denied' and containment['credentials'] == 'not-inherited',
                 'reflection-compiler-not-contained')
         binding = descriptor_material(artifact, captured['dynamicAssembly'])

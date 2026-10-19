@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_reflection.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the ordinary captured NativeAOT descriptor/refusal qualification owner.",
+  "reviewReason": "Match the existing .NET containment producer 32 MiB bound after actual 5410904-byte receipt exceeded default source reader; retain all containment requirements.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4a8ab8e7411e5a6c48309854033229eeca03295e479816672a3b5c75bf3bd454"
+  "sha256": "1da644e2659492c015773bf2928ff48a7b9e803e560a3235971bcc1bcb8df959"
 }
