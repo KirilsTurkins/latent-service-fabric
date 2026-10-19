@@ -300,6 +300,15 @@ def workspace(root: Path) -> dict[str, Package]:
                         base = root
                     if isinstance(value, dict) and "path" in value:
                         directory = (base / value["path"]).resolve(strict=True)
+                        if directory not in directories and name == "latent-streams" and alias == "rustls":
+                            # This reviewed third-party dependency is intentionally
+                            # outside workspace test targets, never an unknown path.
+                            from tools import host_stream_tls_provider as bounded_tls
+
+                            require(directory == root / bounded_tls.PROVIDER,
+                                    "unregistered-path-dependency")
+                            bounded_tls.verify(root)
+                            continue
                         require(directory in directories, "unregistered-path-dependency")
                         target = directories[directory]
                         require(value.get("package", alias) == target, "renamed-package-mismatch")
