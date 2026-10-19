@@ -25,7 +25,7 @@ type localTransport struct{}
 var invocations uint32
 func (localTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	return &http.Response{StatusCode:200, Header:make(http.Header),
-		Body:io.NopCloser(bytes.NewBufferString(`{"id":7,"name":"cafÃƒÆ’Ã‚Â©","items":["ÃƒÅ½Ã‚Â»",""],"empty":""}`)), Request:request}, nil
+		Body:io.NopCloser(bytes.NewBufferString(`{"id":7,"name":"café","items":["λ",""],"empty":""}`)), Request:request}, nil
 }
 
 func Run(which uint32, address string) string {
