@@ -107,8 +107,13 @@ from public dependency receipts.
 Normal recipes materialize the reviewed closure from content-addressed objects
 without resolution or provisioning. Missing, changed and uncaptured inputs fail
 with a concrete dependency diagnostic. Builds recheck manifests, native locks,
-original objects and materialized bytes after compilation. Their receipt records
-selected inputs, transformations and the resulting input identity. Signing,
+original objects and materialized bytes after compilation. The post-build check
+reconstructs each selected artifact from the captured original bytes and reviewed
+transformation chain, including original directory-file preimages and intermediate
+replacement objects. Missing or changed cache bytes fail even when the final
+materialized file is unchanged; no original source path is reopened and no fetch
+is attempted. Their receipt records selected inputs, transformations and the
+resulting input identity. Signing,
 admission and final exact WIT/profile checks still apply.
 
 Automatic transformations identify the selected artifact, original tree digest,
