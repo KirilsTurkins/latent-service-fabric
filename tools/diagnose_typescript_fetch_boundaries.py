@@ -19,6 +19,28 @@ from tools.rust_capsule_project import ROOT, digest, fresh, read_file
 TESTED = 'ba62bf8f266e589971a03e496b18b8f2cb5e5d85'
 
 
+def typed_refusal_source(source: dict[str, bytes]) -> dict[str, bytes]:
+    """Only this private experiment imports HTTP directly; the real fixture does not."""
+    marker = b'    if (mode === 4) return await requestCopyReady(url);'
+    require(source['main.ts'].count(marker) == 1, 'fetch-boundary-exact-probe-dispatch')
+    probe = b'''import * as diagnosticHttp from 'latent:http/streaming@0.3.0';
+async function typedInvalidUrl() {
+  try {
+    const upload = await diagnosticHttp.open({method: 'get', url: 'invalid', headers: [],
+      bodyLength: 0n, bodyMediaType: undefined, idempotencyKey: undefined, timeoutMillis: undefined});
+    await diagnosticHttp.abortUpload(upload);
+    return 'typed-invalid-url-accepted';
+  } catch (error) {
+    const payload = error && typeof error === 'object' && 'payload' in error ? error.payload : null;
+    return payload && typeof payload === 'object' && 'tag' in payload && payload.tag === 'invalid-url'
+      ? 'typed-invalid-url-ready' : 'typed-invalid-url-other';
+  }
+}
+'''
+    return {**source, 'main.ts': probe + source['main.ts'].replace(marker,
+        marker + b'\n    if (mode === 5) return await typedInvalidUrl();', 1)}
+
+
 def numeric_fields(path: Path, fields: set[str]) -> dict:
     value = json.loads(read_file(path, 8192))
     require(isinstance(value, dict) and set(value) == fields and all(
@@ -33,8 +55,12 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
         'qualification': False, 'currentHeadQualification': False, 'status': 'incomplete',
         'sdkTestedCommit': TESTED, 'helper': file_identity(Path(__file__)), 'probes': [],
         'actualInvocationBudgets': {}}
-    source = {name: read_file(probes/name, 65536) for name in ('main.ts', 'default-client.ts')}
+    original_source = {name: read_file(probes/name, 65536) for name in ('main.ts', 'default-client.ts')}
+    source = typed_refusal_source(original_source)
+    record['probeSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)}
+                            for name, raw in original_source.items()}
     record['applicationSource'] = {name: {'sha256': digest(raw), 'bytes': len(raw)} for name, raw in source.items()}
+    record['applicationDerivation'] = 'fixed-typed-invalid-url-import-probe-only'
     original_project, original_call, original_connect = fetch.project, fetch.call, fetch.connect
     services = []
 
@@ -63,7 +89,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
     def invoke(client, target, template, function, arguments, activation, **kwargs):
         require(activation in {'fetch-runtime-denied', 'fetch-http-denied', 'fetch-entry',
             'fetch-request-ready', 'fetch-promise-ready', 'fetch-request-copy-ready',
-            'fetch-json', 'fetch-http404', 'fetch-fresh'}, 'fetch-boundary-activation-name')
+            'fetch-typed-invalid-url', 'fetch-json', 'fetch-http404', 'fetch-fresh'}, 'fetch-boundary-activation-name')
         row = original_call(client, target, template, function, arguments, activation, **kwargs)
         fields = set(json.loads(read_file(ROOT/'examples/echo-contract/deployment.json'))['spec']['resources'])
         record['actualInvocationBudgets'][activation] = numeric_fields(
@@ -74,11 +100,13 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
         if activation == 'fetch-json':
             require(len(services) == 1, 'fetch-boundary-single-node')
             probe = fetch.Probe(*services[0])
-            for name, mode in (('promise-ready', 3), ('request-copy-ready', 4)):
+            for name, mode, expected in (('promise-ready', 3, 'promise-ready'),
+                    ('request-copy-ready', 4, 'request-copy-ready'),
+                    ('typed-invalid-url', 5, 'typed-invalid-url-ready')):
                 row = invoke(client, target, template, function, [mode, arguments[1]], 'fetch-'+name)
                 record['probes'].append({'name': name, 'mode': mode, 'entry': row})
                 write_json(output/('probe-'+name+'.json'), record['probes'][-1])
-                fetch.require_result(row, name, 0)
+                fetch.require_result(row, expected, 0)
                 fetch.retire(client, probe, target, output, name)
         return invoke(client, target, template, function, arguments, activation, **kwargs)
 
@@ -97,7 +125,7 @@ def run(probes: Path, native: Path, engine: Path, splicer: Path, tools: Path, ou
         record['failureClass'] = type(error).__name__ if type(error).__name__ in {
             'WorkflowError', 'ValueError', 'KeyError', 'TypeError', 'OSError'} else 'Other'
     finally:
-        record['applicationSourceUnchanged'] = source == {
+        record['applicationSourceUnchanged'] = original_source == {
             name: read_file(probes/name, 65536) for name in source}
         require(record['applicationSourceUnchanged'], 'fetch-boundary-probe-source-drift')
         write_json(output/'observation.json', record)
