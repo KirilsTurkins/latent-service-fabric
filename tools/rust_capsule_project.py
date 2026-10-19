@@ -19,7 +19,7 @@ AUTHORING_TEMPLATES = (*TEMPLATES, "transactional-aggregate")
 MAX_FILES = 4096
 MAX_FILE = 4 * 1024 * 1024
 MAX_SOURCE = 32 * 1024 * 1024
-SDK_DIRECTORIES = ("sdk/rust-guest", "crates/latent-component-bindings",
+SDK_DIRECTORIES = ("sdk/rust-guest", "sdk/rust-standard-stdio", "crates/latent-component-bindings",
                    "wit/platform", "examples/echo-contract/wit")
 
 
@@ -175,7 +175,7 @@ def sdk_files() -> dict[str, bytes]:
     # Keep the authoritative inheritance tables byte-for-byte. Only workspace
     # membership changes in this isolated, vendored SDK workspace.
     tables = original[original.index("[workspace.package]"):]
-    files["Cargo.toml"] = ("[workspace]\nresolver = \"2\"\nmembers = [\"sdk/rust-guest\", \"crates/latent-component-bindings\"]\n\n" + tables).encode()
+    files["Cargo.toml"] = ("[workspace]\nresolver = \"2\"\nmembers = [\"sdk/rust-guest\", \"sdk/rust-standard-stdio\", \"crates/latent-component-bindings\"]\n\n" + tables).encode()
     for name in ("rust-toolchain.toml", "LICENSE", "NOTICE"):
         files[name] = read_file(ROOT / name)
     if not root["workspace"]["dependencies"]["wit-bindgen"].startswith("="):
@@ -183,7 +183,9 @@ def sdk_files() -> dict[str, bytes]:
     return files
 
 
-def create(directory: Path, template: str, name: str | None = None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, runtime_profile=None) -> Path:
+    from tools import rust_standard_logging_inputs as standard
+    selected_runtime = standard.selection({'runtimeProfile': runtime_profile} if runtime_profile is not None else {})
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown capsule template")
     name = name or "my-" + template
@@ -212,6 +214,9 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
                            "No provider or capability grant is installed by this project.\n").encode()}
     files.update({"vendor/lsf/" + path: data for path, data in vendor.items()})
     transaction_features = ', features = ["transaction"]' if template == "transactional-aggregate" else ""
+    if selected_runtime == standard.PROFILE:
+        features = ['transaction', 'standard-logging'] if template == 'transactional-aggregate' else ['standard-logging']
+        transaction_features = ', features = ' + json.dumps(features)
     files["Cargo.toml"] = f'''[package]
 name = "{name}"
 version = "1.0.0"
@@ -247,6 +252,15 @@ panic = "abort"
     project = {"formatVersion": 1, "name": name, "version": "1.0.0", "tenant": "examples",
                "service": "examples/" + name, "world": f"examples:{template}/service@1.0.0",
                "limits": limits}
+    if selected_runtime != standard.DEFAULT:
+        project['runtimeProfile'] = selected_runtime
+    if selected_runtime == standard.PROFILE:
+        # Explicit creator selection declares a dependency; it grants nothing.
+        marker = b'world service {'
+        if wit.count(marker) != 1:
+            raise ValueError('maintained logging template world shape changed')
+        files['wit/world.wit'] = wit.replace(marker, marker + b'\n    import latent:log/log@0.1.0;', 1)
+        files['wit/deps/log/package.wit'] = read_file(ROOT / 'wit/platform/log/package.wit')
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment

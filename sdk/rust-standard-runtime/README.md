@@ -74,6 +74,46 @@ the new sysroot through a cache glob. The required
 checks on its dependency graph. TLS and thread overlays are not selected by this
 clock-only build.
 
+## Standard stdio candidate
+
+The owned clock/sysroot build now selects a pinned stdio PAL alongside clocks.
+Its default PAL returns `io::ErrorKind::Unsupported` for nonempty stdin reads,
+stdout/stderr writes and flush. Empty writes can complete with zero bytes. The
+outer std wrapper no longer masks these errors as bad-file-descriptor success,
+and this target's stdout buffer has zero capacity, so an ordinary buffered
+`print!` cannot acknowledge bytes that will later be discarded.
+
+The separately selected `rust-standard-logging-v1` authoring profile uses
+`stdio_logging.rs` beneath unchanged `std::io`, `print!` and `eprint!` calls.
+The compiler-owned `latent-standard-stdio` crate supplies one fixed intra-core
+Rust-ABI symbol using the SDK's actual generated typed LOG binding; it registers
+no application callback. Both sides require the same pinned compiler. Standard
+output maps to info and standard error to error, with no guest-supplied identity
+fields. Each synchronous call accepts at most 256 UTF-8 bytes and 16 vectors;
+vectors are joined before decoding. Separate incomplete UTF-8 writes fail
+explicitly. A false provider result, invalid field, unavailable provider, budget
+exhaustion or reentrancy remains an error. No retry or hidden worker is added.
+Flush has no buffered work and acknowledges only completed sink acceptance,
+never remote delivery. Drop and failed panic reporting perform no hidden log.
+
+`rust-standard-closed-v1` selects the same owned build with the concrete closed
+stdio PAL. These explicit profiles require `build --standard-runtime` with the
+current recipe/compiler/source/rlib-bound build receipt. Target-only Cargo
+configuration leaves host build scripts and macros on their original sysroot;
+captured builds mount the owned target sysroot read-only and retain its identity
+in build materials. A prepared build receipt is a builder assertion, not a
+publisher signature or an authorization. Declaring LOG installs no provider or
+grant. The legacy stock profile still uses the unmodified prebuilt standard
+library; no supported logging or concrete-Unsupported stdio claim is made for
+that separate profile.
+
+The seven host tests in `stdio_reference.rs` exercise the actual PAL files with
+a synthetic bridge. `tools/run_rust_stdio_reference.py` also extracts the three
+exact pinned upstream methods: the old write/write_all/flush Unsupported
+assertions fail and the new reference passes. These controls do not qualify the
+rebuilt std, generated binding, component or signed node. Actual default standard
+logging and fresh-state/failure qualification remain required before acceptance.
+
 `tools/qualify_rust_standard_clock.py` prepares an ordinary `SystemTime::now`
 component using that emitted std graph and the pinned bindings/component tool.
 Application code calls no SDK clock or executor. Its optional, explicitly hashed

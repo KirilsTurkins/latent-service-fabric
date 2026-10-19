@@ -1,0 +1,30 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Own exact pinned standard stdio PAL, explicit closed/logging creator profiles, bounded compiler/source/rlib prepared-input admission and mutation controls. Preserve original authoring cases and skip predicates; update controlled verified-closure fixtures with the now-required actual default runtime selection.",
+  "module":"tools/tests/test_rust_standard_logging.py",
+  "cases":["StandardLogging.test_changed_library_compiler_recipe_or_extra_input_never_reuses_prepared_graph","StandardLogging.test_changed_missing_or_extra_source_preimage_cannot_be_selected","StandardLogging.test_closed_prepared_profile_cannot_be_relabelled_as_logging","StandardLogging.test_creator_selects_fixed_sdk_bridge_and_declares_log_without_any_grant","StandardLogging.test_default_maintained_overlay_is_closed_and_logging_never_implicitly_selected","StandardLogging.test_exact_source_changes_only_target_stdio_and_stdout_buffering","StandardLogging.test_prepared_exact_graph_has_target_only_flag_and_bound_source_material","StandardLogging.test_receipt_mutation_is_detected_even_if_updated_document_identity_is_consistent","StandardLogging.test_unknown_or_malformed_project_profile_refuses_before_output"],
+  "guards":{
+    "StandardLogging.test_exact_source_changes_only_target_stdio_and_stdout_buffering":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_changed_missing_or_extra_source_preimage_cannot_be_selected":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_default_maintained_overlay_is_closed_and_logging_never_implicitly_selected":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_creator_selects_fixed_sdk_bridge_and_declares_log_without_any_grant":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_unknown_or_malformed_project_profile_refuses_before_output":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_prepared_exact_graph_has_target_only_flag_and_bound_source_material":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_changed_library_compiler_recipe_or_extra_input_never_reuses_prepared_graph":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_receipt_mutation_is_detected_even_if_updated_document_identity_is_consistent":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41",
+    "StandardLogging.test_closed_prepared_profile_cannot_be_relabelled_as_logging":
+      "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41"
+  },
+  "guardDefinitions":{
+    "73c2bcc31fc0113d0bc79d604f98aea547505bd3561d6f04a3e0f1662887bc41":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:ea8fe7599c37ae3fdafb744400d9f05ad1b43735ffb5ad357723de19fc8061fa","class:setup-sha256:dbfedd96dc84499ff3428b78b7ed14889e4ad029b1fb565f32c4a4675b28787b"]}
+  }
+}
