@@ -331,6 +331,7 @@ jobs:
             ${{ runner.temp }}/rust-standard-entropy/qualification.json
             ${{ runner.temp }}/rust-standard-entropy/FAILED.json
             ${{ runner.temp }}/rust-standard-entropy/capture.json
+            ${{ runner.temp }}/rust-standard-entropy/outside/executable-inputs.json
             ${{ runner.temp }}/rust-standard-entropy/logs/**
             ${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json
             ${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**

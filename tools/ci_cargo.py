@@ -11,14 +11,34 @@ import argparse
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
 import tempfile
+import tomllib
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIGURATIONS = ("current", "ci-correctness")
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(ROOT))
+
+
+def format_command(root: Path) -> list[str]:
+    """Format every owned package, authenticating the sole third-party exception."""
+    from tools import ci_suite_inventory as registry
+    from tools import host_stream_tls_provider as bounded_tls
+
+    manifest = tomllib.loads((root / "Cargo.toml").read_text(encoding="utf-8"))
+    if (bounded_tls.PROVIDER not in manifest.get("workspace", {}).get("exclude", [])
+            and not (root / bounded_tls.PROVIDER).exists()):
+        return ["cargo", "fmt", "--all", "--check"]
+    bounded_tls.verify(root)
+    packages = sorted(registry.workspace(root))
+    if not packages or any(not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name) for name in packages):
+        raise ValueError("invalid-owned-format-packages")
+    return ["cargo", "fmt", *[arg for name in packages for arg in ("--package", name)], "--check"]
 
 
 @dataclass(frozen=True)
@@ -52,7 +72,7 @@ class Invocation:
         if timings and args[0] != "fmt":
             options.append("--timings")
         args[separator:separator] = options
-        return command + args
+        return format_command(ROOT) if self.args[0] == "fmt" else command + args
 
 
 def declared_toolchain(root: Path, selection: str) -> str:

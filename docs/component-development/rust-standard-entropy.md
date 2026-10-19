@@ -41,8 +41,10 @@ sysroot from the authenticated Rust 1.97.1 archive, then captures an outside
 library with ordinary getrandom 0.3.4, rand_core 0.9.3 OsRng, a transitive UTF-8
 text resource and a binary resource. Both outside source directories are removed
 before the isolated, offline component build. The normal executable-input gate
-first refuses getrandom's audited build script; only this controlled fixture
-programme then reviews and consumes the exact retained request identity.
+first refuses the captured build-script/macro closure, including getrandom's
+audited build script; only this controlled fixture programme then reviews and
+consumes that exact retained request identity. Additional compiler transitive
+inputs resolved by normal Cargo retain this same source-bound approval.
 
 The signed programme requires the original 27 node cases plus two before-guest
 missing-grant denials and 16 entropy calls. It covers empty, one-byte, 257-byte,

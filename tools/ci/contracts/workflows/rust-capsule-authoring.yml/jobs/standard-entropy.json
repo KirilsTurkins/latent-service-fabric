@@ -64,7 +64,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "rust-standard-entropy-${{ github.sha }}",
-          "path": "${{ runner.temp }}/rust-standard-entropy/qualification.json\n${{ runner.temp }}/rust-standard-entropy/FAILED.json\n${{ runner.temp }}/rust-standard-entropy/capture.json\n${{ runner.temp }}/rust-standard-entropy/logs/**\n${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json\n${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**\n${{ runner.temp }}/rust-standard-entropy/approval-required/*.json\n${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/*.json\n${{ runner.temp }}/rust-standard-entropy/build/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/component.wasm\n${{ runner.temp }}/rust-standard-entropy/node/workflow.json\n${{ runner.temp }}/rust-standard-entropy/node/FAILED.json\n",
+          "path": "${{ runner.temp }}/rust-standard-entropy/qualification.json\n${{ runner.temp }}/rust-standard-entropy/FAILED.json\n${{ runner.temp }}/rust-standard-entropy/capture.json\n${{ runner.temp }}/rust-standard-entropy/outside/executable-inputs.json\n${{ runner.temp }}/rust-standard-entropy/logs/**\n${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json\n${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**\n${{ runner.temp }}/rust-standard-entropy/approval-required/*.json\n${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/*.json\n${{ runner.temp }}/rust-standard-entropy/build/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/component.wasm\n${{ runner.temp }}/rust-standard-entropy/node/workflow.json\n${{ runner.temp }}/rust-standard-entropy/node/FAILED.json\n",
           "retention-days": 3
         }
       }
@@ -73,7 +73,7 @@
   },
   "jobId": "standard-entropy",
   "kind": "job",
-  "reviewReason": "Add separate exact Rust entropy qualification with normal native/companion producer dependency; no old job or command change.",
+  "reviewReason": "Retain normal exact approval for the complete captured compiler script/macro closure; record actual inputs and capture before owned std compilation. No execution waiver or source preimage change.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

@@ -8,7 +8,7 @@ from tools import rust_dependency_authoring as review, rust_standard_logging_inp
 from tools.application_dependencies import LOCK
 from tools.build_snapshot import digest
 from tools.dev_workflow.common import require
-from tools.rust_capsule_project import snapshot
+from tools.rust_capsule_project import snapshot, write_json
 
 PACKAGE = 'outside-standard-entropy-library'
 RESOURCE = 'outside-standard-entropy-resource'
@@ -102,10 +102,16 @@ def install(project: Path, outside: Path, cargo: Path):
     require({(PACKAGE, VERSION), (RESOURCE, VERSION), ('getrandom', '0.3.4'), ('rand_core', '0.9.3')} <= packages,
             'rust-entropy-native-closure')
     executables = [row for row in lock['artifacts'] if row['role'] == 'build-tool']
-    require(len(executables) == 1 and executables[0]['metadata']['package'] == 'getrandom'
-            and executables[0]['metadata']['version'] == '0.3.4'
-            and executables[0]['metadata']['executableKinds'] == [['custom-build']],
-            'rust-entropy-only-audited-executable-input')
+    write_json(outside / 'executable-inputs.json', {'candidateDigest': digest(candidate.read_bytes()),
+        'inputs': [{'id': row['id'], 'package': row['metadata']['package'], 'version': row['metadata']['version'],
+                    'kinds': row['metadata']['executableKinds']} for row in executables]})
+    # Native Cargo may resolve additional compiler transitive inputs. They keep
+    # the normal exact captured-source approval; this fixture grants no waiver.
+    require(any(row['metadata']['package'] == 'getrandom' and row['metadata']['version'] == '0.3.4'
+                and row['metadata']['executableKinds'] == [['custom-build']] for row in executables)
+            and all(row['metadata']['executableKinds'] and all(
+                kinds in (['custom-build'], ['proc-macro']) for kinds in row['metadata']['executableKinds'])
+                for row in executables), 'rust-entropy-native-executable-closure')
     before = candidate.read_bytes()
     review.review(project, candidate, digest(before))
     require(review.status(project)['status'] == 'verified' and (project / LOCK).read_bytes() == before
@@ -119,5 +125,8 @@ def install(project: Path, outside: Path, cargo: Path):
         'candidateDigest': digest(before), 'sdkLockDigest': digest(initial['sdk-lock.json']),
         'originalsRemoved': not library.exists() and not resource.exists(),
         'catalogueRegistration': False, 'normalExecutableApprovalRequired': True,
+        'capturedExecutableInputs': [{'id': row['id'], 'package': row['metadata']['package'],
+            'version': row['metadata']['version'], 'kinds': row['metadata']['executableKinds']}
+            for row in executables],
         'ordinaryAPIs': ['getrandom::fill', 'getrandom::fill_uninit', 'getrandom::u32', 'getrandom::u64',
                          'rand_core::OsRng', 'std::collections::HashMap']}
