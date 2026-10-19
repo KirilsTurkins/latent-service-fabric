@@ -158,6 +158,18 @@ bootstrap digests, exact engine/splicer inputs, and before/after source/compiler
 identities. It builds no second engine or native node and preserves the existing
 job deadlines and guards.
 
+The final decoded type comparison retains the complete application HTTP,
+clock and export graphs. For the authenticated source-owned import profile,
+the engine-owned activation interface has two finite accepted encodings: the
+complete maintained ABI, or exactly its eight used functions and three types.
+Component encoding can omit only the unused `observe`, `wait-for`, `wait-until`
+methods and their exclusive `phase`/`observation` types. The complete original
+ABI fingerprint, engine/profile and source-splicer receipt identity are checked
+before accepting that alternative. Missing mandatory members, changed retained
+signatures/ownership, partial omissions, unknown imports and public-contract
+changes still fail. The source/derived-world check remains complete and strict;
+this representation check grants no authority or runtime qualification.
+
 The compiler namespace and containment receipts retain a compact digest of every
 field in their complete canonical JSON manifests. The namespace summary also
 records file count and total content bytes. The compiler still enforces its
