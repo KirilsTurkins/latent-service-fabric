@@ -30,6 +30,10 @@ Captured builds require the maintained Linux namespace profile. The builder stag
 
 For private registries, pass the same explicit `--registry-config` to `lock` and `resolve` with `{"registries":[{"scope":"@private","url":"https://registry.example.com","authorizationEnv":"LSF_PRIVATE_NPM_AUTH"}]}`. Credentials reach only that explicit resolver; ordinary compilation consumes verified objects and does not read project/home npm configuration. An update, removal, lock edit, selected condition/profile change, missing object or altered dependency invalidates relevant input identities and requires capture/review again.
 
+On Linux, the policy can additionally select `"tlsTrust":{"caFile":"trust/roots.pem"}`. The project-relative public PEM bundle is limited to 512 KiB and 256 certificates; keys, extra data, aliases and infrastructure paths are rejected. Only the native npm child receives an owned bundle through [`cafile`](https://docs.npmjs.com/cli/v11/using-npm/config/#cafile), with [`strict-ssl`](https://docs.npmjs.com/cli/v11/using-npm/config/#strict-ssl) retained. Machine trust and Node loader settings are unchanged. Include all public roots required by the explicitly selected registries in this bundle. This explicit profile refuses on non-Linux resolver hosts.
+
+Both native lock and capture recheck the source CA, owned copy, strict-verification setting and trust helper recipe. Capture includes the CA as a native lock input and records its logical path, size, digest and `npm-linux-explicit-registry-ca-v1` identity. Offline verification rejects changed trust bytes while preserving the accepted lock. Use the same policy for `lock` and `resolve`; keep the policy and credentials outside the project. Source controls pass with modeled native boundaries; authenticated private TLS acquisition and signed lifecycle qualification remain pending.
+
 A registry policy may select one default registry and one entry per explicit
 scope. Repeating either selector fails with `npm-registry-scope-ambiguous` before
 native lock generation or capture dispatch, even when the repeated endpoints
