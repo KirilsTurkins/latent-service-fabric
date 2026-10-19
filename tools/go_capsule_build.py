@@ -31,6 +31,7 @@ RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_st
            "tools/application_dependency_approval.py", "tools/go_application_dependencies.py",
            "tools/go_dependency_authoring.py", "tools/go_native_authoring.py", "tools/captured_compiler_isolation.py")
 RECIPE += ("tools/go_generator_authoring.py",)
+RECIPE += ('tools/go_proxy_tls.py',)
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += ('tools/guest_runtime_receipts.py',)

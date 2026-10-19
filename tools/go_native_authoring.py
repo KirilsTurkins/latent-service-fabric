@@ -13,6 +13,7 @@ from tools.application_dependency_store import DependencyError, directory_files,
 from tools.build_observation import file_identity
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
+from tools import go_proxy_tls
 
 
 def command(go: Path, arguments: list[str], work: Path, environment: dict, *, fetch=False):
@@ -34,7 +35,7 @@ def declaration(go: Path, work: Path, environment: dict) -> dict:
 def initialize(app: Path, owned: Path, go: Path | None, proxy_config: Path | None, owner: Path):
     go = regular_path(go or Path(shutil.which('go') or 'missing-go')).resolve(strict=True)
     identity = file_identity(go, 'go-native-authoring')
-    environment, policy, policy_bytes = native.fetch_environment(owner, owned, proxy_config)
+    environment, policy, policy_bytes = native.fetch_environment(owner, owned, proxy_config, project=app)
     # A declaration edit never resolves or fetches anything, even with a
     # developer-supplied go.mod toolchain directive or an ambient module cache.
     environment.update(GOPROXY='off', GOSUMDB='off')
@@ -48,7 +49,7 @@ def initialize(app: Path, owned: Path, go: Path | None, proxy_config: Path | Non
 def recipe_identity() -> dict:
     return {name: file_identity(path, name) for name, path in {
         'native-authoring': Path(__file__), 'capture-owner': Path(native.__file__),
-        'review-owner': Path(authoring.__file__)}.items()}
+        'review-owner': Path(authoring.__file__), 'proxy-trust-owner': Path(go_proxy_tls.__file__)}.items()}
 
 
 def still_current(owner, app, sdk, before, go, go_before, recipes, proxy_config, policy_bytes, accepted):
@@ -167,6 +168,7 @@ def create_lock(project: Path, *, go: Path | None = None, proxy_config: Path | N
         with tempfile.TemporaryDirectory(prefix='lsf-go-native-lock-') as temporary:
             owned = Path(temporary)
             go, go_before, environment, policy, policy_bytes, version = initialize(app, owned, go, proxy_config, owner)
+            trust = go_proxy_tls.check(app, owned, policy, environment)
             environment.update(GOPROXY=policy['proxy'], GOSUMDB=policy['sumdb'], GOOS='wasip1', GOARCH='wasm',
                 GOFLAGS='-mod=mod' + (' -tags=' + ','.join(selected['tags']) if selected['tags'] else ''))
             work = native._mirror(app, owned)
@@ -220,13 +222,18 @@ def create_lock(project: Path, *, go: Path | None = None, proxy_config: Path | N
             if any(directory_files(source, exclude=('.git',)) != files for source, files in local_inputs.items()):
                 raise DependencyError('go-native-lock-local-input-mutated')
             still_current(owner, app, sdk, before, go, go_before, recipes, proxy_config, policy_bytes, accepted)
+            if go_proxy_tls.check(app, owned, policy, environment) != trust:
+                raise DependencyError('go-proxy-public-trust-mutated')
             prefix = app.relative_to(owner).as_posix() + '/' if app != owner else ''
             authoring.publish_native(owner, private, sdk,
                 {prefix + name: (raw, before.get(name)) for name, raw in outputs.items()})
-            return {'formatVersion': 1, 'stage': 'go-native-lock', 'status': 'locked',
+            result = {'formatVersion': 1, 'stage': 'go-native-lock', 'status': 'locked',
                     'configurationDigest': digest(outputs['go.mod']), 'nativeSumDigest': digest(outputs['go.sum']),
                     'fetchPolicyDigest': digest(canonical(policy)), 'sdkLockDigest': digest(sdk[0]),
                     'sdkRuntimeBuildDependencies': runtime_modules,
                     'captureRequired': True, 'reviewRequired': True, 'previousLockPreserved': True,
                     'compilerExecution': False, 'generators': 'never-executed', 'tags': selected['tags'],
                     'nativeGo': go_before, 'resolverVersion': version, 'recipe': recipes}
+            if trust is not None:
+                result['fetchTrust'] = trust
+            return result

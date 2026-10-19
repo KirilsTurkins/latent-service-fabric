@@ -17,6 +17,11 @@ on:
       - tools/go_application_dependencies.py
       - tools/go_dependency_authoring.py
       - tools/go_native_authoring.py
+      - tools/go_proxy_tls.py
+      - tools/go_private_proxy_fixture.py
+      - tools/qualify_go_private_dependencies.py
+      - tools/tests/test_go_proxy_tls.py
+      - tools/tests/test_go_private_proxy.py
       - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
@@ -89,6 +94,11 @@ on:
       - tools/go_application_dependencies.py
       - tools/go_dependency_authoring.py
       - tools/go_native_authoring.py
+      - tools/go_proxy_tls.py
+      - tools/go_private_proxy_fixture.py
+      - tools/qualify_go_private_dependencies.py
+      - tools/tests/test_go_proxy_tls.py
+      - tools/tests/test_go_private_proxy.py
       - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
@@ -308,6 +318,13 @@ jobs:
       - name: Qualify two captured default clients and renamed private transitive workers
         if: ${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' && steps.http_library_boundaries.outcome == 'success' }}
         run: python3 tools/qualify_go_http_libraries.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-http-libraries"
+      - name: Check private proxy trust, native capture and signed campaign boundaries
+        id: private_go_boundaries
+        if: ${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' }}
+        run: python3 -m unittest tools.tests.test_go_proxy_tls tools.tests.test_go_private_proxy -v
+      - name: Qualify authenticated private Go graphs and offline signed lifecycle
+        if: ${{ !cancelled() && steps.normal_go_qualification.outcome == 'success' && steps.private_go_boundaries.outcome == 'success' }}
+        run: python3 tools/qualify_go_private_dependencies.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-private-dependencies"
       - name: Diagnose signed Go entry with and without net/http initialization
         if: ${{ !cancelled() && failure() && steps.normal_go_qualification.outcome == 'success' }}
         run: python3 tools/diagnose_go_entry.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-entry-differential"
@@ -498,6 +515,14 @@ jobs:
             ${{ runner.temp }}/go-entry-private-frames/observation.json
             ${{ runner.temp }}/go-entry-private-frames/node/observation.json
             ${{ runner.temp }}/go-entry-private-frames/node/entry.json
+            ${{ runner.temp }}/go-private-dependencies/qualification.json
+            ${{ runner.temp }}/go-private-dependencies/FAILED.json
+            ${{ runner.temp }}/go-private-dependencies/capture.json
+            ${{ runner.temp }}/go-private-dependencies/*-native-reference.json
+            ${{ runner.temp }}/go-private-dependencies/build-*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/go-private-dependencies/offline-rebuild/BUILD-COMPLETE.json
+            ${{ runner.temp }}/go-private-dependencies/node-*/workflow.json
+            ${{ runner.temp }}/go-private-dependencies/node-*/FAILED.json
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

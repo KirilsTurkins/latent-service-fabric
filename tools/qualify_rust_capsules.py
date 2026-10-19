@@ -55,7 +55,7 @@ def inputs(language="rust"):
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
-                    "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
+                    "application_dependency_approval.py", "go_application_dependencies.py", "go_proxy_tls.py", "captured_compiler_isolation.py",
                     "go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",

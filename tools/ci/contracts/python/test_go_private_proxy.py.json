@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "PrivateProxy.test_authority_is_child_only_and_previous_environment_restored",
+    "PrivateProxy.test_campaign_rejects_stale_baseline_before_native_acquisition",
+    "PrivateProxy.test_integrity_controls_restore_exact_owned_objects_and_ca_even_on_refusal_failure",
+    "PrivateProxy.test_invalid_module_selection_refuses_before_archive_generation",
+    "PrivateProxy.test_native_failure_and_confidential_streams_cannot_be_mistaken_for_success",
+    "PrivateProxy.test_peer_authentication_exact_asset_allowlist_and_redacted_observations",
+    "PrivateProxy.test_peer_total_request_bound_is_finite",
+    "PrivateProxy.test_probe_metadata_is_closed_and_validated_before_any_invocation",
+    "PrivateProxy.test_signed_values_use_full_route_tuple_and_original_physical_idle",
+    "PrivateProxy.test_unknown_coordinates_versions_and_zip_members_retain_native_go_sources",
+    "PrivateProxy.test_wrong_revision_unreaped_or_effectful_calls_never_qualify"
+  ],
+  "guards": {
+    "PrivateProxy.test_authority_is_child_only_and_previous_environment_restored": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_campaign_rejects_stale_baseline_before_native_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_integrity_controls_restore_exact_owned_objects_and_ca_even_on_refusal_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_invalid_module_selection_refuses_before_archive_generation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_native_failure_and_confidential_streams_cannot_be_mistaken_for_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_peer_authentication_exact_asset_allowlist_and_redacted_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_peer_total_request_bound_is_finite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_probe_metadata_is_closed_and_validated_before_any_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_signed_values_use_full_route_tuple_and_original_physical_idle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_unknown_coordinates_versions_and_zip_members_retain_native_go_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    },
+    "PrivateProxy.test_wrong_revision_unreaped_or_effectful_calls_never_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb39218118ff99c5ffbd2eafef1f51fc25c9b53e5bfe9f656564f804212206cf",
+        "class:setup-sha256:afd9416533952bdc817456ce95b0d7895ea12ec7f89179fd884902dc14f013c0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_private_proxy.py",
+  "reviewReason": "Add bounded authenticated Go proxy capture and signed offline lifecycle; retain every existing command, case and guard.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

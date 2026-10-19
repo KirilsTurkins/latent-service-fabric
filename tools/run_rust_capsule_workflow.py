@@ -44,7 +44,7 @@ def write_workflow_receipt(path, value):
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
-        captured_rust_matrix=False):
+        captured_rust_matrix=False, captured_go_private=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -68,6 +68,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(captured_rust_matrix) is bool and (not captured_rust_matrix or language == "rust")
             and not (captured_rust_matrix and (rust_compatibility or captured_git_component or captured_dependency_recovery)),
             "authoring-Rust-matrix-language")
+    require(type(captured_go_private) is bool and (not captured_go_private or language == 'go')
+            and not (captured_go_private and captured_dependency_recovery), 'authoring-Go-private-language')
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -161,6 +163,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
                     tutorials(client, targets, result)
+                    if captured_go_private:
+                        from tools.go_private_proxy_fixture import probe as probe_private_go
+                        probe_private_go(client, targets['greeting'], probe, result, len(names),
+                                         read_json(fixture / 'private-go-probe.json'))
                     if rust_compatibility:
                         from tools.rust_compatibility_probe import probe as probe_compatibility
                         probe_compatibility(client, targets['greeting'], probe, result, len(names))

@@ -33,6 +33,11 @@
           "tools/go_application_dependencies.py",
           "tools/go_dependency_authoring.py",
           "tools/go_native_authoring.py",
+          "tools/go_proxy_tls.py",
+          "tools/go_private_proxy_fixture.py",
+          "tools/qualify_go_private_dependencies.py",
+          "tools/tests/test_go_proxy_tls.py",
+          "tools/tests/test_go_private_proxy.py",
           "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -109,6 +114,11 @@
           "tools/go_application_dependencies.py",
           "tools/go_dependency_authoring.py",
           "tools/go_native_authoring.py",
+          "tools/go_proxy_tls.py",
+          "tools/go_private_proxy_fixture.py",
+          "tools/qualify_go_private_dependencies.py",
+          "tools/tests/test_go_proxy_tls.py",
+          "tools/tests/test_go_private_proxy.py",
           "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -175,7 +185,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Trigger native captured-client reference source and retain only three bounded JSON reference receipts",
+  "reviewReason": "Add bounded authenticated Go proxy capture and signed offline lifecycle; retain every existing command, case and guard.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
