@@ -14,6 +14,7 @@ if __package__ in {None, ''}:
 
 from tools import rust_standard_sysroot_build as std, rust_standard_entropy_fixture as fixture
 from tools import rust_standard_logging_inputs as standard
+from tools.application_dependencies import LOCK
 from tools.build_observation import build_environment, resolve_tools
 from tools.dev_workflow.common import require
 from tools.phase3_resource_identity import file_identity
@@ -62,14 +63,14 @@ def qualify(prepared: Path, output: Path):
         archive = output / 'rust-src-1.97.1.tar.xz'
         stage = 'authenticated-stdlib-source'
         source_archive(archive)
-        stage = 'entropy-owned-std'
-        sysroot = output / 'entropy-std'
-        built = std.build(archive, sysroot, paths['rustc'].parent, entropy=True)
         stage = 'ordinary-source-capture'
         application = create(output / 'application', 'greeting', runtime_profile=standard.ENTROPY)
         captured = fixture.install(application, output / 'outside', paths['cargo'])
         write_json(output / 'capture.json', captured)
         original = inventory(snapshot(application))
+        stage = 'entropy-owned-std'
+        sysroot = output / 'entropy-std'
+        built = std.build(archive, sysroot, paths['rustc'].parent, entropy=True)
         common = dict(offline=True, standard_runtime=sysroot)
         arguments = (products['examples/capsule_contracts'], products['examples/package'],
                      'https://github.com/KirilsTurkins/latent-service-fabric')
@@ -83,8 +84,9 @@ def qualify(prepared: Path, output: Path):
                     and not (denied / 'BUILD-COMPLETE.json').exists(), 'rust-entropy-exact-approval-boundary')
             approval = read_json(denied / 'executable-input-approval-request.json')
             executable = approval['specification']['executableInputs']
-            require(len(executable) == 1 and executable[0]['metadata']['package'] == 'getrandom'
-                    and executable[0]['metadata']['version'] == '0.3.4', 'rust-entropy-audited-script-only')
+            retained = [row for row in read_json(application / LOCK)['artifacts'] if row['role'] == 'build-tool']
+            require(executable == retained and len(executable) == len(captured['capturedExecutableInputs']),
+                    'rust-entropy-exact-captured-executable-closure')
         else:
             raise ValueError('rust-entropy-unapproved-script-executed')
         stage = 'isolated-offline-component'

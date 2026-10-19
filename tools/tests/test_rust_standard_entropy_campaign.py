@@ -16,8 +16,8 @@ from tools.phase2_operator_process import WorkflowError
 
 class StandardEntropyCampaign(unittest.TestCase):
     def test_normal_pure_transitive_capture_exact_review_removes_originals_and_preserves_sdk(self):
-        for profile in (standard.ENTROPY,):
-            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temporary:
+        for profile, transitive in ((standard.ENTROPY, False), (standard.ENTROPY, True)):
+            with self.subTest(profile=profile, transitive=transitive), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
                 app = project.create(root / 'app', 'greeting', runtime_profile=profile)
                 original = project.snapshot(app)
@@ -26,7 +26,10 @@ class StandardEntropyCampaign(unittest.TestCase):
                     for name in (fixture.PACKAGE, fixture.RESOURCE, 'getrandom', 'rand_core')]}
                 lock['artifacts'][2]['metadata']['version'] = '0.3.4'
                 lock['artifacts'][3]['metadata']['version'] = '0.9.3'
-                lock['artifacts'].append({'role': 'build-tool', 'metadata': {'package': 'getrandom', 'version': '0.3.4', 'executableKinds': [['custom-build']]}})
+                lock['artifacts'].append({'id': 'controlled-getrandom-script', 'role': 'build-tool', 'metadata': {'package': 'getrandom', 'version': '0.3.4', 'executableKinds': [['custom-build']]}})
+                if transitive:
+                    lock['artifacts'].append({'id': 'captured-transitive-macro', 'role': 'build-tool',
+                        'metadata': {'package': 'ordinary-compiler-macro', 'version': '1.0.0', 'executableKinds': [['proc-macro']]}})
                 def capture(source, candidate, **_kwargs):
                     self.assertEqual((root / 'outside' / fixture.PACKAGE / 'src/lib.rs').read_text(encoding='utf-8'), fixture.LIBRARY)
                     self.assertEqual((root / 'outside' / fixture.RESOURCE / 'src/text.txt').read_bytes(), b'Gr\xc3\xbc\xc3\x9fe')
@@ -49,6 +52,8 @@ class StandardEntropyCampaign(unittest.TestCase):
                 self.assertEqual(source.replace(insertion, b'', 1), original['src/lib.rs'])
                 self.assertEqual(authored.call_args.kwargs['identity'], fixture.PACKAGE)
                 self.assertTrue(result['normalExecutableApprovalRequired'])
+                self.assertEqual([row['id'] for row in result['capturedExecutableInputs']],
+                    ['controlled-getrandom-script'] + (['captured-transitive-macro'] if transitive else []))
                 self.assertNotIn('latent', fixture.LIBRARY)
                 self.assertIn('getrandom::fill', fixture.LIBRARY)
                 self.assertIn('rand_core::OsRng', fixture.LIBRARY)
