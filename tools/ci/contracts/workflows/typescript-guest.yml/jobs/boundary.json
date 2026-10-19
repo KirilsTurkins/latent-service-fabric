@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}",
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -158,6 +159,16 @@
         "run": "python3 -B tools/qualify_typescript_standard_entropy.py --prepared-qualification \"$RUNNER_TEMP/typescript-capsule-dependencies\" --tools \"$RUNNER_TEMP/typescript-guest-tools\" --output \"$RUNNER_TEMP/typescript-standard-entropy\""
       },
       {
+        "name": "Freeze exact-source existing native products for signed Fetch",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "typescript-fetch-native-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-capsule-dependencies/qualification.json\n${{ runner.temp }}/typescript-capsule-dependencies/source-inputs.json\n${{ runner.temp }}/typescript-capsule-dependencies/source-inputs-after.json\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/latent\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/latentd\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/examples-capsule_contracts\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/examples-package\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/examples-capsule_authoring\n",
+          "retention-days": 7
+        }
+      },
+      {
         "if": "always()",
         "name": "Preserve attempted runtime test evidence",
         "uses": "actions/upload-artifact",
@@ -173,7 +184,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Review explicit exact-RANDOM Math.random lowering and concrete undeclared/snapshot refusal; additive actual34-outcome same-products programme and original native15 controls, original75min/allrequired commands unchanged.",
+  "reviewReason": "Review additive Fetch39-path and approved-entropy union; retain both parent commands, exact authority/profile validation, native freezing, limits and all historical obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
