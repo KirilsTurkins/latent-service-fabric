@@ -97,9 +97,9 @@
         "uses": "actions/download-artifact",
         "with": {
           "github-token": "${{ github.token }}",
-          "name": "typescript-fetch-private-host-1c420914b72bff605422a9077fa3eea34af321a3",
+          "name": "typescript-fetch-private-host-880078036ec86f049fb3b6c70795cef72f1e7d96",
           "path": "${{ runner.temp }}/fetch-candidate-observer",
-          "run-id": 39298630321
+          "run-id": 39305199761
         }
       },
       {
@@ -113,7 +113,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-fetch-candidate-${{ github.sha }}",
-          "path": "${{ runner.temp }}/fetch-candidate-result/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/build/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/build/logs/**\n${{ runner.temp }}/fetch-candidate-result/attempt/build/component.wasm\n${{ runner.temp }}/fetch-candidate-result/attempt/node/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/node/controls/*.json\n${{ runner.temp }}/fetch-candidate-result/private-replay/*.json\n${{ runner.temp }}/fetch-candidate-result/private-replay/controls/*.json\n",
+          "path": "${{ runner.temp }}/fetch-candidate-result/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/build/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/build/logs/**\n${{ runner.temp }}/fetch-candidate-result/attempt/build/component.wasm\n${{ runner.temp }}/fetch-candidate-result/attempt/build/generated-bindings.js\n${{ runner.temp }}/fetch-candidate-result/attempt/node/*.json\n${{ runner.temp }}/fetch-candidate-result/attempt/node/controls/*.json\n${{ runner.temp }}/fetch-candidate-result/private-replay/*.json\n${{ runner.temp }}/fetch-candidate-result/private-replay/controls/*.json\n",
           "retention-days": 7
         }
       }
@@ -122,7 +122,7 @@
   },
   "jobId": "fetch-candidate",
   "kind": "job",
-  "reviewReason": "Private manual-only exact backend candidate uses existing authenticated compiler/engine/native products, preserves ordinary finite signed gate and strict bounds, and reuses the private observer only after an actual retained failure; no Cargo/engine rebuild or production qualification transfer.",
+  "reviewReason": "Retain exact owned generated bindings and reuse the authenticated owner-lifetime observer; no runtime limit or qualification change.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

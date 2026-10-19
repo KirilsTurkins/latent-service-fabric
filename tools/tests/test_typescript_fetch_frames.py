@@ -304,7 +304,7 @@ class FetchFailureFrames(unittest.TestCase):
             root = Path(directory)
             binary = root/'private-latentd'; binary.write_bytes(b'owned-private-observer')
             value = {'qualification': False, 'sourceCommit': candidate.TESTED, 'originalNative': {'owned': 'native'},
-                     'markers': {'numericFrames': True, 'registrationFailures': True},
+                     'markers': {'numericFrames': True, 'registrationFailures': True, 'ownerLifetimes': True},
                      'privateHost': candidate.file_identity(binary)}
             path = root/'private-host-identity.json';path.write_bytes(json.dumps(value).encode())
             with patch.object(candidate, 'PRIVATE_IDENTITY', candidate.file_identity(path)):

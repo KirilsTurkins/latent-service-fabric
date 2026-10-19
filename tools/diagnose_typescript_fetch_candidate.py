@@ -25,8 +25,8 @@ TESTED = '0754391a20027a539f1d5b7c0426719a4bd6c3c1'
 BACKEND = 'tools/typescript_guest/fetch.mjs'
 CANDIDATE = {'sha256': 'sha256:cfd5f8986e20312ec931dd5da912387c07da1bee3b3ca47415912aebca82dafe',
              'bytes': 19183}
-PRIVATE_IDENTITY = {'sha256': 'sha256:c6eb63d23e434145446ebec70250c41c6f494e85071f824bf7b5d3be03c678e4',
-                    'bytes': 2087}
+PRIVATE_IDENTITY = {'sha256': 'sha256:f38101edfefcc81a1e42e0f91e73ce16f5b82a6c30c915b8e133a7133a2335bd',
+                    'bytes': 2109}
 
 
 def candidate_bytes(path: Path) -> bytes:
@@ -40,7 +40,7 @@ def observer_host(directory: Path, identity: dict) -> Path:
     value = json.loads(read_file(record, 8192))
     require(value['qualification'] is False and value['sourceCommit'] == TESTED
             and value['originalNative'] == identity
-            and value['markers'] == {'numericFrames': True, 'registrationFailures': True},
+            and value['markers'] == {'numericFrames': True, 'registrationFailures': True, 'ownerLifetimes': True},
             'fetch-candidate-observer-source')
     host = directory/'private-latentd'
     require(file_identity(host, 256*1024**2) == value['privateHost'], 'fetch-candidate-observer-binary')
@@ -80,6 +80,10 @@ def run(candidate: Path, native: Path, engine: Path, splicer: Path, tools: Path,
         component = output/'attempt/build/component.wasm'
         if component.is_file():
             record['component'] = file_identity(component, 16*1024**2)
+        bindings = output/'attempt/build/generated-bindings.js'
+        if bindings.is_file():
+            # Owned compiler output only; no application payload or environment.
+            record['generatedBindings'] = file_identity(bindings, 1024**2)
         if record['ordinaryFiniteGate'] == 'failed' and (output/'attempt/node/FAILED.json').is_file():
             spec = importlib.util.spec_from_file_location('private_fetch_observer', observer_helper)
             require(spec is not None and spec.loader is not None, 'fetch-candidate-observer-module')

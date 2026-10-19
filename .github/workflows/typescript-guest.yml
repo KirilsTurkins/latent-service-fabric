@@ -816,8 +816,8 @@ jobs:
       - name: Read authenticated fetch-candidate-observer
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: typescript-fetch-private-host-1c420914b72bff605422a9077fa3eea34af321a3
-          run-id: 39298630321
+          name: typescript-fetch-private-host-880078036ec86f049fb3b6c70795cef72f1e7d96
+          run-id: 39305199761
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/fetch-candidate-observer
       - name: Compile only the backend repair and run the original ordinary signed gate
@@ -835,6 +835,7 @@ jobs:
             ${{ runner.temp }}/fetch-candidate-result/attempt/build/*.json
             ${{ runner.temp }}/fetch-candidate-result/attempt/build/logs/**
             ${{ runner.temp }}/fetch-candidate-result/attempt/build/component.wasm
+            ${{ runner.temp }}/fetch-candidate-result/attempt/build/generated-bindings.js
             ${{ runner.temp }}/fetch-candidate-result/attempt/node/*.json
             ${{ runner.temp }}/fetch-candidate-result/attempt/node/controls/*.json
             ${{ runner.temp }}/fetch-candidate-result/private-replay/*.json
