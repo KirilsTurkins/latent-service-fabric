@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": 1
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.private_http_replay }}",
     "name": "Actual Java sources, SDK ownership and enforced node",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -240,7 +241,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Append five source controls and private local HTTP JAR provider campaign while preserving every old ordered step, artifact, pin and 55-minute bound",
+  "reviewReason": "Skip unchanged full default job only during explicit manual diagnostic",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

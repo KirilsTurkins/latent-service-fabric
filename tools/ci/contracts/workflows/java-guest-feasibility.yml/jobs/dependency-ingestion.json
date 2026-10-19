@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": 1
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.private_http_replay }}",
     "name": "Captured Java dependency native programme (${{ matrix.mode }})",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -85,7 +86,7 @@
   },
   "jobId": "dependency-ingestion",
   "kind": "job",
-  "reviewReason": "Compose both independently bounded private and recovery matrix modes after private-feed squash; preserve every original command, artifact, source guard and35-minute per-mode deadline.",
+  "reviewReason": "Skip unchanged dependency matrix only during explicit manual diagnostic",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

@@ -20,6 +20,11 @@ on:
       - '.github/workflows/java-guest-feasibility.yml'
       - 'wit/platform/**'
   workflow_dispatch:
+    inputs:
+      private_http_replay:
+        description: Fresh Java private HTTP components with separately authenticated historical native products
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,6 +46,7 @@ env:
 
 jobs:
   compiler-component:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.private_http_replay }}
     name: Actual Java sources, SDK ownership and enforced node
     runs-on: ubuntu-24.04
     timeout-minutes: 55
@@ -523,6 +529,7 @@ jobs:
           retention-days: 14
 
   dependency-ingestion:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.private_http_replay }}
     name: Captured Java dependency native programme (${{ matrix.mode }})
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -618,3 +625,89 @@ jobs:
             ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/node/**/*.json
           if-no-files-found: warn
           retention-days: 7
+
+  private-http-replay:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.private_http_replay }}
+    name: Focused Java private HTTP with authenticated historical native products
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch only the exact historical compiled source commits
+        run: >-
+          git fetch --no-tags --depth=1 origin
+          e97d44ddc744c9bd738d9b3b7a7d8b7234133e36
+          03a3f74598f2abfd0224169ae2871818f6c8419d
+          0e46e59358bb4bae16169690041daacbf113555a
+      - name: Check source, product selection and unchanged provider gates
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_private_http_replay tools.tests.test_java_private_http -v
+      - name: Retrieve only the fixed e97 host and four original03a helper binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_java_private_http.py --prepare --output "$RUNNER_TEMP/java-private-http-prepared"
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install the same pinned Java compiler tools without any native Cargo build
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Acquire one pinned compiler cache and execute two fresh captured HTTP components
+        run: >-
+          python3 -B tools/replay_java_private_http.py
+          --prepared "$RUNNER_TEMP/java-private-http-prepared"
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+          --cache-output "$RUNNER_TEMP/java-private-http-compiler"
+          --output "$RUNNER_TEMP/java-private-http-replay"
+      - name: Retain bounded source-specific replay evidence without credentials or keys
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-private-http-replay-${{ github.sha }}
+          path: |-
+            ${{ runner.temp }}/java-private-http-prepared/retrieval.json
+            ${{ runner.temp }}/java-private-http-prepared/host/host-retrieval.json
+            ${{ runner.temp }}/java-private-http-compiler/compiler-cache-selection.json
+            ${{ runner.temp }}/java-private-http-replay/qualification.json
+            ${{ runner.temp }}/java-private-http-replay/FAILED.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/build/source-inputs.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/build/recipe-inputs.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/build/compiler-inputs.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/build/java-classpath.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/build/http-client-profile.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/build/BUILD-*.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/build/build-observation.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/node/qualification.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/node/physical-after.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/node/standard-invocations.json
+          if-no-files-found: warn
+          retention-days: 3

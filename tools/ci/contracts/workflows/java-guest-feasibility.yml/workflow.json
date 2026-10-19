@@ -38,7 +38,15 @@
           "wit/platform/**"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "private_http_replay": {
+            "default": false,
+            "description": "Fresh Java private HTTP components with separately authenticated historical native products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -46,9 +54,10 @@
   },
   "requiredJobs": [
     "compiler-component",
-    "dependency-ingestion"
+    "dependency-ingestion",
+    "private-http-replay"
   ],
-  "reviewReason": "Add an independent bounded Java dependency matrix programme using the maintained default native builder, normal pinned compiler acquisition, verified read-only cache and existing private/recovery controls; preserve every original Java command and its55-minute job deadline.",
+  "reviewReason": "Default-off explicit manual Java replay selector preserves existing default workflows",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
