@@ -54,8 +54,12 @@ It exercises normal add,
 lock, resolve, digest review, update and remove; missing/wrong authentication, untrusted TLS, changed
 archive integrity, missing/tampered captured objects and changed public CA inputs must refuse while
 preserving the accepted lock. Credentials and the owned HTTPS peer are removed before offline builds.
-The campaign reuses the preceding exact native five-product bundle and four companion capsules,
+The campaign reuses the preceding exact native five-product bundle and four companion capsules.
+Both initial offline builds must preserve source, recipe, compiler and selected module inputs and
+pass signed execution independently. Wizer retains owned temporary argv/home paths in its image;
+byte-identical component reproducibility remains unclaimed. The campaign
 retains the original normal tutorial/fault/HTTP programme, and adds three fresh signed calls per phase
+and for the separately signed initial offline rebuild
 with selected-revision, process-reaping, physical-owner and provider-idle checks. Source controls and
 the local HTTPS peer are checked. Pinned esbuild/Node controls pass both conditional branches and
 all selected resources in twelve fresh processes; these controls do not qualify npm acquisition or

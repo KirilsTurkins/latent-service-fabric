@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_npm_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all original controls; require actual peer/platform selection and native conditional-export key order with one additive package graph case.",
+  "reviewReason": "Retain all18controls and exact offline source/recipe/compiler/selected-module identity; independently sign/execute both offline outputs because maintained Wizer binary reproducibility is not claimed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6bdfbd2abc122fcb14d3d7ee91956d287917107dcb009d6ece0f5a519ed507e6"
+  "sha256": "02eb299140ab21cd47969b58e695963d0ebf59833cc219b63bb3c139a99d36b0"
 }
