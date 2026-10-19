@@ -36,8 +36,10 @@ inventory still must match exactly, and each fresh runtime binding is recorded.
 A fresh normal27-call signed node must pass first. The private campaign then uses
 the maintained HTTPS authentication, CA capture, native authoring, refusal and
 original-removal fixture unchanged. It builds its actual offline components and
-signs/executes the three source states with the original full programme plus
-three private calls each. The generator campaign independently runs normal
+signs/executes both initial outputs separately, then update and removal: four
+full normal programmes plus three private calls each. Exact immutable inputs and
+individually validated runtime observations remain mandatory; byte-identical
+component output is not claimed. The generator campaign independently runs normal
 library capture and explicit request/approval/adoption, builds two offline
 components and signs/executes both with three request-dependent generated calls.
 Generator execution may continue after a private failure only when the fresh
@@ -72,3 +74,12 @@ use a separate replay schema. A replay is not a fabricated normal qualification,
 current-development native compilation, reproducible-build claim or whole-ticket
 closure. #686, #678 and the associated facility tickets retain their remaining
 literal requirements until successful source-bound evidence is reconciled.
+
+Run39316026182 on fixtureba6e72625 passed normal27 and both generated-output
+programmes (60calls/six generated cases, both clean/reaped). Private capture and
+both initial offline builds passed, including their fresh runtime observations,
+but an extra byte-equality assertion refused their distinct component digests.
+The corrected contract compares immutable source/recipe/SDK bindings/closure and
+compiler inputs, validates both runtime receipts, and requires a separate signed
+execution of both actual outputs. Private qualification stays pending until all
+four signed nodes pass; no component variance cause or reproducibility is inferred.

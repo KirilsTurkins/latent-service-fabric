@@ -398,12 +398,13 @@ class ActualPrivateProbeFilename(unittest.TestCase):
                  patch.object(maintained, 'source_files', return_value={}), \
                  patch.object(maintained.dependencies, 'verify_inputs', return_value=SimpleNamespace(lock={})), \
                  patch.object(maintained, 'build', side_effect=build), \
+                 patch.object(maintained, 'offline_rebuild', return_value={'rawBytesIdentical': True}), \
                  patch.object(maintained, 'node_workflow', side_effect=node), \
                  patch.object(maintained, 'inputs', return_value={}), patch('shutil.which', return_value=str(go)):
                 result = maintained.qualify(root / 'prepared', root / 'output')
             self.assertEqual(result['status'], 'passed')
-            self.assertEqual([row['removed'] for row in observed], [False, False, True])
-            self.assertEqual(len(observed), 3)
+            self.assertEqual([row['removed'] for row in observed], [False, False, False, True])
+            self.assertEqual(len(observed), 4)
 
 
 if __name__ == '__main__':

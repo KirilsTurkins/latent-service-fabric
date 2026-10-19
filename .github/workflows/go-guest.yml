@@ -28,6 +28,7 @@ on:
       - docs/development/go-dependency-replay.md
       - tools/tests/test_go_proxy_tls.py
       - tools/tests/test_go_private_proxy.py
+      - tools/tests/test_go_private_rebuild.py
       - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
@@ -117,6 +118,7 @@ on:
       - docs/development/go-dependency-replay.md
       - tools/tests/test_go_proxy_tls.py
       - tools/tests/test_go_private_proxy.py
+      - tools/tests/test_go_private_rebuild.py
       - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
@@ -586,6 +588,8 @@ jobs:
             ${{ runner.temp }}/go-private-dependencies/*-native-reference.json
             ${{ runner.temp }}/go-private-dependencies/build-*/BUILD-COMPLETE.json
             ${{ runner.temp }}/go-private-dependencies/offline-rebuild/BUILD-COMPLETE.json
+            ${{ runner.temp }}/go-private-dependencies/offline-rebuild/build-observation.json
+            ${{ runner.temp }}/go-private-dependencies/offline-rebuild-evidence.json
             ${{ runner.temp }}/go-private-dependencies/node-*/workflow.json
             ${{ runner.temp }}/go-private-dependencies/node-*/FAILED.json
             ${{ runner.temp }}/go-capsule-dependencies/**
@@ -619,7 +623,7 @@ jobs:
           LSF_REQUIRE_COMPILER_ISOLATION: '1'
         run: |
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy tools.tests.test_application_dependency_tools
+          python3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy tools.tests.test_application_dependency_tools tools.tests.test_go_private_rebuild
       - name: Retrieve only original qualified products and pinned reproduction tools
         env:
           GH_TOKEN: ${{ github.token }}
@@ -663,6 +667,8 @@ jobs:
             ${{ runner.temp }}/go-dependency-replay-private/build-*/BUILD-COMPLETE.json
             ${{ runner.temp }}/go-dependency-replay-private/build-*/build-observation.json
             ${{ runner.temp }}/go-dependency-replay-private/offline-rebuild/BUILD-COMPLETE.json
+            ${{ runner.temp }}/go-dependency-replay-private/offline-rebuild/build-observation.json
+            ${{ runner.temp }}/go-dependency-replay-private/offline-rebuild-evidence.json
             ${{ runner.temp }}/go-dependency-replay-private/node-*/workflow.json
             ${{ runner.temp }}/go-dependency-replay-private/node-*/FAILED.json
             ${{ runner.temp }}/go-dependency-replay-generator/qualification.json

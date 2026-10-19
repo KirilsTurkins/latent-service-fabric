@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_private_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Match the exact case-sensitive maintained private Go probe consumer filename.",
+  "reviewReason": "Replace unclaimed raw-byte reproducibility guard with exact immutable inputs, both actual runtime receipts and four separate signed nodes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b11966c107711c7faa94a7ea1fbbdbb0a63228edf4f9816c706cdc7dcf4f701b"
+  "sha256": "479c61c75523228ca899dce4ce9a0fab3cbb985f2330a70745398f7842ea0d88"
 }

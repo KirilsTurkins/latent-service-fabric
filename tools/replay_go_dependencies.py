@@ -780,7 +780,7 @@ def private(prepared, selected_baseline, output):
         stage = 'actual-authenticated-native-acquisition'
         phases, captured = maintained.capture(output, commands, go)
         write_json(output / 'capture.json', captured)
-        builds, nodes, runtime_bindings = [], [], []
+        builds, nodes, runtime_bindings, rebuilt_evidence = [], [], [], None
         for ordinal, (project, lock, version, removed) in enumerate(phases):
             stage = 'offline-build-' + str(ordinal)
             source = inventory(source_files(project))
@@ -791,18 +791,20 @@ def private(prepared, selected_baseline, output):
             require(source == inventory(source_files(project))
                     and maintained.dependencies.verify_inputs(project, 'go').lock == lock,
                     'private-Go-offline-build-mutated-inputs')
+            artifacts = [(str(ordinal), artifact)]
             if ordinal == 0:
                 rebuilt = build(project, output / 'offline-rebuild', products['examples/capsule_contracts'],
                                 products['examples/package'], 'https://github.com/' + REPOSITORY)
                 check_compilation(prepared, rebuilt, compiler)
                 runtime_bindings.append(check_runtime_selection(prepared, rebuilt, project))
-                require(read_json(artifact / 'BUILD-COMPLETE.json')['componentDigest']
-                        == read_json(rebuilt / 'BUILD-COMPLETE.json')['componentDigest'],
-                        'private-Go-offline-component-not-identical')
-            stage = 'sign-and-enforced-node-' + str(ordinal)
-            nodes.append(sign_node(commands, prepared, products, artifact, output, str(ordinal),
-                private={'nonce': captured['nonce'], 'version': version, 'removed': removed}))
-            builds.append(read_json(artifact / 'BUILD-COMPLETE.json'))
+                rebuilt_evidence = maintained.offline_rebuild(artifact, rebuilt, project)
+                write_json(output / 'offline-rebuild-evidence.json', rebuilt_evidence)
+                artifacts.append(('initial-rebuilt', rebuilt))
+            for label, selected in artifacts:
+                stage = 'sign-and-enforced-node-' + label
+                nodes.append(sign_node(commands, prepared, products, selected, output, label,
+                    private={'nonce': captured['nonce'], 'version': version, 'removed': removed}))
+                builds.append(read_json(selected / 'BUILD-COMPLETE.json'))
         require(frozen(prepared)[0] == receipt and before == inputs('go') and driver == fixture_materials()
                 and go_before == file_identity(go)
                 and materials == {name: file_identity(ROOT / name) for name in maintained.MATERIALS},
@@ -810,7 +812,8 @@ def private(prepared, selected_baseline, output):
         result = {'schemaVersion': 'latent.go.private-replay.v1', 'status': 'passed',
                   'originalBaseline': original, 'capture': captured, 'builds': builds, 'nodes': nodes,
                   'materials': materials, 'fixtureMaterials': driver,
-                  'freshRuntimeBindings': runtime_bindings,
+                  'freshRuntimeBindings': runtime_bindings, 'offlineRebuild': rebuilt_evidence,
+                  'componentReproducibility': 'not-claimed',
                   'nativeProductsCompiled': False, 'freshPrivateComponentsCompiled': True,
                   'cleanHost': False, 'hermetic': False, 'publisherAuthenticated': False,
                   'fullTicketQualification': False}

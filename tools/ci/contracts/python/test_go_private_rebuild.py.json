@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "BothActualOutputs.test_real_qualifier_signs_and_executes_both_initial_outputs_plus_update_and_remove",
+    "OfflineRebuild.test_changed_recipe_binding_lock_tool_or_offline_policy_never_uses_byte_variance_exception",
+    "OfflineRebuild.test_distinct_real_receipt_outputs_preserve_inputs_and_require_both_signed_executions",
+    "OfflineRebuild.test_stale_component_or_runtime_receipt_refuses_before_signing",
+    "OwnedProxyAuthority.test_actual_netrc_producer_matches_exact_pinned_go_authority_without_cross_port_credentials",
+    "OwnedProxyAuthority.test_proxy_userinfo_still_refuses_before_owned_config_or_credential_lookup"
+  ],
+  "guards": {
+    "BothActualOutputs.test_real_qualifier_signs_and_executes_both_initial_outputs_plus_update_and_remove": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae61767b77229090f25dbff6a24abeb8b9de3c01ab36e9dd0ac05de374790e91",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OfflineRebuild.test_changed_recipe_binding_lock_tool_or_offline_policy_never_uses_byte_variance_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae61767b77229090f25dbff6a24abeb8b9de3c01ab36e9dd0ac05de374790e91",
+        "class:setup-sha256:d2e9dd27a97364ef6a37272153945d6ab06e5d98c420026e0e699560b921bb19"
+      ],
+      "skipSites": []
+    },
+    "OfflineRebuild.test_distinct_real_receipt_outputs_preserve_inputs_and_require_both_signed_executions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae61767b77229090f25dbff6a24abeb8b9de3c01ab36e9dd0ac05de374790e91",
+        "class:setup-sha256:d2e9dd27a97364ef6a37272153945d6ab06e5d98c420026e0e699560b921bb19"
+      ],
+      "skipSites": []
+    },
+    "OfflineRebuild.test_stale_component_or_runtime_receipt_refuses_before_signing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae61767b77229090f25dbff6a24abeb8b9de3c01ab36e9dd0ac05de374790e91",
+        "class:setup-sha256:d2e9dd27a97364ef6a37272153945d6ab06e5d98c420026e0e699560b921bb19"
+      ],
+      "skipSites": []
+    },
+    "OwnedProxyAuthority.test_actual_netrc_producer_matches_exact_pinned_go_authority_without_cross_port_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae61767b77229090f25dbff6a24abeb8b9de3c01ab36e9dd0ac05de374790e91",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OwnedProxyAuthority.test_proxy_userinfo_still_refuses_before_owned_config_or_credential_lookup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae61767b77229090f25dbff6a24abeb8b9de3c01ab36e9dd0ac05de374790e91",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_private_rebuild.py",
+  "reviewReason": "Bind both actual offline outputs to unchanged source/recipe/SDK/compiler/closure; separately sign and execute both initial components, update and removal.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

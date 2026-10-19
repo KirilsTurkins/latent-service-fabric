@@ -33,7 +33,7 @@
           "LSF_REQUIRE_COMPILER_ISOLATION": "1"
         },
         "name": "Test source binding, private diagnostic privacy and real fixture filenames",
-        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy tools.tests.test_application_dependency_tools\n"
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy tools.tests.test_application_dependency_tools tools.tests.test_go_private_rebuild\n"
       },
       {
         "env": {
@@ -69,7 +69,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "go-dependency-replay-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-dependency-replay-inputs/retrieval.json\n${{ runner.temp }}/go-dependency-replay-inputs/source-preimages.json\n${{ runner.temp }}/go-dependency-replay-baseline/qualification.json\n${{ runner.temp }}/go-dependency-replay-baseline/node/workflow.json\n${{ runner.temp }}/go-dependency-replay-baseline/node/FAILED.json\n${{ runner.temp }}/go-dependency-replay-private/qualification.json\n${{ runner.temp }}/go-dependency-replay-private/FAILED.json\n${{ runner.temp }}/go-dependency-replay-private/capture.json\n${{ runner.temp }}/go-dependency-replay-private/build-*/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-private/build-*/build-observation.json\n${{ runner.temp }}/go-dependency-replay-private/offline-rebuild/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-private/node-*/workflow.json\n${{ runner.temp }}/go-dependency-replay-private/node-*/FAILED.json\n${{ runner.temp }}/go-dependency-replay-generator/qualification.json\n${{ runner.temp }}/go-dependency-replay-generator/FAILED.json\n${{ runner.temp }}/go-dependency-replay-generator/build-*/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-generator/build-*/build-observation.json\n${{ runner.temp }}/go-dependency-replay-generator/node-*/workflow.json\n${{ runner.temp }}/go-dependency-replay-generator/node-*/FAILED.json\n",
+          "path": "${{ runner.temp }}/go-dependency-replay-inputs/retrieval.json\n${{ runner.temp }}/go-dependency-replay-inputs/source-preimages.json\n${{ runner.temp }}/go-dependency-replay-baseline/qualification.json\n${{ runner.temp }}/go-dependency-replay-baseline/node/workflow.json\n${{ runner.temp }}/go-dependency-replay-baseline/node/FAILED.json\n${{ runner.temp }}/go-dependency-replay-private/qualification.json\n${{ runner.temp }}/go-dependency-replay-private/FAILED.json\n${{ runner.temp }}/go-dependency-replay-private/capture.json\n${{ runner.temp }}/go-dependency-replay-private/build-*/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-private/build-*/build-observation.json\n${{ runner.temp }}/go-dependency-replay-private/offline-rebuild/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-private/offline-rebuild/build-observation.json\n${{ runner.temp }}/go-dependency-replay-private/offline-rebuild-evidence.json\n${{ runner.temp }}/go-dependency-replay-private/node-*/workflow.json\n${{ runner.temp }}/go-dependency-replay-private/node-*/FAILED.json\n${{ runner.temp }}/go-dependency-replay-generator/qualification.json\n${{ runner.temp }}/go-dependency-replay-generator/FAILED.json\n${{ runner.temp }}/go-dependency-replay-generator/build-*/BUILD-COMPLETE.json\n${{ runner.temp }}/go-dependency-replay-generator/build-*/build-observation.json\n${{ runner.temp }}/go-dependency-replay-generator/node-*/workflow.json\n${{ runner.temp }}/go-dependency-replay-generator/node-*/FAILED.json\n",
           "retention-days": 3
         }
       }
@@ -78,7 +78,7 @@
   },
   "jobId": "dependency-replay",
   "kind": "job",
-  "reviewReason": "Fetch immutable compiled source directly; retain exact namespace prerequisites, mandatory generator controls and all replay bounds.",
+  "reviewReason": "Add focused paired-output controls and retain both observation identities; original full job unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

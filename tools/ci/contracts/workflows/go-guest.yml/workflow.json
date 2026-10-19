@@ -44,6 +44,7 @@
           "docs/development/go-dependency-replay.md",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
+          "tools/tests/test_go_private_rebuild.py",
           "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -137,6 +138,7 @@
           "docs/development/go-dependency-replay.md",
           "tools/tests/test_go_proxy_tls.py",
           "tools/tests/test_go_private_proxy.py",
+          "tools/tests/test_go_private_rebuild.py",
           "tools/tests/test_go_native_authoring.py",
           "tools/tests/test_go_dependency_authoring.py",
           "tools/guest_authoring_frontend.py",
@@ -228,7 +230,7 @@
     "dependency-replay",
     "upstream-probe"
   ],
-  "reviewReason": "Default-off explicit fixed-source diagnostic selector, retaining the full normal qualification.",
+  "reviewReason": "Cover new explicit offline-pair controls in unchanged owning workflow.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

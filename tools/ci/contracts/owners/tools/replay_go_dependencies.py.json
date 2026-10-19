@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_go_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Compare seven immutable tool/SDK materials and independently validate each fresh source/component/graph-bound runtime receipt.",
+  "reviewReason": "Preserve frozen native preimages and qualify both actual initial outputs independently without a reproducibility claim.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f829040080660c2915ed1649b36c3531f5c49f2136956bc075d7d942fd7b2a63"
+  "sha256": "84c39959f33c91e79a004b6045c9106830d1d0d0d7e40325f465868a1f32dfed"
 }
