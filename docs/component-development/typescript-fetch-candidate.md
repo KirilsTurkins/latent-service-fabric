@@ -302,3 +302,13 @@ is settled or refunded early. Authentic generated-source controls preserve
 closed first/middle refusal, entry races, live ordering and the retirement-gap
 case. Node-reference allocations fall from 10 to 8 for idle entry; this count
 is not LSF owner accounting or a signed Fetch qualification result.
+
+The same finite adapter also inlines only the authenticated native task-metadata
+wrapper at its existing typed import await. It retains argument validation,
+real contention wait/relock, error propagation and finally-clear, while avoiding
+a second private async Promise around work already awaited by the public async
+binding. The two generated callback uses stay unchanged. Unknown wrapper text,
+call shapes and captured local names reject. Actual generated-source controls
+cover pending success, native rejection, typed/lift failure and contention.
+These controls do not establish signed Fetch success; the unchanged finite
+ordinary-host gate remains mandatory.

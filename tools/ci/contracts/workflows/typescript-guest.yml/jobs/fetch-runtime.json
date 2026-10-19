@@ -60,6 +60,10 @@
         "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-signed-fetch-tools\" python3 -m unittest tools.tests.test_typescript_native_await -v"
       },
       {
+        "name": "Check exact native metadata contention and cleanup before signed Fetch",
+        "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-signed-fetch-tools\" python3 -m unittest tools.tests.test_typescript_native_task_meta -v"
+      },
+      {
         "name": "Read the existing native qualification from this exact run",
         "uses": "actions/download-artifact",
         "with": {
@@ -103,7 +107,7 @@
   },
   "jobId": "fetch-runtime",
   "kind": "job",
-  "reviewReason": "Combine the exact reviewed native carrier await/lift fusion with idle-only private Task entry; preserve every old waiter and add both mandatory source controls before the unchanged signed Fetch programme.",
+  "reviewReason": "Authenticate generated native metadata inline control and retain original owning controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
