@@ -103,3 +103,38 @@ class AdversarialHttpEvidence(unittest.TestCase):
             mutate(changed)
             with self.subTest(mutation=mutate), self.assertRaises(WorkflowError):
                 subject.peer_outcome(changed)
+
+
+class OriginalHttpRecipe(unittest.TestCase):
+    def test_original_greeting_and_http_only_selected_manifest_are_both_bound(self):
+        import json
+        from tools import replay_go_http_adversarial as replay
+        from tools.rust_capsule_project import digest
+        original = {'compiler.py': {'digest': digest(b'compiler'), 'size': 8}}
+        selected = dict(original, **{'wit/host-abi-phase3-v5.json': {'digest': digest(b'v5'), 'size': 2}})
+        raw = json.dumps(selected).encode()
+        reference = {'artifact': 12211733679, 'member': 'fixed-original-http-recipe',
+                     'digest': digest(raw), 'size': len(raw)}
+        with patch.object(replay, 'HTTP_RECIPE', reference):
+            self.assertEqual(replay.original_http_recipe(json.dumps(original).encode(), raw), reference)
+            with self.assertRaisesRegex(WorkflowError, 'original-http-recipe-drift'):
+                replay.original_http_recipe(json.dumps(original).encode(), raw + b' ')
+            for changed in ({}, {**original, 'extra.py': {}},
+                            {'compiler.py': {'digest': digest(b'changed'), 'size': 7}}):
+                with self.subTest(original=changed), self.assertRaisesRegex(WorkflowError, 'original-greeting-recipe-drift'):
+                    replay.original_http_recipe(json.dumps(changed).encode(), raw)
+
+    def test_manifest_omission_extra_or_implementation_change_cannot_pass_the_fixed_recipe(self):
+        import json
+        from tools import replay_go_http_adversarial as replay
+        from tools.rust_capsule_project import digest
+        original = {'compiler.py': {'digest': digest(b'compiler'), 'size': 8}}
+        exact = {**original, 'wit/host-abi-phase3-v5.json': {'digest': digest(b'v5'), 'size': 2}}
+        raw = json.dumps(exact).encode()
+        reference = {**replay.HTTP_RECIPE, 'digest': digest(raw), 'size': len(raw)}
+        for changed in (original, {**exact, 'extra.py': {}},
+                        {**exact, 'compiler.py': {'digest': digest(b'changed'), 'size': 7}},
+                        {**exact, 'wit/host-abi-phase3-v5.json': {'digest': digest(b'wrong'), 'size': 5}}):
+            with self.subTest(changed=changed), patch.object(replay, 'HTTP_RECIPE', reference), \
+                 self.assertRaisesRegex(WorkflowError, 'original-http-recipe-drift'):
+                replay.original_http_recipe(json.dumps(original).encode(), json.dumps(changed).encode())

@@ -32,3 +32,13 @@ user cancellation or child join runs. The accepted body remains pending until
 the activation owner retires it; the original host/root deadline and physical
 owner fences remain. A guest timer or explicit application cleanup cannot supply
 the retirement result.
+
+The HTTP recipe must match the exact original HTTP recipe bytes (artifact
+12211733679, member `go-standard-http-signed/build/recipe-inputs.json`, 7,688 bytes,
+SHA-256 `e326a9535ba29295382b667ff64108fd436684ccdd606cf60675962205acbb1f`).
+Its original greeting recipe rows must also remain identical: the only additional
+row is the frozen v5 host manifest selected by declared activation WIT. The v4
+runtime implementation profile and selected v5 host ABI manifest are distinct
+identities. The first661 replay correctly refused a greeting/HTTP recipe equality
+before any HTTP cases; its newly compiled HTTP recipe actually equals the
+original HTTP recipe byte for byte. This correction changes no compiler input.

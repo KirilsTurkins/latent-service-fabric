@@ -3,7 +3,9 @@
     "AdversarialHttpEvidence.test_missing_duplicate_denied_target_or_forwarded_credentials_fail_peer_oracle",
     "AdversarialHttpEvidence.test_referer_selection_does_not_change_original_configuration_or_credentials",
     "AdversarialHttpEvidence.test_secondary_grant_authorizes_only_the_exact_get_target",
-    "AdversarialHttpEvidence.test_uncertainty_wrong_revision_unreaped_or_excess_consumption_cannot_pass"
+    "AdversarialHttpEvidence.test_uncertainty_wrong_revision_unreaped_or_excess_consumption_cannot_pass",
+    "OriginalHttpRecipe.test_manifest_omission_extra_or_implementation_change_cannot_pass_the_fixed_recipe",
+    "OriginalHttpRecipe.test_original_greeting_and_http_only_selected_manifest_are_both_bound"
   ],
   "guards": {
     "AdversarialHttpEvidence.test_missing_duplicate_denied_target_or_forwarded_credentials_fail_peer_oracle": {
@@ -53,10 +55,34 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "OriginalHttpRecipe.test_manifest_omission_extra_or_implementation_change_cannot_pass_the_fixed_recipe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36f8447426b54a0e76e7e586dfda2e87dd80c188943b3a66ec415c79dce1581f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OriginalHttpRecipe.test_original_greeting_and_http_only_selected_manifest_are_both_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36f8447426b54a0e76e7e586dfda2e87dd80c188943b3a66ec415c79dce1581f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_http_adversarial.py",
-  "reviewReason": "Add default-off source-bound HTTP replay: preserve original commands and modes, authenticate original3050 native/SDK/compiler inputs, fresh normal27 plus fresh app original33/adversarial9; no Cargo rebuild.",
+  "reviewReason": "Retain original four HTTP evidence controls and add exact original HTTP versus greeting recipe provenance refusal controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

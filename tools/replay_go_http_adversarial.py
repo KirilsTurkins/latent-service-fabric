@@ -28,6 +28,25 @@ MATERIALS = ('tools/replay_go_http_adversarial.py', 'tools/replay_go_dependencie
     'tools/fixtures/go-http-adversarial/main.go')
 
 
+# Exact public original HTTP recipe retained in the immutable products artifact.
+# HTTP declares activation/v5 WIT; the original greeting lacks that one manifest.
+HTTP_RECIPE = {'artifact': 12211733679,
+    'member': 'go-standard-http-signed/build/recipe-inputs.json',
+    'digest': 'sha256:e326a9535ba29295382b667ff64108fd436684ccdd606cf60675962205acbb1f',
+    'size': 7688}
+
+
+def original_http_recipe(original_greeting: bytes, selected: bytes):
+    require(len(selected) == HTTP_RECIPE['size'] and digest(selected) == HTTP_RECIPE['digest'],
+            'go-http-replay-original-http-recipe-drift')
+    original, current = json.loads(original_greeting), json.loads(selected)
+    manifest = 'wit/host-abi-phase3-v5.json'
+    require(manifest not in original and set(current) == set(original) | {manifest}
+            and {name: row for name, row in current.items() if name != manifest} == original,
+            'go-http-replay-original-greeting-recipe-drift')
+    return dict(HTTP_RECIPE)
+
+
 def qualify(prepared, baseline, output):
     output = owned_output(output)
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=1200, command_seconds=900)
@@ -55,9 +74,9 @@ def qualify(prepared, baseline, output):
         require({name: row for name, row in selected_compiler.items() if name != 'standard-runtime-selection'}
                 == {name: row for name, row in compiler.items() if name != 'standard-runtime-selection'},
                 'go-http-replay-original-compiler-or-sdk-material-drift')
-        require((output / 'build/recipe-inputs.json').read_bytes()
-                == (prepared / 'builds/greeting/recipe-inputs.json').read_bytes(),
-                'go-http-replay-original-recipe-drift')
+        recipe_reference = original_http_recipe(
+            (prepared / 'builds/greeting/recipe-inputs.json').read_bytes(),
+            (output / 'build/recipe-inputs.json').read_bytes())
         runtime_selection = read_json(output / 'build/standard-runtime-selection.json')
         runtime_material = selected_compiler['standard-runtime-selection']
         raw_selection = (output / 'build/standard-runtime-selection.json').read_bytes()
@@ -97,7 +116,8 @@ def qualify(prepared, baseline, output):
             'originalProducts': file_identity(prepared / 'retrieval.json'),
             'freshNormalBaseline': ordinary, 'materials': materials,
             'nativeProductsCompiled': False, 'freshApplicationComponentCompiled': True,
-            'compilerRecipeByteIdentical': True, 'sdkRuntimeProductionPreimagesByteIdentical': True,
+            'compilerRecipeByteIdentical': True, 'compilerRecipeReference': recipe_reference,
+            'sdkRuntimeProductionPreimagesByteIdentical': True,
             'newSourceBoundRuntimeSelection': runtime_material, 'selectedRuntimeProfile': INITIALIZER_PROFILE,
             'build': read_json(output / 'build/BUILD-COMPLETE.json'),
             'standard': file_identity(output / 'standard-node/qualification.json'),
