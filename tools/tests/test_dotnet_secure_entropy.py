@@ -45,6 +45,13 @@ class SecureEntropyPort(unittest.TestCase):
                 'id': probe.noncrypto.PROVIDER, 'profile': probe.noncrypto.PROFILE,
                 'configurationDigest': 'sha256:' + 'a' * 64}]})
             denied = {'processReaped': True, 'response': {'data': {'consumption': {'effectCount': 0}}}}
+            original_binding = {'tenant': 'examples', 'id': probe.noncrypto.BINDING,
+                'recordKind': 'provider-binding', 'revoked': False, 'generation': '17',
+                'document': {'formatVersion': 1, 'tenant': 'examples', 'capability': RANDOM,
+                    'providerProfile': probe.noncrypto.PROFILE, 'configurationDigest': 'sha256:' + 'a' * 64,
+                    'configurationEpoch': 1, 'restriction': {'operations': ['bytes']}}}
+            client.call.return_value = {'outcomeKnown': True, 'category': 'success',
+                                        'data': {'policy': original_binding}}
             result = {'invocations': [], 'providerIdle': []}
             with patch('tools.rust_capsule_node.call', return_value=denied), \
                     patch('tools.rust_capsule_node.assert_value') as assertion, \
@@ -53,7 +60,10 @@ class SecureEntropyPort(unittest.TestCase):
                 targets = {'greeting': target}
                 probe.grant(client, node, Path(temporary), targets, {'greeting': 'publication:exact'}, result)
                 assertion.assert_called_once_with(client, denied, [{'ok': fixture.expected('denied')}])
-                self.assertEqual(client.call.call_count, 2)
+                self.assertEqual(client.call.call_count, 3)
+                mutation = client.call.call_args_list[1].args
+                self.assertEqual(mutation[-2:], ('--expected-generation', '17'))
+                self.assertEqual(result['dotnetStandardEntropyAuthority']['originalBinding'], original_binding)
                 selected = deploy.call_args.kwargs['grants']
                 self.assertEqual(selected, [{'capability': CLOCK, 'policy': 'clock'},
                     {'capability': RANDOM, 'policy': 'secure-entropy-allow'}])
