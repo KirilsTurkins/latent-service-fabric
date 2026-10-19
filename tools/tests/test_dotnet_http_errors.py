@@ -605,5 +605,73 @@ class HttpSyncReadPortTests(unittest.TestCase):
         self.assertEqual(snapshot(self.http.project), original)
         self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
 
+class HttpSyncSendPortTests(unittest.TestCase):
+    """Receipt/ILC controls; actual Send execution has a separate captured-BCL probe."""
+
+    def descriptor(self):
+        return {"profile": "dotnet-wasi-sync-send-v1",
+            "method": "System.Net.Http.HttpResponseMessage System.Net.Http.WasiHttpHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+            "asyncMethod": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.WasiHttpHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+            "originalBody": "authenticated-PlatformNotSupportedException-throw",
+            "defaultConstruction": "original-HttpClient-HttpClientHandler-WasiHttpHandler",
+            "completion": "original-SendAsync-TaskAwaiter",
+            "requestAndCancellation": "original-arguments",
+            "modifiedOriginalMethods": 1, "generatedHelpers": 0, "newHostImports": 0,
+            "nativeSendQualified": False}
+
+    def fixture(self):
+        fixture = HttpSyncReadPortTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        original = fixture.http.run_tool
+        def run(stage, *arguments):
+            original(stage, *arguments)
+            if "--sync-read" in arguments:
+                result = json.loads(read_file(arguments[-1]))
+                result["synchronousRead"]["synchronousSend"] = self.descriptor()
+                arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        fixture.http.run_tool = run
+        return fixture
+
+    def test_selected_send_receipt_retains_original_joint_corelib_ilc_binding(self):
+        fixture = self.fixture()
+        port = fixture.prepare()
+        response = fixture.references(port)
+        result = port.finish(fixture.http.project, fixture.http.evidence)
+        core = fixture.core_port.finish(fixture.http.project, fixture.http.evidence)
+        self.assertEqual(result["synchronousRead"]["synchronousSend"], self.descriptor())
+        self.assertEqual(result["nativeAotReferenceBinding"]["responseFiles"][0]["digest"], digest(response.read_bytes()))
+        self.assertEqual(core["nativeAotReferenceBinding"]["responseFiles"][0]["digest"], digest(response.read_bytes()))
+        self.assertIs(port.task_wait_port, fixture.core_port)
+        self.assertIs(result["synchronousRead"]["synchronousSend"]["nativeSendQualified"], False)
+
+    def test_missing_send_receipt_cannot_publish_compiler_project_references(self):
+        fixture = self.fixture()
+        original = fixture.http.run_tool
+        before = snapshot(fixture.http.project)
+        def omit(stage, *arguments):
+            original(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result["synchronousRead"]["synchronousSend"]
+            arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        fixture.http.run_tool = omit
+        with self.assertRaisesRegex(ValueError, "http-sync-read-rewrite-receipt"):
+            fixture.prepare()
+        self.assertEqual(snapshot(fixture.http.project), before)
+
+    def test_send_receipt_rejects_changed_method_unknown_fields_and_bool_aliases(self):
+        import copy
+        fixture = self.fixture()
+        mutations = [("method", "application.CustomHandler::Send"), ("completion", "completed-value"),
+            ("modifiedOriginalMethods", True), ("generatedHelpers", False),
+            ("newHostImports", False), ("nativeSendQualified", 0), ("foreign", "field")]
+        for key, value in mutations:
+            receipt = copy.deepcopy(fixture.receipt())
+            receipt["synchronousSend"] = self.descriptor()
+            receipt["synchronousSend"][key] = value
+            with self.subTest(field=key), self.assertRaisesRegex(ValueError, "http-sync-(read|send)-rewrite-receipt"):
+                http_errors.validate_sync_read(receipt)
+
+
 if __name__ == "__main__":
     unittest.main()

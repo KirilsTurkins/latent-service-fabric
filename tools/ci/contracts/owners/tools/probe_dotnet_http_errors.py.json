@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/probe_dotnet_http_errors.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve 79 finite error assertions, 24 synchronous-read assertions, 16 response-error assertions and ten ownership denials; add 30 captured-BCL content-length controls without native Fields or transmission qualification.",
+  "reviewReason": "Add fifteen isolated original-versus-derived synchronous Send host controls under existing bounded probe; all original controls retained",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fa6776b57175cb51415c65517afbf9fe148f45862bf9a6556b092ca8eb7a5f08"
+  "sha256": "616d03ddd6c43a42de830087713d2d48d3c399c8e2fac0288701c8c1e195cf52"
 }

@@ -65,6 +65,21 @@ REQUEST_CONTENT_HEADERS = {
 }
 
 
+SYNC_SEND = {
+    "profile": "dotnet-wasi-sync-send-v1",
+    "method": "System.Net.Http.HttpResponseMessage System.Net.Http.WasiHttpHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+    "asyncMethod": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.WasiHttpHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+    "originalBody": "authenticated-PlatformNotSupportedException-throw",
+    "defaultConstruction": "original-HttpClient-HttpClientHandler-WasiHttpHandler",
+    "completion": "original-SendAsync-TaskAwaiter",
+    "requestAndCancellation": "original-arguments",
+    "modifiedOriginalMethods": 1,
+    "generatedHelpers": 0,
+    "newHostImports": 0,
+    "nativeSendQualified": False,
+}
+
+
 SYNC_READ = {
     "profile": "dotnet-wasi-sync-response-read-v1",
     "method": "System.Int32 System.Net.Http.WasiInputStream::Read(System.Byte[],System.Int32,System.Int32)",
@@ -79,6 +94,7 @@ SYNC_READ = {
     "defaultClientComponentQualified": False,
     "responseReadErrors": RESPONSE_READ_ERRORS,
     "requestContentHeaders": REQUEST_CONTENT_HEADERS,
+    "synchronousSend": SYNC_SEND,
 }
 
 
@@ -98,6 +114,13 @@ def validate_request_content_headers(value: dict) -> None:
         raise ValueError("http-request-content-headers-rewrite-receipt")
 
 
+def validate_sync_send(value: dict) -> None:
+    if (type(value) is not dict or set(value) != set(SYNC_SEND)
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in SYNC_SEND.items())):
+        raise ValueError("http-sync-send-rewrite-receipt")
+
+
 def validate_sync_read(value: dict) -> None:
     digests = {"originalReadBodyDigest", "originalAsyncBodyDigest"}
     if (type(value) is not dict or set(value) != set(SYNC_READ) | digests | {"unchangedOriginalMethods"}
@@ -110,6 +133,7 @@ def validate_sync_read(value: dict) -> None:
         raise ValueError("http-sync-read-rewrite-receipt")
     validate_response_read_errors(value["responseReadErrors"])
     validate_request_content_headers(value["requestContentHeaders"])
+    validate_sync_send(value["synchronousSend"])
 
 
 def source_paths(tools: Path) -> tuple[Path, Path]:
