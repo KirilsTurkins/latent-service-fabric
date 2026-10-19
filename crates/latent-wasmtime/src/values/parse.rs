@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use latent_core::PlatformError;
 use serde::de::{self, DeserializeSeed, MapAccess, SeqAccess, Visitor};
@@ -10,12 +10,55 @@ const COLLECTION_LIMIT: &str = "value collection limit";
 
 pub(super) fn parse(bytes: &[u8], limits: ValueCodecLimits) -> Result<Value, PlatformError> {
     preflight(bytes, limits)?;
-    let mut deserializer = serde_json::Deserializer::from_slice(bytes);
+    let normalized = normalize_negative_zero(bytes);
+    let mut deserializer = serde_json::Deserializer::from_slice(&normalized);
     let value = Seed { limits }
         .deserialize(&mut deserializer)
         .map_err(|error| parse_error(&error))?;
     deserializer.end().map_err(|error| parse_error(&error))?;
     Ok(value)
+}
+
+// With arbitrary_precision, serde_json 1.0.154 presents bare -0 as its
+// private number map. Integer component values have always treated it as 0.
+// The lexical preflight has already excluded bare fractions and exponents.
+pub(super) fn normalize_negative_zero(bytes: &[u8]) -> Cow<'_, [u8]> {
+    let mut normalized = None;
+    let mut quoted = false;
+    let mut escaped = false;
+    for (index, &byte) in bytes.iter().enumerate() {
+        if quoted {
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                quoted = false;
+            }
+            continue;
+        }
+        if byte == b'"' {
+            quoted = true;
+        } else if byte == b'-'
+            && bytes.get(index + 1) == Some(&b'0')
+            && (index == 0
+                || matches!(
+                    bytes[index - 1],
+                    b'[' | b',' | b':' | b' ' | b'\t' | b'\n' | b'\r'
+                ))
+            && (index + 2 == bytes.len()
+                || matches!(
+                    bytes[index + 2],
+                    b']' | b'}' | b',' | b' ' | b'\t' | b'\n' | b'\r'
+                ))
+        {
+            normalized.get_or_insert_with(|| bytes.to_vec())[index] = b' ';
+        }
+    }
+    match normalized {
+        Some(bytes) => Cow::Owned(bytes),
+        None => Cow::Borrowed(bytes),
+    }
 }
 
 fn parse_error(error: &serde_json::Error) -> PlatformError {

@@ -41,6 +41,10 @@ fn every_small_integer_width_rejects_overflow_and_noninteger_tokens() {
     }
     rejects(&Type::U8, "[-1]");
     assert_eq!(round_trip(&[Type::S8], "[-0]"), "[0]");
+    assert_eq!(
+        round_trip(&[Type::S8, Type::U8, Type::String], r#"[-0,-0,"-0"]"#),
+        r#"[0,0,"-0"]"#
+    );
     rejects(&Type::Bool, "[1]");
     rejects(&Type::Char, r#"[""]"#);
     rejects(&Type::Char, r#"["ab"]"#);

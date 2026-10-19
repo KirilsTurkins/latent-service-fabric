@@ -28,7 +28,8 @@ pub(super) fn params(
     limits: ValueCodecLimits,
 ) -> Result<Vec<Val>, PlatformError> {
     let mut state = State::new(limits);
-    let mut deserializer = serde_json::Deserializer::from_slice(payload);
+    let normalized = super::parse::normalize_negative_zero(payload);
+    let mut deserializer = serde_json::Deserializer::from_slice(&normalized);
     let result = sequences::Params {
         state: &mut state,
         types,
