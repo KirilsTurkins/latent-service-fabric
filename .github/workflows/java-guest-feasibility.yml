@@ -707,7 +707,7 @@ jobs:
             ${{ runner.temp }}/java-private-http-replay/variant-*/build/BUILD-*.json
             ${{ runner.temp }}/java-private-http-replay/variant-*/build/build-observation.json
             ${{ runner.temp }}/java-private-http-replay/variant-*/node/qualification.json
-            ${{ runner.temp }}/java-private-http-replay/variant-*/node/physical-after.json
-            ${{ runner.temp }}/java-private-http-replay/variant-*/node/standard-invocations.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/node/after-*.json
+            ${{ runner.temp }}/java-private-http-replay/variant-*/node/controls/standard-*.json
           if-no-files-found: warn
           retention-days: 3

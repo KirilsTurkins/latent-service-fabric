@@ -70,7 +70,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-private-http-replay-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-private-http-prepared/retrieval.json\n${{ runner.temp }}/java-private-http-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-private-http-compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-private-http-replay/qualification.json\n${{ runner.temp }}/java-private-http-replay/FAILED.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/source-inputs.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/recipe-inputs.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/compiler-inputs.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/java-classpath.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/http-client-profile.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/BUILD-*.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/build-observation.json\n${{ runner.temp }}/java-private-http-replay/variant-*/node/qualification.json\n${{ runner.temp }}/java-private-http-replay/variant-*/node/physical-after.json\n${{ runner.temp }}/java-private-http-replay/variant-*/node/standard-invocations.json",
+          "path": "${{ runner.temp }}/java-private-http-prepared/retrieval.json\n${{ runner.temp }}/java-private-http-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-private-http-compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-private-http-replay/qualification.json\n${{ runner.temp }}/java-private-http-replay/FAILED.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/source-inputs.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/recipe-inputs.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/compiler-inputs.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/java-classpath.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/http-client-profile.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/BUILD-*.json\n${{ runner.temp }}/java-private-http-replay/variant-*/build/build-observation.json\n${{ runner.temp }}/java-private-http-replay/variant-*/node/qualification.json\n${{ runner.temp }}/java-private-http-replay/variant-*/node/after-*.json\n${{ runner.temp }}/java-private-http-replay/variant-*/node/controls/standard-*.json",
           "retention-days": 3
         }
       }
@@ -79,7 +79,7 @@
   },
   "jobId": "private-http-replay",
   "kind": "job",
-  "reviewReason": "Focused historical-product Java qualification with fresh components and no native Cargo rebuild",
+  "reviewReason": "Retain exact existing per-case physical observations and parsed invocation receipts",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
