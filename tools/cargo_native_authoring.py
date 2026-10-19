@@ -75,7 +75,8 @@ def dependency_tables(value: dict):
         yield value['replace']
 
 
-def observe(app: Path, additional: Path | None = None):
+def observe(app: Path, additional: Path | None = None, *, capture_inputs: bool = False):
+    from tools import application_dependencies as inputs
     roots, missing, pending, manifests, locations = {}, set(), [app], set(), {app}
     if additional is not None:
         pending.append(additional)
@@ -89,10 +90,14 @@ def observe(app: Path, additional: Path | None = None):
         if not source.exists():
             missing.add(source)
             continue
-        files = snapshot(app) if source == app else directory_files(source, exclude=('.git', 'target'))
+        files = snapshot(app) if source == app else directory_files(
+            source, exclude=() if capture_inputs else ('.git', 'target'))
         roots[source] = files
-        if (len(roots) + len(missing) > 1024 or sum(map(len, roots.values())) > 32768
-                or sum(len(raw) for rows in roots.values() for raw in rows.values()) > 256 * 1024 * 1024):
+        observed = [rows for root, rows in roots.items() if not capture_inputs or root != app]
+        maximum_bytes = inputs.MAX_CLOSURE_BYTES if capture_inputs else 256 * 1024 * 1024
+        maximum_files = inputs.MAX_CLOSURE_FILES if capture_inputs else 32768
+        if (len(roots) + len(missing) > 1024 or sum(map(len, observed)) > maximum_files
+                or sum(len(raw) for rows in observed for raw in rows.values()) > maximum_bytes):
             raise DependencyError('cargo-native-authoring-local-byte-or-count-limit')
         for name, raw in files.items():
             if Path(name).name != 'Cargo.toml' or source / name in manifests:

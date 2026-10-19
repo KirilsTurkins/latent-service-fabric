@@ -35,6 +35,18 @@ The separate fetch stage runs native `cargo metadata` and `cargo vendor --locked
 
 Before vendoring or publishing a candidate, capture checks both native metadata
 documents for unique package/node IDs, closed edges and bounded feature lists.
+Outside path-crate inputs are observed before native resolution and must stay
+unchanged through capture. Each captured original directory inventory must match
+that pre-resolution observation, including transitive manifests, resources and
+build scripts. Restoring a changed source after capture cannot make a different
+captured preimage acceptable. Refusal preserves the previous manifest, graph and
+accepted lock and publishes no candidate; resolve again after finishing edits.
+The capture-only observation uses the existing 32,768-file/512-MiB capture bounds
+and records an observer identity, root count and aggregate snapshot digest rather
+than private path or file payloads in resolver evidence. Source drift reports
+`cargo-local-source-mutated`; a changed observer reports
+`cargo-local-input-observer-mutated`. Capture still authorizes no executable tool.
+
 The filtered graph must share the actual application root and unchanged common
 package records with the full graph. The pinned native filter may omit target-only
 packages from its package list. Its enabled features, renamed edges and observed

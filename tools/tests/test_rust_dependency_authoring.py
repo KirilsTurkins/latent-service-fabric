@@ -677,5 +677,132 @@ print('staged-rust-selected-frontend-original-exit-five')
         self.assertIn(b'authoring-staged-recipe-requires-explicit-frontend', result.stderr)
 
 
+class CargoExternalSourceStability(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        RustDependencyAuthoring.setUpClass.__func__(cls)
+
+    setUp = RustDependencyAuthoring.setUp
+    select = RustDependencyAuthoring.select
+    capture = RustDependencyAuthoring.capture
+
+    def metadata(self):
+        value = RustDependencyAuthoring.metadata(self)
+        if getattr(self, 'external_build_script', False):
+            value['packages'][1]['targets'].append(
+                {'kind': ['custom-build'], 'src_path': str(self.library / 'build.rs')})
+        return value
+
+    def resolver_command(self, command, cwd, environment, seconds, maximum):
+        result = RustDependencyAuthoring.resolver_command(
+            self, command, cwd, environment, seconds, maximum)
+        if hook := getattr(self, 'after_native', None):
+            hook(command)
+        return result
+
+    def assert_refused(self, reason='cargo-local-source-mutated'):
+        accepted = self.owner / inputs.LOCK
+        accepted.write_bytes(b'previous accepted bytes')
+        native_lock = (self.app / 'Cargo.lock').read_bytes()
+        published = (self.owner / inputs.MANIFEST, self.app / 'cargo-resolved.lock.json')
+        before = {path: path.read_bytes() if path.exists() else None for path in published}
+        with self.assertRaisesRegex(DependencyError, '^' + reason + '$'):
+            self.capture()
+        self.assertEqual(accepted.read_bytes(), b'previous accepted bytes')
+        self.assertFalse(list(self.root.glob('candidate-*.json')))
+        self.assertEqual({path: path.read_bytes() if path.exists() else None for path in published}, before)
+        self.assertEqual((self.app / 'Cargo.lock').read_bytes(), native_lock)
+        self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
+
+    def test_build_script_added_after_native_graph_cannot_publish_an_unapproved_application(self):
+        def changed(command):
+            if command[1] == 'metadata' and '--filter-platform' in command:
+                (self.library / 'build.rs').write_bytes(b'fn main() {}\n')
+        self.after_native = changed
+        self.assert_refused()
+
+    def test_external_manifest_changed_after_metadata_never_publishes_a_stale_graph(self):
+        def changed(command):
+            if command[1] == 'metadata' and '--filter-platform' in command:
+                path = self.library / 'Cargo.toml'
+                path.write_bytes(path.read_bytes().replace(b'version="1.0.0"', b'version="2.0.0"'))
+        self.after_native = changed
+        self.assert_refused()
+
+    def test_transitive_resource_changed_during_vendor_cannot_be_silently_recaptured(self):
+        def changed(command):
+            if command[1] == 'vendor':
+                (self.child / 'src/greeting.txt').write_bytes(b'changed during native resolution')
+        self.after_native = changed
+        self.assert_refused()
+
+    def test_transient_capture_change_is_bound_to_actual_cas_even_after_originals_are_restored(self):
+        original_capture = native.capture
+        resource = self.child / 'src/greeting.txt'
+        before = resource.read_bytes()
+        def capture_then_restore(*arguments, **keywords):
+            resource.write_bytes(b'transient captured resource')
+            try:
+                return original_capture(*arguments, **keywords)
+            finally:
+                resource.write_bytes(before)
+        with patch.object(native, 'capture', side_effect=capture_then_restore):
+            self.assert_refused()
+        self.assertEqual(resource.read_bytes(), before)
+
+    def test_valid_external_script_is_still_captured_offline_but_requires_separate_approval(self):
+        self.external_build_script = True
+        (self.library / 'build.rs').write_bytes(b'fn main() {}\n')
+        candidate, locked = self.capture()
+        outside = next(row for row in locked['artifacts'] if row['metadata'].get('package') == 'outside')
+        self.assertEqual(outside['role'], 'build-tool')
+        self.assertIn(outside['id'], locked['executableInputs'])
+        authoring.review(self.owner, candidate, digest(candidate.read_bytes()))
+        shutil.rmtree(self.library); shutil.rmtree(self.child)
+        work, output = self.root / 'work', self.root / 'output'
+        work.mkdir(); output.mkdir()
+        with patch.object(inputs, 'fetch', side_effect=AssertionError('offline stage fetched inputs')):
+            with self.assertRaisesRegex(DependencyError, 'require-isolated-stage'):
+                inputs.prepare(self.owner, work, output, 'rust')
+        snapshot = json.loads((self.app / 'cargo-resolved.lock.json').read_bytes())['resolver']
+        self.assertEqual(set(snapshot['localInputSnapshot']), {'roots', 'identity'})
+        self.assertEqual(snapshot['localInputSnapshot']['roots'], 2)
+        self.assertRegex(snapshot['localInputSnapshot']['identity'], r'^sha256:[0-9a-f]{64}$')
+        self.assertNotIn(str(self.root), json.dumps(snapshot['localInputSnapshot']))
+        self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
+
+    def test_capture_mode_uses_existing_capture_caps_without_changing_editor_observation(self):
+        from tools import cargo_native_authoring as source
+        for name in ('MAX_CLOSURE_FILES', 'MAX_CLOSURE_BYTES'):
+            with self.subTest(limit=name), patch.object(inputs, name, 1):
+                observed = source.observe(self.app)
+                self.assertIn(self.library, observed[0])
+                with self.assertRaisesRegex(DependencyError, 'local-byte-or-count-limit'):
+                    self.capture()
+                self.assertEqual(self.calls, [])
+
+    def test_external_link_refuses_before_any_native_dispatch(self):
+        from tools import application_dependency_store as store
+        original = store.is_reparse
+        with patch.object(store, 'is_reparse', side_effect=lambda path: path == self.library or original(path)):
+            self.assert_refused('dependency-link-denied')
+        self.assertEqual(self.calls, [])
+
+    def test_changed_observer_recipe_refuses_candidate_publication(self):
+        original = native.file_identity
+        observations = 0
+        def identity(path, name):
+            nonlocal observations
+            value = original(path, name)
+            if name == 'cargo-local-input-observer':
+                observations += 1
+                if observations == 2:
+                    value = {**value, 'digest': 'sha256:' + '0' * 64}
+            return value
+        with patch.object(native, 'file_identity', side_effect=identity):
+            self.assert_refused('cargo-local-input-observer-mutated')
+        self.assertEqual(observations, 2)
+
+
 if __name__ == '__main__':
     unittest.main()
