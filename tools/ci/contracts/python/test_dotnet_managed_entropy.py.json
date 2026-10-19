@@ -6,6 +6,7 @@
     "ManagedEntropyTests.test_generated_material_target_or_captured_source_drift_refuses",
     "ManagedEntropyTests.test_missing_duplicate_or_original_native_reference_refuses",
     "ManagedEntropyTests.test_pinned_upstream_algorithms_have_only_the_closed_namespace_and_base_derivation",
+    "ManagedEntropyTests.test_rewriter_reference_uses_the_authenticated_captured_support_copy",
     "ManagedEntropyTests.test_unselected_framework_preimage_refuses"
   ],
   "guards": {
@@ -16,7 +17,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
         "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
       ],
       "skipSites": []
@@ -28,7 +29,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
         "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
       ],
       "skipSites": []
@@ -40,7 +41,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
         "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
       ],
       "skipSites": []
@@ -52,7 +53,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
         "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
       ],
       "skipSites": []
@@ -64,7 +65,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
         "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
       ],
       "skipSites": []
@@ -76,7 +77,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
+        "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
+      ],
+      "skipSites": []
+    },
+    "ManagedEntropyTests.test_rewriter_reference_uses_the_authenticated_captured_support_copy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
         "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
       ],
       "skipSites": []
@@ -88,7 +101,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:77dc1923a9408391f89e7098e296da53b72121f15a290789c99bf8abf42c57db",
+        "module:setup-sha256:696db9740ae48e2c7057e13e05dd21b602c4a1281a309ed5c8c13299bc20e785",
         "class:setup-sha256:b5c06fb5dbf6bc36e9f695e2b6b2644e68aba011a72846e8d4ccb553b4d33e87"
       ],
       "skipSites": []
@@ -96,6 +109,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_managed_entropy.py",
-  "reviewReason": "Add exact managed source derivation, direct native binding and reference drift refusal controls; retain seven cases and all guards.",
+  "reviewReason": "Add captured namespace Cecil regression; reviewed two standard-library imports changing only module setup hash. Preserve prior seven cases, setUp, bases, decorators and skips.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
