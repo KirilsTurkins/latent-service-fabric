@@ -46,3 +46,17 @@ unchanged noncryptographic behavior. This provides no statistical-quality,
 FIPS, transactional replay or concurrency certification. It advances the entropy
 portion of [#681](https://github.com/KirilsTurkins/latent-service-fabric/issues/681);
 the complete multi-language resource/clock/logging requirements remain separate.
+
+The pinned WASI `System.Security.Cryptography` assembly contains unsupported RNG
+stubs. The compiler therefore retains an exact private copy of that assembly and
+restores seventeen RNG methods using the pinned upstream algorithms in a private
+managed assembly. Its constructor and virtual base methods preserve custom
+subclass dispatch; the other 3,240 method bodies remain unchanged. Shared NuGet
+files and captured application assemblies are never rewritten. Both private
+assemblies must occur exactly once in the actual NativeAOT reference list.
+The obsolete named algorithm factory remains unsupported. The source capture
+includes the original .NET license and exact upstream preimages. Generic choices,
+shuffle, hexadecimal strings, nonzero bytes, custom subclass dispatch and Dispose
+are included in the signed programme, alongside the basic byte and integer cases.
+The initial signed run found the original unsupported stubs and failed; corrected
+signed execution is required before this profile is reported as qualified.

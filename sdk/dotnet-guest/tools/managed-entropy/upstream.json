@@ -1,0 +1,27 @@
+{
+  "profile": "dotnet-standard-rng-managed-v1",
+  "revision": "8449ba666dd991e495d8363d9852f18eb86a1aa1",
+  "repository": "https://github.com/dotnet/runtimelab",
+  "files": {
+    "HexConverter.cs": {
+      "digest": "sha256:e470bdd76aad0ebf22dfcf14179a52f203b29f8f6215402c90a9e148c1705fed",
+      "size": 28511
+    },
+    "LICENSE.TXT": {
+      "digest": "sha256:cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+      "size": 1116
+    },
+    "RandomNumberGenerator.cs": {
+      "digest": "sha256:1844e4962e9824d79f0eaa998128b79810c53f365742cbbd53a1478774fead0c",
+      "size": 18912
+    },
+    "RandomNumberGeneratorImplementation.Browser.cs": {
+      "digest": "sha256:c76b4d79dcff5a3eb39c396996286416d88fc845523060ae190ce9b4ded32a59",
+      "size": 495
+    },
+    "RandomNumberGeneratorImplementation.cs": {
+      "digest": "sha256:b96c87da91ddf287a97b2f7c4bb211ef3fa873a5c6abb2a07c01532474110f00",
+      "size": 3560
+    }
+  }
+}

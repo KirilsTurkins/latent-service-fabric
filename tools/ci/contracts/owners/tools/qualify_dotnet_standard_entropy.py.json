@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_standard_entropy.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit pinned secure PAL scalar authority and signed outside ordinary RNG gate while preserving every prior command, case, limits and receipt.",
+  "reviewReason": "Restore only exact unsupported RNG entrypoints through pinned upstream algorithms and privately bind both managed inputs; retain every prior command and case.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2dfaccf0eab625bd3038f503b1bce23779571bd1bdcee2a7e7e83f32fc060f5f"
+  "sha256": "63e2fa7adec1dc1c74af045a911db37118a4e8d3e207f2b3432aa532a58f9849"
 }

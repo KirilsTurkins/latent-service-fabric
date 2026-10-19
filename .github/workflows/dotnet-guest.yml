@@ -21,6 +21,7 @@ on:
       - 'tools/dotnet_standard_entropy*.py'
       - 'tools/qualify_dotnet_standard_entropy.py'
       - 'tools/tests/test_dotnet_secure_entropy.py'
+      - 'tools/tests/test_dotnet_managed_entropy.py'
       - 'tools/dotnet_standard_console*.py'
       - 'tools/qualify_dotnet_standard_console.py'
       - 'tools/tests/test_dotnet_standard_console.py'
@@ -279,6 +280,8 @@ jobs:
           python3 tools/qualify_dotnet_standard_console.py --output "$RUNNER_TEMP/dotnet-standard-console" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Check native PAL secure entropy behavior and explicit scalar authority
         run: python3 -m unittest tools.tests.test_dotnet_secure_entropy -v
+      - name: Validate exact managed RNG derivation and private NativeAOT references
+        run: python3 -m unittest tools.tests.test_dotnet_managed_entropy -v
       - name: Qualify captured ordinary RandomNumberGenerator and typed source denial
         run: >-
           python3 tools/qualify_dotnet_standard_entropy.py --output "$RUNNER_TEMP/dotnet-standard-entropy"
@@ -301,6 +304,7 @@ jobs:
             ${{ runner.temp }}/dotnet-standard-entropy/build/compiler-inputs.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/nuget-build-inputs.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/managed-entropy*.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy.o
             ${{ runner.temp }}/dotnet-standard-entropy/build/compatibility*.json
             ${{ runner.temp }}/dotnet-standard-entropy/build/component.wasm
