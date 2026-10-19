@@ -61,6 +61,8 @@
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
+          "tools/qualify_typescript_fetch_runtime.py",
+          "tools/tests/test_typescript_fetch_runtime.py",
           "tools/tests/test_typescript_application_dependencies.py",
           "tools/*rust_capsule*.py",
           "crates/latent-wasmtime/tests/**",
@@ -124,6 +126,8 @@
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
+          "tools/qualify_typescript_fetch_runtime.py",
+          "tools/tests/test_typescript_fetch_runtime.py",
           "tools/tests/test_typescript_application_dependencies.py",
           "tools/*rust_capsule*.py",
           "crates/latent-wasmtime/tests/**",
@@ -140,7 +144,20 @@
           ".github/workflows/typescript-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "observe-failed-fetch": {
+            "default": false,
+            "description": "Replay the authenticated d412 Fetch failure with bounded private frames",
+            "type": "boolean"
+          },
+          "observe-fetch-boundaries": {
+            "default": false,
+            "description": "Compile only new boundary probes using authenticated d412 SDK products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -148,11 +165,14 @@
   },
   "requiredJobs": [
     "boundary",
+    "fetch-boundaries",
     "fetch-component",
+    "fetch-failure-frames",
+    "fetch-runtime",
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Union approved generator and merged private npm lifecycle. Preserve all commands, captured-input ownership, default-off probes and retained evidence.",
+  "reviewReason": "Union current development and signed Fetch source; preserve every parent case, guard, workflow setting and required command",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

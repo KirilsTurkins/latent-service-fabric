@@ -1,0 +1,113 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Finite signed default Fetch and one-shot JSON bodies",
+    "needs": [
+      "boundary",
+      "source-splicer",
+      "promise-library",
+      "fetch-component"
+    ],
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check signed Fetch evidence, real adapter bodies and controlled peer",
+        "run": "python3 -m unittest tools.tests.test_typescript_fetch_runtime -v"
+      },
+      {
+        "name": "Install the existing isolated compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the original locked compiler namespace",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-signed-fetch-tools\""
+      },
+      {
+        "name": "Check actual generated task entry and original waiter invariants",
+        "run": "python3 -m unittest tools.tests.test_typescript_idle_tasks tools.tests.test_typescript_async_waiters -v"
+      },
+      {
+        "name": "Check actual native import carrier and typed await retirement",
+        "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-signed-fetch-tools\" python3 -m unittest tools.tests.test_typescript_native_await -v"
+      },
+      {
+        "name": "Check exact native metadata contention and cleanup before signed Fetch",
+        "run": "LSF_TYPESCRIPT_FRONTEND=\"$RUNNER_TEMP/typescript-signed-fetch-tools\" python3 -m unittest tools.tests.test_typescript_native_task_meta -v"
+      },
+      {
+        "name": "Read the existing native qualification from this exact run",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "typescript-fetch-native-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-signed-fetch-native"
+        }
+      },
+      {
+        "name": "Read the source compiler from this exact run",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "typescript-source-splicer-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-signed-fetch-splicer"
+        }
+      },
+      {
+        "name": "Read the actual import engine from this exact run",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "typescript-fetch-engine-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-signed-fetch-engine"
+        }
+      },
+      {
+        "name": "Build, sign and invoke actual default Fetch through the typed HTTP provider",
+        "run": "python3 tools/qualify_typescript_fetch_runtime.py --tools \"$RUNNER_TEMP/typescript-signed-fetch-tools\" --engine \"$RUNNER_TEMP/typescript-signed-fetch-engine\" --splicer \"$RUNNER_TEMP/typescript-signed-fetch-splicer\" --prepared-qualification \"$RUNNER_TEMP/typescript-signed-fetch-native\" --output \"$RUNNER_TEMP/typescript-signed-fetch\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain finite signed Fetch attempts and exact input identities",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-signed-fetch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-signed-fetch/*.json\n${{ runner.temp }}/typescript-signed-fetch/build/*.json\n${{ runner.temp }}/typescript-signed-fetch/build/logs/**\n${{ runner.temp }}/typescript-signed-fetch/build/component.wasm\n${{ runner.temp }}/typescript-signed-fetch/node/*.json\n${{ runner.temp }}/typescript-signed-fetch/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "fetch-runtime",
+  "kind": "job",
+  "reviewReason": "Authenticate generated native metadata inline control and retain original owning controls",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

@@ -1,0 +1,66 @@
+{
+  "cases": [
+    "TypeScriptIdleTaskTests.test_idle_real_task_avoids_two_reference_promises_without_synchronous_public_entry",
+    "TypeScriptIdleTaskTests.test_live_contended_order_retirement_gap_and_unknown_fallback_keep_async_entry",
+    "TypeScriptIdleTaskTests.test_real_closed_first_middle_and_post_slot_entry_race_remain_refused",
+    "TypeScriptIdleTaskTests.test_unreviewed_private_task_or_duplicate_idle_anchors_fail_closed"
+  ],
+  "guards": {
+    "TypeScriptIdleTaskTests.test_idle_real_task_avoids_two_reference_promises_without_synchronous_public_entry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0ed02e886675ef57049d1665a1c1b274bae853c85509ab0d14242a53aa923cd2",
+        "class:setup-sha256:a9192624320c775809cee486d27cc7f9a876e4a112ae47cec89f9dd607c2d222",
+        "class:skip:self.skipTest('requires Node for actual generated Task controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptIdleTaskTests.test_live_contended_order_retirement_gap_and_unknown_fallback_keep_async_entry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0ed02e886675ef57049d1665a1c1b274bae853c85509ab0d14242a53aa923cd2",
+        "class:setup-sha256:a9192624320c775809cee486d27cc7f9a876e4a112ae47cec89f9dd607c2d222",
+        "class:skip:self.skipTest('requires Node for actual generated Task controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptIdleTaskTests.test_real_closed_first_middle_and_post_slot_entry_race_remain_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0ed02e886675ef57049d1665a1c1b274bae853c85509ab0d14242a53aa923cd2",
+        "class:setup-sha256:a9192624320c775809cee486d27cc7f9a876e4a112ae47cec89f9dd607c2d222",
+        "class:skip:self.skipTest('requires Node for actual generated Task controls')"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptIdleTaskTests.test_unreviewed_private_task_or_duplicate_idle_anchors_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0ed02e886675ef57049d1665a1c1b274bae853c85509ab0d14242a53aa923cd2",
+        "class:setup-sha256:a9192624320c775809cee486d27cc7f9a876e4a112ae47cec89f9dd607c2d222",
+        "class:skip:self.skipTest('requires Node for actual generated Task controls')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_idle_tasks.py",
+  "reviewReason": "Avoid only the actual first idle private Task await-null, preserving closed/current/contended entry and all existing waiter controls; mandatory authentic generated source, retirement-gap, race and finite Node-reference allocation checks.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

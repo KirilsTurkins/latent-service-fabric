@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_typescript_fetch_failure.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review a manual failure-only exact-d412 artifact replay; preserve all normal signed Fetch gates and retain only bounded numeric frames.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "10bf399a6f9a45155b8e7c28331427d4ed312dd32d8fe942684b0d476d00a93e"
+}

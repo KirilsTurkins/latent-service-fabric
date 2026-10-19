@@ -90,3 +90,254 @@ function __lsfApplicationBuiltinModule(name, exports) {
   return source.replace(/^defineBuiltinModule\(/gm, '__lsfApplicationBuiltinModule(')
     .replace(anchor, anchor + helper);
 }
+
+// Preserve public asynchronous entry while avoiding a synthetic await-null
+// reaction only for the actual private Task that is first in an idle queue.
+export function directIdleTaskSlots(source) {
+  const replacements = [
+    ['isSync() { return !this.isAsync(); }',
+      'isSync() { return !this.isAsync(); }\n  hasExitedBeforeEntry() { return this.#exited; }'],
+    ["      await this.#nextTaskPromise;\n      if (placeholder.completed) throw new Error('selected-runtime-task-exited-before-slot');",
+      '      if (this.#nextTaskPromise !== null || !(task instanceof AsyncTask) ||\n' +
+      '          this.#nextTaskQueue.find(entry => !entry.completed) !== placeholder) {\n' +
+      '        await this.#nextTaskPromise;\n' +
+      '      }\n' +
+      '      if (placeholder.completed || task instanceof AsyncTask && task.hasExitedBeforeEntry()) {\n' +
+      '        placeholder.completed = true;\n' +
+      '        this.#nextTaskQueue = this.#nextTaskQueue.filter(entry => entry !== placeholder);\n' +
+      '        if (this.#nextTaskPromise === placeholder.promise) this.#nextTaskPromise = null;\n' +
+      "        throw new Error('selected-runtime-task-exited-before-slot');\n" +
+      '      }'],
+    ['    await cstate.nextTaskExecutionSlot({ task: this });',
+      '    await cstate.nextTaskExecutionSlot({ task: this });\n' +
+      "    if (this.#exited) throw new Error('selected-runtime-task-exited-before-entry');"],
+  ];
+  if (source.split('class AsyncTask {').length !== 2 ||
+      source.split('  #exited = false;').length !== 2 ||
+      source.split('    this.#exited = true;').length !== 2 ||
+      source.includes('hasExitedBeforeEntry')) {
+    throw new Error('selected-runtime-idle-task-shape-drift');
+  }
+  for (const [before, after] of replacements) {
+    if (source.split(before).length !== 2) {
+      throw new Error('selected-runtime-idle-task-shape-drift');
+    }
+    source = source.replace(before, after);
+  }
+  return source;
+}
+
+// The private carrier helper need not create another async Promise: the
+// original typed binding already awaits its global task wrapper. Lift the
+// carrier at that same existing await, before any original typed result lift.
+export function fuseNativeImportAwaits(source, parse) {
+  const fail = () => { throw new Error('selected-runtime-native-await-shape-drift'); };
+  let tree;
+  try { tree = parse(source, {ecmaVersion: 'latest', sourceType: 'module'}); }
+  catch { fail(); }
+  const entries = [];
+  function walk(node, parents = []) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) { for (const child of node) walk(child, parents); return; }
+    if (typeof node.type !== 'string') return;
+    entries.push({node, parents});
+    for (const value of Object.values(node)) {
+      if (value && typeof value === 'object') walk(value, [...parents, node]);
+    }
+  }
+  walk(tree);
+  const helpers = entries.filter(({node}) => node.type === 'VariableDeclarator' &&
+    node.id.type === 'Identifier' && node.id.name === '__lsfAwaitImport');
+  if (!helpers.length) {
+    if (source.includes('__lsfAwaitImport')) fail();
+    return source;
+  }
+  if (entries.filter(({node}) => node.type === 'Identifier' && node.name === '__lsfAwaitImport').length !== helpers.length * 2) fail();
+  const anchor = 'const __lsfImports = contentGlobal.__lsfAsyncImportBridge;';
+  if (source.split(anchor).length !== 2) fail();
+  const identifier = (node, name) => node?.type === 'Identifier' && node.name === name;
+  const member = (node, name) => node?.type === 'MemberExpression' && !node.computed &&
+    identifier(node.object, '__lsfImports') && identifier(node.property, name);
+  const isFunction = node => ['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression'].includes(node.type);
+  const edits = [];
+  for (const {node: helper, parents} of helpers) {
+    const fn = [...parents].reverse().find(isFunction);
+    const arrow = helper.init;
+    if (!fn?.async || fn.body.type !== 'BlockStatement' ||
+        arrow?.type !== 'ArrowFunctionExpression' || !arrow.async || arrow.generator ||
+        arrow.params.length !== 1 || arrow.params[0].type !== 'RestElement' ||
+        !identifier(arrow.params[0].argument, 'lowered') ||
+        arrow.body.type !== 'CallExpression' || !member(arrow.body.callee, 'lift') ||
+        arrow.body.arguments.length !== 1 || arrow.body.arguments[0].type !== 'AwaitExpression') fail();
+    const native = arrow.body.arguments[0].argument;
+    if (native.type !== 'CallExpression' || native.callee.type !== 'Identifier' ||
+        native.arguments.length !== 2 || native.arguments[0].type !== 'BinaryExpression' ||
+        native.arguments[0].operator !== '|' || !identifier(native.arguments[0].left, '__lsfImportId') ||
+        native.arguments[0].right.type !== 'Literal' || native.arguments[0].right.value !== 0 ||
+        native.arguments[1].type !== 'SpreadElement' || !identifier(native.arguments[1].argument, 'lowered')) fail();
+    const inside = entries.filter(({node}) => node.start >= fn.start && node.end <= fn.end);
+    const references = inside.filter(({node}) => identifier(node, '__lsfAwaitImport'));
+    const calls = inside.filter(({node}) => node.type === 'CallExpression' && identifier(node.callee, '__lsfAwaitImport'));
+    if (references.length !== 2 || calls.length !== 1) fail();
+    const call = calls[0];
+    const callback = call.parents.at(-1);
+    const property = call.parents.at(-2);
+    const object = call.parents.at(-3);
+    const wrapper = call.parents.at(-4);
+    const awaited = call.parents.at(-5);
+    if (callback.type !== 'ArrowFunctionExpression' || callback.async || callback.body !== call.node ||
+        property.type !== 'Property' || property.computed || !identifier(property.key, 'fn') || property.value !== callback ||
+        object.type !== 'ObjectExpression' || object.properties.length !== 3 ||
+        object.properties.some(p => p.type !== 'Property' || p.computed || p.key.type !== 'Identifier') ||
+        object.properties.map(p => p.key.name).join(',') !== 'taskID,componentIdx,fn' ||
+        wrapper.type !== 'CallExpression' || wrapper.callee.type !== 'Identifier' ||
+        wrapper.callee.name !== '_withGlobalCurrentTaskMetaAsync' ||
+        wrapper.arguments.length !== 1 || wrapper.arguments[0] !== object ||
+        awaited.type !== 'AwaitExpression' || awaited.argument !== wrapper) fail();
+    const reservations = inside.filter(({node}) => node.type === 'VariableDeclarator' &&
+      identifier(node.id, '__lsfImportId') && node.init?.type === 'CallExpression' && member(node.init.callee, 'reserve'));
+    const finalizers = inside.filter(({node}) => node.type === 'TryStatement' && node.finalizer &&
+      node.block.start <= awaited.start && node.block.end >= awaited.end && node.finalizer.body.length === 1 &&
+      node.finalizer.body[0].type === 'ExpressionStatement' && node.finalizer.body[0].expression.type === 'CallExpression' &&
+      member(node.finalizer.body[0].expression.callee, 'finish') &&
+      node.finalizer.body[0].expression.arguments.length === 1 &&
+      identifier(node.finalizer.body[0].expression.arguments[0], '__lsfImportId'));
+    if (reservations.length !== 1 || finalizers.length !== 1) fail();
+    edits.push({start: arrow.start, end: arrow.end,
+      text: `(...lowered) => ${source.slice(native.start, native.end)}`});
+    edits.push({start: awaited.start, end: awaited.end,
+      text: `__lsfImports.lift(${source.slice(awaited.start, awaited.end)})`});
+  }
+  edits.sort((a, b) => b.start - a.start);
+  let previous = source.length;
+  for (const edit of edits) {
+    if (edit.end > previous) fail();
+    source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
+    previous = edit.start;
+  }
+  parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
+  return source;
+}
+
+// Exact generated task metadata wrapper; preserve all contention and cleanup.
+const nativeTaskMetaPreimage = `async function _withGlobalCurrentTaskMetaAsync(args) {
+  _debugLog('[_withGlobalCurrentTaskMetaAsync()] args', args);
+  if (!args) { throw new TypeError('args missing'); }
+  if (args.taskID === undefined) { throw new TypeError('missing task ID'); }
+  if (args.componentIdx === undefined) { throw new TypeError('missing component idx'); }
+  if (!args.fn) { throw new TypeError('missing fn'); }
+  const { taskID, componentIdx, fn } = args;
+\x20\x20
+  // If there is already an async task executing, we must wait for it
+  // to complete before we can can run the closure we were given
+  //
+  let current = CURRENT_TASK_META[componentIdx];
+  let cstate;
+  if (current && current.taskID !== taskID) {
+    cstate = getOrCreateAsyncState(componentIdx);
+    while (current && current.taskID !== taskID) {
+      const { promise, resolve } = Promise.withResolvers();
+      cstate.onNextExclusiveRelease(resolve);
+      await promise;
+      current = CURRENT_TASK_META[componentIdx];
+    }
+\x20\x20\x20\x20
+    // Since we've just waited for the component to not be locked, re-lock
+    // exclusivity so we can run the fn below (likely a callee/callback)
+    cstate.exclusiveLock();
+  }
+\x20\x20
+  try {
+    CURRENT_TASK_META[componentIdx] = { taskID, componentIdx };
+    return await fn();
+  } catch (err) {
+    _debugLog("error while executing async callee/callback", {
+      ...args,
+      err,
+    });
+    throw err;
+  } finally {
+    CURRENT_TASK_META[componentIdx] = null;
+  }
+}`;
+
+export function inlineNativeTaskMeta(source, parse) {
+  const fail = () => { throw new Error('selected-runtime-native-task-meta-shape-drift'); };
+  let tree;
+  try { tree = parse(source, {ecmaVersion: 'latest', sourceType: 'module'}); }
+  catch { fail(); }
+  const entries = [];
+  function walk(node, parents = []) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) { for (const child of node) walk(child, parents); return; }
+    if (typeof node.type !== 'string') return;
+    entries.push({node, parents});
+    for (const value of Object.values(node)) {
+      if (value && typeof value === 'object') walk(value, [...parents, node]);
+    }
+  }
+  walk(tree);
+  const identifier = (node, name) => node?.type === 'Identifier' && node.name === name;
+  const enclosingFunction = parents => [...parents].reverse().find(node=>node.type==='FunctionDeclaration');
+  const helpers = entries.filter(({node})=>node.type==='VariableDeclarator' && identifier(node.id,'__lsfAwaitImport'));
+  if (!helpers.length) {
+    if (source.includes('__lsfAwaitImport')) fail();
+    return source;
+  }
+  if (helpers.length>256) fail();
+  const nativeFunctions = helpers.map(({node,parents})=> {
+    const outer=enclosingFunction(parents);
+    if (!outer?.async || node.init?.type!=='ArrowFunctionExpression' || node.init.async) fail();
+    return outer;
+  });
+  if (new Set(nativeFunctions).size!==helpers.length) fail();
+  const wrappers = entries.filter(({node}) => node.type === 'FunctionDeclaration' &&
+    identifier(node.id, '_withGlobalCurrentTaskMetaAsync'));
+  if (wrappers.length !== 1 || source.slice(wrappers[0].node.start, wrappers[0].node.end) !== nativeTaskMetaPreimage) fail();
+  const allCalls = entries.filter(({node}) => node.type === 'CallExpression' && identifier(node.callee, '_withGlobalCurrentTaskMetaAsync'));
+  // Framework callbacks and application exports keep their original wrappers.
+  const calls = allCalls.filter(({parents})=>nativeFunctions.includes(enclosingFunction(parents)));
+  if (calls.length!==helpers.length || nativeFunctions.some(outer=>
+      calls.filter(({parents})=>enclosingFunction(parents)===outer).length!==1) ||
+      entries.filter(({node})=>identifier(node,'_withGlobalCurrentTaskMetaAsync')).length!==allCalls.length+1) fail();
+  const body = nativeTaskMetaPreimage.slice(nativeTaskMetaPreimage.indexOf('{')+1, -1)
+    .replace('return await fn();', '__lsfNativeCarrier = await fn();');
+  const locals = new Set(['args','taskID','componentIdx','fn','current','cstate','err','promise','resolve','__lsfNativeCarrier']);
+  const edits = [];
+  for (const {node:call,parents} of calls) {
+    const awaited=parents.at(-1),lift=parents.at(-2),assignment=parents.at(-3),statement=parents.at(-4);
+    const outer=enclosingFunction(parents);
+    const object=call.arguments[0];
+    if (!outer?.async || call.arguments.length!==1 || object?.type!=='ObjectExpression' ||
+        object.properties.length!==3 || object.properties.some(p=>p.type!=='Property'||p.computed||p.key.type!=='Identifier') ||
+        object.properties.map(p=>p.key.name).join(',')!=='taskID,componentIdx,fn' ||
+        awaited?.type!=='AwaitExpression' || awaited.argument!==call ||
+        lift?.type!=='CallExpression' || lift.arguments.length!==1 || lift.arguments[0]!==awaited ||
+        lift.callee.type!=='MemberExpression' || lift.callee.computed ||
+        !identifier(lift.callee.object,'__lsfImports') || !identifier(lift.callee.property,'lift') ||
+        assignment?.type!=='AssignmentExpression' || assignment.operator!=='=' || !identifier(assignment.left,'ret') || assignment.right!==lift ||
+        statement?.type!=='ExpressionStatement' || statement.expression!==assignment) fail();
+    for (const [index,name] of [[0,'id'],[1,'componentIdx']]) {
+      const value=object.properties[index].value;
+      if (value.type!=='CallExpression' || value.arguments.length || value.callee.type!=='MemberExpression' ||
+          value.callee.computed || !identifier(value.callee.object,'task') || !identifier(value.callee.property,name)) fail();
+    }
+    const fn=object.properties[2].value;
+    if (fn.type!=='ArrowFunctionExpression' || fn.async || fn.params.length ||
+        fn.body.type!=='CallExpression' || !identifier(fn.body.callee,'__lsfAwaitImport') ||
+        entries.some(({node})=>node.start>=fn.body.start && node.end<=fn.body.end && node.type==='Identifier' && locals.has(node.name))) fail();
+    const helper=entries.filter(({node})=>node.start>=outer.start && node.end<=outer.end &&
+      node.type==='VariableDeclarator' && identifier(node.id,'__lsfAwaitImport'));
+    if (helper.length!==1 || helper[0].node.init?.type!=='ArrowFunctionExpression' || helper[0].node.init.async) fail();
+    edits.push({start:statement.start,end:statement.end,text:'{\n  let __lsfNativeCarrier;\n  {\n    const args = '+
+      source.slice(object.start,object.end)+';\n'+body+'\n  }\n  ret = __lsfImports.lift(__lsfNativeCarrier);\n}'});
+  }
+  edits.sort((a,b)=>b.start-a.start);
+  let previous=source.length;
+  for (const edit of edits) {
+    if (edit.end>previous) fail();
+    source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);previous=edit.start;
+  }
+  parse(source,{ecmaVersion:'latest',sourceType:'module'});
+  return source;
+}
