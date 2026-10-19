@@ -298,6 +298,24 @@ class FetchFailureFrames(unittest.TestCase):
             with self.assertRaisesRegex(WorkflowError, 'exact-backend'):
                 candidate.candidate_bytes(source)
 
+    def test_candidate_adapters_require_exact_complete_source_without_extra_files(self):
+        from tools import diagnose_typescript_fetch_candidate as candidate
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            expected = {}
+            for name in candidate.ADAPTERS:
+                raw = read_file(fetch.ROOT/'tools/typescript_guest'/name)
+                (root/name).write_bytes(raw)
+                expected['tools/typescript_guest/'+name] = raw
+            self.assertEqual(candidate.candidate_adapters(root), expected)
+            (root/'extra.py').write_bytes(b'not selected')
+            with self.assertRaisesRegex(WorkflowError, 'exact-adapter-set'):
+                candidate.candidate_adapters(root)
+            (root/'extra.py').unlink()
+            (root/'compiler.py').write_bytes(expected['tools/typescript_guest/compiler.py']+b'\n')
+            with self.assertRaisesRegex(WorkflowError, 'exact-adapter'):
+                candidate.candidate_adapters(root)
+
     def test_candidate_private_observer_rejects_changed_binary_and_wrong_source(self):
         from tools import diagnose_typescript_fetch_candidate as candidate
         with tempfile.TemporaryDirectory() as directory:

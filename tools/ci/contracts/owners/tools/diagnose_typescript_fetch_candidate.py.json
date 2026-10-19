@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_typescript_fetch_candidate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact owned generated bindings and reuse the authenticated owner-lifetime observer; no runtime limit or qualification change.",
+  "reviewReason": "Authenticate the exact three guarded compiler-adapter bytes and preserve all unchanged ordinary native and owner limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "935259537a213c0d37a786c20616f1413f752cb85907d2bac59b9e925a42ec73"
+  "sha256": "83c9224b7247a2818227a729f6139956ed4adad4262f80706263bad897f23e9f"
 }

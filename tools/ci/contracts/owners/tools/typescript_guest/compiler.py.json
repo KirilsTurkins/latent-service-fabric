@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/typescript_guest/compiler.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Replay only four exact reviewed backend/compiler-adapter source files with original engine/native products; preserve ordinary gate before any private observer and restore all original bytes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "603478e39ad76dad677bbff9767aa48230c3963e9b28e9deeee853e7926c79af"
+}

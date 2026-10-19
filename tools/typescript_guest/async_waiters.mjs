@@ -155,7 +155,7 @@ export function fuseNativeImportAwaits(source, parse) {
         object.properties.some(p => p.type !== 'Property' || p.computed || p.key.type !== 'Identifier') ||
         object.properties.map(p => p.key.name).join(',') !== 'taskID,componentIdx,fn' ||
         wrapper.type !== 'CallExpression' || wrapper.callee.type !== 'Identifier' ||
-        !/withGlobalCurrentTaskMeta.*Async/i.test(wrapper.callee.name) ||
+        wrapper.callee.name !== '_withGlobalCurrentTaskMetaAsync' ||
         wrapper.arguments.length !== 1 || wrapper.arguments[0] !== object ||
         awaited.type !== 'AwaitExpression' || awaited.argument !== wrapper) fail();
     const reservations = inside.filter(({node}) => node.type === 'VariableDeclarator' &&

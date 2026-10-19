@@ -39,7 +39,7 @@
       },
       {
         "name": "Preserve only the candidate and replay helpers outside original checkout",
-        "run": "cp tools/typescript_guest/fetch.mjs \"$RUNNER_TEMP/fetch-candidate.mjs\"\ncp tools/diagnose_typescript_fetch_candidate.py \"$RUNNER_TEMP/fetch-candidate.py\"\ncp tools/diagnose_typescript_fetch_failure.py \"$RUNNER_TEMP/fetch-observer.py\"\n"
+        "run": "cp tools/typescript_guest/fetch.mjs \"$RUNNER_TEMP/fetch-candidate.mjs\"\nmkdir \"$RUNNER_TEMP/fetch-candidate-adapters\"\ncp tools/typescript_guest/async_waiters.mjs \"$RUNNER_TEMP/fetch-candidate-adapters/\"\ncp tools/typescript_guest/componentize.mjs \"$RUNNER_TEMP/fetch-candidate-adapters/\"\ncp tools/typescript_guest/compiler.py \"$RUNNER_TEMP/fetch-candidate-adapters/\"\ncp tools/diagnose_typescript_fetch_candidate.py \"$RUNNER_TEMP/fetch-candidate.py\"\ncp tools/diagnose_typescript_fetch_failure.py \"$RUNNER_TEMP/fetch-observer.py\"\n"
       },
       {
         "uses": "actions/checkout",
@@ -104,7 +104,7 @@
       },
       {
         "name": "Compile only the backend repair and run the original ordinary signed gate",
-        "run": "chmod u+x \"$RUNNER_TEMP/fetch-candidate-native/native-binaries/\"*\npython3 -B \"$RUNNER_TEMP/fetch-candidate.py\" --candidate \"$RUNNER_TEMP/fetch-candidate.mjs\" --native \"$RUNNER_TEMP/fetch-candidate-native\" --engine \"$RUNNER_TEMP/fetch-candidate-engine\" --splicer \"$RUNNER_TEMP/fetch-candidate-splicer\" --tools \"$RUNNER_TEMP/fetch-candidate-tools\" --observer \"$RUNNER_TEMP/fetch-candidate-observer\" --observer-helper \"$RUNNER_TEMP/fetch-observer.py\" --output \"$RUNNER_TEMP/fetch-candidate-result\"\n"
+        "run": "chmod u+x \"$RUNNER_TEMP/fetch-candidate-native/native-binaries/\"*\npython3 -B \"$RUNNER_TEMP/fetch-candidate.py\" --candidate \"$RUNNER_TEMP/fetch-candidate.mjs\" --adapters \"$RUNNER_TEMP/fetch-candidate-adapters\" --native \"$RUNNER_TEMP/fetch-candidate-native\" --engine \"$RUNNER_TEMP/fetch-candidate-engine\" --splicer \"$RUNNER_TEMP/fetch-candidate-splicer\" --tools \"$RUNNER_TEMP/fetch-candidate-tools\" --observer \"$RUNNER_TEMP/fetch-candidate-observer\" --observer-helper \"$RUNNER_TEMP/fetch-observer.py\" --output \"$RUNNER_TEMP/fetch-candidate-result\"\n"
       },
       {
         "if": "always()",
@@ -122,7 +122,7 @@
   },
   "jobId": "fetch-candidate",
   "kind": "job",
-  "reviewReason": "Retain exact owned generated bindings and reuse the authenticated owner-lifetime observer; no runtime limit or qualification change.",
+  "reviewReason": "Replay only four exact reviewed backend/compiler-adapter source files with original engine/native products; preserve ordinary gate before any private observer and restore all original bytes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

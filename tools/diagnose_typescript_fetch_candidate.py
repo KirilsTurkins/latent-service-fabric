@@ -25,6 +25,7 @@ TESTED = '0754391a20027a539f1d5b7c0426719a4bd6c3c1'
 BACKEND = 'tools/typescript_guest/fetch.mjs'
 CANDIDATE = {'sha256': 'sha256:cfd5f8986e20312ec931dd5da912387c07da1bee3b3ca47415912aebca82dafe',
              'bytes': 19183}
+ADAPTERS = {'async_waiters.mjs': {'sha256': 'sha256:2cfc286f2b3b90d46ea35c9904b7836504c6e3c8933f0fad9fcbc6a7c5aa08c3', 'bytes': 9767}, 'compiler.py': {'sha256': 'sha256:603478e39ad76dad677bbff9767aa48230c3963e9b28e9deeee853e7926c79af', 'bytes': 27677}, 'componentize.mjs': {'sha256': 'sha256:cc62cd3bb040a1cf4d7cb6c6041c7da2fe36c61b638f4f69ac8e686840bfb4b1', 'bytes': 6956}}
 PRIVATE_IDENTITY = {'sha256': 'sha256:f38101edfefcc81a1e42e0f91e73ce16f5b82a6c30c915b8e133a7133a2335bd',
                     'bytes': 2109}
 
@@ -32,6 +33,19 @@ PRIVATE_IDENTITY = {'sha256': 'sha256:f38101edfefcc81a1e42e0f91e73ce16f5b82a6c30
 def candidate_bytes(path: Path) -> bytes:
     require(file_identity(path, 65536) == CANDIDATE, 'fetch-candidate-exact-backend')
     return read_file(path, 65536)
+
+
+def candidate_adapters(directory: Path) -> dict[str, bytes]:
+    require(directory.is_dir() and not directory.is_symlink()
+            and sorted(p.name for p in directory.iterdir()) == sorted(ADAPTERS),
+            'fetch-candidate-exact-adapter-set')
+    result = {}
+    for name, expected in ADAPTERS.items():
+        source = directory/name
+        require(not source.is_symlink() and file_identity(source, 131072) == expected,
+                'fetch-candidate-exact-adapter')
+        result['tools/typescript_guest/'+name] = read_file(source, 131072)
+    return result
 
 
 def observer_host(directory: Path, identity: dict) -> Path:
@@ -47,26 +61,28 @@ def observer_host(directory: Path, identity: dict) -> Path:
     return host
 
 
-def run(candidate: Path, native: Path, engine: Path, splicer: Path, tools: Path,
+def run(candidate: Path, adapters: Path, native: Path, engine: Path, splicer: Path, tools: Path,
         observer: Path, observer_helper: Path, output: Path) -> dict:
     output = fresh(output)
     require(subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == TESTED,
             'fetch-candidate-original-source')
     require(not subprocess.check_output(['git', 'status', '--porcelain']), 'fetch-candidate-clean-source')
-    replacement = candidate_bytes(candidate)
+    replacements = {BACKEND: candidate_bytes(candidate), **candidate_adapters(adapters)}
     originals, identity = fetch.prepared_native(native)
     private_host = observer_host(observer, identity)
-    original = read_file(ROOT/BACKEND, 65536)
+    originals_source = {name: read_file(ROOT/name, 131072) for name in replacements}
+    original = originals_source[BACKEND]
     record = {'schemaVersion': 'latent.typescript.fetch-backend-candidate.v1',
-              'sdkTestedCommit': TESTED, 'candidateBackend': CANDIDATE,
+              'sdkTestedCommit': TESTED, 'candidateBackend': CANDIDATE, 'candidateCompilerAdapters': ADAPTERS,
               'originalBackend': {'sha256': digest(original), 'bytes': len(original)},
               'nativeTuple': identity, 'compilerOrEngineRebuilt': False,
               'currentPrHeadQualification': False, 'privateObserverQualification': False,
               'ordinaryFiniteGate': 'not-run'}
     try:
-        (ROOT/BACKEND).write_bytes(replacement)
-        require(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines() == [BACKEND],
-                'fetch-candidate-only-backend-delta')
+        for name, raw in replacements.items():
+            (ROOT/name).write_bytes(raw)
+        require(sorted(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()) == sorted(replacements),
+                'fetch-candidate-only-reviewed-source-delta')
         try:
             result = fetch.qualify(output/'attempt', tools, engine, splicer, prepared=native)
             record['ordinaryFiniteGate'] = result['status']
@@ -97,8 +113,10 @@ def run(candidate: Path, native: Path, engine: Path, splicer: Path, tools: Path,
                 record['privateReplay'] = module.replay(output/'attempt/build',
                     {**originals, 'latentd': private_host}, output/'private-replay')
     finally:
-        require(read_file(ROOT/BACKEND, 65536) == replacement, 'fetch-candidate-source-drift')
-        (ROOT/BACKEND).write_bytes(original)
+        unchanged = all(read_file(ROOT/name, 131072) == raw for name, raw in replacements.items())
+        for name, raw in originals_source.items():
+            (ROOT/name).write_bytes(raw)
+        require(unchanged, 'fetch-candidate-source-drift')
         require(not subprocess.check_output(['git', 'status', '--porcelain']), 'fetch-candidate-source-not-restored')
         require(fetch.prepared_native(native)[1] == identity, 'fetch-candidate-native-drift')
         record['originalSourceRestored'] = True
@@ -109,8 +127,8 @@ def run(candidate: Path, native: Path, engine: Path, splicer: Path, tools: Path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('candidate', 'native', 'engine', 'splicer', 'tools', 'observer', 'observer-helper', 'output'):
+    for name in ('candidate', 'adapters', 'native', 'engine', 'splicer', 'tools', 'observer', 'observer-helper', 'output'):
         parser.add_argument('--'+name, type=Path, required=True)
     args = parser.parse_args()
-    print(json.dumps(run(args.candidate, args.native, args.engine, args.splicer, args.tools,
+    print(json.dumps(run(args.candidate, args.adapters, args.native, args.engine, args.splicer, args.tools,
                          args.observer, args.observer_helper, args.output)))

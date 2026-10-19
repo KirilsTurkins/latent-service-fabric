@@ -109,6 +109,7 @@ for(const [before,after] of [
  ['const __lsfAwaitImport = async','const __lsfAwaitImport ='],
  ['fn: () => __lsfAwaitImport','fn: async () => __lsfAwaitImport'],
  ['await  _withGlobalCurrentTaskMetaAsync','await  unreviewedWrapper'],
+ ['await  _withGlobalCurrentTaskMetaAsync','await  _withGlobalCurrentTaskMetaOtherAsync'],
  ['const __lsfImports = contentGlobal.__lsfAsyncImportBridge;','const __lsfImports = unreviewedBridge;'],
  ]) {assert(original.includes(before));assert.throws(()=>fuseNativeImportAwaits(original.replace(before,after),parse),/shape-drift/);}
 assert.throws(()=>fuseNativeImportAwaits(original+';__lsfAwaitImport(1);',parse),/shape-drift/);

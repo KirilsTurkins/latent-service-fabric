@@ -778,6 +778,10 @@ jobs:
       - name: Preserve only the candidate and replay helpers outside original checkout
         run: |
           cp tools/typescript_guest/fetch.mjs "$RUNNER_TEMP/fetch-candidate.mjs"
+          mkdir "$RUNNER_TEMP/fetch-candidate-adapters"
+          cp tools/typescript_guest/async_waiters.mjs "$RUNNER_TEMP/fetch-candidate-adapters/"
+          cp tools/typescript_guest/componentize.mjs "$RUNNER_TEMP/fetch-candidate-adapters/"
+          cp tools/typescript_guest/compiler.py "$RUNNER_TEMP/fetch-candidate-adapters/"
           cp tools/diagnose_typescript_fetch_candidate.py "$RUNNER_TEMP/fetch-candidate.py"
           cp tools/diagnose_typescript_fetch_failure.py "$RUNNER_TEMP/fetch-observer.py"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -825,7 +829,7 @@ jobs:
       - name: Compile only the backend repair and run the original ordinary signed gate
         run: |
           chmod u+x "$RUNNER_TEMP/fetch-candidate-native/native-binaries/"*
-          python3 -B "$RUNNER_TEMP/fetch-candidate.py" --candidate "$RUNNER_TEMP/fetch-candidate.mjs" --native "$RUNNER_TEMP/fetch-candidate-native" --engine "$RUNNER_TEMP/fetch-candidate-engine" --splicer "$RUNNER_TEMP/fetch-candidate-splicer" --tools "$RUNNER_TEMP/fetch-candidate-tools" --observer "$RUNNER_TEMP/fetch-candidate-observer" --observer-helper "$RUNNER_TEMP/fetch-observer.py" --output "$RUNNER_TEMP/fetch-candidate-result"
+          python3 -B "$RUNNER_TEMP/fetch-candidate.py" --candidate "$RUNNER_TEMP/fetch-candidate.mjs" --adapters "$RUNNER_TEMP/fetch-candidate-adapters" --native "$RUNNER_TEMP/fetch-candidate-native" --engine "$RUNNER_TEMP/fetch-candidate-engine" --splicer "$RUNNER_TEMP/fetch-candidate-splicer" --tools "$RUNNER_TEMP/fetch-candidate-tools" --observer "$RUNNER_TEMP/fetch-candidate-observer" --observer-helper "$RUNNER_TEMP/fetch-observer.py" --output "$RUNNER_TEMP/fetch-candidate-result"
       - name: Retain candidate build and closed ordinary or private evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
