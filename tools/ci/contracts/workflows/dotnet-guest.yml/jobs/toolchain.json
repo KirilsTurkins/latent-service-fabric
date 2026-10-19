@@ -162,6 +162,10 @@
         "run": "python3 tools/qualify_dotnet_standard_http.py --pre-cancelled-async --output \"$RUNNER_TEMP/dotnet-standard-http-async-cancel\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --native-qualification \"$RUNNER_TEMP/dotnet-capsule-authoring\"\n"
       },
       {
+        "name": "Check real closed adapter synchronous types and exact core preservation",
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_closed_io -v"
+      },
+      {
         "name": "Qualify captured ordinary Console and strict bounded logging",
         "run": "python3 -m unittest tools.tests.test_dotnet_standard_console\npython3 tools/qualify_dotnet_standard_console.py --output \"$RUNNER_TEMP/dotnet-standard-console\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --native-qualification \"$RUNNER_TEMP/dotnet-capsule-authoring\"\n"
       },
@@ -181,7 +185,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Add explicit ordinary Console logging and captured signed lifecycle campaign; preserve existing BCL/HTTP programmes and all original limits.",
+  "reviewReason": "Closed-only synchronous adapter graph derivation fixes observed cannot-block-sync-task without changing core bytes, BCL code, runtime/HTTP async machinery, grants or limits; actual signed repair pending.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

@@ -374,8 +374,19 @@ class Compiler:
         profile = runtime.select(declared, actual)
         adapter = self.runtimes[profile]
         from tools.dotnet_guest.internal_io import PROFILE as IO_PROFILE, prepare as prepare_internal_io
+        from tools.dotnet_guest import closed_io
         io_original = file_identity(raw, 'original-native-aot-component', 64 * 1024 * 1024)
-        raw, io_port = prepare_internal_io(self, raw, adapter, output / 'internal-io-port', json.loads(raw_wit))
+        io_port, closed_port = None, None
+        if profile in closed_io.PROFILES:
+            original_adapter = file_identity(adapter, 'original-closed-runtime-adapter', 64 * 1024 * 1024)
+            adapter, closed_port = closed_io.prepare(self, adapter, output/'closed-io-port', profile)
+            self.compiler_patches.append({'name': closed_io.PROFILE, 'profile': closed_io.PROFILE,
+                'original': original_adapter,
+                'selected': file_identity(adapter, 'synchronous-closed-runtime-adapter', 64 * 1024 * 1024),
+                'selection': closed_port})
+            self.generated_materials.append(file_identity(command.output/'closed-io-port.json', 'dotnet-closed-io-port'))
+        else:
+            raw, io_port = prepare_internal_io(self, raw, adapter, output / 'internal-io-port', json.loads(raw_wit))
         if io_port is not None:
             self.compiler_patches.append({'name': IO_PROFILE, 'profile': IO_PROFILE,
                 'original': io_original, 'selected': file_identity(raw, 'internal-io-component', 64 * 1024 * 1024),
@@ -391,6 +402,8 @@ class Compiler:
                                                for name, path in additional]
         if io_port is not None:
             selection['internalIoPort'] = io_port
+        if closed_port is not None:
+            selection['closedIoPort'] = closed_port
         if retirement_port is not None:
             selection['retirementPort'] = retirement_port
         write_json(command.output / "runtime-profile.json", selection)

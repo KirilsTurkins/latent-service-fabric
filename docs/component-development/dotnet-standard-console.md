@@ -103,3 +103,20 @@ correction still require successful signed execution.
 Cross-tenant logging, default asynchronous workers, callback cancellation,
 pending remote exporters and the complete six-language #681 matrix remain
 separate acceptance work. This profile adds no scratch filesystem.
+
+The later [private unchanged-component observation](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39305529665/job/118241478853)
+passed entry and resource lookup, then observed the exact engine category
+`cannot-block-sync-task` at the BCL's canonical `blocking-flush` call. The
+original `ae70bb14` component and its public failure remain unchanged. This
+observation is diagnostic evidence; it does not qualify the Console campaign.
+
+The closed and closed-logging compiler paths now derive synchronous component
+types for the four immediately completing private WASI I/O operations. The
+installed adapter's complete graph must match the captured source world. Only
+the four known operation types may lose their async bit, every core-module byte
+is retained, and the derived component is validated and decoded independently.
+An explicit material receipt binds the original adapter, source WIT and derived
+adapter. The BCL's original synchronous imports remain unchanged. The separately
+admitted runtime/HTTP adapters keep their existing async projection and root
+ownership machinery. No BCL method, engine reentrancy flag, grant or resource
+limit is changed. Actual signed execution of this repair remains pending.

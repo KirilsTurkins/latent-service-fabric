@@ -238,6 +238,8 @@ jobs:
       - name: Qualify signed asynchronous HttpClient pre-cancellation without dispatch
         run: |
           python3 tools/qualify_dotnet_standard_http.py --pre-cancelled-async --output "$RUNNER_TEMP/dotnet-standard-http-async-cancel" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Check real closed adapter synchronous types and exact core preservation
+        run: python3 -B -m unittest tools.tests.test_dotnet_closed_io -v
       - name: Qualify captured ordinary Console and strict bounded logging
         run: |
           python3 -m unittest tools.tests.test_dotnet_standard_console
