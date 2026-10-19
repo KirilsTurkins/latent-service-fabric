@@ -180,6 +180,12 @@ def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: s
                 includes.append(root.parent)
                 receipts.append({"id": item["id"], "header": item["files"][0], "role": item["role"]})
                 continue
+            if (item['role'] == 'resource' and ('resources' in options or 'logicalPath' in options)
+                    and not selected_sources and not selected_defines and selected_includes in ([], ['.'])):
+                if selected_includes:
+                    includes.append(root.parent)
+                receipts.append({'id': item['id'], 'resource': item['files'][0], 'role': 'resource'})
+                continue
             if not item["mount"].endswith(".a") or item["role"] != "application":
                 raise DependencyError("c-library-file-must-be-static-archive")
             members = archive_members(read_bytes(root))

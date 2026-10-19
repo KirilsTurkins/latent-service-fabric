@@ -12,6 +12,7 @@ from tools.build_process import run_bounded
 from tools.build_observation import build_environment, file_identity
 from tools.c_guest.bindings import digest, generate
 from tools.c_guest import standard_facilities
+from tools.c_guest.language import DEFAULT as C_STANDARD, selected_standard
 
 ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk/c-guest"
@@ -152,8 +153,12 @@ class Compiler:
                 destination: Path, *, memory_bytes: int = 16 * 1024 * 1024,
                 trap: bool = True, include_directories: tuple[Path, ...] = (),
                 static_libraries: tuple[Path, ...] = (), defines: tuple[str, ...] = (),
-                runtime_profile: str = standard_facilities.DEFAULT) -> tuple[Path, dict]:
+                runtime_profile: str = standard_facilities.DEFAULT, language_standard: str = C_STANDARD,
+                embed_directories: tuple[Path, ...] = ()) -> tuple[Path, dict]:
         standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
+        selected_standard({'languageStandard': language_standard})
+        if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
+            raise ValueError('c-embed-directories-require-bounded-c23-selection')
         if not sources or len(sources) > 64:
             raise ValueError("C source count must be between 1 and 64")
         if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
@@ -163,13 +168,15 @@ class Compiler:
         generated, lock = generate(self.run, wit_source, world, destination, self.platform)
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
-        command = ["cc", "-std=c11", "-target", "wasm32-wasi", "-O2",
+        command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",
                    "-Wall", "-Wextra", "-Werror", "-mexec-model=reactor",
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
         for directory in include_directories:
             command.extend(["-I", str(directory)])
+        for directory in embed_directories:
+            command.extend(['--embed-dir', str(directory)])
         command.extend("-D" + define for define in defines)
         command.extend(map(str, static_libraries))
         if trap:
@@ -177,10 +184,12 @@ class Compiler:
         command.extend([str(generated / "probe.c"), str(generated / "probe_component_type.o"),
                         "-o", str(core)])
         if self.isolation is not None:
-            preprocessor = ["cc", "-std=c11", "-target", "wasm32-wasi", "-I", str(generated),
+            preprocessor = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-I", str(generated),
                             "-I", str(self.sdk / "include")]
             for directory in include_directories:
                 preprocessor.extend(["-I", str(directory)])
+            for directory in embed_directories:
+                preprocessor.extend(['--embed-dir', str(directory)])
             preprocessor.extend("-D" + define for define in defines)
             selected_sources = [*sources, generated / "probe.c"]
             if trap:
