@@ -207,7 +207,7 @@ def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None
             or not {'proxy', 'sumdb'} <= set(policy)):
         raise DependencyError('go-proxy-policy-invalid')
     proxy = urlsplit(policy['proxy'])
-    if proxy.scheme != 'https' or not proxy.hostname or proxy.username or proxy.password or proxy.query or proxy.fragment:
+    if proxy.scheme != 'https' or not proxy.hostname or proxy.username is not None or proxy.password is not None or proxy.query or proxy.fragment:
         raise DependencyError('go-proxy-endpoint-invalid')
     if not isinstance(policy['sumdb'], str) or not re.fullmatch(r'(?:off|[a-zA-Z0-9.+/_=-]{1,512})', policy['sumdb']):
         raise DependencyError('go-checksum-policy-invalid')
@@ -232,7 +232,7 @@ def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None
         if not re.fullmatch(r'[^\s]{1,8192}', secret) or any(ord(char) < 32 or ord(char) == 127 for char in secret):
             raise DependencyError('go-proxy-authorization-format')
         netrc = owned / 'resolver.netrc'
-        netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\n')
+        netrc.write_text('machine ' + proxy.netloc + ' login ' + username + ' password ' + secret + '\n')
         netrc.chmod(0o600)
         environment['NETRC'] = str(netrc)
     go_proxy_tls.prepare(project or owner, owned, policy, environment)

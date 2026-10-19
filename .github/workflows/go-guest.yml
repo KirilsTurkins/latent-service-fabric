@@ -605,7 +605,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 4
+          fetch-depth: 5
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
@@ -613,10 +613,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Test source binding, private diagnostic privacy and real fixture filenames
+        env:
+          LSF_REQUIRE_COMPILER_ISOLATION: '1'
         run: |
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy
+          python3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy tools.tests.test_application_dependency_tools
       - name: Retrieve only original qualified products and pinned reproduction tools
         env:
           GH_TOKEN: ${{ github.token }}

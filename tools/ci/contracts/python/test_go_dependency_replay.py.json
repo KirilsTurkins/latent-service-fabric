@@ -4,13 +4,18 @@
     "ClosedNativeFailure.test_actual_authoring_producer_reason_survives_but_credential_shaped_values_do_not",
     "ClosedNativeFailure.test_actual_private_wrapper_preserves_exception_identity_when_nested_metadata_and_observer_fail",
     "ClosedNativeFailure.test_foreign_shape_duplicate_keys_and_hardlinks_cannot_supply_public_reason",
+    "ReplayBoundaries.test_actual_netrc_producer_matches_exact_pinned_go_authority_without_cross_port_credentials",
     "ReplayBoundaries.test_actual_normal_receipt_cannot_be_replaced_by_coherent_new_metadata",
     "ReplayBoundaries.test_actual_six_product_inventory_reuses_only_five_and_refuses_unexpected_products",
     "ReplayBoundaries.test_artifact_names_and_link_entries_refuse_before_writing",
+    "ReplayBoundaries.test_authoring_material_exception_reverses_only_the_exact_authority_line",
     "ReplayBoundaries.test_compiler_material_completeness_and_aliases_are_not_forgiven",
+    "ReplayBoundaries.test_fresh_recipe_binds_authoring_delta_and_rejects_other_recipe_changes",
     "ReplayBoundaries.test_immutable_git_blob_proof_catches_native_tool_source_outside_normal_runtime_inventory",
     "ReplayBoundaries.test_only_exact_reviewed_reader_import_can_explain_old_qualifier_identity",
     "ReplayBoundaries.test_original_random_wit_layer_is_bound_and_unknown_layers_still_refuse",
+    "ReplayBoundaries.test_proxy_userinfo_still_refuses_before_owned_config_or_credential_lookup",
+    "ReplayBoundaries.test_replay_namespace_prerequisite_retains_the_complete_original_command",
     "ReplayBoundaries.test_wrong_or_ambient_tool_refuses_before_authoring_can_execute_it"
   ],
   "guards": {
@@ -62,6 +67,18 @@
       ],
       "skipSites": []
     },
+    "ReplayBoundaries.test_actual_netrc_producer_matches_exact_pinned_go_authority_without_cross_port_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1b375dc655b569b0ca05c932a231e0bb7e802ac005d8e1d683eb3f46476dd06d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "ReplayBoundaries.test_actual_normal_receipt_cannot_be_replaced_by_coherent_new_metadata": {
       "bases": [
         "unittest.TestCase"
@@ -98,7 +115,31 @@
       ],
       "skipSites": []
     },
+    "ReplayBoundaries.test_authoring_material_exception_reverses_only_the_exact_authority_line": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1b375dc655b569b0ca05c932a231e0bb7e802ac005d8e1d683eb3f46476dd06d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "ReplayBoundaries.test_compiler_material_completeness_and_aliases_are_not_forgiven": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1b375dc655b569b0ca05c932a231e0bb7e802ac005d8e1d683eb3f46476dd06d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReplayBoundaries.test_fresh_recipe_binds_authoring_delta_and_rejects_other_recipe_changes": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -146,6 +187,30 @@
       ],
       "skipSites": []
     },
+    "ReplayBoundaries.test_proxy_userinfo_still_refuses_before_owned_config_or_credential_lookup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1b375dc655b569b0ca05c932a231e0bb7e802ac005d8e1d683eb3f46476dd06d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReplayBoundaries.test_replay_namespace_prerequisite_retains_the_complete_original_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1b375dc655b569b0ca05c932a231e0bb7e802ac005d8e1d683eb3f46476dd06d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "ReplayBoundaries.test_wrong_or_ambient_tool_refuses_before_authoring_can_execute_it": {
       "bases": [
         "unittest.TestCase"
@@ -161,6 +226,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_dependency_replay.py",
-  "reviewReason": "Preserve ten prior controls and add exact native inventory and real package-layer refusal controls.",
+  "reviewReason": "Retain twelve old controls plus five actual authority, userinfo, immutable recipe and original namespace prerequisite controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

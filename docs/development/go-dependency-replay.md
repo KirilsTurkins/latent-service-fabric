@@ -8,10 +8,15 @@ The original full45-minute job remains the default and retains every command,
 assertion, artifact and time bound. This diagnostic branch intentionally stays
 on that source composition rather than claiming a new development compilation.
 
-The source comparison includes all original runtime, SDK, WIT, schemas, compiler
-and recipe identities. Additional immutable-Git blob checks cover every Rust source,
+The source comparison includes all original runtime, SDK, WIT, schemas and compiler
+identities. One explicit authoring-only recipe change preserves the HTTPS authority
+in the owned NETRC entry, including the selected port and IPv6 brackets. Its complete
+old/new digest and size are recorded; reversing the exact authority line and
+strict userinfo-denial guard must reconstruct the original Git blob. Every other
+recipe material must remain identical.
+Additional immutable-Git blob checks cover every Rust source,
 workspace manifest, native-tool fixture, WIT/schema and compiler recipe input,
-including native-tool sources absent from the aggregate runtime inventory. Only the exact missing bounded-reader import is permitted
+including native-tool sources absent from the aggregate runtime inventory. The exact missing bounded-reader import is permitted
 in the owning qualifier; its complete old-byte digest is pinned. The original
 normal receipt is retained unchanged and pinned by digest. Binaries, every
 package layer, its observation and the original normal27-call node receipt are
@@ -36,9 +41,23 @@ only fixed-size owned CLI failure JSON with the actual producer schema and a
 closed reason vocabulary. Unknown text, paths, payloads and credentials are not
 published. Existing always-sanitized private command streams remain excluded.
 Diagnostics cannot replace the original acceptance or cleanup failure.
+The replay retains the original runner's complete namespace prerequisite, including
+its unprivileged-user-namespace configuration; the actual Bubblewrap isolation
+arguments and bounds are unchanged.
 Separately, the private qualifier now writes the exact case-sensitive filename
 read by the maintained node fixture; this fixes a later source defect and does
 not establish the original lock-failure cause.
+
+Run39310934607 on fixture18464017a0 verified all3,579 selected native/SDK/compiler
+source preimages (25,841,122bytes), retrieved the original products, prepared the
+pinned compiler and passed a fresh normal27-call signed programme with clean/reaped
+shutdown. Private capture then failed its initial native lock with the closed
+`go-authoring-invalid-or-unavailable-input` reason; approved generation failed at
+its CLI boundary. Neither campaign compiled or qualified a new application.
+The NETRC authority defect is independently demonstrated against Go1.27.2's
+literal credential-prefix algorithm; the old generic failure does not retain
+its complete underlying cause. The namespace prerequisite correction likewise
+preserves a required setup step without inventing old tool stderr.
 
 Receipts distinguish original compiled source from current fixture source and
 use a separate replay schema. A replay is not a fabricated normal qualification,

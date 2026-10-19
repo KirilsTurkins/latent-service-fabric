@@ -14,7 +14,7 @@
       {
         "uses": "actions/checkout",
         "with": {
-          "fetch-depth": 4,
+          "fetch-depth": 5,
           "persist-credentials": false
         }
       },
@@ -26,11 +26,14 @@
       },
       {
         "name": "Install the original captured namespace prerequisite",
-        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\n"
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
       {
+        "env": {
+          "LSF_REQUIRE_COMPILER_ISOLATION": "1"
+        },
         "name": "Test source binding, private diagnostic privacy and real fixture filenames",
-        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy\n"
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_dependency_replay tools.tests.test_go_generator_fixture tools.tests.test_go_private_proxy tools.tests.test_application_dependency_tools\n"
       },
       {
         "env": {
@@ -75,7 +78,7 @@
   },
   "jobId": "dependency-replay",
   "kind": "job",
-  "reviewReason": "Bounded fixed-artifact replay retaining full normal node prerequisite and fresh private/generator builds and signed nodes.",
+  "reviewReason": "Retain full original namespace prerequisite and required native generator controls before the bounded fixed-source replay.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

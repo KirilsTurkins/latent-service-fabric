@@ -177,6 +177,24 @@ def retrieve_build(artifact, template, prepared, expected):
 
 ORIGINAL_QUALIFIER_DIGEST = 'sha256:1ae0dcad6739fa1f6871d5317f6a3bb6a9ebba9bf8a76b99f436ab79caebcd9c'
 ORIGINAL_QUALIFIER_BYTES = 34254
+AUTHORING_SOURCE = 'tools/go_application_dependencies.py'
+ORIGINAL_AUTHORING_BLOB = '92b917a1629ecfe3c57a8c781b7104c48ec91c25'
+ORIGINAL_AUTHORING_IDENTITY = {'sha256': 'sha256:556e773b805fc1c30bb232bbed80e7d32374f72053ca038b668418b924338dda',
+                              'bytes': 29568}
+
+
+def authoring_delta(current):
+    before = b"netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\\n')"
+    after = before.replace(b'proxy.hostname', b'proxy.netloc')
+    old_guard = b'or proxy.username or proxy.password or proxy.query'
+    new_guard = b'or proxy.username is not None or proxy.password is not None or proxy.query'
+    require(current.count(after) == current.count(new_guard) == 1, 'go-replay-exact-netrc-authority-fix')
+    original = current.replace(after, before, 1).replace(new_guard, old_guard, 1)
+    require({'sha256': digest(original), 'bytes': len(original)} == ORIGINAL_AUTHORING_IDENTITY,
+            'go-replay-unreviewed-authoring-source-change')
+    return {'path': AUTHORING_SOURCE, 'original': ORIGINAL_AUTHORING_IDENTITY,
+            'selected': {'sha256': digest(current), 'bytes': len(current)},
+            'scope': 'exact NETRC HTTPS authority including selected port; all URL userinfo denied; no SDK/compiler change'}
 
 
 def qualifier_delta(current):
@@ -193,6 +211,8 @@ def expected_original_inputs():
     value = inputs('go')
     value['helpers']['qualify_rust_capsules.py'] = qualifier_delta(
         (ROOT / 'tools/qualify_rust_capsules.py').read_bytes())
+    value['helpers']['go_application_dependencies.py'] = authoring_delta(
+        (ROOT / AUTHORING_SOURCE).read_bytes())['original']
     return value
 
 
@@ -235,6 +255,11 @@ def production_blob(path, expected):
             == (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns) and len(raw) == before.st_size,
             'go-replay-production-source-mutated')
     actual = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+    if relative.as_posix() == AUTHORING_SOURCE:
+        require(expected == ORIGINAL_AUTHORING_BLOB, 'go-replay-original-authoring-blob')
+        change = authoring_delta(raw)
+        return {'gitBlob': actual, 'sha256': digest(raw), 'bytes': len(raw),
+                'originalGitBlob': expected, 'reviewedAuthoringDelta': change}
     require(actual == expected, 'go-replay-production-git-preimage-drift')
     return {'gitBlob': actual, 'sha256': digest(raw), 'bytes': len(raw)}
 
@@ -311,10 +336,13 @@ def prepare(output):
         'compiledSource': {'head': ORIGINAL_HEAD, 'tree': commit['tree']['sha'],
                            'run': ORIGINAL_RUN, 'job': ORIGINAL_JOB},
         'fixtureSource': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-        'strictNativeAndCompilerSourceMatch': True,
+        'strictNativeSDKAndCompilerToolSourceMatch': True,
+        'compilerRecipeByteIdentical': False,
+        'reviewedAuthoringDelta': authoring_delta((ROOT / AUTHORING_SOURCE).read_bytes()),
         'nativeProductionPreimages': {'files': len(preimages['files']), 'bytes': preimages['bytes'],
                                      'receipt': file_identity(output / 'source-preimages.json')},
-        'permittedFixtureSourceDelta': 'only missing bounded reader import in qualifier', 'sourceIdentityDigest': receipt['sourceIdentityDigest'],
+        'permittedFixtureSourceDelta': 'missing bounded reader import and exact reviewed NETRC authority/userinfo lines',
+        'sourceIdentityDigest': receipt['sourceIdentityDigest'],
         'nativeProducts': native_products, 'unusedOriginalProducts': list(UNUSED_ORIGINAL_PRODUCTS),
         'artifact': artifact.summary(),
         'normalQualificationRecreated': False, 'nativeProductsCompiled': False,
@@ -421,8 +449,14 @@ def check_compilation(prepared, built, original_materials):
     observation = read_json(built / 'build-observation.json')
     require(compiler_materials(observation) == original_materials,
             'go-replay-original-compiler-material-drift')
-    require((built / 'recipe-inputs.json').read_bytes()
-            == (prepared / 'builds/greeting/recipe-inputs.json').read_bytes(), 'go-replay-original-recipe-drift')
+    recipe = read_json(prepared / 'builds/greeting/recipe-inputs.json')
+    change = authoring_delta((ROOT / AUTHORING_SOURCE).read_bytes())
+    require(recipe.get(AUTHORING_SOURCE) == {'digest': change['original']['sha256'],
+                                           'size': change['original']['bytes']},
+            'go-replay-original-authoring-recipe-material')
+    recipe[AUTHORING_SOURCE] = {'digest': change['selected']['sha256'], 'size': change['selected']['bytes']}
+    require(read_json(built / 'recipe-inputs.json') == recipe,
+            'go-replay-recipe-beyond-reviewed-authoring-delta')
     require(observation['parameters']['locked'] is True and observation['parameters']['ambientWasi'] is False
             and read_json(built / 'application-dependencies.json')['networkResolution'] is False,
             'go-replay-offline-component-required')

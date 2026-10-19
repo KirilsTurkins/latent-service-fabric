@@ -18,6 +18,90 @@ from tools.rust_capsule_project import canonical, digest
 
 
 class ReplayBoundaries(unittest.TestCase):
+    def test_actual_netrc_producer_matches_exact_pinned_go_authority_without_cross_port_credentials(self):
+        import os
+        from tools import go_application_dependencies as native
+        def matches(machine, url):
+            prefix = url.removeprefix('https://').removesuffix('/')
+            while True:
+                if prefix == machine:
+                    return True
+                if '/' not in prefix:
+                    return False
+                prefix = prefix.rsplit('/', 1)[0]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for ordinal, authority in enumerate(('127.0.0.1:45679', '[::1]:45679', 'packages.example')):
+                with self.subTest(authority=authority):
+                    app = root / ('app-' + str(ordinal)); app.mkdir()
+                    owned = root / ('owned-' + str(ordinal)); owned.mkdir()
+                    policy = root / ('policy-' + str(ordinal) + '.json')
+                    policy.write_bytes(canonical({'proxy': 'https://' + authority + '/proxy', 'sumdb': 'off',
+                        'authorizationEnv': 'LSF_REPLAY_NETRC_AUTHORITY'}))
+                    with patch.dict(os.environ, {'LSF_REPLAY_NETRC_AUTHORITY': 'owned-fixture-token'}):
+                        environment, _policy, _raw = native.fetch_environment(app, owned, policy, project=app)
+                    machine = Path(environment['NETRC']).read_text().split()[1]
+                    self.assertEqual(machine, authority)
+                    self.assertTrue(matches(machine, 'https://' + authority + '/proxy/module/@v/v0.1.0.mod'))
+                    self.assertFalse(matches(machine, 'https://' + authority + '.different/proxy/module'))
+                    if ':45679' in authority:
+                        self.assertFalse(matches(machine, 'https://' + authority.replace(':45679', ':45680') + '/proxy/module'))
+
+    def test_proxy_userinfo_still_refuses_before_owned_config_or_credential_lookup(self):
+        from tools import go_application_dependencies as native
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); app = root / 'app'; app.mkdir(); owned = root / 'owned'; owned.mkdir()
+            policy = root / 'policy.json'
+            for credentials in ('username:private', '', ':', ':private', 'username:'):
+                with self.subTest(credentials=credentials):
+                    policy.write_bytes(canonical({'proxy': 'https://' + credentials + '@127.0.0.1:45679', 'sumdb': 'off',
+                                                  'authorizationEnv': 'NEVER_LOOK_UP_THIS_SECRET'}))
+                    with patch.object(native.go_proxy_tls, 'prepare') as prepare:
+                        with self.assertRaisesRegex(DependencyError, 'go-proxy-endpoint-invalid'):
+                            native.fetch_environment(app, owned, policy, project=app)
+                    prepare.assert_not_called()
+                    self.assertEqual(list(owned.iterdir()), [])
+
+    def test_authoring_material_exception_reverses_only_the_exact_authority_line(self):
+        raw = (replay.ROOT / replay.AUTHORING_SOURCE).read_bytes()
+        delta = replay.authoring_delta(raw)
+        self.assertEqual(delta['original'], replay.ORIGINAL_AUTHORING_IDENTITY)
+        self.assertEqual(delta['selected'], {'sha256': digest(raw), 'bytes': len(raw)})
+        for changed in (raw + b'\n# unrelated compilation change\n', raw.replace(b'proxy.netloc', b'proxy.hostname')):
+            with self.assertRaises(Exception):
+                replay.authoring_delta(changed)
+
+    def test_replay_namespace_prerequisite_retains_the_complete_original_command(self):
+        import yaml
+        workflow = yaml.safe_load((replay.ROOT / '.github/workflows/go-guest.yml').read_bytes())
+        normal = next(row['run'] for row in workflow['jobs']['upstream-probe']['steps']
+                      if row.get('name') == 'Install captured Go compiler namespace')
+        selected = next(row['run'] for row in workflow['jobs']['dependency-replay']['steps']
+                        if row.get('name') == 'Install the original captured namespace prerequisite')
+        self.assertEqual(selected, normal)
+        self.assertIn('kernel.apparmor_restrict_unprivileged_userns=0', selected)
+
+    def test_fresh_recipe_binds_authoring_delta_and_rejects_other_recipe_changes(self):
+        rows = [{'name': name, 'digest': digest(name.encode()), 'size': 1} for name in replay.COMPILER_MATERIALS]
+        original_materials = replay.compiler_materials({'materials': rows})
+        change = replay.authoring_delta((replay.ROOT / replay.AUTHORING_SOURCE).read_bytes())
+        old = {replay.AUTHORING_SOURCE: {'digest': change['original']['sha256'], 'size': change['original']['bytes']},
+               'unchanged-compiler.py': {'digest': digest(b'original'), 'size': 8}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); prepared = root / 'prepared'; old_build = prepared / 'builds/greeting'
+            old_build.mkdir(parents=True); (old_build / 'recipe-inputs.json').write_bytes(canonical(old))
+            built = root / 'new'; built.mkdir()
+            (built / 'build-observation.json').write_bytes(canonical({'materials': rows,
+                'parameters': {'locked': True, 'ambientWasi': False}}))
+            (built / 'application-dependencies.json').write_bytes(canonical({'networkResolution': False}))
+            current = {**old, replay.AUTHORING_SOURCE: {'digest': change['selected']['sha256'], 'size': change['selected']['bytes']}}
+            (built / 'recipe-inputs.json').write_bytes(canonical(current))
+            replay.check_compilation(prepared, built, original_materials)
+            current['unchanged-compiler.py'] = {'digest': digest(b'new code'), 'size': 8}
+            (built / 'recipe-inputs.json').write_bytes(canonical(current))
+            with self.assertRaisesRegex(Exception, 'recipe-beyond-reviewed-authoring-delta'):
+                replay.check_compilation(prepared, built, original_materials)
+
     def test_original_random_wit_layer_is_bound_and_unknown_layers_still_refuse(self):
         from tools.rust_capsule_project import inventory
         with tempfile.TemporaryDirectory() as temporary:
