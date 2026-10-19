@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from collections import Counter
 from contextlib import ExitStack
 import json
 from pathlib import Path
@@ -19,6 +20,7 @@ from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
 from tools.guest_runtime_profiles import RUNTIME
 from tools.dotnet_guest.entropy_grants import configure as configure_entropy
+from tools.dotnet_standard_http_project import managed_source
 from tools.phase2_operator_process import Process, read_json, require, write_json, stopped_record
 from tools.phase2_operator_scenario import configure_node, connect, stop
 from tools.phase3_resource_identity import file_identity
@@ -26,7 +28,7 @@ from tools.phase3_resource_os import Probe
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
 from tools.rust_capsule_node import RecordingClient, deploy, delete_all, sample
 from tools.runtime_owner_refusal_diagnostic import retain as retain_runtime_owner_refusals
-from tools.rust_capsule_project import ROOT, fresh
+from tools.rust_capsule_project import ROOT, digest, fresh, read_file
 from tools.standard_http.observations import validate as validate_peer
 from tools.static_api.node import policy
 
@@ -269,7 +271,58 @@ def require_case_result(name, row, expected, observe_failure):
         raise
 
 
-def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None):
+def request_api_binding(artifact: Path, *, synchronous_send: bool) -> dict:
+    """Bind the API label to the normal compiler's captured source and component."""
+    managed = managed_source(synchronous_send=synchronous_send)
+    source = read_file(artifact/'source-inputs.json')
+    observed = read_json(artifact/'build-observation.json')
+    component = file_identity(artifact/'component.wasm')
+    identity = {'digest': digest(managed), 'size': len(managed)}
+    selected = json.loads(source).get('src/Main.cs')
+    require(type(selected) is dict and type(selected.get('size')) is int and selected == identity,
+            'standard-dotnet-observed-request-api-mismatch')
+    require(observed['source']['snapshotDigest'] == digest(source)
+            and observed['componentDigest'] == component['sha256']
+            and type(observed['componentSize']) is int and observed['componentSize'] == component['bytes'],
+            'standard-dotnet-observed-request-api-binding')
+    return {'name': 'HttpClient.Send' if synchronous_send else 'HttpClient.SendAsync',
+        'completionOption': 'ResponseHeadersRead', 'managedSource': identity,
+        'sourceSnapshotDigest': digest(source), 'componentDigest': component['sha256']}
+
+
+def require_synchronous_peer(observation: dict) -> dict:
+    """Extra peer evidence; node/provider owners are checked separately per call."""
+    expected = {'domain-json': 2, 'http-404': 1, 'http-500': 1, 'truncated-body': 1,
+        'oversized-body': 1, 'malformed-json': 1, 'partial-body': 2, 'pending-headers': 1,
+        'method-bytes': 1, 'commit-close': 1}
+    rows, events = observation['requests'], observation['events']
+    require(Counter(row.get('vector') for row in rows) == expected,
+            'standard-dotnet-send-exact-request-vectors')
+    for row in rows:
+        require(row.get('method') == ('POST' if row['vector'] in {'method-bytes', 'commit-close'} else 'GET'),
+                'standard-dotnet-send-request-method')
+        phase = {'pending-headers': 'headers', 'partial-body': 'body'}.get(row['vector'])
+        if phase is not None:
+            selected = [event for event in events if event['request'] == row['request']]
+            pending = [event for event in selected if event['kind'] == 'gate-pending']
+            require(len(pending) == 1 and pending[0].get('phase') == phase
+                    and not any(event['kind'] in {'gate-released', 'response-write-complete'} for event in selected)
+                    and (row['responseBytesWritten'] == 0 if phase == 'headers' else row['responseBytesWritten'] > 0),
+                    'standard-dotnet-send-peer-not-genuinely-pending')
+        if row['vector'] == 'commit-close':
+            require(row.get('mutationCommitted') is True and row['responseBytesWritten'] == 0
+                    and row.get('closeReason') == 'response-withheld-after-commit'
+                    and sum(event['kind'] == 'mutation-committed' and event['request'] == row['request']
+                            for event in events) == 1,
+                    'standard-dotnet-send-uncertain-post-replayed-or-uncommitted')
+    return {'exactContactVectors': True, 'headersAndBodyHeldWithoutRelease': True,
+        'uncertainPostCommittedOnceWithoutResponse': True,
+        'preCancelledAndDeniedRequestsWithoutAdditionalContact': True,
+        'scope': 'peer-protocol-only'}
+
+
+def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
+        synchronous_send: bool = False):
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-dotnet-original-deadline-expired')
     output = fresh(output)
@@ -291,6 +344,9 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
     result['artifact'] = {name: file_identity(artifact/name) for name in (
         'BUILD-COMPLETE.json', 'component.wasm', 'build-observation.json', 'source-inputs.json',
         'recipe-inputs.json', 'runtime-profile.json', 'closed-runtime-coverage.json', 'bindings.json')}
+    if synchronous_send:
+        result['artifact'].update({name: file_identity(artifact/name) for name in (
+            'compiler-inputs.json', 'compiler-patches-preparation.json', 'compiler-patches.json')})
     source_paths = ('tools/dotnet_standard_http_project.py', 'tools/dotnet_standard_http_node.py',
         'tools/runtime_owner_refusal_diagnostic.py',
         'tools/qualify_dotnet_standard_http.py', 'examples/dotnet-standard-http/Main.cs',
@@ -301,9 +357,13 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
     result['sources'] = {name: file_identity(ROOT/name) for name in source_paths}
     result['limitations'] = ['Native process RSS is sampled, not allocator/native/kernel upper-bound proof.',
         'Finite ordinary standard-API controls; no two-client, private-library, all-runtime or full ticket qualification.']
+    if synchronous_send:
+        result['limitations'].append('Send with ResponseHeadersRead only; default buffering overloads are not exercised.')
     node = peer = client = None
-    stage = 'sign'
+    stage = 'request-api-binding'
     try:
+        result['requestApi'] = request_api_binding(artifact, synchronous_send=synchronous_send)
+        stage = 'sign'
         environment = build_environment(output)
         signed = output/'releases'
         completed = run_bounded_result([str(binaries['capsule_authoring']), 'demo-sign', str(signed), str(artifact)],
@@ -354,6 +414,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                     'standard-dotnet-http-grant-denial')
             target = deploy(client, source/'deployment.json', publication, generation=str(target['generation']), grants=authorized)
             stage = 'ordinary-http'
+            send_revision = None
             cases = [('json', 0, '/conformance/json', '1:200:domain:7:caf\u00e9:first|\u03bb:'),
                      ('http404', 0, '/conformance/status/404', '1:404:error:domain-error'),
                      ('http500', 0, '/conformance/status/500', '1:500:error:domain-error'),
@@ -373,11 +434,28 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
                 require_case_result(name, row, expected,
                     lambda: prefix_diagnostics(result, client, target, url, probe, output, row))
+                if synchronous_send:
+                    revision = prefix_revision(row, result['artifact']['component.wasm']['sha256'])
+                    require(revision is not None and (send_revision is None or revision == send_revision),
+                            'standard-dotnet-send-signed-revision-or-process')
+                    send_revision = revision
                 result['cases'].append(name)
                 # The shared outbound owner checks every activation-scoped and
                 # service-resident row. Ingress-only exchange rows are absent on
                 # this node, which has no HTTP listener installation.
                 retire(client, target, probe, output, name)
+            if synchronous_send:
+                stage = 'synchronous-pre-cancelled'
+                row = invoke(client, target, 6, url+'/conformance/json', 'standard-pre-cancelled')
+                require_case_result('pre-cancelled', row, '1:cancelled', lambda: None)
+                require(prefix_revision(row, result['artifact']['component.wasm']['sha256']) == send_revision,
+                        'standard-dotnet-send-pre-cancelled-signed-revision-or-process')
+                result['cases'].append('pre-cancelled')
+                retire(client, target, probe, output, 'pre-cancelled')
+                result['synchronousSend'] = {'ordinaryDefaultClient': True,
+                    'sameSignedRevision': send_revision, 'freshManagedStatePerInvocation': True,
+                    'allOriginalFourteenCases': True, 'preCancelledRequest': True,
+                    'physicalOwnerChecksPerInvocation': True, 'fullTicketQualification': False}
             result['finalOs'] = probe.sample()
             delete_all(client, [target['name']])
             stop(client, node)
@@ -392,6 +470,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 and observation['committedMutations'] == 1
                 and all(row['role'] == 'primary' for row in observation['requests']),
                 'standard-dotnet-peer-contact-count')
+            if synchronous_send:
+                result['synchronousSend']['peer'] = require_synchronous_peer(observation)
             result['peer'] = observation
             result['peerReaped'] = peer.owner.finished
             peer = None
@@ -422,5 +502,6 @@ if __name__ == '__main__':
     parser.add_argument('--artifact', type=Path, required=True)
     parser.add_argument('--native', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--synchronous-send', action='store_true')
     args = parser.parse_args()
-    run(args.artifact, args.native, args.output)
+    run(args.artifact, args.native, args.output, synchronous_send=args.synchronous_send)

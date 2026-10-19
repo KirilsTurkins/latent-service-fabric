@@ -42,3 +42,32 @@ cancellation, disposal, uncertain POST and fresh-state/owner retirement under
 the original authority and resource limits. A host-source build or completed
 fault probe cannot supply that evidence. Named factory and unchanged-library
 qualification and the broader #693/#746 requirements remain separate.
+
+## Signed component qualification
+
+The maintained `qualify_dotnet_standard_http.py --synchronous-send` entry point
+builds a separate ordinary application component through the normal captured
+NativeAOT compiler, packaging, fixture signing, admission and enforced node.
+Its fixture changes only the original request call to
+`client.Send(request, HttpCompletionOption.ResponseHeadersRead, token)` and
+adds an already-cancelled-token case. The original `SendAsync` source and
+fourteen-case qualification command remain intact.
+
+The API label binds to the exact captured `src/Main.cs`, complete source
+snapshot and observed component before signing. The synchronous run executes
+all fourteen original cases plus pre-cancellation. It retains the original
+compile, node, invocation, authority, fuel, memory, timer and owner limits.
+Every invocation must resolve the same signed component revision, return its
+expected fresh-state value and pass the existing complete owner-idle checks.
+The provider peer must observe exactly the original twelve request vectors:
+cancelled headers and partial bodies actually enter unreleased gates, and the
+uncertain POST commits once without a response. Pre-cancellation and the two
+denials add no peer contact. Peer observations supplement the independent
+node/provider accounting; they do not prove a refund or external rollback.
+
+The owning .NET workflow runs this command after the unchanged async HTTP
+qualification and retains its complete success or failure directory. Until
+that emitted component actually passes, this is a qualification programme,
+not signed `Send` evidence. It does not cover two unchanged libraries,
+factory middleware, default-buffering `Send` overloads, all options,
+cross-tenant state or broader runtime limits.

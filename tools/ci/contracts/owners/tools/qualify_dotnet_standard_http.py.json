@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_standard_http.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed default HttpClient gate preserves exact frozen normal-product identities and original bounded compiler/node limits, signs only after compile, checks physical retirement and retains failure evidence without claiming full client qualification.",
+  "reviewReason": "Add explicit separate signed Send programme and exact source snapshot comparison; retain existing normal NativeAOT/native receipt checks and 900/300/1200 limits",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "110f65a1e155b7bdd43dc94f55da02f5d41ceae779944b5ef46fcef502c8be77"
+  "sha256": "e99b9e17dce7c907008730e70363650bff7f12f31087b9787bfaa1368dcb9b3d"
 }

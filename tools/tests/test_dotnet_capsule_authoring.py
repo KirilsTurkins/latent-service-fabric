@@ -592,5 +592,171 @@ class AuditDrainTests(unittest.TestCase):
                 self.assertLess(blocks[-1].index("tools/wait_capsule_audit_idle.py"), blocks[-1].index(deletion))
 
 
+class SynchronousHttpSendQualificationTests(unittest.TestCase):
+    """Source/evidence boundary controls; synthetic components are never executed."""
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix='lsf-dotnet-send-controls-')
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    def artifact(self, synchronous_send=True):
+        from tools.dotnet_standard_http_project import managed_source
+        from tools.rust_capsule_project import digest, inventory
+        artifact = self.root/'artifact'
+        artifact.mkdir()
+        source = inventory({'src/Main.cs': managed_source(synchronous_send=synchronous_send)})
+        (artifact/'source-inputs.json').write_bytes(source)
+        component = b'synthetic observation only; not a component or signing authority'
+        (artifact/'component.wasm').write_bytes(component)
+        observed = {'source': {'snapshotDigest': digest(source)}, 'componentDigest': digest(component),
+                    'componentSize': len(component)}
+        (artifact/'build-observation.json').write_text(json.dumps(observed))
+        return artifact
+
+    def peer(self):
+        vectors = ['domain-json', 'http-404', 'http-500', 'truncated-body', 'oversized-body',
+            'malformed-json', 'partial-body', 'pending-headers', 'partial-body', 'method-bytes',
+            'commit-close', 'domain-json']
+        rows, events = [], []
+        for identity, vector in enumerate(vectors, 1):
+            row = {'request': identity, 'vector': vector, 'responseBytesWritten': 100,
+                'method': 'POST' if vector in {'method-bytes', 'commit-close'} else 'GET'}
+            if vector in {'pending-headers', 'partial-body'}:
+                phase = 'headers' if vector == 'pending-headers' else 'body'
+                row['responseBytesWritten'] = 0 if phase == 'headers' else 100
+                events.append({'request': identity, 'kind': 'gate-pending', 'phase': phase})
+            if vector == 'commit-close':
+                row.update(mutationCommitted=True, responseBytesWritten=0,
+                           closeReason='response-withheld-after-commit')
+                events.append({'request': identity, 'kind': 'mutation-committed'})
+            rows.append(row)
+        return {'requests': rows, 'events': events}
+
+    def test_separate_send_project_preserves_original_fixture_and_every_other_captured_input(self):
+        from tools.dotnet_standard_http_project import managed_source, project as http_project
+        from tools.rust_capsule_project import digest, read_file
+        source = Path(__file__).resolve().parents[2]/'examples/dotnet-standard-http/Main.cs'
+        before = read_file(source)
+        original = snapshot(http_project(self.root/'async'))
+        selected = snapshot(http_project(self.root/'send', synchronous_send=True))
+        self.assertEqual(original['src/Main.cs'], before)
+        self.assertEqual(read_file(source), before)
+        expected = before.replace(b'\r\n', b'\n').replace(
+            b'client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,\n'
+            b'                cancellation.Token).GetAwaiter().GetResult()',
+            b'client.Send(request, HttpCompletionOption.ResponseHeadersRead,\n                cancellation.Token)')
+        expected = expected.replace(b'        if (which == 4) cancellation.CancelAfter(100);',
+            b'        if (which == 4) cancellation.CancelAfter(100);\n        if (which == 6) cancellation.Cancel();')
+        self.assertEqual(selected['src/Main.cs'].replace(b'\r\n', b'\n'), expected)
+        self.assertEqual(selected['src/Main.cs'], managed_source(synchronous_send=True))
+        lock = json.loads(original['sdk-lock.json'])
+        lock['template']['sourceDigest'] = digest(selected['src/Main.cs'])
+        self.assertEqual(json.loads(selected['sdk-lock.json']), lock)
+        for name in original:
+            if name not in {'src/Main.cs', 'sdk-lock.json'}:
+                self.assertEqual(selected[name], original[name], name)
+
+    def test_unknown_selection_or_missing_duplicate_request_shape_cannot_create_project(self):
+        from tools import dotnet_standard_http_project as fixture
+        for selection in (1, 0, None, 'Send'):
+            with self.subTest(selection=selection), self.assertRaisesRegex(ValueError, 'request-api-selection'):
+                fixture.project(self.root/'not-created', synchronous_send=selection)
+            self.assertFalse((self.root/'not-created').exists())
+        original = fixture.managed_source()
+        for changed in (b'unknown fixture', original+original):
+            with patch.object(fixture, 'read_file', return_value=changed), \
+                    self.assertRaisesRegex(ValueError, 'synchronous-send-fixture-shape'):
+                fixture.project(self.root/'not-created', synchronous_send=True)
+            self.assertFalse((self.root/'not-created').exists())
+
+    def test_send_label_requires_actual_selected_source_and_observed_component_binding(self):
+        from tools.dotnet_standard_http_node import request_api_binding
+        artifact = self.artifact()
+        binding = request_api_binding(artifact, synchronous_send=True)
+        self.assertEqual(binding['name'], 'HttpClient.Send')
+        self.assertEqual(binding['completionOption'], 'ResponseHeadersRead')
+        self.assertEqual(binding['componentDigest'], json.loads((artifact/'build-observation.json').read_text())['componentDigest'])
+        with self.assertRaisesRegex(RuntimeError, 'observed-request-api-mismatch'):
+            request_api_binding(artifact, synchronous_send=False)
+        before = (artifact/'build-observation.json').read_bytes()
+        for field, value in (('source', {'snapshotDigest': 'sha256:'+'0'*64}),
+                ('componentDigest', 'sha256:'+'0'*64), ('componentSize', True)):
+            observed = json.loads(before); observed[field] = value
+            (artifact/'build-observation.json').write_text(json.dumps(observed))
+            with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'observed-request-api-binding'):
+                request_api_binding(artifact, synchronous_send=True)
+        (artifact/'build-observation.json').write_bytes(before)
+        (artifact/'component.wasm').write_bytes(b'changed')
+        with self.assertRaisesRegex(RuntimeError, 'observed-request-api-binding'):
+            request_api_binding(artifact, synchronous_send=True)
+
+    def test_original_async_artifact_cannot_receive_synchronous_send_qualification(self):
+        from tools.dotnet_standard_http_node import request_api_binding
+        artifact = self.artifact(synchronous_send=False)
+        self.assertEqual(request_api_binding(artifact, synchronous_send=False)['name'], 'HttpClient.SendAsync')
+        with self.assertRaisesRegex(RuntimeError, 'observed-request-api-mismatch'):
+            request_api_binding(artifact, synchronous_send=True)
+
+    def test_compiler_capture_mismatch_stops_before_signing_under_original_command_deadline(self):
+        from types import SimpleNamespace
+        from tools import qualify_dotnet_standard_http as qualification
+        from tools.phase3_resource_identity import file_identity
+        native = self.root/'native'
+        (native/'native-binaries').mkdir(parents=True)
+        binaries = {}
+        for name in qualification.NATIVE_NAMES.values():
+            path = native/'native-binaries'/name.replace('/', '-')
+            path.write_bytes(b'synthetic frozen native identity; never executed')
+            binaries[name] = file_identity(path)
+        (native/'qualification.json').write_text(json.dumps({'status': 'passed', 'binaries': binaries}))
+        def compiler(command, root, environment, *, timeout_seconds, max_output_bytes):
+            self.assertGreater(timeout_seconds, 0)
+            self.assertLessEqual(timeout_seconds, 900)
+            self.assertEqual(max_output_bytes, 2*1024*1024)
+            output = Path(command[command.index('--output')+1])
+            output.mkdir()
+            (output/'source-inputs.json').write_bytes(b'{}')
+            return SimpleNamespace(returncode=0, stdout=b'', stderr=b'')
+        with patch.object(qualification, 'run_bounded_result', side_effect=compiler), \
+                patch.object(qualification, 'run') as signed, \
+                self.assertRaisesRegex(RuntimeError, 'compiler-source-capture-mismatch'):
+            qualification.qualify(self.root/'attempt', self.root/'unused-tools', native, synchronous_send=True)
+        signed.assert_not_called()
+        failure = json.loads((self.root/'attempt/FAILED.json').read_text())
+        self.assertEqual(failure['stage'], 'normal-native-aot-build')
+        self.assertEqual(failure['commandLimits'], {'overallSeconds': 1200, 'compileSeconds': 900, 'nodeSeconds': 300})
+        self.assertEqual(failure['requestApi'], 'HttpClient.Send')
+        self.assertIs(failure['fullTicketQualification'], False)
+
+    def test_peer_protocol_requires_held_headers_partial_body_and_one_committed_uncertain_post(self):
+        from tools.dotnet_standard_http_node import require_synchronous_peer
+        result = require_synchronous_peer(self.peer())
+        self.assertEqual(result['scope'], 'peer-protocol-only')
+        self.assertIs(result['headersAndBodyHeldWithoutRelease'], True)
+        self.assertIs(result['uncertainPostCommittedOnceWithoutResponse'], True)
+
+    def test_missing_contact_replay_released_gate_completed_body_or_mutation_cannot_pass(self):
+        from tools.dotnet_standard_http_node import require_synchronous_peer
+        for change in ('missing', 'replayed', 'released', 'completed', 'no-body', 'headers-written',
+                       'no-commit', 'post-response', 'wrong-method'):
+            value = self.peer()
+            body = next(row for row in value['requests'] if row['vector'] == 'partial-body')
+            headers = next(row for row in value['requests'] if row['vector'] == 'pending-headers')
+            mutation = next(row for row in value['requests'] if row['vector'] == 'commit-close')
+            if change == 'missing': value['requests'].remove(headers)
+            elif change == 'replayed': value['requests'].append(dict(mutation))
+            elif change in {'released', 'completed'}:
+                value['events'].append({'request': body['request'],
+                    'kind': 'gate-released' if change == 'released' else 'response-write-complete'})
+            elif change == 'no-body': body['responseBytesWritten'] = 0
+            elif change == 'headers-written': headers['responseBytesWritten'] = 1
+            elif change == 'no-commit': mutation['mutationCommitted'] = False
+            elif change == 'post-response': mutation['responseBytesWritten'] = 1
+            else: mutation['method'] = 'GET'
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                require_synchronous_peer(value)
+
+
 if __name__ == "__main__":
     unittest.main()
