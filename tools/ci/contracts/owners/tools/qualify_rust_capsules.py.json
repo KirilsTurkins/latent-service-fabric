@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve current development Go managed-idle source/controls and add the explicit standalone TypeScript console programme with original baseline and strict cleanup retained.",
+  "reviewReason": "Preserve current development Go logging and Rust stdio flag/recipe identities alongside the independently signed TypeScript console programme; no implementation, budgets or case omissions.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "224127e0939e81ad85312107462e180903814968f6bcb29bf1ae88e81404aea3"
+  "sha256": "ae2528334e246f8b2b8230517e8a10d6747da84cf358f70e34bdf6e9c97d16da"
 }

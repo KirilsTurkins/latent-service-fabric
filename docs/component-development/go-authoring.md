@@ -1,5 +1,8 @@
 # Go compiler and runtime profile
 
+For ordinary `fmt`, `log` and `os` writes with explicit typed log authority, see
+[Go standard logging](go-standard-logging.md). Its signed campaign is pending.
+
 The optional [Go activation profile](../runtime/go-activation.md) adds bounded
 ordinary goroutines, channel/sync ownership, result drain and `time.Sleep` beneath
 unchanged source. This tutorial keeps the existing explicit clock/random profile;
