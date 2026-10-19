@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "runtimePackage": "getrandom",
+  "version": "0.3.4",
+  "archiveSha256": "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd",
+  "archiveBytes": 50932,
+  "originals": {
+    "src/backends.rs": {
+      "sha256": "61f8d982cd502f3229f49bef2f9b40e181c7c16fb41d029aa2e77f32b10c10a6",
+      "bytes": 7789
+    },
+    "src/backends/custom.rs": {
+      "sha256": "c8776ff0dda65cef1373b8624043f8a42ce4fd6183fbeb8918f9df5d4a13d457",
+      "bytes": 434
+    },
+    "src/backends/unsupported.rs": {
+      "sha256": "a531ab9883b7d7b584c6f37a5c13543ec63d25d3acc36608d57d5d82ef44cbff",
+      "bytes": 238
+    },
+    "src/error.rs": {
+      "sha256": "43f4918d3c47d211d223543fa4b93074f883dcb7232b673b03c8b7fe19ef8e7a",
+      "bytes": 8837
+    },
+    "build.rs": {
+      "sha256": "d542c9c3bbc2f64a26c758eac8af16178aab52464bdd8bf0b9a767ba87665021",
+      "bytes": 2173
+    }
+  }
+}
