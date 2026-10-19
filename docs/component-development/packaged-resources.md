@@ -89,6 +89,13 @@ bound lock; the caller must still authenticate the captured graph and the source
 component and lock digests, and the ordinary signed package authenticates the
 selected index. It does not qualify a language's runtime resource API.
 
+A matching dependency file record must use an integer byte size. Boolean and
+floating-point values cannot authenticate empty or one-byte resources merely
+because their numeric equality matches the payload length. Capture and index
+verification apply the same rule, including after a lock/index rehash. Valid
+integer sizes and unselected records retain their existing behavior; this local
+membership check does not replace validation or authentication of the full graph.
+
 The developer workflow derives a `resourceInputs` manifest binding and includes
 the manifest and its declared source files in trust/watch snapshots. Changing
 resource selection invalidates approval; changing resource bytes changes the
