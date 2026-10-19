@@ -64,11 +64,12 @@
   },
   "requiredJobs": [
     "authoring",
+    "compatibility",
     "git-closure",
     "git-components",
     "standard-clocks"
   ],
-  "reviewReason": "Retain all existing Rust jobs and workflow policies; add required bounded signed Git component job consuming exact same-run prepared inputs.",
+  "reviewReason": "Add signed Rust native-reference/captured unsupported-operation qualification using this run existing native products; retain every existing command, bound and prior case.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

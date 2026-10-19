@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed Rust unsupported operation diagnostics",
+    "needs": "authoring",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the existing bounded compiler namespace and pinned bindings",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Read only this run's identity-checked existing native products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "rust-git-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-compatibility-prepared"
+        }
+      },
+      {
+        "name": "Check captured-source and exact-outcome refusal controls",
+        "run": "python3 -m unittest tools.tests.test_rust_compatibility"
+      },
+      {
+        "name": "Execute native references and actual signed catchable errors, trap and fresh invocation",
+        "run": "python3 tools/qualify_rust_compatibility.py --prepared-qualification \"$RUNNER_TEMP/rust-compatibility-prepared\" --output \"$RUNNER_TEMP/rust-compatibility\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded diagnostic evidence including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-compatibility-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-compatibility/qualification.json\n${{ runner.temp }}/rust-compatibility/FAILED.json\n${{ runner.temp }}/rust-compatibility/capture.json\n${{ runner.temp }}/rust-compatibility/compatibility-execution-report.json\n${{ runner.temp }}/rust-compatibility/logs/**\n${{ runner.temp }}/rust-compatibility/build/*.json\n${{ runner.temp }}/rust-compatibility/build/logs/**\n${{ runner.temp }}/rust-compatibility/build/component.wasm\n${{ runner.temp }}/rust-compatibility/build/component.wit\n${{ runner.temp }}/rust-compatibility/node/workflow.json\n${{ runner.temp }}/rust-compatibility/node/FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "compatibility",
+  "kind": "job",
+  "reviewReason": "Add signed Rust native-reference/captured unsupported-operation qualification using this run existing native products; retain every existing command, bound and prior case.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}

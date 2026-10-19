@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_compatibility.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "New qualification cases and source-bound signed target checks; no cases or guards existed for this new module on the baseline commit, and all existing modules remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ae1e06a89c7f26104a5861c3bb9707718f7c4b6249246db0c9e2c09d33645baa"
+}

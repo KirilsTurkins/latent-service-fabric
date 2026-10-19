@@ -207,6 +207,66 @@ jobs:
             ${{ runner.temp }}/rust-git-components/node/FAILED.json
           if-no-files-found: warn
           retention-days: 3
+  compatibility:
+    name: Signed Rust unsupported operation diagnostics
+    needs: authoring
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Install the existing bounded compiler namespace and pinned bindings
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Read only this run's identity-checked existing native products
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rust-git-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-compatibility-prepared
+      - name: Check captured-source and exact-outcome refusal controls
+        run: python3 -m unittest tools.tests.test_rust_compatibility
+      - name: Execute native references and actual signed catchable errors, trap and fresh invocation
+        run: >-
+          python3 tools/qualify_rust_compatibility.py
+          --prepared-qualification "$RUNNER_TEMP/rust-compatibility-prepared"
+          --output "$RUNNER_TEMP/rust-compatibility"
+      - name: Retain bounded diagnostic evidence including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-compatibility-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-compatibility/qualification.json
+            ${{ runner.temp }}/rust-compatibility/FAILED.json
+            ${{ runner.temp }}/rust-compatibility/capture.json
+            ${{ runner.temp }}/rust-compatibility/compatibility-execution-report.json
+            ${{ runner.temp }}/rust-compatibility/logs/**
+            ${{ runner.temp }}/rust-compatibility/build/*.json
+            ${{ runner.temp }}/rust-compatibility/build/logs/**
+            ${{ runner.temp }}/rust-compatibility/build/component.wasm
+            ${{ runner.temp }}/rust-compatibility/build/component.wit
+            ${{ runner.temp }}/rust-compatibility/node/workflow.json
+            ${{ runner.temp }}/rust-compatibility/node/FAILED.json
+          if-no-files-found: warn
+          retention-days: 3
   git-closure:
     name: Native Cargo Git capture and offline metadata
     runs-on: ubuntu-24.04
