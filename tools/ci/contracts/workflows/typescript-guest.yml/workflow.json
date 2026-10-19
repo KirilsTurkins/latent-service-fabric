@@ -150,6 +150,11 @@
       },
       "workflow_dispatch": {
         "inputs": {
+          "observe-dependency-refusals": {
+            "default": false,
+            "description": "Five current captured compiler refusals using authenticated historical build tools",
+            "type": "boolean"
+          },
           "observe-failed-fetch": {
             "default": false,
             "description": "Replay the authenticated d412 Fetch failure with bounded private frames",
@@ -169,6 +174,7 @@
   },
   "requiredJobs": [
     "boundary",
+    "dependency-refusals",
     "fetch-boundaries",
     "fetch-component",
     "fetch-failure-frames",
@@ -176,7 +182,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Add explicit refusal source and test triggers without removing existing coverage",
+  "reviewReason": "Add default-false explicit five-case compiler-refusal mode to the registered workflow",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

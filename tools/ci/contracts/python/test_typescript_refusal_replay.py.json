@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "FixedRefusalToolInputs.test_member_extracts_only_exact_unique_regular_bounded_name",
+    "FixedRefusalToolInputs.test_network_exception_message_cannot_publish_signed_download_url",
+    "FixedRefusalToolInputs.test_original_receipt_substitution_refuses_before_interpretation",
+    "FixedRefusalToolInputs.test_range_seek_single_read_and_total_bound_refuse_without_network",
+    "FixedRefusalToolInputs.test_scope_is_only_original_two_build_tools_not_host_companions_or_signer",
+    "FixedRefusalToolInputs.test_symlink_member_and_duplicate_fixed_name_are_refused"
+  ],
+  "guards": {
+    "FixedRefusalToolInputs.test_member_extracts_only_exact_unique_regular_bounded_name": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e97f8ccfbac04f0aaac17c4a54c5eab05a9196982d6f59e1596a4da1e1c8cca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedRefusalToolInputs.test_network_exception_message_cannot_publish_signed_download_url": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e97f8ccfbac04f0aaac17c4a54c5eab05a9196982d6f59e1596a4da1e1c8cca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedRefusalToolInputs.test_original_receipt_substitution_refuses_before_interpretation": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e97f8ccfbac04f0aaac17c4a54c5eab05a9196982d6f59e1596a4da1e1c8cca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedRefusalToolInputs.test_range_seek_single_read_and_total_bound_refuse_without_network": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e97f8ccfbac04f0aaac17c4a54c5eab05a9196982d6f59e1596a4da1e1c8cca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedRefusalToolInputs.test_scope_is_only_original_two_build_tools_not_host_companions_or_signer": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e97f8ccfbac04f0aaac17c4a54c5eab05a9196982d6f59e1596a4da1e1c8cca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedRefusalToolInputs.test_symlink_member_and_duplicate_fixed_name_are_refused": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9e97f8ccfbac04f0aaac17c4a54c5eab05a9196982d6f59e1596a4da1e1c8cca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_refusal_replay.py",
+  "reviewReason": "Add six source-only fixed two-tool and ZIP/range identity controls",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

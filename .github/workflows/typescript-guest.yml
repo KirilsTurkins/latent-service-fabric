@@ -128,6 +128,10 @@ on:
       - '.github/workflows/typescript-guest.yml'
   workflow_dispatch:
     inputs:
+      observe-dependency-refusals:
+        description: Five current captured compiler refusals using authenticated historical build tools
+        type: boolean
+        default: false
       observe-failed-fetch:
         description: Replay the authenticated d412 Fetch failure with bounded private frames
         type: boolean
@@ -157,7 +161,7 @@ env:
 
 jobs:
   source-splicer:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.observe-dependency-refusals }}
     name: Source-owned asynchronous import compiler
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -355,7 +359,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   boundary:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.observe-dependency-refusals }}
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -776,3 +780,56 @@ jobs:
             ${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/controls/*.json
           if-no-files-found: warn
           retention-days: 7
+
+  dependency-refusals:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.observe-dependency-refusals && !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}
+    name: Actual captured bundle and snapshot refusals without native rebuild
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      actions: read
+    env:
+      CARGO_BUILD_JOBS: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Test fixed tool retrieval and closed compiler evidence
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_typescript_refusal_replay tools.tests.test_typescript_dependency_refusals -v
+      - name: Retrieve only original authenticated contracts and package tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/replay_typescript_refusal_inputs.py --output "$RUNNER_TEMP/refusal-native-tools"
+      - name: Install the maintained captured compiler boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the unchanged pinned JavaScript compiler packages
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-refusal-tools"
+      - name: Run five actual normal captured compiler refusals
+        run: python3 tools/qualify_typescript_dependency_refusals.py --tools "$RUNNER_TEMP/typescript-refusal-tools" --contracts-tool "$RUNNER_TEMP/refusal-native-tools/capsule_contracts" --packager "$RUNNER_TEMP/refusal-native-tools/package" --output "$RUNNER_TEMP/typescript-dependency-refusals"
+      - name: Retain only fixed public evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-dependency-refusals-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/refusal-native-tools/retrieval.json
+            ${{ runner.temp }}/typescript-dependency-refusals/qualification.json
+            ${{ runner.temp }}/typescript-dependency-refusals/FAILED.json
+            ${{ runner.temp }}/typescript-dependency-refusals/case-*/build/BUILD-FAILED.json
+          if-no-files-found: warn
+          retention-days: 3

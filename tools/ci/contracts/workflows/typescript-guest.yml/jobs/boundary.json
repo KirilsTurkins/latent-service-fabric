@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}",
+    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.observe-dependency-refusals }}",
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -180,7 +180,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Add exact compiler-refusal controls and programme retaining all prior ordered commands and bounds",
+  "reviewReason": "Keep full default job and all commands; dedicated refusal-only mode avoids redundant positive qualification",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

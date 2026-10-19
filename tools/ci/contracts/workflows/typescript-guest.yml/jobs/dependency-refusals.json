@@ -1,0 +1,83 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": 1
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-dependency-refusals && !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries }}",
+    "name": "Actual captured bundle and snapshot refusals without native rebuild",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Test fixed tool retrieval and closed compiler evidence",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_typescript_refusal_replay tools.tests.test_typescript_dependency_refusals -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve only original authenticated contracts and package tools",
+        "run": "python3 tools/replay_typescript_refusal_inputs.py --output \"$RUNNER_TEMP/refusal-native-tools\""
+      },
+      {
+        "name": "Install the maintained captured compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the unchanged pinned JavaScript compiler packages",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-refusal-tools\""
+      },
+      {
+        "name": "Run five actual normal captured compiler refusals",
+        "run": "python3 tools/qualify_typescript_dependency_refusals.py --tools \"$RUNNER_TEMP/typescript-refusal-tools\" --contracts-tool \"$RUNNER_TEMP/refusal-native-tools/capsule_contracts\" --packager \"$RUNNER_TEMP/refusal-native-tools/package\" --output \"$RUNNER_TEMP/typescript-dependency-refusals\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain only fixed public evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-dependency-refusals-${{ github.sha }}",
+          "path": "${{ runner.temp }}/refusal-native-tools/retrieval.json\n${{ runner.temp }}/typescript-dependency-refusals/qualification.json\n${{ runner.temp }}/typescript-dependency-refusals/FAILED.json\n${{ runner.temp }}/typescript-dependency-refusals/case-*/build/BUILD-FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 35
+  },
+  "jobId": "dependency-refusals",
+  "kind": "job",
+  "reviewReason": "Explicit manual-only current compiler refusal mode using two authenticated historical tools",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}
