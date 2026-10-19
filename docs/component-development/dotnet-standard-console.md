@@ -63,7 +63,8 @@ four unchanged companion builds from the ordinary .NET qualification only after
 the prepared source inventory matches its recorded digest and the current .NET
 qualification inputs exactly. It signs
 the five-build release set and retains all original 27 node outcomes before
-adding two missing-log-grant denials, three phase calls and twelve Console outcomes: eight ordinary
+adding two missing-log-grant denials, an independent missing-random-grant denial,
+three phase calls and twelve Console outcomes: eight ordinary
 API/error cases plus trap/fuel and fresh-Store recovery. Each added completed
 activation is followed by the existing physical-owner sample. The fuel case
 uses twice the measured initializer fuel, strictly below the original ceiling;
@@ -81,15 +82,24 @@ eight cases. Only the write phase may consume log bytes. Caught failures return
 closed exception-type labels without messages or stack traces, and still fail
 the original positive result assertion; they cannot qualify a failed case.
 
-Current local evidence comprises eleven Python source/protocol controls and eight
+Current local evidence comprises thirteen Python source/protocol controls and eight
 native reference tests of the actual port against a bounded fake log import.
 The reference does not qualify WASI/BCL lowering or a signed component. The
 [first actual NativeAOT campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39277107487/job/118144257047)
 compiled, signed and admitted the component, but its first initializer call
 trapped before any log write (50,922,019 fuel; 54,132,736 peak memory bytes).
 That result does not identify a cause within resource lookup, formatting or
-Console startup. The additive phase calls and all original Console acceptance
-cases still require successful signed execution.
+Console startup. A subsequent
+[phase campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39286123571/job/118172594415)
+passed the entry-only call, then trapped at the resource-only call with no log
+write; the plain write phase was not reached. The fixture now explicitly declares
+and separately grants the same finite noncrypto entropy port already required by
+the normal CLR embedded-resource qualification for string-hash initialization.
+This does not enable secure random APIs. The existing clock grant is preserved;
+missing LOG is tested while RANDOM is granted, and missing RANDOM is tested while
+CLOCK and LOG are granted, before restoring the exact complete list. The new
+campaign requires 45 total outcomes. Resource and Console acceptance after this
+correction still require successful signed execution.
 Cross-tenant logging, default asynchronous workers, callback cancellation,
 pending remote exporters and the complete six-language #681 matrix remain
 separate acceptance work. This profile adds no scratch filesystem.

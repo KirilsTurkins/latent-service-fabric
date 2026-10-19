@@ -90,6 +90,17 @@ class StandardConsole(unittest.TestCase):
             self.assertEqual(decode_json(files['capsule-project.json'])['limits']['logBytes'], 16384)
             with self.assertRaisesRegex(RuntimeError, 'world-preimage'): fixture.declare(app)
 
+    def test_resource_fixture_declares_existing_noncrypto_port_without_implicit_grants(self):
+        with tempfile.TemporaryDirectory() as owned:
+            app = project.create(Path(owned) / 'greeting', 'greeting')
+            before = (app / 'sdk-lock.json').read_bytes()
+            fixture.declare(app)
+            self.assertIn(runtime.RANDOM.encode(), (app / 'wit/world.wit').read_bytes())
+            self.assertEqual((app / 'wit/deps/random/package.wit').read_bytes(),
+                             (project.ROOT / 'wit/platform/random/package.wit').read_bytes())
+            self.assertEqual((app / 'sdk-lock.json').read_bytes(), before)
+            self.assertNotIn('grants', decode_json((app / 'capsule-project.json').read_bytes()))
+
     def test_outside_packages_keep_exact_transitive_identity_and_resource_bytes(self):
         with tempfile.TemporaryDirectory() as owned:
             feed = Path(owned)
@@ -111,7 +122,8 @@ class StandardConsole(unittest.TestCase):
             with tempfile.TemporaryDirectory() as owned:
                 client = SimpleNamespace(directory=Path(owned), call=Mock())
                 target = {'service': 'examples/my-greeting', 'generation': 3,
-                    'grants': [{'capability': runtime.CLOCK, 'policy': 'clock'}, {'capability': 'extra', 'policy': 'existing'}]}
+                    'grants': [{'capability': runtime.CLOCK, 'policy': 'clock'}, {'capability': runtime.RANDOM, 'policy': 'random'},
+                               {'capability': 'extra', 'policy': 'existing'}]}
                 if not grant_clock: target['grants'].pop(0)
                 node = SimpleNamespace(startup_record={'providers': [{'id': 'log', 'capability': runtime.LOG,
                     'tenant': 'other' if foreign else 'examples', 'service': 'runtime-host',
@@ -122,15 +134,31 @@ class StandardConsole(unittest.TestCase):
                 result = {'invocations': [], 'providerIdle': []}
                 with patch('tools.rust_capsule_node.call', return_value=denied), \
                         patch('tools.rust_capsule_node.provider_idle', return_value={}), \
-                        patch('tools.rust_capsule_node.deploy', return_value={}) as deployed:
+                        patch('tools.rust_capsule_node.deploy', side_effect=[{'generation': 4}, {'generation': 5}, {'generation': 6}]) as deployed:
                     probe.grant(client, node, Path(owned), {'greeting': target}, {'greeting': 'publication'}, result)
                 self.assertEqual(deployed.call_args.kwargs['grants'], [*target['grants'],
                     {'capability': runtime.LOG, 'policy': 'dotnet-console'}])
-                self.assertEqual(len(result['invocations']), 2)
+                self.assertEqual(len(result['invocations']), 3)
+                self.assertEqual(deployed.call_count, 3)
+                self.assertEqual(deployed.call_args_list[1].kwargs['grants'],
+                                 [g for g in [*target['grants'], {'capability': runtime.LOG, 'policy': 'dotnet-console'}]
+                                  if g['capability'] != runtime.RANDOM])
+                self.assertEqual(result['dotnetStandardConsoleAuthority']['randomDenied']['exitCode'], 4)
         observe()
         with self.assertRaisesRegex(RuntimeError, 'preserve-existing-runtime-grants'): observe(grant_clock=False)
         with self.assertRaisesRegex(RuntimeError, 'provider-identity'): observe(foreign=True)
         with self.assertRaisesRegex(RuntimeError, 'missing-grant-before-guest'): observe(denied_fuel=1)
+
+    def test_missing_resource_random_grant_refuses_before_log_policy_mutation(self):
+        with tempfile.TemporaryDirectory() as owned:
+            client = SimpleNamespace(directory=Path(owned), call=Mock())
+            target = {'service': 'examples/my-greeting', 'generation': 3,
+                      'grants': [{'capability': runtime.CLOCK, 'policy': 'clock'}]}
+            with patch('tools.rust_capsule_node.call') as invoked, self.assertRaisesRegex(RuntimeError, 'preserve-existing-runtime-grants'):
+                probe.grant(client, SimpleNamespace(startup_record={}), Path(owned),
+                            {'greeting': target}, {'greeting': 'publication'}, {'invocations': [], 'providerIdle': []})
+            invoked.assert_not_called()
+            client.call.assert_not_called()
 
     def test_all_eight_console_cases_require_charged_logs_and_trap_fuel_physical_recovery(self):
         def observe(*, reaped=True, success_reaped=True, fault_fuel=110_000_000, logged=32, baseline=55_000_000):

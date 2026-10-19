@@ -26,7 +26,8 @@ NATIVE_NAMES = {'latent': 'latent', 'latentd': 'latentd', 'package': 'examples/p
     'capsule_contracts': 'examples/capsule_contracts', 'capsule_authoring': 'examples/capsule_authoring'}
 HELPERS = ('tools/dotnet_standard_console_fixture.py', 'tools/dotnet_standard_console_probe.py',
     'tools/qualify_dotnet_standard_console.py', 'tools/run_rust_capsule_workflow.py',
-    'tools/dotnet_dependency_authoring.py', 'tools/dotnet_application_dependencies.py')
+    'tools/dotnet_dependency_authoring.py', 'tools/dotnet_application_dependencies.py',
+    'tools/dotnet_guest/entropy_grants.py')
 
 
 def inherited(native_qualification: Path):
@@ -98,16 +99,17 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         commands.run('demo-sign', binaries['capsule_authoring'], 'demo-sign', output / 'releases', *builds)
         stage = 'signed-node'
         observed = run(binaries['latent'], binaries['latentd'], output / 'releases', output / 'node',
-                       language='dotnet', dotnet_standard_logging=True)
+                       language='dotnet', noncrypto_entropy=True, dotnet_standard_logging=True)
         require(observed['status'] == 'passed' and len(observed['dotnetStandardConsoleCases']) == len(CASES)
                 and len(observed['dotnetStandardConsolePhases']) == len(PHASES)
-                and len(observed['invocations']) == 44
+                and len(observed['invocations']) == 45
                 and len(observed['dotnetStandardConsoleRecovery']) == 2
                 and observed['nodeShutdown']['reaped'] and observed['nodeShutdown']['record']['clean'],
                 'dotnet-Console-original-and-new-signed-gates-required')
         # Keep the public result bounded and exclude private node configuration.
         fields = ('schemaVersion', 'status', 'scope', 'limits', 'invocations', 'samples', 'providerIdle',
                   'dotnetStandardConsoleAuthority', 'dotnetStandardConsolePhases',
+                  'noncryptoEntropyGrantDenied', 'noncryptoEntropyAuthority',
                   'dotnetStandardConsoleCases', 'dotnetStandardConsoleRecovery',
                   'nodeShutdown', 'peerShutdown', 'cliCalls')
         write_json(output / 'node/public-workflow.json', {name: observed[name] for name in fields})

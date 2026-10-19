@@ -142,6 +142,11 @@ def declare(project: Path) -> None:
     path = project / 'wit/world.wit'
     before = path.read_text(encoding='utf-8')
     require(before.count('world service {') == 1 and LOG not in before, 'dotnet-Console-world-preimage')
+    # CLR embedded-resource lookup initializes its existing noncrypto hash seed.
+    # Declare the same finite port as the normal resource qualification; no grant.
+    from tools.dotnet_guest.entropy_grants import declare as declare_entropy
+    declare_entropy(project)
+    before = path.read_text(encoding='utf-8')
     path.write_text(before.replace('world service {', 'world service {\n    import ' + LOG + ';'),
                     encoding='utf-8', newline='\n')
     for name, data in snapshot(ROOT / 'wit/platform/log').items():

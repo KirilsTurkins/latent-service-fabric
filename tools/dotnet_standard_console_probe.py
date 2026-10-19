@@ -1,5 +1,5 @@
 """Explicit log admission and synchronous ordinary Console lifecycle controls."""
-from tools.dotnet_guest.runtime import CLOCK, LOG
+from tools.dotnet_guest.runtime import CLOCK, LOG, RANDOM
 from tools.dotnet_standard_console_fixture import CASES, EXPECTED, PHASES, PHASE_EXPECTED
 from tools.phase2_operator_process import require, write_json
 
@@ -17,7 +17,7 @@ def configure(settings):
 def grant(client, node, fixture, targets, publications, result):
     from tools.rust_capsule_node import call, deploy, provider_idle
     target = targets['greeting']
-    require(CLOCK in {row['capability'] for row in target['grants']}
+    require({CLOCK, RANDOM} <= {row['capability'] for row in target['grants']}
             and LOG not in {row['capability'] for row in target['grants']},
             'dotnet-console-preserve-existing-runtime-grants')
     denied = []
@@ -53,8 +53,23 @@ def grant(client, node, fixture, targets, publications, result):
                 '--operation-id', 'grant-dotnet-console', '--expected-generation', '0')
     selected = deploy(client, fixture / 'my-greeting/deployment.json', publications['greeting'],
         generation=str(target['generation']), grants=[*target['grants'], {'capability': LOG, 'policy': 'dotnet-console'}])
-    targets['greeting'] = selected
-    result['dotnetStandardConsoleAuthority'] = {'denied': denied, 'provider': descriptor,
+    # Isolate missing RANDOM after LOG is installed, preserving CLOCK and LOG.
+    grants = [*target['grants'], {'capability': LOG, 'policy': 'dotnet-console'}]
+    restricted = [row for row in grants if row['capability'] != RANDOM]
+    require(len(restricted) == len(grants) - 1 and {CLOCK, LOG} <= {g['capability'] for g in restricted},
+            'dotnet-console-random-denial-preserves-other-grants')
+    missing_random = deploy(client, fixture / 'my-greeting/deployment.json', publications['greeting'],
+        generation=str(selected['generation']), grants=restricted)
+    row = call(client, missing_random, 'greeting', 'greet', ['console-phase:resource'], 'dotnet-console-random-denied')
+    result['invocations'].append(row)
+    from tools.c_standard_facilities_probe import require_denied_before_guest
+    require(row['processReaped'] and row['response']['data']['consumption']['effectCount'] == 0,
+            'dotnet-console-random-denial-process-or-effects')
+    require_denied_before_guest(row)
+    result['providerIdle'].append(provider_idle(client))
+    targets['greeting'] = deploy(client, fixture / 'my-greeting/deployment.json', publications['greeting'],
+        generation=str(missing_random['generation']), grants=grants)
+    result['dotnetStandardConsoleAuthority'] = {'denied': denied, 'randomDenied': row, 'provider': descriptor,
         'policy': specification, 'preservedGrants': target['grants']}
 
 
