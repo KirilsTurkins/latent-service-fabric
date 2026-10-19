@@ -6,6 +6,11 @@
 #![cfg(target_arch = "wasm32")]
 #![forbid(unsafe_code)]
 
+// The explicit compiler profile links the fixed std PAL bridge. No application
+// callback is registered and no import declaration becomes a provider/grant.
+#[cfg(feature = "standard-logging")]
+extern crate latent_standard_stdio as _;
+
 pub mod bindings;
 pub mod blob;
 pub mod http;

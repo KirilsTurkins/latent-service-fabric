@@ -19,6 +19,15 @@ on:
       - 'tools/typescript*dependencies.py'
       - 'tools/typescript_dependency_authoring.py'
       - 'tools/npm_lock_authoring.py'
+      - 'tools/typescript_generator_authoring.py'
+      - 'tools/typescript_generator_fixture.py'
+      - 'tools/tests/test_typescript_generator_authoring.py'
+      - 'tools/tests/test_typescript_generator_fixture.py'
+      - 'tools/typescript_registry_tls.py'
+      - 'tools/npm_private_registry_fixture.py'
+      - 'tools/qualify_npm_private_dependencies.py'
+      - 'tools/tests/test_typescript_registry_tls.py'
+      - 'tools/tests/test_npm_private_registry.py'
       - 'tools/tests/test_typescript_dependency_authoring.py'
       - 'tools/tests/test_npm_lock_authoring.py'
       - 'tools/guest_authoring_frontend.py'
@@ -69,6 +78,15 @@ on:
       - 'tools/typescript*dependencies.py'
       - 'tools/typescript_dependency_authoring.py'
       - 'tools/npm_lock_authoring.py'
+      - 'tools/typescript_generator_authoring.py'
+      - 'tools/typescript_generator_fixture.py'
+      - 'tools/tests/test_typescript_generator_authoring.py'
+      - 'tools/tests/test_typescript_generator_fixture.py'
+      - 'tools/typescript_registry_tls.py'
+      - 'tools/npm_private_registry_fixture.py'
+      - 'tools/qualify_npm_private_dependencies.py'
+      - 'tools/tests/test_typescript_registry_tls.py'
+      - 'tools/tests/test_npm_private_registry.py'
       - 'tools/tests/test_typescript_dependency_authoring.py'
       - 'tools/tests/test_npm_lock_authoring.py'
       - 'tools/guest_authoring_frontend.py'
@@ -374,6 +392,8 @@ jobs:
       - name: Install the reviewed JavaScript compiler inputs
         run: |
           python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
+      - name: Test the explicit strict console and activation module initialization
+        run: LSF_TYPESCRIPT_FRONTEND="$RUNNER_TEMP/typescript-guest-tools" python3 -m unittest tools.tests.test_typescript_console -v
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
@@ -410,19 +430,25 @@ jobs:
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_typescript_application_dependencies tools.tests.test_captured_compiler_isolation
       - name: Qualify captured projects, all SDK owners, enforced node and printed guide
         run: |
-          python3 tools/qualify_typescript_capsules.py --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
+          python3 tools/qualify_typescript_capsules.py --standard-console --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Test controlled native npm lock authoring
         run: python3 -m unittest tools.tests.test_npm_lock_authoring
       - name: Test reviewed npm lifecycle and selected frontend
         run: |
           python3 -m unittest tools.tests.test_typescript_dependency_authoring tools.tests.test_guest_authoring_frontend
+      - name: Test exact approved TypeScript generator containment and signed probes
+        run: LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_typescript_generator_authoring tools.tests.test_typescript_generator_fixture
       - name: Qualify captured npm libraries and resource lookups
         run: |
-          python3 tools/qualify_typescript_capsules.py --application-dependencies --output "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools"
+          python3 tools/qualify_typescript_capsules.py --application-dependencies --approved-generator --output "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Rebuild the verified npm closure and test library integrity and fresh state
         run: |
           python3 tools/qualify_typescript_dependencies.py --resolve-only --output "$RUNNER_TEMP/typescript-library-integrity"
           python3 tools/qualify_typescript_dependencies.py --offline --output "$RUNNER_TEMP/typescript-library-integrity" --tools "$RUNNER_TEMP/typescript-guest-tools" --prepared-qualification "$RUNNER_TEMP/typescript-capsule-dependencies"
+      - name: Test explicit registry trust and private campaign controls
+        run: python3 -m unittest tools.tests.test_typescript_registry_tls tools.tests.test_npm_private_registry
+      - name: Qualify authenticated npm lifecycle with original native products
+        run: python3 tools/qualify_npm_private_dependencies.py --native-qualification "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools" --output "$RUNNER_TEMP/npm-private-dependencies"
       - name: Validate explicit TypeScript runtime selection and preserved public contracts
         run: |
           python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools tools.tests.test_typescript_runtime_materials tools.tests.test_typescript_runtime_bundle tools.tests.test_typescript_text_codec_source tools.tests.test_typescript_async_waiters tools.tests.test_typescript_runtime_packaging
@@ -466,6 +492,20 @@ jobs:
             ${{ runner.temp }}/typescript-guest-probe/
             ${{ runner.temp }}/typescript-capsule-authoring/
             ${{ runner.temp }}/typescript-capsule-dependencies/
+            ${{ runner.temp }}/typescript-capsule-dependencies/outside-project-generator/GENERATOR-COMPLETE.json
+            ${{ runner.temp }}/typescript-capsule-dependencies/projects/greeting/typescript-generated-inputs.json
+            ${{ runner.temp }}/typescript-capsule-dependencies/projects/greeting/src/generated/**
+            ${{ runner.temp }}/npm-private-dependencies/capture.json
+            ${{ runner.temp }}/npm-private-dependencies/qualification.json
+            ${{ runner.temp }}/npm-private-dependencies/FAILED.json
+            ${{ runner.temp }}/npm-private-dependencies/logs/**
+            ${{ runner.temp }}/npm-private-dependencies/build-*/*.json
+            ${{ runner.temp }}/npm-private-dependencies/build-*/component.wasm
+            ${{ runner.temp }}/npm-private-dependencies/build-*/logs/**
+            ${{ runner.temp }}/npm-private-dependencies/offline-rebuild/*.json
+            ${{ runner.temp }}/npm-private-dependencies/offline-rebuild/component.wasm
+            ${{ runner.temp }}/npm-private-dependencies/node-*/workflow.json
+            ${{ runner.temp }}/npm-private-dependencies/node-*/FAILED.json
             ${{ runner.temp }}/typescript-library-integrity/capture.json
             ${{ runner.temp }}/typescript-library-integrity/qualification.json
             ${{ runner.temp }}/typescript-library-integrity/FAILED.json

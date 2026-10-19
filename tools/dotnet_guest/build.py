@@ -35,7 +35,7 @@ RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dot
     "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_store.py', 'tools/application_dependency_tools.py',
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
-           'tools/dotnet_application_dependencies.py', 'tools/dotnet_dependency_authoring.py')
+           'tools/dotnet_application_dependencies.py', 'tools/dotnet_dependency_authoring.py', 'tools/dotnet_registry_tls.py')
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
