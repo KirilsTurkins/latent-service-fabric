@@ -88,7 +88,7 @@ those mechanisms.
 
 This buffered candidate is not a browser or Node environment. Non-null `.body`
 stream access, Blob/FormData bodies, stream readers, tee, streaming uploads,
-`getSetCookie`, `Response.error` and `Response.redirect` reject explicitly.
+and `getSetCookie` reject explicitly.
 Fetch resolves after complete buffering, so it does not expose header-first
 resolution or network backpressure to application readers. The typed contract
 has no HTTP reason phrase: fetched `statusText` throws a technical unsupported
@@ -216,3 +216,42 @@ values nonnegatively. Node 24.19.0 differs on those two edge cases, so no Node
 parity is claimed for them. Source/mock controls do not establish signed engine,
 component/provider, unchanged-library/private-consumer or lifecycle/cleanup
 qualification; those #691 requirements remain open.
+## Prepared signed-provider runner
+
+`tools/qualify_typescript_fetch_runtime.py` adds a finite execution attempt after
+the actual construction gate. It uses the normal outside-checkout TypeScript
+project, normal package/build observation, explicit demo signing and enforced
+node admission. The hosted lane consumes the same run's source-owned engine and
+splicer and the exact five native products already built by the maintained
+TypeScript boundary job. It does not build another engine or node. Downloaded
+native products must match that successful qualification's complete current
+source capture and binary identities; the separate ordinary-tuple CLI path
+retains its existing feature/ABI/version checks.
+
+The new fixture uses ordinary automatically installed globals in both direct
+and transitive modules. Pure `Headers`/`Response` initialization stays in the
+snapshot; `Request` and its native signal graph are constructed during the
+invocation. A real async export checks entry, GET JSON, HTTP 404 as a response,
+one-shot buffered `json()` consumption and a fresh per-activation counter.
+Missing runtime and HTTP grants must refuse before execution with no outbound,
+child or mutation effects. The peer must observe exactly three authorized GETs,
+and every completed control must leave the observed topology, cleanup slots and
+all 18 physical provider counters idle before clean node/peer reaping.
+
+The fixture keeps the existing TypeScript 1,000,000,000-fuel / 128-MiB /
+120-second invocation budget and one outbound request. Its private provider
+allows only the exact primary origin and GET `/conformance/json` and
+`/conformance/status/404`, with 8-KiB responses, 4-KiB chunks and two outstanding
+chunks. Activation owner ceilings match the maintained TypeScript local-service
+experiment (16 tasks, 2 executors, 16 queued work, 8 waits/timers/results and
+64 native owners). These are finite experimental limits, not new platform
+defaults or native allocator/kernel upper-bound evidence.
+
+The runner is prepared source, not a signed qualification result. Its local
+controls exercise the actual JavaScript adapter and bounded real peer plus
+failure/evidence predicates; they do not execute a Wasm component. Until the
+hosted signed job passes, emitted exports, provider execution and retirement
+remain unqualified. Even a passing finite run does not qualify two unchanged
+published clients, a private consumer, top-level `Request`, streaming/tee,
+Abort/timeout races, reaction/timer/memory limits or cross-tenant reuse. The
+engine metadata remains `unknown` / `not-evaluated`; #691 remains open.

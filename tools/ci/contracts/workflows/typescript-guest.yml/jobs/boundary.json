@@ -130,6 +130,16 @@
         "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools tools.tests.test_typescript_runtime_materials tools.tests.test_typescript_runtime_bundle tools.tests.test_typescript_text_codec_source tools.tests.test_typescript_async_waiters tools.tests.test_typescript_runtime_packaging\n"
       },
       {
+        "name": "Freeze exact-source existing native products for signed Fetch",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "typescript-fetch-native-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-capsule-dependencies/qualification.json\n${{ runner.temp }}/typescript-capsule-dependencies/source-inputs.json\n${{ runner.temp }}/typescript-capsule-dependencies/source-inputs-after.json\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/latent\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/latentd\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/examples-capsule_contracts\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/examples-package\n${{ runner.temp }}/typescript-capsule-dependencies/native-binaries/examples-capsule_authoring\n",
+          "retention-days": 7
+        }
+      },
+      {
         "if": "always()",
         "name": "Preserve attempted runtime test evidence",
         "uses": "actions/upload-artifact",
@@ -145,7 +155,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Preserve every merged integrity and original boundary command, artifact path and75-minute budget; add normal native npm lock authoring control.",
+  "reviewReason": "Add a finite signed default-Fetch/provider runner using exact existing same-run native and source-owned engine inputs, strict ordinary build evidence and one-shot body/retirement controls; no full ticket claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

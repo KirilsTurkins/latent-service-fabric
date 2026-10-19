@@ -1,0 +1,10 @@
+package examples:typescript-fetch@1.0.0;
+
+interface api {
+    run: async func(mode: u32, url: string) -> string;
+}
+
+world service {
+    import latent:http/streaming@0.3.0;
+    export api;
+}

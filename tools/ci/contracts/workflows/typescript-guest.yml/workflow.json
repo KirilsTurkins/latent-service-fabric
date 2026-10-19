@@ -52,6 +52,8 @@
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
+          "tools/qualify_typescript_fetch_runtime.py",
+          "tools/tests/test_typescript_fetch_runtime.py",
           "tools/tests/test_typescript_application_dependencies.py",
           "tools/*rust_capsule*.py",
           "crates/latent-wasmtime/tests/**",
@@ -106,6 +108,8 @@
           "tools/qualify_typescript_dependencies.py",
           "tools/qualify_typescript_fetch_component.py",
           "tools/tests/test_typescript_fetch_component.py",
+          "tools/qualify_typescript_fetch_runtime.py",
+          "tools/tests/test_typescript_fetch_runtime.py",
           "tools/tests/test_typescript_application_dependencies.py",
           "tools/*rust_capsule*.py",
           "crates/latent-wasmtime/tests/**",
@@ -131,10 +135,11 @@
   "requiredJobs": [
     "boundary",
     "fetch-component",
+    "fetch-runtime",
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Build an actual Fetch-selected async-import component from same-run source-owned engine and splicer without inferring signed/provider execution.",
+  "reviewReason": "Add a finite signed default-Fetch/provider runner using exact existing same-run native and source-owned engine inputs, strict ordinary build evidence and one-shot body/retirement controls; no full ticket claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
