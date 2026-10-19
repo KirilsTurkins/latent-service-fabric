@@ -139,3 +139,23 @@ selection, acquisition commands and failed attempts are retained under the same
 3600 second enclosing qualification deadline. Five boundary controls cover
 explicit/default selection, acquisition failure, expired deadlines and an
 incomplete explicit cache. The corrected hosted native run remains pending.
+
+## Nullable response-message metadata
+
+The typed streaming provider supplies the actual numeric status, headers, media
+type and body, but it does not export a reason phrase. `getResponseMessage()`
+therefore completes the normal response operation and returns `null` for the
+unavailable optional message. It propagates the original transport, policy and
+closed-state errors; `null` never replaces a failed operation. No status-derived
+phrase, HTTP version or raw status line is invented. The source-bound profile
+records this metadata absence explicitly.
+
+This follows the nullable result in the [JDK API contract](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/HttpURLConnection.html#getResponseMessage())
+and the [OpenJDK 25 implementation](https://github.com/openjdk/jdk/blob/jdk-25%2B36/src/java.base/share/classes/java/net/HttpURLConnection.java#L528).
+Separate nonzero connect/read phase timeouts remain unsupported and refuse before
+opening a provider operation; the original provider deadline remains in force.
+
+A bounded installed-JDK reference and six SDK-source controls check nullable
+metadata without losing a valid status, replaying a request, reading a body early,
+dropping a live body, suppressing an uncertain completion or admitting unsupported
+timeouts. They are source/model evidence, not signed component qualification.

@@ -24,7 +24,8 @@ def profile(sdk: Path, recipe_inputs: bytes, source_inputs: bytes, component: by
         "componentDigest": digest(component), "inputs": json.loads(inputs),
         "boundary": "standard-url-default-handler-to-latent-http-streaming-0.3.0",
         "qualification": "pending", "schemes": ["http"],
+        "responseMetadata": {"reasonPhrase": "not-supplied-by-typed-provider", "unavailableMessage": None},
         "limits": {"requestBodyBytes": 262144, "responseBodyBytes": 262144, "chunkBytes": 4096},
         "unsupported": ["https-standard-type", "separate-phase-timeouts", "automatic-redirects",
-            "explicit-chunk-framing", "status-line-and-reason-phrase", "indexed-response-headers",
+            "explicit-chunk-framing", "raw-status-line", "wire-reason-phrase", "indexed-response-headers",
             "proxy-transport", "socket-address-resolution"]})
