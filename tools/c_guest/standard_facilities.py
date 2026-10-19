@@ -24,6 +24,49 @@ def selected_profile(project, graph=None):
     return profile
 
 
+def code_view(text: str) -> str:
+    """Mask comments/literals at equal offsets; the WIT parser remains authoritative."""
+    visible, position = list(text), 0
+    while position < len(text):
+        if text.startswith('//', position):
+            end = text.find('\n', position + 2)
+            if end == -1:
+                end = len(text)
+        elif text.startswith('/*', position):
+            end, depth = position + 2, 1
+            while end < len(text) and depth:
+                if text.startswith('/*', end):
+                    depth += 1
+                    end += 2
+                elif text.startswith('*/', end):
+                    depth -= 1
+                    end += 2
+                else:
+                    end += 1
+            if depth:
+                raise ValueError('c-runtime-profile-unterminated-wit-comment')
+        elif text[position] == '"':
+            end = position + 1
+            while end < len(text):
+                if text[end] == '\\':
+                    end += 2
+                elif text[end] == '"':
+                    end += 1
+                    break
+                else:
+                    end += 1
+            else:
+                raise ValueError('c-runtime-profile-unterminated-wit-string')
+        else:
+            position += 1
+            continue
+        for offset in range(position, end):
+            if text[offset] not in '\r\n':
+                visible[offset] = ' '
+        position = end
+    return ''.join(visible)
+
+
 def stage(source: Path, world: str, destination: Path, platform: Path, *, profile=PROFILE) -> Path:
     selected_profile({'runtimeProfile': profile})
     if profile not in PROFILE_IMPORTS:
@@ -38,13 +81,14 @@ def stage(source: Path, world: str, destination: Path, platform: Path, *, profil
     if not re.fullmatch('[a-z][a-z0-9-]*', leaf):
         raise ValueError('c-runtime-profile-world-name-unsupported')
     pattern = re.compile(r'\bworld\s+' + re.escape(leaf) + r'\s*\{')
-    matches = [(path, match) for path in sorted(source.glob('*.wit'))
-               for match in pattern.finditer(path.read_text(encoding='utf-8'))]
+    texts = {path: path.read_text(encoding='utf-8') for path in sorted(source.glob('*.wit'))}
+    visible = {path: code_view(text) for path, text in texts.items()}
+    matches = [(path, match) for path, text in visible.items() for match in pattern.finditer(text)]
     if len(matches) != 1:
         raise ValueError('c-runtime-profile-requires-one-selected-world-declaration')
     path, match = matches[0]
-    text = path.read_text(encoding='utf-8')
-    if any(re.search(r'\bimport\s+' + re.escape(name) + r'\s*;', text) for name in imports):
+    text = texts[path]
+    if any(re.search(r'\bimport\s+' + re.escape(name) + r'\s*;', visible[path]) for name in imports):
         raise ValueError('c-runtime-profile-imports-must-be-owned-by-profile')
     if destination.exists():
         raise ValueError('c-runtime-profile-requires-fresh-derived-wit')
