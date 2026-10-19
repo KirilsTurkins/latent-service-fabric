@@ -112,7 +112,7 @@ jobs:
           python3 tools/c_dependency_controls.py --project "$RUNNER_TEMP/c-application-library/projects/greeting" --output "$RUNNER_TEMP/c-dependency-controls"
       - name: Retain compiler and ownership results including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: c-guest-ownership-${{ github.run_id }}
           path: |
@@ -212,7 +212,7 @@ jobs:
           python3 tools/qualify_c_standard_facilities.py --standard-logging --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-logging"
       - name: Retain bounded C standard runtime proof including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: c-standard-facilities-${{ github.run_id }}
           path: |

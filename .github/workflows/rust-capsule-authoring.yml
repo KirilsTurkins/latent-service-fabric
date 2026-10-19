@@ -123,7 +123,7 @@ jobs:
           python3 tools/qualify_owned_native_threads.py --transformer "$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform" --wasm-tools "$(command -v wasm-tools)" --cargo-inventory "$RUNNER_TEMP/owned-native-child-native.json" --native-target "$GITHUB_WORKSPACE/target" --output "$RUNNER_TEMP/owned-native-children"
       - name: Retain bounded standard clock evidence including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rust-standard-clocks-${{ github.run_id }}
           path: |
@@ -186,7 +186,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-git-components"
       - name: Retain bounded Git component qualification observations including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rust-git-components-${{ github.sha }}
           path: |
@@ -228,7 +228,7 @@ jobs:
           python3 tools/qualify_rust_git_dependencies.py --cargo "$(rustup which --toolchain 1.97.1 cargo)" --output "$RUNNER_TEMP/rust-git-closure"
       - name: Retain source and offline Git observations including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rust-git-closure-${{ github.sha }}
           path: |
@@ -343,7 +343,7 @@ jobs:
           cargo test --locked -p latent-signing --test guest_provenance
       - name: Retain source-bound authoring evidence including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
@@ -418,7 +418,7 @@ jobs:
           --prepared-qualification "$RUNNER_TEMP/rust-capsule-dependencies"
           --output "$RUNNER_TEMP/rust-git-prepared"
       - name: Retain identity-checked public Git qualification prerequisites
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rust-git-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/rust-git-prepared/

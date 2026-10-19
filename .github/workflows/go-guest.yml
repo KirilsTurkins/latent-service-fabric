@@ -182,7 +182,7 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/go-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/go-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: go-guest-command-contract-${{ github.sha }}
           path: |
@@ -232,7 +232,7 @@ jobs:
           out="$RUNNER_TEMP/go-guest-tools"
           cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"
           sha256sum "$out/componentize-go" "$out/wasm-tools" > "$out/tools.sha256"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: go-guest-tools-${{ github.sha }}
           path: |
@@ -334,7 +334,7 @@ jobs:
         run: python3 tools/diagnose_go_entry_frames.py --diagnostic "$RUNNER_TEMP/go-entry-differential" --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-entry-private-frames"
       - name: Retain successful and failed upstream observations
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |

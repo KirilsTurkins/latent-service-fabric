@@ -118,7 +118,7 @@ jobs:
       - name: Retain CI contract diagnostics even on validation failure
         id: contract_evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-contracts-${{ github.sha }}
           path: target/ci/observed-inventory.json
@@ -165,7 +165,7 @@ jobs:
           python3 tools/ci_fast.py --packages-json "$packages" --output "$RUNNER_TEMP/ci-fast/narrow"
       - name: Retain exact host dependency, discovery and timing receipts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-host-correctness-${{ github.sha }}
           path: ${{ runner.temp }}/ci-fast/
@@ -313,7 +313,7 @@ jobs:
           python3 tools/test.py run --suite selection.metadata-working-set --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci 2>&1 | tee "$RUNNER_TEMP/metadata-working-set.log"
       - name: Retain metadata working-set inputs and publication/apply/reopen costs
         if: always() && matrix.lane == 'qualification' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: metadata-working-set-observations-${{ matrix.lane }}
           path: ${{ runner.temp }}/metadata-working-set.log
@@ -328,7 +328,7 @@ jobs:
           python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
       - name: Retain the bounded Phase 3 security receipt
         if: always() && matrix.lane == 'qualification'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase3-security-pr-${{ github.sha }}-${{ matrix.lane }}
           path: target/phase3-security/pr-receipt.json
@@ -367,7 +367,7 @@ jobs:
           python3 tools/build_s3_fixture.py --output "$RUNNER_TEMP/s3-fixture"
       - name: Retain source-built S3 fixture and failure evidence
         if: always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: source-built-s3-fixture-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -392,7 +392,7 @@ jobs:
           python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --lane "$CI_NATIVE_LANE" --output "$RUNNER_TEMP/ci-lanes"
       - name: Retain bounded CI lane timing and completion receipts
         if: always() && (matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')) && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-integration-lanes-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/ci-lanes/
@@ -400,7 +400,7 @@ jobs:
           retention-days: 14
       - name: Retain bounded browser boundary observations
         if: always() && (matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true' && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: browser-boundary-observations-${{ matrix.lane }}
           path: |
@@ -552,7 +552,7 @@ jobs:
           python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always() && (matrix.lane == 'publications' || matrix.lane == 'angular-t1')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase-2-gate-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/phase2-gate/*.json
@@ -585,7 +585,7 @@ jobs:
           python3 tools/run_phase3_resource_acceptance.py --revision "$GITHUB_SHA" --output "$RUNNER_TEMP/phase3-resource-matrix" --guest-capsules "$PWD/target/phase3-resource-guests" --angular-build "$RUNNER_TEMP/angular-build/actual" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --host-condition shared-github-runner
       - name: Retain immutable Phase 3 resource attempts
         if: matrix.lane == 'angular-t1' && always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase3-resource-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -596,7 +596,7 @@ jobs:
 
       - name: Retain the opt-in dependency-cache identity
         if: always() && steps.cargo-cache-identity.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cargo-dependency-cache-identity-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/lsf-cargo-cache-identity.json
@@ -604,7 +604,7 @@ jobs:
           retention-days: 7
       - name: Retain exact workspace test discovery and custom-harness execution
         if: always() && matrix.lane == 'tests'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-runtime-discovery-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -617,7 +617,7 @@ jobs:
 
       - name: Retain attempted renderer ownership diagnostics
         if: always() && (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: owned-renderer-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -689,7 +689,7 @@ jobs:
 
       - name: Retain attempted registry ownership diagnostics
         if: always() && steps.oci_preflight.outcome != '' && steps.oci_preflight.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: owned-oci-${{ github.sha }}
           path: |
@@ -737,7 +737,7 @@ jobs:
           cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log
       - name: Retain catalog acceptance evidence
         if: always() && github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: catalog-scale-${{ github.sha }}
           path: |
@@ -781,7 +781,7 @@ jobs:
         run: python3 tools/ci_fast.py --msrv --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast-msrv"
       - name: Retain narrow MSRV timing evidence
         if: always() && needs.profile.outputs.profile == 'fast'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-host-msrv-${{ github.sha }}
           path: ${{ runner.temp }}/ci-fast-msrv/
@@ -869,7 +869,7 @@ jobs:
         run: tools/validate_contracts.sh "$CI_CONTRACT_LANE"
       - name: Pass bounded observed build inputs to registry verification
         if: matrix.lane == 'runtime'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase-2-observed-echo-${{ github.sha }}
           path: target/capsules/echo-provenance/
@@ -877,7 +877,7 @@ jobs:
           retention-days: 1
       - name: Pass the bounded public web component to registry verification
         if: matrix.lane == 'runtime'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase-3-web-contract-${{ github.sha }}
           path: target/capsules/web-contract/component.wasm
@@ -885,7 +885,7 @@ jobs:
           retention-days: 1
       - name: Retain bounded conformance and provider diagnostics
         if: always() && (matrix.lane == 'standalone' || matrix.lane == 'sdk-provider')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase-1-bounded-conformance-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -896,7 +896,7 @@ jobs:
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics
         if: always() && matrix.lane == 'measurements'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase-1-measurement-smoke-${{ github.sha }}
           path: target/phase1-measurements/
@@ -911,7 +911,7 @@ jobs:
           python3 tools/run_optimization_benchmarks.py --profile smoke
       - name: Retain optimization benchmark smoke evidence
         if: always() && matrix.lane == 'optimization'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase-1-optimization-smoke-${{ github.sha }}
           path: target/optimization-benchmarks/
@@ -924,7 +924,7 @@ jobs:
           cat target/capsules/echo/sha256.txt
       - name: Upload echo capsule build evidence
         if: matrix.lane == 'runtime'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase-0-echo-capsule-${{ github.sha }}
           path: |
@@ -1029,7 +1029,7 @@ jobs:
           python3 -m unittest tools.tests.test_transaction_client_models
       - name: Retain Java SDK qualification diagnostics
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: java-sdk-qualification-${{ github.sha }}
           path: ${{ runner.temp }}/java-sdk/
