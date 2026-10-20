@@ -76,7 +76,77 @@ internal static class TaskWait
         module.GetTypes().SelectMany(type => type.Methods.Select((method, index) =>
             new { key = type.FullName + "#" + index, method })).ToDictionary(item => item.key, item => item.method);
 
-    internal static int Run(string[] args)
+    private static MethodDefinition FiniteWait(ModuleDefinition module, TypeDefinition loop,
+        TypeDefinition task, MethodDefinition infinite, MethodDefinition completed)
+    {
+        var token = module.Types.Single(type => type.FullName == "System.Threading.CancellationToken");
+        var source = module.Types.Single(type => type.FullName == "System.Threading.CancellationTokenSource");
+        var linked = source.Methods.Single(method => method.Name == "CreateLinkedTokenSource" &&
+            method.Parameters.Count == 1 && method.Parameters[0].ParameterType.FullName == token.FullName);
+        var getToken = source.Methods.Single(method => method.Name == "get_Token");
+        var cancel = source.Methods.Single(method => method.Name == "Cancel" && method.Parameters.Count == 0);
+        var dispose = source.Methods.Single(method => method.Name == "Dispose" && method.Parameters.Count == 0);
+        var throwCancelled = token.Methods.Single(method => method.Name == "ThrowIfCancellationRequested");
+        var delay = task.Methods.Single(method => method.Name == "Delay" && method.Parameters.Count == 2 &&
+            method.Parameters[0].ParameterType.MetadataType == MetadataType.Int32 &&
+            method.Parameters[1].ParameterType.FullName == token.FullName);
+        var whenAny = task.Methods.Single(method => method.Name == "WhenAny" && !method.HasGenericParameters &&
+            method.Parameters.Count == 2 && method.Parameters.All(parameter => parameter.ParameterType.FullName == task.FullName));
+        var method = new MethodDefinition("LsfWaitForActualTaskOrTimeout", MethodAttributes.Private |
+            MethodAttributes.Static | MethodAttributes.HideBySig, module.TypeSystem.Boolean);
+        Require(!loop.Methods.Any(candidate => candidate.Name == method.Name));
+        method.Parameters.Add(new ParameterDefinition(task));
+        method.Parameters.Add(new ParameterDefinition(module.TypeSystem.Int32));
+        method.Parameters.Add(new ParameterDefinition(token));
+        method.Body.InitLocals = true;
+        method.Body.MaxStackSize = 3;
+        var owned = new VariableDefinition(source);
+        var result = new VariableDefinition(module.TypeSystem.Boolean);
+        method.Body.Variables.Add(owned); method.Body.Variables.Add(result);
+        var il = method.Body.GetILProcessor();
+        var incomplete = il.Create(OpCodes.Ldarg_1);
+        var nonzero = il.Create(OpCodes.Ldarga, method.Parameters[2]);
+        var body = il.Create(OpCodes.Ldarg_0);
+        var expired = il.Create(OpCodes.Ldarga, method.Parameters[2]);
+        var cleanup = il.Create(OpCodes.Ldloc, owned);
+        var disposeOwned = il.Create(OpCodes.Ldloc, owned);
+        var cleanupEnd = il.Create(OpCodes.Endfinally);
+        var done = il.Create(OpCodes.Ldloc, result);
+        // Public Task.Wait keeps its original timeout validation and completed
+        // success/fault/cancel handling. A zero-time query admits no timer/work.
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Callvirt, completed);
+        il.Emit(OpCodes.Brfalse, incomplete); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Ret);
+        il.Append(incomplete); il.Emit(OpCodes.Brtrue, nonzero);
+        il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Ret);
+        il.Append(nonzero); il.Emit(OpCodes.Call, throwCancelled);
+        il.Emit(OpCodes.Ldarg_2); il.Emit(OpCodes.Call, linked); il.Emit(OpCodes.Stloc, owned);
+        il.Append(body);
+        il.Emit(OpCodes.Ldarg_1); il.Emit(OpCodes.Ldloc, owned); il.Emit(OpCodes.Callvirt, getToken);
+        il.Emit(OpCodes.Call, delay); il.Emit(OpCodes.Call, whenAny);
+        // The unchanged stackful helper pumps the original queue until the real
+        // WhenAny task completes, retaining its depth/context/main-task fences.
+        il.Emit(OpCodes.Call, infinite); il.Emit(OpCodes.Pop);
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Callvirt, completed);
+        il.Emit(OpCodes.Brfalse, expired);
+        il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Stloc, result); il.Emit(OpCodes.Leave, done);
+        il.Append(expired); il.Emit(OpCodes.Call, throwCancelled);
+        il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Stloc, result); il.Emit(OpCodes.Leave, done);
+        // Only this private token reaches Delay. Its losing timer/registration
+        // is cancelled before disposal on success, timeout, cancellation or fault.
+        il.Append(cleanup); il.Emit(OpCodes.Callvirt, cancel); il.Emit(OpCodes.Leave, cleanupEnd);
+        il.Append(disposeOwned); il.Emit(OpCodes.Callvirt, dispose); il.Emit(OpCodes.Endfinally);
+        il.Append(cleanupEnd); il.Append(done); il.Emit(OpCodes.Ret);
+        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = cleanup, TryEnd = disposeOwned, HandlerStart = disposeOwned, HandlerEnd = cleanupEnd,
+        });
+        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = body, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done,
+        });
+        loop.Methods.Add(method);
+        return method;
+    }
+
+    internal static int Run(string[] args, bool finiteSelected = false)
     {
         try
         {
@@ -214,17 +284,27 @@ internal static class TaskWait
                 TryStart = body, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done,
             });
             loop.Methods.Add(helper);
+            var finite = finiteSelected ? FiniteWait(module, loop, task, helper, completed) : null;
             var entry = wait.Body.GetILProcessor();
-            // Retain the complete original method and its original unsupported
-            // finite/cancellable path. Only a selected ordinary infinite join
-            // enters the real WASI queue; it never invents a completed Task.
-            Instruction[] prologue = [
+            var bounded = entry.Create(OpCodes.Ldarg_0);
+            // Keep the old infinite/noncancellable join and entire non-WASI
+            // remainder exact. Other WASI waits use real Task/Delay completion.
+            Instruction[] prologue = finite is null ? [
                 entry.Create(OpCodes.Call, (MethodReference)originalEntry.Operand),
                 entry.Create(OpCodes.Brfalse, originalEntry),
                 entry.Create(OpCodes.Ldarg_1), entry.Create(OpCodes.Ldc_I4_M1),
                 entry.Create(OpCodes.Bne_Un, originalEntry), entry.Create(OpCodes.Ldarga, wait.Parameters[1]),
                 entry.Create(OpCodes.Call, canCancel), entry.Create(OpCodes.Brtrue, originalEntry),
                 entry.Create(OpCodes.Ldarg_0), entry.Create(OpCodes.Call, helper), entry.Create(OpCodes.Ret),
+            ] : [
+                entry.Create(OpCodes.Call, (MethodReference)originalEntry.Operand),
+                entry.Create(OpCodes.Brfalse, originalEntry),
+                entry.Create(OpCodes.Ldarg_1), entry.Create(OpCodes.Ldc_I4_M1),
+                entry.Create(OpCodes.Bne_Un, bounded), entry.Create(OpCodes.Ldarga, wait.Parameters[1]),
+                entry.Create(OpCodes.Call, canCancel), entry.Create(OpCodes.Brtrue, bounded),
+                entry.Create(OpCodes.Ldarg_0), entry.Create(OpCodes.Call, helper), entry.Create(OpCodes.Ret),
+                bounded, entry.Create(OpCodes.Ldarg_1), entry.Create(OpCodes.Ldarg_2),
+                entry.Create(OpCodes.Call, finite), entry.Create(OpCodes.Ret),
             ];
             foreach (var instruction in prologue) entry.InsertBefore(originalEntry, instruction);
             var timerMethods = IdleTimerDriver.Install(module);
@@ -237,12 +317,12 @@ internal static class TaskWait
                 method => BodyIdentity(method));
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == 9 && timerMethods.Length == 3 && modifiedBodies.Count == 4);
+            Require(generatedHelpers.Count == (finiteSelected ? 10 : 9) && timerMethods.Length == 3 && modifiedBodies.Count == 4);
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
                 var methods = Methods(written);
-                Require(methods.Count == originalMethods.Count + 9 &&
+                Require(methods.Count == originalMethods.Count + (finiteSelected ? 10 : 9) &&
                     methods.Values.Count(method => method.FullName == helper.FullName) == 1 &&
                     methods.Values.Count(method => method.FullName == pump.FullName) == 1);
                 foreach (var (name, identity) in originalMethods)
@@ -264,11 +344,11 @@ internal static class TaskWait
                 method = wait.FullName, originalWaitBodyDigest = "sha256:" + WaitDigest,
                 originalLoopBodyDigest = "sha256:" + LoopDigest, originalDispatchBodyDigest = "sha256:" + DispatchDigest,
                 originalContextBodyDigest = "sha256:" + ContextDigest, originalContextRestoreBodyDigest = "sha256:" + RestoreDigest,
-                maximumNestedWaits = 32, finiteAndCancellableWaits = "original-unsupported",
+                maximumNestedWaits = 32, finiteAndCancellableWaits = finiteSelected ? "original-Task-WhenAny-Delay" : "original-unsupported",
                 completion = "actual-task-only", exceptionPropagation = "original-TaskAwaiter",
                 nestedTaskIdentity = "save-restore-finally", defaultClientComponentQualified = false,
                 callerContexts = "original-RunInternal-Default", contextNotifications = "original-runtime",
-                generatedHelperCount = 9, contextCallback = "same-CoreLib-ContextCallback(object)",
+                generatedHelperCount = finiteSelected ? 10 : 9, contextCallback = "same-CoreLib-ContextCallback(object)",
                 unchangedOriginalMethods = originalMethods.Count - 5, completeOriginalWaitRemainderPreserved = true,
                 timerDriver = "TimerQueue.SetNextTimer-only", timerDriverIdle = "Timer.ActiveCount==0",
                 timerDriverCancellation = "original-CancellationTokenSource-CancelAndDispose",
@@ -280,9 +360,19 @@ internal static class TaskWait
                 zeroCacheDispose = "original-owned-Pollable-finally", zeroCacheForeignHolders = "untouched",
                 zeroCacheModifiedOriginalMethods = 1, zeroCacheOriginalBodies,
             };
+            var record = JsonSerializer.SerializeToElement(result).EnumerateObject()
+                .ToDictionary(property => property.Name, property => property.Value);
+            if (finiteSelected)
+            {
+                foreach (var (name, value) in new[] {
+                    ("finiteWaitCleanup", "private-linked-source-cancel-dispose-finally"),
+                    ("zeroTimeout", "query-only-before-cancellation"), ("waitCancellation", "original-token-only"),
+                    ("publicWaitValidationAndExceptions", "unchanged"),
+                }) record.Add(name, JsonSerializer.SerializeToElement(value));
+            }
             using var destination = new FileStream(receipt, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            JsonSerializer.Serialize(destination, result);
-            Console.WriteLine(JsonSerializer.Serialize(result));
+            JsonSerializer.Serialize(destination, record);
+            Console.WriteLine(JsonSerializer.Serialize(record));
             return 0;
         }
         catch (Exception)

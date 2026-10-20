@@ -15,8 +15,13 @@ existing activation adapter; it adds no network import, provider or grant.
 
 The private `dotnet-stackful-task-wait-v1` derivation preserves the exact original
 CoreLib preimage, dispatch, ExecutionContext entry/restore and TaskAwaiter error
-paths. It limits nested joins to 32. Finite and cancellable blocking waits retain
-their original unsupported boundary. The derived assembly must be the sole
+paths. It limits nested joins to 32. With all four explicit task/timer declarations,
+[finite and cancellable Task.Wait](../testing/dotnet-finite-task-waits.md) now uses
+the original Task.WhenAny/Task.Delay through that pump, preserving exact token,
+validation, fault and timeout behavior. Its separate eighteen-outcome signed
+programme includes pending root cancellation/deadline and fresh recovery; it
+does not relabel the historical twelve/sixteen-case receipts below. Unselected
+infinite-only output is unchanged. The derived assembly must be the sole
 CoreLib reference in both the compiler list and the actual NativeAOT response
 file. Application assemblies and the shared package cache are unchanged.
 

@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "FiniteTaskWaitTests.test_finite_receipt_refuses_timer_leaks_synthetic_completion_and_changed_token_precedence",
+    "FiniteTaskWaitTests.test_four_explicit_runtime_facets_select_the_finite_rewrite_without_http",
+    "FiniteTaskWaitTests.test_missing_entropy_keeps_the_original_infinite_only_rewrite",
+    "FiniteTaskWaitTests.test_missing_wall_keeps_the_original_infinite_only_rewrite",
+    "FiniteTaskWaitTests.test_old_or_cross_selected_receipts_cannot_claim_finite_support"
+  ],
+  "guards": {
+    "FiniteTaskWaitTests.test_finite_receipt_refuses_timer_leaks_synthetic_completion_and_changed_token_precedence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:623f7485d48c8710eacae75dfd8066ac875d7d16121c897c926728365b874c19",
+        "class:setup-sha256:74b647ecadd87ea8adce95b476ecec9a152a291c4903abe693cd477985503832"
+      ],
+      "skipSites": []
+    },
+    "FiniteTaskWaitTests.test_four_explicit_runtime_facets_select_the_finite_rewrite_without_http": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:623f7485d48c8710eacae75dfd8066ac875d7d16121c897c926728365b874c19",
+        "class:setup-sha256:74b647ecadd87ea8adce95b476ecec9a152a291c4903abe693cd477985503832"
+      ],
+      "skipSites": []
+    },
+    "FiniteTaskWaitTests.test_missing_entropy_keeps_the_original_infinite_only_rewrite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:623f7485d48c8710eacae75dfd8066ac875d7d16121c897c926728365b874c19",
+        "class:setup-sha256:74b647ecadd87ea8adce95b476ecec9a152a291c4903abe693cd477985503832"
+      ],
+      "skipSites": []
+    },
+    "FiniteTaskWaitTests.test_missing_wall_keeps_the_original_infinite_only_rewrite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:623f7485d48c8710eacae75dfd8066ac875d7d16121c897c926728365b874c19",
+        "class:setup-sha256:74b647ecadd87ea8adce95b476ecec9a152a291c4903abe693cd477985503832"
+      ],
+      "skipSites": []
+    },
+    "FiniteTaskWaitTests.test_old_or_cross_selected_receipts_cannot_claim_finite_support": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:623f7485d48c8710eacae75dfd8066ac875d7d16121c897c926728365b874c19",
+        "class:setup-sha256:74b647ecadd87ea8adce95b476ecec9a152a291c4903abe693cd477985503832"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_finite_task_wait.py",
+  "reviewReason": "Five finite Task.Wait authority and exact cleanup/token/zero-timeout receipt controls; preserve all existing task-wait cases and guards",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
