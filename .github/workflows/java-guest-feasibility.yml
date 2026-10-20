@@ -705,6 +705,11 @@ jobs:
         with:
           name: java-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/java-scratch-prepared
+      - name: Install the same namespace prerequisite on this separate child host
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Check exact source preservation and concrete error categories
         run: python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification tools.tests.test_java_scratch_wiring
       - name: Check exact Java closed filesystem and preserved argument cases

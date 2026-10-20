@@ -56,6 +56,8 @@ class JavaScratchWiring(unittest.TestCase):
         self.assertIn('--wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"', commands)
         self.assertIn('--native-qualification "$RUNNER_TEMP/java-scratch-prepared"', commands)
         self.assertNotIn('--runtime-profile', commands)
+        self.assertIn('sudo apt-get install --yes bubblewrap', commands)
+        self.assertIn('sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0', commands)
         retained = child['steps'][-1]
         self.assertEqual(retained['if'], 'always()')
         for name in ('FAILED.json', 'compatibility-execution-report.json', 'node/workflow.json', 'node/controls/*.json'):
