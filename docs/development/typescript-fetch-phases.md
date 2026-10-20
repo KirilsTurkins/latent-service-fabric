@@ -1,5 +1,7 @@
 # Explicit TypeScript Fetch phase-contract candidate
 
+See the reusable [API/profile matrix and normal dependency/grant workflow](../component-development/typescript-fetch-profiles.md).
+
 The compiler can select `lsf-fetch-phase-buffered-v2` when the existing
 `spidermonkey-activation-promises-clocks-imports-v1` runtime and the explicit
 `latent:http/phase-timing@0.4.0` import are both declared. Package names do not
@@ -100,3 +102,25 @@ Host products now use the separately authenticated nominal-type correction at
 with thirteen native controls. Original77 products and receipts remain frozen for
 their existing consumers. The C-context Cargo target and both actual new nominal
 Rust tests are registered additively; all prior rows/cases remain intact.
+
+## Independent tenant HTTP candidate
+
+The source programme adds twelve outcomes using the same compiled component in
+one execution cell: eleven real guest executions and a zero-work foreign grant
+denial. Ordinary Ky and the captured transitive package run under both tenants;
+fresh calls follow real public abort and root cancellation. An optional Ky
+extension succeeds against its own origin and refuses the first tenant's origin
+without contact. Both peers compare distinct ephemeral authorization bytes and
+must observe exactly five requests each, with physical retirement between calls.
+The original provider/runtime limits are unchanged. HTTP installations have
+independent identities and protected credential stores; only the existing scalar
+runtime registrations use their explicit tenant aliases.
+
+This uses the existing neutral packaging/signing derivation to preserve the
+original component, compiler observation, exports and derived world. Each tenant
+publishes and grants its own release. It adds no guest compilation and grants
+nothing implicitly. The complete candidate now requires thirty-one invocation
+outcomes: twenty-seven guest executions and four refusals before guest work.
+These new observations are pending. They require #1225's source-bound native
+products and exact final-graph correction; the previous36ea tuple cannot qualify
+the component decoder's omission of the unused legacy response record.

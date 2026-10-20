@@ -6,6 +6,7 @@ on:
       - '.github/workflows/typescript-fetch-phases.yml'
       - 'sdk/typescript-guest/probes/fetch-phases/**'
       - 'tools/typescript_fetch_phase_fixture.py'
+      - 'tools/typescript_fetch_tenant_programme.py'
       - 'tools/qualify_typescript_fetch_phases.py'
       - 'tools/java_phase_native_products.py'
       - 'tools/http_phase_native_products.py'
@@ -48,6 +49,8 @@ jobs:
         run: python3 -B -m unittest tools.tests.test_typescript_phase_execution tools.tests.test_java_phase_native_products -v
       - name: Check nominal native producer authentication controls
         run: python3 -B -m unittest tools.tests.test_http_phase_native_products -v
+      - name: Check independent tenant HTTP configuration and captured component boundaries
+        run: python3 -B -m unittest tools.tests.test_typescript_fetch_tenants -v
       - name: Install normal compiler isolation boundary
         run: |
           sudo apt-get update
@@ -82,5 +85,6 @@ jobs:
             ${{ runner.temp }}/phase-fetch/node/*.json
             ${{ runner.temp }}/phase-fetch/node/controls/
             ${{ runner.temp }}/phase-fetch/node/missing-provider/
+            ${{ runner.temp }}/phase-fetch/node/tenant-isolation/
           if-no-files-found: warn
           retention-days: 7

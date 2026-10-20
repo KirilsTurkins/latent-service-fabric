@@ -35,6 +35,9 @@ from tools.typescript_guest.build import build
 SOURCES = ('.github/workflows/typescript-fetch-phases.yml', fixture.SOURCE,
     'tools/typescript_fetch_phase_fixture.py', 'tools/qualify_typescript_fetch_phases.py',
     'tools/http_phase_wit.py', 'tools/typescript_phase_abort_observer.py',
+    'tools/typescript_fetch_tenant_programme.py', 'tools/qualify_resource_tenants.py',
+    'tools/resource_tenant_node.py', 'tools/java_server_tenants.py', 'tools/guest_runtime_profiles.py',
+    'tools/rust_capsule_node.py',
     'tools/typescript_published_fetch_fixture.py', 'tools/qualify_typescript_published_fetch.py',
     'tools/qualify_typescript_fetch_runtime.py', 'tools/typescript_fetch_conformance.py',
     'tools/qualify_typescript_fetch_conformance.py', 'tools/http_phase_native_products.py',
@@ -319,8 +322,12 @@ def execute(artifact, native, output):
             write_json(output/'peer.json', record['peer'])
         stage = 'missing-provider'
         record['missingProvider'] = missing_provider(signed, native, output/'missing-provider')
+        stage = 'single-cell-tenant-http-isolation'
+        from tools import typescript_fetch_tenant_programme as tenants
+        record['tenantIsolation'] = tenants.execute(artifact,native,output/'tenant-isolation',configuration)
         require(base.build_evidence(artifact) == original, 'phase-fetch-built-input-changed')
-        record.update(status='passed', artifact=original)
+        record.update(status='passed', artifact=original, crossTenantQualified=True,
+                      invocationOutcomes=31, guestExecutions=27, preIoRefusals=4)
         write_json(output/'qualification.json', record)
         return record
     except BaseException:
@@ -359,7 +366,9 @@ def qualify(acquired: Path, native_input: Path, tools: Path, output: Path):
     record = {'schemaVersion': 'latent.typescript.phase-fetch.v1', 'status': 'passed',
         'qualificationSources': source_before, 'nativeProducer': identity, 'source': digest(before),
         'build': base.build_evidence(artifact), 'execution': file_identity(output/'node/qualification.json'),
-        'cases': execution['cases'], 'fullTicketQualification': False}
+        'cases': execution['cases'], 'invocationOutcomes':31,'guestExecutions':27,'preIoRefusals':4,
+        'tenantIsolation':file_identity(output/'node/tenant-isolation/qualification.json'),
+        'fullTicketQualification': False}
     write_json(output/'qualification.json', record)
     return record
 
