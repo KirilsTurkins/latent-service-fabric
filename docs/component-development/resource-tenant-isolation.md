@@ -117,5 +117,11 @@ control guards remain identical. A default-false Rust-only manual selector
 retains the default three-language steps and twenty-minute bounds while
 avoiding repeats of the successful siblings. The corrected Rust-only
 [run39414718984](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39414718984)
-is pending at source `cb17c6c9081f90628afa693690e9eebfe10c92a8`.
+passed at source `cb17c6c9081f90628afa693690e9eebfe10c92a8`.
+Its [authenticated seven-call observation](../testing/evidence/rust-resource-tenants-signed-2026-10-20.json)
+checks all 98 archive members, 24 recorded Git helpers, exact original Rust33
+component and compiler records, all seven outcomes, physical/owner-zero
+barriers, exact zero peer counts, clean shutdown and final source/product
+identities. No Cargo, guest compiler, native build or successful sibling replay
+was performed.
 No six-language coupled or concurrent completion is claimed.
