@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_runtime_costs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual38f65/run39390120215 compiler-only reference failed before components: Go ignores go.mod directly in TMPDIR. Put the identical exact function/module under owned project child, retain parent temporary/output/deadline bounds and exact pinned compiler/stack diagnostics. Actual-source old RED/new GREEN environment-root control; all47 focused PASS. No guest or compiler-placement qualification from the failed run, no native rebuild or limit change.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7409a6af495cfa0cd6767cfcce75196f48b11362cb733e228980e88085827315"
+}

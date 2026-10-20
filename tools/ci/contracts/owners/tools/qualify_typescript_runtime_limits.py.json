@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_runtime_limits.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Correct evidence serialization after actual f894 bootstrap PASS: success responses explicitly carry error:null, not an omitted field. Treat null as no terminal error while preserving all exact result/limit/retirement checks and raw rows. No guest/SDK/profile change or broad retest; rerun only the failed focused programme.",
+  "reviewReason": "Correct owner fingerprint to exact committed LF bytes after the successful ee93 signed15-case programme. Prior proposal captured CRLF working-copy bytes before Git normalization; the script itself and all result/limit/cleanup checks are unchanged. Retain the original failed fingerprint and actual source-bound execution identities.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d68b2008177a3764e189c5f14f72889348f9ba34a28365f7f29595999485c77b"
+  "sha256": "295d10c5d4bd8f9c1f3c0e70ef9fbbf1d359651e13f6a26b841e684a81199817"
 }
