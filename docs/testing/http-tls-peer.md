@@ -31,8 +31,14 @@ The owned `tools/standard_http/process_peer.py` CLI also accepts the explicit
 plain HTTP peer. Incomplete pairs, relative paths and oversized or nonregular
 TLS inputs fail before opening a listener. A separate process reference runs
 TLS1.2 and TLS1.3 domain requests and rejects a wrong hostname, then requires
-the original peer's final observation and a reaped subprocess. This new process
-qualification is pending; the historical six-case proof above is unchanged.
+the original peer's final observation and a reaped subprocess. The [hosted
+process run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39474063983)
+passed all eleven portable controls, the original six TLS cases and these three
+process cases on source `7342a32034824bdae7547314e686e53685a672d3`.
+The [original public receipt](evidence/http-tls-process-peer-reference-2026-10-20.json)
+retains all eleven Git material identities, exact TLS1.2/TLS1.3 contacts and the
+rejected handshake with zero HTTP requests. The historical six-case proof above
+is unchanged.
 
 This supplies reusable encrypted fixture input for #688/#691/#692/#693 and
 their shared HTTP tests. It executes no signed guest and certifies no provider,

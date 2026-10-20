@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "latent.go.http-tenant-current-native-observation.v1",
+  "status": "independently-verified-passed",
+  "sourceHead": "f672a33f09c67d6a4913d0fa0d5fd14197fb9ba7",
+  "run": 39466872357,
+  "job": 118780445700,
+  "event": "push",
+  "workflow": ".github/workflows/go-http-tenant-catalogue.yml",
+  "artifact": {
+    "id": 12285497221,
+    "size_in_bytes": 3894020,
+    "digest": "sha256:b95e88ce602ef90602ed2b393148161ad87ede53b6ea29af1ba11d71fc7a09f6"
+  },
+  "allArchiveMemberCrcAndSha256Verified": true,
+  "archiveMembers": 325,
+  "sourceMaterialsEqualGit": 28,
+  "stagedCompilerFilesEqualGit": 91,
+  "capturedSdkFilesEqualGit": 60,
+  "component": {
+    "sha256": "sha256:1d75564ab003fcf900f90196cfd652ff4d5b6fc9896961ef1bdbf71ea9e5f69f",
+    "bytes": 10526491
+  },
+  "compiledNativeSource": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+  "runtimeProfile": "go-component-activation-v4",
+  "runtimeLimits": {
+    "tasks": 8,
+    "executors": 2,
+    "queuedWork": 8,
+    "waits": 16,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 8
+  },
+  "knownReapedSignedOutcomes": 19,
+  "preEntryDenials": 4,
+  "peerContacts": 15,
+  "physicalAndProviderZeroRows": 19,
+  "cleanNodeShutdown": true,
+  "bothIndependentTenantInstallations": true,
+  "singleCellCapacity": 1,
+  "catalogueFreeNormalBuilder": true,
+  "sameSourceAutomaticRun": true,
+  "original1ad6f5ObservationReplaced": false,
+  "managedV5QualifiedByThisReceipt": false,
+  "normalKernelOrHttpsQualified": false,
+  "fullTicketQualifiedByThisReceipt": false
+}
