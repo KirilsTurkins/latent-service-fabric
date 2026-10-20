@@ -876,6 +876,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         rust_selector = data['workflowContracts']['.github/workflows/rust-capsule-authoring.yml']['on']['workflow_dispatch']['inputs']['replay-scratch-refusals']
         self.assertEqual(rust_selector['type'], 'boolean')
         self.assertIs(rust_selector['default'], False)
+        c_selector = data['workflowContracts']['.github/workflows/c-guest-authoring.yml']['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
+        self.assertEqual(c_selector['type'], 'boolean')
+        self.assertIs(c_selector['default'], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
@@ -887,6 +890,12 @@ class RepositoryMigrationTests(unittest.TestCase):
                 # default, PR and push retain every original job and command.
                 self.assertEqual(value['jobIf'], 'success()', key)
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}"
+            if value['workflow'] == '.github/workflows/c-guest-authoring.yml' and value['job'] == 'runtime':
+                # Only the explicit historical-products replay skips this old
+                # complete job. Its normal/default commands and all other
+                # execution fields retain the immutable historical obligation.
+                self.assertEqual(value['jobIf'], 'success()', key)
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.

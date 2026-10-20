@@ -12,6 +12,23 @@ from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 
 
 class RustScratchReplay(unittest.TestCase):
+    def test_composition_accepts_only_exact_reviewed_default_dotnet_runner_pair(self):
+        before = {name: {} for name in ('runtime', 'sdk', 'wit', 'schemas', 'guide', 'helpers')}
+        before['helpers'] = {'run_rust_capsule_workflow.py': gate.ORIGINAL_RUNNER, 'other.py': {'digest': 'fixed'}}
+        after = copy.deepcopy(before)
+        after['helpers']['run_rust_capsule_workflow.py'] = gate.COMPOSED_RUNNER
+        proof = gate.normal_inputs(before, after)
+        self.assertFalse(proof['selectedForRust'])
+        self.assertEqual(proof['reviewedDelta'], 'default-false-dotnet-published-tasks-only')
+        for changed in ('runner', 'other-helper', 'sdk', 'extra-helper'):
+            value = copy.deepcopy(after)
+            if changed == 'runner': value['helpers']['run_rust_capsule_workflow.py']['size'] += 1
+            elif changed == 'other-helper': value['helpers']['other.py']['digest'] = 'foreign'
+            elif changed == 'sdk': value['sdk'] = {'foreign': True}
+            else: value['helpers']['extra.py'] = {}
+            with self.subTest(changed=changed), self.assertRaisesRegex(RuntimeError, 'current-nonnative-normal-inputs'):
+                gate.normal_inputs(before, value)
+
     def test_historical_products_bind_fixed_normal_source_and_all_original_layers(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); receipt = ordinary(root)

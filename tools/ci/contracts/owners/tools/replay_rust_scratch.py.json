@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_rust_scratch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit source review: historical38 native provenance stays separate; all five non-native normal input groups must equal authenticated original, with no test removal or skip and all three replay controls retained.",
+  "reviewReason": "Reviewed exact composed runner preimage pair permits only merged default-false .NET Polly selector; original and composed whole-file AST projection checked equal, all foreign helper/SDK mutations refused and existing controls retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7aae75b1f05c9ed888c323fca8c6a44dd8ca22e17f3ed4421ba69a3a8e1d7dd3"
+  "sha256": "b0461dbf7e3260934bc207dcadfca03105d3c66c8e43e766b02286ca1a05d112"
 }

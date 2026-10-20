@@ -11,7 +11,7 @@ import tomllib
 from tools.build_process import run_bounded
 from tools.build_observation import build_environment, file_identity
 from tools.c_guest.bindings import digest, generate
-from tools.c_guest import standard_facilities
+from tools.c_guest import closed_filesystem, standard_facilities
 from tools.c_guest.language import DEFAULT as C_STANDARD, selected_standard
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -56,6 +56,8 @@ class Compiler:
             actual = self.run(tool, "version" if tool == "zig" else "--version").strip()
             if version not in actual.split():
                 raise ValueError(f"{tool}: expected {version}, found {actual}")
+        self.closed_filesystem = closed_filesystem.prepare(self.paths['zig'], self.sdk)
+        self.materials.update(self.closed_filesystem.materials)
 
     def run(self, tool: str, *arguments: str) -> str:
         remaining = self.deadline - time.monotonic()
@@ -77,6 +79,7 @@ class Compiler:
         return result.stdout.decode("utf-8")
 
     def check_unchanged(self) -> None:
+        self.closed_filesystem.check_unchanged()
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")

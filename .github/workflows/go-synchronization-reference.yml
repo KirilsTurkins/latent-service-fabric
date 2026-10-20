@@ -1,9 +1,16 @@
 name: Actual Go synchronization reference
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      campaign:
+        description: Finite actual Go runtime programme
+        type: choice
+        required: true
+        default: synchronization
+        options: [synchronization, admission]
   push:
-    branches: ['feat/go-runtime-retirement-20261020']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020']
 
 permissions:
   contents: read
@@ -13,6 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -43,6 +51,8 @@ jobs:
           cache-targets: true
       - name: Check finite source and fail-closed execution contracts
         run: python3 -m unittest tools.tests.test_go_synchronization tools.tests.test_go_managed_idle -v
+      - name: Check exact cross-tenant admission evidence controls
+        run: python3 -m unittest tools.tests.test_go_admission -v
       - name: Install captured compiler namespace
         run: |
           sudo apt-get update
@@ -63,11 +73,20 @@ jobs:
           python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/go-synchronization-tools/go" --output "$RUNNER_TEMP/go-synchronization-tools/go-async"
           echo "$RUNNER_TEMP/go-synchronization-tools/go-async/bin" >> "$GITHUB_PATH"
       - name: Compile ordinary synchronization with the actual v5 runtime and native reference
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'synchronization'
         run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-synchronization" --runtime-profile go-component-activation-v5 --fixture synchronization
       - name: Compile the identical source without compiler checkpoints
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'synchronization'
         run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-synchronization-negative" --runtime-profile go-component-activation-v1 --fixture synchronization
       - name: Run the one real signed synchronization and retirement target
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'synchronization'
         run: python3 tools/qualify_go_synchronization.py --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-synchronization" --no-checkpoints "$RUNNER_TEMP/go-synchronization-negative" --output "$RUNNER_TEMP/go-synchronization-result"
+      - name: Compile the unchanged managed Go fixture for shared-cell admission
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'admission'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-admission" --runtime-profile go-component-activation-v5 --fixture managed-idle
+      - name: Run actual signed cross-tenant cell ownership and retirement
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'admission'
+        run: python3 tools/qualify_go_synchronization.py --campaign admission --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-admission" --output "$RUNNER_TEMP/go-admission-result"
       - name: Retain bounded actual results and compiler source identities
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -83,5 +102,11 @@ jobs:
             ${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-COMPILE.json
             ${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-FAILED.json
             ${{ runner.temp }}/go-synchronization-negative/logs/
+            ${{ runner.temp }}/go-admission/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-admission/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-admission/logs/
+            ${{ runner.temp }}/go-admission-result/receipt.json
+            ${{ runner.temp }}/go-admission-result/signed.stdout.log
+            ${{ runner.temp }}/go-admission-result/signed.stderr.log
           if-no-files-found: warn
           retention-days: 7

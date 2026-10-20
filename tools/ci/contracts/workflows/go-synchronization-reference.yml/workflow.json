@@ -9,16 +9,31 @@
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "LSF_GO_REFERENCE_CAMPAIGN": "${{ inputs.campaign || (github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}"
     },
     "name": "Actual Go synchronization reference",
     "on": {
       "push": {
         "branches": [
-          "feat/go-runtime-retirement-20261020"
+          "feat/go-runtime-retirement-20261020",
+          "feat/go-runtime-admission-20261020"
         ]
       },
-      "workflow_dispatch": {}
+      "workflow_dispatch": {
+        "inputs": {
+          "campaign": {
+            "default": "synchronization",
+            "description": "Finite actual Go runtime programme",
+            "options": [
+              "synchronization",
+              "admission"
+            ],
+            "required": true,
+            "type": "choice"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -27,7 +42,7 @@
   "requiredJobs": [
     "synchronization"
   ],
-  "reviewReason": "Add finite actual Go Cond/RWMutex/Once/channel/select synchronization and original-v5 drain/cancel/deadline/admission controls; same-source v1 negative, every old profile/case/guard/cap retained; no runtime qualification claim before hosted execution.",
+  "reviewReason": "Add exact signed two-tenant one-cell admission and original-retirement controls; preserve every prior command, case and finite bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-synchronization-reference.yml"
 }

@@ -21,6 +21,27 @@ ORIGINAL_RUN, ORIGINAL_ARTIFACT = 39358494292, 12236803645
 QUALIFICATION = 'sha256:87b5664bcca6db0622e2407bf047f3ed30c1f406008370a4ac2cf7a0655fdb9d'
 SOURCE_INPUTS = 'sha256:3677ec116d9e47ca3b96542f274b995dd202ba5ff959e7d642afc510d52fbab6'
 ORIGINAL_NODE = 'sha256:7727e47ee556712a6cc111aca7dc5ad750060294839c42a2dfe4d3890bcd59d9'
+ORIGINAL_RUNNER = {'digest': 'sha256:e90d89cc4cdf24ebbf24f1f2cf54daba59ccd70ea20eace563d737b1ec05c994', 'size': 31615}
+COMPOSED_RUNNER = {'digest': 'sha256:c0e042d4c7c354246121125950ad96e430f26052fae59fad533c5dec4f0059cd', 'size': 32387}
+
+
+def normal_inputs(original, current):
+    groups = {'runtime', 'sdk', 'wit', 'schemas', 'guide', 'helpers'}
+    require(set(original) == set(current) == groups
+            and all(original[name] == current[name] for name in groups - {'runtime', 'helpers'}),
+            'rust-scratch-replay-current-nonnative-normal-inputs')
+    before, after = original['helpers'], current['helpers']
+    if before == after:
+        return None
+    name = 'run_rust_capsule_workflow.py'
+    # Reviewed whole-file AST projection removes only the merged default-false
+    # .NET Polly selector. This exact pair admits no future helper/source drift.
+    require(type(before) is dict and type(after) is dict and set(before) == set(after)
+            and before.get(name) == ORIGINAL_RUNNER and after.get(name) == COMPOSED_RUNNER
+            and all(before[key] == after[key] for key in before if key != name),
+            'rust-scratch-replay-current-nonnative-normal-inputs')
+    return {'original': ORIGINAL_RUNNER, 'current': COMPOSED_RUNNER,
+        'reviewedDelta': 'default-false-dotnet-published-tasks-only', 'selectedForRust': False}
 
 
 def historical(native):
@@ -30,9 +51,7 @@ def historical(native):
             'rust-scratch-replay-original-normal-preimages')
     receipt, node = read_json(native/'qualification.json'), read_json(native/'node/workflow.json')
     original, current = read_json(native/'source-inputs.json'), current_inputs('rust')
-    require(set(original) == set(current) == {'runtime', 'sdk', 'wit', 'schemas', 'guide', 'helpers'}
-            and all(original[name] == current[name] for name in original if name != 'runtime'),
-            'rust-scratch-replay-current-nonnative-normal-inputs')
+    runner_composition = normal_inputs(original, current)
     require(receipt['status'] == 'passed' and receipt['schemaVersion'] == 'latent.rust-capsule.qualification.v1'
             and 'applicationDependencies' not in receipt and receipt['sourceIdentityDigest'] == SOURCE_INPUTS
             and receipt['node']['receiptDigest'] == ORIGINAL_NODE and node['status'] == 'passed'
@@ -55,7 +74,8 @@ def historical(native):
         'qualification': file_identity(native/'qualification.json'), 'sourceInputs': file_identity(native/'source-inputs.json'),
         'node': file_identity(native/'node/workflow.json'), 'binaries': identities, 'companions': packages,
         'nativeProductsRebuilt': False, 'normalReceiptRewritten': False, 'currentNormalReceiptFabricated': False,
-        'currentNonNativeNormalInputsEqual': True}
+        'currentNonNativeNormalInputsEqual': runner_composition is None,
+        'reviewedNormalRunnerComposition': runner_composition}
 
 
 def replay(native, output):
