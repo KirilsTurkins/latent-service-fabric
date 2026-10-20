@@ -161,7 +161,7 @@ async fn current_linux_pressure_and_active_close_distinguish_kernel_tail_from_fd
         match tokio::time::timeout(Duration::from_millis(20), &mut write).await {
             Ok(Ok(count)) => {
                 assert!(count > 0);
-                accepted += count;
+                accepted += usize::try_from(count).unwrap();
             }
             Ok(Err(_)) => panic!("original bounded write failed before pressure barrier"),
             Err(_) => {
@@ -186,7 +186,7 @@ async fn current_linux_pressure_and_active_close_distinguish_kernel_tail_from_fd
     let mut bytes = [0u8; 16 * 1024];
     loop {
         tokio::select! {
-            value = &mut blocked => { accepted += value.unwrap(); break; }
+            value = &mut blocked => { accepted += usize::try_from(value.unwrap()).unwrap(); break; }
             value = peer.read(&mut bytes) => { let count = value.unwrap(); assert!(count > 0); received += count; }
         }
     }

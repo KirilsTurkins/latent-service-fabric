@@ -45,6 +45,7 @@ jobs:
           path: |
             ${{ runner.temp }}/host-stream-kernel-reference/receipt.json
             ${{ runner.temp }}/host-stream-kernel-reference/cargo.stderr.log
+            ${{ runner.temp }}/host-stream-kernel-reference/cargo-diagnostics.json
             ${{ runner.temp }}/host-stream-kernel-reference/tests.stdout.log
             ${{ runner.temp }}/host-stream-kernel-reference/tests.stderr.log
             ${{ runner.temp }}/host-stream-kernel-reference/list.stdout.log

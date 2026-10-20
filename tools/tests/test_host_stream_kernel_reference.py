@@ -71,3 +71,23 @@ class HostStreamKernelReference(unittest.TestCase):
                     self.assertRaisesRegex(ValueError, "changed-source"):
                 reference.qualify(reference.provider.provider.ROOT, output, "a" * 40)
             self.assertFalse(output.exists())
+
+    def test_actual_cargo_json_errors_keep_only_bounded_codes_and_primary_source_spans(self):
+        row = {"reason": "compiler-message", "message": {"level": "error", "code": {"code": "E0277"},
+               "message": "cannot add-assign `u32` to `usize`", "rendered": "private-sentinel",
+               "children": [{"message": "private-sentinel"}], "spans": [
+                   {"file_name": "crates/latent-streams/src/tests/kernel.rs", "line_start": 168,
+                    "column_start": 26, "is_primary": True, "text": ["private-sentinel"]}]}}
+        raw = (json.dumps({"reason": "compiler-artifact", "private": "private-sentinel"}) + "\n" + json.dumps(row)).encode()
+        result = reference.compiler_diagnostics(raw, Path.cwd())
+        self.assertEqual(result["errors"], [{"code": "E0277", "message": "cannot add-assign `u32` to `usize`",
+            "spans": [{"file": "crates/latent-streams/src/tests/kernel.rs", "line": 168, "column": 26}]}])
+        self.assertNotIn("private-sentinel", json.dumps(result))
+        for kind in ("path", "count", "message", "code"):
+            changed = copy.deepcopy(row)
+            if kind == "path": changed["message"]["spans"][0]["file_name"] = "../private"
+            elif kind == "message": changed["message"]["message"] = "x" * 2049
+            elif kind == "code": changed["message"]["code"]["code"] = "unknown"
+            raw = ("\n".join([json.dumps(changed)] * (17 if kind == "count" else 1))).encode()
+            with self.subTest(kind=kind), self.assertRaises(ValueError):
+                reference.compiler_diagnostics(raw, Path.cwd())

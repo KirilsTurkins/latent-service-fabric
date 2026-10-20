@@ -47,7 +47,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "host-stream-kernel-reference-${{ github.sha }}",
-          "path": "${{ runner.temp }}/host-stream-kernel-reference/receipt.json\n${{ runner.temp }}/host-stream-kernel-reference/cargo.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/tests.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/tests.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/list.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/ignored.stdout.log\n",
+          "path": "${{ runner.temp }}/host-stream-kernel-reference/receipt.json\n${{ runner.temp }}/host-stream-kernel-reference/cargo.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/cargo-diagnostics.json\n${{ runner.temp }}/host-stream-kernel-reference/tests.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/tests.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/list.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/ignored.stdout.log\n",
           "retention-days": 7
         }
       }
@@ -56,7 +56,7 @@
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "A bounded current-Linux real-provider pressure and active-close witness distinguishes remaining kernel tail from FD/native-lease refund; closed numeric observations never certify retirement or enable an unqualified profile; all25 earlier cases and900s cap retained",
+  "reviewReason": "retain bounded compiler diagnostics for measured kernel-reference build failure",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-kernel-reference.yml"
 }

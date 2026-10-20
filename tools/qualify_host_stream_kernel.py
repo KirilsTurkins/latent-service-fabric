@@ -54,6 +54,47 @@ def outcomes(raw: bytes, total: int) -> list[dict]:
     return rows
 
 
+
+def compiler_diagnostics(raw: bytes, root: Path) -> dict:
+    """Keep bounded error identity/spans, never Cargo payloads or environment."""
+    if len(raw) > 16 * 1024 * 1024:
+        raise ValueError("kernel-reference-compiler-output-bound")
+    errors = []
+    for line in raw.splitlines():
+        row = json.loads(line)
+        if row.get("reason") != "compiler-message":
+            continue
+        message = row["message"]
+        if message.get("level") != "error":
+            continue
+        if len(errors) >= 16:
+            raise ValueError("kernel-reference-compiler-error-count")
+        spans = []
+        for span in message.get("spans", []):
+            if not span.get("is_primary"):
+                continue
+            name = Path(span["file_name"])
+            if name.is_absolute():
+                name = name.relative_to(root)
+            if name.is_absolute() or ".." in name.parts or len(name.as_posix()) > 256:
+                raise ValueError("kernel-reference-compiler-source-path")
+            if len(spans) >= 8:
+                raise ValueError("kernel-reference-compiler-span-count")
+            spans.append({"file": name.as_posix(), "line": span["line_start"], "column": span["column_start"]})
+        code = message.get("code")
+        code = code.get("code") if isinstance(code, dict) else None
+        if code is not None and not re.fullmatch(r"E[0-9]{4}", code):
+            raise ValueError("kernel-reference-compiler-error-code")
+        text = redact(message["message"])
+        if len(text) > 2048:
+            raise ValueError("kernel-reference-compiler-message-bound")
+        errors.append({"code": code, "message": text, "spans": spans})
+    result = {"schemaVersion": "lsf.kernel-reference-compiler-diagnostics.v1", "errors": errors}
+    if len(json.dumps(result).encode()) > 65536:
+        raise ValueError("kernel-reference-compiler-diagnostics-bound")
+    return result
+
+
 def qualify(root: Path, output: Path, revision: str) -> dict:
     environment = {**os.environ, "CARGO_BUILD_JOBS": "2", "CARGO_INCREMENTAL": "0", "CARGO_TARGET_DIR": str(root / "target")}
     artifacts.require_source(root, revision, environment)
@@ -77,6 +118,9 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
             raise
         (output / (name + ".stdout.log")).write_bytes(result.output)
         (output / (name + ".stderr.log")).write_text(redact(result.stderr.decode("utf-8", "replace")))
+        if name == "cargo":
+            diagnostics = compiler_diagnostics(result.output, root)
+            (output / "cargo-diagnostics.json").write_bytes((json.dumps(diagnostics, indent=2) + "\n").encode())
         if result.returncode:
             raise ValueError("kernel-reference-command-failed:" + name)
         return result.output
