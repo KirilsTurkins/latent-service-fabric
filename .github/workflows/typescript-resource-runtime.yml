@@ -33,10 +33,7 @@ jobs:
         with:
           version: 1.254.0
       - name: Fetch the immutable compiled source before any producer verification
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+        run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
       - name: Install locked requirements and check actual positive timer boundaries
         run: |
           python3 -m pip install -r tools/requirements.lock

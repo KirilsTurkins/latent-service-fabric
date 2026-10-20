@@ -31,11 +31,8 @@
         }
       },
       {
-        "env": {
-          "GH_TOKEN": "${{ github.token }}"
-        },
         "name": "Fetch the immutable compiled source before any producer verification",
-        "run": "git -c http.extraheader=\"AUTHORIZATION: bearer $GH_TOKEN\" fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\n"
+        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
       },
       {
         "name": "Install locked requirements and check actual positive timer boundaries",
@@ -83,7 +80,7 @@
   },
   "jobId": "resource-runtime",
   "kind": "job",
-  "reviewReason": "Add finite actual resource/callback lifecycle with unchanged native products and explicit positive timer witnesses; retain all historical programmes.",
+  "reviewReason": "Correct actual Git HTTPS setup failure using the exact already-passing immutable public-source fetch command from the owning V7 consumer; all guest/compiler/native commands and limits retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-resource-runtime.yml"
 }
