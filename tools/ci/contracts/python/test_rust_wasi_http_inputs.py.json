@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "ActualImportReader.test_import_reader_binds_exact_original_core_and_nested_component_without_reachability_claim",
+    "ActualImportReader.test_truncated_unknown_duplicate_and_excessive_import_encodings_refuse",
+    "ExecutableInputBoundary.test_exact_captured_closure_identity_and_isolation_are_required_before_test_approval",
+    "RustWasiHttpInputs.test_developer_coordinates_vary_without_changing_either_published_client",
+    "RustWasiHttpInputs.test_normal_project_keeps_the_closed_default_profile_and_unchanged_sdk",
+    "RustWasiHttpInputs.test_published_source_identity_requires_both_exact_checksums_without_sdk_exemption"
+  ],
+  "guards": {
+    "ActualImportReader.test_import_reader_binds_exact_original_core_and_nested_component_without_reachability_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1d268007769563e228893a8408a2811e9d65cb3821b737009a16929993d04362",
+        "class:setup-sha256:ba1823fd8dbd37699240690eaf885d6f08d36ca34d30a1c690a370ff0172b12a"
+      ],
+      "skipSites": []
+    },
+    "ActualImportReader.test_truncated_unknown_duplicate_and_excessive_import_encodings_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1d268007769563e228893a8408a2811e9d65cb3821b737009a16929993d04362",
+        "class:setup-sha256:ba1823fd8dbd37699240690eaf885d6f08d36ca34d30a1c690a370ff0172b12a"
+      ],
+      "skipSites": []
+    },
+    "ExecutableInputBoundary.test_exact_captured_closure_identity_and_isolation_are_required_before_test_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1d268007769563e228893a8408a2811e9d65cb3821b737009a16929993d04362",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustWasiHttpInputs.test_developer_coordinates_vary_without_changing_either_published_client": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1d268007769563e228893a8408a2811e9d65cb3821b737009a16929993d04362",
+        "class:setup-sha256:4432183746d94a3413bfcef9ac35513fc59bc4bada99b06a3dd201c1de7ef4b9"
+      ],
+      "skipSites": []
+    },
+    "RustWasiHttpInputs.test_normal_project_keeps_the_closed_default_profile_and_unchanged_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1d268007769563e228893a8408a2811e9d65cb3821b737009a16929993d04362",
+        "class:setup-sha256:4432183746d94a3413bfcef9ac35513fc59bc4bada99b06a3dd201c1de7ef4b9"
+      ],
+      "skipSites": []
+    },
+    "RustWasiHttpInputs.test_published_source_identity_requires_both_exact_checksums_without_sdk_exemption": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1d268007769563e228893a8408a2811e9d65cb3821b737009a16929993d04362",
+        "class:setup-sha256:4432183746d94a3413bfcef9ac35513fc59bc4bada99b06a3dd201c1de7ef4b9"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_inputs.py",
+  "reviewReason": "Six additive normal-project, independent-upstream-identity, binary-import and exact isolated executable-approval controls. Original commands/cases/guards remain unchanged; no HTTP runtime or signed qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
