@@ -177,10 +177,13 @@ class ScratchQualification(unittest.TestCase):
         jobs = model['jobs']
         selector = model['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
         self.assertEqual((selector['type'], selector['default']), ('boolean', False))
-        self.assertNotIn('if', jobs['runtime'])
+        self.assertEqual(jobs['runtime']['if'],
+            "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}")
+        self.assertEqual(model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']['type'], 'boolean')
+        self.assertIs(model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']['default'], False)
         self.assertEqual(jobs['standard-facilities']['timeout-minutes'], 25)
         self.assertEqual(jobs['standard-facilities']['if'],
-            "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}")
+            "${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}")
         child = jobs['scratch-refusals']
         self.assertEqual(child['needs'], 'runtime')
         self.assertEqual(child['timeout-minutes'], 20)

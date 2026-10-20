@@ -4,6 +4,9 @@ use super::*;
 #[path = "go/managed_idle.rs"]
 mod managed_idle;
 
+#[path = "go/admission.rs"]
+mod admission;
+
 #[path = "go/synchronization.rs"]
 mod synchronization;
 

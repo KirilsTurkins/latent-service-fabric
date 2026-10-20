@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_synchronization.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add finite actual Go Cond/RWMutex/Once/channel/select synchronization and original-v5 drain/cancel/deadline/admission controls; same-source v1 negative, every old profile/case/guard/cap retained; no runtime qualification claim before hosted execution.",
+  "reviewReason": "Authenticate synthetic callee42 to actual packages/component constructor and contract source, separate from Go caller; preserve every prior source/guard/case.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "43d1d2aabc3a754aef92dc4b82cc1634c8f9fee12ccc0123e1807e4745f51a63"
+  "sha256": "7e1c4fccb660a0e8b3cea8cb0e203f474b3eb8d0e1f1619371e20dc8c6053851"
 }

@@ -1,0 +1,433 @@
+{
+  "schemaVersion": "latent.dotnet.published-tasks.signed-observation.v1",
+  "status": "passed",
+  "run": 39362050200,
+  "job": 118430228859,
+  "actualSource": "42e1d986fd725f32c2da73e4d0a954a01bdcad30",
+  "reviewedFeature": "1fe632a6f551abee4266e3de967a7efbca957166",
+  "artifact": {
+    "id": 12238161606,
+    "sha256": "sha256:996a5801c94add625f3569935ffb14a2f6d35b22b89b2348b99720ce86b4cc00",
+    "bytes": 4120556,
+    "all159MembersAuthenticated": true
+  },
+  "qualification": {
+    "sha256": "sha256:ebe9b29c0e57748d5d6c76dce6b551d6bfd2cb62d33b1177fc28d860b4625cd4",
+    "bytes": 58059
+  },
+  "component": {
+    "sha256": "sha256:bbd5004e9663c30c5d970426448ef3f204237ad36efbd200fc6c9c6d8801b5d3",
+    "bytes": 7417125
+  },
+  "profile": "dotnet-stackful-task-wait-v1",
+  "source": {
+    "runtimeInputsDigest": "sha256:6dbbf4da36e957633e37a80ddbafb52a7e78036e751769a484ef0f379d4894ab",
+    "helpers": [
+      {
+        "path": "tools/dotnet_published_task_fixture.py",
+        "actual": {
+          "sha256": "sha256:00a61c2b104d937116dc1c8c8ab2d0c7cdaa78691e21433b3daf63ccddee0193",
+          "bytes": 9005
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:00a61c2b104d937116dc1c8c8ab2d0c7cdaa78691e21433b3daf63ccddee0193",
+          "bytes": 9005
+        },
+        "identical": true
+      },
+      {
+        "path": "tools/dotnet_published_task_probe.py",
+        "actual": {
+          "sha256": "sha256:c121abf113823da0dca4c188e2614ddb86e60eeafeef54d0474fd6bf80b73f47",
+          "bytes": 1690
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:c121abf113823da0dca4c188e2614ddb86e60eeafeef54d0474fd6bf80b73f47",
+          "bytes": 1690
+        },
+        "identical": true
+      },
+      {
+        "path": "tools/dotnet_task_runtime_fixture.py",
+        "actual": {
+          "sha256": "sha256:896c6238a2b38ea8f5a1d5ea832c3dc2bc56faa13e032e980ccbacc467730fd5",
+          "bytes": 12978
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:159a51da898125e29a645506bce99588d49d9f207fb02bff948d4bc9761eed46",
+          "bytes": 17448
+        },
+        "identical": false
+      },
+      {
+        "path": "tools/dotnet_task_runtime_probe.py",
+        "actual": {
+          "sha256": "sha256:fb4e1e0bba09d1c73d8f3753c235be416583b2c9d3716912d1b74b4860fa90b2",
+          "bytes": 9557
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:fb4e1e0bba09d1c73d8f3753c235be416583b2c9d3716912d1b74b4860fa90b2",
+          "bytes": 9557
+        },
+        "identical": true
+      },
+      {
+        "path": "tools/qualify_dotnet_published_tasks.py",
+        "actual": {
+          "sha256": "sha256:174e14e3f262fd0cf987e4403630c463bc0a442a23f7a8b542f54bd7787f4182",
+          "bytes": 6877
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:0dadc2b5cb965e61e43dc81d7e414ca97e7a4251821e482c595b7a54368e9501",
+          "bytes": 7103
+        },
+        "identical": false
+      },
+      {
+        "path": "tools/run_rust_capsule_workflow.py",
+        "actual": {
+          "sha256": "sha256:22b469e3f3fdc642fe00aa5e08eca91bdadfd6b38c2d99272d3ef909a7a3ee55",
+          "bytes": 29837
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:c0e042d4c7c354246121125950ad96e430f26052fae59fad533c5dec4f0059cd",
+          "bytes": 32387
+        },
+        "identical": false
+      },
+      {
+        "path": "tools/dotnet_guest/task_wait.py",
+        "actual": {
+          "sha256": "sha256:2d95ff74c5d0924cd53896f544a1853be649cb33df4051a2eb9687b3abb31f5a",
+          "bytes": 10233
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:2d95ff74c5d0924cd53896f544a1853be649cb33df4051a2eb9687b3abb31f5a",
+          "bytes": 10233
+        },
+        "identical": true
+      },
+      {
+        "path": "tools/dotnet_guest/async_exports.py",
+        "actual": {
+          "sha256": "sha256:30dee63b944c832b981048c8677c3a7134aa478b02adaad1a7a4cac2eccf2f10",
+          "bytes": 16972
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:30dee63b944c832b981048c8677c3a7134aa478b02adaad1a7a4cac2eccf2f10",
+          "bytes": 16972
+        },
+        "identical": true
+      },
+      {
+        "path": "tools/dotnet_guest/compiler.py",
+        "actual": {
+          "sha256": "sha256:9acbaa76a2eb36191c5426827aae669a1e70538531179395cc2f99d846c3eca3",
+          "bytes": 33168
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:9acbaa76a2eb36191c5426827aae669a1e70538531179395cc2f99d846c3eca3",
+          "bytes": 33168
+        },
+        "identical": true
+      },
+      {
+        "path": "tools/dotnet_guest/entropy_grants.py",
+        "actual": {
+          "sha256": "sha256:3bbe872763642fbb514c3f19978996ba9332404ea1a1aefe1b9c60fd887ebaf9",
+          "bytes": 5068
+        },
+        "reviewedFeature": {
+          "sha256": "sha256:3bbe872763642fbb514c3f19978996ba9332404ea1a1aefe1b9c60fd887ebaf9",
+          "bytes": 5068
+        },
+        "identical": true
+      }
+    ],
+    "nonidenticalHelperReview": {
+      "run_rust_capsule_workflow.py": "Exact run AST after only removal of two independently false selectors and their true validation guards",
+      "dotnet_task_runtime_fixture.py": "declare function exact AST; changes only unused ordinary-task library cases/string data",
+      "qualify_dotnet_published_tasks.py": "Exact qualify AST after idempotent chmod0700 of the five already authenticated/executable products"
+    }
+  },
+  "selectedHost": {
+    "compiledSource": "75b408ea0184936aa1dc21df2c9dd5e6c44bbc46",
+    "compiledTree": "4fe55ff6b68317fedcf4f05f2ff5a67d16681f5e",
+    "run": 39359322603,
+    "job": 118421487525,
+    "artifact": 12237197879,
+    "archiveDigest": "sha256:1fceae9a8e6e4a097cc7babc4c67c1eed0b8941e4d65ee134ec4a669200de818",
+    "binary": {
+      "sha256": "sha256:faad2a5502519c05bf8dd8b27016cd70615fefd6aca7b8b2c37e3bbf2f91d818",
+      "bytes": 186366600
+    },
+    "sourceArchive": {
+      "sha256": "sha256:bf06389ad4900489f722be0acfe983ad5629f29eafad0198a3c11e7a0d8b535f",
+      "bytes": 5281580
+    },
+    "sourceIdentity": {
+      "sha256": "sha256:767e86c2b3f7484c6830208afb40c7217645ab56f64f637b087c565acfcd5889",
+      "files": 3295,
+      "bytes": 25790889,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "features": [],
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": false
+    },
+    "ordinaryDefaults": true,
+    "actualRandomTests": 17,
+    "currentDevelopmentCompilationClaimed": false
+  },
+  "historicalOriginalCompiledSource": {
+    "head": "03a3f74598f2abfd0224169ae2871818f6c8419d",
+    "testedMerge": "0e46e59358bb4bae16169690041daacbf113555a",
+    "tree": "30e699965ff81243d3b24673c28758b132a26ad3",
+    "run": 39287260436,
+    "job": 118177684118
+  },
+  "historicalNormalNode": {
+    "receiptDigest": "sha256:3dbddfc782ef454e0f93fc72f23a985a6feb39754ba056c42b854c67b6194f45",
+    "compiledSource": "03a3f74598f2abfd0224169ae2871818f6c8419d"
+  },
+  "selectedBinaries": {
+    "latent": {
+      "sha256": "sha256:3b799d5afec30ada02c382797bfae9e1445a675ba0b838a0681b9cf826aa0ddc",
+      "bytes": 68801608
+    },
+    "latentd": {
+      "sha256": "sha256:faad2a5502519c05bf8dd8b27016cd70615fefd6aca7b8b2c37e3bbf2f91d818",
+      "bytes": 186366600
+    },
+    "package": {
+      "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+      "bytes": 17726192
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+      "bytes": 7224720
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:d560fb7003732efca6477e29bf51aa0510103b903a68a9c71b0a4c49caf1ee43",
+      "bytes": 23847032
+    }
+  },
+  "packages": [
+    {
+      "identity": "polly.core/8.6.3",
+      "original": {
+        "digest": "sha256:e972912ebc10f2760bc14361c3cfbfe59e84bdf20b860b9bd939fa07a5d2c48c",
+        "size": 826595
+      },
+      "dependencies": [],
+      "selectedAssets": {
+        "net10.0": {
+          "compile": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        },
+        "net10.0/wasi-wasm": {
+          "compile": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": "polly/8.6.3",
+      "original": {
+        "digest": "sha256:922a22762e8f2968147bbba3fab4fc93907a13bae8da220ca3ad1c2eb68524bd",
+        "size": 766807
+      },
+      "dependencies": [
+        "polly.core/8.6.3"
+      ],
+      "selectedAssets": {
+        "net10.0": {
+          "compile": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        },
+        "net10.0/wasi-wasm": {
+          "compile": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "normalResolverWorkspaceEphemeral": true,
+  "limits": {
+    "overallSeconds": 900,
+    "invocationMillis": 120000,
+    "controlMillis": 15000,
+    "controlProcessSeconds": 25,
+    "peerSeconds": 900
+  },
+  "invocations": 36,
+  "allOutcomesKnownAndReaped": true,
+  "completePhysicalSamples": 28,
+  "providerIdleObservations": 10,
+  "allOriginalActiveCountersZero": true,
+  "cases": [
+    {
+      "mode": "legacy",
+      "decoded": [
+        {
+          "ok": "published-tasks:legacy|attempts=3|callbacks=2|value=41"
+        }
+      ],
+      "known": true,
+      "processReaped": true,
+      "cpuFuel": "51852522",
+      "peakMemoryBytes": "57740016",
+      "wallTimeMicros": "12347423",
+      "outboundRequests": 0,
+      "externalEffects": 0,
+      "completeTopology": true,
+      "activeAndQuarantinedCells": 0,
+      "queuedInvocations": 0,
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "activationScopedOwners": 0
+    },
+    {
+      "mode": "modern",
+      "decoded": [
+        {
+          "ok": "published-tasks:modern|attempts=3|callbacks=2|value=43"
+        }
+      ],
+      "known": true,
+      "processReaped": true,
+      "cpuFuel": "58023708",
+      "peakMemoryBytes": "57740016",
+      "wallTimeMicros": "34872",
+      "outboundRequests": 0,
+      "externalEffects": 0,
+      "completeTopology": true,
+      "activeAndQuarantinedCells": 0,
+      "queuedInvocations": 0,
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "activationScopedOwners": 0
+    },
+    {
+      "mode": "error",
+      "decoded": [
+        {
+          "ok": "published-tasks:error|attempts=2|callbacks=1|value=47"
+        }
+      ],
+      "known": true,
+      "processReaped": true,
+      "cpuFuel": "51842377",
+      "peakMemoryBytes": "57740016",
+      "wallTimeMicros": "19070",
+      "outboundRequests": 0,
+      "externalEffects": 0,
+      "completeTopology": true,
+      "activeAndQuarantinedCells": 0,
+      "queuedInvocations": 0,
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "activationScopedOwners": 0
+    },
+    {
+      "mode": "cancel",
+      "decoded": [
+        {
+          "ok": "published-tasks:cancel|attempts=1|callbacks=1|value=53"
+        }
+      ],
+      "known": true,
+      "processReaped": true,
+      "cpuFuel": "51827259",
+      "peakMemoryBytes": "57740016",
+      "wallTimeMicros": "15374",
+      "outboundRequests": 0,
+      "externalEffects": 0,
+      "completeTopology": true,
+      "activeAndQuarantinedCells": 0,
+      "queuedInvocations": 0,
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "activationScopedOwners": 0
+    }
+  ],
+  "nodeShutdown": {
+    "clean": true,
+    "reaped": true
+  },
+  "peerShutdown": {
+    "requests": 8,
+    "authorized": 8,
+    "unexpected": 0,
+    "holds": 3,
+    "closedHolds": 3
+  },
+  "applicationSchedulerReplacement": false,
+  "httpAuthorityAdded": false,
+  "publisherAuthenticated": false,
+  "releasePublished": false,
+  "currentHeadNormalQualificationClaimed": false,
+  "fullTicketQualification": false,
+  "remaining": [
+    "CPU preemption",
+    "Thread and Monitor.Wait lifecycle",
+    "logical ThreadLocal isolation",
+    "background root drain",
+    "complete timer races",
+    "full resource/exhaustion matrix"
+  ]
+}
