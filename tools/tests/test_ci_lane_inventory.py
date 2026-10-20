@@ -220,6 +220,34 @@ class InventoryTests(unittest.TestCase):
 
 
 class RepositoryInventoryTests(unittest.TestCase):
+    def test_python_preservation_inputs_fetch_only_exact_frozen_source_commits(self):
+        import shlex
+        from tools.ci_lane_inventory import workflow_model
+        from tools import go_http_tenant_native_products, http_phase_native_products
+        from tools import http_tenant_native_products, java_phase_native_products
+        from tools import wait_runtime_native_products, wasmtime_48_0_7_native_products
+        from tools import qualify_go_write_progress
+
+        steps = workflow_model((ROOT / '.github/workflows/ci.yml').read_text())['jobs']['contracts']['steps']
+        matches = [step for step in steps if step.get('name') ==
+            'Fetch exact historical source inputs for Python preservation controls']
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]['if'], "matrix.lane == 'python'")
+        words = shlex.split(matches[0]['run'].replace('\\\n', ''))
+        self.assertEqual(words[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
+        expected = {module.SOURCE for module in (go_http_tenant_native_products,
+            http_phase_native_products, http_tenant_native_products, java_phase_native_products,
+            wait_runtime_native_products, wasmtime_48_0_7_native_products)}
+        expected.update((qualify_go_write_progress.BASELINE,
+            qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
+        self.assertEqual(len(words[5:]), len(expected))
+        self.assertEqual(set(words[5:]), expected)
+        self.assertTrue(all(len(value) == 40 and set(value) <= set('0123456789abcdef') for value in expected))
+        fetch = steps.index(matches[0])
+        run = next(i for i, step in enumerate(steps) if step.get('name') ==
+            'Validate contracts, echo component, and generated bindings')
+        self.assertLess(fetch, run)
+
     def test_current_workflow_has_the_bounded_lane_contract(self):
         import yaml
         spec = baseline()

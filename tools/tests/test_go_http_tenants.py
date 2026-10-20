@@ -211,14 +211,20 @@ class FutureGoHttpNativeTests(unittest.TestCase):
         from tools.phase3_resource_identity import source_identity
         self.assertEqual(future.SOURCE,'f9192fb5785ca7bed8b33dbb869b3d775b72ab4b')
         self.assertEqual(q.SOURCE,'6f5f180136d140ac670561695260f71514781015')
-        self.assertEqual(source_identity(q.ROOT),git_source_identity(future.SOURCE))
+        historical = git_source_identity(future.SOURCE)
+        current = source_identity(q.ROOT)
         proof={'compiledSource':future.SOURCE,'signedQualification':False}
         auxiliary={'wit/host-abi-phase3-v7.json':q.file_identity(q.ROOT/'wit/host-abi-phase3-v7.json')}
         with patch.object(future,'verify_prepared',return_value=proof), \
-                patch.object(future.READER,'_git_materials',return_value=auxiliary):
+                patch.object(future.READER,'_git_materials',return_value=auxiliary), \
+                patch.object(q,'source_identity',return_value=historical):
             result=q.future_native_compatibility(Path('prepared'))
             self.assertEqual(result['compiledSource'],future.SOURCE)
             self.assertEqual(result['reviewedUncompiledTestDelta'],[])
+            if current != historical:
+                with patch.object(q,'source_identity',return_value=current), \
+                        self.assertRaisesRegex(WorkflowError,'future-native-source-drift'):
+                    q.future_native_compatibility(Path('prepared'))
             self.assertIs(result['currentNativeCompilationClaimed'],False)
             with patch.object(q,'source_identity',return_value={'unreviewed':'source'}), \
                     self.assertRaisesRegex(WorkflowError,'future-native-source-drift'):

@@ -813,6 +813,19 @@ jobs:
           python-version: 3.13.5
           cache: pip
           cache-dependency-path: tools/requirements.lock
+      - name: Fetch exact historical source inputs for Python preservation controls
+        if: matrix.lane == 'python'
+        run: |
+          git fetch --no-tags --depth=1 origin \
+            6f5f180136d140ac670561695260f71514781015 \
+            36eaed79dbd92cac12bad2dd1f52cd5d1acd525f \
+            8f7780dd0a35e3375524d72e7dfaddf847deaa5c \
+            77bf0e3f3b68e17342b6146abd6f2de34a3efa00 \
+            f9192fb5785ca7bed8b33dbb869b3d775b72ab4b \
+            fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12 \
+            955da9c7465b88541e39b043203abb92782ae26a \
+            fb79a7ab6ea86f53baec78ee341aca075c14a2ef \
+            aa56bdebad8c12f20acce4ec4ecfeca73cf554be
       - name: Install Python validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1

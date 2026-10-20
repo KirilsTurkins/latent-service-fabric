@@ -136,12 +136,16 @@ class JavaResourceConformance(unittest.TestCase):
         class Project(ast.NodeTransformer):
             def visit_FunctionDef(self,node):
                 if node.name == 'run':
-                    self_outer = node.args.kwonlyargs.pop(); node.args.kw_defaults.pop()
-                    if self_outer.arg != 'java_resource_conformance': raise AssertionError('selector-order')
-                    node.body.pop(0)
+                    for expected in ('embedded_resource_conformance', 'java_resource_conformance'):
+                        argument, default = node.args.kwonlyargs.pop(), node.args.kw_defaults.pop()
+                        if argument.arg != expected or not isinstance(default, ast.Constant) or default.value is not False:
+                            raise AssertionError('selector-order-or-default')
+                        guard = node.body.pop(0)
+                        if not isinstance(guard, ast.Expr) or expected not in ast.unparse(guard):
+                            raise AssertionError('selector-guard-order')
                 return self.generic_visit(node)
             def visit_If(self,node):
-                if isinstance(node.test,ast.Name) and node.test.id == 'java_resource_conformance': return None
+                if isinstance(node.test,ast.Name) and node.test.id in {'java_resource_conformance', 'embedded_resource_conformance'}: return None
                 return self.generic_visit(node)
         self.assertEqual(hashlib.sha256(ast.dump(Project().visit(current),include_attributes=False).encode()).hexdigest(),
             '717ee343cfdced134f3cd0660e750dd7e80ea39484f75cd50e1c671a32634fcc')
@@ -149,6 +153,24 @@ class JavaResourceConformance(unittest.TestCase):
     def test_resource_child_preserves_all_original_jobs_commands_and_deadlines(self):
         path = '.github/workflows/java-guest-feasibility.yml'
         current = yaml.safe_load(read_file(ROOT/path))
+        flag = current[True]['workflow_dispatch']['inputs'].pop('java_http_spi')
+        self.assertEqual(flag['type'], 'boolean'); self.assertIs(flag['default'], False)
+        spi = current['jobs'].pop('http-public-spi')
+        focused = yaml.safe_load(read_file(ROOT/'.github/workflows/java-http-fiber-lifecycle.yml'))
+        self.assertEqual(spi, focused['jobs']['http-public-spi'])
+        parent = current['jobs']['compiler-component']
+        self.assertEqual(parent.pop('if'), "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
+        dependency = current['jobs']['dependency-ingestion']
+        self.assertEqual(dependency['if'], "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
+        dependency['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}"
+        steps = parent['steps']
+        index = next(i for i, step in enumerate(steps) if step.get('name') ==
+            'Export only exact normal public prerequisites for the separate Java scratch packet')
+        qualified = next(i for i, step in enumerate(steps) if step.get('name') ==
+            'Qualify standalone Java projects, nine SDK components, signed node and printed guide')
+        self.assertEqual(index, qualified + 1)
+        self.assertEqual(steps[index + 1]['name'], 'Retain verified normal Java products without keys or compiler caches')
+        moved = steps[index:index + 2]; del steps[index:index + 2]; steps.extend(moved)
         def normalized(value):
             if isinstance(value,dict): return {str(key):normalized(item) for key,item in value.items()}
             if isinstance(value,list): return [normalized(item) for item in value]
