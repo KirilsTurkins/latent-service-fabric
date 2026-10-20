@@ -44,16 +44,17 @@ class FrozenNativeProducts:
     retains its fixed members, source/material verification, limits and origin
     checks for later exact tuples without copying another acquisition algorithm.
     """
-    def __init__(self, *, source, run, job, artifact, receipts, branch, stages):
+    def __init__(self, *, source, run, job, artifact, receipts, branch, stages, event='push'):
         require(type(source) is str and re.fullmatch(r'[0-9a-f]{40}', source)
             and type(run) is int and run > 0 and type(job) is int and job > 0
             and type(branch) is str and re.fullmatch(r'[A-Za-z0-9._/-]{1,128}', branch)
+            and type(event) is str and event in ('push', 'workflow_dispatch')
             and type(stages) is tuple and 0 < len(stages) <= 32
             and len(set(stages)) == len(stages)
             and all(type(stage) is str and re.fullmatch(r'[a-z0-9-]{1,80}', stage) for stage in stages),
             'sdk-native-frozen-configuration')
         self.source, self.run, self.job, self.branch = source, run, job, branch
-        self.stages = stages
+        self.stages, self.event = stages, event
         # Own detached data so callers cannot mutate the original pin dictionaries.
         self.artifact, self.receipts = copy.deepcopy(artifact), copy.deepcopy(receipts)
         self._pins()
@@ -176,7 +177,7 @@ class FrozenNativeProducts:
         self._pins()
         run, job = api(f'actions/runs/{self.run}'), api(f'actions/jobs/{self.job}')
         require(run['id'] == self.run and run['head_sha'] == self.source and run['path'] == WORKFLOW
-            and run['event'] == 'push' and run['head_branch'] == self.branch
+            and run['event'] == self.event and run['head_branch'] == self.branch
             and run['status'] == 'completed' and run['conclusion'] == 'success'
             and job['id'] == self.job and job['run_id'] == self.run and job['head_sha'] == self.source
             and job['name'] == 'Build and retain five source-bound native products'
