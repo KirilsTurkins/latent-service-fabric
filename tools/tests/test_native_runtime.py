@@ -43,7 +43,7 @@ def fixture(version: str = "0.1.0-test.1") -> tuple[dict, bytes]:
     executable = hashlib.sha256(payloads["bin/latent-aot-compiler"]).hexdigest()
     metadata = {"schemaVersion": "latent.native-release.v1", "version": version, "sourceCommit": "a" * 40,
                 "target": verify.TARGET, "toolchain": {"rust": "1.97.1", "lockSha256": "b" * 64},
-                "engine": {"wasmtimeVersion": "48.0.6", "hostAbiProfile": "lsf-host-abi-phase3-v5",
+                "engine": {"wasmtimeVersion": "48.0.7", "hostAbiProfile": "lsf-host-abi-phase3-v5",
                            "compilerSha256": executable, "dynamicDependencies": ["libc.so.6"]},
                 "platform": dict(verify.PLATFORM),
                 "compatibility": {"installerFormat": 1, "nodeConfigFormat": 1, "migration": "none", "upgradeFrom": []},
@@ -150,6 +150,45 @@ class ManifestTests(unittest.TestCase):
                                {"sha256": "d" * 64}, {"license": "Apache-2.0"}, {"packages": {"example-child": "2.0.0"}}):
                     with self.assertRaises(InstallError):
                         shared_license(package, [donor], checksums, {**policy, "sources": [{**source, **change}]})
+
+    def test_current_wasmtime_shared_license_donor_matches_every_locked_child(self):
+        import tomllib
+        policy = json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes())
+        current = [source for source in policy["sources"]
+                   if source["donor"] == {"name": "wasmtime", "version": "48.0.7", "file": "LICENSE"}]
+        self.assertEqual(len(current), 1)
+        source = current[0]
+        self.assertEqual(source["sourceCommit"], "c6846e13f64b07b7912d372db141397058b55f99")
+        self.assertEqual(source["sha256"], "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5")
+        self.assertEqual(len(source["packages"]), 14)
+        locks = [tomllib.loads((ROOT / name).read_text())["package"]
+                 for name in ("Cargo.lock", "tools/rust_capsule.lock")]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / ".cargo_vcs_info.json").write_bytes(encode({"git": {"sha1": source["sourceCommit"]}}))
+            donor = {"name": "wasmtime", "version": "48.0.7", "source": "registry+example",
+                     "repository": source["repository"], "license": source["license"],
+                     "manifest_path": str(directory / "Cargo.toml")}
+            for lock in locks:
+                selected = {entry["name"]: entry for entry in lock
+                            if entry["name"] in source["packages"] or entry["name"] == "wasmtime"}
+                self.assertEqual(len(selected), 15)
+                checksums = {(name, entry["version"], donor["source"]): entry["checksum"]
+                             for name, entry in selected.items()}
+                for name, version in source["packages"].items():
+                    with self.subTest(name=name):
+                        self.assertEqual(selected[name]["version"], version)
+                        child = {**donor, "name": name, "version": version}
+                        with patch.object(files, "read", return_value=encode({"git": {"sha1": source["sourceCommit"]}})), \
+                                patch.object(files, "digest", return_value=source["sha256"]):
+                            path, evidence = shared_license(child, [donor], checksums, policy)
+                            self.assertEqual(path, directory / "LICENSE")
+                            self.assertEqual(evidence["donorCrateSha256"], selected["wasmtime"]["checksum"])
+                            for sources in ([entry for entry in policy["sources"] if entry is not source],
+                                            policy["sources"] + [source],
+                                            [{**source, "sourceCommit": "0" * 40}]):
+                                with self.assertRaises(InstallError):
+                                    shared_license(child, [donor], checksums, {**policy, "sources": sources})
 
     def test_vm_driver_uses_pinned_image_and_actual_reboot(self):
         profile = json.loads((ROOT / "tools/native-vm-profile.json").read_text())

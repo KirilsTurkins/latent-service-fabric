@@ -339,8 +339,11 @@ pub fn phase_type_owner_capsule(legacy_operations: bool) -> PackageInput {
     } else {
         old.lines()
             .filter(|line| !line.contains(": async func"))
-            .map(|line| format!("{line}\n"))
-            .collect()
+            .fold(String::new(), |mut output, line| {
+                output.push_str(line);
+                output.push('\n');
+                output
+            })
     };
     let phase = latent_core::PHASE3_HOST_ABI_V7
         .interface("latent:http/phase-timing@0.4.0")

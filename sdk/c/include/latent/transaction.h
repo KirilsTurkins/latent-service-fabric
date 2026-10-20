@@ -690,7 +690,7 @@ static inline latent_transaction_transaction_profile latent_transaction_current_
     latent_transaction_transaction_profile result = {
         {"lsf-transaction-v1", 18},
         {"sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35", 71},
-        {"sha256:28ce257e527e335555ee61130e92ad4736c582d1921d276398f7ae55d38376a1", 71},
+        {"sha256:bea079c0a3623e11fb559bd8cbb6ced9149f1f8bb5d3b40a8e9c73474c327a48", 71},
     };
     return result;
 }

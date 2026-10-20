@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_tls_parser.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Qualify only the exact current rustls parser with fixed maintained dependency closure and unchanged amplification/refusal vectors; host TLS accounting stays disabled",
+  "reviewReason": "Keep the maintained parser reference lock on patched verifier0.103.16 with exact source guard",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0acbd60041d9ced9223287bc69f09c8d501f794d00d8ec957e95a6eb73294848"
+  "sha256": "b7722ba93212bf376a2d1a57ffc309957f50e05ca4c1494870a53fb8a45b0a53"
 }

@@ -1,5 +1,5 @@
 mod types;
-use super::{SemanticLimits, exhausted, incompatible, limits};
+use super::{exhausted, incompatible, limits, SemanticLimits};
 use latent_core::PlatformError;
 use std::collections::BTreeMap;
 use wit_parser::{FunctionKind, InterfaceId, Resolve, WorldId, WorldItem, WorldKey};

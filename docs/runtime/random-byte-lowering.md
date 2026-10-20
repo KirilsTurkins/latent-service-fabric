@@ -8,7 +8,7 @@ both generated lowering paths, guest realloc, destination checks and failure
 unwind. The host buffer is wiped and freed before its original call charge
 returns. Successfully copied guest bytes remain charged as guest memory.
 
-The implementation delegates to the exact Wasmtime48.0.6 generated ABI.
+The implementation delegates to the exact Wasmtime48.0.7 generated ABI.
 `StaticHostFn::lower_result` owns the return value by value; generated list
 lowering reallocates guest memory and copies the source before returning.
 The private fixed-scalar completion trait remains closed. Other strings,

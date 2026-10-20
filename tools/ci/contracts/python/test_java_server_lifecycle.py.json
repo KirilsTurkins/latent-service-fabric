@@ -187,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_server_lifecycle.py",
-  "reviewReason": "Preserve original controls plus actual recipe baseline requirement and strict final Cargo graph immutable product capture negatives",
+  "reviewReason": "Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
