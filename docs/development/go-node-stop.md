@@ -106,3 +106,32 @@ witnesses must share one epoch before their sequence order can be compared.
 The retained three-page sample contains only the earlier fresh activation, so
 parsing it correctly still yields no live-work barrier. No numeric-epoch
 fallback, extra polling allowance, or shutdown success is introduced.
+
+
+The corrected 067003 run parsed those epochs and retained all 16 original polling
+attempts, but still failed before SIGTERM: no complete set of named timer
+positives was retained. Store/session/provider ownership stayed live; those
+snapshots do not expose per-activation timer/read-wait counts or prove progress
+past registration. The optional stream had 149 drops, including 130 already
+reported on the first page. This does not establish that query contention caused
+the missing events, and no ordering-only retry is counted as a fix.
+
+A new native observer is off by default and selected only by
+`LSF_GO_NODE_STOP_TIMER_OBSERVER=1` together with the two exact public fixture
+activation IDs. It emits fixed `pending`/`drain` mode labels and
+`start-accepted`, `next-entered`, `root-close` events with only a sequence and
+actual Task/Wait/Timer counts. The start hook runs after successful timer
+allocation; the next hook runs after a real timer wait owner is admitted; close
+runs after the actual runtime close. Typed errors cannot become positive records.
+The observer does not print activation IDs, tokens, request data or error text.
+
+A static process-wide budget permits at most 15 normal records, no more than 8
+per mode, plus one closed overflow marker: 16 total records even if tables are
+recreated under the same fixture IDs. Failed output is ignored by execution;
+missing, extra, malformed, duplicate or overflowed observations never qualify a
+stop. The small per-Table observer field remains covered by the existing
+`size_of<Table>` original host-memory reservation. No owner/authority/grace/wall
+limit or original error/retirement path changes. The reader always reports
+`qualification: false`; it does not replace the strict stop barrier. This source
+requires a new authenticated native producer and actual execution before it can
+supply positive diagnostic evidence. Historical 94d has no such observer.

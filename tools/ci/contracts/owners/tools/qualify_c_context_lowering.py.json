@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_c_context_lowering.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Extend only the explicit unqualified C compiler mechanism with bounded pthread-key and errno PAL controls; retain original26 Rust and original C isolation/refusal controls, limits and engine defaults.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e3c1043bb800b7583d709d5d1cbe21fd4fd6cbd89c678dcbe1ef08e4b991a824"
+}

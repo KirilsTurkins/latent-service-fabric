@@ -99,5 +99,23 @@ not repeat the original C35 baseline or build native/engine tools. The same
 seven-call two-tenant controller then consumes this new observed component.
 Rust reuses its exact authenticated33-call component, with its single missing
 public WIT restored only after matching both original inventories. It invokes
-no Cargo, Rust compiler or host build. All three new extension programmes are
-pending; none supplies six-language closure.
+no Cargo, Rust compiler or host build. The [C seven-call observation](../testing/evidence/c-resource-tenants-signed-2026-10-20.json)
+and [Java seven-call observation](../testing/evidence/java-resource-tenants-signed-2026-10-20.json)
+bind actual source `8435f5057a00900eb2d782f3a963f3d2f01208d5` in
+[run39413019080](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39413019080).
+Both language jobs passed all seven calls, physical/owner-zero barriers,
+independent credentials, five exact zero peer counters, clean node/peer
+retirement and the final source/product checks. All 161 C and 119 Java archive
+members were authenticated. C records one actual new captured guest build and
+no native build; Java retains its original component and compiler records.
+
+The overall run remains failed because Rust's CLI rejected its registered
+language before guest work. A real subprocess control reproduces that old
+exit2 and verifies the closed registered-origin selection, foreign-origin
+refusal and unknown-language refusal after correction. The original two C
+control guards remain identical. A default-false Rust-only manual selector
+retains the default three-language steps and twenty-minute bounds while
+avoiding repeats of the successful siblings. The corrected Rust-only
+[run39414718984](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39414718984)
+is pending at source `cb17c6c9081f90628afa693690e9eebfe10c92a8`.
+No six-language coupled or concurrent completion is claimed.
