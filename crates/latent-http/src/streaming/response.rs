@@ -426,6 +426,9 @@ impl HttpBody for Body {
                     self.pending = Bytes::new();
                     self.exchange.socket = None;
                     self.exchange.terminal_audit().await;
+                    // Audit completion is an async boundary too. An original
+                    // root stop during retirement still wins before reporting.
+                    self.exchange.call.io().checkpoint()?;
                     Err(error)
                 }
             }
