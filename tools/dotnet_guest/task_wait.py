@@ -49,7 +49,9 @@ def selected(declared: list[str], bridge: dict | None) -> bool:
     return True
 
 
-def validate_receipt(value: dict) -> None:
+def validate_receipt(value: dict, *, finite: bool = False) -> None:
+    if type(finite) is not bool:
+        raise ValueError('task-wait-finite-selection')
     fixed = {'patch': PATCH, 'sourceDigest': SOURCE, 'cecilDigest': http_errors.CECIL_DIGEST,
         'method': METHOD, **BODY_IDENTITIES, 'maximumNestedWaits': 32,
         'finiteAndCancellableWaits': 'original-unsupported', 'completion': 'actual-task-only',
@@ -67,6 +69,11 @@ def validate_receipt(value: dict) -> None:
         'zeroCacheLifetime': 'CheckPollables-original-Poll-call-only', 'zeroCacheDetach': 'before-original-Poll',
         'zeroCacheDispose': 'original-owned-Pollable-finally', 'zeroCacheForeignHolders': 'untouched',
         'zeroCacheModifiedOriginalMethods': 1}
+    if finite:
+        fixed.update(finiteAndCancellableWaits='original-Task-WhenAny-Delay', generatedHelperCount=10,
+            finiteWaitCleanup='private-linked-source-cancel-dispose-finally',
+            zeroTimeout='query-only-before-cancellation', waitCancellation='original-token-only',
+            publicWaitValidationAndExceptions='unchanged')
     bodies = value.get('timerDriverOriginalBodies')
     cache_bodies = value.get('zeroCacheOriginalBodies')
     body_names = {'System.Void System.Threading.TimerQueue::SetNextTimer(System.Int64,System.Int64)',
@@ -96,6 +103,18 @@ class Port:
     source_identity: bytes
     targets_identity: bytes
     evidence: dict
+
+    def validated_helper_count(self) -> int:
+        self.recheck()
+        fields = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest',
+            'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
+        finite = self.evidence.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
+        validate_receipt({key: value for key, value in self.evidence.items() if key not in fields}, finite=finite)
+        declarations = (runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM) if finite else (runtime.CLOCK, runtime.ACTIVATION)
+        if (self.evidence['derived'] != self.identity or self.evidence['outputDigest'] != self.identity['digest']
+                or self.evidence['selection']['requiredDeclarations'] != sorted(declarations)):
+            raise ValueError('task-wait-authenticated-helper-count')
+        return self.evidence['generatedHelperCount']
 
     def recheck(self) -> None:
         original(self.original)
@@ -147,6 +166,7 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
             project: Path, output: Path, evidence: Path, run, *, protect_inputs=None) -> Port | None:
     if not selected(declared, bridge):
         return None
+    finite = {runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM} <= set(declared)
     tool = http_errors.verify_installed(sdk, tools)
     source = source_path(packages)
     source_identity = original(source)
@@ -156,9 +176,10 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
     captured = inventory(snapshot(sdk / 'tools/http-errors'))
     target = read_file(sdk / 'tools/http-errors/TaskWait.targets', http_errors.MAX_RECEIPT)
     targets.write_bytes(target)
-    run('task-wait-rewrite', dotnet, tools / 'http-errors/HttpErrors.dll', '--task-wait', source, assembly, receipt)
+    run('task-wait-rewrite', dotnet, tools / 'http-errors/HttpErrors.dll',
+        '--finite-task-wait' if finite else '--task-wait', source, assembly, receipt)
     result = json.loads(read_file(receipt, http_errors.MAX_RECEIPT))
-    validate_receipt(result)
+    validate_receipt(result, finite=finite)
     identity = file_identity(assembly, 'task-wait-derived-corelib', MAX_ASSEMBLY)
     if identity['digest'] != result['outputDigest']:
         raise ValueError('task-wait-rewrite-output-drift')
@@ -176,6 +197,7 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
     (project / 'Capsule.csproj').write_bytes(XML.tostring(document, encoding='utf-8', xml_declaration=True))
     record = {**result, 'profile': PROFILE, 'frameworkInput': source_identity, 'tool': tool, 'derived': identity,
         'sourceCaptureDigest': digest(captured), 'targetsDigest': digest(target), 'nativeAotReferenceBinding': None,
-        'selection': {'requiredDeclarations': sorted((runtime.CLOCK, runtime.ACTIVATION)), 'asyncExportBridge': bridge}}
+        'selection': {'requiredDeclarations': sorted((runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM)
+            if finite else (runtime.CLOCK, runtime.ACTIVATION)), 'asyncExportBridge': bridge}}
     write_json(evidence / 'task-wait-port-preparation.json', record)
     return Port(sdk / 'tools/http-errors', source, assembly, retained, targets, references, identity, captured, target, record)
