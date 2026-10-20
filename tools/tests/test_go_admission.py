@@ -65,6 +65,12 @@ class GoAdmission(unittest.TestCase):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'unreviewed-campaign-or-negative'):
                 reference.campaign(name, fixture, control)
 
+    def test_source_identity_includes_actual_synthetic_callee_constructor_and_contract(self):
+        snapshot = reference.source_snapshot(reference.ROOT)
+        for name in ['crates/latent-wasmtime/tests/local_service/packages.rs',
+                     'crates/latent-wasmtime/tests/local_service/component.rs']:
+            self.assertEqual(snapshot[name], reference.digest((reference.ROOT / name).read_bytes()))
+
     def test_existing_managed_fixture_identity_and_native_modes_are_required(self):
         source = (reference.ROOT / 'sdk/go-guest/runtime/managed-idle-conformance/main.go').read_bytes()
         profile = 'go-component-activation-v5'

@@ -10,6 +10,10 @@ Two independently signed tenant publications of the identical Go component use
 one actual local activation manager, backend and physical cell. Each tenant has
 its own deployment, capability policy and scoped publication selector. The
 existing provider registrations are shared without a second provider/executor.
+The auxiliary `packages::callee(42)` publication is a synthetic handwritten
+wasm-encoder fixture, never invoked by this Go campaign. Its source snapshot
+binds `packages.rs`, `component.rs` and the actual callee WIT, separately from
+the maintained Go caller/compiler materials.
 The application still requires its original 16 Task slots (including eight
 managed reservations), four Wait slots and original request budgets.
 

@@ -104,6 +104,8 @@ def source_snapshot(root: Path) -> dict:
               'crates/latent-wasmtime/tests/local_service/runtime/go/admission.rs',
               'crates/latent-wasmtime/tests/local_service/fixture.rs',
               'crates/latent-wasmtime/tests/guest_sdk/runtime.rs',
+              'crates/latent-wasmtime/tests/local_service/packages.rs',
+              'crates/latent-wasmtime/tests/local_service/component.rs',
               'tools/ci/suites.json', 'tools/qualify_go_activation.py', 'tools/qualify_go_synchronization.py')}
     if len(files) > 1024:
         raise ValueError('Go-synchronization-source-count')
@@ -200,7 +202,11 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     else:
         receipt.update({'signedObservationCount': 12, 'admissionRefusals': 2, 'foreignCancellationControls': 2,
                         'physicalCells': 1, 'nodeAdmissionCeiling': 1, 'tenantsShareManagerBackendAndCell': True,
-                        'generalSchedulerFairnessQualified': False})
+                        'generalSchedulerFairnessQualified': False,
+                        'auxiliaryCallee': {'kind': 'synthetic-handwritten-wasm-encoder',
+                                            'constructor': 'packages::callee(42)', 'invoked': False,
+                                            'sources': ['crates/latent-wasmtime/tests/local_service/packages.rs',
+                                                        'crates/latent-wasmtime/tests/local_service/component.rs']}})
     raw = (json.dumps(receipt, indent=2) + '\n').encode()
     if len(raw) > 262144:
         raise ValueError('Go-synchronization-receipt-bound')

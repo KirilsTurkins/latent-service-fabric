@@ -18,20 +18,31 @@ async fn fixture(root: &std::path::Path) -> Fixture {
         &TenantId("tenant-b".into()),
     );
     let mut uploads = vec![];
-    for (tenant, bundle) in [
-        ("tenant-b", &caller),
-        ("tenant-b", &callee),
-        ("tenant-a", &caller),
+    for (tenant, bundle, maintained_go) in [
+        ("tenant-b", &caller, true),
+        ("tenant-b", &callee, false),
+        ("tenant-a", &caller, true),
     ] {
         let mut observation = provenance::observation();
         observation.source.repository =
             "https://github.com/KirilsTurkins/latent-service-fabric".into();
         observation.component_digest = bundle.layout().component_release().unwrap().0;
         observation.component_size = bundle.blob("component.wasm").unwrap().len() as u64;
-        let mut bound = source.clone();
-        bound.extend_from_slice(include_bytes!(
-            "../../../../../../wit/platform/activation-runtime/package.wit"
-        ));
+        let bound = if maintained_go {
+            let mut bound = source.clone();
+            bound.extend_from_slice(include_bytes!(
+                "../../../../../../wit/platform/activation-runtime/package.wit"
+            ));
+            bound
+        } else {
+            // Auxiliary topology fixture, never a Go compilation claim. Its
+            // bytes come from the checked handwritten wasm-encoder builder.
+            let mut bound = b"synthetic-local-service-callee:packages::callee(42)\n".to_vec();
+            bound.extend_from_slice(include_bytes!("../../packages.rs"));
+            bound.extend_from_slice(include_bytes!("../../component.rs"));
+            bound.extend_from_slice(component::CALLEE_WIT.as_bytes());
+            bound
+        };
         observation.source.snapshot_digest =
             latent_artifacts::package::artifact_blob_digest(&bound).into_string();
         let material = observation
