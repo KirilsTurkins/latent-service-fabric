@@ -151,7 +151,9 @@ class JavaHttpPhaseCampaignSource(unittest.TestCase):
                 self.assertEqual(digest((project/'vendor/lsf'/name).read_bytes()), identity['digest'])
             declaration = json.loads((project/'java-dependencies.json').read_bytes())
             self.assertEqual(declaration['dependencies'], [{'exclusions': [], 'group': 'com.goebl',
-                'name': 'david-webb', 'scope': 'runtime', 'version': '1.3.0'}])
+                'name': 'david-webb', 'scope': 'runtime', 'version': '1.3.0'},
+                {'exclusions': [], 'group': 'com.github.kevinsawicki', 'name': 'http-request',
+                 'scope': 'runtime', 'version': '6.0'}])
 
     def test_default_library_and_actual_connect_boundary_do_not_relabel_root_or_header_wait(self):
         from tools import java_http_phase_fixture as fixture
@@ -160,6 +162,9 @@ class JavaHttpPhaseCampaignSource(unittest.TestCase):
         self.assertIn('Webb.create().get(', default)
         for override in ('connectTimeout(', 'readTimeout(', 'setConnectTimeout(', 'setReadTimeout('):
             self.assertNotIn(override, default)
+        self.assertIn('HttpRequest.get(', default)
+        self.assertIn('new JSONObject(request.body()).getInt("id")', default)
+        self.assertIn('request.disconnect();', default)
         self.assertLess(source.index('connection.connect();'), source.index('int status = connection.getResponseCode();'))
         self.assertIn('"http-connect-timeout".equals(timeout.getMessage())', source)
         self.assertIn('"http-read-timeout".equals(timeout.getMessage())', source)

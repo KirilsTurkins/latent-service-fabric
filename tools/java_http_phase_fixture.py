@@ -13,7 +13,8 @@ SOURCE = 'tools/fixtures/java-http-phases/Capsule.java'
 WORLD = 'tools/fixtures/java-http-phases/world.wit'
 CASES = ('published-defaults', 'explicit-nonzero-success', 'headers-read-timeout',
     'body-read-timeout', 'root-deadline-is-not-phase-timeout', 'root-cancel-is-not-phase-timeout',
-    'fresh-explicit-success', 'connect-timeout', 'connect-root-deadline', 'connect-root-cancel')
+    'fresh-explicit-success', 'connect-timeout', 'connect-root-deadline', 'connect-root-cancel',
+    'published-http-request-defaults')
 
 
 class ConnectBacklog:
@@ -66,6 +67,13 @@ def project(directory: Path) -> Path:
     source, wit = read_file(ROOT/SOURCE), read_file(ROOT/WORLD)
     (app/'src/dev/latent/app/Capsule.java').write_bytes(source)
     (app/'wit/world.wit').write_bytes(wit)
+    declaration = read_json(app/'java-dependencies.json')
+    if declaration['dependencies'] != [{'exclusions': [], 'group': 'com.goebl',
+            'name': 'david-webb', 'scope': 'runtime', 'version': '1.3.0'}]:
+        raise ValueError('java-phase-published-dependency-preimage')
+    declaration['dependencies'].append({'exclusions': [], 'group': 'com.github.kevinsawicki',
+        'name': 'http-request', 'scope': 'runtime', 'version': '6.0'})
+    (app/'java-dependencies.json').write_bytes((json.dumps(declaration, indent=2)+'\n').encode())
     descriptor = read_json(app/'capsule-project.json')
     descriptor['httpClient'] = {'profile': PHASE_PROFILE_ID}
     (app/'capsule-project.json').write_bytes((json.dumps(descriptor, indent=2)+'\n').encode())

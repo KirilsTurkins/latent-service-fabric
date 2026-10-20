@@ -39,8 +39,10 @@ physical provider retirement or whole-issue #688/#741 completion. Those require
 the new V7 host and actual pending HTTP component programme; historical 0.3 native
 products cannot qualify this profile.
 
-The prepared public campaign uses an ordinary captured DavidWebb 1.3.0 project
-without replacing its nonzero timeout defaults. Its other standard URLConnection
+The prepared public campaign uses one ordinary project capturing DavidWebb 1.3.0,
+its transitive JSON dependency, and http-request 6.0. Both published clients use
+their default timeout paths under the same selected profile; DavidWebb's nonzero
+defaults are not replaced. Its other standard URLConnection
 cases select explicit nonzero success, held-header and partial-body read expiry,
 root deadline/cancellation separation and a fresh request. A Linux connect case
 uses the same real full-accept-backlog premise as the maintained native ownership

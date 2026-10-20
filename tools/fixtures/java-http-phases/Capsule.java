@@ -2,6 +2,7 @@ package dev.latent.app;
 
 import com.goebl.david.Response;
 import com.goebl.david.Webb;
+import com.github.kevinsawicki.http.HttpRequest;
 import dev.latent.generated.Bindings;
 import dev.latent.guest.client.HttpFailure;
 import java.io.InputStream;
@@ -15,7 +16,7 @@ public final class Capsule implements Bindings.Exports {
     private static int calls;
 
     public String run(Long which, String endpoint) {
-        if (which == null || which < 0 || which > 9) throw new IllegalArgumentException("unknown-phase-case");
+        if (which == null || which < 0 || which > 10) throw new IllegalArgumentException("unknown-phase-case");
         int invocation = ++calls;
         if (which == 0) {
             // Do not replace the published library's nonzero phase defaults.
@@ -23,6 +24,15 @@ public final class Capsule implements Bindings.Exports {
                 .followRedirects(false).asJsonObject();
             return invocation + ":default-webb:" + response.getStatusCode() + ":"
                 + response.getResponseMessage() + ":" + response.getBody().getInt("id");
+        }
+        if (which == 10) {
+            HttpRequest request = HttpRequest.get(endpoint + "/conformance/json");
+            try {
+                return invocation + ":default-http-request:" + request.code() + ":"
+                    + new JSONObject(request.body()).getInt("id");
+            } finally {
+                request.disconnect();
+            }
         }
         boolean pendingHeaders = which == 2 || which == 4 || which == 5;
         String path = pendingHeaders ? "/conformance/hold/headers"
