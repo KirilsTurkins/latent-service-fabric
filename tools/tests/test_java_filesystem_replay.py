@@ -52,6 +52,12 @@ class JavaFilesystemReplay(unittest.TestCase):
         commands = '\n'.join(step.get('run', '') for step in job['steps'])
         for revision in (replay.PRODUCTION, replay.historical.HOST_SOURCE, replay.acquisition.SOURCE):
             self.assertIn(revision, commands)
+        steps = job['steps']
+        fetched = next(i for i, step in enumerate(steps)
+                       if step.get('run', '').startswith('git fetch --no-tags --depth=1 origin '))
+        controls = next(i for i, step in enumerate(steps)
+                        if 'unittest tools.tests.test_java_closed_filesystem' in step.get('run', ''))
+        self.assertLess(fetched, controls)
         for forbidden in ('cargo build', 'cargo test', 'install-tools'):
             self.assertNotIn(forbidden, commands)
         self.assertIn('sudo apt-get install --yes bubblewrap', commands)

@@ -53,6 +53,10 @@
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
       {
+        "name": "Fetch exact historical revisions before source projection controls",
+        "run": "git fetch --no-tags --depth=1 origin e97d44ddc744c9bd738d9b3b7a7d8b7234133e36 75b408ea0184936aa1dc21df2c9dd5e6c44bbc46 759b86c139473cbe06a0b51298ac13ea234cbffe"
+      },
+      {
         "name": "Check concrete refused APIs argument preservation and diagnostic source guards",
         "run": "python3 -B -m unittest tools.tests.test_java_closed_filesystem tools.tests.test_java_filesystem_replay -v"
       },
@@ -61,7 +65,7 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Retrieve only separately authenticated historical products",
-        "run": "git fetch --no-tags --depth=1 origin e97d44ddc744c9bd738d9b3b7a7d8b7234133e36 75b408ea0184936aa1dc21df2c9dd5e6c44bbc46 759b86c139473cbe06a0b51298ac13ea234cbffe\npython3 tools/replay_java_closed_filesystem.py --prepare --output \"$RUNNER_TEMP/java-filesystem-prepared\""
+        "run": "python3 tools/replay_java_closed_filesystem.py --prepare --output \"$RUNNER_TEMP/java-filesystem-prepared\""
       },
       {
         "env": {
@@ -86,7 +90,7 @@
   },
   "jobId": "closed-filesystem-reference",
   "kind": "job",
-  "reviewReason": "Default-false diagnostic only: preserve complete original jobs; build current five Java components on exact retained native products with39 required outcomes and no fabricated normal Java receipt.",
+  "reviewReason": "Fetch the exact already-required production and historical revisions before shallow-checkout source projection controls; no native command, budget, source preimage or original job change",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
