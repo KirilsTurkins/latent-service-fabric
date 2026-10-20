@@ -423,6 +423,15 @@ impl Fixture {
             contract: self.capability.into(),
             opaque_handle: "descriptive-only".into(),
         });
+        if self.capability == latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY {
+            // The component imports its original nominal type owner as well;
+            // this descriptive binding installs no legacy callable operation.
+            request.imports.push(BoundImport {
+                capability: CapabilityId(component::CAP.into()),
+                contract: component::CAP.into(),
+                opaque_handle: "descriptive-only".into(),
+            });
+        }
         (
             request,
             Control {
