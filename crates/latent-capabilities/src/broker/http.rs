@@ -4,6 +4,7 @@ use super::{io::IoBuffer, pools::PoolCall, CapabilitySession};
 use latent_core::{BoxFuture, PlatformError, PlatformErrorCode};
 
 pub const HTTP_CAPABILITY: &str = "latent:http/client@0.2.0";
+pub const MAXIMUM_HTTP_REASON_BYTES: usize = 512;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpMethod {
     Get,
@@ -127,20 +128,47 @@ impl HttpHeaderBlock {
 pub struct HttpResponseHead {
     status: u16,
     headers: HttpHeaderBlock,
+    reason_phrase: Option<IoBuffer>,
 }
 impl HttpResponseHead {
     pub fn new(status: u16, headers: IoBuffer) -> Result<Self, HttpError> {
+        Self::with_reason_phrase(status, headers, None)
+    }
+    pub fn with_reason_phrase(
+        status: u16,
+        headers: IoBuffer,
+        reason_phrase: Option<IoBuffer>,
+    ) -> Result<Self, HttpError> {
         if !(200..=599).contains(&status) {
             return Err(HttpError::ConnectionFailed);
+        }
+        if let Some(reason) = &reason_phrase {
+            if reason.capacity() > MAXIMUM_HTTP_REASON_BYTES {
+                return Err(HttpError::ResponseTooLarge);
+            }
+            if reason
+                .bytes()
+                .iter()
+                .any(|byte| *byte < 32 && *byte != 9 || *byte == 127)
+            {
+                return Err(HttpError::ConnectionFailed);
+            }
         }
         Ok(Self {
             status,
             headers: HttpHeaderBlock::new(headers)?,
+            reason_phrase: reason_phrase.map(IoBuffer::retain).transpose()?,
         })
     }
     #[must_use]
     pub fn status(&self) -> u16 {
         self.status
+    }
+    /// None is unavailable metadata, while Some(empty) is an actual empty phrase.
+    /// The complete original capacity stays charged for this head's lifetime.
+    #[must_use]
+    pub fn reason_phrase(&self) -> Option<&[u8]> {
+        self.reason_phrase.as_ref().map(IoBuffer::bytes)
     }
     pub fn headers(&self) -> impl Iterator<Item = (&str, &str)> {
         self.headers.iter()

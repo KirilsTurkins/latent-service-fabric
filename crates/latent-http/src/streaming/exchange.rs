@@ -253,7 +253,7 @@ impl HttpUpload for Upload {
             }
             state.sender.end();
             state.progress(false).await?;
-            super::response::begin(state).map(|body| Box::new(body) as Box<dyn HttpBody>)
+            super::response::begin(state, false).map(|body| Box::new(body) as Box<dyn HttpBody>)
         })
     }
 }
