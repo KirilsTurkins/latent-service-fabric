@@ -81,6 +81,48 @@ class FrozenNativeReader(unittest.TestCase):
             with self.assertRaises(WorkflowError):self.reader.extract(archive,'unselected-private-or-foreign',Path(tmp)/'foreign')
             with self.assertRaises(FileExistsError):self.reader.extract(archive,'native-products.json',target)
 
+    def test_manual_producer_is_exactly_selected_without_relaxing_push_or_identity(self):
+        artifact = {**self.artifact, "name": "sdk-native-products-" + "2" * 40, "expired": False,
+                    "workflow_run": {"id": 2, "head_sha": "2" * 40}}
+        run = {"id": 2, "head_sha": "2" * 40, "path": reader.WORKFLOW,
+               "event": "push", "head_branch": "fixture/native",
+               "status": "completed", "conclusion": "success"}
+        job = {"id": 3, "run_id": 2, "head_sha": "2" * 40,
+               "name": "Build and retain five source-bound native products",
+               "status": "completed", "conclusion": "success"}
+        replies = {"actions/runs/2": run, "actions/jobs/3": job,
+                   "actions/runs/2/artifacts?per_page=100": {"total_count": 1, "artifacts": [artifact]}}
+        with patch.object(reader, "api", side_effect=replies.__getitem__):
+            self.assertEqual(self.reader._official_artifact(), artifact)
+            run["event"] = "workflow_dispatch"
+            with self.assertRaisesRegex(WorkflowError, "official-producer"):
+                self.reader._official_artifact()
+            selected = reader.FrozenNativeProducts(source="2" * 40, run=2, job=3,
+                artifact=self.artifact, receipts=self.receipts, branch="fixture/native",
+                stages=("rust-version",), event="workflow_dispatch")
+            self.assertEqual(selected._official_artifact(), artifact)
+            for event in ("push", "pull_request", "unknown", None, True):
+                with self.subTest(event=event):
+                    run["event"] = event
+                    with self.assertRaisesRegex(WorkflowError, "official-producer"):
+                        selected._official_artifact()
+            run["event"] = "workflow_dispatch"
+            for target, key, value in ((run, "head_sha", "3" * 40), (run, "path", "another-workflow"),
+                    (run, "head_branch", "another-branch"), (run, "id", 9),
+                    (job, "id", 9), (job, "run_id", 9), (job, "head_sha", "3" * 40)):
+                with self.subTest(field=key, value=value):
+                    before = target[key];target[key] = value
+                    with self.assertRaisesRegex(WorkflowError, "official-producer"):
+                        selected._official_artifact()
+                    target[key] = before
+
+    def test_unknown_or_non_string_producer_event_is_refused_at_configuration(self):
+        arguments = dict(source="2" * 40, run=2, job=3, artifact=self.artifact,
+                         receipts=self.receipts, branch="fixture/native", stages=("rust-version",))
+        for event in ("pull_request", "", "push,workflow_dispatch", None, True, []):
+            with self.subTest(event=event), self.assertRaisesRegex(WorkflowError, "frozen-configuration"):
+                reader.FrozenNativeProducts(**arguments, event=event)
+
     def test_changed_receipt_preimage_is_refused_before_product_use(self):
         with patch.object(reader,'file_identity',return_value={'sha256':'sha256:'+'f'*64,'bytes':1}):
             with self.assertRaises(WorkflowError):self.reader.receipt_preimages(Path('unexecuted-fixture'))
