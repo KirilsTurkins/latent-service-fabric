@@ -274,6 +274,16 @@ packages were captured/reviewed, originals removed and the actual compiler
 completed with the exact uninstalled-module refusal. All112 compiler materials
 remain exact after composition. This executes no node and qualifies no native
 filesystem result; the native-language programmes remain separately pending.
+The Java workflow also exports its exact passed normal public products, then
+runs one fresh Java component in a separate 20-minute scratch child. The original
+55-minute parent steps and deadline remain intact. The default-false manual
+`qualify-scratch-refusals` selector skips only the unrelated dependency-ingestion
+matrix; normal PR/manual runs retain it. The child uses the same pinned JDK,
+Gradle, WASI SDK and bindings, with no Rust setup or native-host build. It retains
+every caught category and compatibility-report finding: a Java FileNotFound or
+generic I/O error is unresolved behavior, not a reached Unsupported result.
+This source wiring has focused controls; actual Java scratch outcomes remain
+pending. It grants no filesystem provider or scratch storage.
 The owning language receipts
 feed the existing SDK conformance work in #694; this adds no cross-language gate.
 

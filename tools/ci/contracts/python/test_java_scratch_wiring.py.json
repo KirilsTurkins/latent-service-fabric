@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "JavaScratchWiring.test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent",
+    "JavaScratchWiring.test_original_normal_parent_and_dependency_programmes_remain_exact",
+    "JavaScratchWiring.test_public_bundle_is_from_this_same_normal_run_and_original_native_directory",
+    "JavaScratchWiring.test_separate_twenty_minute_child_does_not_build_a_host_or_install_rust"
+  ],
+  "guards": {
+    "JavaScratchWiring.test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaScratchWiring.test_original_normal_parent_and_dependency_programmes_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaScratchWiring.test_public_bundle_is_from_this_same_normal_run_and_original_native_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaScratchWiring.test_separate_twenty_minute_child_does_not_build_a_host_or_install_rust": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_scratch_wiring.py",
+  "reviewReason": "Preserve every original55-minute Java stage and compiler pin; append exact public same-run bundle export and separate20-minute scratch child, with default-false manual skip for unrelated dependency matrix. No native host rebuild or Unsupported pass claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
