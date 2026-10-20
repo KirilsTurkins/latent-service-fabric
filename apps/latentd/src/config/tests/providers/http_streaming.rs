@@ -270,3 +270,131 @@ fn protected_phase_configuration_selects_v7_without_changing_original_limits_or_
         assert!(!directory.path().join("data").exists());
     }
 }
+
+fn additional_document() -> Value {
+    let mut value = document();
+    let mut additional = value["providers"]["httpStreaming"].clone();
+    additional["identity"] =
+        json!({"id":"foreign-http", "tenant":"foreign", "service":"foreign-http-host", "epoch":2});
+    additional["phaseTiming"] = true.into();
+    value["providers"]["additionalHttpStreaming"] = json!([additional]);
+    value["providers"]["bindings"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({
+        "name":"foreign-http-binding", "tenant":"foreign", "consumerService":"foreign-client",
+        "providerService":"foreign-http-host", "contract":"latent:http/phase-timing@0.4.0",
+        "providerBinding":"foreign-http-installed"}));
+    value
+}
+
+#[test]
+fn independent_http_installations_require_exact_tenant_service_and_profile_bindings() {
+    let original = additional_document();
+    let decode =
+        |value: &Value| super::super::input::decode(&serde_json::to_vec(value).unwrap()).unwrap();
+    let providers = decode(&original).providers.unwrap();
+    providers.validate_http_streaming_installations().unwrap();
+    assert_eq!(providers.definitions().unwrap().len(), 2);
+    let installed: Vec<_> = providers.http_streaming_installations().collect();
+    assert_eq!(installed.len(), 2);
+    assert_eq!(installed[0].identity.tenant, "examples");
+    assert_eq!(installed[1].identity.tenant, "foreign");
+    assert_eq!(installed[1].identity.epoch, 2);
+    assert!(installed[1].phase_timing);
+    for (key, changed) in [
+        ("tenant", "examples"),
+        ("providerService", "http-stream-host"),
+        ("contract", "latent:http/streaming@0.3.0"),
+    ] {
+        let mut value = original.clone();
+        value["providers"]["bindings"][1][key] = changed.into();
+        assert!(
+            decode(&value).providers.unwrap().definitions().is_err(),
+            "{key}"
+        );
+    }
+    let mut alias = original;
+    alias["providers"]["scalarAliases"] = json!([{"source":"foreign-http", "identity":{
+        "id":"forbidden-http-alias", "tenant":"examples", "service":"alias-host", "epoch":2}}]);
+    assert!(decode(&alias).providers.unwrap().definitions().is_err());
+}
+
+#[test]
+fn additional_http_installations_share_the_original_fourteen_identity_ceiling() {
+    let mut value = additional_document();
+    let template = value["providers"]["additionalHttpStreaming"][0].clone();
+    let additional = value["providers"]["additionalHttpStreaming"]
+        .as_array_mut()
+        .unwrap();
+    additional.clear();
+    for index in 0..13 {
+        let mut installed = template.clone();
+        installed["identity"]["id"] = format!("http-{index}").into();
+        installed["identity"]["tenant"] = format!("tenant-{index}").into();
+        additional.push(installed);
+    }
+    let decode =
+        |value: &Value| super::super::input::decode(&serde_json::to_vec(value).unwrap()).unwrap();
+    let providers = decode(&value).providers.unwrap();
+    providers.validate_http_streaming_installations().unwrap();
+    assert_eq!(providers.http_streaming_installations().count(), 14);
+    let mut excess = value.clone();
+    let mut next = template;
+    next["identity"]["id"] = "fourteenth-addition".into();
+    excess["providers"]["additionalHttpStreaming"]
+        .as_array_mut()
+        .unwrap()
+        .push(next);
+    assert!(decode(&excess)
+        .providers
+        .unwrap()
+        .validate_http_streaming_installations()
+        .is_err());
+    let mut collision = additional_document();
+    collision["providers"]["additionalHttpStreaming"][0]["identity"]["id"] = "stream-http".into();
+    assert!(decode(&collision)
+        .providers
+        .unwrap()
+        .validate_http_streaming_installations()
+        .is_err());
+    collision = additional_document();
+    collision["providers"]["additionalHttpStreaming"][0]["identity"]["tenant"] = "examples".into();
+    collision["providers"]["additionalHttpStreaming"][0]["identity"]["service"] =
+        "http-stream-host".into();
+    assert!(decode(&collision)
+        .providers
+        .unwrap()
+        .validate_http_streaming_installations()
+        .is_err());
+}
+
+#[test]
+fn additional_http_credentials_keep_closed_file_and_destination_inputs() {
+    for pointer in [
+        "/providers/additionalHttpStreaming",
+        "/providers/additionalHttpStreaming/0/credentials",
+    ] {
+        let mut value = additional_document();
+        value["providers"]["additionalHttpStreaming"][0]["credentials"] = json!([]);
+        *value.pointer_mut(pointer).unwrap() = Value::Null;
+        assert!(super::super::input::decode(&serde_json::to_vec(&value).unwrap()).is_err());
+    }
+    let mut value = additional_document();
+    value["providers"]["additionalHttpStreaming"][0]["credentialDirectory"] =
+        "/never-opened".into();
+    value["providers"]["additionalHttpStreaming"][0]["credentials"] = json!([
+        {"reference":"same-name-is-local", "file":"../foreign-token", "destination":0, "header":"authorization"}]);
+    let providers = super::super::input::decode(&serde_json::to_vec(&value).unwrap())
+        .unwrap()
+        .providers
+        .unwrap();
+    assert!(providers.validate_http_streaming_installations().is_err());
+    value["providers"]["additionalHttpStreaming"][0]["credentials"][0]["file"] = "token".into();
+    value["providers"]["additionalHttpStreaming"][0]["credentials"][0]["destination"] = 1.into();
+    let providers = super::super::input::decode(&serde_json::to_vec(&value).unwrap())
+        .unwrap()
+        .providers
+        .unwrap();
+    assert!(providers.validate_http_streaming_installations().is_err());
+}

@@ -71,7 +71,7 @@ impl ConfiguredProviders {
         Ok(selected)
     }
 
-    fn installation_identities(&self) -> impl Iterator<Item = &ProviderIdentity> {
+    pub(super) fn installation_identities(&self) -> impl Iterator<Item = &ProviderIdentity> {
         [
             self.http.as_ref().map(|v| &v.identity),
             self.outbound_streams.as_ref().map(|v| &v.identity),
@@ -90,6 +90,11 @@ impl ConfiguredProviders {
         ]
         .into_iter()
         .flatten()
+        .chain(
+            self.additional_http_streaming
+                .iter()
+                .map(|value| &value.identity),
+        )
     }
 
     pub(super) fn validate_scalar_aliases(&self) -> Result<(), PlatformError> {
