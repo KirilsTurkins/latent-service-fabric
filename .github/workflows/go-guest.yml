@@ -44,6 +44,8 @@ on:
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
+      - tools/tests/test_go_queued.py
+      - docs/development/go-runtime-queued-ownership.md
       - docs/development/go-runtime-admission.md
       - docs/development/go-synchronization.md
       - .github/workflows/go-synchronization-reference.yml
@@ -142,6 +144,8 @@ on:
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
+      - tools/tests/test_go_queued.py
+      - docs/development/go-runtime-queued-ownership.md
       - docs/development/go-runtime-admission.md
       - docs/development/go-synchronization.md
       - .github/workflows/go-synchronization-reference.yml
@@ -365,6 +369,10 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_go_admission
           python3 tools/qualify_go_synchronization.py --campaign admission --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-idle" --output "$RUNNER_TEMP/go-admission-result"
+      - name: Qualify signed Go ordinary queue reservation and original root deadlines
+        run: |
+          python3 -m unittest tools.tests.test_go_queued
+          python3 tools/qualify_go_synchronization.py --campaign queued --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-idle" --output "$RUNNER_TEMP/go-queued-result"
       - name: Qualify ordinary Go synchronization and original v5 waiter retirement
         run: |
           python3 -m unittest tools.tests.test_go_synchronization
@@ -598,6 +606,9 @@ jobs:
             ${{ runner.temp }}/go-admission-result/receipt.json
             ${{ runner.temp }}/go-admission-result/signed.stdout.log
             ${{ runner.temp }}/go-admission-result/signed.stderr.log
+            ${{ runner.temp }}/go-queued-result/receipt.json
+            ${{ runner.temp }}/go-queued-result/signed.stdout.log
+            ${{ runner.temp }}/go-queued-result/signed.stderr.log
             ${{ runner.temp }}/go-synchronization-result/receipt.json
             ${{ runner.temp }}/go-synchronization-result/signed.stdout.log
             ${{ runner.temp }}/go-synchronization-result/signed.stderr.log

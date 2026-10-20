@@ -8,9 +8,9 @@ on:
         type: choice
         required: true
         default: synchronization
-        options: [synchronization, admission]
+        options: [synchronization, admission, queued]
   push:
-    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || (github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization')) }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -53,6 +53,8 @@ jobs:
         run: python3 -m unittest tools.tests.test_go_synchronization tools.tests.test_go_managed_idle -v
       - name: Check exact cross-tenant admission evidence controls
         run: python3 -m unittest tools.tests.test_go_admission -v
+      - name: Check exact queued-root reservation and original-deadline evidence controls
+        run: python3 -m unittest tools.tests.test_go_queued -v
       - name: Install captured compiler namespace
         run: |
           sudo apt-get update
@@ -82,11 +84,14 @@ jobs:
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'synchronization'
         run: python3 tools/qualify_go_synchronization.py --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-synchronization" --no-checkpoints "$RUNNER_TEMP/go-synchronization-negative" --output "$RUNNER_TEMP/go-synchronization-result"
       - name: Compile the unchanged managed Go fixture for shared-cell admission
-        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'admission'
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'admission' || env.LSF_GO_REFERENCE_CAMPAIGN == 'queued'
         run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-admission" --runtime-profile go-component-activation-v5 --fixture managed-idle
       - name: Run actual signed cross-tenant cell ownership and retirement
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'admission'
         run: python3 tools/qualify_go_synchronization.py --campaign admission --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-admission" --output "$RUNNER_TEMP/go-admission-result"
+      - name: Run actual signed ordinary queue ownership and original ingress deadlines
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'queued'
+        run: python3 tools/qualify_go_synchronization.py --campaign queued --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-admission" --output "$RUNNER_TEMP/go-queued-result"
       - name: Retain bounded actual results and compiler source identities
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -108,5 +113,8 @@ jobs:
             ${{ runner.temp }}/go-admission-result/receipt.json
             ${{ runner.temp }}/go-admission-result/signed.stdout.log
             ${{ runner.temp }}/go-admission-result/signed.stderr.log
+            ${{ runner.temp }}/go-queued-result/receipt.json
+            ${{ runner.temp }}/go-queued-result/signed.stdout.log
+            ${{ runner.temp }}/go-queued-result/signed.stderr.log
           if-no-files-found: warn
           retention-days: 7

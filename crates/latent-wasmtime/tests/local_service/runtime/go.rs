@@ -7,6 +7,9 @@ mod managed_idle;
 #[path = "go/admission.rs"]
 mod admission;
 
+#[path = "go/queued.rs"]
+mod queued;
+
 #[path = "go/synchronization.rs"]
 mod synchronization;
 

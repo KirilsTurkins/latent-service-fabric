@@ -10,6 +10,14 @@ fn observed(case: &str, tenant: &str, outcome: &str) {
 }
 
 async fn fixture(root: &std::path::Path) -> Fixture {
+    fixture_with_queue(root, false).await
+}
+
+pub(super) async fn queued_fixture(root: &std::path::Path) -> Fixture {
+    fixture_with_queue(root, true).await
+}
+
+async fn fixture_with_queue(root: &std::path::Path, ordinary_queue: bool) -> Fixture {
     let (caller, source) =
         checkpoint_component("LSF_GO_MANAGED_IDLE_FIXTURE", "go-component-activation-v5");
     let callee = packages::callee(42);
@@ -67,16 +75,22 @@ async fn fixture(root: &std::path::Path) -> Fixture {
     }
     let release = packages::release(&caller);
     let package_digest = caller.layout().digest().clone();
-    let f = Fixture::with_two_tenant_activation_runtime(
-        (catalog, caller, callee),
-        RuntimeLimits {
-            tasks: 16,
-            waits: 4,
-            ..limits()
-        },
-        120_000,
-    )
-    .await;
+    let runtime_limits = RuntimeLimits {
+        tasks: 16,
+        waits: 4,
+        ..limits()
+    };
+    let f = if ordinary_queue {
+        Fixture::with_two_tenant_queued_runtime((catalog, caller, callee), runtime_limits, 120_000)
+            .await
+    } else {
+        Fixture::with_two_tenant_activation_runtime(
+            (catalog, caller, callee),
+            runtime_limits,
+            120_000,
+        )
+        .await
+    };
     for tenant in ["tenant-a", "tenant-b"] {
         let publication = PublicationRef::package(
             LifecycleScope::Tenant(TenantId(tenant.into())),
@@ -100,7 +114,12 @@ async fn fixture(root: &std::path::Path) -> Fixture {
     f
 }
 
-fn request(f: &Fixture, tenant: &str, id: &str, mode: u32) -> latent_activation::ActivationRequest {
+pub(super) fn request(
+    f: &Fixture,
+    tenant: &str,
+    id: &str,
+    mode: u32,
+) -> latent_activation::ActivationRequest {
     let mut request = f.request(id, mode);
     request.target.tenant = TenantId(tenant.into());
     request.principal.tenant = Some(TenantId(tenant.into()));
