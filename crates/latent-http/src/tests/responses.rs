@@ -4,7 +4,7 @@ async fn reason_call(
     f: &Fixture,
     session: &latent_capabilities::broker::CapabilitySession,
 ) -> latent_capabilities::broker::pools::PoolCall {
-    let client = f.provider.client(0).unwrap();
+    let client = f.provider.inner.client(0).unwrap();
     let ready = f
         .pools
         .admit(&client, session)
