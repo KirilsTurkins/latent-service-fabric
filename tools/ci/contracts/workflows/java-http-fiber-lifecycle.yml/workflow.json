@@ -46,6 +46,8 @@
           "tools/tests/test_java_teavm_failure_trace.py",
           "tools/tests/test_java_phase_c_context.py",
           "tools/tests/test_java_array_gc_roots.py",
+          "tools/tests/test_java_phase_surface.py",
+          "tools/tests/fixtures/java_phase_surface_0bdb.json",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -72,7 +74,7 @@
     "http-fiber-lifecycle",
     "http-phase-clients"
   ],
-  "reviewReason": "Reviewed exact TeaVM0.15.0 array-element worklist seed repair; retain all prior case IDs/guards/commands and add three pinned-source/closure controls plus mandatory real original/private IR checks.",
+  "reviewReason": "Reviewed source-hashed selected HTTP0.4 nominal-owner emission: only unused legacy response omission allowed after full pinned source pair, all other graphs/default0.3 strict; four actual-pair/adversarial controls added, old commands/cases/guards/bounds retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

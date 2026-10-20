@@ -38,6 +38,8 @@ on:
       - 'tools/tests/test_java_teavm_failure_trace.py'
       - 'tools/tests/test_java_phase_c_context.py'
       - 'tools/tests/test_java_array_gc_roots.py'
+      - 'tools/tests/test_java_phase_surface.py'
+      - 'tools/tests/fixtures/java_phase_surface_0bdb.json'
       - '.github/workflows/java-http-fiber-lifecycle.yml'
   workflow_dispatch:
     inputs:
@@ -189,6 +191,8 @@ jobs:
         run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
       - name: Check pinned array type propagation and real GC-root regression requirements
         run: python3 -B -m unittest tools.tests.test_java_array_gc_roots -v
+      - name: Check exact selected phase graph emission and all other semantic refusals
+        run: python3 -B -m unittest tools.tests.test_java_phase_surface -v
       - name: Check standard socket timeout identity and captured-source registration
         run: python3 -B -m unittest tools.tests.test_java_timeout_exception -v
       - name: Check actual host JDK phase mapping and strict source and receipt controls
