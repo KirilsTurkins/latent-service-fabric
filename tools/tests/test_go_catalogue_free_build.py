@@ -73,6 +73,8 @@ class GoCatalogueFreeBuildTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr.decode())
             self.assertIn(b'--expect-source-digest', result.stdout)
             self.assertNotIn(b'--tools', result.stdout)
+            self.assertFalse(list(root.rglob('*.pyc')))
+            stage.verify(root)
 
 
 if __name__ == '__main__':

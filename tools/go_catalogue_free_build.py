@@ -15,6 +15,8 @@ import stat
 import sys
 
 if __package__ in {None, ''}:
+    # CLI imports must not mutate the immutable staged source before verify().
+    sys.dont_write_bytecode = True
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.go_capsule_build import RECIPE, build
