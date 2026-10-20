@@ -123,6 +123,7 @@ def prepare(output: Path, outside: Path, tools: Path):
     app = application(output)
     sdk = (app / 'sdk-lock.json').read_bytes()
     outside.mkdir(mode=0o700)
+    (outside / 'capture-evidence').mkdir(mode=0o700)
     commands = Commands(app, outside / 'capture-evidence', build_environment(outside))
     compiler = Compiler(tools, commands, app / 'vendor/lsf', offline=True, captured=True)
     candidate = app / 'target/published-task-candidate.json'
