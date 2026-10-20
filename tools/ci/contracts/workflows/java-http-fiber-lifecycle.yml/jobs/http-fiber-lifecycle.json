@@ -1,0 +1,89 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/java-http-fiber-lifecycle-20261020') || (github.event_name == 'workflow_dispatch' && inputs.java_http_fibers) }}",
+    "name": "Ordinary Java HTTP pending fiber lifecycle with historical native products",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch only the exact historical compiled source commits",
+        "run": "git fetch --no-tags --depth=1 origin e97d44ddc744c9bd738d9b3b7a7d8b7234133e36 03a3f74598f2abfd0224169ae2871818f6c8419d 0e46e59358bb4bae16169690041daacbf113555a"
+      },
+      {
+        "name": "Check pending-witness, authority, source and original-error boundaries",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_fibers -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve only the fixed e97 host and four original03a helper binaries",
+        "run": "python3 -B tools/qualify_java_http_fibers.py --prepare --output \"$RUNNER_TEMP/java-http-fiber-prepared\""
+      },
+      {
+        "uses": "actions/setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "name": "Check actual host JDK HTTP type and pre-effect refusal controls",
+        "run": "python3 -B -m unittest discover -s sdk/java-guest/tests -p test_client.py -v"
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install the same pinned Java compiler tools without any native Cargo build",
+        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Build one fresh offline fiber-I/O component and execute real pending lifecycle controls",
+        "run": "python3 -B tools/qualify_java_http_fibers.py --prepared \"$RUNNER_TEMP/java-http-fiber-prepared\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/java-http-fiber-lifecycle\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source-specific replay evidence without credentials or keys",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-http-fiber-lifecycle-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-http-fiber-prepared/retrieval.json\n${{ runner.temp }}/java-http-fiber-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-http-fiber-lifecycle/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/compiler-cache-selection.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 55
+  },
+  "jobId": "http-fiber-lifecycle",
+  "kind": "job",
+  "reviewReason": "New bounded source-bound branch-specific Java HTTP pending lifecycle component campaign; no native Cargo rebuild or edits to original workflows.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
+}

@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "JavaHttpFiberControlBoundaries.test_changed_candidate_refuses_before_review_cache_or_compilation",
+    "JavaHttpFiberControlBoundaries.test_failure_observer_preserves_original_exception",
+    "JavaHttpFiberControlBoundaries.test_missing_pending_witness_cannot_pass_an_early_root_return",
+    "JavaHttpFiberControlBoundaries.test_nonlinux_refuses_before_prepared_read_or_output_creation",
+    "JavaHttpFiberControlBoundaries.test_supervisor_releases_once_only_after_pending_owner_and_later_sibling",
+    "JavaHttpFiberControlBoundaries.test_uncertain_cancellation_preserves_original_exception_without_replay",
+    "JavaHttpFiberSource.test_actual_normal_project_retains_sdk_and_published_lock_with_explicit_world",
+    "JavaHttpFiberSource.test_budget_narrowing_never_mutates_or_elevates_original",
+    "JavaHttpFiberSource.test_forged_or_stale_sibling_observation_does_not_release",
+    "JavaHttpFiberSource.test_only_existing_qualified_profile_and_normal_apis_are_selected",
+    "JavaHttpFiberSource.test_real_peer_requires_completed_independent_primary_response",
+    "JavaHttpFiberSource.test_result_checks_actual_full_resolved_revision_and_known_reaped_outcome",
+    "JavaHttpFiberSource.test_sibling_completion_before_pending_gate_cannot_prove_concurrent_progress",
+    "JavaHttpFiberSource.test_terminal_codes_cannot_replace_cancellation_deadline_or_fuel"
+  ],
+  "guards": {
+    "JavaHttpFiberControlBoundaries.test_changed_candidate_refuses_before_review_cache_or_compilation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberControlBoundaries.test_failure_observer_preserves_original_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberControlBoundaries.test_missing_pending_witness_cannot_pass_an_early_root_return": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberControlBoundaries.test_nonlinux_refuses_before_prepared_read_or_output_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberControlBoundaries.test_supervisor_releases_once_only_after_pending_owner_and_later_sibling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberControlBoundaries.test_uncertain_cancellation_preserves_original_exception_without_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_actual_normal_project_retains_sdk_and_published_lock_with_explicit_world": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_budget_narrowing_never_mutates_or_elevates_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_forged_or_stale_sibling_observation_does_not_release": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_only_existing_qualified_profile_and_normal_apis_are_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_real_peer_requires_completed_independent_primary_response": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_result_checks_actual_full_resolved_revision_and_known_reaped_outcome": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_sibling_completion_before_pending_gate_cannot_prove_concurrent_progress": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_terminal_codes_cannot_replace_cancellation_deadline_or_fuel": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_http_fibers.py",
+  "reviewReason": "Add fourteen finite source/peer/supervisor controls including real held-wire ordering, single release after a charged pending witness, exact signed revision, budget narrowing, no-replay and original-error preservation; all prior cases and guards remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

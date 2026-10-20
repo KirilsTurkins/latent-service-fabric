@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_http_fibers.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review new explicit captured Java HTTP/fiber lifecycle qualification only, with original SDK/compiler/profile/grants/limits and authenticated historical native provenance.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ca8456599c2406d78ff44756f0220ee3f9dd754e11a366a876b85ec83138ee60"
+}

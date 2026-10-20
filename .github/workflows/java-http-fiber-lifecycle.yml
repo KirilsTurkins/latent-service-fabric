@@ -1,0 +1,114 @@
+name: Focused Java HTTP fiber lifecycle
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - 'sdk/java-guest/**'
+      - 'examples/java-http-fiber-lifecycle/**'
+      - 'tools/java_http_fiber_node.py'
+      - 'tools/qualify_java_http_fibers.py'
+      - 'tools/java_replay_materials.py'
+      - 'tools/java_standard_http*.py'
+      - 'tools/java_capsule*.py'
+      - 'tools/java_guest/**'
+      - 'tools/standard_http/**'
+      - 'tools/tests/test_java_http_fibers.py'
+      - '.github/workflows/java-http-fiber-lifecycle.yml'
+  workflow_dispatch:
+    inputs:
+      java_http_fibers:
+        description: Fresh ordinary Java HTTP/fiber component with authenticated native products
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: java-http-fiber-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  http-fiber-lifecycle:
+    if: ${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/java-http-fiber-lifecycle-20261020') || (github.event_name == 'workflow_dispatch' && inputs.java_http_fibers) }}
+    name: Ordinary Java HTTP pending fiber lifecycle with historical native products
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch only the exact historical compiled source commits
+        run: >-
+          git fetch --no-tags --depth=1 origin
+          e97d44ddc744c9bd738d9b3b7a7d8b7234133e36
+          03a3f74598f2abfd0224169ae2871818f6c8419d
+          0e46e59358bb4bae16169690041daacbf113555a
+      - name: Check pending-witness, authority, source and original-error boundaries
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_http_fibers -v
+      - name: Retrieve only the fixed e97 host and four original03a helper binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/qualify_java_http_fibers.py --prepare --output "$RUNNER_TEMP/java-http-fiber-prepared"
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Check actual host JDK HTTP type and pre-effect refusal controls
+        run: python3 -B -m unittest discover -s sdk/java-guest/tests -p test_client.py -v
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install the same pinned Java compiler tools without any native Cargo build
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Build one fresh offline fiber-I/O component and execute real pending lifecycle controls
+        run: >-
+          python3 -B tools/qualify_java_http_fibers.py
+          --prepared "$RUNNER_TEMP/java-http-fiber-prepared"
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+          --output "$RUNNER_TEMP/java-http-fiber-lifecycle"
+      - name: Retain bounded source-specific replay evidence without credentials or keys
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-http-fiber-lifecycle-${{ github.sha }}
+          path: |-
+            ${{ runner.temp }}/java-http-fiber-prepared/retrieval.json
+            ${{ runner.temp }}/java-http-fiber-prepared/host/host-retrieval.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/qualification.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/qualification.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/FAILED.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/*.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-to-c.log
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/qualification.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/compiler-cache-selection.json
+          if-no-files-found: warn
+          retention-days: 3
