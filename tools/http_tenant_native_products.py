@@ -21,16 +21,16 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
 
-SOURCE = '6f5f180136d140ac670561695260f71514781015'
-RUN = 39443901256
-JOB = 118700610031
+SOURCE = '8f7780dd0a35e3375524d72e7dfaddf847deaa5c'
+RUN = 39453477174
+JOB = 118734133231
 # Exact successful public producer; these pins never select a moving branch.
-ARTIFACT = {'id': 12275691963, 'size_in_bytes': 66080276, 'digest': 'sha256:fa6c846ffcf5f79b1153d60053aeb79f2e3495228f1c7c510159f7a2c072e399'}
-RECEIPTS = {'native-products.json': {'sha256': 'sha256:e90056e7b967ad859ac8311ffd5b27d6513473673006f79be15a47636ff1ba0b', 'bytes': 21159}, 'source-inputs.json': {'sha256': 'sha256:8f10be2d3d773b288df3a76c0bcc4e8b799e6fbbc931c767f82028d9094f7ce1', 'bytes': 18936}}
-BRANCH = 'fix/http-phase-unused-nominal-type-20261020'
+ARTIFACT = {'id': 12280886264, 'size_in_bytes': 66088564, 'digest': 'sha256:be34c00e1c6d5971a750843de75715170c4dd6bd2319bd60110002954a82b76f'}
+RECEIPTS = {'native-products.json': {'sha256': 'sha256:85397c7e67e24604e0e09b91e8eb214d13be10fa34d5527066c817ab81fc8f55', 'bytes': 21390}, 'source-inputs.json': {'sha256': 'sha256:b338d101d5fd34a4cff354f690d70c514bf4188715bd67b7955e38db34f9bea1', 'bytes': 18937}}
+BRANCH = 'fix/http-phase-operational-authority-20261020'
 WORKFLOW = '.github/workflows/sdk-native-products.yml'
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
-STAGES = ('rust-version', 'normal-host-build', 'closed-http-refusal-controls', 'neutral-resource-signing-controls', 'positive-timer-observer-controls', 'phase-nominal-type-owner-controls', 'phase-emitted-type-owner-controls', 'independent-http-configuration-controls', 'independent-http-dispatch-controls', 'independent-http-secret-controls')
+STAGES = ('rust-version', 'normal-host-build', 'closed-http-refusal-controls', 'neutral-resource-signing-controls', 'positive-timer-observer-controls', 'phase-nominal-type-owner-controls', 'phase-emitted-type-owner-controls', 'independent-http-configuration-controls', 'independent-http-dispatch-controls', 'independent-http-secret-controls', 'phase-operational-metadata-controls', 'phase-operational-binding-controls')
 MATERIALS = (WORKFLOW, '.cargo/managed-guest.toml', 'tools/qualify_rust_capsules.py',
              'tools/toolchain.toml', 'tools/rust_capsule_build.py', 'tools/build_observation.py',
              'tools/build_process.py', 'tools/build_process_linux.py')

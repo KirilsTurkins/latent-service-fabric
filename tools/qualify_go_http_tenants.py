@@ -18,7 +18,7 @@ from tools.build_process import run_bounded_result
 from tools import go_catalogue_free_build as catalogue
 from tools.go_http_tenant_fixture import CONTROL_SOURCE, LIBRARY_SOURCE, project
 from tools.go_http_tenant_node import run
-from tools.http_tenant_native_products import SOURCE, _git_materials, native_products, verify_prepared
+from tools.go_http_tenant_native_products import SOURCE, _git_materials, native_products, verify_prepared
 from tools.java_replay_materials import git_source_identity
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
@@ -31,7 +31,7 @@ NATIVE_SCOPES = ('Cargo.toml','Cargo.lock','rust-toolchain.toml','.cargo/config.
 NATIVE_TEST_ONLY = frozenset(('crates/latent-wasmtime/tests/go_smtp_tls.rs',
     'crates/latent-wasmtime/tests/go_smtp_tls/setup.rs'))
 MATERIALS = ('tools/qualify_go_http_tenants.py','tools/go_http_tenant_fixture.py','tools/go_http_tenant_node.py',
-    'tools/go_http_library_fixture.py','tools/go_catalogue_free_build.py','tools/http_tenant_native_products.py',
+    'tools/go_http_library_fixture.py','tools/go_catalogue_free_build.py','tools/go_http_tenant_native_products.py',
     'tools/go_standard_http_node.py','tools/go_standard_http_project.py','tools/go_http_adversarial.py',
     'tools/resource_tenant_node.py','tools/qualify_resource_tenants.py','tools/rust_capsule_node.py',
     'tools/phase2_operator_process.py','tools/phase2_operator_scenario.py','tools/phase3_resource_identity.py',

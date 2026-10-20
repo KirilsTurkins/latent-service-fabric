@@ -34,7 +34,7 @@ class HttpTenantNativeProducts(unittest.TestCase):
     def test_real_fixed_git_materials_bind_v7_and_all_three_auxiliary_trees(self):
         materials = native._git_materials()
         self.assertEqual(len(materials), 114)
-        self.assertEqual(sum(row['bytes'] for row in materials.values()), 495787)
+        self.assertEqual(sum(row['bytes'] for row in materials.values()), 496929)
         self.assertEqual(materials['wit/host-abi-phase3-v7.json']['sha256'],
             'sha256:e4f5211dbb2ced0c32ad112ed8ca589df2e3f107149e20a588549157e680a7b0')
         for prefix in ('wit/', 'schemas/', 'examples/echo-contract/wit/'):
@@ -131,3 +131,51 @@ class HttpTenantNativeProducts(unittest.TestCase):
                 with self.subTest(name=name), self.assertRaises(WorkflowError):
                     native.extract(None, name, output)
                 self.assertFalse(output.exists())
+
+
+class HttpOperationalAuthorityTuple(unittest.TestCase):
+    def test_fixed_successful_origin_cannot_be_replaced_by_prior_failed_consumer_tuple(self):
+        run = {'id': native.RUN, 'head_sha': native.SOURCE, 'path': native.WORKFLOW,
+            'event': 'push', 'head_branch': native.BRANCH, 'status': 'completed', 'conclusion': 'success'}
+        job = {'id': native.JOB, 'run_id': native.RUN, 'head_sha': native.SOURCE,
+            'name': 'Build and retain five source-bound native products',
+            'status': 'completed', 'conclusion': 'success'}
+        artifact = {**native.ARTIFACT, 'name': 'sdk-native-products-'+native.SOURCE,
+            'expired': False, 'workflow_run': {'id': native.RUN, 'head_sha': native.SOURCE}}
+        headers = [run, job, {'total_count': 1, 'artifacts': [artifact]}]
+        with patch.object(native, 'api', side_effect=copy.deepcopy(headers)):
+            self.assertEqual(native._official_artifact(), artifact)
+        for field in ('run-source', 'job-source', 'artifact-source', 'old-artifact', 'old-branch'):
+            changed = copy.deepcopy(headers)
+            if field == 'run-source': changed[0]['head_sha'] = '6f5f180136d140ac670561695260f71514781015'
+            if field == 'job-source': changed[1]['head_sha'] = '6f5f180136d140ac670561695260f71514781015'
+            if field == 'artifact-source': changed[2]['artifacts'][0]['workflow_run']['head_sha'] = '6f5f180136d140ac670561695260f71514781015'
+            if field == 'old-artifact': changed[2]['artifacts'][0]['id'] = 12275691963
+            if field == 'old-branch': changed[0]['head_branch'] = 'fix/http-phase-unused-nominal-type-20261020'
+            with self.subTest(field=field), patch.object(native, 'api', side_effect=changed), self.assertRaises(WorkflowError):
+                native._official_artifact()
+
+    def test_both_new_authority_controls_are_mandatory_not_a_ten_stage_downgrade(self):
+        stages = ('phase-operational-metadata-controls', 'phase-operational-binding-controls')
+        self.assertEqual(native.STAGES[-2:], stages)
+        self.assertEqual(len(native.STAGES), 12)
+        identity = {'sha256': 'sha256:'+'1'*64, 'bytes': 1}
+        source = {'sha256': 'sha256:'+'2'*64, 'files': 1, 'bytes': 1}
+        snapshot = {'native': source, 'materials': {}}
+        record = {'schemaVersion': 'latent.sdk.native-products.v1', 'status': 'built',
+            'sourceRevision': native.SOURCE, 'source': source, 'materials': {},
+            'compiler': 'rustc 1.97.1 (fixed test compiler)',
+            'products': {name: identity for name in native.PRODUCTS},
+            'commands': [{'stage': stage, 'exitCode': 0, 'seconds': 1} for stage in native.STAGES],
+            'profile': 'normal-managed-guest-default-features', 'signedQualification': False,
+            'guestComponentsCompiled': False, 'historicalReceiptRewritten': False}
+        native.validate_record(record, snapshot, source, {})
+        for stage in stages:
+            for mutation in ('missing', 'failed', 'renamed'):
+                changed = copy.deepcopy(record)
+                row = next(row for row in changed['commands'] if row['stage'] == stage)
+                if mutation == 'missing': changed['commands'].remove(row)
+                if mutation == 'failed': row['exitCode'] = 1
+                if mutation == 'renamed': row['stage'] = 'phase-nominal-type-owner-controls'
+                with self.subTest(stage=stage, mutation=mutation), self.assertRaises(WorkflowError):
+                    native.validate_record(changed, snapshot, source, {})
