@@ -67,7 +67,7 @@
     "http-fiber-lifecycle",
     "http-phase-clients"
   ],
-  "reviewReason": "Add only the explicit public-fixture trace control path; all existing workflow jobs and selectors remain unchanged.",
+  "reviewReason": "Add one scoped pure Python coroutine-control command; all previous commands, guards and limits remain.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

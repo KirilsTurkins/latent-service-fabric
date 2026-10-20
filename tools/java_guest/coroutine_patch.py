@@ -1,4 +1,4 @@
-"""Exact TeaVM 0.15 copied-phi repair in a private compiler JAR, never its cache."""
+"""Exact TeaVM 0.15 coroutine repairs in a private compiler JAR, never its cache."""
 from __future__ import annotations
 
 import hashlib
@@ -15,6 +15,16 @@ AFTER = ('phi.getIncomings().removeIf(incoming -> !domainSet.contains(incoming.g
          '                            && !copiedSet.contains(incoming.getSource().getIndex()));')
 DOMAIN = 'var domainSet = IntHashSet.from(remaining);'
 COPIED_DOMAIN = DOMAIN + '\n            var copiedSet = IntHashSet.from(copies);'
+LIVENESS_REPLACEMENTS = (
+    ('processBlock(program.basicBlockAt(i));',
+     'processBlock(program.basicBlockAt(i), i == basicBlockCount ? 0 : i);'),
+    ('private void processBlock(BasicBlock block) {',
+     'private void processBlock(BasicBlock block, int originalIndex) {'),
+    ('collectSplitInstructions(block);', 'collectSplitInstructions(block, originalIndex);'),
+    ('private Map<Instruction, BitSet> collectSplitInstructions(BasicBlock block) {',
+     'private Map<Instruction, BitSet> collectSplitInstructions(BasicBlock block, int originalIndex) {'),
+    ('livenessAnalysis.liveOut(block.getIndex());', 'livenessAnalysis.liveOut(originalIndex);'),
+)
 CLASS_ROOT = 'org/teavm/backend/lowlevel/transform/'
 PATCH_CLASSES = frozenset(CLASS_ROOT + name for name in (
     'CoroutineTransformation.class', 'CoroutineTransformation$1.class',
@@ -31,6 +41,12 @@ def corrected_source(raw: bytes) -> bytes:
     if source.count(BEFORE) != 1 or source.count(DOMAIN) != 1:
         raise ValueError('unreviewed-teavm-coroutine-predicate')
     source = source.replace(DOMAIN, COPIED_DOMAIN).replace(BEFORE, AFTER)
+    # Splitting block zero appends its continuation at the old block count.
+    # Liveness still describes the original graph, including that block zero.
+    for before, after in LIVENESS_REPLACEMENTS:
+        if source.count(before) != 1:
+            raise ValueError('unreviewed-teavm-coroutine-liveness')
+        source = source.replace(before, after)
     # The published 0.15.0 artifacts relocate HPPC, unlike the Git source tree.
     for name in RELOCATED_IMPORTS:
         before = 'import com.carrotsearch.hppc.' + name + ';'
@@ -297,6 +313,7 @@ tasks.named('generateC') {
     receipt.update(schemaVersion='latent.java.coroutine-compiler-patch.v1',
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),
         realOriginalIrDefectObserved=True, realCorrectedIrInputsPreserved=True,
+        realOriginalEntryLivenessDefectObserved=True, realCorrectedEntryLiveValuePreserved=True,
         originalInputsUnchanged=True, checkedCompilerJars=identities,
         publishedHppcRelocation='org.teavm.hppc',
         originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]

@@ -54,6 +54,10 @@
         "run": "python3 -B -m unittest tools.tests.test_java_teavm_failure_trace -v"
       },
       {
+        "name": "Check pinned coroutine repairs and mandatory original-entry liveness regression",
+        "run": "python3 -B -m unittest tools.tests.test_java_http_fibers.PinnedCoroutinePhiRepair -v"
+      },
+      {
         "name": "Check standard socket timeout identity and captured-source registration",
         "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
       },
@@ -111,7 +115,7 @@
   },
   "jobId": "http-phase-clients",
   "kind": "job",
-  "reviewReason": "Add bounded stacktrace only to the existing explicit public fixture diagnostic selection; preserve default compiler argument vectors, original failure/single attempt, all log/process limits, and every prior owning workflow command/guard.",
+  "reviewReason": "Add one scoped pure Python coroutine-control command; all previous commands, guards and limits remain.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
