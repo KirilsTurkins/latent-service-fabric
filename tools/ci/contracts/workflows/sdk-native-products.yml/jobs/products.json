@@ -1,0 +1,75 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Build and retain five source-bound native products",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Install the existing pinned Python recipe dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Build the normal managed-guest host profile and freeze exact products",
+        "run": "python3 -B - <<'PY'\nimport json, os, shutil, tomllib\nfrom pathlib import Path\nfrom tools.build_observation import build_environment\nfrom tools.phase2_operator_process import require\nfrom tools.phase3_resource_identity import file_identity, source_identity\nfrom tools.rust_capsule_build import Commands\nfrom tools.rust_capsule_project import fresh, write_json\nroot=Path.cwd();output=fresh(Path(os.environ['RUNNER_TEMP'])/'sdk-native-products')\npins=tomllib.loads((root/'rust-toolchain.toml').read_text())\nrequire(pins['toolchain']['channel']=='1.97.1','native-products-original-rust-pin')\nselected=('.github/workflows/sdk-native-products.yml','.cargo/managed-guest.toml',\n    'tools/qualify_rust_capsules.py','tools/toolchain.toml','tools/rust_capsule_build.py',\n    'tools/build_observation.py','tools/build_process.py','tools/build_process_linux.py')\nbefore=source_identity(root);materials={p:file_identity(root/p) for p in selected}\nwrite_json(output/'source-inputs.json',{'native':before,'materials':materials})\ntarget=Path(os.environ.get('CARGO_TARGET_DIR',root/'target')).resolve()\nenvironment=build_environment(output)\nenvironment.update(CARGO_TARGET_DIR=str(target),RUSTUP_TOOLCHAIN='1.97.1',CARGO_INCREMENTAL='0',\n    CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0',\n    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',\n    CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')\ncommands=Commands(root,output,environment,deadline_seconds=1320,command_seconds=1200)\ncompiler=commands.run('rust-version','rustc','--version').decode().strip()\nrequire(compiler.startswith('rustc 1.97.1 ('),'native-products-rust-version')\ncommands.run('normal-host-build','cargo','--config',root/'.cargo/managed-guest.toml',\n    'build','--locked','-p','latent','-p','latentd','--bins','-p','latent-packaging',\n    '--example','package','--example','capsule_contracts','-p','latent-policy','--example','capsule_authoring')\nrequire(before==source_identity(root) and materials=={p:file_identity(root/p) for p in selected},\n    'native-products-source-changed')\nproducts={};owned=output/'native-binaries';owned.mkdir(mode=0o700)\nfor name in ('latent','latentd','examples/package','examples/capsule_contracts','examples/capsule_authoring'):\n    source=target/'debug'/name;identity=file_identity(source,512*1024**2)\n    destination=owned/name.replace('/','-');shutil.copyfile(source,destination);destination.chmod(0o700)\n    require(file_identity(source,512*1024**2)==identity==file_identity(destination,512*1024**2),\n        'native-products-capture-changed')\n    products[name]=identity\nwrite_json(output/'native-products.json',{'schemaVersion':'latent.sdk.native-products.v1',\n    'status':'built','sourceRevision':os.environ['GITHUB_SHA'],'source':before,'materials':materials,\n    'compiler':compiler,'products':products,'commands':commands.records,\n    'profile':'normal-managed-guest-default-features','signedQualification':False,\n    'guestComponentsCompiled':False,'historicalReceiptRewritten':False})\nPY\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain source-bound products and bounded build failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "sdk-native-products-${{ github.sha }}",
+          "path": "${{ runner.temp }}/sdk-native-products/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "products",
+  "kind": "job",
+  "reviewReason": "Install the existing locked Python recipe dependencies before importing the unchanged shared build helpers. Preserve original source-bound five-product build, command/output/cleanup bounds and all prior steps.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/sdk-native-products.yml"
+}
