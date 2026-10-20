@@ -31,3 +31,23 @@ world/export identity, embeds the original observation verbatim and a separate
 packaging derivation, and verifies the new package for the two explicit test
 tenants. It grants no authority and compiles no guest. The same hosted build
 runs its three scoped source/guard controls before retaining products.
+
+## Wasmtime 48.0.7 products
+
+[Run 39480948895](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39480948895),
+job 118829053989, built the five normal managed-guest products at exact source
+`724686748d39d84c86ac6ec053f615b887642e94`. Artifact 12292667379 is
+66,110,576 bytes with SHA-256
+`7cf353169b2cdffd240a5b58e87b63d1e4db46892654730197def581bfd05998`.
+All 31 archive members were checked against their CRC and SHA-256; the two
+receipts bind 3,315 native source files, 114 auxiliary inputs and all five products.
+The twelve bounded commands passed, including thirty native controls with no
+ignored tests. This producer compiled no guest components and provides no signed
+guest qualification.
+
+`tools/wasmtime_48_0_7_native_products.py` selects only that immutable tuple and
+its explicit `workflow_dispatch` event. The shared reader retains `push` as its
+default and refuses any other event or foreign source, workflow, branch, job or
+artifact. Historical 48.0.6 wrappers and receipts remain separate. The native
+release candidate workflow builds three release binaries and VM fixtures; its
+results do not substitute for these five SDK products or their selected profile.
