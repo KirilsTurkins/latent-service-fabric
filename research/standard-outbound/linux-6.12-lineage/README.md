@@ -195,3 +195,20 @@ Makefile integration, public registrar, caller certificate or quarantine release
 Running maintained-kernel/config/BTF authentication, complete allocation and
 descendant coverage, prepaid physical costs and sealed final-free consumption
 remain required. Normal installation and ACCOUNTING_QUALIFIED stay unchanged.
+
+## Physical extent plan and allocator-cache retention
+
+The additive [partial allocation closure](allocation-closure.md) authenticates
+25 whole historical source files and 37 lifetime functions. It introduces a
+checked disjoint whole-extent plan over the original bundle and a conservative
+keeper for all five object-return callbacks. Returning a slot to SLUB/kmalloc/
+NAPI is not backing-page final free: the keeper retains the original charge in
+a nonreusable PHYSICAL_HELD record, without a public or private release shortcut.
+The earlier recipes and model controls remain unchanged and separately scoped.
+
+No actual geometry, trusted factory/RX classification, complete shared-cache/
+page/route/deferred closure or final-free producer is installed. In particular,
+before-socket-lookup RX allocation cannot borrow a later socket's authority.
+The actual constructor still refuses before allocation. The partial graph,
+explicit model geometry and supplemental C controls cannot qualify a physical
+kernel profile; every production/full-accounting flag remains false.
