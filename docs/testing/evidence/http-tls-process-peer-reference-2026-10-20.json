@@ -1,0 +1,865 @@
+{
+  "schemaVersion": "latent.http.tls-peer-reference.v1",
+  "status": "passed",
+  "source": "7342a32034824bdae7547314e686e53685a672d3",
+  "materials": {
+    "tools/qualify_http_tls_peer.py": {
+      "sha256": "sha256:eaf03d1266884e433be6c9e05fb71deb9774f589b1536c7cf045cc10091c192b",
+      "bytes": 4716
+    },
+    "tools/http_tls_peer_reference.py": {
+      "sha256": "sha256:e9b1a3fdab0b8cb5d2a303159141efe5c358a23ca6d6f3f2f8b4a10ea861e267",
+      "bytes": 6382
+    },
+    "tools/standard_http/tls_peer.py": {
+      "sha256": "sha256:b9ceee3de15ed7695979dcbce7259e6f575e435d1f70f464fad4aaf7b5c6ea77",
+      "bytes": 11296
+    },
+    "tools/standard_http/peer.py": {
+      "sha256": "sha256:8fa65529659ef2e53166e821da4a86c1622bec1bcec080b050d7e4e4bd04db1f",
+      "bytes": 18941
+    },
+    "tools/standard_http/protocol.py": {
+      "sha256": "sha256:495fb9756c377ba086627f51a69f5e1721fe21b83a5c16b4b97344f3d049b5c7",
+      "bytes": 6517
+    },
+    "tools/standard_http/vectors.py": {
+      "sha256": "sha256:00dc2c620e29f01e54e0c1c23ed3e5f845c1251b62ad0af9bf819be3063683a9",
+      "bytes": 5636
+    },
+    "tools/standard_http/observations.py": {
+      "sha256": "sha256:701478e4b994453e95dd9d9e92dee685493fd3ddec9eb347d939298b13543c20",
+      "bytes": 8185
+    },
+    "tools/owned_test_process.py": {
+      "sha256": "sha256:da38e62f58d2dc3cdd0517c2cc4c77f175afde5299a01bfed75488bb9a862283",
+      "bytes": 11348
+    },
+    ".github/workflows/http-tls-fixture.yml": {
+      "sha256": "sha256:be70975395963ccba65e0e1181137ba7d8dcfaad1caf97a55a343c2ac7c1f2fb",
+      "bytes": 1888
+    },
+    "tools/http_tls_process_reference.py": {
+      "sha256": "sha256:0163200c5a38dd5b8d9bd401cbe38cb16a616df982bef9d45dee29080ee1a101",
+      "bytes": 5048
+    },
+    "tools/standard_http/process_peer.py": {
+      "sha256": "sha256:fd6352284b8ac5c38e5f4e64a2aa122852a0913a26cb807bddf8e7945d42d3cf",
+      "bytes": 2427
+    }
+  },
+  "signedGuestExecuted": false,
+  "providerAccountingQualified": false,
+  "kernelAccountingQualified": false,
+  "privateKeyRetained": false,
+  "openssl": "OpenSSL 3.0.13 30 Jan 2024",
+  "certificateTool": {
+    "sha256": "sha256:b4f547c0f16272d1cc7f870330a6f2c243710c335e7a99c734ff7a0c6fdb2503",
+    "bytes": 1005368
+  },
+  "publicCertificate": {
+    "sha256": "sha256:c8056349e4486ca0cccc6960ff33c3d0f2b596383954e72d8cd98dcc9c42fee4",
+    "bytes": 438
+  },
+  "cases": [
+    {
+      "case": "tls12-json",
+      "certificateRejected": false,
+      "response": {
+        "bytes": 167,
+        "sha256": "sha256:ab387da1c59195b8b5f651deccd610265dafe202402a7bffb5723e98597e38be"
+      },
+      "peer": {
+        "schemaVersion": "latent.controlled-http-tls-peer.v1",
+        "kind": "controlled-peer-observation",
+        "evidenceScope": "peer-protocol-only",
+        "generation": "3db2feb6874349a8bab5e25a036e9a93",
+        "state": "stopped",
+        "failure": null,
+        "origins": {
+          "primary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 34163
+          },
+          "secondary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 41427
+          }
+        },
+        "limits": {
+          "connections": 4,
+          "contacts": 32,
+          "events": 512,
+          "receivedBytes": 2097152,
+          "maximumSeconds": 300
+        },
+        "acceptedConnections": 1,
+        "startedRequests": 1,
+        "listeningOrigins": 0,
+        "completedResponseWrites": 1,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "connectionBoundRejections": 0,
+        "openConnections": 0,
+        "receivedBytes": 164,
+        "requests": [
+          {
+            "request": 1,
+            "role": "primary",
+            "state": "closed",
+            "responseBytesWritten": 167,
+            "receiveBufferBytes": 8192,
+            "sendBufferBytes": 8192,
+            "tls": {
+              "state": "closed",
+              "version": "TLSv1.2",
+              "alpn": "http/1.1"
+            },
+            "authorizationPresent": true,
+            "cookiePresent": false,
+            "proxyAuthorizationPresent": false,
+            "userAgent": {
+              "present": false,
+              "bytes": 0,
+              "sha256": null
+            },
+            "vector": "domain-json",
+            "method": "GET",
+            "requestFraming": "length",
+            "bodyBytes": 0,
+            "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "closeReason": "response-write-complete"
+          }
+        ],
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "connection-accepted",
+            "role": "primary",
+            "request": 1
+          },
+          {
+            "sequence": 2,
+            "kind": "request-started",
+            "vector": "domain-json",
+            "request": 1
+          },
+          {
+            "sequence": 3,
+            "kind": "request-complete",
+            "bodyBytes": 0,
+            "request": 1
+          },
+          {
+            "sequence": 4,
+            "kind": "response-write-complete",
+            "request": 1
+          },
+          {
+            "sequence": 5,
+            "kind": "peer-connection-closed",
+            "reason": "response-write-complete",
+            "request": 1
+          }
+        ],
+        "tlsProfile": {
+          "minimum": "TLSv1.2",
+          "maximum": "TLSv1.3",
+          "alpn": "http/1.1",
+          "handshakeSeconds": 5,
+          "providerAccountingQualified": false
+        }
+      }
+    },
+    {
+      "case": "tls13-json",
+      "certificateRejected": false,
+      "response": {
+        "bytes": 167,
+        "sha256": "sha256:ab387da1c59195b8b5f651deccd610265dafe202402a7bffb5723e98597e38be"
+      },
+      "peer": {
+        "schemaVersion": "latent.controlled-http-tls-peer.v1",
+        "kind": "controlled-peer-observation",
+        "evidenceScope": "peer-protocol-only",
+        "generation": "e3c740dc1e9c4d6cbdd0bfb3ef20216a",
+        "state": "stopped",
+        "failure": null,
+        "origins": {
+          "primary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 39397
+          },
+          "secondary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 34251
+          }
+        },
+        "limits": {
+          "connections": 4,
+          "contacts": 32,
+          "events": 512,
+          "receivedBytes": 2097152,
+          "maximumSeconds": 300
+        },
+        "acceptedConnections": 1,
+        "startedRequests": 1,
+        "listeningOrigins": 0,
+        "completedResponseWrites": 1,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "connectionBoundRejections": 0,
+        "openConnections": 0,
+        "receivedBytes": 164,
+        "requests": [
+          {
+            "request": 1,
+            "role": "primary",
+            "state": "closed",
+            "responseBytesWritten": 167,
+            "receiveBufferBytes": 8192,
+            "sendBufferBytes": 8192,
+            "tls": {
+              "state": "closed",
+              "version": "TLSv1.3",
+              "alpn": "http/1.1"
+            },
+            "authorizationPresent": true,
+            "cookiePresent": false,
+            "proxyAuthorizationPresent": false,
+            "userAgent": {
+              "present": false,
+              "bytes": 0,
+              "sha256": null
+            },
+            "vector": "domain-json",
+            "method": "GET",
+            "requestFraming": "length",
+            "bodyBytes": 0,
+            "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "closeReason": "response-write-complete"
+          }
+        ],
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "connection-accepted",
+            "role": "primary",
+            "request": 1
+          },
+          {
+            "sequence": 2,
+            "kind": "request-started",
+            "vector": "domain-json",
+            "request": 1
+          },
+          {
+            "sequence": 3,
+            "kind": "request-complete",
+            "bodyBytes": 0,
+            "request": 1
+          },
+          {
+            "sequence": 4,
+            "kind": "response-write-complete",
+            "request": 1
+          },
+          {
+            "sequence": 5,
+            "kind": "peer-connection-closed",
+            "reason": "response-write-complete",
+            "request": 1
+          }
+        ],
+        "tlsProfile": {
+          "minimum": "TLSv1.2",
+          "maximum": "TLSv1.3",
+          "alpn": "http/1.1",
+          "handshakeSeconds": 5,
+          "providerAccountingQualified": false
+        }
+      }
+    },
+    {
+      "case": "hostname-refused",
+      "certificateRejected": true,
+      "response": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "peer": {
+        "schemaVersion": "latent.controlled-http-tls-peer.v1",
+        "kind": "controlled-peer-observation",
+        "evidenceScope": "peer-protocol-only",
+        "generation": "93721bdf1ea143c59c6a2cfdf707a98a",
+        "state": "stopped",
+        "failure": null,
+        "origins": {
+          "primary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 42585
+          },
+          "secondary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 36385
+          }
+        },
+        "limits": {
+          "connections": 4,
+          "contacts": 32,
+          "events": 512,
+          "receivedBytes": 2097152,
+          "maximumSeconds": 300
+        },
+        "acceptedConnections": 1,
+        "startedRequests": 0,
+        "listeningOrigins": 0,
+        "completedResponseWrites": 0,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "connectionBoundRejections": 0,
+        "openConnections": 0,
+        "receivedBytes": 0,
+        "requests": [
+          {
+            "request": 1,
+            "role": "primary",
+            "state": "closed",
+            "responseBytesWritten": 0,
+            "receiveBufferBytes": 8192,
+            "sendBufferBytes": 8192,
+            "tls": {
+              "state": "handshake-failed",
+              "version": null,
+              "alpn": null
+            },
+            "closeReason": "tls-handshake-failed"
+          }
+        ],
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "connection-accepted",
+            "role": "primary",
+            "request": 1
+          },
+          {
+            "sequence": 2,
+            "kind": "peer-connection-closed",
+            "reason": "tls-handshake-failed",
+            "request": 1
+          }
+        ],
+        "tlsProfile": {
+          "minimum": "TLSv1.2",
+          "maximum": "TLSv1.3",
+          "alpn": "http/1.1",
+          "handshakeSeconds": 5,
+          "providerAccountingQualified": false
+        }
+      }
+    },
+    {
+      "case": "trust-refused",
+      "certificateRejected": true,
+      "response": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "peer": {
+        "schemaVersion": "latent.controlled-http-tls-peer.v1",
+        "kind": "controlled-peer-observation",
+        "evidenceScope": "peer-protocol-only",
+        "generation": "5da052ebceae43e2b7d1f61602c661e2",
+        "state": "stopped",
+        "failure": null,
+        "origins": {
+          "primary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 39813
+          },
+          "secondary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 36551
+          }
+        },
+        "limits": {
+          "connections": 4,
+          "contacts": 32,
+          "events": 512,
+          "receivedBytes": 2097152,
+          "maximumSeconds": 300
+        },
+        "acceptedConnections": 1,
+        "startedRequests": 0,
+        "listeningOrigins": 0,
+        "completedResponseWrites": 0,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "connectionBoundRejections": 0,
+        "openConnections": 0,
+        "receivedBytes": 0,
+        "requests": [
+          {
+            "request": 1,
+            "role": "primary",
+            "state": "closed",
+            "responseBytesWritten": 0,
+            "receiveBufferBytes": 8192,
+            "sendBufferBytes": 8192,
+            "tls": {
+              "state": "handshake-failed",
+              "version": null,
+              "alpn": null
+            },
+            "closeReason": "tls-handshake-failed"
+          }
+        ],
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "connection-accepted",
+            "role": "primary",
+            "request": 1
+          },
+          {
+            "sequence": 2,
+            "kind": "peer-connection-closed",
+            "reason": "tls-handshake-failed",
+            "request": 1
+          }
+        ],
+        "tlsProfile": {
+          "minimum": "TLSv1.2",
+          "maximum": "TLSv1.3",
+          "alpn": "http/1.1",
+          "handshakeSeconds": 5,
+          "providerAccountingQualified": false
+        }
+      }
+    },
+    {
+      "case": "stalled-handshake-retired",
+      "certificateRejected": false,
+      "response": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "peer": {
+        "schemaVersion": "latent.controlled-http-tls-peer.v1",
+        "kind": "controlled-peer-observation",
+        "evidenceScope": "peer-protocol-only",
+        "generation": "7a7918fa2bcc44ae840d243f65f423c0",
+        "state": "stopped",
+        "failure": null,
+        "origins": {
+          "primary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 34345
+          },
+          "secondary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 42281
+          }
+        },
+        "limits": {
+          "connections": 4,
+          "contacts": 32,
+          "events": 512,
+          "receivedBytes": 2097152,
+          "maximumSeconds": 300
+        },
+        "acceptedConnections": 1,
+        "startedRequests": 0,
+        "listeningOrigins": 0,
+        "completedResponseWrites": 0,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "connectionBoundRejections": 0,
+        "openConnections": 0,
+        "receivedBytes": 0,
+        "requests": [
+          {
+            "request": 1,
+            "role": "primary",
+            "state": "closed",
+            "responseBytesWritten": 0,
+            "receiveBufferBytes": 8192,
+            "sendBufferBytes": 8192,
+            "tls": {
+              "state": "handshake-failed",
+              "version": null,
+              "alpn": null
+            },
+            "closeReason": "peer-request-deadline"
+          }
+        ],
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "connection-accepted",
+            "role": "primary",
+            "request": 1
+          },
+          {
+            "sequence": 2,
+            "kind": "peer-request-deadline",
+            "request": 1
+          },
+          {
+            "sequence": 3,
+            "kind": "peer-connection-closed",
+            "reason": "peer-request-deadline",
+            "request": 1
+          }
+        ],
+        "tlsProfile": {
+          "minimum": "TLSv1.2",
+          "maximum": "TLSv1.3",
+          "alpn": "http/1.1",
+          "handshakeSeconds": 5,
+          "providerAccountingQualified": false
+        }
+      }
+    },
+    {
+      "case": "early-tls-body-close",
+      "certificateRejected": false,
+      "response": {
+        "bytes": 110,
+        "sha256": "sha256:21b9b486436b767390264c8dd3958b776cb89c6e490800d58a044d2c582a64ce"
+      },
+      "peer": {
+        "schemaVersion": "latent.controlled-http-tls-peer.v1",
+        "kind": "controlled-peer-observation",
+        "evidenceScope": "peer-protocol-only",
+        "generation": "d998674e4d3445d69f13ea5b20356b6e",
+        "state": "stopped",
+        "failure": null,
+        "origins": {
+          "primary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 45511
+          },
+          "secondary": {
+            "scheme": "https",
+            "host": "127.0.0.1",
+            "port": 40537
+          }
+        },
+        "limits": {
+          "connections": 4,
+          "contacts": 32,
+          "events": 512,
+          "receivedBytes": 2097152,
+          "maximumSeconds": 300
+        },
+        "acceptedConnections": 1,
+        "startedRequests": 1,
+        "listeningOrigins": 0,
+        "completedResponseWrites": 0,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "connectionBoundRejections": 0,
+        "openConnections": 0,
+        "receivedBytes": 172,
+        "requests": [
+          {
+            "request": 1,
+            "role": "primary",
+            "state": "closed",
+            "responseBytesWritten": 110,
+            "receiveBufferBytes": 8192,
+            "sendBufferBytes": 8192,
+            "tls": {
+              "state": "closed",
+              "version": "TLSv1.3",
+              "alpn": "http/1.1"
+            },
+            "authorizationPresent": true,
+            "cookiePresent": false,
+            "proxyAuthorizationPresent": false,
+            "userAgent": {
+              "present": false,
+              "bytes": 0,
+              "sha256": null
+            },
+            "vector": "partial-body",
+            "method": "GET",
+            "requestFraming": "length",
+            "bodyBytes": 0,
+            "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "closeReason": "remote-write-half-ended"
+          }
+        ],
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "connection-accepted",
+            "role": "primary",
+            "request": 1
+          },
+          {
+            "sequence": 2,
+            "kind": "request-started",
+            "vector": "partial-body",
+            "request": 1
+          },
+          {
+            "sequence": 3,
+            "kind": "request-complete",
+            "bodyBytes": 0,
+            "request": 1
+          },
+          {
+            "sequence": 4,
+            "kind": "gate-pending",
+            "phase": "body",
+            "request": 1
+          },
+          {
+            "sequence": 5,
+            "kind": "remote-write-half-ended",
+            "request": 1
+          },
+          {
+            "sequence": 6,
+            "kind": "peer-connection-closed",
+            "reason": "remote-write-half-ended",
+            "request": 1
+          }
+        ],
+        "tlsProfile": {
+          "minimum": "TLSv1.2",
+          "maximum": "TLSv1.3",
+          "alpn": "http/1.1",
+          "handshakeSeconds": 5,
+          "providerAccountingQualified": false
+        }
+      }
+    }
+  ],
+  "processQualification": {
+    "cases": [
+      {
+        "case": "process-tls12-json",
+        "certificateRejected": false,
+        "responseBytes": 167
+      },
+      {
+        "case": "process-tls13-json",
+        "certificateRejected": false,
+        "responseBytes": 167
+      },
+      {
+        "case": "process-hostname-refused",
+        "certificateRejected": true,
+        "responseBytes": 0
+      }
+    ],
+    "peer": {
+      "schemaVersion": "latent.controlled-http-tls-peer.v1",
+      "kind": "controlled-peer-observation",
+      "evidenceScope": "peer-protocol-only",
+      "generation": "cb09d3fc8f7b4a66bac334fe509c845b",
+      "state": "stopped",
+      "failure": null,
+      "origins": {
+        "primary": {
+          "scheme": "https",
+          "host": "127.0.0.1",
+          "port": 38613
+        },
+        "secondary": {
+          "scheme": "https",
+          "host": "127.0.0.1",
+          "port": 40451
+        }
+      },
+      "limits": {
+        "connections": 4,
+        "contacts": 32,
+        "events": 512,
+        "receivedBytes": 2097152,
+        "maximumSeconds": 300
+      },
+      "acceptedConnections": 3,
+      "startedRequests": 2,
+      "listeningOrigins": 0,
+      "completedResponseWrites": 2,
+      "committedMutations": 0,
+      "rejectedRequests": 0,
+      "connectionBoundRejections": 0,
+      "openConnections": 0,
+      "receivedBytes": 328,
+      "requests": [
+        {
+          "request": 1,
+          "role": "primary",
+          "state": "closed",
+          "responseBytesWritten": 167,
+          "receiveBufferBytes": 8192,
+          "sendBufferBytes": 8192,
+          "tls": {
+            "state": "closed",
+            "version": "TLSv1.2",
+            "alpn": "http/1.1"
+          },
+          "authorizationPresent": true,
+          "cookiePresent": false,
+          "proxyAuthorizationPresent": false,
+          "userAgent": {
+            "present": false,
+            "bytes": 0,
+            "sha256": null
+          },
+          "vector": "domain-json",
+          "method": "GET",
+          "requestFraming": "length",
+          "bodyBytes": 0,
+          "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "closeReason": "response-write-complete"
+        },
+        {
+          "request": 2,
+          "role": "primary",
+          "state": "closed",
+          "responseBytesWritten": 167,
+          "receiveBufferBytes": 8192,
+          "sendBufferBytes": 8192,
+          "tls": {
+            "state": "closed",
+            "version": "TLSv1.3",
+            "alpn": "http/1.1"
+          },
+          "authorizationPresent": true,
+          "cookiePresent": false,
+          "proxyAuthorizationPresent": false,
+          "userAgent": {
+            "present": false,
+            "bytes": 0,
+            "sha256": null
+          },
+          "vector": "domain-json",
+          "method": "GET",
+          "requestFraming": "length",
+          "bodyBytes": 0,
+          "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "closeReason": "response-write-complete"
+        },
+        {
+          "request": 3,
+          "role": "primary",
+          "state": "closed",
+          "responseBytesWritten": 0,
+          "receiveBufferBytes": 8192,
+          "sendBufferBytes": 8192,
+          "tls": {
+            "state": "handshake-failed",
+            "version": null,
+            "alpn": null
+          },
+          "closeReason": "tls-handshake-failed"
+        }
+      ],
+      "events": [
+        {
+          "sequence": 1,
+          "kind": "connection-accepted",
+          "role": "primary",
+          "request": 1
+        },
+        {
+          "sequence": 2,
+          "kind": "request-started",
+          "vector": "domain-json",
+          "request": 1
+        },
+        {
+          "sequence": 3,
+          "kind": "request-complete",
+          "bodyBytes": 0,
+          "request": 1
+        },
+        {
+          "sequence": 4,
+          "kind": "response-write-complete",
+          "request": 1
+        },
+        {
+          "sequence": 5,
+          "kind": "peer-connection-closed",
+          "reason": "response-write-complete",
+          "request": 1
+        },
+        {
+          "sequence": 6,
+          "kind": "connection-accepted",
+          "role": "primary",
+          "request": 2
+        },
+        {
+          "sequence": 7,
+          "kind": "request-started",
+          "vector": "domain-json",
+          "request": 2
+        },
+        {
+          "sequence": 8,
+          "kind": "request-complete",
+          "bodyBytes": 0,
+          "request": 2
+        },
+        {
+          "sequence": 9,
+          "kind": "response-write-complete",
+          "request": 2
+        },
+        {
+          "sequence": 10,
+          "kind": "peer-connection-closed",
+          "reason": "response-write-complete",
+          "request": 2
+        },
+        {
+          "sequence": 11,
+          "kind": "connection-accepted",
+          "role": "primary",
+          "request": 3
+        },
+        {
+          "sequence": 12,
+          "kind": "peer-connection-closed",
+          "reason": "tls-handshake-failed",
+          "request": 3
+        }
+      ],
+      "tlsProfile": {
+        "minimum": "TLSv1.2",
+        "maximum": "TLSv1.3",
+        "alpn": "http/1.1",
+        "handshakeSeconds": 5,
+        "providerAccountingQualified": false
+      }
+    },
+    "process": {
+      "reaped": true,
+      "exitCode": 0
+    },
+    "signedGuestExecuted": false,
+    "providerAccountingQualified": false,
+    "privateKeyRetained": false
+  },
+  "seconds": 0.3080812050000006
+}
