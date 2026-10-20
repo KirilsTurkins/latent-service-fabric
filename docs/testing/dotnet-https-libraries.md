@@ -5,6 +5,13 @@ component produced by the [captured library programme](../development/dotnet-pub
 It adds no guest handler, compiler adaptation or native host build. There is no
 signed HTTPS result yet; source availability does not complete #693.
 
+The `dotnet-https-libraries.yml` owning workflow authenticates the original
+7e3 component archive, generator approval, captured SDK/compiler inputs and
+original package WIT before signing it for these nodes. It runs the existing
+twenty portable provenance/TLS controls, then requires the fifteen real signed
+outcomes below. The complete original build failure remains separate from
+this qualification; no result is inferred from an earlier direct HTTP case.
+
 The trusted profile requires eleven real signed outcomes: both libraries parse
 the domain body and 404/500 responses, both cancel genuinely held headers, an
 ordinary body stream is disposed early, and fresh invocations use both default
