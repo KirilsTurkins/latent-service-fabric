@@ -43,6 +43,8 @@ limits are unchanged.
 The original source-owned import engine and splicer are reused only when
 their unchanged40 SDK inputs validate normally. Five ordinary host/tool
 binaries retain explicit historical source0754391a/run39276911555 identity;
+0754391a is the exact tested pull-request merge, whose second parent is the
+owning workflow's aea63cc6 head. These identities are checked separately.
 no current normal receipt is fabricated. Fixed original artifact metadata,
 whole ZIP SHA256, member shapes, original normal receipt and all five binary
 hashes are checked before use. A new source capture and normal build evidence

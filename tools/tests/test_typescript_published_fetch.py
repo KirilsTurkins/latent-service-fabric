@@ -17,6 +17,22 @@ from tools.standard_http.peer import Peer
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge(self):
+        identity,size,sha=inputs.ARTIFACTS['engine']
+        metadata={'id':identity,'size_in_bytes':size,'digest':'sha256:'+sha,'expired':False,
+                  'workflow_run':{'id':inputs.RUN,'head_sha':inputs.RUN_HEAD}}
+        inputs.artifact_metadata(metadata,identity,size,sha)
+        self.assertNotEqual(inputs.SOURCE,inputs.RUN_HEAD)
+        self.assertEqual(inputs.MERGE_PARENTS[1],inputs.RUN_HEAD)
+        for key,value in (('id',identity+1),('size_in_bytes',size+1),('digest','sha256:'+'0'*64),('expired',True)):
+            changed=deepcopy(metadata); changed[key]=value
+            with self.subTest(key=key),self.assertRaises(WorkflowError):
+                inputs.artifact_metadata(changed,identity,size,sha)
+        for key,value in (('id',inputs.RUN+1),('head_sha',inputs.SOURCE)):
+            changed=deepcopy(metadata); changed['workflow_run'][key]=value
+            with self.subTest(key=key),self.assertRaises(WorkflowError):
+                inputs.artifact_metadata(changed,identity,size,sha)
+
     def test_caller_uses_original_global_clients_and_original_world_limits(self):
         with tempfile.TemporaryDirectory() as temporary:
             app = fixture.project(Path(temporary)/'project', 'outside-fetch-alpha')
