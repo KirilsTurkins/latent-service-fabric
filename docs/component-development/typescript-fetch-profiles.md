@@ -41,6 +41,12 @@ deadline impose additional limits. These API constants are not measurements of
 native or kernel memory. The explicit published-client execution profile uses
 64 task slots, 64 queued work slots and 256 native-owner slots; this is no claim
 that every compatible package requires that profile or that these are minima.
+The phase-client programme additionally declares the uniform initial
+`typescript-phase-published-clients-fuel-v1` allowance of two billion fuel units.
+The prior one-billion run completed Ky JSON at944,147,189 units and exhausted
+that allowance while handling Ky's404 response. That failed run remains failed;
+the larger initial allowance is pending signed qualification. It changes no
+shared default, body/owner/memory limit, deadline, grant or helper budget.
 
 ## Add a dependency and authorize its work
 

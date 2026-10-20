@@ -365,6 +365,7 @@ def qualify(acquired: Path, native_input: Path, tools: Path, output: Path):
     require(identity == verify_prepared(native_input) and before_native == {
         name: file_identity(path, 512*1024**2) for name, path in native.items()}, 'phase-fetch-native-changed')
     record = {'schemaVersion': 'latent.typescript.phase-fetch.v1', 'status': 'passed',
+        'executionProfile': fixture.EXECUTION_PROFILE, 'initialCpuFuel': fixture.INITIAL_CPU_FUEL,
         'qualificationSources': source_before, 'nativeProducer': identity, 'source': digest(before),
         'build': base.build_evidence(artifact), 'execution': file_identity(output/'node/qualification.json'),
         'cases': execution['cases'], 'invocationOutcomes':31,'guestExecutions':27,'preIoRefusals':4,

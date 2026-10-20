@@ -133,7 +133,10 @@ class PhaseExecutionTests(unittest.TestCase):
             old = original.project(directory/'original')
             app = fixture.project(directory/'phase')
             manifest, lock, _ = validate(snapshot(app))
-            self.assertEqual(manifest, json.loads((old/'capsule-project.json').read_bytes()))
+            original_manifest = json.loads((old/'capsule-project.json').read_bytes())
+            self.assertEqual(original_manifest['limits']['cpuFuel'], 1_000_000_000)
+            original_manifest['limits']['cpuFuel'] = fixture.INITIAL_CPU_FUEL
+            self.assertEqual(manifest, original_manifest)
             self.assertEqual(lock['sdk'], json.loads((old/'sdk-lock.json').read_bytes())['sdk'])
             self.assertEqual((app/'src/default-client.ts').read_text(),
                 fixture.published.CLIENT.replace('@PRIVATE@', fixture.PRIVATE_NAME))

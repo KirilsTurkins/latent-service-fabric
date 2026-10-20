@@ -16,6 +16,8 @@ SOURCE = 'sdk/typescript-guest/probes/fetch-phases/main.ts'
 HTTP = 'latent:http/phase-timing@0.4.0'
 PROFILE = 'lsf-fetch-phase-buffered-v2'
 PRIVATE_NAME = 'outside-fetch-phase'
+EXECUTION_PROFILE = 'typescript-phase-published-clients-fuel-v1'
+INITIAL_CPU_FUEL = 2_000_000_000
 VECTORS = (
     ('ky-json', 0, 'domain-json', None),
     ('wretch-json', 1, 'domain-json', None),
@@ -53,6 +55,14 @@ def project(directory: Path) -> Path:
     lock['template'] = {'name': 'typescript-phase-fetch', 'sourceDigest': digest(source),
                         'witDigest': digest(wit)}
     (app / 'sdk-lock.json').write_bytes((json.dumps(lock, indent=2)+'\n').encode())
+    descriptor = app / 'capsule-project.json'
+    manifest = json.loads(read_file(descriptor))
+    require(manifest['limits']['cpuFuel'] == 1_000_000_000,
+            'phase-fetch-original-fuel-profile')
+    # One explicit initial application budget for every case and both tenants.
+    # Host calls, helpers and continuations receive no independent allowance.
+    manifest['limits']['cpuFuel'] = INITIAL_CPU_FUEL
+    descriptor.write_bytes((json.dumps(manifest, indent=2)+'\n').encode())
     return app
 
 

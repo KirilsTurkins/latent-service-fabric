@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "latent.typescript.phase-fuel-failure.v1",
+  "status": "failed",
+  "source": "6fe7b3926e02dffe22c39f7195dc0a9a0ad16237",
+  "run": 39457682347,
+  "job": 118748713242,
+  "artifact": 12280189992,
+  "archive": "sha256:6d84d6652bcdbeead0867937b5c5b86152c68dbcd6252abb953b4e464f94eceb",
+  "archiveBytes": 8919668,
+  "membersCrcAndShaVerified": 173,
+  "stage": "ky-http404",
+  "observations": {
+    "ky-json": {
+      "decoded": [
+        "1|ky:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+      ],
+      "exitCode": 0,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "944147189",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "11617128",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "959225"
+      }
+    },
+    "wretch-json": {
+      "decoded": [
+        "1|wretch:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+      ],
+      "exitCode": 0,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "651702981",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "11616760",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "697775"
+      }
+    },
+    "outside-json": {
+      "decoded": [
+        "1|outside:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+      ],
+      "exitCode": 0,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "691059706",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "11616760",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "665544"
+      }
+    },
+    "ky-http404": {
+      "decoded": null,
+      "exitCode": 4,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1000000000",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "11617312",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "967475"
+      }
+    }
+  },
+  "cause": "exact initial CPU-fuel allowance exhausted",
+  "algorithmTerminationAtLargerBudget": "not-yet-qualified",
+  "nativeProducerSource": "8f7780dd0a35e3375524d72e7dfaddf847deaa5c",
+  "nextInitialProfile": {
+    "name": "typescript-phase-published-clients-fuel-v1",
+    "cpuFuel": 2000000000,
+    "uniformForAllCallsAndTenants": true,
+    "sharedDefaultsChanged": false,
+    "perHelperBudgetsAdded": false
+  },
+  "fullTicketQualification": false
+}
