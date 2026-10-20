@@ -1247,14 +1247,15 @@ class JavaExplicitNativeProducer(unittest.TestCase):
             'head_branch':'feat/sdk-current-native-products-20261020','status':'completed','conclusion':'success'}
         job={'id':products.JOB,'head_sha':products.SOURCE,'run_id':products.RUN,
             'name':'Build and retain five source-bound native products','status':'completed','conclusion':'success'}
-        artifact={'id':1,'name':'sdk-native-products-'+products.SOURCE,'expired':False,'size_in_bytes':100,
-            'digest':'sha256:'+'d'*64,'workflow_run':{'id':products.RUN,'head_sha':products.SOURCE}}
+        artifact={**products.ARTIFACT,'name':'sdk-native-products-'+products.SOURCE,'expired':False,
+            'workflow_run':{'id':products.RUN,'head_sha':products.SOURCE}}
         listing={'total_count':1,'artifacts':[artifact]}
         with mock.patch.object(products,'api',side_effect=[run,job,listing]):
             self.assertEqual(products._official_artifact(),artifact)
         for kind,key,value in [('run','head_sha','0'*40),('run','event','pull_request'),
                 ('run','path','.github/workflows/unrelated.yml'),('job','conclusion','failure'),
-                ('job','id',products.JOB+1),('artifact','expired',True),('artifact','digest','unknown')]:
+                ('job','id',products.JOB+1),('artifact','expired',True),('artifact','digest','unknown'),
+                ('artifact','id',products.ARTIFACT['id']+1),('artifact','size_in_bytes',products.ARTIFACT['size_in_bytes']+1)]:
             r,j,a=deepcopy(run),deepcopy(job),deepcopy(artifact)
             {'run':r,'job':j,'artifact':a}[kind][key]=value
             with self.subTest(kind=kind,key=key),mock.patch.object(products,'api',
@@ -1262,3 +1263,15 @@ class JavaExplicitNativeProducer(unittest.TestCase):
                 products._official_artifact()
         with mock.patch.object(products,'api',side_effect=[run,job,{'total_count':2,'artifacts':[artifact]}]), \
                 self.assertRaises(WorkflowError):products._official_artifact()
+
+
+class JavaProducerReceiptPreimages(unittest.TestCase):
+    def test_modified_prepared_receipt_refuses_before_git_or_product_inspection(self):
+        from tools import java_fiber_native_products as products
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            (root/'native-products.json').write_bytes(b'{}')
+            (root/'source-inputs.json').write_bytes(b'{}')
+            with mock.patch.object(products,'git_source_identity',side_effect=RuntimeError('must-not-read-git')), \
+                    self.assertRaisesRegex(WorkflowError,'receipt-preimage'):
+                products.verify_prepared(root)

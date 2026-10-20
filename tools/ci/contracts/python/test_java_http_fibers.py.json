@@ -46,6 +46,7 @@
     "JavaHttpNativeRefusalReader.test_record_and_source_caps_preserve_incomplete_diagnostic_scope",
     "JavaHttpNativeRefusalReader.test_retention_failure_preserves_original_refusal_identity",
     "JavaPendingConnectBarrier.test_pending_header_witness_follows_completed_connect_before_response",
+    "JavaProducerReceiptPreimages.test_modified_prepared_receipt_refuses_before_git_or_product_inspection",
     "JavaPublicCFailureContext.test_anchored_reader_rejects_hardlinks_and_linked_directories",
     "JavaPublicCFailureContext.test_default_and_success_paths_never_read_or_retain_source",
     "JavaPublicCFailureContext.test_exact_context_retains_real_declarations_control_flow_and_byte_identities",
@@ -617,6 +618,18 @@
       ],
       "skipSites": []
     },
+    "JavaProducerReceiptPreimages.test_modified_prepared_receipt_refuses_before_git_or_product_inspection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaPublicCFailureContext.test_anchored_reader_rejects_hardlinks_and_linked_directories": {
       "bases": [
         "unittest.TestCase"
@@ -824,6 +837,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Preserve all prior cases and guards, exact pending-body normalization reviewed against immutable tail hash; add explicit native producer and completed-connect witness controls.",
+  "reviewReason": "Preserve all63cases/guards; add refusal of changed prepared receipt preimages before Git/product access and pin independently verified actual a4f artifact metadata.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

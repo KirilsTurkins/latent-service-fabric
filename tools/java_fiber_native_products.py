@@ -21,6 +21,12 @@ from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
 SOURCE = 'a4f05f3f243889cc7ba7a0404bdc76afec32d3c2'
 RUN = 39400186766
 JOB = 118552659402
+ARTIFACT = {'id': 12255531553, 'size_in_bytes': 65925279,
+    'digest': 'sha256:0b5756327d92f45e59e65da2f9d059d6f7e464e59830e43761931c97c4391e8e'}
+RECEIPTS = {'native-products.json': {'sha256': 'sha256:f6022e637a01a4bf8740ae0f66c4cc3728c0bc45cca852d1746cff666ed16ad4',
+                          'bytes': 3105},
+ 'source-inputs.json': {'sha256': 'sha256:cb2d0d7b2a4948669f23461773caf96d9f651107fecb435c13b6ead59e9f3121',
+                        'bytes': 1563}}
 WORKFLOW = '.github/workflows/sdk-native-products.yml'
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 STAGES = ('rust-version', 'normal-host-build', 'closed-http-refusal-controls', 'neutral-resource-signing-controls')
@@ -120,6 +126,8 @@ def _official_artifact():
         and type(artifact['digest']) is str and re.fullmatch(r'sha256:[0-9a-f]{64}', artifact['digest'])
         and artifact['workflow_run']['id'] == RUN and artifact['workflow_run']['head_sha'] == SOURCE,
         'java-fiber-native-artifact-origin')
+    require(all(artifact[key] == value for key, value in ARTIFACT.items()),
+        'java-fiber-native-fixed-artifact')
     return artifact
 
 
@@ -128,7 +136,13 @@ def native_products(prepared):
             prepared/'native'/name.replace('/', '-') for name in PRODUCTS}
 
 
+def receipt_preimages(prepared):
+    for name, expected in RECEIPTS.items():
+        require(file_identity(prepared/name) == expected, 'java-fiber-native-receipt-preimage')
+
+
 def verify_prepared(prepared):
+    receipt_preimages(prepared)
     record, snapshot = read_json(prepared/'native-products.json'), read_json(prepared/'source-inputs.json')
     validate_record(record, snapshot, git_source_identity(SOURCE), _git_materials())
     retained = read_json(prepared/'retrieval.json')
@@ -141,7 +155,9 @@ def verify_prepared(prepared):
             cwd=ROOT, text=True, timeout=30).strip()
         and retained['producerReceipt'] == file_identity(prepared/'native-products.json')
         and retained['sourceSnapshot'] == file_identity(prepared/'source-inputs.json')
-        and retained['products'] == record['products'], 'java-fiber-native-retained-record-drift')
+        and retained['products'] == record['products']
+        and retained['origin']['artifact'] == ARTIFACT['id']
+        and retained['origin']['archiveDigest'] == ARTIFACT['digest'], 'java-fiber-native-retained-record-drift')
     for name, expected in record['products'].items():
         require(file_identity(prepared/'native'/name.replace('/', '-'), 512*1024**2) == expected,
             'java-fiber-native-product-drift')
@@ -169,6 +185,7 @@ def prepare(output):
         selected = preflight(archive)
         for name in ('native-products.json', 'source-inputs.json'):
             extract(archive, name, output/name)
+        receipt_preimages(output)
         record, snapshot = read_json(output/'native-products.json'), read_json(output/'source-inputs.json')
         validate_record(record, snapshot, git_source_identity(SOURCE), _git_materials())
         for name in PRODUCTS:
