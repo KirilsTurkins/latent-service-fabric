@@ -7321,7 +7321,12 @@
         "backend::call_phase::tests::only_generic_runtime_failure_gets_the_actual_closed_call_boundary",
         "backend::call_phase::tests::call_boundary_does_not_relabel_traps_accounting_or_lifecycle_failures",
         "host::tests::finite_default_table_limit_admits_go_minimum_and_rejects_excess",
-        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration"
+        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration",
+        "host::runtime::positive_timer_observer::tests::closed_record_has_only_static_labels_and_actual_count_fields",
+        "host::runtime::positive_timer_observer::tests::disabled_or_any_other_activation_has_no_observer",
+        "host::runtime::positive_timer_observer::tests::each_selected_mode_has_at_most_eight_events",
+        "host::runtime::positive_timer_observer::tests::failed_output_does_not_panic_or_return_a_guest_result",
+        "host::runtime::positive_timer_observer::tests::repeated_tables_share_the_process_bound_including_one_overflow_record"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7334,7 +7339,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 379,
+      "minimumCases": 384,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
