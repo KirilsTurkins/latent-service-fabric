@@ -58,7 +58,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "c-context-mechanism-${{ github.sha }}",
-          "path": "${{ runner.temp }}/c-context-mechanism/report.json\n${{ runner.temp }}/c-context-mechanism/*.txt\n${{ runner.temp }}/c-context-mechanism/*.wasm\n${{ runner.temp }}/c-context-mechanism/*.ll\n${{ runner.temp }}/c-context-mechanism/selected/*.json\n${{ runner.temp }}/c-context-mechanism/selected/*.wasm\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.json\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm\n",
+          "path": "${{ runner.temp }}/c-context-mechanism/report.json\n${{ runner.temp }}/c-context-mechanism/*.txt\n${{ runner.temp }}/c-context-mechanism/*.wasm\n${{ runner.temp }}/c-context-mechanism/*.ll\n${{ runner.temp }}/c-context-mechanism/selected/*.json\n${{ runner.temp }}/c-context-mechanism/selected/*.wasm\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.json\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm\n${{ runner.temp }}/c-context-mechanism/tss/*.json\n${{ runner.temp }}/c-context-mechanism/tss/*.wasm\n",
           "retention-days": 7
         }
       }
@@ -67,7 +67,7 @@
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "Extend only the explicit unqualified C compiler mechanism with bounded pthread-key and errno PAL controls; retain original26 Rust and original C isolation/refusal controls, limits and engine defaults.",
+  "reviewReason": "Add finite C11 tss entry points over the same bounded context PAL and actual compiled-core controls; preserve all original Rust/C/key controls, limits, commands and default runtime selection.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-context-mechanism.yml"
 }
