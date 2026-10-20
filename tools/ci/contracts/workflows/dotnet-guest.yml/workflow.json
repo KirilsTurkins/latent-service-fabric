@@ -38,10 +38,6 @@
           "tools/qualify_dotnet_standard_entropy.py",
           "tools/dotnet_task_runtime*.py",
           "tools/qualify_dotnet_task_runtime.py",
-          "tools/dotnet_published_task*.py",
-          "tools/qualify_dotnet_published_tasks.py",
-          "tools/tests/test_dotnet_published_tasks.py",
-          "docs/component-development/dotnet-published-tasks.md",
           "tools/tests/test_dotnet_task_runtime.py",
           "tools/tests/test_dotnet_secure_entropy.py",
           "tools/tests/test_dotnet_managed_entropy.py",
@@ -105,9 +101,10 @@
   },
   "requiredJobs": [
     "published-tasks",
+    "scratch-refusals",
     "toolchain"
   ],
-  "reviewReason": "Add separate bounded published Polly task child and exact normal public bundle export; preserve all original75-minute parent commands, jobs and budgets. Requires the reusable normal-product bundle from PR1156.",
+  "reviewReason": "Compose the unchanged normal parent and both separately budgeted published and scratch children without removing commands",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

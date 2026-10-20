@@ -42,7 +42,7 @@
       },
       {
         "name": "Execute full fixed topology and exact selected Vec precharge",
-        "run": "set -o pipefail\ncargo test --locked -p latentd --lib standalone::observations::topology::tests:: -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test result: ok. 5 passed; 0 failed; 0 ignored;' \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row ... ok' \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity ... ok' \"$RUNNER_TEMP/standalone-topology.log\"\n"
+        "run": "set -o pipefail\ncargo test --locked -p latentd --lib standalone::observations::topology::tests:: -- --show-output --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test result: ok. 5 passed; 0 failed; 0 ignored;' \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row ... ok' \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity ... ok' \"$RUNNER_TEMP/standalone-topology.log\"\n"
       },
       {
         "name": "Verify standalone derivation retains generic and snapshot byte limits",
@@ -64,7 +64,7 @@
   },
   "jobId": "topology",
   "kind": "job",
-  "reviewReason": "Require all five exact topology tests and one config test, including both new cases; no zero-test or ignored success. Original reference job and its limits remain unchanged.",
+  "reviewReason": "Capture successful counter output after exact named results via --show-output, retaining five required topology cases and config case. No runtime, source selection, bounds or original reference changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/node-worker-stacks.yml"
 }

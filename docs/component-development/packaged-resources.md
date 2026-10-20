@@ -167,7 +167,12 @@ runs the original 35-minute runtime job and this child, skipping only the
 separate unchanged 25-minute standard-facility campaign on that explicit manual
 selection. PR, push and default manual runs retain every original job, command
 and deadline. Other language execution
-wiring retains its own pending boundary. Neither the C nor Rust scratch child
+wiring retains its own pending boundary. The .NET workflow adds a separate
+20-minute child of its unchanged75-minute normal parent. It authenticates only
+the public normal products, builds one fresh NativeAOT component and runs the
+six filesystem/refusal/trap/fresh-state calls without adding entropy or file
+authority. Its runtime results remain pending; the prior entropy-specific
+harness failure is not filesystem evidence. Neither the C nor Rust scratch child
 has a passing guest receipt yet. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap

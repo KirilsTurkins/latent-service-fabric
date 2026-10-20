@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "GoSynchronization.test_compiler_binding_requires_original_source_native_modes_and_component_bytes",
+    "GoSynchronization.test_exact_named_signed_target_requires_all_33_original_owner_barriers",
+    "GoSynchronization.test_missing_duplicated_reordered_or_wrong_outcome_is_not_signed_qualification",
+    "GoSynchronization.test_only_current_v5_or_the_exact_v1_negative_is_admitted_before_output",
+    "GoSynchronization.test_partial_libtest_ignored_or_other_executable_cannot_substitute_for_the_target",
+    "GoSynchronization.test_unknown_private_fields_bool_and_unbounded_indices_are_rejected"
+  ],
+  "guards": {
+    "GoSynchronization.test_compiler_binding_requires_original_source_native_modes_and_component_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dca76c31b3c82d560ed55f703ddda9881d0add76b994b0fc7c6c259f8a2ff0e4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoSynchronization.test_exact_named_signed_target_requires_all_33_original_owner_barriers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dca76c31b3c82d560ed55f703ddda9881d0add76b994b0fc7c6c259f8a2ff0e4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoSynchronization.test_missing_duplicated_reordered_or_wrong_outcome_is_not_signed_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dca76c31b3c82d560ed55f703ddda9881d0add76b994b0fc7c6c259f8a2ff0e4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoSynchronization.test_only_current_v5_or_the_exact_v1_negative_is_admitted_before_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dca76c31b3c82d560ed55f703ddda9881d0add76b994b0fc7c6c259f8a2ff0e4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoSynchronization.test_partial_libtest_ignored_or_other_executable_cannot_substitute_for_the_target": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dca76c31b3c82d560ed55f703ddda9881d0add76b994b0fc7c6c259f8a2ff0e4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoSynchronization.test_unknown_private_fields_bool_and_unbounded_indices_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dca76c31b3c82d560ed55f703ddda9881d0add76b994b0fc7c6c259f8a2ff0e4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_synchronization.py",
+  "reviewReason": "Add finite actual Go Cond/RWMutex/Once/channel/select synchronization and original-v5 drain/cancel/deadline/admission controls; same-source v1 negative, every old profile/case/guard/cap retained; no runtime qualification claim before hosted execution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
