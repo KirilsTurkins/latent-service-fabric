@@ -1,0 +1,53 @@
+name: Go bounded write progress reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/go-stream-write-progress-20261020']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-write-progress-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reference:
+    name: Exact production Write old counterexample and eight bounded controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install pinned source controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact projection and strict counterexample reader
+        run: python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_network -v
+      - name: Authenticate one official reference compiler
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/go-write-reference-tools"
+          test ! -e "$out"
+          mkdir "$out"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$out/go.tar.gz" -C "$out"
+          echo "$out/go/bin" >> "$GITHUB_PATH"
+      - name: Execute original failure and corrected finite method controls
+        run: python3 tools/qualify_go_write_progress.py --output "$RUNNER_TEMP/go-write-progress"
+      - name: Retain bounded source and actual method reference evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-write-progress-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-write-progress/*.json
+            ${{ runner.temp }}/go-write-progress/*.log
+          if-no-files-found: warn
+          retention-days: 7

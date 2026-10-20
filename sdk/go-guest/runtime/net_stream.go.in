@@ -250,7 +250,7 @@ func (c *lsfStreamConn) Read(bytes []byte) (int, error) {
 }
 
 func (c *lsfStreamConn) Write(bytes []byte) (int, error) {
-	timeout, release, err := c.begin(true)
+	_, release, err := c.begin(true)
 	if err != nil {
 		return 0, c.opError("write", err)
 	}
@@ -261,27 +261,43 @@ func (c *lsfStreamConn) Write(bytes []byte) (int, error) {
 	if shut {
 		return 0, c.opError("write", ErrClosed)
 	}
-	if len(bytes) == 0 {
-		return 0, nil
-	}
-	part := bytes
-	if len(part) > lsfStreamMaximumChunk {
-		part = part[:lsfStreamMaximumChunk]
-	}
-	r := c.stream.WriteContext(context.Background(), part, timeout)
-	if r.IsErr() {
-		if r.Err().AcceptedPrefixBytes > uint32(len(part)) {
-			panic("lsf: invalid stream accepted prefix")
+	written := 0
+	for written < len(bytes) {
+		// The original absolute deadline applies to the whole public Write.
+		// Rearming an active direction is still refused by setDeadline.
+		c.mu.Lock()
+		deadline := c.writeDeadline
+		c.mu.Unlock()
+		timeout, err := lsfStreamTimeout(deadline)
+		if err != nil {
+			return written, c.opError("write", err)
 		}
-		return int(r.Err().AcceptedPrefixBytes), c.opError("write", &lsfStreamError{r.Err()})
+		part := bytes[written:]
+		if len(part) > lsfStreamMaximumChunk {
+			part = part[:lsfStreamMaximumChunk]
+		}
+		r := c.stream.WriteContext(context.Background(), part, timeout)
+		if r.IsErr() {
+			failure := r.Err()
+			if failure.AcceptedPrefixBytes > uint32(len(part)) {
+				panic("lsf: invalid stream accepted prefix")
+			}
+			// wasm32 slices bound this sum; retain the actual cumulative prefix
+			// for both net.Conn's count and its typed partial-effect error.
+			failure.AcceptedPrefixBytes += uint32(written)
+			return int(failure.AcceptedPrefixBytes), c.opError("write", &lsfStreamError{failure})
+		}
+		if r.Ok() > uint32(len(part)) {
+			panic("lsf: invalid stream write count")
+		}
+		if r.Ok() == 0 {
+			return written, c.opError("write", lsfIO.ErrShortWrite)
+		}
+		// Only an acknowledged positive prefix advances the borrowed slice.
+		// An error or uncertain effect above is never retried or replayed.
+		written += int(r.Ok())
 	}
-	if r.Ok() > uint32(len(part)) {
-		panic("lsf: invalid stream write count")
-	}
-	if int(r.Ok()) < len(bytes) {
-		return int(r.Ok()), c.opError("write", lsfIO.ErrShortWrite)
-	}
-	return int(r.Ok()), nil
+	return written, nil
 }
 
 func (c *lsfStreamConn) CloseWrite() error {

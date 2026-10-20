@@ -1,0 +1,57 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Exact production Write old counterexample and eight bounded controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "fetch-depth": 0,
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install pinned source controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check exact projection and strict counterexample reader",
+        "run": "python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_network -v"
+      },
+      {
+        "name": "Authenticate one official reference compiler",
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-write-reference-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\necho \"$out/go/bin\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Execute original failure and corrected finite method controls",
+        "run": "python3 tools/qualify_go_write_progress.py --output \"$RUNNER_TEMP/go-write-progress\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source and actual method reference evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-write-progress-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-write-progress/*.json\n${{ runner.temp }}/go-write-progress/*.log\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 10
+  },
+  "jobId": "reference",
+  "kind": "job",
+  "reviewReason": "Require exact original chunk-boundary failure and eight bounded production-method reference controls; keep original owner, deadline, chunk/transfer limits, typed uncertainty and all signed/provider gates separate.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-write-progress-reference.yml"
+}
