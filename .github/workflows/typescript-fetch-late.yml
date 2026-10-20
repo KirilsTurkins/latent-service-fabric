@@ -1,0 +1,71 @@
+name: TypeScript late provider completion
+on:
+  push:
+    branches: ['feat/typescript-fetch-late-20261020']
+    paths:
+      - '.github/workflows/typescript-fetch-late.yml'
+      - 'sdk/typescript-guest/probes/fetch-late-completion/**'
+      - 'tools/typescript_fetch_late.py'
+      - 'tools/qualify_typescript_fetch_late.py'
+      - 'tools/tests/test_typescript_fetch_late.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: typescript-fetch-late-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fetch-conformance:
+    name: Signed late headers and body completion after public abort
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact late-completion evidence controls
+        run: python3 -B -m unittest tools.tests.test_typescript_fetch_late -v
+      - name: Install normal compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install normal pinned public compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/fetch-late-tools"
+      - name: Acquire exact historical import engine and original native tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_fetch_replay_inputs.py --output "$RUNNER_TEMP/fetch-late-original"
+      - name: Build sign and execute actual standard Fetch programme
+        run: python3 -B tools/qualify_typescript_fetch_late.py --acquired "$RUNNER_TEMP/fetch-late-original" --tools "$RUNNER_TEMP/fetch-late-tools" --output "$RUNNER_TEMP/fetch-late"
+      - name: Retain exact source compiler results real contacts and physical ownership
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-fetch-late-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/fetch-late-original/acquisition.json
+            ${{ runner.temp }}/fetch-late/*.json
+            ${{ runner.temp }}/fetch-late/build/*.json
+            ${{ runner.temp }}/fetch-late/build/*.wit
+            ${{ runner.temp }}/fetch-late/build/component.wasm
+            ${{ runner.temp }}/fetch-late/build/package/**
+            ${{ runner.temp }}/fetch-late/build/logs/
+            ${{ runner.temp }}/fetch-late/node/*.json
+            ${{ runner.temp }}/fetch-late/node/controls/
+          if-no-files-found: warn
+          retention-days: 7
