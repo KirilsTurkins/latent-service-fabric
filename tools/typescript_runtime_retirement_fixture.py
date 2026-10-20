@@ -42,6 +42,9 @@ export async function lifecycle(mode) {
     setTimeout(() => { throw new Error('retirement-accepted-callback-must-not-disappear'); }, 0);
     return 42;
   }
+  if (mode === 5) {
+    return await new Promise(resolve => { setTimeout(() => resolve(42), 1000); });
+  }
   throw new Error('retirement-mode');
 }
 '''
@@ -92,7 +95,8 @@ def capture(app, outside):
     return {'source': digest(inventory(snapshot(app))), 'library': digest(LIBRARY), 'nativeLock': native,
         'acceptedLock': digest(read_file(app/'latent.dependencies.lock.json')), 'outsideOriginalRemoved': True,
         'publishedLibrary': False, 'compilerExecuted': False, 'signedRetirement': 'pending',
-        'operations': ['pending-root', 'fresh', 'root-trap-with-timer', 'clear-before-fire', 'accepted-callback-error']}
+        'operations': ['pending-root', 'fresh', 'root-trap-with-timer', 'clear-before-fire',
+                       'accepted-callback-error', 'pending-then-resolved']}
 
 
 def compile_fixture(output, tools, contracts, packager, engine, envelope):

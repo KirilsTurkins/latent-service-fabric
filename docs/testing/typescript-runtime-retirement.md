@@ -1,4 +1,4 @@
-# Ordinary pending Promise retirement inputs
+# Ordinary pending Promise retirement
 
 This branch prepares a current compiler and signed-node gate for the root
 cancellation and retirement portions of issues #736 and #745. It does not
@@ -32,24 +32,39 @@ cargo test --locked -p latent-wasmtime --test local_service -- \
   runtime::typescript::signed_pending_promise_cancellation_deadline_and_timer_failures_retire_before_fresh_state
 ```
 
+The separate default-false `qualify-runtime-retirement` workflow selector
+reuses the authenticated 02f compiler products and CLOCK engine. It compiles
+two fresh components with current tooling and genuine build observations,
+then builds only the current `latent-wasmtime --test local_service` native
+test target against the pinned lock. It does not rebuild the engine, the
+historical native five, or the SDK distribution. The 25-minute job has a
+20-minute command deadline and a 15-minute per-command ceiling. The existing
+PR/push jobs and guest budgets remain unchanged.
+
 The case signs and admits the actual products, waits for the original
 Store/read-wait/broker pending-timer witness before root cancellation, and
 checks `Cancelled`. The deadline invocation separately establishes the same
-pending witness before its one-second original root deadline. A third path
-checks a root trap after accepting a timer. Each outcome must retire the original
+pending witness before its one-second original root deadline. A one-second
+ordinary timer also establishes pending state before resolving its Promise
+to 42. A third failure path observes the root-trap mode; a generic trap alone
+does not prove callback execution or timer registration. Each outcome must retire the original
 activation, Store, call and result owners before a fresh module returns 42.
-Every idle boundary also checks all five original backend owner counters and
-the original read-wait counter are zero.
+All ten outcomes retain the original six backend owner counters, broker
+calls/sessions/handles/results/buffers, read waits, quota activations,
+instance reservations and cancellation registrations at the idle boundary.
 The original runtime ceilings, five-second pending witness and two-second
 physical-idle bound remain unchanged.
 
-Three source controls pass, including actual native JavaScript execution of
+Focused source controls include actual native JavaScript execution of
 the outside library with controlled timers. A bounded local normal npm
 capture also passed with originals removed and the reviewed closure still
 verifiable. Neither result proves emitted-component execution. Compiler and
 signed native execution are pending. The CLOCK build also needs the verified
 native-world/application-import separation repaired by #1148; no historical
-build observation may be relabelled as a current one.
+build observation may be relabelled as a current one. The qualification record
+keeps historical compiler ancestry separate from the current native test
+target source. Synthetic receipt controls are validation of the reader,
+not signed runtime evidence.
 
 An accepted callback error has a distinct source/reference mode, but the
 native case does not use a generic trap to infer that callback's origin.
