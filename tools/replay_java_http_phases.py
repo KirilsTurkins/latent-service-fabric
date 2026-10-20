@@ -34,8 +34,8 @@ ARTIFACT = {'id': 12290889682, 'size_in_bytes': 2970741,
 PINS = 'tools/fixtures/java-http-phase-prepared-aa56.json'
 PREFIX = 'java-http-phases/campaign/build/'
 CHANGES = {
-    'tools/java_http_phase_node.py': 'sha256:d6723d3142c959b68ade37acad904a51e902bc9ea18dba3cdc3955e97546fc89',
-    'tools/java_http_tenant_node.py': 'sha256:2bdd3b62cf372ff4711b5be666156a29aae75769ad9522531827cfbe34a92b8b'}
+    'tools/java_http_phase_node.py': 'sha256:3842a061ebcbbb44f06ef7092dcc5650a6f3b1071da7dd9800e99110a6173044',
+    'tools/java_http_tenant_node.py': 'sha256:276bfbea12fc54471450d0142394440cc68b1838856a80bc62a3b3bf7192652c'}
 
 
 def pins():
@@ -127,7 +127,7 @@ def source_proof(build):
         if current['sha256'] != digest(data):
             require(CHANGES.get(name) == current['sha256'], 'java-phase-replay-unreviewed-source-change')
             changed[name] = {'compiled': {'sha256': digest(data), 'bytes': size}, 'fixture': current,
-                'scope': 'explicit-operator-component-input-ceiling-only'}
+                'scope': 'explicit-operator-and-node-component-input-ceilings-only'}
     require(position == len(raw) and set(changed) == set(CHANGES), 'java-phase-replay-source-change-scope')
     return {'compiledFeature': SOURCE, 'compiledTestedSource': TESTED, 'recipeFilesExact': len(recipe), 'capturedSdkFilesExact': len(vendor),
         'fixtureAndCompilerMaterialsCompared': len(names), 'reviewedControllerChanges': changed,

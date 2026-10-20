@@ -35,6 +35,10 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_replay_java_http_phases tools.tests.test_java_http_phase_campaign.JavaPhaseOperatorComponentLimit -v"
       },
       {
+        "name": "Check explicit node component input profile without altering runtime budgets",
+        "run": "python3 -B -m unittest tools.tests.test_java_http_phase_campaign.JavaPhaseNodeComponentLimit -v"
+      },
+      {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
@@ -68,7 +72,7 @@
   },
   "jobId": "http-phase-prepared",
   "kind": "job",
-  "reviewReason": "Exact authenticated old component +fresh signing/node30outcomes23contacts only; defaultfalse manual, no compiler/native/JDK build, failedreceipt untouched.",
+  "reviewReason": "Preserve every existing replay command and guard; add two closed node-input profile controls for the source-proven16MiB package-layer refusal and authenticate the reviewed64MiB fixture-only input selection.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

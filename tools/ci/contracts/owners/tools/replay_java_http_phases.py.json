@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_java_http_phases.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Diagnostic-only source-bound exactaa56 artifact67members/55buildinputs/199SDK+73recipe+105materials, freshsign/node16+2+tenant12, nativef919 strict, source/fixture identities distinct; no recompilation/oldreceipt rewrite.",
+  "reviewReason": "Preserve every existing replay command and guard; add two closed node-input profile controls for the source-proven16MiB package-layer refusal and authenticate the reviewed64MiB fixture-only input selection.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "79eb083ccebd2096d234b49acdc5fea245030e0c3e02fdbb1d6a22522c6e4680"
+  "sha256": "9ccc3c8cc4cd53336bc32f5e7e82bbcb1438a994ac7334bc8b7cd0be3b97d36a"
 }
