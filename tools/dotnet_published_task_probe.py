@@ -9,6 +9,7 @@ def probe(client, target, accounting, result, population):
     for mode in CASES:
         label = 'dotnet-published-tasks-' + mode
         row = call(client, target, 'greeting', 'greet', ['published:' + mode], label)
+        result['invocations'].append(row)
         assert_value(client, row, [{'ok': expected(mode)}])
         consumed = row['response']['data']['consumption']
         require(row['processReaped'] and row['response']['outcomeKnown'] is True
@@ -16,7 +17,6 @@ def probe(client, target, accounting, result, population):
                 and 0 < int(consumed['peakMemoryBytes']) <= target['budget']['memoryBytes']
                 and int(consumed['outboundRequests']) == int(consumed['logBytes']) == int(consumed['effectCount']) == 0,
                 'dotnet-published-tasks-consumption-or-reaping')
-        result['invocations'].append(row)
         result['providerIdle'].append(provider_idle(client))
         retired = sample(client, accounting, label + '-retired', population)
         result['samples'].append(retired)

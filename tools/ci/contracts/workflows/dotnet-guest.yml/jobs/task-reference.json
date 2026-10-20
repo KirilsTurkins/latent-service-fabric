@@ -97,7 +97,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-tasks-focused-${{ github.sha }}",
-          "path": "${{ runner.temp }}/task-prepared/retrieval.json\n${{ runner.temp }}/task-prepared/selected-host/host-retrieval.json\n${{ runner.temp }}/dotnet-task-runtime/qualified.json\n${{ runner.temp }}/dotnet-task-runtime/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/replay-materials.json\n${{ runner.temp }}/dotnet-task-runtime/logs/**\n${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**\n${{ runner.temp }}/dotnet-task-runtime/build/*.json\n${{ runner.temp }}/dotnet-task-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-task-runtime/build/logs/**\n${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json",
+          "path": "${{ runner.temp }}/task-prepared/retrieval.json\n${{ runner.temp }}/task-prepared/selected-host/host-retrieval.json\n${{ runner.temp }}/dotnet-task-runtime/qualified.json\n${{ runner.temp }}/dotnet-task-runtime/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/replay-materials.json\n${{ runner.temp }}/dotnet-task-runtime/logs/**\n${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**\n${{ runner.temp }}/dotnet-task-runtime/build/*.json\n${{ runner.temp }}/dotnet-task-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-task-runtime/build/logs/**\n${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json\n${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-published-tasks-*.json\n${{ runner.temp }}/dotnet-task-runtime/node/controls/unexpected-invocation-diagnostics.json",
           "retention-days": 3
         }
       }
@@ -106,7 +106,7 @@
   },
   "jobId": "task-reference",
   "kind": "job",
-  "reviewReason": "Add four pure published factory controls before exact existing diagnostic native acquisition; preserve every original command, guard, timeout and private-input boundary.",
+  "reviewReason": "Retain failing published guest result and bounded redacted diagnostic before original assertion, with no retry or expected-value relaxation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

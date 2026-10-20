@@ -58,6 +58,19 @@ class PublishedManagedTasks(unittest.TestCase):
             with self.subTest(selected=selected), self.assertRaisesRegex(RuntimeError, 'published-tasks-language'):
                 run(Path('missing'), Path('missing'), Path('missing'), Path('missing'), **selected)
 
+    def test_failed_guest_result_is_retained_before_assertion_without_retry_or_success(self):
+        row = {'activation': 'published-failed', 'exitCode': 4, 'decoded': None,
+               'response': {'outcomeKnown': True}}
+        result = {'invocations': [], 'providerIdle': [], 'samples': []}
+        with patch('tools.rust_capsule_node.call', return_value=row) as invoke, \
+                patch('tools.capsule_invocation_diagnostics.capture'):
+            with self.assertRaisesRegex(RuntimeError, 'application-result'):
+                probe.probe(None, {}, None, result, 0)
+        invoke.assert_called_once()
+        self.assertEqual(result['invocations'], [row])
+        self.assertNotIn('dotnetPublishedTasks', result)
+        self.assertEqual(result['samples'], [])
+
     def test_every_published_result_requires_original_limits_reaping_and_retirement(self):
         target = {'budget': {'cpuFuel': 1000, 'memoryBytes': 10000}}
         original = {'processReaped': True, 'response': {'outcomeKnown': True, 'data': {

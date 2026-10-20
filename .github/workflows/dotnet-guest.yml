@@ -527,5 +527,7 @@ jobs:
           ${{ runner.temp }}/dotnet-task-runtime/node/workflow.json
           ${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json
           ${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json
+          ${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-published-tasks-*.json
+          ${{ runner.temp }}/dotnet-task-runtime/node/controls/unexpected-invocation-diagnostics.json
         if-no-files-found: warn
         retention-days: 3
