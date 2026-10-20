@@ -51,6 +51,10 @@ class HttpPhaseContract(unittest.TestCase):
         self.assertEqual([int(x) for x in re.findall(r'PHASE3_V6_INTERFACES\[(\d+)\]',selected)],list(range(16)))
         self.assertIn('interface: "'+PHASE+'"',selected)
         self.assertIn('http_phase_timing: false',(ROOT/'crates/latent-wasmtime/src/config.rs').read_text())
+        policy=(ROOT/'crates/latent-policy/src/capability.rs').read_text()
+        supported=policy.split('fn supported_contract(value: &str) -> bool {',1)[1].split('\nfn operation(',1)[0]
+        self.assertIn('"latent:http/phase-timing@0.4.0"',supported)
+        self.assertIn('latent_core::PHASE3_HOST_ABI_CURRENT',supported)
 
     def test_new_schema_rules_preserve_every_original_constraint(self):
         expected={'capability-policy':'61da651075da1823bd7b3e7b5e4d05485e9269a418cc9a1f712fe2f024ea351c',

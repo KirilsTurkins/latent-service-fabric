@@ -8,6 +8,9 @@ mod fixture;
 #[path = "../streaming_http/packages.rs"]
 #[allow(dead_code, unused_imports)]
 mod packages;
+#[path = "../streaming_http/phase_component.rs"]
+#[allow(dead_code, unused_imports)]
+mod phase_component;
 use fixture::*;
 
 use tokio::{
