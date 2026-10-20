@@ -17,6 +17,6 @@
       <IlcReference Include="$(LsfClosedFilesystemAssembly)" />
     </ItemGroup>
     <WriteLinesToFile File="$(LsfClosedFilesystemReferenceReceipt)"
-        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+        Lines="$(LsfClosedFilesystemAssembly)" Overwrite="false" Encoding="UTF-8" />
   </Target>
 </Project>

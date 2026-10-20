@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_http_tls_peer.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add a bounded independent TLS fixture reference lane with ten portable controls and six real TLS/HTTP outcomes; no guest/provider/kernel qualification or previous command replacement.",
+  "reviewReason": "Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ca194b2fad9e0374827685b08603165a70361fda1b5dc32d4711a76912910d2f"
+  "sha256": "eaf03d1266884e433be6c9e05fb71deb9774f589b1536c7cf045cc10091c192b"
 }

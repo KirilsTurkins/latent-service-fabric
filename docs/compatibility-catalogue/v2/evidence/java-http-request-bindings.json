@@ -1,0 +1,187 @@
+{
+  "bindings": {
+    "formatVersion": 1,
+    "world": "examples:java-standard-http/service@1.0.0",
+    "generator": "lsf-java-wit-v1+wit-bindgen-0.62.0",
+    "outputs": {
+      "Bindings.java": {
+        "digest": "sha256:d762c84bd27f98046f885e27266a1301909ac2487ce2b1c3a3b17dcc955212c2",
+        "size": 20288
+      },
+      "bridge.c": {
+        "digest": "sha256:82d4a6d0ab411dd6cfad6248a801fe8fd267345d46477f63c7e3e9e85383e5d9",
+        "size": 21657
+      },
+      "probe.c": {
+        "digest": "sha256:aa9f807ae9deec2a730fe43087b7a7eb088bc74660857ff96a0815c59c950353",
+        "size": 25087
+      },
+      "probe.h": {
+        "digest": "sha256:de52f42085f9107e23fa106eea0923fc62e0341a1bcfdb8102aedf73442aeaee",
+        "size": 10418
+      },
+      "probe_component_type.o": {
+        "digest": "sha256:c4050010a575af206498bd5213f46c923c70187db64b5e41cf7ae3d0bacb7856",
+        "size": 1357
+      }
+    },
+    "digest": "sha256:7d78a04bdd7ad17552d3b81765d835be1f48ba2cccba0ee975c93412e186ed3e",
+    "imports": 10,
+    "exports": 1,
+    "resources": 3
+  },
+  "dependencies": {
+    "status": "checksummed-gradle-metadata",
+    "downloadedJars": 26,
+    "reviewedJars": 70,
+    "lock": {
+      "sha256": "4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+      "size": 16525
+    },
+    "metadata": {
+      "sha256": "2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+      "size": 46640
+    }
+  },
+  "platform": {
+    "fiber.c": {
+      "upstreamSha256": "b7f4592776d780165154c69e75b243ad9f32df0a717eb8bd29a11924fc6bc6df",
+      "adaptedSha256": "b64a2732183d26e33955c1866208fa98c5ccd7292f38477385a3292666563db0"
+    },
+    "time.c": {
+      "upstreamSha256": "9f4d0ea0a14f0786cb76172acd9bdefd4464aebf58a0372cfa66ff92dcacae2e",
+      "adaptedSha256": "685144b5e9ad8f907a455ecd546a620a1222f75179e9ecd36af12cc150809b45"
+    },
+    "memory.c": {
+      "upstreamSha256": "d685e2f0f8b3983d5886b48ece7d83298b864893f3c80701ed11cc779a51ada2",
+      "adaptedSha256": "54d8d661b7aef84a7abc04a33d6899b160aba730444eac2d33be04009c5e95f2"
+    },
+    "file.c": {
+      "upstreamSha256": "49c8a5f152eefffbe2832b607fcd40b225936fc593d1a0d53fb81ed700a30538",
+      "adaptedSha256": "6cbcbadf02ff4db88c4a8a82cf14cdc4f2ee3ee79621ecfab297c45f631c81a6"
+    },
+    "arrayclass.c": {
+      "upstreamSha256": "044dc626c36581887874d0f4cda5070be0dfdcdb703c6ef0893616e568dc0058",
+      "adaptedSha256": "a09f225c1517579640a9d0ba9483368eb0ce4d284339755c5b820aa63c85ddc0"
+    },
+    "referenceSpills": {
+      "profile": "teavm-0.15-wasm-sjlj-reference-spills-v2",
+      "scannedClasses": 305,
+      "pointerSpills": 32,
+      "files": [
+        {
+          "path": "c/c/g/k/h/HttpRequest.c",
+          "upstreamSha256": "52dafb2c00a4d424be298de94ee14d0357d73bc846d860c0172fff39e2668521",
+          "adaptedSha256": "4cedf826b5d85a1f536ede0af3862ea2dabf8a32695a9878ff7440c3dd5cc0e7",
+          "pointerSpills": 2
+        },
+        {
+          "path": "c/d/l/a/Capsule.c",
+          "upstreamSha256": "aec70716c53e75f5c568864f13b4bf661f8322a1d473517152e89df081b5a011",
+          "adaptedSha256": "9c4df4ad7b6879557037b04a52714108c0e75f9f2a711cfe7a1fbdd64a6bd333",
+          "pointerSpills": 7
+        },
+        {
+          "path": "c/d/l/g/Bindings.c",
+          "upstreamSha256": "085ce5fdf4dcc1de9dc4f659c9c34007fc095585bf8eba5a12b65d6aed9d993e",
+          "adaptedSha256": "b47f8f60d6b9ffd912793700d03a3f6020806a8fa8fb4a3455e249bcd45c1017",
+          "pointerSpills": 8
+        },
+        {
+          "path": "c/d/l/g/Bindings@dLatentHttpStreaming.c",
+          "upstreamSha256": "5f42bf8079a16d7329be1ca77ebe6a9101968052fa462da6072956f5e3f28a24",
+          "adaptedSha256": "e40063d369285f0a1ec3bd4913a1600e8b8c335e66a40d2cee85dac8f17eb46c",
+          "pointerSpills": 3
+        },
+        {
+          "path": "c/d/l/g/Resource.c",
+          "upstreamSha256": "e00e49765abc49f52c82ac9821aa1f17451c35e59325cf51abcf618275c37f88",
+          "adaptedSha256": "c2a3efe6ef3e8b6bd8a45eff0062f75f5c6563892e9081a2350ef57bedac5703",
+          "pointerSpills": 1
+        },
+        {
+          "path": "c/d/l/g/c/Connection.c",
+          "upstreamSha256": "e2fe1d42f357cc7f627bbc6012d927bbdcd5f2dbccb36c41b0538fe221622b6b",
+          "adaptedSha256": "03dcfbf85edfd960ce410aaaf7c43fafdd7641dbda8806252b0ba162c4d8d637",
+          "pointerSpills": 5
+        },
+        {
+          "path": "c/d/l/g/c/Connection@dOutput.c",
+          "upstreamSha256": "f46f9d3a78aaca17a608ca31e2164d84a7cd051d55f1eb8255b519fdfa98e16c",
+          "adaptedSha256": "baab9bcfaf878ef989340845aa169a5b0c98234689bee64808052b2725ffb914",
+          "pointerSpills": 2
+        },
+        {
+          "path": "c/d/l/g/c/Connection@dResponseInput.c",
+          "upstreamSha256": "ab06d400d9afd3caf1b941dfd51463ca9fa12b2c181653b9bd139b923938f3f8",
+          "adaptedSha256": "ac1450ad0fbcf47f300300ecb9d66b64338cf2d17a269939894f68a4d4a001a8",
+          "pointerSpills": 2
+        },
+        {
+          "path": "c/j/n/c/CharsetDecoder.c",
+          "upstreamSha256": "2c7c4f384bbf2e13272388da161823138454c179167cac4bcec231cd8c539dfa",
+          "adaptedSha256": "d5e66a3c910fbcdf2e86bb4e093a1f5329be5c298a538588d710eeaf9d9093b6",
+          "pointerSpills": 1
+        },
+        {
+          "path": "c/j/n/c/CharsetEncoder.c",
+          "upstreamSha256": "99d0eb61d3fb2305286373abc8e920fb7b1854b21aea120669c175b3990952af",
+          "adaptedSha256": "feaea4a3bf1a61433565fcc762709c770fa91abd215805f3c0d7ded5b5b15402",
+          "pointerSpills": 1
+        }
+      ]
+    }
+  },
+  "semanticSurfaceDigest": "sha256:8d9675d8fed03801a58ac1359fb4b908ee2256e03d67e89022d609c19eb7d972",
+  "immutableResources": {
+    "profile": "java-immutable-classloader-v1",
+    "lookup": "exact-case-sensitive-no-ambient-fallback",
+    "streamOwnership": "fresh-decoded-byte-array-per-open",
+    "classlibPreimage": {
+      "path": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+      "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+      "size": 17718996,
+      "platform": "any"
+    },
+    "method": "java.lang.ClassLoader.getResourceAsStream(Ljava/lang/String;)Ljava/io/InputStream;",
+    "resourceInputs": {
+      "META-INF/maven/com.github.kevinsawicki/http-request/pom.properties": {
+        "digest": "sha256:4587881f1c12c1c73de592402c7773e761518a93a37c0b16e6d998abfeadc055",
+        "size": 118
+      },
+      "META-INF/maven/com.github.kevinsawicki/http-request/pom.xml": {
+        "digest": "sha256:80440bf18236a8ba11da8677285e59d2d30989e46a3594fb2fb0238eea4830c5",
+        "size": 7158
+      }
+    },
+    "generatedSources": {
+      "Data0000.java": {
+        "digest": "sha256:734d13df77ebd707542e67ab4ddd0792306be4ce281f37df80b3ac630239027d",
+        "size": 332
+      },
+      "Data0000Part0000.java": {
+        "digest": "sha256:8760f006cc4a9648a9771445c14f459bd215a91090eb9a3922b0ace820172aa1",
+        "size": 341
+      },
+      "Data0001.java": {
+        "digest": "sha256:d0a251e997410a5c2f8b9a0427272dc65bef932cad60167b5c2b5feb06feddb4",
+        "size": 333
+      },
+      "Data0001Part0000.java": {
+        "digest": "sha256:3be53ccb39d195ef45c624941cadbf05192a2eb377ce321260529b7f91af0821",
+        "size": 9777
+      },
+      "ImmutableResources.java": {
+        "digest": "sha256:44bf70a36fc209facdf16107de0a97ce5f6333b81a9921dd6bd3e9790144f07b",
+        "size": 509
+      }
+    },
+    "compilerPortSources": {
+      "dev/latent/guest/resources/compiler/ImmutableResourcePlugin.java": {
+        "digest": "sha256:73dff0e6ff259f800ce1fc1658a5cb4512893c3d4cdbd30e8e612401678fa98c",
+        "size": 2877
+      }
+    },
+    "identity": "sha256:788a5a35a4da3fd3b1178ad01b1cb6ae0f7d47f5843b3a890d801119f99fa677"
+  }
+}

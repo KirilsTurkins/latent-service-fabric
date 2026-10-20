@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "dotnet-resource-runtime-${{ github.ref }}"
+    },
+    "name": "Managed resource callback lifecycle",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/dotnet-resource-runtime-20261020"
+        ],
+        "paths": [
+          ".github/workflows/dotnet-resource-runtime.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "resource-runtime"
+  ],
+  "reviewReason": "Add separate bounded managed resource callbacks qualification: unchanged explicit runtime/entropy limits, current pinned NativeAOT compiler, original source77 native products; no host rebuild, no implicit authority or whole-ticket claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-resource-runtime.yml"
+}

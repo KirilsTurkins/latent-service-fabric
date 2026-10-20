@@ -1,0 +1,912 @@
+{
+  "schemaVersion": "latent.java.default-client.qualification.v1",
+  "status": "passed",
+  "scope": "one-unchanged-published-default-client-finite-signed-provider-subset",
+  "library": {
+    "coordinate": "com.github.kevinsawicki:http-request:6.0",
+    "originalJarDigest": "sha256:673dd02ade4196ab511e812a6857dacaeb5716dea83aa217dba654824b5d5476",
+    "capturedClosureDigest": "sha256:0159ae14f34c314b8d5ff06a5b2defac711eb6911e85066f7176cece4513e5c5",
+    "classpath": {
+      "id": "com.github.kevinsawicki:http-request:6.0",
+      "originalDigest": "sha256:673dd02ade4196ab511e812a6857dacaeb5716dea83aa217dba654824b5d5476",
+      "selectedDigest": "sha256:bb1c6ffd76fd4b42a02e7fe85d2d2fa9f70223e5b0ac8bff7e8fd32acb16ecf0",
+      "selection": {
+        "release": 25,
+        "multiRelease": "highest-version-at-most-release",
+        "classpathOrder": 0
+      },
+      "entries": [
+        {
+          "path": "META-INF/MANIFEST.MF",
+          "digest": "sha256:f71cf0a8bc5f5bbd136b740157d6eb82dc05a8744f0213df75ac738c1090cff7",
+          "size": 612
+        },
+        {
+          "path": "META-INF/maven/com.github.kevinsawicki/http-request/pom.properties",
+          "digest": "sha256:4587881f1c12c1c73de592402c7773e761518a93a37c0b16e6d998abfeadc055",
+          "size": 118
+        },
+        {
+          "path": "META-INF/maven/com.github.kevinsawicki/http-request/pom.xml",
+          "digest": "sha256:80440bf18236a8ba11da8677285e59d2d30989e46a3594fb2fb0238eea4830c5",
+          "size": 7158
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$1.class",
+          "digest": "sha256:2458133635237250697c54b02c70ac64af10523e326722f53d8746523271913c",
+          "size": 1026
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$10.class",
+          "digest": "sha256:4f7edd83776f92314dca6667d6655eaaf6ebe8ea6195816c4f7cb19acb7a8cea",
+          "size": 1523
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$2.class",
+          "digest": "sha256:6eabe4a495c49ff0ecc336ea93346711e2c95ff3c7e8050891a5ae13818e9945",
+          "size": 734
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$3.class",
+          "digest": "sha256:3526153ab28eb9b87df361a6de588b6ecdd63bf69336c4cd229929662d122630",
+          "size": 984
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$4.class",
+          "digest": "sha256:8ba986d811e1bedb4b1911749d5b2ad004e9a82ba3678dcbed8165f7c0ead36b",
+          "size": 989
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$5.class",
+          "digest": "sha256:255b0820e183e26cd7abe2c7ac231e44281c791eabe6a56aa6dbbafb191f3051",
+          "size": 1486
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$6.class",
+          "digest": "sha256:593b0966d5e867b9cf517f141fa2ccdad93ff5a13608a067c2995c9f0c2a6e82",
+          "size": 1981
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$7.class",
+          "digest": "sha256:25ae298db36dc7487377410cdd4a64e77626a7aa5bb8717a60111d0c9979bdcc",
+          "size": 1583
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$8.class",
+          "digest": "sha256:9b019c819317ae77d64f1a917a56bafc257b2d4bad75857dc55a2dd66a237e07",
+          "size": 2227
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$9.class",
+          "digest": "sha256:6998b6fb9acfe47d8023ed34923a5aeb4a1766ff7a2f46ae28a49e18dd200467",
+          "size": 2165
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$Base64.class",
+          "digest": "sha256:31db0f88cb730c68d8f5c687025fb64d1241cd7c11398f50f28051322012f74a",
+          "size": 3620
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$CloseOperation.class",
+          "digest": "sha256:fed040d8ef36317685da7014d89916a7da067c83e4c508cb1eb33644634cd407",
+          "size": 1214
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$ConnectionFactory$1.class",
+          "digest": "sha256:0cb629c65205c2f72ad2ff1947235e135e3c0a5f88cb359b40a47c313f5ae84a",
+          "size": 1102
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$ConnectionFactory.class",
+          "digest": "sha256:83dcc7782d78921d3dc145984c880a1311453d9d7825ae6b1caea4eae5554f83",
+          "size": 715
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$FlushOperation.class",
+          "digest": "sha256:050a098df58b0cf4797f27ded43f6c20942f5d60f22d85fd057e020ea98b9797",
+          "size": 988
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$HttpRequestException.class",
+          "digest": "sha256:bfd9aff9fca3ca80e1259acf85ce54d680e5a2c658f964158bed3a83f61cc1fd",
+          "size": 860
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$Operation.class",
+          "digest": "sha256:6ebf4f36a51bbac95fbe9a829f8e3dfdc8861596b80fe3d4d55835ad587e94e1",
+          "size": 1406
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$RequestOutputStream.class",
+          "digest": "sha256:086c3f6f5a42c13d45304952188b3d5fe8fbaf0cbb1094f497467a5ab90c506a",
+          "size": 1721
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$UploadProgress$1.class",
+          "digest": "sha256:08137c21a1705aa27c45f0c9e1b33a6c7c7da90316e55b403bbc8b3876506a79",
+          "size": 662
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest$UploadProgress.class",
+          "digest": "sha256:10f4f9c97840d0ee20ef9b25db889ccfc368569bd023989b7b92a9987f23b5cb",
+          "size": 537
+        },
+        {
+          "path": "com/github/kevinsawicki/http/HttpRequest.class",
+          "digest": "sha256:1597e2946f2e829f75a9179e1d8060c3e19eabf5570754c9e8a0864a0d628894",
+          "size": 41911
+        }
+      ],
+      "transformation": "deterministic-selected-jar-v1",
+      "vendorSignature": "original-only"
+    }
+  },
+  "sources": {
+    "examples/java-http-request/Capsule.java": {
+      "sha256": "sha256:bf8e473ba5ffaf903295b6a098e15c4e09220118c231920180d984226b618c9b",
+      "bytes": 1572
+    },
+    "tools/java_standard_http_library.py": {
+      "sha256": "sha256:f252c80fb34ec8b7ba112860200de3ca1b33b20a9648b1e9e53cdefadb439694",
+      "bytes": 6018
+    }
+  },
+  "component": {
+    "sha256": "sha256:66d5fb812c59ba0b361667c8d86448fa89d834e2d19ba9102abadccba931d52b",
+    "bytes": 1422921
+  },
+  "sourceInputs": {
+    "sha256": "sha256:2753e8397c38214e741ec568474634d436c78e1bdb21126edc5c8d8fbec534d8",
+    "bytes": 26516
+  },
+  "recipeInputs": {
+    "sha256": "sha256:0f3fdc1b084cbbfcacb4b9566d5e96fbddb63c1e94cdd3fb3ddd39d6d9ed74af",
+    "bytes": 8745
+  },
+  "runtimeProfile": {
+    "sha256": "sha256:5f7a405f56110ecd5e36a31f958f6dbf2019675c7ec985b0c1af557d9556cad2",
+    "bytes": 2568
+  },
+  "compilerCacheSelection": {
+    "formatVersion": 1,
+    "mode": "maintained-source-compiler-acquisition",
+    "inventoryDigest": "sha256:5a02e5628e1383e26f9d30d19d4faefb39ed3c76721e61bca64509d4b59817c3",
+    "applicationRegistryResolution": false
+  },
+  "providerReceipt": {
+    "sha256": "sha256:0efc34e4da62d90adde751ed66e14f448342f6cd8ecb4024bc55d31c07096ca1",
+    "bytes": 17248
+  },
+  "cases": [
+    "json",
+    "http404",
+    "http500",
+    "truncated",
+    "oversized",
+    "forbidden",
+    "early",
+    "redirect",
+    "post",
+    "uncertain",
+    "alternate-denied",
+    "direct-factory",
+    "fresh"
+  ],
+  "peer": {
+    "schemaVersion": "latent.standard-http.conformance.v1",
+    "kind": "controlled-peer-observation",
+    "evidenceScope": "peer-protocol-only",
+    "generation": "0feb0344b2ac498caceb1cc3cc86ab09",
+    "state": "stopped",
+    "failure": null,
+    "origins": {
+      "primary": {
+        "scheme": "http",
+        "host": "127.0.0.1",
+        "port": 46495
+      },
+      "secondary": {
+        "scheme": "http",
+        "host": "127.0.0.1",
+        "port": 45381
+      }
+    },
+    "limits": {
+      "connections": 4,
+      "contacts": 32,
+      "events": 512,
+      "receivedBytes": 2097152,
+      "maximumSeconds": 300
+    },
+    "acceptedConnections": 11,
+    "startedRequests": 11,
+    "listeningOrigins": 0,
+    "completedResponseWrites": 8,
+    "committedMutations": 1,
+    "rejectedRequests": 0,
+    "connectionBoundRejections": 0,
+    "openConnections": 0,
+    "receivedBytes": 2245,
+    "requests": [
+      {
+        "request": 1,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 167,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "domain-json",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "response-write-complete"
+      },
+      {
+        "request": 2,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 149,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "http-404",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "response-write-complete"
+      },
+      {
+        "request": 3,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 149,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "http-500",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "response-write-complete"
+      },
+      {
+        "request": 4,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 115,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "truncated-body",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "response-write-complete"
+      },
+      {
+        "request": 5,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 28672,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "oversized-body",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "connection-lost"
+      },
+      {
+        "request": 6,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 110,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "partial-body",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "remote-write-half-ended"
+      },
+      {
+        "request": 7,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 124,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "redirect",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "response-write-complete"
+      },
+      {
+        "request": 8,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 232,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "method-bytes",
+        "method": "POST",
+        "requestFraming": "length",
+        "bodyBytes": 4,
+        "bodySha256": "sha256:054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8",
+        "closeReason": "response-write-complete"
+      },
+      {
+        "request": 9,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 0,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "commit-close",
+        "method": "POST",
+        "requestFraming": "length",
+        "bodyBytes": 4,
+        "bodySha256": "sha256:054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8",
+        "mutationCommitted": true,
+        "closeReason": "response-withheld-after-commit"
+      },
+      {
+        "request": 10,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 167,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "domain-json",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "response-write-complete"
+      },
+      {
+        "request": 11,
+        "role": "primary",
+        "state": "closed",
+        "responseBytesWritten": 167,
+        "receiveBufferBytes": 8192,
+        "sendBufferBytes": 8192,
+        "authorizationPresent": true,
+        "cookiePresent": false,
+        "proxyAuthorizationPresent": false,
+        "vector": "domain-json",
+        "method": "GET",
+        "requestFraming": "length",
+        "bodyBytes": 0,
+        "bodySha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "closeReason": "response-write-complete"
+      }
+    ],
+    "events": [
+      {
+        "sequence": 1,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 1
+      },
+      {
+        "sequence": 2,
+        "kind": "request-started",
+        "vector": "domain-json",
+        "request": 1
+      },
+      {
+        "sequence": 3,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 1
+      },
+      {
+        "sequence": 4,
+        "kind": "response-write-complete",
+        "request": 1
+      },
+      {
+        "sequence": 5,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 1
+      },
+      {
+        "sequence": 6,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 2
+      },
+      {
+        "sequence": 7,
+        "kind": "request-started",
+        "vector": "http-404",
+        "request": 2
+      },
+      {
+        "sequence": 8,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 2
+      },
+      {
+        "sequence": 9,
+        "kind": "response-write-complete",
+        "request": 2
+      },
+      {
+        "sequence": 10,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 2
+      },
+      {
+        "sequence": 11,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 3
+      },
+      {
+        "sequence": 12,
+        "kind": "request-started",
+        "vector": "http-500",
+        "request": 3
+      },
+      {
+        "sequence": 13,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 3
+      },
+      {
+        "sequence": 14,
+        "kind": "response-write-complete",
+        "request": 3
+      },
+      {
+        "sequence": 15,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 3
+      },
+      {
+        "sequence": 16,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 4
+      },
+      {
+        "sequence": 17,
+        "kind": "request-started",
+        "vector": "truncated-body",
+        "request": 4
+      },
+      {
+        "sequence": 18,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 4
+      },
+      {
+        "sequence": 19,
+        "kind": "response-write-complete",
+        "request": 4
+      },
+      {
+        "sequence": 20,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 4
+      },
+      {
+        "sequence": 21,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 5
+      },
+      {
+        "sequence": 22,
+        "kind": "request-started",
+        "vector": "oversized-body",
+        "request": 5
+      },
+      {
+        "sequence": 23,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 5
+      },
+      {
+        "sequence": 24,
+        "kind": "connection-lost",
+        "request": 5
+      },
+      {
+        "sequence": 25,
+        "kind": "peer-connection-closed",
+        "reason": "connection-lost",
+        "request": 5
+      },
+      {
+        "sequence": 26,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 6
+      },
+      {
+        "sequence": 27,
+        "kind": "request-started",
+        "vector": "partial-body",
+        "request": 6
+      },
+      {
+        "sequence": 28,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 6
+      },
+      {
+        "sequence": 29,
+        "kind": "gate-pending",
+        "phase": "body",
+        "request": 6
+      },
+      {
+        "sequence": 30,
+        "kind": "remote-write-half-ended",
+        "request": 6
+      },
+      {
+        "sequence": 31,
+        "kind": "peer-connection-closed",
+        "reason": "remote-write-half-ended",
+        "request": 6
+      },
+      {
+        "sequence": 32,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 7
+      },
+      {
+        "sequence": 33,
+        "kind": "request-started",
+        "vector": "redirect",
+        "request": 7
+      },
+      {
+        "sequence": 34,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 7
+      },
+      {
+        "sequence": 35,
+        "kind": "response-write-complete",
+        "request": 7
+      },
+      {
+        "sequence": 36,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 7
+      },
+      {
+        "sequence": 37,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 8
+      },
+      {
+        "sequence": 38,
+        "kind": "request-started",
+        "vector": "method-bytes",
+        "request": 8
+      },
+      {
+        "sequence": 39,
+        "kind": "request-complete",
+        "bodyBytes": 4,
+        "request": 8
+      },
+      {
+        "sequence": 40,
+        "kind": "response-write-complete",
+        "request": 8
+      },
+      {
+        "sequence": 41,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 8
+      },
+      {
+        "sequence": 42,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 9
+      },
+      {
+        "sequence": 43,
+        "kind": "request-started",
+        "vector": "commit-close",
+        "request": 9
+      },
+      {
+        "sequence": 44,
+        "kind": "request-complete",
+        "bodyBytes": 4,
+        "request": 9
+      },
+      {
+        "sequence": 45,
+        "kind": "mutation-committed",
+        "total": 1,
+        "request": 9
+      },
+      {
+        "sequence": 46,
+        "kind": "peer-connection-closed",
+        "reason": "response-withheld-after-commit",
+        "request": 9
+      },
+      {
+        "sequence": 47,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 10
+      },
+      {
+        "sequence": 48,
+        "kind": "request-started",
+        "vector": "domain-json",
+        "request": 10
+      },
+      {
+        "sequence": 49,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 10
+      },
+      {
+        "sequence": 50,
+        "kind": "response-write-complete",
+        "request": 10
+      },
+      {
+        "sequence": 51,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 10
+      },
+      {
+        "sequence": 52,
+        "kind": "connection-accepted",
+        "role": "primary",
+        "request": 11
+      },
+      {
+        "sequence": 53,
+        "kind": "request-started",
+        "vector": "domain-json",
+        "request": 11
+      },
+      {
+        "sequence": 54,
+        "kind": "request-complete",
+        "bodyBytes": 0,
+        "request": 11
+      },
+      {
+        "sequence": 55,
+        "kind": "response-write-complete",
+        "request": 11
+      },
+      {
+        "sequence": 56,
+        "kind": "peer-connection-closed",
+        "reason": "response-write-complete",
+        "request": 11
+      }
+    ]
+  },
+  "shutdown": {
+    "processId": 14984,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 530,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "nativeProducts": {
+    "latent": {
+      "sha256": "sha256:11ef4b204887c41cf08e36bcfd1befa3f90861c62c782daab4a8745c5a4b12c2",
+      "bytes": 67322728
+    },
+    "latentd": {
+      "sha256": "sha256:f2d26759ba82cebdba348ec53e424677f6fa28cdcd2caca231986f09c24126ff",
+      "bytes": 180420752
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:cf61b5b8b189ef59541cadd0df536ef28332eecb3717b1a2f401ea5d46036af1",
+      "bytes": 22394784
+    }
+  },
+  "limitations": [
+    "One published client; no two-client or private-client acceptance.",
+    "Plain HTTP synchronous factory/body/early-close subset; full async/cancel/HTTPS matrix pending.",
+    "Native RSS is sampled; no allocator/native/kernel upper-bound claim."
+  ]
+}

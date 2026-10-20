@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_catalogue_free.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Qualify the exact normal TypeScript builder closure without optional catalogue/reference data; preserve selected source-bound engine/native products and three signed default-client gates.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "963fafb4c7ec40ec786d0bc7a273b36a86dac19f12443999a7cf60a3e1bf2c71"
+}

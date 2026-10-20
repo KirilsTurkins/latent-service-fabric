@@ -1,0 +1,3058 @@
+{
+  "formatVersion": 1,
+  "profile": "go-component-activation-v4",
+  "automaticTransformations": [
+    {
+      "name": "go-activation-entry-drain",
+      "upstreamDigest": "sha256:dbf833d765b533046ea1774fd27d552575340de7c45af1798d32873b4f4d7627",
+      "adaptedDigest": "sha256:de0b214fb298df69c869b88cb137fc0850d5d7869580efc40c4b40eaade9c3ce",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-sdk-resource-owner/latent_http_streaming",
+      "upstreamDigest": "sha256:d4e6362c915e2436b6f205c2881ae7f4d018bbc67603c1ad49d55a319c2aab9d",
+      "adaptedDigest": "sha256:93f79b8e2d8f1da5f24ec363aa1fdfec0dae3678ae37758f23a79ebc55e6aa80",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-compiler-checkpoints/export_examples_go_standard_http_api/main.go",
+      "upstreamDigest": "sha256:f964856d1819f11c6e422bd4f98e479abcf122bf4296a3addc605c4dde769e81",
+      "adaptedDigest": "sha256:d89a6d003cc532cbdc8975943a02d72892a1e2c3eef945efec4ead021f6f2c1b",
+      "sites": [
+        {
+          "line": 31,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 43,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 57,
+          "column": 85,
+          "suspendable": true
+        },
+        {
+          "line": 59,
+          "column": 29,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/export_examples_go_standard_http_api/tenant.go",
+      "upstreamDigest": "sha256:3879d66fb15414658ef77fe0116970159635ecbfe24884bc1eaff22f84f238ab",
+      "adaptedDigest": "sha256:133810128d644e8a795f2107e1059b25202a496fda9d99cce09e0454bd9d84a9",
+      "sites": [
+        {
+          "line": 13,
+          "column": 95,
+          "suspendable": true
+        },
+        {
+          "line": 18,
+          "column": 58,
+          "suspendable": true
+        },
+        {
+          "line": 26,
+          "column": 14,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/body.go",
+      "upstreamDigest": "sha256:0fd450b4de8dc78c8dda8fee455b31a17bc14b3c4d3a967eb03f62160ece7335",
+      "adaptedDigest": "sha256:a4a87a64428be95e66132cd508a0975ef8206b6bf7fc201a3694640e440ccd5d",
+      "sites": [
+        {
+          "line": 15,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 16,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 25,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 26,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 28,
+          "column": 14,
+          "suspendable": true
+        },
+        {
+          "line": 30,
+          "column": 18,
+          "suspendable": true
+        },
+        {
+          "line": 40,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 41,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 49,
+          "column": 54,
+          "suspendable": true
+        },
+        {
+          "line": 50,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 61,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 66,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 67,
+          "column": 46,
+          "suspendable": true
+        },
+        {
+          "line": 73,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 74,
+          "column": 46,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/builder_core.go",
+      "upstreamDigest": "sha256:561c0a7e03fbc1eb2f7f8de65d7fd33a61effec959aacbbcd332a8dcd87400bf",
+      "adaptedDigest": "sha256:175e554f5260843bd0ce60666ae472e7c95666e4326755edeb6a02488557a4c8",
+      "sites": [
+        {
+          "line": 91,
+          "column": 54,
+          "suspendable": true
+        },
+        {
+          "line": 98,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 105,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 113,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 120,
+          "column": 66,
+          "suspendable": true
+        },
+        {
+          "line": 128,
+          "column": 74,
+          "suspendable": true
+        },
+        {
+          "line": 134,
+          "column": 67,
+          "suspendable": true
+        },
+        {
+          "line": 142,
+          "column": 75,
+          "suspendable": true
+        },
+        {
+          "line": 149,
+          "column": 57,
+          "suspendable": true
+        },
+        {
+          "line": 157,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 165,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 171,
+          "column": 54,
+          "suspendable": true
+        },
+        {
+          "line": 178,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 186,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 193,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 199,
+          "column": 53,
+          "suspendable": true
+        },
+        {
+          "line": 200,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 207,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 215,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 223,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 232,
+          "column": 81,
+          "suspendable": true
+        },
+        {
+          "line": 245,
+          "column": 55,
+          "suspendable": true
+        },
+        {
+          "line": 275,
+          "column": 60,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/builder_extras.go",
+      "upstreamDigest": "sha256:7949d1c5269cdb4814613e50fb99cd29b3cf777b5201ea24181680878e842f27",
+      "adaptedDigest": "sha256:374da50ce487b389c1db9950130541a3f600c34221dc24ca216b6da96d018e14",
+      "sites": [
+        {
+          "line": 15,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 24,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 29,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 36,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 41,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 46,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 51,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 56,
+          "column": 61,
+          "suspendable": true
+        },
+        {
+          "line": 64,
+          "column": 61,
+          "suspendable": true
+        },
+        {
+          "line": 69,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 74,
+          "column": 60,
+          "suspendable": true
+        },
+        {
+          "line": 75,
+          "column": 24,
+          "suspendable": true
+        },
+        {
+          "line": 82,
+          "column": 61,
+          "suspendable": true
+        },
+        {
+          "line": 83,
+          "column": 24,
+          "suspendable": true
+        },
+        {
+          "line": 90,
+          "column": 58,
+          "suspendable": true
+        },
+        {
+          "line": 95,
+          "column": 61,
+          "suspendable": true
+        },
+        {
+          "line": 100,
+          "column": 53,
+          "suspendable": true
+        },
+        {
+          "line": 105,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 110,
+          "column": 67,
+          "suspendable": true
+        },
+        {
+          "line": 117,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 122,
+          "column": 54,
+          "suspendable": true
+        },
+        {
+          "line": 127,
+          "column": 68,
+          "suspendable": true
+        },
+        {
+          "line": 132,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 138,
+          "column": 66,
+          "suspendable": true
+        },
+        {
+          "line": 147,
+          "column": 46,
+          "suspendable": true
+        },
+        {
+          "line": 155,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 162,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 167,
+          "column": 65,
+          "suspendable": true
+        },
+        {
+          "line": 172,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 177,
+          "column": 69,
+          "suspendable": true
+        },
+        {
+          "line": 183,
+          "column": 68,
+          "suspendable": true
+        },
+        {
+          "line": 191,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 196,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 201,
+          "column": 63,
+          "suspendable": true
+        },
+        {
+          "line": 206,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 213,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 221,
+          "column": 65,
+          "suspendable": true
+        },
+        {
+          "line": 228,
+          "column": 63,
+          "suspendable": true
+        },
+        {
+          "line": 237,
+          "column": 47,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/config.go",
+      "upstreamDigest": "sha256:2096ae08a143a69606f52c74ee25730962a65cb2003e4ea1284cdbde864cc4d9",
+      "adaptedDigest": "sha256:fedb16ae85ac9c50b72f8a9cc1ad606ac8b6a948cc4e098c005cb75bf77f53a7",
+      "sites": [
+        {
+          "line": 18,
+          "column": 67,
+          "suspendable": true
+        },
+        {
+          "line": 19,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 22,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 41,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 42,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 55,
+          "column": 84,
+          "suspendable": true
+        },
+        {
+          "line": 56,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 63,
+          "column": 40,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/cookies.go",
+      "upstreamDigest": "sha256:6b2a0375c10fc3d657a49fa42462261a69c8d9899e7476f4ae3c8be1c2822e2d",
+      "adaptedDigest": "sha256:9cea4d16e9d70335ec312fe77c46cc8ef21f901630f2abacb6a577b35edab2a7",
+      "sites": [
+        {
+          "line": 11,
+          "column": 37,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/core_do.go",
+      "upstreamDigest": "sha256:9eb20e06d878bdae6008b67d6d3050237b1a30e0cef681b700bf40f63c28f8ef",
+      "adaptedDigest": "sha256:b5c28a37c9ceb2bd41aec78349fdc402dd7275275cd7aeb3335daf6ace00f5ac",
+      "sites": [
+        {
+          "line": 16,
+          "column": 115,
+          "suspendable": true
+        },
+        {
+          "line": 23,
+          "column": 32,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/core_req.go",
+      "upstreamDigest": "sha256:914125467b783d544967135adb32ca1a737dd5c7f2e75532fd3ee402021250bd",
+      "adaptedDigest": "sha256:50122b1e24e8354e4ec6c509220f26c5cdeb01cd579b5d4e851fb7b639afcab7",
+      "sites": [
+        {
+          "line": 22,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 26,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 37,
+          "column": 65,
+          "suspendable": true
+        },
+        {
+          "line": 41,
+          "column": 73,
+          "suspendable": true
+        },
+        {
+          "line": 45,
+          "column": 55,
+          "suspendable": true
+        },
+        {
+          "line": 49,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 53,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 58,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 66,
+          "column": 100,
+          "suspendable": true
+        },
+        {
+          "line": 87,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 92,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 99,
+          "column": 33,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/core_url.go",
+      "upstreamDigest": "sha256:4d7625a06300aa93baf6988b3d3903209ca9f0da049f23432256a0765bf09c7e",
+      "adaptedDigest": "sha256:362bd04bfe2511739239bc1eb1c64af18346d25aaab5ecde3021a00769a8cb72",
+      "sites": [
+        {
+          "line": 27,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 31,
+          "column": 46,
+          "suspendable": true
+        },
+        {
+          "line": 35,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 40,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 44,
+          "column": 60,
+          "suspendable": true
+        },
+        {
+          "line": 48,
+          "column": 68,
+          "suspendable": true
+        },
+        {
+          "line": 52,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 59,
+          "column": 54,
+          "suspendable": true
+        },
+        {
+          "line": 70,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 75,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 80,
+          "column": 33,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/errorkind.go",
+      "upstreamDigest": "sha256:68a26c62574b10ef83d3d5bc7dbd629fda03e212a56c15facf2175aee959a449",
+      "adaptedDigest": "sha256:e46d3e26d096f45be4bcab5cfdca25a5f7be67004ba36bb1cfae2e7a0267f9f6",
+      "sites": [
+        {
+          "line": 18,
+          "column": 37,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/errorkind_string.go",
+      "upstreamDigest": "sha256:1af53a33fb1da618ac4e58d546ce2b8b4bf3fdf68d0c11a93205a9c071113ca6",
+      "adaptedDigest": "sha256:e3fd6496c31f4a01a1fba794058399f3f0423390d636846e1ee80ca91a837d69",
+      "sites": [
+        {
+          "line": 7,
+          "column": 11,
+          "suspendable": true
+        },
+        {
+          "line": 22,
+          "column": 37,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/handler.go",
+      "upstreamDigest": "sha256:b198212d4ba1c4eaaa7be0c6cba9df1e312c7aa894e6e487ea3a19e67e06ad23",
+      "adaptedDigest": "sha256:fbf208054e7b1f2a2b5664592bcfc33311f2fa9f69b800ff3b221ec3d572aa5a",
+      "sites": [
+        {
+          "line": 19,
+          "column": 66,
+          "suspendable": true
+        },
+        {
+          "line": 20,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 21,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 33,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 42,
+          "column": 61,
+          "suspendable": true
+        },
+        {
+          "line": 43,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 58,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 63,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 64,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 75,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 76,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 83,
+          "column": 68,
+          "suspendable": true
+        },
+        {
+          "line": 84,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 90,
+          "column": 70,
+          "suspendable": true
+        },
+        {
+          "line": 91,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 99,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 100,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 111,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 112,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 121,
+          "column": 43,
+          "suspendable": true
+        },
+        {
+          "line": 122,
+          "column": 41,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/internal/minitrue/minitrue.go",
+      "upstreamDigest": "sha256:80aad47ff398073e4b41217d31e3f7206e997c1bd9b896b9423eaea08818d6d9",
+      "adaptedDigest": "sha256:8b47696d7847527be4f8d8d3128770190ac397655811cc81869baf00d075f308",
+      "sites": [
+        {
+          "line": 4,
+          "column": 39,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/internal/slicex/slicex.go",
+      "upstreamDigest": "sha256:da23dddcf59a371723ce742b6c7fcea96aca2a45e2a275109382f92aadcde9dd",
+      "adaptedDigest": "sha256:03f55827f54820e1a3e7d6f432ebfed0f03d3c85228b11b730d158eed776f3bb",
+      "sites": [
+        {
+          "line": 3,
+          "column": 28,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/recorder.go",
+      "upstreamDigest": "sha256:a248b2d6a0ac95f7d1a80fdc064395b747534d0179ca87fe350fb7d20c5c5558",
+      "adaptedDigest": "sha256:65e668d938c8a4b2a81a68b01ea7655e4e57e5155f580fc7e4e45b0bfcd2c503",
+      "sites": [
+        {
+          "line": 23,
+          "column": 63,
+          "suspendable": true
+        },
+        {
+          "line": 27,
+          "column": 80,
+          "suspendable": true
+        },
+        {
+          "line": 28,
+          "column": 17,
+          "suspendable": true
+        },
+        {
+          "line": 63,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 75,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 76,
+          "column": 80,
+          "suspendable": true
+        },
+        {
+          "line": 77,
+          "column": 17,
+          "suspendable": true
+        },
+        {
+          "line": 107,
+          "column": 53,
+          "suspendable": true
+        },
+        {
+          "line": 121,
+          "column": 64,
+          "suspendable": true
+        },
+        {
+          "line": 124,
+          "column": 80,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/redirects.go",
+      "upstreamDigest": "sha256:8d17769d9cb4eba24e4b02f932a728efef71807cd3e0e826da6f6b0bf9bdf6fb",
+      "adaptedDigest": "sha256:172f01768fe2e1a40a8e0eaf092d8cc4a1fbfea3bc0e649603802a33c1d82a0d",
+      "sites": [
+        {
+          "line": 9,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 10,
+          "column": 61,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/transport.go",
+      "upstreamDigest": "sha256:980a827eda96f8b5697ee7134f4365552fe9f07da596dcef209d4bc252cca606",
+      "adaptedDigest": "sha256:6957bce4efe56aee4a40b3df19f4e48459894d257b97ee910afe34be59f01864",
+      "sites": [
+        {
+          "line": 20,
+          "column": 78,
+          "suspendable": true
+        },
+        {
+          "line": 30,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 31,
+          "column": 80,
+          "suspendable": true
+        },
+        {
+          "line": 39,
+          "column": 68,
+          "suspendable": true
+        },
+        {
+          "line": 43,
+          "column": 80,
+          "suspendable": true
+        },
+        {
+          "line": 54,
+          "column": 72,
+          "suspendable": true
+        },
+        {
+          "line": 60,
+          "column": 80,
+          "suspendable": true
+        },
+        {
+          "line": 76,
+          "column": 135,
+          "suspendable": true
+        },
+        {
+          "line": 80,
+          "column": 80,
+          "suspendable": true
+        },
+        {
+          "line": 92,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 104,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 117,
+          "column": 15,
+          "suspendable": true
+        },
+        {
+          "line": 124,
+          "column": 43,
+          "suspendable": true
+        },
+        {
+          "line": 125,
+          "column": 72,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/validator.go",
+      "upstreamDigest": "sha256:1f280a8aac35884e90b47f10002223f915270a33da2e118236376e17a80a86e9",
+      "adaptedDigest": "sha256:227e95d3b9050e889d6ac5d749ea3dffa9c8a946b0b74d76310217369885e0e8",
+      "sites": [
+        {
+          "line": 25,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 30,
+          "column": 58,
+          "suspendable": true
+        },
+        {
+          "line": 31,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 32,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 44,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 49,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 59,
+          "column": 55,
+          "suspendable": true
+        },
+        {
+          "line": 60,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 66,
+          "column": 27,
+          "suspendable": true
+        },
+        {
+          "line": 83,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 84,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 102,
+          "column": 58,
+          "suspendable": true
+        },
+        {
+          "line": 103,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 104,
+          "column": 33,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/carlmjohnson/requests/validator_handler.go",
+      "upstreamDigest": "sha256:8619c7a43fdd79a63a9b3e9d8dbf68b75e94756b25599dcdb0520c599c5c9572",
+      "adaptedDigest": "sha256:07eab6b452a7516ff8239c39710e3d02cb700a29fe9658214eea65055651e9ae",
+      "sites": [
+        {
+          "line": 13,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 14,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 32,
+          "column": 40,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/dghubble/sling/body.go",
+      "upstreamDigest": "sha256:678a03ccc17166b6872fe3d3f2fe2fc0398316d97dd82383e79a89cabc653176",
+      "adaptedDigest": "sha256:13c18416cda0ab7c06d3e4f45769ef23a6e6f8303fb622628378e731d08b3207",
+      "sites": [
+        {
+          "line": 25,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 29,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 39,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 43,
+          "column": 54,
+          "suspendable": true
+        },
+        {
+          "line": 58,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 62,
+          "column": 54,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/dghubble/sling/response.go",
+      "upstreamDigest": "sha256:fe34cea5632272a81b43f12a0bdafc6a77ed85c42eac52ffb6eb8c8481638ac8",
+      "adaptedDigest": "sha256:fb68218eef52282fd55f40d84d276f96e8e708a521329b3f2d533adb1627dbdf",
+      "sites": [
+        {
+          "line": 20,
+          "column": 72,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/dghubble/sling/sling.go",
+      "upstreamDigest": "sha256:9a72b90344c958ab3d80956e8a057a1fe60904f7a339144e3b70fb2487f4d409",
+      "adaptedDigest": "sha256:c01e4ead7469dda309188545f419f84f8c135af7fa5650a58e126a5f31e4ce76",
+      "sites": [
+        {
+          "line": 45,
+          "column": 20,
+          "suspendable": true
+        },
+        {
+          "line": 67,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 70,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 88,
+          "column": 57,
+          "suspendable": true
+        },
+        {
+          "line": 97,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 109,
+          "column": 46,
+          "suspendable": true
+        },
+        {
+          "line": 115,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 121,
+          "column": 46,
+          "suspendable": true
+        },
+        {
+          "line": 127,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 133,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 139,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 145,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 151,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 157,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 166,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 173,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 181,
+          "column": 65,
+          "suspendable": true
+        },
+        {
+          "line": 187,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 196,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 203,
+          "column": 43,
+          "suspendable": true
+        },
+        {
+          "line": 218,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 231,
+          "column": 46,
+          "suspendable": true
+        },
+        {
+          "line": 239,
+          "column": 57,
+          "suspendable": true
+        },
+        {
+          "line": 257,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 268,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 280,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 309,
+          "column": 74,
+          "suspendable": true
+        },
+        {
+          "line": 315,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 320,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 321,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 333,
+          "column": 57,
+          "suspendable": true
+        },
+        {
+          "line": 334,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 335,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 344,
+          "column": 66,
+          "suspendable": true
+        },
+        {
+          "line": 356,
+          "column": 79,
+          "suspendable": true
+        },
+        {
+          "line": 367,
+          "column": 82,
+          "suspendable": true
+        },
+        {
+          "line": 381,
+          "column": 96,
+          "suspendable": true
+        },
+        {
+          "line": 412,
+          "column": 106,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/github.com/google/go-querystring/query/encode.go",
+      "upstreamDigest": "sha256:9414828ddedc2d1ee45d81a06716c5a03effab33cb112fb79a136841ff30a833",
+      "adaptedDigest": "sha256:a75822481a90cf452060b76819ee1fc183c904d30e6723229a35a3ba0982075d",
+      "sites": [
+        {
+          "line": 126,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 129,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 151,
+          "column": 78,
+          "suspendable": true
+        },
+        {
+          "line": 155,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 204,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 228,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 238,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 264,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 274,
+          "column": 84,
+          "suspendable": true
+        },
+        {
+          "line": 275,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 311,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 344,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 350,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 351,
+          "column": 23,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/atom/atom.go",
+      "upstreamDigest": "sha256:86490b2027af4443dacfe96c313a6c632c03ea1acdf85f7f61c4fdde32bc2f3d",
+      "adaptedDigest": "sha256:c03bdabd217b837c3ae1aee56d129ad7f20192169a715532dbd7599792fb9c5b",
+      "sites": [
+        {
+          "line": 24,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 33,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 38,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 39,
+          "column": 20,
+          "suspendable": true
+        },
+        {
+          "line": 46,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 47,
+          "column": 23,
+          "suspendable": true
+        },
+        {
+          "line": 57,
+          "column": 29,
+          "suspendable": true
+        },
+        {
+          "line": 73,
+          "column": 31,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/const.go",
+      "upstreamDigest": "sha256:44c814afac4b0206a4f2af92607f93a72b93919ec2c3884d372edcdc24507584",
+      "adaptedDigest": "sha256:97c8e24e5c9bb7d2f51bbf18a750823b1471984f7e1afe11477fb248033adae2",
+      "sites": [
+        {
+          "line": 95,
+          "column": 44,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/doctype.go",
+      "upstreamDigest": "sha256:d61e3134cbc26d533b8c3ddff72f41872cbd9e077e1ab3a4241ebf427cfc2861",
+      "adaptedDigest": "sha256:c8f4e9f7c5eb5c120941254c26fe715f72cdffcba3cf4c9ceb61e755641ba716",
+      "sites": [
+        {
+          "line": 16,
+          "column": 53,
+          "suspendable": true
+        },
+        {
+          "line": 40,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 76,
+          "column": 34,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/escape.go",
+      "upstreamDigest": "sha256:85d7c118044e2c84c5ca2bfd568a27e83cd1cef7f2aea8e961bb4c4200bd964d",
+      "adaptedDigest": "sha256:1b13340c9d3bc4c8fc6110708cf1182970be9e20aa346526b13504a7c6021bd7",
+      "sites": [
+        {
+          "line": 57,
+          "column": 79,
+          "suspendable": true
+        },
+        {
+          "line": 82,
+          "column": 19,
+          "suspendable": true
+        },
+        {
+          "line": 125,
+          "column": 18,
+          "suspendable": true
+        },
+        {
+          "line": 153,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 167,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 168,
+          "column": 23,
+          "suspendable": true
+        },
+        {
+          "line": 171,
+          "column": 22,
+          "suspendable": true
+        },
+        {
+          "line": 187,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 188,
+          "column": 23,
+          "suspendable": true
+        },
+        {
+          "line": 215,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 230,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 268,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 279,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 281,
+          "column": 15,
+          "suspendable": true
+        },
+        {
+          "line": 318,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 332,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 333,
+          "column": 23,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/foreign.go",
+      "upstreamDigest": "sha256:4bb48c05b855fd872bf3f8a10ff54759d756592588278e8bad2b8daabd509453",
+      "adaptedDigest": "sha256:675d02803c4829f63d4ec938ebfd141bc8c3021263ec93d3528bd491fa0882df",
+      "sites": [
+        {
+          "line": 11,
+          "column": 71,
+          "suspendable": true
+        },
+        {
+          "line": 12,
+          "column": 21,
+          "suspendable": true
+        },
+        {
+          "line": 19,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 20,
+          "column": 24,
+          "suspendable": true
+        },
+        {
+          "line": 34,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 41,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 59,
+          "column": 48,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/node.go",
+      "upstreamDigest": "sha256:4bfed9a1a0640864748b3649ad731a35ca2eae6bf720f769978b87c01d8623fb",
+      "adaptedDigest": "sha256:e8f77f2415ca876fabb9df0ca1a5f52316ff8abcd47b66eb300cd4988e4951cc",
+      "sites": [
+        {
+          "line": 59,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 87,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 106,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 128,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 129,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 141,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 156,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 164,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 173,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 174,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 183,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 184,
+          "column": 24,
+          "suspendable": true
+        },
+        {
+          "line": 193,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 200,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 213,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 220,
+          "column": 51,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/parse.go",
+      "upstreamDigest": "sha256:853f334017c5b37c282635101af5a5e1483c2bb07b7cfac90f195fa7676c596d",
+      "adaptedDigest": "sha256:425097622912fae0ef6b1b0fd0a9182bf727c35d08c7416fbb616fd16dc195f1",
+      "sites": [
+        {
+          "line": 54,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 99,
+          "column": 63,
+          "suspendable": true
+        },
+        {
+          "line": 110,
+          "column": 75,
+          "suspendable": true
+        },
+        {
+          "line": 111,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 114,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 144,
+          "column": 63,
+          "suspendable": true
+        },
+        {
+          "line": 156,
+          "column": 69,
+          "suspendable": true
+        },
+        {
+          "line": 162,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 163,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 192,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 201,
+          "column": 64,
+          "suspendable": true
+        },
+        {
+          "line": 204,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 211,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 226,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 240,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 252,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 255,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 263,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 300,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 325,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 335,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 342,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 360,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 361,
+          "column": 29,
+          "suspendable": true
+        },
+        {
+          "line": 382,
+          "column": 51,
+          "suspendable": true
+        },
+        {
+          "line": 383,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 391,
+          "column": 57,
+          "suspendable": true
+        },
+        {
+          "line": 400,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 408,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 420,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 433,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 441,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 442,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 452,
+          "column": 60,
+          "suspendable": true
+        },
+        {
+          "line": 515,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 542,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 580,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 623,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 677,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 708,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 738,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 787,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 847,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 852,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 855,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 864,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 950,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 968,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 993,
+          "column": 78,
+          "suspendable": true
+        },
+        {
+          "line": 1032,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 1197,
+          "column": 27,
+          "suspendable": true
+        },
+        {
+          "line": 1210,
+          "column": 74,
+          "suspendable": true
+        },
+        {
+          "line": 1225,
+          "column": 26,
+          "suspendable": true
+        },
+        {
+          "line": 1228,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 1258,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 1266,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 1283,
+          "column": 8,
+          "suspendable": true
+        },
+        {
+          "line": 1366,
+          "column": 69,
+          "suspendable": true
+        },
+        {
+          "line": 1367,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 1387,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 1416,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 1461,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 1517,
+          "column": 16,
+          "suspendable": true
+        },
+        {
+          "line": 1523,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 1567,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 1626,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 1678,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 1729,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 1779,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 1864,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 1877,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 1891,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 1942,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 1957,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 1995,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 2004,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 2045,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 2054,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 2084,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 2113,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 2122,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 2148,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 2155,
+          "column": 43,
+          "suspendable": true
+        },
+        {
+          "line": 2173,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 2182,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 2221,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 2238,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 2246,
+          "column": 43,
+          "suspendable": true
+        },
+        {
+          "line": 2276,
+          "column": 80,
+          "suspendable": true
+        },
+        {
+          "line": 2290,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 2297,
+          "column": 17,
+          "suspendable": true
+        },
+        {
+          "line": 2311,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 2314,
+          "column": 21,
+          "suspendable": true
+        },
+        {
+          "line": 2343,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 2352,
+          "column": 66,
+          "suspendable": true
+        },
+        {
+          "line": 2363,
+          "column": 59,
+          "suspendable": true
+        },
+        {
+          "line": 2364,
+          "column": 26,
+          "suspendable": true
+        },
+        {
+          "line": 2370,
+          "column": 73,
+          "suspendable": true
+        },
+        {
+          "line": 2381,
+          "column": 26,
+          "suspendable": true
+        },
+        {
+          "line": 2392,
+          "column": 98,
+          "suspendable": true
+        },
+        {
+          "line": 2420,
+          "column": 26,
+          "suspendable": true
+        },
+        {
+          "line": 2436,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 2453,
+          "column": 41,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/render.go",
+      "upstreamDigest": "sha256:4b483d3c0629a7231e3bb54daca1f4441072bf792c6391f9eff29c59060a8a24",
+      "adaptedDigest": "sha256:a92b13766ad888eee02acad4eca492b2c1748654f4fe0791a5d3361a3ffb37ce",
+      "sites": [
+        {
+          "line": 45,
+          "column": 42,
+          "suspendable": true
+        },
+        {
+          "line": 60,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 68,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 76,
+          "column": 55,
+          "suspendable": true
+        },
+        {
+          "line": 104,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 151,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 199,
+          "column": 55,
+          "suspendable": true
+        },
+        {
+          "line": 216,
+          "column": 55,
+          "suspendable": true
+        },
+        {
+          "line": 233,
+          "column": 46,
+          "suspendable": true
+        },
+        {
+          "line": 258,
+          "column": 45,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/html/token.go",
+      "upstreamDigest": "sha256:e0167fa69083f5c525f217f15aba048c722d3eaffdc6ab561bfcdbaa8419d1b8",
+      "adaptedDigest": "sha256:e5c47d0ae85974cd6750670c61c5626c7390312bcaec44c35b0b5e77f289a5bd",
+      "sites": [
+        {
+          "line": 41,
+          "column": 37,
+          "suspendable": true
+        },
+        {
+          "line": 84,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 89,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 100,
+          "column": 33,
+          "suspendable": true
+        },
+        {
+          "line": 188,
+          "column": 50,
+          "suspendable": true
+        },
+        {
+          "line": 216,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 222,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 234,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 262,
+          "column": 27,
+          "suspendable": true
+        },
+        {
+          "line": 290,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 297,
+          "column": 62,
+          "suspendable": true
+        },
+        {
+          "line": 298,
+          "column": 28,
+          "suspendable": true
+        },
+        {
+          "line": 307,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 311,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 328,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 336,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 366,
+          "column": 43,
+          "suspendable": true
+        },
+        {
+          "line": 367,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 393,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 394,
+          "column": 16,
+          "suspendable": true
+        },
+        {
+          "line": 514,
+          "column": 38,
+          "suspendable": true
+        },
+        {
+          "line": 600,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 607,
+          "column": 16,
+          "suspendable": true
+        },
+        {
+          "line": 616,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 652,
+          "column": 58,
+          "suspendable": true
+        },
+        {
+          "line": 668,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 673,
+          "column": 20,
+          "suspendable": true
+        },
+        {
+          "line": 682,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 684,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 700,
+          "column": 56,
+          "suspendable": true
+        },
+        {
+          "line": 703,
+          "column": 26,
+          "suspendable": true
+        },
+        {
+          "line": 729,
+          "column": 41,
+          "suspendable": true
+        },
+        {
+          "line": 731,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 754,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 756,
+          "column": 31,
+          "suspendable": true
+        },
+        {
+          "line": 770,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 793,
+          "column": 52,
+          "suspendable": true
+        },
+        {
+          "line": 795,
+          "column": 24,
+          "suspendable": true
+        },
+        {
+          "line": 799,
+          "column": 32,
+          "suspendable": true
+        },
+        {
+          "line": 815,
+          "column": 47,
+          "suspendable": true
+        },
+        {
+          "line": 853,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 861,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 882,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 884,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 904,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 906,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 931,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 964,
+          "column": 8,
+          "suspendable": true
+        },
+        {
+          "line": 978,
+          "column": 8,
+          "suspendable": true
+        },
+        {
+          "line": 998,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 1009,
+          "column": 22,
+          "suspendable": true
+        },
+        {
+          "line": 1027,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 1123,
+          "column": 35,
+          "suspendable": true
+        },
+        {
+          "line": 1129,
+          "column": 40,
+          "suspendable": true
+        },
+        {
+          "line": 1130,
+          "column": 23,
+          "suspendable": true
+        },
+        {
+          "line": 1142,
+          "column": 21,
+          "suspendable": true
+        },
+        {
+          "line": 1166,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 1187,
+          "column": 60,
+          "suspendable": true
+        },
+        {
+          "line": 1203,
+          "column": 65,
+          "suspendable": true
+        },
+        {
+          "line": 1219,
+          "column": 36,
+          "suspendable": true
+        },
+        {
+          "line": 1226,
+          "column": 17,
+          "suspendable": true
+        },
+        {
+          "line": 1242,
+          "column": 39,
+          "suspendable": true
+        },
+        {
+          "line": 1248,
+          "column": 44,
+          "suspendable": true
+        },
+        {
+          "line": 1260,
+          "column": 71,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/golang.org/x/net/publicsuffix/list.go",
+      "upstreamDigest": "sha256:3b0c51c1695e32efd86c59cc18d34dcf0cf4a80c25420b7ab16372830d29a518",
+      "adaptedDigest": "sha256:d9133f922dbf8cb906a152e1e860f9beedb55a519871d16f91bc0ee74b5c39fd",
+      "sites": [
+        {
+          "line": 63,
+          "column": 49,
+          "suspendable": true
+        },
+        {
+          "line": 68,
+          "column": 30,
+          "suspendable": true
+        },
+        {
+          "line": 86,
+          "column": 69,
+          "suspendable": true
+        },
+        {
+          "line": 90,
+          "column": 7,
+          "suspendable": true
+        },
+        {
+          "line": 142,
+          "column": 48,
+          "suspendable": true
+        },
+        {
+          "line": 143,
+          "column": 15,
+          "suspendable": true
+        },
+        {
+          "line": 158,
+          "column": 34,
+          "suspendable": true
+        },
+        {
+          "line": 168,
+          "column": 58,
+          "suspendable": true
+        },
+        {
+          "line": 186,
+          "column": 45,
+          "suspendable": true
+        },
+        {
+          "line": 196,
+          "column": 45,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-compiler-checkpoints/vendor/outside.example.test/http-library/tenant-catalogue-free/marker.go",
+      "upstreamDigest": "sha256:a85ca040b18555e104421b2fc305578cf4db6faaca62a07d8d6652f8a38b3fd0",
+      "adaptedDigest": "sha256:9260efffe87f730ea96a4af6aace5fdf9da7a975cbce91f9028e044d9eb0f0d4",
+      "sites": [
+        {
+          "line": 12,
+          "column": 23,
+          "suspendable": true
+        },
+        {
+          "line": 16,
+          "column": 15,
+          "suspendable": true
+        }
+      ]
+    },
+    {
+      "name": "go-runtime-overlay/983f44767712ee8d1b82f77b426421d6912081ec95cf0f680007d7de6039dce3.go",
+      "upstreamDigest": "sha256:f964856d1819f11c6e422bd4f98e479abcf122bf4296a3addc605c4dde769e81",
+      "adaptedDigest": "sha256:d89a6d003cc532cbdc8975943a02d72892a1e2c3eef945efec4ead021f6f2c1b",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/72f33583d974081fcf24e253f813997e360c17c326a1619bcadc23c409717d16.go",
+      "upstreamDigest": "sha256:3879d66fb15414658ef77fe0116970159635ecbfe24884bc1eaff22f84f238ab",
+      "adaptedDigest": "sha256:133810128d644e8a795f2107e1059b25202a496fda9d99cce09e0454bd9d84a9",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/53f88532f55e8b48790c66880da54fea5eef9dd3246995009203ad509b21127d.go",
+      "upstreamDigest": "sha256:0fd450b4de8dc78c8dda8fee455b31a17bc14b3c4d3a967eb03f62160ece7335",
+      "adaptedDigest": "sha256:a4a87a64428be95e66132cd508a0975ef8206b6bf7fc201a3694640e440ccd5d",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/000db88391557974ac61484a65b9e30fb41fdf5dce9ad43abb0ba3655e6ff339.go",
+      "upstreamDigest": "sha256:561c0a7e03fbc1eb2f7f8de65d7fd33a61effec959aacbbcd332a8dcd87400bf",
+      "adaptedDigest": "sha256:175e554f5260843bd0ce60666ae472e7c95666e4326755edeb6a02488557a4c8",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/578eec302b9fee6746b4e51b8ac3a23f3088c01f53ee55aaefd9f23b0f565b56.go",
+      "upstreamDigest": "sha256:7949d1c5269cdb4814613e50fb99cd29b3cf777b5201ea24181680878e842f27",
+      "adaptedDigest": "sha256:374da50ce487b389c1db9950130541a3f600c34221dc24ca216b6da96d018e14",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/bd987e14a8b499385bda935f6506f4b259ced06ea113b5691d01aff579f55338.go",
+      "upstreamDigest": "sha256:2096ae08a143a69606f52c74ee25730962a65cb2003e4ea1284cdbde864cc4d9",
+      "adaptedDigest": "sha256:fedb16ae85ac9c50b72f8a9cc1ad606ac8b6a948cc4e098c005cb75bf77f53a7",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/1a6047cc81eaf43194ed53cd9f20a41b5c63192242f1e30610b858fdf2532ee9.go",
+      "upstreamDigest": "sha256:6b2a0375c10fc3d657a49fa42462261a69c8d9899e7476f4ae3c8be1c2822e2d",
+      "adaptedDigest": "sha256:9cea4d16e9d70335ec312fe77c46cc8ef21f901630f2abacb6a577b35edab2a7",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/40f6ccafd3ff5442219c824d26d4298c37a54bfaa2ce2e20d80958015ae310fd.go",
+      "upstreamDigest": "sha256:9eb20e06d878bdae6008b67d6d3050237b1a30e0cef681b700bf40f63c28f8ef",
+      "adaptedDigest": "sha256:b5c28a37c9ceb2bd41aec78349fdc402dd7275275cd7aeb3335daf6ace00f5ac",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/97840ddf561ef1438e4bcd66de916a780ee7a40d2f59d0a80c302287540ec779.go",
+      "upstreamDigest": "sha256:914125467b783d544967135adb32ca1a737dd5c7f2e75532fd3ee402021250bd",
+      "adaptedDigest": "sha256:50122b1e24e8354e4ec6c509220f26c5cdeb01cd579b5d4e851fb7b639afcab7",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/bc4351b937df93964bc84d8fc2bbb08337960cafaa9fae9e1d0b9d2f01e9da69.go",
+      "upstreamDigest": "sha256:4d7625a06300aa93baf6988b3d3903209ca9f0da049f23432256a0765bf09c7e",
+      "adaptedDigest": "sha256:362bd04bfe2511739239bc1eb1c64af18346d25aaab5ecde3021a00769a8cb72",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/7b7a5f85e3094337bfb5b98c430ad7afd249a7a430efbc9ee132172f130a5717.go",
+      "upstreamDigest": "sha256:68a26c62574b10ef83d3d5bc7dbd629fda03e212a56c15facf2175aee959a449",
+      "adaptedDigest": "sha256:e46d3e26d096f45be4bcab5cfdca25a5f7be67004ba36bb1cfae2e7a0267f9f6",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/73368c91277648a17e60e4c20df8c0825d33e81d5713ba164090426b2e48cb85.go",
+      "upstreamDigest": "sha256:1af53a33fb1da618ac4e58d546ce2b8b4bf3fdf68d0c11a93205a9c071113ca6",
+      "adaptedDigest": "sha256:e3fd6496c31f4a01a1fba794058399f3f0423390d636846e1ee80ca91a837d69",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/e9593a5b69bbd3fcfbbba6c2cb13dd964686776e9a9d70f38a82a6cf5cfe1e14.go",
+      "upstreamDigest": "sha256:b198212d4ba1c4eaaa7be0c6cba9df1e312c7aa894e6e487ea3a19e67e06ad23",
+      "adaptedDigest": "sha256:fbf208054e7b1f2a2b5664592bcfc33311f2fa9f69b800ff3b221ec3d572aa5a",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/a270d19c830beb0932f78adf9809e0dbfd64fceee46473fd0321f37851c9a23a.go",
+      "upstreamDigest": "sha256:80aad47ff398073e4b41217d31e3f7206e997c1bd9b896b9423eaea08818d6d9",
+      "adaptedDigest": "sha256:8b47696d7847527be4f8d8d3128770190ac397655811cc81869baf00d075f308",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/0d2a15b243d333de4dc1610850b71f8a1508e8fee0db1fad93e7438dfbe34745.go",
+      "upstreamDigest": "sha256:da23dddcf59a371723ce742b6c7fcea96aca2a45e2a275109382f92aadcde9dd",
+      "adaptedDigest": "sha256:03f55827f54820e1a3e7d6f432ebfed0f03d3c85228b11b730d158eed776f3bb",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/9277ff58d522636cfb97a14998b552885924128f147ca38f0c2eaff48ab21878.go",
+      "upstreamDigest": "sha256:a248b2d6a0ac95f7d1a80fdc064395b747534d0179ca87fe350fb7d20c5c5558",
+      "adaptedDigest": "sha256:65e668d938c8a4b2a81a68b01ea7655e4e57e5155f580fc7e4e45b0bfcd2c503",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/592c41aa72efb25255e576daf252a2afeec58ef5ecb308754ef07f1973e90077.go",
+      "upstreamDigest": "sha256:8d17769d9cb4eba24e4b02f932a728efef71807cd3e0e826da6f6b0bf9bdf6fb",
+      "adaptedDigest": "sha256:172f01768fe2e1a40a8e0eaf092d8cc4a1fbfea3bc0e649603802a33c1d82a0d",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/69b51a9ff50ffe8daf31a64b2ba33912fd056bdd0efe2e826a0bdcebd0e51663.go",
+      "upstreamDigest": "sha256:980a827eda96f8b5697ee7134f4365552fe9f07da596dcef209d4bc252cca606",
+      "adaptedDigest": "sha256:6957bce4efe56aee4a40b3df19f4e48459894d257b97ee910afe34be59f01864",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/ea4bc58a390a5e344a80222ae085a33db411548b1d1e2a44fc6fd7a5ed3b1eb1.go",
+      "upstreamDigest": "sha256:1f280a8aac35884e90b47f10002223f915270a33da2e118236376e17a80a86e9",
+      "adaptedDigest": "sha256:227e95d3b9050e889d6ac5d749ea3dffa9c8a946b0b74d76310217369885e0e8",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/f79faebb82e62b6ebbf343d1e7d4658d35f3b565527610974cddca38863c7b78.go",
+      "upstreamDigest": "sha256:8619c7a43fdd79a63a9b3e9d8dbf68b75e94756b25599dcdb0520c599c5c9572",
+      "adaptedDigest": "sha256:07eab6b452a7516ff8239c39710e3d02cb700a29fe9658214eea65055651e9ae",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/7add7bdae583c086f31b635c9590481f5c8b018f7383db11a1877414f2b9d65c.go",
+      "upstreamDigest": "sha256:678a03ccc17166b6872fe3d3f2fe2fc0398316d97dd82383e79a89cabc653176",
+      "adaptedDigest": "sha256:13c18416cda0ab7c06d3e4f45769ef23a6e6f8303fb622628378e731d08b3207",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/ef88cb1633f094f0bf0c5c3ecb10cd2a47a6e603af7596f445c35c1b460e3923.go",
+      "upstreamDigest": "sha256:fe34cea5632272a81b43f12a0bdafc6a77ed85c42eac52ffb6eb8c8481638ac8",
+      "adaptedDigest": "sha256:fb68218eef52282fd55f40d84d276f96e8e708a521329b3f2d533adb1627dbdf",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/8bd19e68ccf8e5efe3c8d7e7a7dea012556a50650dce564e9756b3294bb5de7b.go",
+      "upstreamDigest": "sha256:9a72b90344c958ab3d80956e8a057a1fe60904f7a339144e3b70fb2487f4d409",
+      "adaptedDigest": "sha256:c01e4ead7469dda309188545f419f84f8c135af7fa5650a58e126a5f31e4ce76",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/d5017d28cf2fd68cf3bad6e7239d73e76b5e6e2af7a25cfb6dd77495c81b18a2.go",
+      "upstreamDigest": "sha256:9414828ddedc2d1ee45d81a06716c5a03effab33cb112fb79a136841ff30a833",
+      "adaptedDigest": "sha256:a75822481a90cf452060b76819ee1fc183c904d30e6723229a35a3ba0982075d",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/go_pkg_async.go",
+      "upstreamDigest": "sha256:0ab89732e936c9f766ca571e7f56d6406b1fd0a2d28931f5c8d2c86bdedf786b",
+      "adaptedDigest": "sha256:3cc14f0ec9482fd85a5260e306ae5fda296e5db0465113240cb66731180e32d2",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/go_pkg_runtime.go",
+      "upstreamDigest": "sha256:abff1455a417b51e77e83e01da34fe1048330a9fe0e7d607bb5265f2162eb9b5",
+      "adaptedDigest": "sha256:73abcc4cd10d65374a780e5bbec8086e70538cddae06a1c6d0b5605102e822e1",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/77e4d40226274800e05e8226fdb2fee89fa311ed041a555cfc755d0abbcfba8d.go",
+      "upstreamDigest": "sha256:86490b2027af4443dacfe96c313a6c632c03ea1acdf85f7f61c4fdde32bc2f3d",
+      "adaptedDigest": "sha256:c03bdabd217b837c3ae1aee56d129ad7f20192169a715532dbd7599792fb9c5b",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/9f25eeb8c312b45a70e58160db7ecd3a38011658458fad634e6540d9931fc1fd.go",
+      "upstreamDigest": "sha256:44c814afac4b0206a4f2af92607f93a72b93919ec2c3884d372edcdc24507584",
+      "adaptedDigest": "sha256:97c8e24e5c9bb7d2f51bbf18a750823b1471984f7e1afe11477fb248033adae2",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/6185a398430c0a7193d48987b43d98c8c60a50e7952b68c92f3579db8947cc3e.go",
+      "upstreamDigest": "sha256:d61e3134cbc26d533b8c3ddff72f41872cbd9e077e1ab3a4241ebf427cfc2861",
+      "adaptedDigest": "sha256:c8f4e9f7c5eb5c120941254c26fe715f72cdffcba3cf4c9ceb61e755641ba716",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/5ccfcb954915103dd5e2d895ccc0fdf74e8d693f59ecb6034ad7df6eb9e1a7be.go",
+      "upstreamDigest": "sha256:85d7c118044e2c84c5ca2bfd568a27e83cd1cef7f2aea8e961bb4c4200bd964d",
+      "adaptedDigest": "sha256:1b13340c9d3bc4c8fc6110708cf1182970be9e20aa346526b13504a7c6021bd7",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/7b9bf1707f3cfd85c6acb7890f62e82056324e088ee721cf8a6a3d568b42a6a4.go",
+      "upstreamDigest": "sha256:4bb48c05b855fd872bf3f8a10ff54759d756592588278e8bad2b8daabd509453",
+      "adaptedDigest": "sha256:675d02803c4829f63d4ec938ebfd141bc8c3021263ec93d3528bd491fa0882df",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/ff632f3c1ffa86f43c0bcd537407d20d591e1a68795624c5524f25bab4bc9202.go",
+      "upstreamDigest": "sha256:4bfed9a1a0640864748b3649ad731a35ca2eae6bf720f769978b87c01d8623fb",
+      "adaptedDigest": "sha256:e8f77f2415ca876fabb9df0ca1a5f52316ff8abcd47b66eb300cd4988e4951cc",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/37d077cf5ccb0e51e7e89eb396855d3e2e8522d4726d2dc083f5dad18c2bb9b9.go",
+      "upstreamDigest": "sha256:853f334017c5b37c282635101af5a5e1483c2bb07b7cfac90f195fa7676c596d",
+      "adaptedDigest": "sha256:425097622912fae0ef6b1b0fd0a9182bf727c35d08c7416fbb616fd16dc195f1",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/08fde42f343576bf6af0d3032311f56a5ca7d694af0bc8563580de74d9f65e66.go",
+      "upstreamDigest": "sha256:4b483d3c0629a7231e3bb54daca1f4441072bf792c6391f9eff29c59060a8a24",
+      "adaptedDigest": "sha256:a92b13766ad888eee02acad4eca492b2c1748654f4fe0791a5d3361a3ffb37ce",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/78204cdf492c1def3f85925649a53b2d49d11c5a42a7b627457a1f29af8efdbb.go",
+      "upstreamDigest": "sha256:e0167fa69083f5c525f217f15aba048c722d3eaffdc6ab561bfcdbaa8419d1b8",
+      "adaptedDigest": "sha256:e5c47d0ae85974cd6750670c61c5626c7390312bcaec44c35b0b5e77f289a5bd",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/a07ac7dbcd87f8fd438df10cc0a59f454f4f13519f8090a06428d677f9bee42c.go",
+      "upstreamDigest": "sha256:3b0c51c1695e32efd86c59cc18d34dcf0cf4a80c25420b7ab16372830d29a518",
+      "adaptedDigest": "sha256:d9133f922dbf8cb906a152e1e860f9beedb55a519871d16f91bc0ee74b5c39fd",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/c59dc89c40c7d46ac5bc4c8f768cdf785efb6dbac18975bc315318a03b122690.go",
+      "upstreamDigest": "sha256:a85ca040b18555e104421b2fc305578cf4db6faaca62a07d8d6652f8a38b3fd0",
+      "adaptedDigest": "sha256:9260efffe87f730ea96a4af6aace5fdf9da7a975cbce91f9028e044d9eb0f0d4",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/net_http_roundtrip.go",
+      "upstreamDigest": "sha256:a02501dcc615b6af4144655cd28f6a6901973267d2a188794e4552104dcf589a",
+      "adaptedDigest": "sha256:ad24457eb7cb8fb361fbb5778b72b830c66631a2f57cb8fd3424201770639bcb",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/net_http_transport.go",
+      "upstreamDigest": "sha256:c9146e77adc22d4b74ba77384ec7be7fc27c3af21ff20485f642b4d611b381a4",
+      "adaptedDigest": "sha256:8b51d5c7868659c078f57af7a912fad0b76d8107d56faf70a00558b32416ed86",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/net_net_fake.go",
+      "upstreamDigest": "sha256:784b369c57be52fa87ace5f10e07e3c24b45d549639e1487734b793024188df3",
+      "adaptedDigest": "sha256:4045b16c285764ff370907b4eb9249ed9af9b840f04a8fed92e409ad3ea933ad",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/os_file_unix.go",
+      "upstreamDigest": "sha256:877dd004355c475e8805b5700061604558422da057037556e0cf6edeb36ab7ec",
+      "adaptedDigest": "sha256:877dd004355c475e8805b5700061604558422da057037556e0cf6edeb36ab7ec",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_lock_futex.go",
+      "upstreamDigest": "sha256:b0f86c66fc0598546c54e4db32d9e1479b77e66e67539872870fe41a3d413798",
+      "adaptedDigest": "sha256:b0f86c66fc0598546c54e4db32d9e1479b77e66e67539872870fe41a3d413798",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_lock_js.go",
+      "upstreamDigest": "sha256:32537875a1bae14517f33ca4fa5cb37daa4fb375da655a534d9e8dc6da3dbed8",
+      "adaptedDigest": "sha256:32537875a1bae14517f33ca4fa5cb37daa4fb375da655a534d9e8dc6da3dbed8",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_lock_sema.go",
+      "upstreamDigest": "sha256:284889789238c412c9f2e2c99e10912641fac591523a462659c9ec49ab905239",
+      "adaptedDigest": "sha256:284889789238c412c9f2e2c99e10912641fac591523a462659c9ec49ab905239",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_lock_wasip1.go",
+      "upstreamDigest": "sha256:720415791179802557117471740f92cddf4b8a8aa0ebfdba1322bbc621e1f62c",
+      "adaptedDigest": "sha256:720415791179802557117471740f92cddf4b8a8aa0ebfdba1322bbc621e1f62c",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_mcleanup.go",
+      "upstreamDigest": "sha256:bda3732f12dc16750994d6ce6b10b6844beb2ea1aa854c3407be757097f04207",
+      "adaptedDigest": "sha256:0e1ed8be1fbd272ac1bf2e6dd1d4f962046c055a8c8d6fde15ec43d4efbc2895",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_mfinal.go",
+      "upstreamDigest": "sha256:49d40539afdd927355c9cfbfabc7130c561d0a19e68ca5e621082e58e9d96cd7",
+      "adaptedDigest": "sha256:34accb50082159bdcd927a896ba4dc5491d0bcd2158fdd31784c7fee654c85c8",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_mgc.go",
+      "upstreamDigest": "sha256:b1cb75ff1b5da577a1af442d5c52da2a08328510e4e70f66cb88d92e02a5b33e",
+      "adaptedDigest": "sha256:b1cb75ff1b5da577a1af442d5c52da2a08328510e4e70f66cb88d92e02a5b33e",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_mgcscavenge.go",
+      "upstreamDigest": "sha256:8d462284b9cc551410de1d19b910e4d263d29869596314c0a8dc4af8f8afa25b",
+      "adaptedDigest": "sha256:8d462284b9cc551410de1d19b910e4d263d29869596314c0a8dc4af8f8afa25b",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_mgcsweep.go",
+      "upstreamDigest": "sha256:81139b39aeacd63e86bdadb6e921882e871bb30c87479b454aa5d82adc0c91aa",
+      "adaptedDigest": "sha256:81139b39aeacd63e86bdadb6e921882e871bb30c87479b454aa5d82adc0c91aa",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_mheap.go",
+      "upstreamDigest": "sha256:848cedd74ae1d10af65eb3beed88ddd7d22d184a64a5a7477251c4886e8a459d",
+      "adaptedDigest": "sha256:848cedd74ae1d10af65eb3beed88ddd7d22d184a64a5a7477251c4886e8a459d",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_netpoll_wasip1.go",
+      "upstreamDigest": "sha256:5462ad1c05a38ba052d77b3795fb284e2606471585ef5faef4f99cc27f400082",
+      "adaptedDigest": "sha256:c0ac91cbc19727e2d7e279794ecb27ccd21d55ef57964ec06b525be2f9eab8d4",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_os_wasip1.go",
+      "upstreamDigest": "sha256:c8ddc4ddc00af788539897f9a75c814d9c7fcfe9416dbf977f896631c158a3ca",
+      "adaptedDigest": "sha256:03e4ae290636d748cce9c257d9b69e54004791abc50d868075a131279be7dad6",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_pinner.go",
+      "upstreamDigest": "sha256:6f638fb797edb1ed42601f11a086c8f6a34f095d7c85b9f53773e59528ff38bd",
+      "adaptedDigest": "sha256:6f638fb797edb1ed42601f11a086c8f6a34f095d7c85b9f53773e59528ff38bd",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_proc.go",
+      "upstreamDigest": "sha256:64e0822a2f8b8a6ed6e764e5c0f224b392e3a1343a328d30d7b34441ae7c9cef",
+      "adaptedDigest": "sha256:087408c7727fe3f1adcc48ac92c0b60ad5ef4a585cfa244bc811d48c7eeea1d5",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_runtime2.go",
+      "upstreamDigest": "sha256:7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da",
+      "adaptedDigest": "sha256:7d1bf63a1359344d7e00ec3cc60aaee35fbeb5896e3e6e5435383c833ebb7676",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/runtime_time.go",
+      "upstreamDigest": "sha256:cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682",
+      "adaptedDigest": "sha256:170c358003de722daf30448bbf9fba7c83ca92ef4f693fb9d9f14f54fe553123",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/syscall_fs_wasip1.go",
+      "upstreamDigest": "sha256:5cf5a98b3361c2d839e084b183366849cd276c9585620f04cc3c75e35a371448",
+      "adaptedDigest": "sha256:a1a4acb32932f8eb90860ae34539241134b13787135c6190818627b75836fd4a",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/syscall_syscall_wasip1.go",
+      "upstreamDigest": "sha256:2017243455e2f7f62bdd0c36040be61af3989b5d96ab81d115d24228657ed1b1",
+      "adaptedDigest": "sha256:276ef99951d812ee658ed26fe6b22b8badc6be6c13fa9c12fbd86291a7705066",
+      "profile": "go-component-activation-v4"
+    },
+    {
+      "name": "go-runtime-overlay/unique_canonmap.go",
+      "upstreamDigest": "sha256:c2231dbb996483905d256f0c1d8cf64266fd89c63bc339e0530e536bedb5aedb",
+      "adaptedDigest": "sha256:6931daabc50614ab9b74dfcf5355eaeebf22c1afb9a46bd95dd454158ef6374e",
+      "profile": "go-component-activation-v4"
+    }
+  ]
+}
