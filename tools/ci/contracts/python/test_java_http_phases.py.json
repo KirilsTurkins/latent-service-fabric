@@ -5,6 +5,7 @@
     "JavaHttpPhaseCampaignSource.test_default_library_and_actual_connect_boundary_do_not_relabel_root_or_header_wait",
     "JavaHttpPhaseCampaignSource.test_normal_project_binds_published_defaults_to_explicit_phase_world_and_unchanged_sdk",
     "JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile",
+    "JavaHttpPhaseHostReference.test_published_fixture_handles_checked_json_errors_without_changing_success_or_disconnect",
     "JavaHttpPhases.test_changed_sdk_or_staged_class_refuses_without_replacing_any_bytes",
     "JavaHttpPhases.test_declared_phase_import_selects_only_v7_and_cannot_mix_transaction_authority",
     "JavaHttpPhases.test_derived_adapter_is_bound_to_captured_preimage_and_existing_owner_limits",
@@ -62,6 +63,20 @@
       "skipSites": []
     },
     "JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for host-only adapter reference')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseHostReference.test_published_fixture_handles_checked_json_errors_without_changing_success_or_disconnect": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -150,6 +165,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_phases.py",
-  "reviewReason": "Keep all seven original phase/reference cases and four campaign controls; strengthen the captured-dependency assertion with the second unchanged published default client.",
+  "reviewReason": "Add one installed-JDK language-boundary control for the actual pinned org.json checked-exception fixture failure. Both success results, exact checked exception cause identity and disconnect-finally remain asserted; original cases, all old class/module fixtures and skip guards unchanged. This is not a published-library or component execution claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
