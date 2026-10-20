@@ -95,12 +95,22 @@ pub(super) fn validate(
                 (trusted.id_of(index).as_deref() == Some(name.as_str())).then_some(index)
             })
             .ok_or_else(|| incompatible("pinned-host-interface-missing"))?;
-        comparison.host_interface(
-            *id,
-            interface,
-            specification.asynchronous,
-            specification.resource_types(),
-        )?;
+        // A phase-only world still imports its original nominal resource
+        // interface. It supplies every pinned type, but no legacy operation.
+        // Validate it in this same comparison budget; no provider is installed.
+        if name == "latent:http/streaming@0.3.0"
+            && imports.contains_key("latent:http/phase-timing@0.4.0")
+            && resolve.interfaces[*id].functions.is_empty()
+        {
+            comparison.host_type_owner(*id, interface, specification.resource_types())?;
+        } else {
+            comparison.host_interface(
+                *id,
+                interface,
+                specification.asynchronous,
+                specification.resource_types(),
+            )?;
+        }
     }
     Ok(())
 }

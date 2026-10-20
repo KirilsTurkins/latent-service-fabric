@@ -275,3 +275,42 @@ fn source_order_is_irrelevant_and_utf8_documentation_is_digest_bound() {
     let plain = derive(WIT).unwrap();
     assert_ne!(a.contracts(), plain.contracts());
 }
+
+#[test]
+fn phase_nominal_owner_supports_normal_contract_derivation_without_legacy_operations() {
+    let old = latent_core::PHASE3_HOST_ABI_V3
+        .interface("latent:http/streaming@0.3.0")
+        .unwrap()
+        .wit;
+    let nominal: String = old
+        .lines()
+        .filter(|line| !line.contains(": async func"))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    let phase = latent_core::PHASE3_HOST_ABI_V7
+        .interface("latent:http/phase-timing@0.4.0")
+        .unwrap()
+        .wit;
+    let source = WIT.replace(
+        "world service {",
+        "world service { import latent:http/phase-timing@0.4.0;",
+    );
+    let files = BTreeMap::from([
+        ("wit/app.wit".into(), source.as_bytes()),
+        ("wit/deps/old/package.wit".into(), nominal.as_bytes()),
+        ("wit/deps/phase/package.wit".into(), phase.as_bytes()),
+    ]);
+    let result = derive_capsule_contracts(WORLD, &files, SemanticLimits::default()).unwrap();
+    assert_eq!(result.exports(), &["example:author/api@1.2.3"]);
+    assert_eq!(
+        result.imports(),
+        &[
+            "latent:http/phase-timing@0.4.0",
+            "latent:http/streaming@0.3.0"
+        ]
+    );
+    let changed = nominal.replace("resource chunk;", "resource chunk; type hidden = u32;");
+    let mut changed_files = files.clone();
+    changed_files.insert("wit/deps/old/package.wit".into(), changed.as_bytes());
+    assert!(derive_capsule_contracts(WORLD, &changed_files, SemanticLimits::default()).is_err());
+}
