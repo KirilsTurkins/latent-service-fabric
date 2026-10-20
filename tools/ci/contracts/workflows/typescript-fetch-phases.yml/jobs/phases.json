@@ -17,6 +17,10 @@
         }
       },
       {
+        "name": "Fetch only the authenticated native producer source object",
+        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
+      },
+      {
         "uses": "actions/setup-python",
         "with": {
           "python-version": "3.13.5"
@@ -84,7 +88,7 @@
   },
   "jobId": "phases",
   "kind": "job",
-  "reviewReason": "Add focused V7 standard Fetch signed consumer and exact native acquisition; preserve all historical commands and cases.",
+  "reviewReason": "Fetch the exact nonancestor producer source object before existing Git-based acquisition controls; preserve all compiler and guest commands.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-phases.yml"
 }
