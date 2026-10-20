@@ -250,6 +250,8 @@ jobs:
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm.log
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm-context.command.json
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-expected-wit.log
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-compiled-wit.log
             ${{ runner.temp }}/java-http-phases/campaign/node/qualification.json
             ${{ runner.temp }}/java-http-phases/campaign/node/FAILED.json
             ${{ runner.temp }}/java-http-phases/campaign/node/controls/*.json
