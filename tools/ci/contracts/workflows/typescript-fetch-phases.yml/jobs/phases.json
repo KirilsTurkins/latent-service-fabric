@@ -1,0 +1,90 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed default published clients wire reasons and root retirement",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check phase Fetch source and real wire fixture controls",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_phase_execution tools.tests.test_java_phase_native_products -v"
+      },
+      {
+        "name": "Install normal compiler isolation boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install normal pinned public compiler tools",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/phase-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire original import engine and compiler",
+        "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/phase-engine\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire the exact shared V7 native producer",
+        "run": "python3 -B tools/java_phase_native_products.py --output \"$RUNNER_TEMP/phase-native\""
+      },
+      {
+        "name": "Build sign and execute actual phase Fetch programme",
+        "run": "python3 -B tools/qualify_typescript_fetch_phases.py --acquired \"$RUNNER_TEMP/phase-engine\" --native \"$RUNNER_TEMP/phase-native\" --tools \"$RUNNER_TEMP/phase-tools\" --output \"$RUNNER_TEMP/phase-fetch\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain source identities original compiler results real contacts and physical owners",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-fetch-phases-${{ github.sha }}",
+          "path": "${{ runner.temp }}/phase-engine/acquisition.json\n${{ runner.temp }}/phase-native/*.json\n${{ runner.temp }}/phase-fetch/*.json\n${{ runner.temp }}/phase-fetch/build/*.json\n${{ runner.temp }}/phase-fetch/build/*.wit\n${{ runner.temp }}/phase-fetch/build/component.wasm\n${{ runner.temp }}/phase-fetch/build/package/**\n${{ runner.temp }}/phase-fetch/build/logs/\n${{ runner.temp }}/phase-fetch/node/*.json\n${{ runner.temp }}/phase-fetch/node/controls/\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "phases",
+  "kind": "job",
+  "reviewReason": "Add focused V7 standard Fetch signed consumer and exact native acquisition; preserve all historical commands and cases.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-fetch-phases.yml"
+}

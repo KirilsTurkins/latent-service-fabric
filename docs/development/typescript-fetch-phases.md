@@ -30,3 +30,26 @@ V7 component, provider, production enablement or whole #691/#745 completion is
 claimed. That actual qualification depends on #1184's maintained phase contract
 and separately authenticated native products. The existing engine and compiler
 splicer identities must still validate; this is not a replacement engine.
+
+## Signed consumer programme
+
+The focused `typescript-fetch-phases.yml` lane prepares one fresh component with
+unchanged Ky 2.2.0 and Wretch 3.0.9, plus an outside-checkout transitive local
+package. It uses normal dependency capture, removes the original local package,
+and performs normal compilation, packaging, signing and node admission.
+The compiler engine and splicer retain their authenticated historical identities;
+only the separately authenticated V7 native producer supplies the host products.
+
+Its pending execution gate covers both clients' ordinary JSON and HTTP-error
+paths, actual empty and Latin1 wire reasons through Response.clone(), public
+abort during held headers/body, an uncertain single POST without replay, a denied
+target without contact, root cancellation/deadline, and a fresh invocation. The
+peer never releases the four held responses. Each terminal invocation must retire
+its physical owners before the next case. The explicit published-client owner
+profile remains 64 tasks, 64 queued work and 256 native owners; it establishes no
+minimum-client or default-budget claim.
+
+The source and real-wire reference controls pass. Signed execution is pending;
+no whole #691/#745 criterion is credited to preparing this programme. It supplies
+no Fetch connect/read timeout extension, TLS/HTTP2 reason fabrication or new
+stream grant.
