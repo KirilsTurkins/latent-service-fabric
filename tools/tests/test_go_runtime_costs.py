@@ -203,14 +203,38 @@ class GoRuntimeCosts(unittest.TestCase):
         self.assertIn('runtime.GC()', source)
 
     def test_compiler_reference_requires_actual_function_local_stack_address_and_bounded_frame(self):
-        source = b'main.costRecursive STEXT size=500 args=0x28 locals=0x2040 funcid=0x0\nMOVD $main.frame+48(SP), R0\n'
+        source = (Path(__file__).parent / 'fixtures/go_runtime_costs/wasip1-3337.stderr.txt').read_bytes()
         value = reference.stack_placement_observation(source)
-        self.assertEqual(value['compilerFrameBytes'], 8256)
+        self.assertEqual(value['compilerFrameBytes'], 16424)
+        self.assertEqual(value['arrayStackOffset'], 40)
+        self.assertEqual(value['checksumCopyStackOffset'], 8232)
         self.assertFalse(value['referenceExecuted'])
         self.assertFalse(value['finalComponentPlacementInferredFromReferenceAlone'])
-        for changed in (b'unknown', source * 2, source.replace(b'main.frame+48(SP)', b'heap'),
-                        source + b'moved to heap: frame', source.replace(b'0x2040', b'0x1000'),
-                        source.replace(b'0x2040', b'0x4000'), b'x' * 262145):
+        for changed in (b'unknown', source * 2, source.replace(b'Get\tSP', b'Get\tR0'),
+                        source + b'moved to heap: frame', source.replace(b'locals=0x4028', b'locals=0x1000'),
+                        source.replace(b'locals=0x4028', b'locals=0x8028'), b'x' * 262145):
+            with self.subTest(changed=changed[:100]), self.assertRaisesRegex(RuntimeError, 'Go-cost-'):
+                reference.stack_placement_observation(changed)
+
+    def test_retained_pinned_wasm_diagnostics_prove_the_real_array_initialization_and_checksum_copy(self):
+        import hashlib
+        source = (Path(__file__).parent / 'fixtures/go_runtime_costs/wasip1-3337.stderr.txt').read_bytes()
+        self.assertEqual(len(source), 36849)
+        self.assertEqual(hashlib.sha256(source).hexdigest(),
+            'fe791676509f5193a9833b94371079e8fd336692f878ae03be289ed19ae980cd')
+        self.assertNotIn(b'main.frame', source)
+        self.assertIn(b'locals=0x4028', source)
+        self.assertEqual(reference.stack_placement_observation(source)['ordinaryArrayBytes'], 8192)
+
+    def test_wasm_reference_rejects_wrong_initialization_copy_source_line_and_other_function(self):
+        source = (Path(__file__).parent / 'fixtures/go_runtime_costs/wasip1-3337.stderr.txt').read_bytes()
+        for changed in (source.replace(b'I32Const\t$8192', b'I32Const\t$8191'),
+                source.replace(b'MemoryFill', b'MemoryCopy'), source.replace(b'MemoryCopy', b'MemoryFill'),
+                source.replace(b'main.go:7)', b'main.go:8)'),
+                source.replace(b'I64Const\t$8232', b'I64Const\t$8233'),
+                source.replace(b'main.costRecursive STEXT', b'main.other STEXT'),
+                source.replace(b'Call\tmain.costRecursive(SB)', b'Call\tmain.other(SB)'),
+                source.replace(b'main.go:18)', b'main.go:19)'), source + b'frame escapes to heap'):
             with self.subTest(changed=changed[:100]), self.assertRaisesRegex(RuntimeError, 'Go-cost-'):
                 reference.stack_placement_observation(changed)
 
@@ -244,13 +268,12 @@ class GoRuntimeCosts(unittest.TestCase):
                     check.assertEqual(args[1], 'build')
                     check.assertIn('-gcflags=lsf-cost-stack-proof=-m=2 -S', args)
                     (output / 'logs/01-stack-reference-compile-not-execute.stderr.txt').write_bytes(
-                        b'main.costRecursive STEXT size=500 args=0x28 locals=0x2040 funcid=0x0\n'
-                        b'MOVD $main.frame+48(SP), R0\n')
+                        (Path(__file__).parent / 'fixtures/go_runtime_costs/wasip1-3337.stderr.txt').read_bytes())
                     return b''
             with patch.object(reference, 'Commands', ControlledCommands), \
                     patch.object(reference.shutil, 'which', return_value=str(compiler)):
                 value = reference.stack_placement_reference(output)
-            self.assertEqual(value['compilerFrameBytes'], 8256)
+            self.assertEqual(value['compilerFrameBytes'], 16424)
             self.assertFalse(value['referenceExecuted'])
 
 

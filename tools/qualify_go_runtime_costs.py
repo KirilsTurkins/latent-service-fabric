@@ -36,14 +36,35 @@ CASES = {'go-component-async-v1': [('baseline', 'baseline')],
 def stack_placement_observation(stderr):
     require(type(stderr) is bytes and len(stderr) <= 262144, 'Go-cost-stack-placement-output-bound')
     text = stderr.decode('utf-8')
-    rows = re.findall(r'^main\.costRecursive STEXT size=[0-9]+ args=0x[0-9a-f]+ locals=0x([0-9a-f]+)\b', text, re.M)
-    require(len(rows) == 1 and re.search(r'\bmain\.frame(?:\+[0-9]+)?\(SP\)', text) is not None
+    rows = re.findall(r'^main\.costRecursive STEXT size=[0-9]+ align=0x[0-9a-f]+ args=0x[0-9a-f]+ locals=0x([0-9a-f]+)\b', text, re.M)
+    require(len(rows) == 1
             and 'moved to heap: frame' not in text and 'frame escapes to heap' not in text,
             'Go-cost-actual-recursive-stack-frame-required')
     size = int(rows[0], 16)
-    require(8192 <= size < 16384, 'Go-cost-recursive-stack-frame-size')
+    # The pinned wasm backend lowers local addresses to Get SP, not symbolic
+    # main.frame(SP). The unchanged value-range checksum also makes an 8 KiB
+    # copy. Authenticate both concrete stack addresses inside this function.
+    require(size == 40 + 2 * 8192, 'Go-cost-recursive-stack-frame-size')
+    require(re.findall(r'^(\S+) STEXT ', text, re.M) == ['main.costRecursive', 'main.main'],
+            'Go-cost-exact-reference-functions-required')
+    function = text[text.index('main.costRecursive STEXT'):].split('\nmain.main STEXT', 1)[0]
+    instructions = re.findall(
+        r'^\t0x[0-9a-f]+ [0-9]+ \([^\n]+/main\.go:([0-9]+)\)\t([^\n]+)$', function, re.M)
+    instructions = [(int(line), instruction) for line, instruction in instructions]
+    def present(line, sequence):
+        expected = [(line, instruction) for instruction in sequence]
+        return sum(instructions[index:index + len(expected)] == expected
+                   for index in range(len(instructions))) == 1
+    stack_address = lambda offset: ['Get\tSP', 'I64ExtendI32U', 'I64Const\t$' + str(offset),
+                                   'I64Add', 'I32WrapI64']
+    require(present(7, stack_address(40) + ['I32Const\t$0', 'I32Const\t$8192', 'MemoryFill'])
+            and present(18, stack_address(8232) + stack_address(40) + ['I32Const\t$8192', 'MemoryCopy'])
+            and '\tCall\tmain.costRecursive(SB)' in function,
+            'Go-cost-actual-wasm-local-stack-address-required')
     return {'target': 'wasip1/wasm', 'function': 'main.costRecursive', 'compilerFrameBytes': size,
-            'ordinaryArrayBytes': 8192, 'referenceExecuted': False,
+            'ordinaryArrayBytes': 8192, 'arrayStackOffset': 40, 'checksumCopyStackOffset': 8232,
+            'placementEvidence': 'wasm-SP-relative-initialization-and-checksum-copy',
+            'referenceExecuted': False,
             'finalComponentPlacementInferredFromReferenceAlone': False}
 
 
