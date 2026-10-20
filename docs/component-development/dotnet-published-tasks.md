@@ -16,7 +16,7 @@ deterministic. Additional cases preserve the final original exception object
 and the cancellation token while preventing another attempt after cancellation.
 Every invocation must begin with fresh static state.
 
-The same explicit CLOCK, ACTIVATION and RANDOM fixture authority used by the
+The same explicit CLOCK, WALL, ACTIVATION and RANDOM fixture authority used by the
 ordinary task programme is required; there is no HTTP declaration or grant.
 All original node assertions, provider-idle/physical observations, fuel/memory
 limits, zero outbound/log/effect assertions and clean/reaped shutdown remain.
