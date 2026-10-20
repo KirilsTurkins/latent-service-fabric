@@ -181,7 +181,7 @@ def project(directory:Path,outside:Path):
         '<PropertyGroup><AssemblyName>'+PACKAGES[1]+'</AssemblyName></PropertyGroup><ItemGroup>'+resources+'</ItemGroup></Project>').encode())
     (library/'Library.cs').write_bytes(LIBRARY_SOURCE.encode())
     (library/'Library.csproj').write_bytes(('<Project Sdk="Microsoft.NET.Sdk">'+PROPERTIES+
-        '<PropertyGroup><AssemblyName>'+PACKAGES[0]+'</AssemblyName></PropertyGroup><ItemGroup>'+ 
+        '<PropertyGroup><AssemblyName>'+PACKAGES[0]+'</AssemblyName></PropertyGroup><ItemGroup>'+
         '<Compile Remove="child/**" /><ProjectReference Include="child/Child.csproj" /></ItemGroup></Project>').encode())
     (library/'nuget.config').write_bytes(b'<configuration><packageSources><clear /></packageSources></configuration>')
     (library/'global.json').write_bytes(read_file(app/'global.json'))
