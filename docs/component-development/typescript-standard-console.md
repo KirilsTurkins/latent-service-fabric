@@ -48,8 +48,10 @@ object-refusal, strict budget and fresh-state cases. It requires actual
 LogBytes, zero unrelated effects and existing provider-idle/physical cleanup
 checks. It uses the existing native products and original job/node deadlines.
 
-Local Node/Acorn/esbuild and data controls are source evidence. The new signed
-programme has not yet passed; component initialization, host correlation and
-strict accounting are not newly qualified by those local controls. This is a
-partial TypeScript logging/initialization candidate for #681, not six-language
-facility, asynchronous logging, publisher, release or whole-ticket completion.
+Local Node/Acorn/esbuild controls remain source evidence. The maintained
+[signed console step](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39294563856/job/118204349964)
+passed at source9744563fc0112892d9698ffb0973d067d2b36d9b with the eight
+required Console cases and original programme preserved. That historical
+step success is separate from the local controls; it does not qualify
+asynchronous logging, the six-language coupled lifecycle matrix, publisher,
+release or whole-ticket completion.
