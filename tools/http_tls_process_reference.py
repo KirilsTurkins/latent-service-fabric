@@ -23,7 +23,7 @@ def exercise(certificate: Path, key: Path):
     with tempfile.TemporaryDirectory(prefix='lsf-tls-process-') as temporary, owned_cancellation() as cancellation:
         private = Path(temporary)
         credential = private/'authorization'
-        authorization = b'Bearer '+b'p'*64
+        authorization = b'Bearer '+b'b'*64
         credential.write_bytes(authorization)
         credential.chmod(0o600)
         process = Process([sys.executable, '-B', str(ROOT/'tools/standard_http/process_peer.py'),
