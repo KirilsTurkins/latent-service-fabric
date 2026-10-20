@@ -1,0 +1,163 @@
+package network
+
+import (
+	"context"
+	"testing"
+)
+
+func TestIndependentReadWriteAndSameDirectionRefusal(t *testing.T) {
+	owner := newConnectionOwner(42)
+	read, _, releaseRead, ok := owner.borrow(context.Background(), streamRead)
+	if !ok || read != 42 {
+		t.Fatal("read owner")
+	}
+	write, _, releaseWrite, ok := owner.borrow(context.Background(), streamWrite)
+	if !ok || write != 42 {
+		t.Fatal("independent write owner")
+	}
+	if _, _, _, ok := owner.borrow(context.Background(), streamRead); ok {
+		t.Fatal("duplicate read queued or admitted")
+	}
+	if _, _, _, ok := owner.borrow(context.Background(), streamWrite); ok {
+		t.Fatal("duplicate write queued or admitted")
+	}
+	releaseRead()
+	_, _, releaseNext, ok := owner.borrow(context.Background(), streamRead)
+	if !ok {
+		t.Fatal("retired direction not reusable")
+	}
+	releaseNext()
+	releaseWrite()
+}
+
+func TestCloseCancelsBothDirectionsButWaitsForRealAcknowledgements(t *testing.T) {
+	owner := newConnectionOwner(42)
+	_, readContext, releaseRead, ok := owner.borrow(context.Background(), streamRead)
+	if !ok {
+		t.Fatal("read owner")
+	}
+	_, writeContext, releaseWrite, ok := owner.borrow(context.Background(), streamWrite)
+	if !ok {
+		t.Fatal("write owner")
+	}
+	closed := make(chan int)
+	go func() {
+		value, first := owner.beginClose()
+		if !first {
+			closed <- -1
+			return
+		}
+		closed <- value
+	}()
+	<-readContext.Done()
+	<-writeContext.Done()
+	select {
+	case <-closed:
+		t.Fatal("close consumed live borrows")
+	default:
+	}
+	releaseRead()
+	select {
+	case <-closed:
+		t.Fatal("close refunded unacknowledged write")
+	default:
+	}
+	if _, _, _, ok := owner.borrow(context.Background(), streamReady); ok {
+		t.Fatal("borrow after closing")
+	}
+	releaseWrite()
+	if <-closed != 42 {
+		t.Fatal("original owner lost")
+	}
+	owner.finishClose()
+	if _, first := owner.beginClose(); first {
+		t.Fatal("duplicate final own handle")
+	}
+}
+
+func TestSendShutdownSharesWriteOwnerAndPreservesRead(t *testing.T) {
+	owner := newConnectionOwner(7)
+	_, readContext, releaseRead, ok := owner.borrow(context.Background(), streamRead)
+	if !ok {
+		t.Fatal("read owner")
+	}
+	_, _, releaseShutdown, ok := owner.borrow(context.Background(), streamWrite)
+	if !ok {
+		t.Fatal("send shutdown prevented by independent read")
+	}
+	if _, _, _, ok := owner.borrow(context.Background(), streamWrite); ok {
+		t.Fatal("write overlapped send shutdown")
+	}
+	select {
+	case <-readContext.Done():
+		t.Fatal("send shutdown cancelled independent read")
+	default:
+	}
+	releaseShutdown()
+	if owner.active != 1<<streamRead {
+		t.Fatal("pending read owner refunded by shutdown")
+	}
+	releaseRead()
+}
+
+func TestCloseWithoutBorrowRetainsOneFinalOwner(t *testing.T) {
+	owner := newConnectionOwner(91)
+	value, first := owner.beginClose()
+	if !first || value != 91 {
+		t.Fatal("initial own value")
+	}
+	owner.finishClose()
+	if owner.value != 0 {
+		t.Fatal("value retained after actual final close")
+	}
+	if _, first := owner.beginClose(); first {
+		t.Fatal("second own value")
+	}
+	if _, _, _, ok := owner.borrow(context.Background(), streamInspect); ok {
+		t.Fatal("closed inspect admitted")
+	}
+}
+
+func TestInvalidOwnerDirectionOrContextNeverBorrows(t *testing.T) {
+	owner := newConnectionOwner(1)
+	var absent *connectionOwner[int]
+	if _, _, _, ok := absent.borrow(context.Background(), streamRead); ok {
+		t.Fatal("nil owner")
+	}
+	if _, _, _, ok := owner.borrow(nil, streamRead); ok {
+		t.Fatal("nil context")
+	}
+	for _, direction := range []int{-1, streamDirections, 100} {
+		if _, _, _, ok := owner.borrow(context.Background(), direction); ok {
+			t.Fatal("invalid direction")
+		}
+	}
+	if owner.active != 0 {
+		t.Fatal("invalid input changed owners")
+	}
+}
+
+func TestDuplicateReleaseFailsClosedWithoutRefundingAnotherDirection(t *testing.T) {
+	owner := newConnectionOwner(1)
+	_, _, release, ok := owner.borrow(context.Background(), streamRead)
+	if !ok {
+		t.Fatal("read owner")
+	}
+	_, _, releaseWrite, ok := owner.borrow(context.Background(), streamWrite)
+	if !ok {
+		t.Fatal("write owner")
+	}
+	release()
+	func() {
+		defer func() {
+			if recover() == nil {
+				t.Fatal("duplicate release accepted")
+			}
+		}()
+		release()
+	}()
+	if owner.active != 1<<streamWrite {
+		t.Fatal("unrelated write owner refunded")
+	}
+	releaseWrite()
+}

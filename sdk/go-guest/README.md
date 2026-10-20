@@ -126,6 +126,13 @@ did not happen.
 
 ## Evidence and limitations
 
+The separate [declared-stream source port](../../docs/development/go-standard-network.md)
+requires the explicit streams WIT import and complete managed v5 profile. Its
+private connection owner and ordinary `net` projection are construction
+prerequisites; they do not install a provider or qualify TCP/DNS/TLS, signed
+clients or physical/kernel accounting. Undeclared streams keep the existing
+SDK path, and native/fake socket fallback remains refused.
+
 `BUILD-COMPLETE.json` means compilation and packaging succeeded, not that the
 guest ran or that the ticket is qualified. `SDK-BUILD.json` deliberately records
 `runtimeQualified: false`. The Linux `guest_sdk` integration gate must then

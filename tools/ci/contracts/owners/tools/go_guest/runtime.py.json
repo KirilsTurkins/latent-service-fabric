@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Unconditional exact-pinned fake socket refusal before optional runtime selection; existing bridge authority and scheduler paths retained.",
+  "reviewReason": "Retain unconditional exact fake-network refusal and default paths; selected complete v5 streams reuses canonical cancellation bridge once.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3e85abf523b436e97ad5cc1cbf1b458a196dd673d61ba2ec5171cf8ea0575978"
+  "sha256": "8b81c82303cec5a017cde5b65392e9a32acd335a0ea0b3b6a44e7eee61ddb861"
 }

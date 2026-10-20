@@ -31,11 +31,11 @@ async fn returned(f: &Fixture, mode: u32, expected: u32) {
         serde_json::from_slice::<serde_json::Value>(&output).unwrap(),
         serde_json::json!([expected])
     );
-    assert_eq!(consumption.outbound_requests, 1);
     let budget = control
         .budget
         .finalize_at(Some(&consumption), Instant::now());
     assert!(budget.violation().is_none());
+    assert_eq!(budget.consumption().outbound_requests, 1);
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     f.idle();
     assert_eq!(f.io.snapshot(), IoSnapshot::default());

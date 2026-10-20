@@ -196,7 +196,9 @@ class Compiler:
         if any('panic("not implemented")' in path.read_text() for path in generated.glob("export_*/*.go")):
             raise ValueError("unimplemented-Go-WIT-export")
         binding_before = {path: path.read_bytes() for path in generated.glob("*/wit_bindings.go")}
-        http_context = install(self.sdk, generated, http_context=activation)
+        from tools.go_guest.network_context import selected as select_network
+        network_context = select_network(generated, runtime_profile)
+        http_context = install(self.sdk, generated, http_context=activation, network_context=network_context)
         from tools.go_guest.standard_log import install as install_standard_log
         standard_log, log_transformations = install_standard_log(self.sdk, generated, runtime_profile)
         transforms = entry_transform
@@ -229,7 +231,8 @@ class Compiler:
             overlay_path = overlay(self.goroot, output / "runtime-overlay",
                                    generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
                                    activation=activation, checkpoints=checkpoints, timers=timers, initializers=initializers,
-                                   http_context=http_context, standard_log=standard_log, managed_idle=managed_idle)
+                                   http_context=http_context, standard_log=standard_log, managed_idle=managed_idle,
+                                   network_context=network_context)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
             if selected_module is not None and selected_module["tags"]:
                 self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
@@ -238,6 +241,11 @@ class Compiler:
                 from tools.go_guest.http import prepare as prepare_http
                 module_identity = selected_module['module'] if selected_module is not None else 'wit_component'
                 replacements.update(prepare_http(self.goroot, self.sdk, output/'standard-http', module_identity))
+                overlay_path.write_text(json.dumps({'Replace': replacements}, indent=2, sort_keys=True) + '\n')
+            if network_context:
+                from tools.go_guest.network import prepare as prepare_network
+                module_identity = selected_module['module'] if selected_module is not None else 'wit_component'
+                replacements.update(prepare_network(self.goroot, self.sdk, output/'standard-network', module_identity))
                 overlay_path.write_text(json.dumps({'Replace': replacements}, indent=2, sort_keys=True) + '\n')
             if checkpoints:
                 from tools.go_application_dependencies import json_stream

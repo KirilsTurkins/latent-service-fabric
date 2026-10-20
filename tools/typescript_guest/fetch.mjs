@@ -1,11 +1,14 @@
 // Compiler-owned candidate over exact typed streaming HTTP imports. No socket,
 // executor, credential or grant is supplied by the application to this module.
-export function installFetch(http, snapshotActive, target = globalThis) {
+export function installFetch(http, snapshotActive, target = globalThis, profile = 'lsf-fetch-buffered-v1') {
+  if (!['lsf-fetch-buffered-v1', 'lsf-fetch-phase-buffered-v2'].includes(profile))
+    throw new TypeError('unknown-standard-fetch-profile');
+  const phaseTiming = profile === 'lsf-fetch-phase-buffered-v2';
   const maxBody = 1024 * 1024, maxHeaders = 64, maxHeaderBytes = 32768;
   const encoder = new target.TextEncoder(), decoder = new target.TextDecoder();
   const SearchParams = target.URLSearchParams;
   const serializeParams = typeof SearchParams === 'function' ? SearchParams.prototype.toString : null;
-  const unsupported = member => new TypeError('lsf-fetch-buffered-v1:unsupported:' + member);
+  const unsupported = member => new TypeError(profile + ':unsupported:' + member);
   const records = new WeakMap();
   const immutableHeaders = new WeakSet();
   const errorResponses = new WeakSet();
@@ -262,7 +265,7 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       const result = new Response(records.get(this).content, {status: this.status,
         statusText: statusText.get ? '' : statusText.value, headers: this.headers});
       readonly(result, {url: this.url, redirected: this.redirected, type: this.type});
-      if (statusText.get) Object.defineProperty(result, 'statusText', statusText);
+      Object.defineProperty(result, 'statusText', statusText);
       if (immutableHeaders.has(this.headers)) immutableHeaders.add(result.headers);
       return result;
     }
@@ -314,18 +317,32 @@ export function installFetch(http, snapshotActive, target = globalThis) {
     destroy.call(owner);
   }
   function failure(error) {
-    const tag = error?.payload?.tag ?? error?.tag;
+    const payload = error?.payload ?? error;
+    const phase = phaseTiming ? payload?.tag : undefined;
+    const detail = phase === 'http' ? payload.val : payload;
+    const tag = phaseTiming ? detail?.tag : (error?.payload?.tag ?? error?.tag);
     if (error instanceof Error && typeof tag !== 'string') return error;
     const result = new TypeError('fetch-transport-failure:' + (typeof tag === 'string' ? tag : 'unknown'));
     Object.defineProperty(result, 'cause', {value: error});
-    Object.defineProperty(result, 'uncertain', {value: tag === 'uncertain'});
+    Object.defineProperty(result, 'uncertain', {value: tag === 'uncertain' || phase === 'read-timeout' && payload.val === true});
+    return result;
+  }
+  function wireReason(value) {
+    if (!ArrayBuffer.isView(value) || value.BYTES_PER_ELEMENT !== 1 || value.byteLength > 512)
+      throw new TypeError('invalid-http-reason-phrase');
+    const raw = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+    let result = '';
+    for (const byte of raw) {
+      if (byte !== 9 && (byte < 32 || byte === 127)) throw new TypeError('invalid-http-reason-phrase');
+      result += String.fromCharCode(byte);
+    }
     return result;
   }
   async function perform(request, cancelled) {
     for (let hop = 0; hop <= 5; hop++) {
       let upload, body, response;
       try {
-        upload = await http.open(metadata(request));
+        upload = phaseTiming ? await http.open(metadata(request), undefined) : await http.open(metadata(request));
         if (cancelled()) throw request.signal.reason;
         const content = records.get(request).content;
         if (content !== null) {
@@ -335,13 +352,13 @@ export function installFetch(http, snapshotActive, target = globalThis) {
           }
         }
         const consumed = upload; upload = undefined;
-        const received = await http.finish(consumed);
+        const received = phaseTiming ? await http.finish(consumed, undefined) : await http.finish(consumed);
         body = received.body;
         const parts = [];
         let total = 0;
         while (true) {
           if (cancelled()) throw request.signal.reason;
-          const chunk = await http.read(body, 65536);
+          const chunk = phaseTiming ? await http.read(body, 65536, undefined) : await http.read(body, 65536);
           if (chunk === undefined) break;
           try {
             const part = await http.chunkBytes(chunk);
@@ -363,8 +380,12 @@ export function installFetch(http, snapshotActive, target = globalThis) {
         const result = new Response(request.method === 'HEAD' || [204, 205, 304].includes(received.status) ? null : contentBytes,
           {status: received.status, headers});
         readonly(result, {url: request.url, type: 'basic'});
-        // The typed contract has no reason phrase. It must not fabricate one.
-        Object.defineProperty(result, 'statusText', {get() { throw unsupported('response-status-text'); }, configurable: true});
+        if (phaseTiming && received.reasonPhrase !== undefined) {
+          readonly(result, {statusText: wireReason(received.reasonPhrase)});
+        } else {
+          // A legacy contract or unavailable metadata must not fabricate a phrase.
+          Object.defineProperty(result, 'statusText', {get() { throw unsupported('response-status-text'); }, configurable: true});
+        }
         immutableHeaders.add(result.headers);
         response = result;
       } finally {

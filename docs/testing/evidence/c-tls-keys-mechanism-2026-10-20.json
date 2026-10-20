@@ -1,0 +1,247 @@
+{
+  "status": "passed",
+  "source": "577492a0b41cbf1850fe10668dbb1ab344c10a76",
+  "run": 39413924006,
+  "job": 118598192794,
+  "artifact": 12261121042,
+  "archive": {
+    "sha256": "84f3f0e0dd6b42baa8b80ed3c3f8e661c4e79b8eb7a237a489ecf91405c787bc",
+    "bytes": 14640,
+    "members": 35,
+    "allCrcChecked": true
+  },
+  "allGitSourceRowsChecked": 12,
+  "allProductsChecked": 8,
+  "rustControlsPassed": 26,
+  "independentCoreReplay": true,
+  "report": {
+    "schemaVersion": "latent.c.compiler-context-control.v1",
+    "status": "passed",
+    "source": {
+      "tools/qualify_c_context_lowering.py": {
+        "sha256": "e3c1043bb800b7583d709d5d1cbe21fd4fd6cbd89c678dcbe1ef08e4b991a824",
+        "bytes": 9929
+      },
+      "sdk/c-guest/runtime-fixtures/context-lowering/probe.c": {
+        "sha256": "02ff5eb4b1a4d038ec34d459a7f004a451573fe552510d4ff4e44c41b6957bd9",
+        "bytes": 859
+      },
+      "sdk/c-guest/runtime-fixtures/context-lowering/control.cjs": {
+        "sha256": "e7e3759c601a7c970bbaad2b33275c3e68cfa0e23bda574923a4b8fcab41045a",
+        "bytes": 3556
+      },
+      "sdk/c-guest/runtime-fixtures/context-lowering/tls-keys.c": {
+        "sha256": "093b0526f471e8cb1047be557b0161d5fc5044de74be6d2decddf5f04fc09a19",
+        "bytes": 3629
+      },
+      "sdk/c-guest/runtime-fixtures/context-lowering/tls-keys.cjs": {
+        "sha256": "52544eacfcddb5695c02b6ee349c2b38f9cda29136d2c5f522c0327f359860e7",
+        "bytes": 2259
+      },
+      "sdk/c-guest/runtime/tls-keys.c": {
+        "sha256": "f243cec46d099681273c7f22f351d76f92848541320278ea5972a6f5958859c1",
+        "bytes": 4496
+      },
+      "crates/latent-component-threading/src/c_context.rs": {
+        "sha256": "60e2709f753283be986b986e8abb786fe2019bc3fcc346435855cdff91206fde",
+        "bytes": 22076
+      },
+      "crates/latent-component-threading/src/bin/c-context.rs": {
+        "sha256": "36011a3d247496ba74844f64cff256671ddc37087ae8c18a87c92e16f3802ce2",
+        "bytes": 2538
+      },
+      "crates/latent-component-threading/src/lib.rs": {
+        "sha256": "48040f1c394421d57c0b53a85a7a18a2d6fbed7f256f2fdcc32fe9bee732bddb",
+        "bytes": 23861
+      },
+      "crates/latent-component-threading/Cargo.toml": {
+        "sha256": "4aa9d3980b845949ddba6f2f0b148420fd0b4d9d918c9785d47f143ac5630355",
+        "bytes": 637
+      },
+      "Cargo.toml": {
+        "sha256": "0670f74a80d1e5e95b082bf8152da8260f634147957fe10add32336a59d5fea9",
+        "bytes": 3779
+      },
+      "Cargo.lock": {
+        "sha256": "950dd0a788724cd7c2ffe163b1dceb8b65399879754a62aade46f0492ef1705b",
+        "bytes": 112655
+      }
+    },
+    "tools": {
+      "zig": {
+        "sha256": "2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+        "bytes": 172641672
+      },
+      "transformer": {
+        "sha256": "c6df9c3b11d55367f56526eda39b3396232995788d08d77931a8653087a29b98",
+        "bytes": 4259776
+      },
+      "node": {
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "bytes": 125989464
+      }
+    },
+    "commands": [
+      {
+        "program": "zig",
+        "exitCode": 0
+      },
+      {
+        "program": "zig",
+        "exitCode": 0
+      },
+      {
+        "program": "node",
+        "exitCode": 0
+      },
+      {
+        "program": "zig",
+        "exitCode": 0
+      },
+      {
+        "program": "zig",
+        "exitCode": 0
+      },
+      {
+        "program": "zig",
+        "exitCode": 0
+      },
+      {
+        "program": "c-context",
+        "exitCode": 0
+      },
+      {
+        "program": "c-context",
+        "exitCode": 1
+      },
+      {
+        "program": "node",
+        "exitCode": 0
+      },
+      {
+        "program": "zig",
+        "exitCode": 0
+      },
+      {
+        "program": "zig",
+        "exitCode": 0
+      },
+      {
+        "program": "c-context",
+        "exitCode": 0
+      },
+      {
+        "program": "node",
+        "exitCode": 0
+      }
+    ],
+    "actualCompiledCoreExecuted": true,
+    "canonicalChildCreated": false,
+    "nativeRuntimeExecuted": false,
+    "pthreadProfileQualified": false,
+    "bootstrapOrAdmissionQualified": false,
+    "atomicMemoryModelQualified": false,
+    "hermetic": false,
+    "control": {
+      "schemaVersion": "latent.c.context-compiler-control.v1",
+      "status": "passed",
+      "originalControlRejected": true,
+      "actualCompiledCoreExecuted": true,
+      "callbackReentrancyControl": true,
+      "records": [
+        {
+          "context": 256,
+          "value": 1,
+          "stack": 65472,
+          "tls": 131072,
+          "counter": 8
+        },
+        {
+          "context": 320,
+          "value": 2,
+          "stack": 131008,
+          "tls": 196608,
+          "counter": 9
+        },
+        {
+          "context": 256,
+          "value": 1,
+          "stack": 65472,
+          "tls": 131072,
+          "counter": 9
+        },
+        {
+          "context": 320,
+          "value": 2,
+          "stack": 131008,
+          "tls": 196608,
+          "counter": 11
+        }
+      ],
+      "negativeControls": 6,
+      "canonicalChildCreated": false,
+      "nativeRuntimeExecuted": false,
+      "pthreadProfileQualified": false
+    },
+    "wasiHeaders": {
+      "sha256": "c5fb2b6810aacaa225b69299432a31f34c61dda9e00b112cbe81dcffcf88f48d",
+      "files": 343,
+      "bytes": 733646,
+      "scope": "explicit-wasm-wasi-musl-and-generic-musl-headers",
+      "compilerImplicitInputsAttested": false
+    },
+    "tlsKeys": {
+      "schemaVersion": "latent.c.tls-key-control.v1",
+      "status": "passed",
+      "actualCompiledCoreExecuted": true,
+      "contextErrnoIsolation": true,
+      "staleKeyRefusal": true,
+      "keyLimit": 128,
+      "destructorPassLimit": 4,
+      "cyclicPendingRetained": true,
+      "clearBeforeDestructor": true,
+      "reentryRefused": true,
+      "canonicalChildCreated": false,
+      "nativeRuntimeExecuted": false,
+      "pthreadProfileQualified": false
+    },
+    "products": {
+      "selected.wasm": {
+        "sha256": "6470cda3ffd1a4e1e13dbf83af5c20f05b4456383e1ac9e82f90121f285b2924",
+        "bytes": 864
+      },
+      "ordinary-static.wasm": {
+        "sha256": "8c96a8f06693c52cd4a735fde25e494f796ff844ef6d130c5554060b0642c43a",
+        "bytes": 767
+      },
+      "selected.ll": {
+        "sha256": "dea909d03737f177c8316dcdf711eb7f98bb1974be7c9824aef940c7e087b247",
+        "bytes": 6892
+      },
+      "selected/core.wasm": {
+        "sha256": "0d35cfa4dc9e30855c0707b60f23fc514f529468107b47b6b07050ccbd579962",
+        "bytes": 1146
+      },
+      "selected/receipt.json": {
+        "sha256": "caa9b36eb7a8afa3a4b939debc7866d049bc79199938346bbeded3afa2811112",
+        "bytes": 462
+      },
+      "tls-keys.wasm": {
+        "sha256": "eb680c29b261a2a0643940a319c381898ace0db5678010104306498362355537",
+        "bytes": 4404
+      },
+      "tls-keys/core.wasm": {
+        "sha256": "2b081f5db599e4ec19321c39b115fe92206375c0b519cc45dd638644f09d0e40",
+        "bytes": 4356
+      },
+      "tls-keys/receipt.json": {
+        "sha256": "47850741654662b87d1f474d0141366c753c49c5d6dd56415d2c162b6a44ce72",
+        "bytes": 465
+      }
+    }
+  },
+  "toolBinariesIndependentlyRetained": false,
+  "signedQualification": false,
+  "independentNodeVersion": "v24.19.0",
+  "fullTicketQualification": false
+}
