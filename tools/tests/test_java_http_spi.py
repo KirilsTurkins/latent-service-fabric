@@ -166,6 +166,19 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         old = yaml.safe_load(subprocess.check_output(['git', 'show',
             'aa56bdebad8c12f20acce4ec4ecfeca73cf554be:'+name], cwd=ROOT, text=True))
         selected = yaml.safe_load((ROOT/name).read_text())
+        prepared_flag = selected[True]['workflow_dispatch']['inputs'].pop('java_http_spi_prepared')
+        self.assertEqual(prepared_flag['type'], 'boolean');self.assertIs(prepared_flag['default'], False)
+        prepared = selected['jobs'].pop('http-public-spi-prepared')
+        self.assertEqual(prepared['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && inputs.java_http_spi_prepared }}")
+        self.assertEqual(selected['jobs']['http-public-spi']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.java_http_spi_prepared }}")
+        selected['jobs']['http-public-spi']['if'] = "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi }}"
+        replay_commands = '\n'.join(step.get('run', '') for step in prepared['steps'])
+        self.assertIn('tools/replay_java_http_spi.py --prepare', replay_commands)
+        self.assertIn('Fresh ordinary signing and all six original public SPI cases plus two denials',
+            [step.get('name') for step in prepared['steps']])
+        self.assertNotIn('tools/qualify_java_http_spi.py', replay_commands)
+        self.assertNotIn('curl ', replay_commands);self.assertNotIn('cargo ', replay_commands)
         flag = selected[True]['workflow_dispatch']['inputs'].pop('java_http_spi')
         self.assertEqual(flag['type'], 'boolean');self.assertIs(flag['default'], False)
         job = selected['jobs'].pop('http-public-spi')

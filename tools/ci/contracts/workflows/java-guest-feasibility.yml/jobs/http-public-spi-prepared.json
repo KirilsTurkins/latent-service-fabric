@@ -1,0 +1,114 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && inputs.java_http_spi_prepared }}",
+    "name": "Retained Java public SPI component fresh signing and isolated cases",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch the one exact V7 native producer source before any helper verification",
+        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
+      },
+      {
+        "name": "Fetch the exact nominal HTTP native producer source before new helper controls",
+        "run": "git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f"
+      },
+      {
+        "name": "Fetch the exact independent-tenant HTTP producer before its helper verification",
+        "run": "git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015"
+      },
+      {
+        "name": "Fetch the exact operational-authority native producer before SPI helper controls",
+        "run": "git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c"
+      },
+      {
+        "name": "Fetch the exact current native producer before optional SPI controls",
+        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b"
+      },
+      {
+        "name": "Check shared strict fixed-tuple acquisition for optional SPI products",
+        "run": "python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v"
+      },
+      {
+        "name": "Check the captured standard socket timeout exception identity",
+        "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
+      },
+      {
+        "name": "Check exact selected phase emission before optional SPI compilation",
+        "run": "python3 -B -m unittest tools.tests.test_java_phase_surface -v"
+      },
+      {
+        "name": "Fetch exact original workflow baseline before SPI preservation controls",
+        "run": "git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be"
+      },
+      {
+        "name": "Check optional SPI authority, original exception and native receipt controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_spi tools.tests.test_http_tenant_native_products -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve exactly the five authenticated V7 products without a native rebuild",
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/java-http-spi-native\""
+      },
+      {
+        "name": "Fetch the exact retained successful SPI compilation before replay source controls",
+        "run": "git fetch --no-tags --depth=1 origin e1c33adb2414a8371026d479600e08d48b6df88a"
+      },
+      {
+        "name": "Check fixed SPI archive, source identity and post-execution mutation refusal",
+        "run": "python3 -B -m unittest tools.tests.test_java_http_spi_replay -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate only the fixed e1c SPI build and original package layers",
+        "run": "python3 -B tools/replay_java_http_spi.py --prepare --output \"$RUNNER_TEMP/java-http-spi-original\""
+      },
+      {
+        "name": "Fresh ordinary signing and all six original public SPI cases plus two denials",
+        "run": "python3 -B tools/replay_java_http_spi.py --prepared \"$RUNNER_TEMP/java-http-spi-original\" --native \"$RUNNER_TEMP/java-http-spi-native\" --output \"$RUNNER_TEMP/java-http-spi-node-replay\""
+      },
+      {
+        "if": "${{ always() }}",
+        "name": "Retain source-specific fixed build and fresh SPI node receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-http-spi-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-http-spi-native/retrieval.json\n${{ runner.temp }}/java-http-spi-native/native-products.json\n${{ runner.temp }}/java-http-spi-native/source-inputs.json\n${{ runner.temp }}/java-http-spi-original/retrieval.json\n${{ runner.temp }}/java-http-spi-node-replay/qualification.json\n${{ runner.temp }}/java-http-spi-node-replay/node/qualification.json\n${{ runner.temp }}/java-http-spi-node-replay/node/FAILED.json\n${{ runner.temp }}/java-http-spi-node-replay/node/controls/*.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 55
+  },
+  "jobId": "http-public-spi-prepared",
+  "kind": "job",
+  "reviewReason": "Add explicit defaultfalse fixed-e1c SPI node replay. Preserve full/default SPI command bodies, bounds and all normal jobs; mutually exclusive prepared flag selects original component plus six fresh signed cases/two denials without compilation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-guest-feasibility.yml"
+}

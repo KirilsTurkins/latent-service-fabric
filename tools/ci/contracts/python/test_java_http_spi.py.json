@@ -135,6 +135,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_spi.py",
-  "reviewReason": "Explicit actual-CLI schema correction: u64 cpuFuel remains decimal string, u32 outboundRequests is integer as authoritative response.rs and retained e1c request prove. Preserve every old case, rejection and skip/decorator boundary; helper fixtures now use actual schema and add real-row control. No authority, retry, budget or programme change.",
+  "reviewReason": "Add explicit defaultfalse fixed-e1c SPI node replay. Preserve full/default SPI command bodies, bounds and all normal jobs; mutually exclusive prepared flag selects original component plus six fresh signed cases/two denials without compilation.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -30,16 +30,37 @@ historical77 tuple is not substituted. An existing source-checked compiler cache
 may be reused; one new application component is still compiled normally. No
 native Cargo/toolchain rebuild is part of this campaign.
 
-**Current evidence:** focused source/controller controls pass. Actual compilation,
-signing and the six SPI outcomes have not run. The separate default-false `java_http_spi` workflow selector is prepared, but no
-SPI dispatch or PR has occurred. The native authority repair, compiler-owned
-`SocketTimeoutException` type and original-entry coroutine liveness correction
-are integrated in this branch. The selected native source is the independently
-authenticated `f9192fb5785ca7bed8b33dbb869b3d775b72ab4b` tuple through the shared
-strict reader; full current native and auxiliary equality remains mandatory.
-Historical tuple helpers remain unchanged. The real IR and component results
-remain pending; the default-client campaign owns its separate qualification.
-It does not close #688 or #741 or replace the default-client proof.
+**Current evidence:** [run 39494971018 / job 118877563609](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39494971018/job/118877563609)
+at `e1c33adb2414a8371026d479600e08d48b6df88a` passed the real pinned IR
+controls, normal Java component build, package assembly, signing and both
+zero-work authority denials. Its first public-factory invocation succeeded with
+`1:spi:200:7:1`, 11,094,755 fuel and one outbound request. The workflow then failed
+in the qualifier reader: CLI `cpuFuel` is a decimal u64 string, while
+`outboundRequests` is an integer u32. The old reader wrongly required strings for
+both. The strict field-specific correction preserves all original outcomes and
+rejects booleans, altered types, overflow and duplicate outbound charges.
+All six SPI cases are still required; one actual success does not qualify them.
+
+Artifact `12296844781` (2,003,357 bytes, SHA256
+`cc7bc2b4aa07072943925f3a8aea098f338f9c3b44724a2f97fdad8e33bea9c4`)
+retains the original component and assembled package. All 105 members passed CRC
+and SHA checks. The separately selected fixed-artifact replay authenticates all
+55 build members, original package/layer preimages, all 199 captured SDK and 73
+compiler recipe files, and 110 campaign materials against exact Git source.
+Only the reviewed SPI result reader differs. The 6,410,239-byte component digest
+is `07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25`.
+No new guest or native compilation is needed to correct that reader.
+
+The diagnostic selector `java_http_spi_prepared` defaults to false and requires
+explicit `java_http_spi=true` as well. It preserves the entire original normal
+workflow and full SPI job when absent/false. Only the explicit replay selection
+fresh-signs this original component and executes the same six cases plus two
+authority denials and four contacts. Before/after build, source and native checks
+remain mandatory. Its hosted result is pending. The independently authenticated
+native source remains `f9192fb5785ca7bed8b33dbb869b3d775b72ab4b`; the shared strict
+reader and full current native/auxiliary equality are unchanged. No historical
+failure, default-client result or cross-tenant result is relabelled as SPI proof.
+Neither #688 nor #741 closes.
 
 ## Same-node cross-tenant boundary
 

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_java_http_spi.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add explicit defaultfalse fixed-e1c SPI node replay. Preserve full/default SPI command bodies, bounds and all normal jobs; mutually exclusive prepared flag selects original component plus six fresh signed cases/two denials without compilation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "fae590b7047981ea3f24acff4847c8f27220af90b3703b532cee3bc08b9ea065"
+}

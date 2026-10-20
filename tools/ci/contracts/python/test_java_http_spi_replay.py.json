@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "JavaSpiPreparedReplay.test_changed_retained_component_refuses_before_reading_original_observation",
+    "JavaSpiPreparedReplay.test_different_archive_refuses_before_creating_any_retained_build",
+    "JavaSpiPreparedReplay.test_fixed_pin_set_refuses_escape_alias_nonregular_and_unbounded_shapes",
+    "JavaSpiPreparedReplay.test_incomplete_cases_and_post_execution_material_changes_cannot_publish_success"
+  ],
+  "guards": {
+    "JavaSpiPreparedReplay.test_changed_retained_component_refuses_before_reading_original_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:977e858d4695cf0f94430bdb59608bb646bfcfe9a708af94ac5e6352e12b1d73",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaSpiPreparedReplay.test_different_archive_refuses_before_creating_any_retained_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:977e858d4695cf0f94430bdb59608bb646bfcfe9a708af94ac5e6352e12b1d73",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaSpiPreparedReplay.test_fixed_pin_set_refuses_escape_alias_nonregular_and_unbounded_shapes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:977e858d4695cf0f94430bdb59608bb646bfcfe9a708af94ac5e6352e12b1d73",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaSpiPreparedReplay.test_incomplete_cases_and_post_execution_material_changes_cannot_publish_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:977e858d4695cf0f94430bdb59608bb646bfcfe9a708af94ac5e6352e12b1d73",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_http_spi_replay.py",
+  "reviewReason": "Four strict fixed-archive replay refusal controls. Tightened nonregular assertion to actual WorkflowError; no case/decorator/skip removal.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
