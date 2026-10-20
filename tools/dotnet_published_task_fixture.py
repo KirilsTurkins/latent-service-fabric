@@ -13,7 +13,7 @@ from tools.rust_capsule_project import digest
 
 PACKAGE = 'Polly'
 VERSION = '8.6.3'
-CHECKPOINTS = ('builder', 'options', 'predicate', 'add', 'build')
+CHECKPOINTS = ('builder', 'options', 'predicate', 'type-name', 'context', 'required', 'int-range', 'time-range', 'validate', 'add', 'build')
 CASES = tuple('diagnostic-' + name for name in CHECKPOINTS) + ('legacy', 'modern', 'error', 'cancel')
 VALUES = {'legacy': (3, 2, 41), 'modern': (3, 2, 43), 'error': (2, 1, 47), 'cancel': (1, 1, 53)}
 VALUES.update({ 'diagnostic-' + name: (0, 0, 0) for name in CHECKPOINTS })
@@ -47,6 +47,12 @@ public static class PublishedTasks {
         case "diagnostic-builder":
         case "diagnostic-options":
         case "diagnostic-predicate":
+        case "diagnostic-type-name":
+        case "diagnostic-context":
+        case "diagnostic-required":
+        case "diagnostic-int-range":
+        case "diagnostic-time-range":
+        case "diagnostic-validate":
         case "diagnostic-add":
         case "diagnostic-build":
         case "modern": {
@@ -63,6 +69,34 @@ public static class PublishedTasks {
                 ShouldHandle = predicate,
                 OnRetry = _ => { ++callbacks; return ValueTask.CompletedTask; }
             };
+            if (mode == "diagnostic-type-name") {
+                var type = options.GetType();
+                if (!type.IsGenericType || type.Name.Length == 0 || type.GetGenericArguments()[0].Name.Length == 0) throw new Exception("type metadata");
+                return Checkpoint(mode);
+            }
+            if (mode == "diagnostic-context") {
+                var context = new System.ComponentModel.DataAnnotations.ValidationContext(options);
+                if (context.DisplayName.Length == 0) throw new Exception("validation context");
+                return Checkpoint(mode);
+            }
+            if (mode == "diagnostic-required") {
+                if (!new System.ComponentModel.DataAnnotations.RequiredAttribute().IsValid(predicate)) throw new Exception("required");
+                return Checkpoint(mode);
+            }
+            if (mode == "diagnostic-int-range") {
+                if (!new System.ComponentModel.DataAnnotations.RangeAttribute(1,100).IsValid(2)) throw new Exception("integer range");
+                return Checkpoint(mode);
+            }
+            if (mode == "diagnostic-time-range") {
+                if (!new System.ComponentModel.DataAnnotations.RangeAttribute(typeof(TimeSpan),"00:00:00","1.00:00:00").IsValid(TimeSpan.FromMilliseconds(1))) throw new Exception("time range");
+                return Checkpoint(mode);
+            }
+            if (mode == "diagnostic-validate") {
+                if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(options,
+                    new System.ComponentModel.DataAnnotations.ValidationContext(options),
+                    new System.Collections.Generic.List<System.ComponentModel.DataAnnotations.ValidationResult>(),true)) throw new Exception("validation");
+                return Checkpoint(mode);
+            }
             builder.AddRetry(options);
             if (mode == "diagnostic-add") return Checkpoint(mode);
             var pipeline = builder.Build();

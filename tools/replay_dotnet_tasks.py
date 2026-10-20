@@ -80,6 +80,24 @@ def main():
     def authenticated_materials(path):
         require(path == prepared, 'task-replay-fixed-prepared-only')
         return observed(prepared, host)
+    # Diagnostic-only collection continues through independent cases, then
+    # fails unconditionally. It cannot emit a passing qualification receipt.
+    from tools import dotnet_published_task_probe as probes
+    def diagnose(client, target, accounting, result, population):
+        from tools.dotnet_published_task_fixture import CASES, expected
+        from tools.rust_capsule_node import call, provider_idle, sample
+        rows = []
+        for mode in CASES:
+            label = 'dotnet-published-tasks-' + mode
+            row = call(client, target, 'greeting', 'greet', ['published:' + mode], label)
+            result['invocations'].append(row)
+            require(row['processReaped'] and row['response']['outcomeKnown'], 'polly-diagnostic-known-reaped-required')
+            result['providerIdle'].append(provider_idle(client))
+            result['samples'].append(sample(client, accounting, label+'-retired',population))
+            rows.append({'mode':mode,'expectedMatched':row.get('decoded') == [{'ok':expected(mode)}]})
+        result['pollyConstructionDiagnostics'] = {'qualification':False,'observations':rows}
+        require(False,'polly-construction-diagnostic-never-qualifies')
+    probes.probe = diagnose
     qualification.inherited = authenticated_materials
     result = qualification.qualify(args.output.resolve(), args.tools.resolve(strict=True), prepared)
     write_json(args.output / 'replay-materials.json', result['inherited'])
