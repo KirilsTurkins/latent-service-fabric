@@ -6,7 +6,10 @@ It requires an authenticated canonical async export, declared monotonic CLOCK
 and ACTIVATION interfaces, and separately installed operator grants. The
 fixture also explicitly declares RANDOM for the original CoreLib thread-pool
 selector seed and installs the existing bounded bytes-only entropy policy. No
-production grant is automatic. An HTTP
+production grant is automatic. The timer fixture also declares WALL because the
+pinned BCL TimerQueue static initializer records DateTime.UtcNow alongside the
+monotonic tick count. Its separate wall policy reads only now-unix-millis; actual
+timer waiting still uses the activation/monotonic clock. An HTTP
 declaration is unnecessary for task and timer progress. The compiler selects the
 existing activation adapter; it adds no network import, provider or grant.
 
@@ -27,7 +30,8 @@ SynchronizationContext, scheduler, executor, HTTP handler or task implementation
 The original source and local feed are removed before offline NativeAOT build.
 
 The signed programme keeps all 27 original node cases and adds a distinct
-activation-authority refusal, an entropy-authority refusal and 12 managed task cases. Every successful case
+activation/entropy setup refusals, four isolated single-missing-grant refusals
+and 12 managed task cases. Every successful case
 requires the actual expected return value, known and reaped invocation, original
 fuel/memory limits, zero outbound/log/effect consumption, provider-idle counters
 and physical retirement observations. Original shutdown and cleanup assertions
@@ -44,7 +48,10 @@ first Task.Run case. Pinned ThreadPoolWorkQueueThreadLocals initializes a
 Random.XoshiroImpl; its constructor calls the native non-cryptographic entropy
 entrypoint. The original fixture omitted RANDOM, leaving that entrypoint on
 the closed path. The explicit declaration selects the existing exact-preimage
-entropy adapter. The new run must still pass every original task assertion.
+entropy adapter. The entropy correction passed all six initial task cases in actual
+run39346280817, then trapped at the first timer in the context case. The
+TimerQueue source exposed the additional WALL dependency. A fresh run must
+still pass every original task assertion.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU
