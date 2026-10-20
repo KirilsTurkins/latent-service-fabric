@@ -1,13 +1,15 @@
 name: Controlled HTTP TLS fixture
 on:
   push:
-    branches: ['feat/http-tls-fixture-20261020']
+    branches: ['feat/http-tls-fixture-20261020', 'feat/http-tls-process-peer-20261020']
     paths:
       - '.github/workflows/http-tls-fixture.yml'
       - 'tools/standard_http/tls_peer.py'
       - 'tools/http_tls_peer_reference.py'
       - 'tools/qualify_http_tls_peer.py'
       - 'tools/tests/test_http_tls_peer.py'
+      - 'tools/standard_http/process_peer.py'
+      - 'tools/http_tls_process_reference.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   fixture:
-    name: Six real TLS peer controls without a guest or provider build
+    name: TLS transport and owned process controls without a guest or provider build
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
