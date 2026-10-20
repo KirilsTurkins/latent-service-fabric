@@ -14,6 +14,13 @@ from tools.rust_capsule_project import digest
 
 
 class FetchConformanceTests(unittest.TestCase):
+    def test_cold_admission_preserves_the_existing_invocation_watchdog(self):
+        client=SimpleNamespace(deadline=1000,invocation_timeout_millis=120000)
+        process=SimpleNamespace(owner=SimpleNamespace(exited=unittest.mock.Mock(side_effect=[False,True])),drain=lambda:None)
+        peer=SimpleNamespace(poll=lambda _:None,gates=lambda:())
+        with patch.object(cases.time,'monotonic',side_effect=[0,20]),patch.object(cases,'finish_call',return_value={'finished':True}):
+            self.assertEqual(cases.drive(client,process,peer),{'finished':True})
+
     def test_separate_fixture_preserves_original_budget_and_records_exact_source(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
@@ -47,21 +54,21 @@ class FetchConformanceTests(unittest.TestCase):
         owner=SimpleNamespace(exited=unittest.mock.Mock(side_effect=[False,True]))
         process=SimpleNamespace(owner=owner,drain=lambda:None)
         peer=SimpleNamespace(poll=lambda _:None,gates=lambda:(object(),),release=unittest.mock.Mock())
-        client=SimpleNamespace(deadline=time.monotonic()+10)
+        client=SimpleNamespace(deadline=time.monotonic()+10,invocation_timeout_millis=120000)
         with patch.object(cases,'finish_call',return_value={}),self.assertRaisesRegex(WorkflowError,'pending-gate-required'):
             cases.drive(client,process,peer,release_after=1)
         peer.release.assert_not_called()
 
     def test_absent_provider_wait_cannot_satisfy_abort_or_timeout_control(self):
         process=SimpleNamespace(owner=SimpleNamespace(exited=lambda:True))
-        client=SimpleNamespace(deadline=time.monotonic()+10)
+        client=SimpleNamespace(deadline=time.monotonic()+10,invocation_timeout_millis=120000)
         peer=SimpleNamespace(gates=lambda:())
         with patch.object(cases,'finish_call',return_value={}),self.assertRaisesRegex(WorkflowError,'pending-gate-required'):
             cases.drive(client,process,peer,release_after=.15)
 
     def test_pending_barrier_refuses_completion_without_a_real_gate(self):
         process=SimpleNamespace(owner=SimpleNamespace(exited=lambda:True))
-        client=SimpleNamespace(deadline=time.monotonic()+10)
+        client=SimpleNamespace(deadline=time.monotonic()+10,invocation_timeout_millis=120000)
         peer=SimpleNamespace(gates=lambda:())
         with self.assertRaisesRegex(WorkflowError,'real-pending-required'):
             cases.wait_gate(client,process,peer)

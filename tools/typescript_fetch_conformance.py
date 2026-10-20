@@ -96,7 +96,7 @@ def vectors():
 
 def drive(client, process, peer, *, deadline=None, release_after=None):
     """Keep one selector and one real CLI owner live until actual termination."""
-    expires = min(client.deadline, deadline or time.monotonic()+15)
+    expires = min(client.deadline, deadline or time.monotonic()+client.invocation_timeout_millis/1000+3)
     first_gate = None
     released = False
     while not process.owner.exited():

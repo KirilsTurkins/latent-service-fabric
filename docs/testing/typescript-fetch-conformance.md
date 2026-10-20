@@ -33,6 +33,12 @@ The source-owned import engine/compiler and five historical native tools retain
 their original authenticated acquisition identities. Fresh normal source/build
 documents bind this application. Six focused source and pending-owner controls
 and the pinned Jco/TypeScript typecheck pass; actual signed results are pending.
+The initial1898 run failed the supervisor's new15-second wait before its first
+grant-denied admission completed. Artifact12242035617 retains that failure;
+no guest case passed. The supervisor now uses the existing client's120-second
+invocation watchdog, capped by the original campaign deadline. A regression
+requires cold admission lasting20 seconds to remain inside that existing bound;
+application deadlines, guest budgets and pending-owner assertions are unchanged.
 This does not qualify network streaming/backpressure, every runtime resource
 limit, provider absence or cross-tenant reuse. Those literal whole-ticket
 requirements remain open rather than being inferred from these narrower rows.
