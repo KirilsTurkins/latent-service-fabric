@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_resource_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Record current finite managed resource callback qualifier fingerprint; exact new source and historical compiled product identities remain distinct, original runtime limits and compiler gates retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ccdfcfdd67ead917609506225002bd9f992d1b3fdf7e3fc173ec41217f9e4d73"
+}

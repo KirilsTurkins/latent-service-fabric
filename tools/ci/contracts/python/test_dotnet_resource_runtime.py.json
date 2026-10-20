@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings",
+    "ManagedResourceRuntime.test_missing_optional_duplicate_or_foreign_import_fails_before_configuration",
+    "ManagedResourceRuntime.test_normal_async_greeting_world_and_public_namespace_cannot_be_relabelled",
+    "ManagedResourceRuntime.test_original_managed_bounds_distinct_tenant_aliases_and_no_implicit_grants",
+    "ManagedResourceRuntime.test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss",
+    "ManagedResourceRuntime.test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence",
+    "ManagedResourceRuntime.test_secure_operation_upgrade_preserves_noncrypto_operation_budget_and_existing_grant",
+    "ManagedResourceRuntime.test_stale_before_invocation_pair_cannot_be_credited_and_read_deadline_is_restored"
+  ],
+  "guards": {
+    "ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_missing_optional_duplicate_or_foreign_import_fails_before_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_normal_async_greeting_world_and_public_namespace_cannot_be_relabelled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_original_managed_bounds_distinct_tenant_aliases_and_no_implicit_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_secure_operation_upgrade_preserves_noncrypto_operation_budget_and_existing_grant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_stale_before_invocation_pair_cannot_be_credited_and_read_deadline_is_restored": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_resource_runtime.py",
+  "reviewReason": "Finite managed resource callback authority and authenticated final compiler/linker binding controls; preserve all prior fixture guards and original runtime caps.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
