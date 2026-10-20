@@ -1,10 +1,11 @@
 name: C compiler stack and TLS mechanism
 on:
   push:
-    branches: [feat/c-owned-context-20261020]
+    branches: [feat/c-tls-keys-20261020]
     paths:
       - 'crates/latent-component-threading/**'
       - 'sdk/c-guest/runtime-fixtures/context-lowering/**'
+      - 'sdk/c-guest/runtime/tls-keys.c'
       - 'tools/qualify_c_context_lowering.py'
       - '.github/workflows/c-context-mechanism.yml'
   workflow_dispatch:
@@ -59,5 +60,7 @@ jobs:
             ${{ runner.temp }}/c-context-mechanism/*.ll
             ${{ runner.temp }}/c-context-mechanism/selected/*.json
             ${{ runner.temp }}/c-context-mechanism/selected/*.wasm
+            ${{ runner.temp }}/c-context-mechanism/tls-keys/*.json
+            ${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm
           if-no-files-found: warn
           retention-days: 7
