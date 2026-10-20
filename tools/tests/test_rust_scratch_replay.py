@@ -12,6 +12,12 @@ from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 
 
 class RustScratchReplay(unittest.TestCase):
+    def test_current_composed_runner_uses_actual_normal_inventory_identity_shape(self):
+        observed = gate.current_inputs('rust')['helpers']['run_rust_capsule_workflow.py']
+        self.assertEqual(observed, gate.COMPOSED_RUNNER)
+        self.assertEqual(set(gate.ORIGINAL_RUNNER), {'sha256', 'bytes'})
+        self.assertEqual(set(gate.COMPOSED_RUNNER), {'sha256', 'bytes'})
+
     def test_composition_accepts_only_exact_reviewed_default_dotnet_runner_pair(self):
         before = {name: {} for name in ('runtime', 'sdk', 'wit', 'schemas', 'guide', 'helpers')}
         before['helpers'] = {'run_rust_capsule_workflow.py': gate.ORIGINAL_RUNNER, 'other.py': {'digest': 'fixed'}}
@@ -22,7 +28,7 @@ class RustScratchReplay(unittest.TestCase):
         self.assertEqual(proof['reviewedDelta'], 'default-false-dotnet-published-tasks-only')
         for changed in ('runner', 'other-helper', 'sdk', 'extra-helper'):
             value = copy.deepcopy(after)
-            if changed == 'runner': value['helpers']['run_rust_capsule_workflow.py']['size'] += 1
+            if changed == 'runner': value['helpers']['run_rust_capsule_workflow.py']['bytes'] += 1
             elif changed == 'other-helper': value['helpers']['other.py']['digest'] = 'foreign'
             elif changed == 'sdk': value['sdk'] = {'foreign': True}
             else: value['helpers']['extra.py'] = {}

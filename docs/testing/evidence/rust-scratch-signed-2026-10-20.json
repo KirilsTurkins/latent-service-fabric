@@ -305,5 +305,29 @@
       "missingLockedCrate": "addr2line0.26.1",
       "guestExecuted": false
     }
-  ]
+  ],
+  "deliveryComposition": {
+    "developmentBase": "a982d64986d16c16f35602582205ad9156240df7",
+    "normalRunner": {
+      "original": {
+        "sha256": "sha256:e90d89cc4cdf24ebbf24f1f2cf54daba59ccd70ea20eace563d737b1ec05c994",
+        "bytes": 31615
+      },
+      "current": {
+        "sha256": "sha256:c0e042d4c7c354246121125950ad96e430f26052fae59fad533c5dec4f0059cd",
+        "bytes": 32387
+      },
+      "reviewedDelta": "default-false-dotnet-published-tasks-only",
+      "selectedForRust": false
+    },
+    "originalRunnerAstDigest": "sha256:965e490bb15d6277244c5c78b7f3a7d44895b0fa085ed8763ffe3873f5845146",
+    "projectedComposedRunnerAstEqual": true,
+    "sdkWitSchemaGuideAndOtherNormalHelpersEqual": true,
+    "otherReviewedDeltas": [
+      "C-only compatibility operation tokens",
+      "exact historical-reader runner composition guard",
+      "documentation and controls"
+    ],
+    "nativeProgrammeRepeated": false
+  }
 }
