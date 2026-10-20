@@ -87,12 +87,52 @@ quarantine. No thread, pool, application connection or mutable guest state is
 retained outside the invocation. Concurrent Java thread/executor semantics require
 the separately qualified #736/#741 profile; this source slice makes no such claim.
 
+## Selected phase profile and optional public SPI
+
+The separate [explicit phase profile](../testing/java-http-phase-timing.md)
+adds bounded actual connect/read deadlines and actual response-reason bytes
+without changing the legacy profile described above. Its source-specific
+sixteen-call result includes default DavidWebb use and retains the root
+cancellation/deadline distinction. This does not qualify every Java HTTP API.
+
+The [optional public guest SPI](../testing/java-http-public-spi.md) uses the
+unchanged `http-request:6.0` connection-factory extension. Six signed cases and
+two authority denials verify delegation through ordinary `URL.openConnection`,
+reserved-header/destination refusal and fresh default-state retirement. The
+extension requires no maintainer registration and supplies no host authority.
+Its historical compiler/native attribution and current-source limits are
+recorded separately from the default-client programme.
+
+## API, feature and runtime matrix
+
+These are implementation profiles and finite evidence scopes. The package
+versions used by a particular test live in its separate receipt and never select
+API eligibility or require a catalogue entry.
+
+| API/feature | Selected implementation and runtime | Evidence and boundary |
+| --- | --- | --- |
+| Ordinary `URL.openConnection` / `HttpURLConnection` | `lsf.java.httpurlconnection.streaming.v1`, typed HTTP 0.3 | [Ordinary/published/private provider cases](../testing/java-standard-http.md); HTTP only, bounded bodies, explicit unsupported members as above. |
+| Nonzero connect/read setters and response reason | `lsf.java.httpurlconnection.phase-timing.v1`, typed HTTP 0.4 / host V7, `teavm-activation-fibers-io-v1` | [Sixteen signed cases and two denials](../testing/java-http-phase-timing.md); root deadlines/cancellation remain distinct. |
+| Pending HTTP with runnable Java work | `teavm-activation-fibers-io-v1` | [Finite sibling/timer/lifecycle evidence](../testing/java-http-fiber-lifecycle.md); this is not every executor or cross-tenant case. |
+| Optional guest factory | Same selected HTTP/runtime profile | [Six signed SPI cases and two denials](../testing/java-http-public-spi.md); separate from required defaults, no privileged provider. |
+| `Class` / `ClassLoader` resource lookup, wall and monotonic reads | Captured immutable resource port and explicitly declared clock interfaces | [Ordinary resource/clock conformance](java-resource-conformance.md); no ambient filesystem or clock authority. |
+| `System.out` / `System.err` and `SecureRandom` | Compiler-owned bounded logging and entropy ports | [Logging](java-standard-logging.md) / [entropy](java-standard-entropy.md); declarations, grants, limits and technical failures remain explicit. |
+| Runtime/automatic patch and diagnostics tooling | Normal source/recipe/component reports, exact compiler-owned transformations | [Compatibility reports](library-compatibility.md), [captured Java authoring](java-authoring.md); report success is not API execution or an authority grant. |
+
+The HTTP port composes these ordinary standard facilities through the normal
+compiler, captured WIT and grants; it does not replace them with HTTP-specific
+resource, logging, clock or entropy callbacks. Every dated result keeps its
+original runtime/compiler/patch/component identities. Fresh current-source
+qualification and the outstanding full lifecycle/tenant matrix remain separate.
+
 ## Concrete remaining implementation
 
 HTTPS currently fails before provider contact because the standard HTTPS type,
 certificate/pinning and socket-factory boundary is unqualified. Provider TLS
-alone cannot substitute those Java API semantics. Separate nonzero connect/read
-timeouts, conditional date requests, interactive authentication, explicit chunk
+alone cannot substitute those Java API semantics. In the legacy profile, nonzero connect/read
+timeouts remain unsupported; the explicit phase profile linked above provides
+its separately qualified finite path. Conditional date requests, interactive
+authentication, explicit chunk
 framing, the wire HTTP version and indexed status-line/header views remain
 unsupported. The typed provider does not export a reason phrase; the optional
 `getResponseMessage()` returns `null` after completing the normal response,
@@ -105,8 +145,8 @@ forwarding.
 The source-bound signed `http-client-profile.json` asset records exact adapter,
 recipe, source and component identities and a pending qualification state. It is
 not execution evidence or authority. Remaining work includes pinned TeaVM ABI
-checks for inherited JDK members, HTTPS and redirect semantics, distinct timeout
-phases, pending/sibling/cancellation behavior, native/guest cost measurements
+checks for inherited JDK members, HTTPS and redirect semantics, additional timeout/API cases beyond the explicit phase programme,
+remaining pending/sibling/cancellation behavior, native/guest cost measurements
 and fresh cross-tenant cleanup. The two published clients and outside-checkout
 private JAR have passed the finite shared real-provider matrix linked above;
 their receipts do not qualify the remaining surfaces. Existing direct Java SDK
