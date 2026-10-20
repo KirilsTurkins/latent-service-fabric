@@ -1,0 +1,78 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "node-worker-stacks-${{ github.ref }}"
+    },
+    "name": "Node worker stack reference",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/node-worker-stacks.yml",
+          "apps/latentd/src/worker_stacks*",
+          "apps/latentd/src/worker_stacks/**",
+          "apps/latentd/src/command/serve.rs",
+          "apps/latentd/src/command/inspection.rs",
+          "apps/latentd/src/config.rs",
+          "apps/latentd/src/config/derive.rs",
+          "apps/latentd/src/lib_root.rs",
+          "apps/latentd/src/config/tests/providers.rs",
+          "apps/latentd/Cargo.toml",
+          "crates/latent-wasmtime/src/config.rs",
+          "crates/latent-wasmtime/src/config/engine.rs",
+          "crates/latent-wasmtime/src/config/renderer.rs",
+          "Cargo.toml",
+          "apps/latentd/src/standalone/observations/topology*",
+          "apps/latentd/src/standalone/observations/topology/**",
+          "sdk/node-worker-stacks/**",
+          "tools/qualify_node_worker_stacks.py",
+          "tools/tests/test_node_worker_stacks.py",
+          "Cargo.lock",
+          "rust-toolchain.toml"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/node-worker-stacks.yml",
+          "apps/latentd/src/worker_stacks*",
+          "apps/latentd/src/worker_stacks/**",
+          "apps/latentd/src/command/serve.rs",
+          "apps/latentd/src/command/inspection.rs",
+          "apps/latentd/src/config.rs",
+          "apps/latentd/src/config/derive.rs",
+          "apps/latentd/src/lib_root.rs",
+          "apps/latentd/src/config/tests/providers.rs",
+          "apps/latentd/Cargo.toml",
+          "crates/latent-wasmtime/src/config.rs",
+          "crates/latent-wasmtime/src/config/engine.rs",
+          "crates/latent-wasmtime/src/config/renderer.rs",
+          "Cargo.toml",
+          "apps/latentd/src/standalone/observations/topology*",
+          "apps/latentd/src/standalone/observations/topology/**",
+          "sdk/node-worker-stacks/**",
+          "tools/qualify_node_worker_stacks.py",
+          "tools/tests/test_node_worker_stacks.py",
+          "Cargo.lock",
+          "rust-toolchain.toml"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "reference"
+  ],
+  "reviewReason": "One checked standalone worker/stack profile fixes the two-blocking-worker topology undercount and ambient native stack default; exact-source small Linux mapping/timeout reference, all prior limits and cases preserved; no full-node/TLS/kernel qualification",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/node-worker-stacks.yml"
+}

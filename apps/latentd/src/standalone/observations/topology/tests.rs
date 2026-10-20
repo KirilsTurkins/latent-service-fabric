@@ -14,6 +14,8 @@ fn fixture(compiler_workers_live: u64) -> impl Iterator<Item = Row> {
         Limits {
             invocation_threads: 3,
             control_threads: 2,
+            invocation_stack_bytes: 3 * count(crate::worker_stacks::THREAD_MAPPING_ALLOWANCE),
+            control_stack_bytes: 2 * count(crate::worker_stacks::THREAD_MAPPING_ALLOWANCE),
             connections: 10,
             rpcs: 11,
             control_jobs: 2,
@@ -56,11 +58,11 @@ fn fixed_topology_distinguishes_measurements_unknowns_and_architectural_zeros() 
     let reporter = reporter(
         Arc::new(EmptyCacheInventorySource),
         Arc::new(FixedRows(2)),
-        22,
+        24,
     );
     let inventory = reporter.snapshot_now().expect("fixed topology");
     assert!(inventory.topology.available && inventory.topology.complete);
-    assert_eq!(inventory.topology.entries.len(), 22);
+    assert_eq!(inventory.topology.entries.len(), 24);
     let lookup = |name: &str| {
         inventory
             .topology
@@ -89,6 +91,16 @@ fn fixed_topology_distinguishes_measurements_unknowns_and_architectural_zeros() 
             lookup("control-runtime").active_count
         ),
         (2, Some(1))
+    );
+    let stack = lookup("control-runtime-stack");
+    assert_eq!(stack.kind, "byte");
+    assert_eq!(stack.ownership, ResourceOwnership::NodeFixed);
+    assert_eq!(
+        (stack.configured_count, stack.active_count),
+        (
+            2 * count(crate::worker_stacks::THREAD_MAPPING_ALLOWANCE),
+            Some(count(crate::worker_stacks::THREAD_MAPPING_ALLOWANCE))
+        )
     );
     assert_eq!(
         lookup("grpc-listener").active_count,
@@ -156,7 +168,7 @@ fn retired_compiler_workers_report_observed_zero_with_configuration_retained() {
     let reporter = reporter(
         Arc::new(EmptyCacheInventorySource),
         Arc::new(FixedRows(0)),
-        22,
+        24,
     );
     let inventory = reporter.snapshot_now().expect("retired worker topology");
     let compiler = inventory

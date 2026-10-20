@@ -178,6 +178,17 @@ client was reaped. Unknown, conflicting or oversized trap details do not supply
 a runtime disposition. Messages, cell identifiers and private detail fields are
 excluded from the observation.
 
+The separate node-owned `activation.guest-trap-kind` detail now retains its
+closed engine classification in `guestTrapKind`, such as `stack-overflow` or
+`unreachable-code`. A `runtime-error` may also retain the fixed
+`guestRuntimePhase` label. These fields require a matching original trap code;
+unknown, duplicate, contradictory or private-bearing details produce only
+`trapKindUnavailable`. This distinguishes an observed engine failure without
+identifying an unsupported API, a particular quota, library reachability or
+physical retirement. [Two retained actual results](../testing/evidence/compatibility-trap-kind-reader-2026-10-20.json)
+exercise the new reader; this is no additional guest execution or six-language
+runtime qualification claim.
+
 The text reader also names the existing node-owned numeric diagnostic stage,
 reason and optional profile. For example, stage `3` and reason `4` are displayed
 as `preparation (3)` and `unsupported-engine-profile (4)`. These labels describe

@@ -1,0 +1,91 @@
+name: Node worker stack reference
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/node-worker-stacks.yml'
+      - 'apps/latentd/src/worker_stacks*'
+      - 'apps/latentd/src/worker_stacks/**'
+      - 'apps/latentd/src/command/serve.rs'
+      - 'apps/latentd/src/command/inspection.rs'
+      - 'apps/latentd/src/config.rs'
+      - 'apps/latentd/src/config/derive.rs'
+      - 'apps/latentd/src/lib_root.rs'
+      - 'apps/latentd/src/config/tests/providers.rs'
+      - 'apps/latentd/Cargo.toml'
+      - 'crates/latent-wasmtime/src/config.rs'
+      - 'crates/latent-wasmtime/src/config/engine.rs'
+      - 'crates/latent-wasmtime/src/config/renderer.rs'
+      - 'Cargo.toml'
+      - 'apps/latentd/src/standalone/observations/topology*'
+      - 'apps/latentd/src/standalone/observations/topology/**'
+      - 'sdk/node-worker-stacks/**'
+      - 'tools/qualify_node_worker_stacks.py'
+      - 'tools/tests/test_node_worker_stacks.py'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/node-worker-stacks.yml'
+      - 'apps/latentd/src/worker_stacks*'
+      - 'apps/latentd/src/worker_stacks/**'
+      - 'apps/latentd/src/command/serve.rs'
+      - 'apps/latentd/src/command/inspection.rs'
+      - 'apps/latentd/src/config.rs'
+      - 'apps/latentd/src/config/derive.rs'
+      - 'apps/latentd/src/lib_root.rs'
+      - 'apps/latentd/src/config/tests/providers.rs'
+      - 'apps/latentd/Cargo.toml'
+      - 'crates/latent-wasmtime/src/config.rs'
+      - 'crates/latent-wasmtime/src/config/engine.rs'
+      - 'crates/latent-wasmtime/src/config/renderer.rs'
+      - 'Cargo.toml'
+      - 'apps/latentd/src/standalone/observations/topology*'
+      - 'apps/latentd/src/standalone/observations/topology/**'
+      - 'sdk/node-worker-stacks/**'
+      - 'tools/qualify_node_worker_stacks.py'
+      - 'tools/tests/test_node_worker_stacks.py'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: node-worker-stacks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reference:
+    name: Exact node worker stack and physical-thread reference
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Check exact source/lock and partial-result refusal controls
+        run: python3 -m unittest tools.tests.test_node_worker_stacks -v
+      - name: Execute original ambient refusal and actual bounded worker stacks
+        run: python3 tools/qualify_node_worker_stacks.py --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/node-worker-stack-reference"
+      - name: Retain finite numeric stack evidence and bounded compiler failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: node-worker-stack-reference-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/node-worker-stack-reference/receipt.json
+            ${{ runner.temp }}/node-worker-stack-reference/*-build.stderr.log
+            ${{ runner.temp }}/node-worker-stack-reference/*-run.stdout.log
+            ${{ runner.temp }}/node-worker-stack-reference/*-run.stderr.log
+            ${{ runner.temp }}/node-worker-stack-reference/new-list.stdout.log
+            ${{ runner.temp }}/node-worker-stack-reference/new-ignored.stdout.log
+          if-no-files-found: warn
+          retention-days: 7

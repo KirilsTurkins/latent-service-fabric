@@ -22,6 +22,46 @@ def failure():
 
 
 class Projection(unittest.TestCase):
+    def test_closed_native_trap_kinds_and_runtime_phases_preserve_only_original_tokens(self):
+        source = (Path(__file__).resolve().parents[2] / 'crates/latent-core/src/error/guest_trap_kind.rs').read_text(encoding='utf-8')
+        method = source.split('pub const fn wire_name(self)')[1].split('/// Parses')[0]
+        names = {part.split('"')[0] for part in method.split('=> "')[1:]}
+        self.assertEqual(names, diagnostics.TRAP_KINDS)
+        self.assertEqual(len(names), 13)
+        for kind in names:
+            result = failure()
+            code = 'guest-runtime-error' if kind == 'runtime-error' else 'guest-trap'
+            result['error']['details'] = [
+                {'kind': 'activation.guest-trap', 'fields': {'code': code, 'cell_id': 'private-cell'}},
+                {'kind': 'activation.guest-trap-kind', 'fields': {'kind': kind}}]
+            original = copy.deepcopy(result)
+            captured = diagnostics.original_result(result)
+            self.assertEqual(captured['guestTrapKind'], kind)
+            self.assertNotIn('private-', json.dumps(captured))
+            self.assertEqual(result, original)
+        for phase in diagnostics.RUNTIME_PHASES:
+            result['error']['details'][0]['fields']['code'] = 'guest-runtime-error'
+            result['error']['details'][1]['fields'] = {'kind': 'runtime-error', 'phase': phase}
+            self.assertEqual(diagnostics.original_result(result)['guestRuntimePhase'], phase)
+
+    def test_malformed_duplicate_and_contradictory_trap_kinds_do_not_expose_input(self):
+        for fields in ({'kind': 'private-token'}, {'kind': True}, {'kind': []},
+                       {'kind': 'runtime-error'}, {'kind': 'stack-overflow', 'phase': 'instantiate'},
+                       {'kind': 'unreachable-code', 'private': 'private-secret'},
+                       {'kind': 'unreachable-code', 'phase': None}):
+            result = failure()
+            result['error']['details'][0]['fields']['code'] = 'guest-trap'
+            result['error']['details'].append({'kind': 'activation.guest-trap-kind', 'fields': fields})
+            captured = diagnostics.original_result(result)
+            self.assertNotIn('guestTrapKind', captured)
+            self.assertNotIn('guestRuntimePhase', captured)
+            self.assertIs(captured['trapKindUnavailable'], True)
+            self.assertNotIn('private-', json.dumps(captured))
+        result = failure()
+        detail = {'kind': 'activation.guest-trap-kind', 'fields': {'kind': 'runtime-error'}}
+        result['error']['details'] += [detail, detail]
+        self.assertTrue(diagnostics.original_result(result)['trapKindUnavailable'])
+
     def test_lifecycle_refusal_retains_only_the_existing_closed_disposition(self):
         result = failure()
         result["error"]["details"][0]["fields"] = {

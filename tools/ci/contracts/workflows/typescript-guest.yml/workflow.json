@@ -58,6 +58,10 @@
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_standard_clocks.py",
+          "tools/typescript_standard_clock*.py",
+          "tools/tests/test_typescript*clock*.py",
+          "docs/component-development/typescript-standard-clocks.md",
           "tools/qualify_typescript_standard_entropy.py",
           "tools/typescript_entropy_probe.py",
           "tools/tests/test_typescript_entropy.py",
@@ -130,6 +134,10 @@
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_standard_clocks.py",
+          "tools/typescript_standard_clock*.py",
+          "tools/tests/test_typescript*clock*.py",
+          "docs/component-development/typescript-standard-clocks.md",
           "tools/qualify_typescript_standard_entropy.py",
           "tools/typescript_entropy_probe.py",
           "tools/tests/test_typescript_entropy.py",
@@ -170,6 +178,11 @@
             "description": "Compile only new boundary probes using authenticated d412 SDK products",
             "type": "boolean"
           },
+          "qualify-standard-clocks": {
+            "default": false,
+            "description": "Build two ordinary clock probes using original engine and native products",
+            "type": "boolean"
+          },
           "replay-entropy-policy": {
             "default": false,
             "description": "Re-sign unchanged02f components and qualify the explicit zero-input policy ceiling",
@@ -190,9 +203,10 @@
     "fetch-failure-frames",
     "fetch-runtime",
     "promise-library",
-    "source-splicer"
+    "source-splicer",
+    "standard-clocks"
   ],
-  "reviewReason": "Union explicit dependency-negative source triggers and default-false entropy replay; retain all original jobs/events.",
+  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

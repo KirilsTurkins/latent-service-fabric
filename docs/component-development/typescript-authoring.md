@@ -355,3 +355,5 @@ call. These example settings do not change any production node default.
 See the source-matched qualification receipt for measured
 build, compilation, invocation, memory, cache and cleanup costs; these
 correctness experiments are not throughput or production-sizing claims.
+
+Ordinary Date/performance compatibility uses the explicitly selected [standard clock boundary](typescript-standard-clocks.md). Undeclared current-time reads fail concretely; deterministic Date arguments/parsing remain available. Its finite signed campaign is pending.
