@@ -40,3 +40,14 @@ NativeAOT compilation, preserved invalid-argument results, signed reached/caught
 Unsupported results and physical retirement remain mandatory owning gates.
 No guest execution pass, writable scratch implementation, whole criterion or
 whole-ticket completion is claimed by this source milestone.
+
+The owning20-minute scratch child preserves its normal pure-component command,
+then adds a joined TaskWait component. Each programme retains the original27
+SDK outcomes, the six filesystem/trap/fresh calls, and six named null, empty,
+NUL-path, invalid-mode, invalid-access and incompatible-mode/access cases.
+The pure component has no ACTIVATION grant; the joined component declares and
+receives it explicitly. The six argument results must retain their exact
+`ArgumentNullException`, `ArgumentException` or `ArgumentOutOfRangeException`
+categories. Unsupported, a generic trap or an unknown error cannot satisfy
+those controls. Both phases must retain zero active owners, clean shutdown and
+the exact final CoreLib reference chain. Actual78 outcomes remain pending.

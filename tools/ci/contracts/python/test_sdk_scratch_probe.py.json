@@ -1,12 +1,39 @@
 {
   "cases": [
+    "ScratchProbe.test_dotnet_argument_error_cannot_be_replaced_by_unsupported_trap_or_unknown_result",
+    "ScratchProbe.test_dotnet_retains_all_six_calls_then_original_argument_categories_with_retirement",
     "ScratchProbe.test_no_filesystem_grants_or_inferred_unknown_outcome_and_no_false_retirement",
     "ScratchProbe.test_old_greeting_traps_unknown_and_malformed_values_do_not_become_api_evidence",
     "ScratchProbe.test_only_bounded_exact_caught_results_count_and_not_found_is_not_unsupported",
+    "ScratchProbe.test_only_explicit_dotnet_join_can_retain_activation_and_no_filesystem_grants",
     "ScratchProbe.test_selector_refuses_alias_foreign_language_and_competing_campaign_before_output",
     "ScratchProbe.test_six_calls_include_original_bound_owner_retirement_and_explicit_trap_fresh_pair"
   ],
   "guards": {
+    "ScratchProbe.test_dotnet_argument_error_cannot_be_replaced_by_unsupported_trap_or_unknown_result": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
+      ],
+      "skipSites": []
+    },
+    "ScratchProbe.test_dotnet_retains_all_six_calls_then_original_argument_categories_with_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
+      ],
+      "skipSites": []
+    },
     "ScratchProbe.test_no_filesystem_grants_or_inferred_unknown_outcome_and_no_false_retirement": {
       "bases": [
         "unittest.TestCase"
@@ -15,7 +42,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
-        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
       ],
       "skipSites": []
     },
@@ -27,7 +54,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
-        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
       ],
       "skipSites": []
     },
@@ -39,7 +66,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
-        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
+      ],
+      "skipSites": []
+    },
+    "ScratchProbe.test_only_explicit_dotnet_join_can_retain_activation_and_no_filesystem_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
       ],
       "skipSites": []
     },
@@ -51,7 +90,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
-        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
       ],
       "skipSites": []
     },
@@ -63,13 +102,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
-        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+        "class:setup-sha256:0a2fe8774d5b8f94713864cbb392ca517c993c890d3a5d5caf2e9d756045401a"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_sdk_scratch_probe.py",
-  "reviewReason": "Preserve every scratch outcome and explicitly refuse simultaneous newly merged managed-task campaign selection before output; all original cases, decorators and skip guards retained.",
+  "reviewReason": "Reviewed additive .NET filesystem qualification: keep original six calls, all other languages, normal75min parent and20min scratch child; add six precise argument cases and explicit joined-CoreLib phase without filesystem grants or native host build.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

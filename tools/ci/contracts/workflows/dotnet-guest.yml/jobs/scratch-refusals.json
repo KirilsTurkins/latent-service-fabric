@@ -60,13 +60,21 @@
         "run": "python3 tools/qualify_sdk_scratch.py --language dotnet --native-qualification \"$RUNNER_TEMP/dotnet-scratch-prepared\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-scratch-refusals\""
       },
       {
+        "name": "Check exact CoreLib composition and pure joined filesystem controls",
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_closed_filesystem tools.tests.test_dotnet_filesystem_qualification -v"
+      },
+      {
+        "name": "Require pure and joined signed Unsupported and original argument validation",
+        "run": "python3 tools/qualify_dotnet_closed_filesystem.py --native-qualification \"$RUNNER_TEMP/dotnet-scratch-prepared\" --pure-scratch \"$RUNNER_TEMP/dotnet-scratch-refusals\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-closed-filesystem\""
+      },
+      {
         "if": "always()",
         "name": "Retain bounded filesystem observations including failures",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-scratch-refusals-${{ github.sha }}",
-          "path": "${{ runner.temp }}/dotnet-scratch-refusals/qualification.json\n${{ runner.temp }}/dotnet-scratch-refusals/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/dotnet-scratch-refusals/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/build/*.json\n${{ runner.temp }}/dotnet-scratch-refusals/build/component.wasm\n${{ runner.temp }}/dotnet-scratch-refusals/build/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/node/workflow.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/controls/*.json\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n",
+          "path": "${{ runner.temp }}/dotnet-scratch-refusals/qualification.json\n${{ runner.temp }}/dotnet-scratch-refusals/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/dotnet-scratch-refusals/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/build/*.json\n${{ runner.temp }}/dotnet-scratch-refusals/build/component.wasm\n${{ runner.temp }}/dotnet-scratch-refusals/build/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/node/workflow.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/controls/*.json\n${{ runner.temp }}/dotnet-scratch-refusals/build/derived-closed-filesystem-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem/qualified.json\n${{ runner.temp }}/dotnet-closed-filesystem/FAILED.json\n${{ runner.temp }}/dotnet-closed-filesystem/logs/**\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/*.json\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/derived-closed-filesystem-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/derived-task-wait-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/component.wasm\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/logs/**\n${{ runner.temp }}/dotnet-closed-filesystem/joined/node/workflow.json\n${{ runner.temp }}/dotnet-closed-filesystem/joined/node/FAILED.json\n${{ runner.temp }}/dotnet-closed-filesystem/joined/node/controls/*.json\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n",
           "retention-days": 3
         }
       }
@@ -75,7 +83,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Preserve every original75-minute parent step and workflow property; add public normal-bundle export and separate20-minute ordinary.NET scratch child without native host rebuild, filesystem or entropy grants.",
+  "reviewReason": "Reviewed additive .NET filesystem qualification: keep original six calls, all other languages, normal75min parent and20min scratch child; add six precise argument cases and explicit joined-CoreLib phase without filesystem grants or native host build.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
