@@ -59,6 +59,12 @@ No WALL, RANDOM, HTTP or filesystem authority is added. The six argument results
 categories. Unsupported, a generic trap or an unknown error cannot satisfy
 those controls. Both phases must retain zero active owners, clean shutdown and
 the exact final CoreLib reference chain. Pure39 plus joined40 (one additional
-authority denial) make79 required outcomes; the joined40 remain pending.
+authority denial) make79 required outcomes. The [same-component replay](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39376610797/job/118476056909)
+passed all79 at diagnostic sourcec26632b1927779975a98fd14000c81803fb7957b.
+The [compact observation](../testing/evidence/dotnet-closed-filesystem-joined-signed-2026-10-20.json)
+binds artifact12244113860, both original components and their CoreLib chains,
+the separate zero-entry ACTIVATION denial,36 physical and18 zero-active-owner
+samples per phase, and both clean shutdowns. No AOT/native-host rebuild or
+fabricated current normal receipt was used; the earlier cd6e job stays failed.
 This finite proof does not establish writable scratch, every filesystem query,
 the whole criterion or whole-ticket completion.

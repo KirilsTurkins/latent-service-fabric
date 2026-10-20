@@ -45,7 +45,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, dotnet_task_runtime=False, standard_typescript_clocks=False, standard_scratch_refusal=False, dotnet_published_tasks=False, dotnet_scratch_task_runtime=False):
+        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, dotnet_task_runtime=False, standard_typescript_clocks=False, standard_scratch_refusal=False, dotnet_published_tasks=False, dotnet_scratch_task_runtime=False, java_resource_conformance=False):
+    require(type(java_resource_conformance) is bool and (not java_resource_conformance or
+        (language == 'java' and not standard_scratch_refusal)), 'authoring-java-resource-conformance-selection')
     require(type(dotnet_scratch_task_runtime) is bool and (not dotnet_scratch_task_runtime or
             (language == 'dotnet' and standard_scratch_refusal is True)), 'authoring-dotnet-scratch-task-runtime-selection')
     require(type(dotnet_published_tasks) is bool and (not dotnet_published_tasks or (
@@ -334,6 +336,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if standard_typescript_entropy:
                         from tools.typescript_entropy_probe import probe as probe_typescript_entropy
                         probe_typescript_entropy(client, targets, probe, result, len(names), fixture, publications)
+                    if java_resource_conformance:
+                        from tools.java_resource_probe import probe as probe_java_resources
+                        probe_java_resources(client, targets['greeting'], probe, result, len(names))
                     if standard_typescript_clocks:
                         from tools.typescript_standard_clock_probe import probe as probe_typescript_clocks
                         probe_typescript_clocks(client, targets, probe, result, len(names))
