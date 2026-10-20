@@ -26,6 +26,13 @@ Development also contains opt-in protected transaction storage, deferred dispatc
 3. Publish bounded listeners only after required owners are ready. Each request enters the normal authenticated adapter and activation or transaction lifecycle.
 4. During shutdown stop new admission, drain accepted transports/activations/providers/control/dispatch/storage and retain unresolved owners instead of claiming early reclamation.
 
+The standalone inventory precharges 38 topology row slots: the fixed node,
+activation and architectural service groups plus the bounded catalog, HTTP,
+policy, rollout and canary groups. These group lengths also type-check the
+source arrays. The snapshot byte cap remains 256 KiB; a shorter selection still
+reports an incomplete topology rather than dropping rows as a complete result.
+The generic inventory default remains 32 slots.
+
 ## Integration boundaries
 
 `check-config` is preflight rather than serve; inspection does not silently bootstrap a node. Product execution/security qualification is Linux x86-64. `development-test-node` and `development-outbound-streams` are explicit fixture/qualification features. Measurement collectors are separately invoked tooling, never ordinary workload startup. Standalone composition does not implement clustered control or remote invocation.

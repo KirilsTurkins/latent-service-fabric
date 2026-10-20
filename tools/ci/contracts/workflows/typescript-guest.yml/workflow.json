@@ -178,6 +178,11 @@
             "description": "Compile only new boundary probes using authenticated d412 SDK products",
             "type": "boolean"
           },
+          "qualify-scratch-refusals": {
+            "default": false,
+            "description": "Require reachable node:fs refusal using existing authenticated native tools",
+            "type": "boolean"
+          },
           "qualify-standard-clocks": {
             "default": false,
             "description": "Build two ordinary clock probes using original engine and native products",
@@ -203,10 +208,11 @@
     "fetch-failure-frames",
     "fetch-runtime",
     "promise-library",
+    "scratch-refusals",
     "source-splicer",
     "standard-clocks"
   ],
-  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
+  "reviewReason": "Add only a default-false manual three-case captured node:fs refusal job using authenticated historical contracts/package tools, preserving all existing language commands, budgets and original native attribution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "latent.typescript.scratch-refusal-observation.v1",
+  "status": "passed",
+  "executionSource": "99eaccd694604c2218d48639e648d5691c6d40c0",
+  "integrationBase": "5bf2f3d72d05d04a52ad0ccfdbb22ea26584d0bd",
+  "run": 39350623578,
+  "job": 118393691728,
+  "artifact": 12233067378,
+  "archiveDigest": "sha256:96337b25f37b926f60c3a79c58fe83a2a3ecc6bcf7796be9783c6b61149ea07a",
+  "qualification": {
+    "sha256": "sha256:1d1535ee5e9d0b30421545295a2b45c31a359cdb1226fcdf4f83800f2874fee8",
+    "bytes": 29291
+  },
+  "historicalInputs": {
+    "sha256": "sha256:fd5c752186d3da715aa54ecd5ebd293cfffc9394ccf4d3b3a6b1f10750fb326a",
+    "bytes": 1980
+  },
+  "cases": [
+    {
+      "case": "open",
+      "observation": {
+        "status": "refused",
+        "boundary": "captured-reachable-bundle-import",
+        "module": "node:fs",
+        "profile": "spidermonkey-public-sync-v1",
+        "reason": "standard-runtime-module-not-installed",
+        "runtimeFilesystemExecutionClaimed": false,
+        "compilerProcessCompleted": true,
+        "rawDiagnosticsPublished": false
+      },
+      "sourceDigest": "sha256:aea1d4f5b2d575074f5dd6acb2bc668040514a7713191b0f341feccdc9050001",
+      "acceptedDependencyLockDigest": "sha256:77b7a50ba3c19f1e8673a23f093b035f005f7b819018bfea7156a6492df2dd94",
+      "originalOutsideSourceRemoved": true,
+      "failureStage": "compile",
+      "lastCompilerCommand": {
+        "stage": "bundle",
+        "exitCode": 1,
+        "seconds": 0.063825
+      },
+      "allEarlierCompilerCommandsPassed": true,
+      "compilerInputs": {
+        "sha256": "sha256:282715e6d99d6e78d7196457bc7cebe15372ed89c0635b17816930e0f448fc65",
+        "bytes": 918942
+      }
+    },
+    {
+      "case": "create",
+      "observation": {
+        "status": "refused",
+        "boundary": "captured-reachable-bundle-import",
+        "module": "node:fs",
+        "profile": "spidermonkey-public-sync-v1",
+        "reason": "standard-runtime-module-not-installed",
+        "runtimeFilesystemExecutionClaimed": false,
+        "compilerProcessCompleted": true,
+        "rawDiagnosticsPublished": false
+      },
+      "sourceDigest": "sha256:e96e7a818a7f89a3a4ff0001ac07ec001bc8a8eb4d7b7392f47ba03c179dd70b",
+      "acceptedDependencyLockDigest": "sha256:0f161a77746d0e68ac0b80cba8c02b829c56296f37563034b50c93b565a44804",
+      "originalOutsideSourceRemoved": true,
+      "failureStage": "compile",
+      "lastCompilerCommand": {
+        "stage": "bundle",
+        "exitCode": 1,
+        "seconds": 0.053476
+      },
+      "allEarlierCompilerCommandsPassed": true,
+      "compilerInputs": {
+        "sha256": "sha256:282715e6d99d6e78d7196457bc7cebe15372ed89c0635b17816930e0f448fc65",
+        "bytes": 918942
+      }
+    },
+    {
+      "case": "temp",
+      "observation": {
+        "status": "refused",
+        "boundary": "captured-reachable-bundle-import",
+        "module": "node:fs",
+        "profile": "spidermonkey-public-sync-v1",
+        "reason": "standard-runtime-module-not-installed",
+        "runtimeFilesystemExecutionClaimed": false,
+        "compilerProcessCompleted": true,
+        "rawDiagnosticsPublished": false
+      },
+      "sourceDigest": "sha256:5339a4acd94c4aa26edb9de8a861386ebd0f7e7a5724a6a42f8e8242c82edf9d",
+      "acceptedDependencyLockDigest": "sha256:ed521030e4148c2e0e59027b141b471f0b36828616b46d729782a785ed30e92a",
+      "originalOutsideSourceRemoved": true,
+      "failureStage": "compile",
+      "lastCompilerCommand": {
+        "stage": "bundle",
+        "exitCode": 1,
+        "seconds": 0.053355
+      },
+      "allEarlierCompilerCommandsPassed": true,
+      "compilerInputs": {
+        "sha256": "sha256:282715e6d99d6e78d7196457bc7cebe15372ed89c0635b17816930e0f448fc65",
+        "bytes": 918942
+      }
+    }
+  ],
+  "compilerMaterialCount": 112,
+  "allCompilerMaterialsByteExactAtIntegration": true,
+  "compilerMaterialInventoryDigest": "sha256:7119f06e2165ecde3511adce0ebf38399389ccad96d4151b02c6d9bd6fcf5d4c",
+  "exercisedEntryMaterials": {
+    "tools/run_typescript_scratch_refusals.py": {
+      "sha256": "sha256:cac181a01fc17ebc749d9560646e145e50c5d8487b9ef12a0e4b56304b2f7743",
+      "bytes": 2070
+    },
+    "tools/qualify_typescript_scratch_refusals.py": {
+      "sha256": "sha256:f1807212ed300738556fe7597d42332fc33cccef9f36431dea39e60e9690b1ec",
+      "bytes": 7352
+    },
+    "tools/sdk_scratch_fixture.py": {
+      "sha256": "sha256:0c742f4be74b251c8f7525fa4d4e8b5b39b81b95e4c86ed2f254587c6e76cd5f",
+      "bytes": 15221
+    },
+    "tools/typescript_guest/compiler.py": {
+      "sha256": "sha256:08e750380f714b6e18eea2cd7059db79986feeec6340dae37e69a8555ada848a",
+      "bytes": 32305
+    },
+    "tools/typescript_guest/bundle.mjs": {
+      "sha256": "sha256:cddf651966f4e2f6ed8c15635117c851784987cc15b841ea69770be814b3b8d0",
+      "bytes": 11995
+    },
+    ".github/workflows/typescript-guest.yml": {
+      "sha256": "sha256:8ed3649423b8e2f7cd52c4845c25e6f940823258e914b790e4958561165fefd8",
+      "bytes": 59111
+    }
+  },
+  "historicalProducts": {
+    "compiledSourceMerge": "2cd6bb0d1ca39e3205ef0cf6296170fcab4005fe",
+    "originalPrHead": "02fbe2f9ed5c2cec6f568ebc7cce99216a12631e",
+    "qualification": {
+      "sha256": "sha256:f9aded6b7b0ba702d9ec105d30320a0b2d44c22a2ab090e88e1bc1e813bda778",
+      "bytes": 25162
+    },
+    "sourceInputs": {
+      "sha256": "sha256:593c8dbaa193fc9ed8b3f88ff650975b55abf2b124c2cfeaf0decc534f723b34",
+      "bytes": 41819
+    },
+    "normalNode": {
+      "sha256": "sha256:ceaacb9c49b1595ff726aa3139aa7f0a75c03a6f63561602a0e406405191f649",
+      "bytes": 281497
+    },
+    "nativeBinaries": {
+      "latent": {
+        "sha256": "sha256:25253f0ad347c9b710b240360dc5f16e4b1faf73b6373ed416de72e54d4a9145",
+        "bytes": 68801736
+      },
+      "latentd": {
+        "sha256": "sha256:61bfcc6da1f9704ffdab3aa157eba8e24dccc43b6e794739e5b1d0e7d4b9a616",
+        "bytes": 182156984
+      },
+      "examples/package": {
+        "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+        "bytes": 17726192
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+        "bytes": 7224720
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:5a1fb049382ef7c3d828be500525e335855a5cbaee6697d4a6dd0d6d3a700aa5",
+        "bytes": 23847136
+      }
+    },
+    "historicalNormalOutcomes": 30,
+    "currentNormalReceiptFabricated": false
+  },
+  "newNativeBuild": false,
+  "nodeInvoked": false,
+  "filesystemProviderGranted": false,
+  "runtimeFilesystemExecutionClaimed": false,
+  "successfulComponentOrPackageProduced": false,
+  "captureStageRecordsRetainedUnmodified": true,
+  "fullTicketQualification": false,
+  "limitations": [
+    "ECMAScript has no standard filesystem API; this is reachable node:fs compiler refusal, not a reached guest Unsupported error.",
+    "No new component execution, native/engine rebuild, scratch implementation or concurrent lifecycle qualification.",
+    "Five native-language scratch runtime programmes retain their separate pending or failed state."
+  ]
+}

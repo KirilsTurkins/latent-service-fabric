@@ -1,0 +1,81 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-scratch-refusals }}",
+    "name": "Captured outside node:fs open create and temp refusal",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install original compiler namespace prerequisites",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install -r tools/requirements.lock\n"
+      },
+      {
+        "name": "Check reachable bundle refusal and historical tool guards",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_scratch_refusals tools.tests.test_typescript_scratch_replay"
+      },
+      {
+        "name": "Install normal pinned public compiler tools",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-scratch-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire only existing authenticated public products",
+        "run": "python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs \"$RUNNER_TEMP/typescript-scratch-original-inputs\"",
+        "timeout-minutes": 5
+      },
+      {
+        "name": "Compile three actual reachable outside filesystem calls and require refusal",
+        "run": "python3 -B tools/run_typescript_scratch_refusals.py --acquired \"$RUNNER_TEMP/typescript-scratch-original-inputs\" --tools \"$RUNNER_TEMP/typescript-scratch-tools\" --output \"$RUNNER_TEMP/typescript-scratch-refusals\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public refusal and source identity receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-scratch-refusals-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-scratch-original-inputs/acquisition.json\n${{ runner.temp }}/typescript-scratch-refusals/qualification.json\n${{ runner.temp }}/typescript-scratch-refusals/FAILED.json\n${{ runner.temp }}/typescript-scratch-refusals/historical-inputs.json\n${{ runner.temp }}/typescript-scratch-refusals/*/build/BUILD-FAILED.json\n${{ runner.temp }}/typescript-scratch-refusals/*/build/recipe-inputs.json\n${{ runner.temp }}/typescript-scratch-refusals/*/build/compiler-inputs.json\n${{ runner.temp }}/typescript-scratch-refusals/*/build/source-inputs.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "scratch-refusals",
+  "kind": "job",
+  "reviewReason": "Add only a default-false manual three-case captured node:fs refusal job using authenticated historical contracts/package tools, preserving all existing language commands, budgets and original native attribution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

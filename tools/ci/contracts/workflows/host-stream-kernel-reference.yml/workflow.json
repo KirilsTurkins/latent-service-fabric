@@ -1,0 +1,28 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "host-stream-kernel-reference-${{ github.ref }}"
+    },
+    "name": "Current stream kernel owner reference",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/host-stream-kernel-tail-20261020",
+          "feat/host-stream-kernel-retirement-20261020"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "reference"
+  ],
+  "reviewReason": "retain original kernel owners across failed DNS/connect and actual close-tail retirement uncertainty",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/host-stream-kernel-reference.yml"
+}

@@ -15,8 +15,12 @@ This is an implementation candidate. Native Java ownership controls and a
 [finite signed ordinary-API provider gate](../testing/java-standard-http.md)
 passed, including actual TeaVM component execution, HTTP errors, denied targets,
 body failures/early close, uncertain POST and physical retirement. One unchanged
-published default client also passes that finite provider matrix. Two independent
-clients, private dependencies and the complete profile remain unqualified.
+published default client also passes that finite provider matrix. The later
+[two-published-client campaign](../testing/java-published-http.md) passed all
+26 cases using unchanged `http-request:6.0` and DavidWebb with its transitive
+JSON parser. The [private-JAR campaign](../testing/java-private-http.md) passed
+its separate 26-case captured-source gate. Those source-bound results leave the
+complete profile unqualified.
 Issue #688 remains open.
 It is independent of the listener-free Java HttpServer profile. Selecting both
 profiles merges their SDK compiler provider lists without replacing either list.
@@ -66,6 +70,16 @@ The finite profile rejects explicit proxies and socket-address resolution with
 concrete errors before DNS or contact. It supplies no socket or proxy transport.
 These standard API substitutions do not inspect dependency coordinates.
 
+The profile also supplies the canonical abstract `javax.net.ssl.HttpsURLConnection`
+type for ordinary libraries' optional HTTPS type checks. It remains distinct from
+the final plain-HTTP `Connection`: an HTTP connection never passes that test.
+Construction and the supplied hostname-verifier/socket-factory setters are
+catchably unsupported (`java-https-standard-type-not-qualified`); null setter
+arguments retain their standard `IllegalArgumentException`. No verifier, socket
+factory, certificate, TLS connection or successful placeholder is created.
+The ordinary HTTPS URL factory retains its original pre-dispatch refusal.
+This finite type surface is not a qualified HTTPS implementation.
+
 Each upload/body/chunk uses the generated owned WIT resource. Stream close,
 disconnect and errors release guest ownership without claiming physical retirement;
 the original installed provider retains charges through actual cleanup or
@@ -92,6 +106,8 @@ The source-bound signed `http-client-profile.json` asset records exact adapter,
 recipe, source and component identities and a pending qualification state. It is
 not execution evidence or authority. Remaining work includes pinned TeaVM ABI
 checks for inherited JDK members, HTTPS and redirect semantics, distinct timeout
-phases, two unchanged independent default clients and an outside-checkout private
-JAR, the shared real-provider adversarial matrix, native/guest cost measurements
-and fresh cross-tenant cleanup. Existing direct Java SDK regressions remain in CI.
+phases, pending/sibling/cancellation behavior, native/guest cost measurements
+and fresh cross-tenant cleanup. The two published clients and outside-checkout
+private JAR have passed the finite shared real-provider matrix linked above;
+their receipts do not qualify the remaining surfaces. Existing direct Java SDK
+regressions remain in CI.

@@ -1,0 +1,46 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "java-published-http-replay-${{ github.ref }}"
+    },
+    "name": "Focused published Java HTTP replay",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          "sdk/java-guest/**",
+          "examples/java-http-request/**",
+          "examples/java-david-webb/**",
+          "tools/java*.py",
+          "tools/java_guest/**",
+          "tools/qualify_java_published_http.py",
+          "tools/replay_java_published_http.py",
+          "tools/tests/test_java_published*.py",
+          ".github/workflows/java-published-http-replay.yml"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "published_http_replay": {
+            "default": false,
+            "description": "Fresh published client components with authenticated historical native products",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "published-http-replay"
+  ],
+  "reviewReason": "Register named qualification PR trigger and false-by-default future manual input without depending future PRs on expiring artifacts",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-published-http-replay.yml"
+}

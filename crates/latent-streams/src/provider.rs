@@ -31,6 +31,7 @@ pub struct StreamProvider {
 }
 pub(crate) struct Inner {
     pub config: StreamProviderConfig,
+    pub kernel_mode: crate::kernel::Mode,
     pub installed: InstalledProvider,
     pub pools: Arc<ProviderPools>,
     pub resolvers: Vec<Option<Resolver>>,
@@ -66,8 +67,64 @@ impl TlsInstallMode {
 }
 
 impl StreamProvider {
-    /// Explicit nonproduction qualification entry. Removing this feature gate
-    /// requires the architecture/security and real-component profile gates.
+    /// Normal installation refuses before protected inputs, resolver/socket
+    /// allocation or provider publication until an actual platform is qualified.
+    pub fn install(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+    ) -> Result<Self, StreamError> {
+        let input = (pools, logical_id, epoch, expected_epoch);
+        let kernel_mode = crate::kernel::Mode::RetainUnproved;
+        config.validate()?;
+        crate::kernel::require_supported_profile()?;
+        #[cfg(any(test, feature = "development-outbound"))]
+        {
+            let (pools, logical_id, epoch, expected_epoch) = input;
+            Self::install_with_modes(
+                pools,
+                logical_id,
+                epoch,
+                expected_epoch,
+                config,
+                TlsInstallMode::Qualified,
+                kernel_mode,
+            )
+        }
+        #[cfg(not(any(test, feature = "development-outbound")))]
+        {
+            drop((input, kernel_mode));
+            Err(error(StreamErrorCode::Unsupported))
+        }
+    }
+
+    // Current-kernel ownership experiment; no normal or development binary can
+    // select a passing kernel accounting certificate through this entry.
+    #[cfg(test)]
+    pub(crate) fn install_kernel_for_accounting_reference(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )
+    }
+
+    /// Explicit nonproduction logical-library reference. FD/future destruction
+    /// here is not final kernel retirement and grants no accounting qualification.
+    /// Removing this feature gate requires the architecture/security and actual
+    /// complete platform/provider gates; normal callers must use `install`.
     #[cfg(any(test, feature = "development-outbound"))]
     pub fn install_for_qualification(
         pools: Arc<ProviderPools>,
@@ -114,6 +171,27 @@ impl StreamProvider {
         expected_epoch: u64,
         config: StreamProviderConfig,
         tls_mode: TlsInstallMode,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            tls_mode,
+            crate::kernel::Mode::LogicalReference,
+        )
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    fn install_with_modes(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        tls_mode: TlsInstallMode,
+        kernel_mode: crate::kernel::Mode,
     ) -> Result<Self, StreamError> {
         config.validate()?;
         let limits = pools.limits()?;
@@ -200,6 +278,7 @@ impl StreamProvider {
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
+                kernel_mode,
                 installed,
                 pools,
                 resolvers,
@@ -254,6 +333,9 @@ impl StreamProvider {
                 result.delivered_read_bytes += usage.delivered_read_bytes;
             }
         }
+        let quarantined = self.inner.installed.quarantined_connections();
+        result.owners += quarantined;
+        result.connections += quarantined;
         Ok(result)
     }
 

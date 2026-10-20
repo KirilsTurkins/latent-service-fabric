@@ -12,6 +12,8 @@ on:
       - 'apps/latentd/src/command/inspection.rs'
       - 'apps/latentd/src/config.rs'
       - 'apps/latentd/src/config/derive.rs'
+      - 'apps/latentd/src/config/topology.rs'
+      - 'apps/latentd/src/config/tests.rs'
       - 'apps/latentd/src/lib_root.rs'
       - 'apps/latentd/src/config/tests/providers.rs'
       - 'apps/latentd/Cargo.toml'
@@ -36,6 +38,8 @@ on:
       - 'apps/latentd/src/command/inspection.rs'
       - 'apps/latentd/src/config.rs'
       - 'apps/latentd/src/config/derive.rs'
+      - 'apps/latentd/src/config/topology.rs'
+      - 'apps/latentd/src/config/tests.rs'
       - 'apps/latentd/src/lib_root.rs'
       - 'apps/latentd/src/config/tests/providers.rs'
       - 'apps/latentd/Cargo.toml'
@@ -87,5 +91,58 @@ jobs:
             ${{ runner.temp }}/node-worker-stack-reference/*-run.stderr.log
             ${{ runner.temp }}/node-worker-stack-reference/new-list.stdout.log
             ${{ runner.temp }}/node-worker-stack-reference/new-ignored.stdout.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  topology:
+    name: Standalone fixed topology capacity and exact byte precharge
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Execute full fixed topology and exact selected Vec precharge
+        run: |
+          set -o pipefail
+          cargo test --locked -p latentd --lib standalone::observations::topology::tests:: -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/standalone-topology.log"
+          grep -F 'test result: ok. 5 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/standalone-topology.log"
+          grep -F 'test standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row ... ok' "$RUNNER_TEMP/standalone-topology.log"
+          grep -F 'test standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity ... ok' "$RUNNER_TEMP/standalone-topology.log"
+      - name: Verify standalone derivation retains generic and snapshot byte limits
+        run: |
+          set -o pipefail
+          cargo test --locked -p latentd --lib config::tests::defaults_derive_compatible_node_limits_without_creating_storage -- --exact --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/standalone-topology-config.log"
+          grep -F 'test result: ok. 1 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/standalone-topology-config.log"
+      - name: Retain exact reporter and capacity results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: standalone-topology-capacity-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/standalone-topology.log
+            ${{ runner.temp }}/standalone-topology-config.log
           if-no-files-found: warn
           retention-days: 7

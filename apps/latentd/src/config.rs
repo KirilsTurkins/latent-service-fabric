@@ -25,6 +25,7 @@ mod stream_reload;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
+pub(crate) mod topology;
 mod validation;
 
 use std::path::{Path, PathBuf};

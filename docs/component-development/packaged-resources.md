@@ -160,8 +160,15 @@ Unsupported; neither a generic trap nor a successful compiler build proves API
 support or refusal. Source controls currently pass; signed five-language results
 are pending and no whole criterion is complete. The Rust workflow has a separate
 20-minute child consuming an exact normal public bundle; the original 35-minute
-parent and all its commands remain mandatory. Other language execution wiring
-retains its own pending boundary. Actual results also project into the existing
+parent and all its commands remain mandatory. The C workflow also has a separate
+20-minute child using only its exact normal public products and pinned
+Zig/bindgen/wasm-tools. A default-false manual `qualify-scratch-refusals` selection
+runs the original 35-minute runtime job and this child, skipping only the
+separate unchanged 25-minute standard-facility campaign on that explicit manual
+selection. PR, push and default manual runs retain every original job, command
+and deadline. Other language execution
+wiring retains its own pending boundary. Neither the C nor Rust scratch child
+has a passing guest receipt yet. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.
@@ -171,7 +178,18 @@ ECMAScript has no standard filesystem API. The corresponding TypeScript packet
 removes its originals and invokes the real isolated compiler for reachable
 `node:fs` open/create/temp operations. Only the exact uninstalled-standard-module
 bundle diagnostic counts. This is compiler-refusal evidence, not a claim that a
-Node filesystem facade executes in the component. The owning language receipts
+Node filesystem facade executes in the component. A default-false `qualify-scratch-refusals`
+selection in the registered TypeScript workflow runs only these three compiler
+refusals under a separate 20-minute job, reusing authenticated historical public
+contracts/packager tools; it performs no native rebuild or node invocation.
+Its current compiler receipt and original compiled-source ancestry remain separate.
+[Actual three-case qualification](../testing/evidence/typescript-scratch-refusals-2026-10-20.json)
+passed at source99eaccd694 in run39350623578/job118393691728: all three outside
+packages were captured/reviewed, originals removed and the actual compiler
+completed with the exact uninstalled-module refusal. All112 compiler materials
+remain exact after composition. This executes no node and qualifies no native
+filesystem result; the native-language programmes remain separately pending.
+The owning language receipts
 feed the existing SDK conformance work in #694; this adds no cross-language gate.
 
 Related: [captured dependencies](application-dependencies.md),

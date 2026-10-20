@@ -48,6 +48,15 @@
           "docs/component-development/c-authoring.md",
           ".github/workflows/c-guest-authoring.yml"
         ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "qualify-scratch-refusals": {
+            "default": false,
+            "description": "Run the original normal C qualification and same-products scratch child",
+            "type": "boolean"
+          }
+        }
       }
     },
     "permissions": {
@@ -56,9 +65,10 @@
   },
   "requiredJobs": [
     "runtime",
+    "scratch-refusals",
     "standard-facilities"
   ],
-  "reviewReason": "Add current-source signed C clock entropy acceptance without changing existing C runtime job",
+  "reviewReason": "Add explicit default-false manual scratch selection retaining mandatory original runtime35 and new same-products child20; skip only unchanged extra standards25 on that manual selection, with all PR/push/default jobs and commands preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
