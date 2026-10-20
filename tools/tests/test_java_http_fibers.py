@@ -623,7 +623,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         from tools.java_guest import coroutine_patch as patch
         text = (campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/Check.java').read_text()
         for required in ('entryLiveness(args[0]);', 'transform.apply(program,',
-                'new MethodReference("control.Await", "await", void.class)',
+                'new MethodReference("control.Await", "await", ValueType.VOID)',
                 'catch (ArrayIndexOutOfBoundsException failure)',
                 'origin.getClassName().equals("org.teavm.model.util.LivenessAnalyzer")',
                 'origin.getMethodName().equals("liveOut")', 'constant.setConstant(42)',

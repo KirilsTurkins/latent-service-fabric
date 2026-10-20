@@ -10,6 +10,7 @@ import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -49,14 +50,14 @@ public final class Check {
         var value = program.createVariable();
         var constant = new IntegerConstantInstruction();
         constant.setReceiver(value); constant.setConstant(42); entry.add(constant);
-        var awaited = new MethodReference("control.Await", "await", void.class);
+        var awaited = new MethodReference("control.Await", "await", ValueType.VOID);
         var call = new InvokeInstruction();
         call.setType(InvocationType.SPECIAL); call.setMethod(awaited); entry.add(call);
         jump(entry, exit);
         var result = new ExitInstruction(); result.setValueToReturn(value); exit.add(result);
         var transform = new CoroutineTransformation(name -> null, Set.of(awaited), false);
         try {
-            transform.apply(program, new MethodReference("control.Owner", "run", int.class));
+            transform.apply(program, new MethodReference("control.Owner", "run", ValueType.INTEGER));
         } catch (ArrayIndexOutOfBoundsException failure) {
             var origin = failure.getStackTrace()[0];
             if (!mode.equals("original")
@@ -70,7 +71,7 @@ public final class Check {
             throw new AssertionError("coroutine-control-original-entry-defect-not-observed");
         }
         int calls = 0, pushes = 0;
-        var pushInt = new MethodReference("org.teavm.runtime.Fiber", "push", int.class, void.class);
+        var pushInt = new MethodReference("org.teavm.runtime.Fiber", "push", ValueType.INTEGER, ValueType.VOID);
         for (var block : program.getBasicBlocks()) {
             for (var instruction : block) {
                 if (instruction instanceof InvokeInstruction) {
