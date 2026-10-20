@@ -31,7 +31,7 @@ The original source and local feed are removed before offline NativeAOT build.
 
 The signed programme keeps all 27 original node cases and adds distinct
 activation/entropy setup refusals, four isolated single-missing-grant refusals
-and 12 managed task cases. Every successful case
+and 16 managed task cases. Every successful case
 requires the actual expected return value, known and reaped invocation, original
 fuel/memory limits, zero outbound/log/effect consumption, provider-idle counters
 and physical retirement observations. Original shutdown and cleanup assertions
@@ -58,6 +58,25 @@ exposed the original ThreadPoolWorkQueue selector's RANDOM dependency; after
 that explicit grant, six initial cases passed before the first timer exposed
 TimerQueue's WALL dependency. The final passing run includes both declarations
 and independently refuses each of the four missing grants before guest entry.
+
+Four additional ordinary timer lifecycle cases now cover periodic callback
+ExecutionContext with stable post-disposal counts, disabled/change/reset behavior,
+disposal before a due time with rejected reset, and a callback that observes its
+own DisposeAsync as genuinely incomplete until the callback returns. Their four
+reference CLR controls pass with SDK10.0.303. The pinned BCL Timer.Change returns
+false after cancellation; the fixture preserves that behavior. No callback,
+scheduler or Timer implementation is replaced.
+
+All sixteen cases passed the fresh signed NativeAOT
+[run39352737634](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39352737634/job/118400465348).
+The [expanded source-bound receipt](../testing/evidence/dotnet-timer-lifecycle-signed-2026-10-20.json)
+records exactly48 known/reaped invocations within the original48-call ceiling,
+22 provider-idle observations,40 complete physical process-tree samples, all
+four isolated missing-grant denials and clean node/peer shutdown. All eight
+exercised helper/compiler source files and the full runtime-input digest match
+the integrated source. The identified historical native binaries are reused;
+this does not claim a rebuilt current host. Complete simultaneous reset/dispose
+races, shutdown/tenant fencing and managed CPU scheduling remain separate.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU
