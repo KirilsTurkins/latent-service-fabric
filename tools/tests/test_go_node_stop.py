@@ -46,6 +46,15 @@ def stopped():
         'telemetryFlushed': True, 'epochHelperJoined': True}}}
 
 
+def provider_usage():
+    return {'tenantUsage': {'scope': 'tenant', 'counters': {'sessions': '1', 'calls': '1'}},
+            'nodeUsage': {'scope': 'node', 'counters': {'broker_calls': '1'}}}
+
+
+def barrier(*args):
+    return probe.barrier(*args, provider_usage=provider_usage())
+
+
 class GoNodeStop(unittest.TestCase):
     def test_configuration_updates_the_actual_already_created_owned_file_with_original_limits(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -108,49 +117,74 @@ class GoNodeStop(unittest.TestCase):
                 self.assertIn(operation, owner)
 
     def test_barrier_requires_actual_live_store_and_host_completed_body_timers_not_just_a_wait(self):
-        actual = probe.barrier(inventory(), pages(), 'pending', 'pending')
-        self.assertEqual(actual['completedTimerStarts'], 3)
+        actual = barrier(inventory(), pages(), 'pending', 'pending')
+        self.assertEqual(actual['hostCompletedTimerStarts'], 3)
         self.assertEqual(actual['allowedTimerNext'], 2)
         self.assertFalse(actual['actualNodeSignalSent'])
         for name in probe.LIVE_ROWS:
             value = inventory()
             next(row for row in value['topology']['entries'] if row['name'] == name)['activeCount'] = '0'
-            self.assertIsNone(probe.barrier(value, pages(), 'pending', 'pending'))
+            self.assertIsNone(barrier(value, pages(), 'pending', 'pending'))
         raw = pages()
         for row in raw[0]['data']['records']:
             if row['data']['observation']['identities']['capability']['operation'] == 'timer-start':
                 row['data']['observation']['kind'] = 'PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED'
-        self.assertIsNone(probe.barrier(inventory(), raw, 'pending', 'pending'))
+        self.assertIsNone(barrier(inventory(), raw, 'pending', 'pending'))
 
     def test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results(self):
-        self.assertTrue(probe.barrier(inventory(), pages('drain'), 'pending', 'drain')['rootCloseObserved'])
+        self.assertTrue(barrier(inventory(), pages('drain'), 'pending', 'drain')['rootCloseObserved'])
         raw = pages('drain')
         raw[0]['data']['records'].pop()
-        self.assertIsNone(probe.barrier(inventory(), raw, 'pending', 'drain'))
+        self.assertIsNone(barrier(inventory(), raw, 'pending', 'drain'))
         raw = pages()
         raw[0]['data']['records'][-1]['sequence'] = '0'
-        self.assertIsNone(probe.barrier(inventory(), raw, 'pending', 'pending'))
+        self.assertIsNone(barrier(inventory(), raw, 'pending', 'pending'))
 
     def test_initializer_only_or_other_activation_cannot_stand_in_for_accepted_body_work(self):
         raw = pages()
         raw[0]['data']['records'] = [raw[0]['data']['records'][0], raw[0]['data']['records'][1], raw[0]['data']['records'][-1]]
-        self.assertIsNone(probe.barrier(inventory(), raw, 'pending', 'pending'))
-        self.assertIsNone(probe.barrier(inventory(), pages(), 'foreign', 'pending'))
+        self.assertIsNone(barrier(inventory(), raw, 'pending', 'pending'))
+        self.assertIsNone(barrier(inventory(), pages(), 'foreign', 'pending'))
         for key, value in [('rootActivation', 'foreign'), ('providerProfile', 'other')]:
             raw = pages()
             raw[0]['data']['records'][1]['data']['observation']['identities']['capability'][key] = value
             with self.assertRaisesRegex(RuntimeError, 'exact-activation-provider'):
-                probe.barrier(inventory(), raw, 'pending', 'pending')
+                barrier(inventory(), raw, 'pending', 'pending')
 
     def test_missing_dropped_duplicate_or_partial_audit_is_not_a_live_work_barrier(self):
-        for update in ('dropped', 'partial', 'duplicate', 'unavailable'):
+        for update in ('unknown-loss', 'partial', 'duplicate', 'unavailable'):
             raw = pages()
-            if update == 'dropped': raw[0]['data']['coverage']['droppedObservations'] = '1'
+            if update == 'unknown-loss': raw[0]['data']['coverage']['droppedObservations'] = 'unknown'
             if update == 'partial': raw[0]['data']['page']['nextPageToken'] = 'more'
             if update == 'duplicate': raw[0]['data']['records'] += [copy.deepcopy(raw[0]['data']['records'][0])]
             if update == 'unavailable': raw[0]['category'] = 'transport-failure'
             with self.subTest(update=update), self.assertRaisesRegex(RuntimeError, 'Go-node-stop-'):
-                probe.barrier(inventory(), raw, 'pending', 'pending')
+                barrier(inventory(), raw, 'pending', 'pending')
+
+    def test_optional_global_loss_does_not_replace_or_erase_the_required_named_positive_witnesses(self):
+        raw = pages()
+        raw[0]['data']['coverage']['droppedObservations'] = '157'
+        actual = barrier(inventory(), raw, 'pending', 'pending')
+        self.assertEqual(actual['droppedObservations'], 157)
+        self.assertEqual(actual['observationCoverage'], 'named-positive-witnesses-only')
+        self.assertFalse(actual['diagnosticStreamComplete'])
+        # Loss never creates a missing timer result or subsequent dispatch.
+        for missing in (1, -1):
+            value = copy.deepcopy(raw)
+            value[0]['data']['records'].pop(missing)
+            self.assertIsNone(barrier(inventory(), value, 'pending', 'pending'))
+
+    def test_named_timer_events_require_real_retained_provider_calls_with_the_store(self):
+        for member, key in [('tenantUsage', 'sessions'), ('tenantUsage', 'calls'),
+                            ('nodeUsage', 'broker_calls')]:
+            selected = provider_usage()
+            selected[member]['counters'][key] = '0'
+            self.assertIsNone(probe.barrier(inventory(), pages(), 'pending', 'pending',
+                                            provider_usage=selected))
+        selected = provider_usage()
+        selected['tenantUsage']['scope'] = 'foreign'
+        with self.assertRaisesRegex(RuntimeError, 'provider-usage-scope'):
+            probe.barrier(inventory(), pages(), 'pending', 'pending', provider_usage=selected)
 
     def test_original_limits_are_go_limits_and_readiness_does_not_raise_any_capacity(self):
         self.assertEqual(probe.OWNER_LIMITS, {'tasks': 16, 'executors': 2, 'queuedWork': 2, 'waits': 4,

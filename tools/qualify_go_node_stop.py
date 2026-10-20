@@ -183,11 +183,15 @@ def wait_live(client, node, pending, mode):
             node.drain()
             pages, identities = audit_pages(client, max(0, pending.authoring_started_unix_millis - 1000))
             inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']
-            observed = oracle.barrier(inventory, pages, pending.authoring_activation, mode)
+            providers = client.call('capability', 'list', '--deployment', 'my-greeting', '--include-node-usage')['data']
+            require(providers['nextPageToken'] is None, 'Go-node-stop-provider-page-bound')
+            observed = oracle.barrier(inventory, pages, pending.authoring_activation, mode,
+                                      provider_usage=providers)
             require(not pending.owner.exited(), 'Go-node-stop-guest-completed-before-signal')
             require(time.monotonic() < client.deadline, 'Go-node-stop-live-barrier-deadline')
             if observed is not None:
-                return {'observation': observed, 'inventory': inventory, 'auditFiles': identities,
+                return {'observation': observed, 'inventory': inventory, 'providerUsage': providers,
+                        'auditFiles': identities,
                         'attempts': attempt + 1}
             time.sleep(0.01)
         raise RuntimeError('Go-node-stop-live-barrier-attempts')

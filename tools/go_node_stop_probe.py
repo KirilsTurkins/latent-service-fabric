@@ -25,8 +25,8 @@ def integer(value):
     return result
 
 
-def barrier(inventory, pages, activation, mode):
-    """Both actual Store population and source-owned timer/close audit are required."""
+def barrier(inventory, pages, activation, mode, *, provider_usage):
+    """Require named positive timer witnesses and actual retained provider/Store work."""
     require(mode in ('pending', 'drain'), 'Go-node-stop-closed-mode')
     topology = inventory['topology']
     require(topology['available'] is True and topology['complete'] is True,
@@ -37,13 +37,22 @@ def barrier(inventory, pages, activation, mode):
     if any(integer(rows[name]['activeCount']) != 1 for name in LIVE_ROWS):
         return None
     require(integer(inventory['queueDepth']) == 0, 'Go-node-stop-no-hidden-root-queue')
+    tenant, node = provider_usage['tenantUsage'], provider_usage['nodeUsage']
+    require(tenant['scope'] == 'tenant' and node['scope'] == 'node', 'Go-node-stop-provider-usage-scope')
+    sessions, calls, node_calls = (integer(tenant['counters']['sessions']),
+        integer(tenant['counters']['calls']), integer(node['counters']['broker_calls']))
+    if min(sessions, calls, node_calls) == 0:
+        return None
     require(0 < len(pages) <= 4, 'Go-node-stop-audit-page-bound')
     events = {}
+    dropped = []
     for page in pages:
         require(page['category'] == 'success' and page['outcomeKnown'] is True,
                 'Go-node-stop-audit-unavailable')
         coverage = page['data']['coverage']
-        require(integer(coverage['droppedObservations']) == 0, 'Go-node-stop-audit-dropped')
+        # Optional capture uses try_lock and can drop unrelated observations.
+        # Retain loss honestly; only the named positives below authorize stop.
+        dropped.append(integer(coverage['droppedObservations']))
         records = page['data']['records']
         require(type(records) is list and len(records) <= 64, 'Go-node-stop-audit-record-bound')
         for row in records:
@@ -76,6 +85,9 @@ def barrier(inventory, pages, activation, mode):
                 completed_timers.append(integer(row['sequence']))
     # One initializer timer precedes the one/two actual long-lived body timers.
     # timer-next must also be dispatched after those checked start results.
+    # HostCompleted alone also permits a typed error. The immutable fixture's
+    # runtime checks each start result before a later timer-next can be reached.
+    # Real ProviderCall ownership must additionally remain live in this sample.
     minimum = 3 if mode == 'pending' else 2
     if len(completed_timers) < minimum or allowed.count('timer-next') < 2:
         return None
@@ -84,8 +96,10 @@ def barrier(inventory, pages, activation, mode):
     if mode == 'drain' and 'close' not in allowed:
         return None
     return {'mode': mode, 'activation': activation, 'livePhysicalRows': {name: 1 for name in LIVE_ROWS},
-            'completedTimerStarts': len(completed_timers), 'allowedTimerNext': allowed.count('timer-next'),
-            'rootCloseObserved': 'close' in allowed, 'droppedObservations': 0,
+            'hostCompletedTimerStarts': len(completed_timers), 'allowedTimerNext': allowed.count('timer-next'),
+            'rootCloseObserved': 'close' in allowed, 'droppedObservations': max(dropped),
+            'observationCoverage': 'named-positive-witnesses-only', 'diagnosticStreamComplete': False,
+            'retainedProviderUsage': {'tenantSessions': sessions, 'tenantCalls': calls, 'nodeCalls': node_calls},
             'actualNodeSignalSent': False}
 
 

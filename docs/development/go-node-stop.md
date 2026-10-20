@@ -26,16 +26,25 @@ No HTTP, socket, filesystem or logging authority is installed. The original
 normal27 signed Go programme and native products are authenticated separately;
 the new fixture does not replace or rewrite that baseline.
 
-Before SIGTERM, bounded original audit pages must show completed timer-start
+Before SIGTERM, bounded original audit pages must show host-returned timer-start
 provider boundaries for the initializer and actual body timers, followed by
 their timer-next dispatch. The returned-root mode also requires its actual
-close operation. Every record must name the exact activation and provider;
-dropped, duplicate, incomplete and foreign observations cannot qualify. A
+close operation. Every named record must match the exact activation and
+provider. Missing, duplicate, foreign or unpaged positive witnesses cannot
+qualify. HostCompleted alone does not assert a typed success: the authenticated
+runtime must check each start result before its later timer-next dispatch.
+A capability inspection must additionally show actual retained tenant and node
+provider calls alongside the live Store/caller. These are original ProviderCall
+owners retained through the pending timer operation, not a guessed elapsed wait.
+A
 bounded audit queue of 64 operations selects the ordinary supported node
 default instead of the shared tiny helper's eight slots. It remains charged
 by the node configuration and does not change any guest owner/request limit.
-Optional diagnostic capture is lossy and does not enforce capability admission;
-its absence is not evidence for a guest-trap cause. A
+Optional diagnostic capture uses try_lock and can drop observations even when
+queue capacity is available. The raw global dropped count is retained; it is
+not treated as loss of a required named positive which is actually present.
+The diagnostic stream supplies no absence, exclusivity or complete-history
+claim, and its absence is not evidence for a guest-trap cause. A
 complete node topology must simultaneously show the original cell, invocation,
 Store, host-state and component instance live. The caller must still be
 running. There is no fixed sleep used as admission or retirement proof.
