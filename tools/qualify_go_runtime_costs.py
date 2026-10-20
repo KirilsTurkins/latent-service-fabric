@@ -143,7 +143,9 @@ def programme(native, signed, output, profile):
             target = deploy(client, source / 'deployment.json', publication)
             targets = {'greeting': target}
             original.runtime_grants(client, node, signed, targets, {'greeting': publication}, record, language='go')
-            target = original.install_activation(client, node, signed, targets['greeting'], publication)
+            target = targets['greeting']
+            if profile == 'go-component-activation-v5':
+                target = original.install_activation(client, node, signed, target, publication)
             require(target['budget']['cpuFuel'] == 1000000000 and target['budget']['memoryBytes'] == 67108864
                     and target['budget']['wallTimeLimitMillis'] == 120000, 'Go-cost-original-request-budgets')
             revision = selected_revision(client, target)

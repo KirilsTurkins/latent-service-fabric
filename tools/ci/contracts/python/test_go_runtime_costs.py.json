@@ -1,5 +1,6 @@
 {
   "cases": [
+    "GoRuntimeCosts.test_actual_programme_grants_activation_only_to_the_explicit_v5_component",
     "GoRuntimeCosts.test_actual_stats_parser_keeps_source_data_separate_from_physical_qualification",
     "GoRuntimeCosts.test_compiler_reference_requires_actual_function_local_stack_address_and_bounded_frame",
     "GoRuntimeCosts.test_consumption_cannot_accept_boolean_negative_private_or_unbounded_integer_fields",
@@ -20,6 +21,18 @@
     "GoRuntimeCosts.test_wasm_reference_rejects_wrong_initialization_copy_source_line_and_other_function"
   ],
   "guards": {
+    "GoRuntimeCosts.test_actual_programme_grants_activation_only_to_the_explicit_v5_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "GoRuntimeCosts.test_actual_stats_parser_keeps_source_data_separate_from_physical_qualification": {
       "bases": [
         "unittest.TestCase"
@@ -239,6 +252,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_runtime_costs.py",
-  "reviewReason": "Actual3337/run39392610753 pinnedGo1.27.2 wasm compile passed but oldreader omitted STEXT align and expected symbolicSP. Exact36853B actualdiagnostics f839812c show original16424B frame: SP+40 initialization8192B and SP+8232 checksumcopy8192B. Closed functionpair/source-lines/recursivecall/noheapescape and alteredlayout/size/function/line/escape/oversize negatives;18focusedPASS. Originalmodule/class/decorator/skip contexts retainedAST-exact and14oldtestbodies unchanged; twooldcontrols replace syntheticwrongarchitecture output with actualpinnedWasmfixture, twoadditivecases. Ordinaryapplication/SDK/native/probe/budgets/all6signedgates unchanged. Fullsignedcostqualification remainsfalse.",
+  "reviewReason": "One additive actual programme-path default/v5 grant control, oldsource RED capability-not-imported/current19PASS; original18cases and fixture/decorator/skip context unchanged. No actualcost pass claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

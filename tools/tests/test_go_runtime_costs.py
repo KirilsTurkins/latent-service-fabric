@@ -277,5 +277,46 @@ class GoRuntimeCosts(unittest.TestCase):
             self.assertFalse(value['referenceExecuted'])
 
 
+    def test_actual_programme_grants_activation_only_to_the_explicit_v5_component(self):
+        budget = {'cpuFuel': 1000000000, 'memoryBytes': 67108864, 'wallTimeLimitMillis': 120000}
+        runtime = [{'capability': capability, 'policy': capability + '-allow'} for capability in
+            ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0')]
+        class Cancellation:
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+        for profile in fixture.PROFILES:
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temporary:
+                target = {'budget': budget, 'grants': [], 'generation': 1}
+                client = SimpleNamespace(call=lambda *args: {
+                    'data': {'operation': {'publication': {'id': 'exact-publication'}}}})
+                node = SimpleNamespace(startup_record={'providers': []}, close=lambda: None)
+                def grants(_client, _node, _signed, targets, publications, record, *, language):
+                    self.assertEqual(language, 'go')
+                    self.assertEqual(publications, {'greeting': 'exact-publication'})
+                    targets['greeting'] = dict(target, grants=runtime)
+                def activation(_client, _node, _signed, selected, publication):
+                    self.assertEqual(profile, 'go-component-activation-v5', 'capability-not-imported')
+                    self.assertEqual(selected['grants'], runtime)
+                    return dict(selected, grants=runtime + [{'capability': reference.original.oracle.ACTIVATION,
+                        'policy': 'activation-allow'}])
+                def selected(_client, actual):
+                    expected = runtime + ([{'capability': reference.original.oracle.ACTIVATION,
+                        'policy': 'activation-allow'}] if profile == 'go-component-activation-v5' else [])
+                    self.assertEqual(actual['grants'], expected)
+                    self.assertEqual(actual['budget'], budget)
+                    raise RuntimeError('stop-after-exact-target-before-invocation')
+                with patch.multiple(reference, owned_cancellation=Cancellation,
+                        RecordingClient=lambda *args, **kwargs: client,
+                        connect=lambda *args: node, deploy=lambda *args: target,
+                        selected_revision=selected, write_json=lambda *args: None), \
+                        patch.object(reference.original, 'configuration', return_value=Path('owned-node.json')), \
+                        patch.object(reference.original, 'runtime_grants', side_effect=grants), \
+                        patch.object(reference.original, 'install_activation', side_effect=activation) as install, \
+                        self.assertRaisesRegex(RuntimeError, 'stop-after-exact-target-before-invocation'):
+                    reference.programme({'latent': Path('latent'), 'latentd': Path('latentd')},
+                        Path('signed'), Path(temporary), profile)
+                self.assertEqual(install.call_count, int(profile == 'go-component-activation-v5'))
+
+
 if __name__ == '__main__':
     unittest.main()
