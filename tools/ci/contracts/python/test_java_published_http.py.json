@@ -1,5 +1,7 @@
 {
   "cases": [
+    "PublishedJarResourceGraph.test_actual_resource_capture_retains_two_runtime_jars_and_their_owned_children",
+    "PublishedJarResourceGraph.test_resource_exception_rejects_missing_forged_duplicate_and_foreign_children",
     "PublishedJavaHttp.test_changed_published_original_refuses_before_review_and_preserves_accepted_lock",
     "PublishedJavaHttp.test_exact_transitive_jar_selection_rejects_changed_coordinates_edges_and_duplicates",
     "PublishedJavaHttp.test_failed_receipt_observer_preserves_original_execution_exception_identity",
@@ -9,6 +11,30 @@
     "PublishedJavaHttp.test_sha256_cas_refusal_precedes_published_checksum_or_lock_review"
   ],
   "guards": {
+    "PublishedJarResourceGraph.test_actual_resource_capture_retains_two_runtime_jars_and_their_owned_children": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:78b1751e1bfa9dcfdc4dd7de842a160fe21f556f91394b116da1c4f122313972"
+      ],
+      "skipSites": []
+    },
+    "PublishedJarResourceGraph.test_resource_exception_rejects_missing_forged_duplicate_and_foreign_children": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6856b3bbefba7437cee45c681eee2a00c8a9b455ab24c7367b91bb80a49b011a",
+        "class:setup-sha256:78b1751e1bfa9dcfdc4dd7de842a160fe21f556f91394b116da1c4f122313972"
+      ],
+      "skipSites": []
+    },
     "PublishedJavaHttp.test_changed_published_original_refuses_before_review_and_preserves_accepted_lock": {
       "bases": [
         "unittest.TestCase"
@@ -96,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_published_http.py",
-  "reviewReason": "Add published capture CAS and exact-closure/refusal controls",
+  "reviewReason": "Retain all seven original case bodies and guards; add actual resource producer roundtrip and malformed ownership/graph refusal controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

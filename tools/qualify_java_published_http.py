@@ -38,15 +38,50 @@ MAX_SECONDS = 2400
 
 
 def selected_jars(candidate):
-    jars = [row for row in candidate['artifacts']
-            if row['metadata'].get('scope') == 'selected-runtime']
+    from tools.java_resource_artifacts import PROFILE, resource_selection, resource_metadata
+    rows = candidate['artifacts']
+    by_id = {row['id']: row for row in rows}
+    jars = [row for row in rows if row['metadata'].get('scope') == 'selected-runtime']
     selected = {row['id']: row for row in jars}
-    require(len(jars) == 2 and set(selected) == {PRIMARY, CHILD}
-            and selected[PRIMARY]['dependencies'] == [CHILD]
-            and selected[CHILD]['dependencies'] == [], 'java-webb-reviewed-closure-changed')
+    require(len(rows) == len(by_id) and len(rows) <= inputs.MAX_ARTIFACTS
+            and len(jars) == 2 and set(selected) == {PRIMARY, CHILD},
+            'java-webb-reviewed-closure-changed')
     require(all(row['role'] == 'application' and row['format'] == 'file'
                 and row['metadata']['coordinates'] == row['id']
                 and row['mount'].endswith('.jar') for row in jars), 'java-webb-reviewed-jar-kind')
+    resource_ids = set()
+    for name, row in selected.items():
+        owned = []
+        selection = row['metadata'].get('resourceSelection')
+        if selection is not None:
+            require(isinstance(selection, dict) and selection.get('profile') == PROFILE
+                    and selection.get('release') == 25 and isinstance(selection.get('entries'), list)
+                    and len(selection['entries']) <= inputs.MAX_ARTIFACTS,
+                    'java-webb-resource-closure-changed')
+            entries = selection['entries']
+            require(all(isinstance(entry, dict) and set(entry) ==
+                        {'artifact', 'path', 'originalEntry', 'selectedVersion', 'digest', 'size'}
+                        for entry in entries), 'java-webb-resource-closure-changed')
+            original = row['original']['digest']
+            require(selection == resource_selection(name, original,
+                    [{key: value for key, value in entry.items() if key != 'artifact'} for entry in entries], 25),
+                    'java-webb-resource-closure-changed')
+            for entry in entries:
+                child_id = entry['artifact']
+                child = by_id.get(child_id)
+                require(child_id not in resource_ids and child is not None
+                        and child['role'] == 'resource' and child['format'] == 'file'
+                        and child['mount'] == 'dependencies/java/resources/' + child_id.split(':', 1)[1] + '.bin'
+                        and child['dependencies'] == []
+                        and child['metadata'] == resource_metadata(name, original, entry, 25)
+                        and child['original'] == {'digest': entry['digest'], 'size': entry['size']},
+                        'java-webb-resource-closure-changed')
+                resource_ids.add(child_id)
+                owned.append(child_id)
+        require(row['dependencies'] == ([CHILD] if name == PRIMARY else []) + owned,
+                'java-webb-reviewed-closure-changed')
+    require(resource_ids == {row['id'] for row in rows if row['role'] == 'resource'},
+            'java-webb-resource-closure-changed')
     return selected
 
 

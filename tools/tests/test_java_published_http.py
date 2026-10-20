@@ -145,5 +145,69 @@ class PublishedJavaHttp(unittest.TestCase):
             self.assertIs(raised.exception, original)
 
 
+class PublishedJarResourceGraph(unittest.TestCase):
+    @staticmethod
+    def captured(resources):
+        import io
+        import zipfile
+        from tools.application_dependencies import capture, MANIFEST
+        from tools.java_resource_artifacts import capture_resources
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            store = Store(root / 'dependency-inputs/objects')
+            rows = []
+            for ordinal, (name, edges) in enumerate(((campaign.PRIMARY, [campaign.CHILD]), (campaign.CHILD, []))):
+                stream = io.BytesIO()
+                with zipfile.ZipFile(stream, 'w', compression=zipfile.ZIP_STORED) as archive:
+                    archive.writestr('example/Library' + str(ordinal) + '.class', b'\xca\xfe\xba\xbe\x00\x00\x00\x34')
+                    if resources:
+                        archive.writestr('META-INF/maven/fixture' + str(ordinal) + '/pom.xml', b'<project>captured metadata</project>')
+                original = store.put(stream.getvalue())
+                rows.append({'id': name, 'role': 'application', 'format': 'file',
+                    'mount': 'dependencies/java/' + str(ordinal) + '.jar',
+                    'source': {'path': store.path(original['digest']).relative_to(root).as_posix()},
+                    'dependencies': edges, 'metadata': {'scope': 'selected-runtime', 'coordinates': name}})
+            produced = capture_resources(root, store, rows)
+            write_json(root / MANIFEST, {'formatVersion': 1, 'language': 'java', 'selection': {},
+                'nativeLocks': [], 'artifacts': produced, 'transformations': []})
+            return capture(root)
+
+    def test_actual_resource_capture_retains_two_runtime_jars_and_their_owned_children(self):
+        for resources in (False, True):
+            with self.subTest(resources=resources):
+                candidate = self.captured(resources)
+                selected = campaign.selected_jars(candidate)
+                self.assertEqual(set(selected), {campaign.PRIMARY, campaign.CHILD})
+                children = [row for row in candidate['artifacts'] if row['role'] == 'resource']
+                self.assertEqual(len(children), 2 if resources else 0)
+                runtime_edges = [edge for edge in selected[campaign.PRIMARY]['dependencies'] if edge in selected]
+                self.assertEqual(runtime_edges, [campaign.CHILD])
+                self.assertEqual([edge for edge in selected[campaign.CHILD]['dependencies'] if edge in selected], [])
+
+    def test_resource_exception_rejects_missing_forged_duplicate_and_foreign_children(self):
+        original = self.captured(True)
+        changes = []
+        missing = deepcopy(original)
+        missing['artifacts'] = [row for row in missing['artifacts'] if row['role'] != 'resource']
+        changes.append(missing)
+        for field, value in (('jar', campaign.CHILD), ('originalJarDigest', 'sha256:' + '0' * 64)):
+            changed = deepcopy(original)
+            next(row for row in changed['artifacts'] if row['role'] == 'resource')['metadata'][field] = value
+            changes.append(changed)
+        changed = deepcopy(original)
+        changed['artifacts'].append(deepcopy(next(row for row in changed['artifacts'] if row['role'] == 'resource')))
+        changes.append(changed)
+        changed = deepcopy(original)
+        selected = next(row for row in changed['artifacts'] if row['id'] == campaign.PRIMARY)
+        selected['dependencies'].append(campaign.PRIMARY)
+        changes.append(changed)
+        changed = deepcopy(original)
+        next(row for row in changed['artifacts'] if row['role'] == 'resource')['original']['digest'] = 'sha256:' + '0' * 64
+        changes.append(changed)
+        for candidate in changes:
+            with self.subTest(candidate=candidate), self.assertRaises(WorkflowError):
+                campaign.selected_jars(candidate)
+
+
 if __name__ == '__main__':
     unittest.main()
