@@ -304,3 +304,10 @@ feed the existing SDK conformance work in #694; this adds no cross-language gate
 Related: [captured dependencies](application-dependencies.md),
 [compatibility reports](library-compatibility.md), and
 [guest SDK development](guest-sdk.md).
+
+The [six-language standard facility matrix](standard-facilities.md) publishes
+the supported logging, wall/monotonic clock and approved entropy paths alongside
+their profile, grant, provenance and error limitations. The new
+[Java resource conformance programme](java-resource-conformance.md) separately
+requires exact transitive binary/empty/text and independent-stream results;
+source controls alone do not establish its pending signed outcome.
