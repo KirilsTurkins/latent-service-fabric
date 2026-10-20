@@ -1,0 +1,83 @@
+name: TypeScript catalogue-free normal HTTP build
+on:
+  push:
+    branches: ['feat/typescript-catalogue-free-http-20261020']
+    paths:
+      - '.github/workflows/typescript-catalogue-free-http.yml'
+      - 'tools/typescript_catalogue_free_build.py'
+      - 'tools/qualify_typescript_catalogue_free.py'
+      - 'tools/tests/test_typescript_catalogue_free.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: typescript-catalogue-free-http-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  catalogue-free:
+    name: Catalogue-free normal build and three signed default clients
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fetch the immutable native producer source object
+        run: git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check complete isolated build closure and real peer controls
+        run: python3 -B -m unittest tools.tests.test_typescript_catalogue_free tools.tests.test_http_tenant_native_products -v
+      - name: Install the normal compiler namespace boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install normal pinned public compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/catalogue-free-tools"
+      - name: Acquire only the authenticated existing source-bound engine and splicer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_resource_runtime_inputs.py --output "$RUNNER_TEMP/catalogue-free-engine"
+      - name: Acquire the exact operational HTTP authority native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/http_tenant_native_products.py --output "$RUNNER_TEMP/catalogue-free-native"
+      - name: Capture and build without catalogue data then sign three ordinary clients
+        run: |
+          python3 -B tools/qualify_typescript_catalogue_free.py \
+            --acquired "$RUNNER_TEMP/catalogue-free-engine" --native "$RUNNER_TEMP/catalogue-free-native" \
+            --tools "$RUNNER_TEMP/catalogue-free-tools" --output "$RUNNER_TEMP/catalogue-free-http"
+      - name: Retain exact staged source inventory normal construction and real signed outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-catalogue-free-http-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/catalogue-free-native/*.json
+            ${{ runner.temp }}/catalogue-free-engine/acquisition.json
+            ${{ runner.temp }}/catalogue-free-http/*.json
+            ${{ runner.temp }}/catalogue-free-http/*.log
+            ${{ runner.temp }}/catalogue-free-http/catalogue-free-build-source/BUILD-SOURCE-INVENTORY.json
+            ${{ runner.temp }}/catalogue-free-http/build/*.json
+            ${{ runner.temp }}/catalogue-free-http/build/*.wit
+            ${{ runner.temp }}/catalogue-free-http/build/component.wasm
+            ${{ runner.temp }}/catalogue-free-http/build/package/**
+            ${{ runner.temp }}/catalogue-free-http/build/logs/**
+            ${{ runner.temp }}/catalogue-free-http/node/*.json
+            ${{ runner.temp }}/catalogue-free-http/node/*.log
+            ${{ runner.temp }}/catalogue-free-http/node/controls/**

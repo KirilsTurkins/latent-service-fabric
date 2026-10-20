@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "DotnetResourceRuntimeFixture.test_foreign_originals_are_rejected_before_project_creation",
+    "DotnetResourceRuntimeFixture.test_managed_outputs_do_not_hide_original_library_source_mutation",
+    "DotnetResourceRuntimeFixture.test_nonportable_or_changed_original_source_is_not_hidden_by_output_pruning",
+    "DotnetResourceRuntimeFixture.test_ordinary_task_resource_logging_selection_keeps_original_sdk_and_limits",
+    "DotnetResourceRuntimeFixture.test_pure_package_has_exact_child_dependency_and_no_executable_or_build_payload",
+    "DotnetResourceRuntimeFixture.test_unseen_transitive_library_holds_real_independent_embedded_streams_across_incomplete_callbacks"
+  ],
+  "guards": {
+    "DotnetResourceRuntimeFixture.test_foreign_originals_are_rejected_before_project_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c77bbbdc4a042712310d13027c5b7fbf648047dff89b1024c5a81b53454d4db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceRuntimeFixture.test_managed_outputs_do_not_hide_original_library_source_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c77bbbdc4a042712310d13027c5b7fbf648047dff89b1024c5a81b53454d4db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceRuntimeFixture.test_nonportable_or_changed_original_source_is_not_hidden_by_output_pruning": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c77bbbdc4a042712310d13027c5b7fbf648047dff89b1024c5a81b53454d4db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceRuntimeFixture.test_ordinary_task_resource_logging_selection_keeps_original_sdk_and_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c77bbbdc4a042712310d13027c5b7fbf648047dff89b1024c5a81b53454d4db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceRuntimeFixture.test_pure_package_has_exact_child_dependency_and_no_executable_or_build_payload": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c77bbbdc4a042712310d13027c5b7fbf648047dff89b1024c5a81b53454d4db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceRuntimeFixture.test_unseen_transitive_library_holds_real_independent_embedded_streams_across_incomplete_callbacks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c77bbbdc4a042712310d13027c5b7fbf648047dff89b1024c5a81b53454d4db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_resource_runtime_fixture.py",
+  "reviewReason": "Preserve all original managed resource fixture controls and guards; prune only known root/child bin/obj outputs BEFORE portable-path validation after actual19ff MSBuild capture failure. Add original-source refusal counterexample; keep aggregate source limits and all runtime/compiler authority gates.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
