@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_published_http.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Read original13.8MB artifact in two existing8MiB-bounded ranges, retain exact whole-archive SHA/size and all356 CRC checks. Add regression for real shared transfer bound and truncated range refusal.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "45fd75c79ee0582f261fc762b9cbadba845458de94db03c396a34dc5d4b7fe99"
+}

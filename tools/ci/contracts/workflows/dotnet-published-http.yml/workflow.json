@@ -1,0 +1,40 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "dotnet-published-http-${{ github.ref }}"
+    },
+    "name": "Published managed HTTP clients",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/dotnet-published-http-20261020"
+        ],
+        "paths": [
+          ".github/workflows/dotnet-published-http.yml"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "fresh_component": {
+            "default": false,
+            "description": "Compile a new component instead of replaying the authenticated successful build",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "exact-component",
+    "published-http"
+  ],
+  "reviewReason": "Keep original compiler commands and all20 signed plus2 denial gates; authenticate original successful7e3 component and replay after only unique progress filenames, without guest or native recompilation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-published-http.yml"
+}

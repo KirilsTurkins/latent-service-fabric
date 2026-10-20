@@ -312,7 +312,8 @@ class HttpErrorPort:
 
 
 def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: Path,
-            output: Path, evidence: Path, run, *, protect_inputs=None, task_wait_port=None) -> HttpErrorPort | None:
+            output: Path, evidence: Path, run, *, protect_inputs=None, task_wait_port=None,
+            package_cache: Path | None = None) -> HttpErrorPort | None:
     if not {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
         return None
     if task_wait_port is not None:
@@ -325,7 +326,13 @@ def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: 
         if inventory(snapshot(sdk / "tools/http-errors")) != task_wait_port.source_identity:
             raise ValueError("http-sync-read-task-wait-source-drift")
     tool = verify_installed(sdk, tools)
-    originals = source_paths(tools)
+    # Captured applications restore from their owned namespace cache, rather
+    # than the compiler tool cache. Bind only those exact framework paths and
+    # authenticate both copies before replacing an ILC reference.
+    originals = source_paths(tools) if package_cache is None else tuple(
+        package_cache / PACKAGE / folder / "System.Net.Http.dll" for folder in ("lib", "native-hidden"))
+    for path in source_paths(tools):
+        require_digest(path, SOURCE_DIGEST, "http-error-framework")
     sources = [require_digest(path, SOURCE_DIGEST, "http-error-framework") for path in originals]
     owned = output / "http-error-port"
     owned.mkdir(mode=0o700)
