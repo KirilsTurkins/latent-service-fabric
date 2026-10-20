@@ -22,3 +22,12 @@ requires a separate genuine tenant-neutral signing and admission programme.
 Source controls and pinned type checking pass; actual signed execution is
 pending. Existing Fetch, client, buffered-body and resource-limit programmes
 retain their separate results and are not silently replaced by this slice.
+
+
+The [signed four-call programme passed](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39391258904/job/118523056126)
+on frozen `c5ad00505bb4bb44d7a2e4c3a2ff1a4c2cdc60d4`.
+Its [source-bound observation](evidence/typescript-fetch-late-signed-2026-10-20.json)
+records two real released gates and two completed peer responses after public
+abort, four known/reaped calls, four physical-retirement and zero-owner controls,
+fresh module state, and clean node/peer stop. Native products remain historical
+0754391. This does not establish intermediate refund timing or cross-tenant reuse.
