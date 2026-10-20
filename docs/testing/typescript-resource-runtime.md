@@ -30,8 +30,28 @@ remain mandatory final checks. The V7 products are authenticated from the fixed
 The original import engine and splicer keep their own historical identities.
 There is no native host, engine or five-template rebuild.
 
-Source controls and native Node references pass. Signed component execution is
-pending. These finite logical-task cases do not qualify native threads, mutable
+The [signed run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39439210885/job/118684299853)
+passed on frozen source `00deb2a75f57ebeeeaa501f2c846c894245420ce`.
+The [compact observation](evidence/typescript-resource-runtime-signed-2026-10-20.json)
+binds the authenticated artifact, 27 recorded direct helpers, 111 compiler recipe
+rows, the fresh component and the historical V7 products. All 13 outcomes were
+known and reaped: eleven joined lifecycle calls and two runtime-grant denials.
+Sixteen physical samples include both live pending barriers, thirteen terminal
+samples have all eighteen active provider counters at zero, and the node and
+zero-contact observation peer shut down cleanly. Both pending barriers recorded
+four runtime tasks, one timer and its entered wait. The cancellation audit page
+explicitly reported dropped observations; the deadline audit read returned the
+closed `resource-exhausted` refusal. Neither audit condition is barrier evidence:
+the positive native pair, live guest owners and retained provider call remain
+mandatory.
+
+Earlier runs remain failures: immutable source acquisition, an incorrect derived
+world comparison, a scalar/activation service collision and two audit-reader
+assumptions were repaired before this complete pass. Final integration adds CI
+registry metadata and documentation; it does not relabel these historical
+failures or repeat the guest programme.
+
+These finite logical-task cases do not qualify native threads, mutable
 worker TLS, a pending asynchronous console flush queue, a separately observed
 late wake attempt, or full issue #681/#736 completion. The callback-error case
 requires its preceding log but does not infer a native trap cause from it.

@@ -4145,14 +4145,16 @@
         "semantics::wasm::tests::data::excess_and_truncated_data_vectors_remain_rejected_before_execution",
         "semantics::wasm::tests::data::lowering_function_slots_does_not_reclassify_data_segments_as_functions",
         "semantics::wasm::tests::data::valid_data_segments_at_the_pinned_parser_ceiling_validate_without_execution",
-        "semantics::host::tests::phase_semantics_bind_original_resource_owners_and_exact_versioned_extension"
+        "semantics::host::tests::phase_semantics_bind_original_resource_owners_and_exact_versioned_extension",
+        "semantics::authoring::tests::phase_nominal_owner_supports_normal_contract_derivation_without_legacy_operations",
+        "semantics::host::tests::phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase"
       ],
       "expectedIgnored": [],
       "id": "latent-packaging.lib.latent-packaging",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 87,
+      "minimumCases": 89,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
