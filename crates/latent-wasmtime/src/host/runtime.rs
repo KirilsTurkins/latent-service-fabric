@@ -424,6 +424,8 @@ struct WaitingTimer {
     runtime: ActivationRuntime,
     _owner: Option<RuntimeOwner>,
     timer_wait: Option<TimerWait>,
+    wait_observer: Option<TimerObserver>,
+    wait_observed: bool,
     wait: Arc<dyn PreparationReadWait>,
     clock: Arc<dyn latent_core::ActivationClock>,
     stop: Arc<crate::containment::StopControl>,
@@ -484,12 +486,16 @@ fn prepare_wait(
                 "runtime-timer-out-of-range",
             )
         })?;
-        let runtime = table(state)?.runtime.clone();
+        let table = table(state)?;
+        let runtime = table.runtime.clone();
+        let wait_observer = table.timer_observer.filter(|_| operation == "wait-for");
         let owner = runtime.register(OwnerKind::Timer, continuation)?;
         Ok(WaitingTimer {
             runtime,
             _owner: Some(owner),
             timer_wait: None,
+            wait_observer,
+            wait_observed: false,
             wait,
             clock,
             stop,
@@ -543,6 +549,9 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
             runtime: table.runtime.clone(),
             _owner: None,
             timer_wait: Some(timer_wait),
+            // Existing timer-start/next observations remain byte-identical.
+            wait_observer: None,
+            wait_observed: false,
             wait,
             clock,
             stop,
@@ -629,7 +638,21 @@ impl WaitingTimer {
                 .requested
                 .min(self.call.deadline())
                 .min(now + STOP_OBSERVATION);
-            self.wait.wait_until(next).await;
+            let mut wait = self.wait.wait_until(next);
+            std::future::poll_fn(|context| {
+                positive_timer_observer::poll_pending(
+                    wait.as_mut(),
+                    context,
+                    &mut self.wait_observed,
+                    || {
+                        if let Some(observer) = &self.wait_observer {
+                            observer
+                                .record(TimerEvent::WaitPending, self.runtime.snapshot().owners);
+                        }
+                    },
+                )
+            })
+            .await;
         }
     }
 }

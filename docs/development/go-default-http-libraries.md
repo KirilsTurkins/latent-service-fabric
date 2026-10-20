@@ -1,7 +1,8 @@
 # Captured default Go HTTP client candidate
 
-This is a pending extension to the
-[finite typed HTTP candidate](go-standard-http-candidate.md), not completed
+This is a qualified finite extension to the
+[typed HTTP candidate](go-standard-http-candidate.md), with actual signed results in
+[the #1043 owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39178228657/job/117825251956), not completed
 [#692](https://github.com/KirilsTurkins/latent-service-fabric/issues/692)
 qualification. It supplies no new runtime/backend implementation or authority.
 
@@ -68,7 +69,19 @@ The reference has a120-second sub-bound inside the unchanged1,200-second total;
 capture/component/node limits and the45-minute job are unchanged.
 
 The original Go workflow commands, timer/GC regression and 45-minute job limit
-remain. Native module capture, compilation and signed results for these clients
-are pending. No complete Go runtime, TLS/socket profile, catalogue-removal proof,
-cross-tenant matrix, allocator bound or full ticket completion follows from the
-local capture-model tests. Original runtime failures stay visible.
+remain. That owning job passed all 33 standard cases and 30 client cases in each
+of the original and renamed variants. Each variant contains 15 Sling and 15
+Requests cases; it is not 30 cases per client. The actual private worker ran in
+both variants. Original runtime failures stay visible, and the historical
+compiler/native identities remain distinct from newer source.
+
+The [catalogue-free tenant programme](go-http-tenant-catalogue.md) separately
+constructs a fresh component and tests two independent HTTP installations in one
+cell. Its new signed result is pending. No complete Go runtime, HTTPS transport,
+kernel allocation bound or full ticket completion follows from either programme.
+
+The later [catalogue-free tenant programme](go-http-tenant-catalogue.md)
+passed 19 signed outcomes and four pre-entry denials with one fresh captured
+component, two independent HTTP installations, real delegated extensions and
+15 exact contacts. It used the existing v4 profile and frozen native producer;
+managed-v5 HTTP and production kernel accounting remain separate gates.

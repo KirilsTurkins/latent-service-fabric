@@ -1,0 +1,222 @@
+{
+  "source": "1522a1a5f6c4f1b2e25d3ee42290fbbf6b7b1339",
+  "run": 39448598381,
+  "job": 118717047234,
+  "artifact": 12277214364,
+  "archiveBytes": 8892221,
+  "archiveSha256": "aae67d1795335742a55f54e0681babf9353fe1e58d01d618b4544c15c2152064",
+  "allMembersCrcShaVerified": 152,
+  "component": {
+    "digest": "sha256:94aa6461fe58e0172fe020e147e4c998ceb866b74a73c28720d3b4b98457215b",
+    "version": "1.0.0",
+    "world": "examples:lsf-typescript-activation/selected@1.0.0"
+  },
+  "manifestImports": [
+    {
+      "contract": "latent:clock/monotonic@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:clock/wall@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:http/phase-timing@0.4.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:http/streaming@0.3.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:runtime/activation@0.1.0",
+      "optional": false
+    }
+  ],
+  "firstDefaultCall": {
+    "activation": "phase-ky-json",
+    "exitCode": 4,
+    "startedAtUnixMillis": "1792510354418",
+    "elapsedNanos": "13978060",
+    "decoded": null,
+    "response": {
+      "category": "platform-failure",
+      "command": "invoke",
+      "data": {
+        "activationId": "phase-ky-json",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "877"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:86fa773a0f3d9b37423612e88ed7c4f1b61a3b854251e16c23898a14a5f0d090",
+          "releaseDigest": "sha256:94aa6461fe58e0172fe020e147e4c998ceb866b74a73c28720d3b4b98457215b",
+          "revisionId": "revision-v1:sha256:40d4f2a3e70eb8684c2aa20eab80e2767e643874ec085e82b763a65d2df7813e",
+          "routeGeneration": "4"
+        },
+        "terminalState": "rejected"
+      },
+      "error": {
+        "code": "permission-denied",
+        "details": [],
+        "message": "The platform reported a failure.",
+        "retryable": false
+      },
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "processReaped": true
+  },
+  "rawBuildComplete": {
+    "formatVersion": 1,
+    "packageAssembled": true,
+    "observationDigest": "sha256:ac1416c0c2fbff37cac66ef54c7dcbfa4bd2dedd309673ef1d03ab982b8af8a8",
+    "sourceDigest": "sha256:1f49886f82ed6e8ccc61d71ce604c24a2258f62d3b24235b1858dc92168abb4a",
+    "componentDigest": "sha256:94aa6461fe58e0172fe020e147e4c998ceb866b74a73c28720d3b4b98457215b",
+    "sdkBindingDigest": "sha256:2247793b6cef08bf1dfbd3392d87e35f735b98d88a9378c98229684915f70fe1",
+    "buildSeconds": 18.64466,
+    "commands": [
+      {
+        "stage": "contracts",
+        "exitCode": 0,
+        "seconds": 0.014299
+      },
+      {
+        "stage": "node-version",
+        "exitCode": 0,
+        "seconds": 0.014406
+      },
+      {
+        "stage": "wasm-tools-version",
+        "exitCode": 0,
+        "seconds": 0.013914
+      },
+      {
+        "stage": "prepare-compiler-adapter",
+        "exitCode": 0,
+        "seconds": 0.15693
+      },
+      {
+        "stage": "canonical-wit",
+        "exitCode": 0,
+        "seconds": 0.014696
+      },
+      {
+        "stage": "authoritative-types",
+        "exitCode": 0,
+        "seconds": 0.01487
+      },
+      {
+        "stage": "selected-runtime-types",
+        "exitCode": 0,
+        "seconds": 0.014699
+      },
+      {
+        "stage": "selected-activation-types",
+        "exitCode": 0,
+        "seconds": 0.014597
+      },
+      {
+        "stage": "selected-clock-types",
+        "exitCode": 0,
+        "seconds": 0.014832
+      },
+      {
+        "stage": "selected-runtime-wit",
+        "exitCode": 0,
+        "seconds": 0.01454
+      },
+      {
+        "stage": "projected-types",
+        "exitCode": 0,
+        "seconds": 0.014657
+      },
+      {
+        "stage": "generate-types",
+        "exitCode": 0,
+        "seconds": 0.231279
+      },
+      {
+        "stage": "regenerate-types",
+        "exitCode": 0,
+        "seconds": 0.231332
+      },
+      {
+        "stage": "typecheck",
+        "exitCode": 0,
+        "seconds": 0.075665
+      },
+      {
+        "stage": "bundle",
+        "exitCode": 0,
+        "seconds": 0.159418
+      },
+      {
+        "stage": "componentize",
+        "exitCode": 0,
+        "seconds": 6.525614
+      },
+      {
+        "stage": "strip-projection",
+        "exitCode": 0,
+        "seconds": 0.024642
+      },
+      {
+        "stage": "restore-authoritative-contract",
+        "exitCode": 0,
+        "seconds": 0.024588
+      },
+      {
+        "stage": "compose",
+        "exitCode": 0,
+        "seconds": 0.095357
+      },
+      {
+        "stage": "validate",
+        "exitCode": 0,
+        "seconds": 0.054952
+      },
+      {
+        "stage": "surface",
+        "exitCode": 0,
+        "seconds": 0.024565
+      },
+      {
+        "stage": "final-runtime-types",
+        "exitCode": 0,
+        "seconds": 0.024614
+      },
+      {
+        "stage": "selected-runtime-contracts",
+        "exitCode": 0,
+        "seconds": 0.013962
+      },
+      {
+        "stage": "compatibility-final-wit",
+        "exitCode": 0,
+        "seconds": 0.014214
+      },
+      {
+        "stage": "package",
+        "exitCode": 0,
+        "seconds": 2.224143
+      },
+      {
+        "stage": "inspect",
+        "exitCode": 0,
+        "seconds": 1.188377
+      }
+    ]
+  },
+  "cause": "CheckedSurface::capability_imports recognizes nominal HTTP0.3 by name although validated source contains no functions; binding compilation therefore requests unavailable operational definition. No legacy operation or grant added."
+}

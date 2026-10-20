@@ -1,0 +1,84 @@
+{
+  "source": "36eaed79dbd92cac12bad2dd1f52cd5d1acd525f",
+  "run": 39430989809,
+  "job": 118655688632,
+  "artifact": 12269226324,
+  "archive": {
+    "bytes": 66079674,
+    "sha256": "sha256:65131cb82bc78b88b91dd62867abc4c98b3c4054136f7ab065b6bc75412af837"
+  },
+  "nativeSource": {
+    "sha256": "sha256:c76f7c8fb49ebf436b2e562ff938456ebeb621460c45438296a9ec2d49454f99",
+    "files": 3311,
+    "bytes": 26035143,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:ed95689f4d12c3494538cc8bbeb9f30fc4bd64389a8c461f34a43d8e946fcd99",
+      "bytes": 68821872
+    },
+    "latentd": {
+      "sha256": "sha256:19b5de49a30df75ba45b2d32f65cda6991018b4baf24c53b0b649af14fb7d7e1",
+      "bytes": 185128080
+    },
+    "examples/package": {
+      "sha256": "sha256:fd53979df91cf521c2fb5ac47dc0fb963fb0f4a4198e87c400ca47fbe1680748",
+      "bytes": 17744152
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:e2202cbafbc4fdf2332ae9bef742bee46469a0affb39bf686208d287eb625e0a",
+      "bytes": 7242984
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:90fb6013498f1cb99c0b6ac64b9f74df33a8201296bffe1a1607ce9147c3d30e",
+      "bytes": 24009704
+    }
+  },
+  "controls": [
+    {
+      "stage": "closed-http-refusal-controls",
+      "passed": [
+        "broker::http::refusal::tests::disabled_unrelated_and_overbound_observations_cannot_leak_or_expand_capture",
+        "broker::http::refusal::tests::exact_busy_capacity_and_active_dial_are_closed_static_witnesses",
+        "broker::http::refusal::tests::writer_failure_preserves_the_original_typed_error_and_borrowed_source"
+      ]
+    },
+    {
+      "stage": "neutral-resource-signing-controls",
+      "passed": [
+        "authoring::resource_neutral::tests::neutral_resource_derivation_refuses_changed_original_inventory_and_reserved_assets",
+        "authoring::resource_neutral::tests::neutral_resource_scope_preserves_component_world_exports_and_original_documents",
+        "authoring::resource_neutral::tests::neutral_resource_scope_refuses_foreign_scoped_names_and_new_grants"
+      ]
+    },
+    {
+      "stage": "positive-timer-observer-controls",
+      "passed": [
+        "host::runtime::positive_timer_observer::tests::closed_record_has_only_static_labels_and_actual_count_fields",
+        "host::runtime::positive_timer_observer::tests::disabled_or_any_other_activation_has_no_observer",
+        "host::runtime::positive_timer_observer::tests::each_selected_mode_has_at_most_eight_events",
+        "host::runtime::positive_timer_observer::tests::failed_output_does_not_panic_or_return_a_guest_result",
+        "host::runtime::positive_timer_observer::tests::repeated_tables_share_the_process_bound_including_one_overflow_record"
+      ]
+    },
+    {
+      "stage": "phase-nominal-type-owner-controls",
+      "passed": [
+        "semantics::authoring::tests::phase_nominal_owner_supports_normal_contract_derivation_without_legacy_operations",
+        "semantics::host::tests::phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase"
+      ]
+    }
+  ],
+  "signedQualification": false,
+  "guestComponentsCompiled": false,
+  "wholeArchiveAndAllCrcVerified": true,
+  "schemaVersion": "latent.http.phase-nominal-native.v1",
+  "members": 19,
+  "gitNativeFilesChecked": 3311,
+  "auxiliaryMaterialsChecked": 114,
+  "auxiliaryBytes": 493748,
+  "consumerRecipesAuthenticatedSeparately": true
+}
