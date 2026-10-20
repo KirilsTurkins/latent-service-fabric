@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "GoQueued.test_bool_index_unknown_private_fields_and_unbounded_or_duplicate_successor_indices_are_rejected",
+    "GoQueued.test_both_tenants_require_seven_actual_queued_successors_after_original_cancel_and_trap",
+    "GoQueued.test_each_queue_requires_foreign_refusal_owned_cancel_original_deadline_and_two_replacements",
+    "GoQueued.test_missing_duplicate_reordered_and_wrong_tenant_rows_cannot_substitute_for_queue_retirement",
+    "GoQueued.test_only_original_v5_managed_component_is_selected_and_queued_source_is_authenticated",
+    "GoQueued.test_other_target_ignored_extra_pass_and_incomplete_or_oversized_stdout_are_not_qualification"
+  ],
+  "guards": {
+    "GoQueued.test_bool_index_unknown_private_fields_and_unbounded_or_duplicate_successor_indices_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e812d47f9cc7f11d1ef8ca8572274225bd873c71dee58311ff180f33e70e8fd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoQueued.test_both_tenants_require_seven_actual_queued_successors_after_original_cancel_and_trap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e812d47f9cc7f11d1ef8ca8572274225bd873c71dee58311ff180f33e70e8fd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoQueued.test_each_queue_requires_foreign_refusal_owned_cancel_original_deadline_and_two_replacements": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e812d47f9cc7f11d1ef8ca8572274225bd873c71dee58311ff180f33e70e8fd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoQueued.test_missing_duplicate_reordered_and_wrong_tenant_rows_cannot_substitute_for_queue_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e812d47f9cc7f11d1ef8ca8572274225bd873c71dee58311ff180f33e70e8fd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoQueued.test_only_original_v5_managed_component_is_selected_and_queued_source_is_authenticated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e812d47f9cc7f11d1ef8ca8572274225bd873c71dee58311ff180f33e70e8fd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoQueued.test_other_target_ignored_extra_pass_and_incomplete_or_oversized_stdout_are_not_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e812d47f9cc7f11d1ef8ca8572274225bd873c71dee58311ff180f33e70e8fd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_queued.py",
+  "reviewReason": "Add one actual signed ordinary node8/queue8 programme: retain original aggregate CPU/memory grants through seven queued roots, foreign cancellation, owned queued cancellation/deadline and original physical retirement; preserve every previous command, case, ignore guard, cap and default campaign.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -65,6 +65,9 @@ func scratchCase(mode string) string {
     if !errors.As(err, &pathError) || !errors.As(err, &errno) {
         return "scratch|go|unclassified"
     }
+    if errno == syscall.ENOSYS && !errors.Is(err, errors.ErrUnsupported) {
+        return "scratch|go|unclassified"
+    }
     if mode == "trap" { panic("scratch-explicit-fixture-trap") }
     return "scratch|go|path-error|errno="+strconv.FormatUint(uint64(errno),10)+"|fresh=1"
 }

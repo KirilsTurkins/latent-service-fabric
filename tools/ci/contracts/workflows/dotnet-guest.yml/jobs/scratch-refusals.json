@@ -84,7 +84,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Retain all existing child commands and append six focused explicit activation-only setup controls to existing source unittest command Preserve exact diagnostic-only default-false manual guard.",
+  "reviewReason": "Retain all existing child commands and append six focused explicit activation-only setup controls to existing source unittest command Preserve diagnostic explicit default-false manual guard.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
