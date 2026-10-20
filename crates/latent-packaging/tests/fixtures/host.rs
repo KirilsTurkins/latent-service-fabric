@@ -2,9 +2,10 @@
 //! Shared with the runtime's generated-linker compatibility tests.
 #![allow(dead_code)]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use wasm_encoder::{
-    ComponentTypeRef, ComponentValType as Value, InstanceType, PrimitiveValType as P, TypeBounds,
+    Alias, ComponentOuterAliasKind, ComponentTypeRef, ComponentValType as Value, InstanceType,
+    PrimitiveValType as P, TypeBounds,
 };
 use wit_parser::{FunctionKind, Resolve, Type, TypeDefKind, TypeId};
 
@@ -24,6 +25,27 @@ pub fn interface_with_dependencies(
     encode_interface(&resolve, name, asynchronous)
 }
 
+/// Import the original named type closure without any operations or authority.
+pub fn interface_types(source: &str, name: &str) -> InstanceType {
+    let mut resolve = Resolve::default();
+    resolve.push_source("host.wit", source).unwrap();
+    encode_with_resources(&resolve, name, None, &[], false)
+}
+
+/// Share actual outer type identities instead of redefining foreign owners.
+pub fn interface_with_type_aliases(
+    sources: &[(&str, &str)],
+    name: &str,
+    asynchronous: Option<bool>,
+    resources: &[(&str, &str, u32)],
+) -> InstanceType {
+    let mut resolve = Resolve::default();
+    for (path, source) in sources {
+        resolve.push_source(path, source).unwrap();
+    }
+    encode_with_resources(&resolve, name, asynchronous, resources, true)
+}
+
 /// Parse one exact committed package directory and its own declared WIT deps.
 /// This is an unexecuted type fixture, not an installed WASI implementation.
 pub fn interface_from_directory(
@@ -37,6 +59,16 @@ pub fn interface_from_directory(
 }
 
 fn encode_interface(resolve: &Resolve, name: &str, asynchronous: Option<bool>) -> InstanceType {
+    encode_with_resources(resolve, name, asynchronous, &[], true)
+}
+
+fn encode_with_resources(
+    resolve: &Resolve,
+    name: &str,
+    asynchronous: Option<bool>,
+    resources: &[(&str, &str, u32)],
+    include_functions: bool,
+) -> InstanceType {
     let (_, interface) = resolve
         .interfaces
         .iter()
@@ -47,9 +79,31 @@ fn encode_interface(resolve: &Resolve, name: &str, asynchronous: Option<bool>) -
         host: InstanceType::new(),
         types: BTreeMap::new(),
         names: BTreeMap::new(),
+        // Only the explicit shared-owner path restricts named exports. Imported
+        // foreign definitions retain their original outer names and identities.
+        exports: (!resources.is_empty()).then(|| interface.types.values().copied().collect()),
     };
+    for (owner, name, outer) in resources {
+        let (_, owner) = resolve
+            .interfaces
+            .iter()
+            .find(|(id, _)| resolve.id_of(*id).as_deref() == Some(*owner))
+            .unwrap();
+        let resource = owner.types[*name];
+        assert_eq!(resolve.types[resource].name.as_deref(), Some(*name));
+        let index = encoder.host.type_count();
+        encoder.host.alias(Alias::Outer {
+            kind: ComponentOuterAliasKind::Type,
+            count: 1,
+            index: *outer,
+        });
+        assert!(encoder.types.insert(resource, Value::Type(index)).is_none());
+    }
     for id in interface.types.values() {
         encoder.value(Type::Id(*id));
+    }
+    if !include_functions {
+        return encoder.host;
     }
     for function in interface.functions.values() {
         let params: Vec<_> = function
@@ -78,6 +132,7 @@ struct Encoder<'a> {
     host: InstanceType,
     types: BTreeMap<TypeId, Value>,
     names: BTreeMap<String, Value>,
+    exports: Option<BTreeSet<TypeId>>,
 }
 
 impl Encoder<'_> {
@@ -127,6 +182,10 @@ impl Encoder<'_> {
         // parser, arena and comparison budgets are independently exercised.
         let def = &self.resolve.types[id];
         if matches!(def.kind, TypeDefKind::Resource) {
+            assert!(
+                self.exports.as_ref().is_none_or(|ids| ids.contains(&id)),
+                "foreign fixture resources require their outer owner aliases"
+            );
             let index = self.host.type_count();
             self.host.export(
                 def.name.as_deref().expect("named fixture resource"),
@@ -207,7 +266,8 @@ impl Encoder<'_> {
             }
             _ => panic!("unsupported fixture shape"),
         };
-        let value = if let Some(name) = &def.name {
+        let visible = self.exports.as_ref().is_none_or(|ids| ids.contains(&id));
+        let value = if let Some(name) = def.name.as_ref().filter(|_| visible) {
             if let Some(existing) = self.names.get(name) {
                 // WIT `use` aliases can reuse the original exported spelling.
                 // Preserve that one type identity, not a second resource.

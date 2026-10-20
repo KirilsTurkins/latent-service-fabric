@@ -248,6 +248,10 @@ impl PoolAdmission {
         self.registration = None;
         Ok(true)
     }
+    /// A weak observation/cancellation handle for this exact admitted request.
+    pub fn stop_handle(&self) -> crate::broker::io::IoStopHandle {
+        self.io.as_ref().expect("affine admission").stop_handle()
+    }
     pub fn reserve_input(
         &self,
         bytes: usize,

@@ -6,6 +6,10 @@ mod component;
 mod fixture;
 #[path = "streaming_http/packages.rs"]
 mod packages;
+#[path = "streaming_http/phase_component.rs"]
+mod phase_component;
+#[path = "streaming_http/phases.rs"]
+mod phases;
 #[path = "generic_backend/support.rs"]
 #[allow(dead_code)]
 mod support;

@@ -11,7 +11,9 @@ const project = await realpath(projectPath);
 const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
 const configuration = configurationPath ? JSON.parse(await readFile(configurationPath, 'utf8')) : {};
 const captured = !!configuration.moduleRoot;
-const standardFetch = configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
+const phaseFetch = configuration.standardFetchProfile === 'lsf-fetch-phase-buffered-v2';
+const standardFetch = phaseFetch || configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
+const fetchInterface = phaseFetch ? 'latent:http/phase-timing@0.4.0' : 'latent:http/streaming@0.3.0';
 const entropyProfile = configuration.standardEntropyProfile ?? 'lsf-math-random-unsupported-v1';
 const standardEntropy = entropyProfile === 'lsf-math-random-approved-v1';
 if ((!standardEntropy && entropyProfile !== 'lsf-math-random-unsupported-v1') ||
@@ -25,7 +27,7 @@ if (configuration.standardConsoleProfile !== undefined && (!standardConsole ||
 }
 if (configuration.standardFetchProfile !== undefined && (!standardFetch ||
     configuration.runtimeProfile !== 'spidermonkey-activation-promises-clocks-imports-v1' ||
-    !imports.has('latent:http/streaming@0.3.0'))) {
+    !imports.has(fetchInterface))) {
   throw new Error('standard-fetch-requires-exact-async-runtime-and-typed-import');
 }
 const builtins = new Set(builtinModules.map(name => name.replace(/^node:/, '')));
@@ -66,9 +68,10 @@ if (standardFetch) {
   const source = await readFile(new URL('./fetch.mjs', import.meta.url), 'utf8');
   const anchor = 'export function installFetch(';
   if (source.split(anchor).length !== 2) throw new Error('compiler-owned-fetch-install-shape');
-  backend = "import * as __lsfFetchHttp from 'latent:http/streaming@0.3.0';\n" +
+  backend = "import * as __lsfFetchHttp from '" + fetchInterface + "';\n" +
     source.replace(anchor, 'function __lsfInstallFetch(') +
-    '\n__lsfInstallFetch(__lsfFetchHttp, () => __lsfSnapshotActive);\n';
+    (phaseFetch ? '\n__lsfInstallFetch(__lsfFetchHttp, () => __lsfSnapshotActive, globalThis, "lsf-fetch-phase-buffered-v2");\n'
+      : '\n__lsfInstallFetch(__lsfFetchHttp, () => __lsfSnapshotActive);\n');
   guard += backend;
 }
 if (standardConsole) {

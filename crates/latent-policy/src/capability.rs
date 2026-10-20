@@ -107,6 +107,7 @@ fn supported_contract(value: &str) -> bool {
         .is_some()
         || value == latent_core::activation_runtime::CAPABILITY
         || value == "latent:runtime-native/threads@0.1.0"
+        || value == "latent:http/phase-timing@0.4.0"
         || matches!(
             value,
             "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
@@ -167,6 +168,16 @@ fn operation(contract: &str, name: &str) -> bool {
             "close",
         ],
         "latent:http/streaming@0.3.0" => &[
+            "open",
+            "write",
+            "finish",
+            "read",
+            "chunk-bytes",
+            "trailers",
+            "abort-upload",
+            "abort-body",
+        ],
+        "latent:http/phase-timing@0.4.0" => &[
             "open",
             "write",
             "finish",

@@ -124,12 +124,14 @@ impl WasmtimeConfig {
                 "execution-isolation-profile".into(),
                 self.execution_isolation_profile.name().into(),
             );
-            let abi = if self.owned_native_threads {
+            let abi = if self.http_phase_timing {
+                latent_core::PHASE3_HOST_ABI_V7
+            } else if self.owned_native_threads {
                 latent_core::PHASE3_HOST_ABI_V6
             } else {
                 latent_core::PHASE3_HOST_ABI_CURRENT
             };
-            let abi_digest = if self.owned_native_threads {
+            let abi_digest = if self.http_phase_timing || self.owned_native_threads {
                 crate::bindings::host_abi_digest_for(abi)
             } else {
                 crate::bindings::host_abi_digest()

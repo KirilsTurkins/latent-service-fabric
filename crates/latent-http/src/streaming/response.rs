@@ -29,8 +29,9 @@ pub(super) struct Body {
     trailers_seen: bool,
     eof: bool,
     failed: Option<Error>,
+    phase_failure: Option<latent_capabilities::broker::streaming_http::HttpPhaseError>,
 }
-pub(super) fn begin(mut exchange: Exchange) -> Result<Body, Error> {
+pub(super) fn begin(mut exchange: Exchange, capture_reason: bool) -> Result<Body, Error> {
     let reply = exchange.response.take().ok_or(Error::InvalidState)?;
     let limits = exchange.inner.config.limits;
     validate(reply.headers(), limits)?;
@@ -82,7 +83,23 @@ pub(super) fn begin(mut exchange: Exchange) -> Result<Body, Error> {
         .io()
         .buffer(limits.maximum_header_bytes, 512)?;
     copy_headers(reply.headers(), &mut buffer, false)?;
-    let head = HttpResponseHead::new(reply.status().as_u16(), buffer)?;
+    let reason_phrase = if capture_reason {
+        let Network::Http(connection) = exchange
+            .socket
+            .as_mut()
+            .ok_or(Error::InvalidState)?
+            .resource()
+        else {
+            return Err(Error::InvalidState);
+        };
+        // Move the original prepaid raw buffer into the head. Hyper's parsed
+        // ReasonPhrase is lossy for obs-text and is never a source substitute.
+        connection.take_reason(reply.version(), reply.status().as_u16())?
+    } else {
+        None
+    };
+    let head =
+        HttpResponseHead::with_reason_phrase(reply.status().as_u16(), buffer, reason_phrase)?;
     Ok(Body {
         pending: Bytes::new(),
         incoming: reply.into_body(),
@@ -95,7 +112,52 @@ pub(super) fn begin(mut exchange: Exchange) -> Result<Body, Error> {
         trailers_seen: false,
         eof: false,
         failed: None,
+        phase_failure: None,
     })
+}
+#[cfg(test)]
+mod reason_tests {
+    use super::*;
+    use latent_capabilities::broker::http::MAXIMUM_HTTP_REASON_BYTES;
+
+    #[tokio::test]
+    async fn actual_http1_parser_preserves_canonical_custom_empty_and_non_ascii_reason_bytes() {
+        for (status, expected) in [
+            (&b"200 OK"[..], &b"OK"[..]),
+            (&b"200 Custom phrase"[..], &b"Custom phrase"[..]),
+            (&b"299 "[..], &b""[..]),
+            (&b"200 Caf\xc3\xa9"[..], &b"Caf\xc3\xa9"[..]),
+            (&b"200 Caf\xe9"[..], &b"Caf\xe9"[..]),
+        ] {
+            let mut wire = b"HTTP/1.1 ".to_vec();
+            wire.extend_from_slice(status);
+            wire.extend_from_slice(b"\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            let reason = crate::tests::captured_wire_reason(&wire, true)
+                .await
+                .unwrap();
+            assert_eq!(reason.as_deref(), Some(expected));
+            assert_eq!(
+                crate::tests::captured_wire_reason(&wire, false)
+                    .await
+                    .unwrap(),
+                None
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn actual_http1_oversize_reason_refuses_and_other_protocol_metadata_stays_unavailable() {
+        let mut wire = b"HTTP/1.1 200 ".to_vec();
+        wire.extend(std::iter::repeat_n(b'x', MAXIMUM_HTTP_REASON_BYTES + 1));
+        wire.extend_from_slice(b"\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        assert!(matches!(
+            crate::tests::captured_wire_reason(&wire, true).await,
+            Err(Error::Http(HttpError::ResponseTooLarge))
+        ));
+        assert!(!crate::reason::supports_version(http::Version::HTTP_2));
+        assert!(!crate::reason::supports_version(http::Version::HTTP_3));
+        assert!(!crate::reason::supports_version(http::Version::HTTP_09));
+    }
 }
 fn copy_headers(
     headers: &HeaderMap,
@@ -267,6 +329,64 @@ impl HttpBody for Body {
         maximum_bytes: usize,
     ) -> BoxFuture<'_, Result<Option<IoOutputChunk>, Error>> {
         Box::pin(self.next(maximum_bytes))
+    }
+    fn read_with_timeout(
+        &mut self,
+        maximum_bytes: usize,
+        timeout_millis: Option<u32>,
+    ) -> BoxFuture<
+        '_,
+        Result<Option<IoOutputChunk>, latent_capabilities::broker::streaming_http::HttpPhaseError>,
+    > {
+        use latent_capabilities::broker::streaming_http::HttpPhaseError;
+        if let Err(error) = self.exchange.call.io().checkpoint() {
+            return Box::pin(async move { Err(error.into()) });
+        }
+        if let Some(error) = self.phase_failure {
+            return Box::pin(async move { Err(error) });
+        }
+        if timeout_millis.is_none_or(|millis| millis == 0) {
+            return Box::pin(async move { self.next(maximum_bytes).await.map_err(Into::into) });
+        }
+        if !self.exchange.inner.phase_timing {
+            return Box::pin(async { Err(HttpPhaseError::Unsupported) });
+        }
+        let deadline = match super::phase::Deadline::new(
+            self.exchange.call.io().stop_handle(),
+            timeout_millis,
+        ) {
+            Ok(deadline) => deadline,
+            Err(error) => return Box::pin(async move { Err(error) }),
+        };
+        Box::pin(async move {
+            match deadline
+                .wait(
+                    self.next(maximum_bytes),
+                    HttpPhaseError::ReadTimeout {
+                        external_completion_uncertain: false,
+                    },
+                )
+                .await
+            {
+                Ok(result) => result.map_err(Into::into),
+                Err(error) => {
+                    // The borrowed read future has been destroyed. Close its
+                    // actual transport before reporting any phase failure;
+                    // retained chunks/body metadata keep their original charges.
+                    self.phase_failure = Some(error);
+                    // A retired phase stream is invalid for the legacy API;
+                    // do not manufacture an original activation deadline.
+                    self.failed = Some(Error::InvalidState);
+                    self.pending = Bytes::new();
+                    self.exchange.socket = None;
+                    self.exchange.terminal_audit().await;
+                    // Audit completion is an async boundary too. An original
+                    // root stop during retirement still wins before reporting.
+                    self.exchange.call.io().checkpoint()?;
+                    Err(error)
+                }
+            }
+        })
     }
     fn trailers(&self) -> Result<&HttpHeaderBlock, Error> {
         self.exchange.call.io().checkpoint()?;

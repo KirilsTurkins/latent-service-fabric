@@ -115,7 +115,6 @@ impl Fixture {
             Some(limits),
         )
     }
-    #[expect(clippy::too_many_lines, reason = "shared explicit fixture composition")]
     pub(super) fn configured_inner(
         config: HttpProviderConfig,
         credentials: &[HttpCredential<'_>],
@@ -123,7 +122,37 @@ impl Fixture {
         audit: Option<latent_audit::AuditHandle>,
         streaming_limits: Option<HttpStreamLimits>,
     ) -> Self {
-        let cap = if streaming_limits.is_some() {
+        Self::configured_profile(
+            config,
+            credentials,
+            pool_limits,
+            audit,
+            streaming_limits,
+            false,
+        )
+    }
+    pub fn phase_timing(config: HttpProviderConfig, limits: HttpStreamLimits) -> Self {
+        Self::configured_profile(
+            config,
+            &[],
+            ProviderPoolLimits::default(),
+            None,
+            Some(limits),
+            true,
+        )
+    }
+    #[expect(clippy::too_many_lines, reason = "shared explicit fixture composition")]
+    fn configured_profile(
+        config: HttpProviderConfig,
+        credentials: &[HttpCredential<'_>],
+        pool_limits: ProviderPoolLimits,
+        audit: Option<latent_audit::AuditHandle>,
+        streaming_limits: Option<HttpStreamLimits>,
+        phase_timing: bool,
+    ) -> Self {
+        let cap = if phase_timing {
+            latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY
+        } else if streaming_limits.is_some() {
             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY
         } else {
             CAP
@@ -133,7 +162,9 @@ impl Fixture {
         } else {
             "send"
         };
-        let profile = if streaming_limits.is_some() {
+        let profile = if phase_timing {
+            PHASE_TIMING_HTTP_PROVIDER_PROFILE
+        } else if streaming_limits.is_some() {
             STREAMING_HTTP_PROVIDER_PROFILE
         } else {
             HTTP_PROVIDER_PROFILE
@@ -204,7 +235,13 @@ impl Fixture {
             0,
             config,
             crate::credentials::CredentialInput::Inline(credentials),
-            streaming_limits,
+            streaming_limits.map(|limits| {
+                if phase_timing {
+                    crate::provider::StreamingProfile::PhaseTiming(limits)
+                } else {
+                    crate::provider::StreamingProfile::Identity(limits)
+                }
+            }),
         )
         .unwrap();
         let streaming = streaming_limits.map(|_| StreamingHttpProvider {

@@ -1,0 +1,37 @@
+package latent:http@0.4.0;
+
+// Explicit per-operation timing over the unchanged v0.3 linear resources.
+// Selection grants no destination, transport, retry, or additional lifetime.
+interface phase-timing {
+    use latent:http/streaming@0.3.0.{request, upload, body, chunk, header, http-error};
+    record response {
+        status: u16,
+        // Actual bounded HTTP/1 wire bytes, interpreted as Latin1 by adapters.
+        // Some(empty) is an observed empty phrase; None is unavailable metadata.
+        reason-phrase: option<list<u8>>,
+        headers: list<header>,
+        body-media-type: option<string>,
+        body: body,
+    }
+    variant phase-error {
+        http(http-error),
+        connect-timeout,
+        // True means request bytes may have been dispatched before headers.
+        read-timeout(bool),
+        unsupported-phase-timing,
+    }
+    // Includes queue, approved DNS and actual TCP/TLS establishment. It never
+    // substitutes receipt of response headers for connection establishment.
+    // None/zero disables this phase timer; the original deadline still applies.
+    open: async func(request: request, connect-timeout-millis: option<u32>) -> result<upload, phase-error>;
+    write: async func(target: borrow<upload>, bytes: list<u8>) -> result<_, http-error>;
+    // Consume the original upload and await its response headers once.
+    finish: async func(target: upload, read-timeout-millis: option<u32>) -> result<response, phase-error>;
+    // One fresh timeout per public read, not per underlying protocol frame.
+    // A timeout destroys the pending physical transport before returning.
+    read: async func(source: borrow<body>, maximum-bytes: u32, read-timeout-millis: option<u32>) -> result<option<chunk>, phase-error>;
+    chunk-bytes: async func(value: borrow<chunk>) -> result<list<u8>, http-error>;
+    trailers: async func(source: borrow<body>) -> result<list<header>, http-error>;
+    abort-upload: async func(target: upload) -> result<_, http-error>;
+    abort-body: async func(source: body) -> result<_, http-error>;
+}
