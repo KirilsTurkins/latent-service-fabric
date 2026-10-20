@@ -142,8 +142,9 @@ The operational-authority correction subsequently selected producer
 an immutable historical tuple. Java run `39461289033` loaded its exact private
 compiler JAR, then failed before a component existed in TeaVM's original-entry
 liveness lookup. Corrected source `7bb87351a7c05cdf915c5a160f788803977be9ae`
-is being qualified separately in run `39463938701`; neither failure nor a queued
-run establishes signed Java behavior.
+failed in run `39463938701` while compiling three new IR-harness constructor
+references. Neither IR control nor guest execution ran. Those references now use
+the pinned API's `ValueType` overload; actual old/new IR remains required.
 
 After the independent pending-wait observer merged into development, the
 maintained campaign selects successful producer
