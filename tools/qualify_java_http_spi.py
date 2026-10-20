@@ -15,14 +15,13 @@ from tools.build_observation import build_environment
 from tools.java_capsule_build import build, FIBER_IO_PROFILE
 from tools.java_http_spi_fixture import project, SOURCE, WORLD
 from tools.java_http_spi_node import run as node_controls
-from tools.java_http_client import PHASE_PROFILE_ID
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_java_http_phases import (MATERIALS as PHASE_MATERIALS, resolve_review,
-    native_source)
+    native_source, component_profile)
 from tools.java_standard_http_library import compiler_cache
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, digest, fresh, read_file, read_json, write_json
+from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
 
 MAX_SECONDS = 1500
 MATERIALS = tuple(dict.fromkeys((*PHASE_MATERIALS, SOURCE, WORLD,
@@ -52,10 +51,7 @@ def execute(commands, binaries, wasi_sdk, output, selected_cache=None):
         require(set(actual) == set(captured['originalJars'])
             and all(actual[name] == identity['digest'] for name, identity in captured['originalJars'].items()),
             'java-spi-actual-classpath-drift')
-        profile = read_json(artifact/'http-client-profile.json')
-        require(profile['profile'] == PHASE_PROFILE_ID
-            and profile['componentDigest'] == digest(read_file(artifact/'component.wasm')),
-            'java-spi-selected-profile-drift')
+        profile = component_profile(artifact, 'java-spi-selected-profile-drift')
         stage = 'signed-optional-spi-only'
         result = node_controls(artifact,
             {name: binaries[name] for name in ('latent', 'latentd', 'capsule_authoring')},

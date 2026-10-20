@@ -254,6 +254,8 @@ jobs:
             ${{ runner.temp }}/java-http-phases/campaign/qualification.json
             ${{ runner.temp }}/java-http-phases/campaign/FAILED.json
             ${{ runner.temp }}/java-http-phases/campaign/build/*.json
+            ${{ runner.temp }}/java-http-phases/campaign/build/component.wasm
+            ${{ runner.temp }}/java-http-phases/campaign/build/package/**
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-to-c.log
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-owned-classes.log
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log
@@ -367,6 +369,8 @@ jobs:
             ${{ runner.temp }}/java-http-spi/campaign/FAILED.json
             ${{ runner.temp }}/java-http-spi/campaign/final-materials.json
             ${{ runner.temp }}/java-http-spi/campaign/build/*.json
+            ${{ runner.temp }}/java-http-spi/campaign/build/component.wasm
+            ${{ runner.temp }}/java-http-spi/campaign/build/package/**
             ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-to-c.log
             ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-owned-classes.log
             ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-coroutine-*.log

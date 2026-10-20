@@ -1,5 +1,7 @@
 {
   "cases": [
+    "JavaComponentProfileIdentity.test_actual_component_larger_than_source_cap_preserves_exact_profile_and_digest",
+    "JavaComponentProfileIdentity.test_component_above_producer_bound_and_nonregular_input_refuse_before_signing",
     "JavaHttpPhaseCampaign.test_configuration_selects_only_phase_contract_and_retains_original_limits",
     "JavaHttpPhaseCampaign.test_connect_observations_stop_at_sixteen_without_replaying_or_claiming_a_witness",
     "JavaHttpPhaseCampaign.test_every_exact_result_is_source_revision_owned_and_root_errors_cannot_be_phase_errors",
@@ -8,6 +10,30 @@
     "JavaHttpPhaseCampaign.test_public_client_closure_preserves_transitive_edge_and_owned_resources"
   ],
   "guards": {
+    "JavaComponentProfileIdentity.test_actual_component_larger_than_source_cap_preserves_exact_profile_and_digest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaComponentProfileIdentity.test_component_above_producer_bound_and_nonregular_input_refuse_before_signing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaHttpPhaseCampaign.test_configuration_selects_only_phase_contract_and_retains_original_limits": {
       "bases": [
         "unittest.TestCase"
@@ -83,6 +109,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_phase_campaign.py",
-  "reviewReason": "Explicit reviewed native tuple update after current pending-wait observer merge: replace only acquisition module8f with shared strict f919 wrapper; identical output/env/bounds, original8f/36/77 receipts and all old controls retained, exact new source fetch and factory controls additive. All current native/107 auxiliary source bytes equal authenticated f919; no historical qualification transfer.",
+  "reviewReason": "Append two real bounded-reader controls for actual17MiB component, immutable selected profile and digest, wrong identity, over64MiB producer ceiling and nonregular refusal; all six prior case bodies/guards retained.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

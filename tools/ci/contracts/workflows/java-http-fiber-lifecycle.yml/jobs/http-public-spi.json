@@ -98,7 +98,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-http-spi-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-http-spi-prepared/retrieval.json\n${{ runner.temp }}/java-http-spi-prepared/native-products.json\n${{ runner.temp }}/java-http-spi-prepared/source-inputs.json\n${{ runner.temp }}/java-http-spi/campaign/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/final-materials.json\n${{ runner.temp }}/java-http-spi/campaign/build/*.json\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-expected-wit.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-compiled-wit.log\n${{ runner.temp }}/java-http-spi/campaign/node/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/node/controls/*.json",
+          "path": "${{ runner.temp }}/java-http-spi-prepared/retrieval.json\n${{ runner.temp }}/java-http-spi-prepared/native-products.json\n${{ runner.temp }}/java-http-spi-prepared/source-inputs.json\n${{ runner.temp }}/java-http-spi/campaign/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/final-materials.json\n${{ runner.temp }}/java-http-spi/campaign/build/*.json\n${{ runner.temp }}/java-http-spi/campaign/build/component.wasm\n${{ runner.temp }}/java-http-spi/campaign/build/package/**\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-expected-wit.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-compiled-wit.log\n${{ runner.temp }}/java-http-spi/campaign/node/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/node/controls/*.json",
           "retention-days": 3
         }
       }
@@ -107,7 +107,7 @@
   },
   "jobId": "http-public-spi",
   "kind": "job",
-  "reviewReason": "Add the four exact selected Java phase graph controls and retain only the two existing bounded public WIT diagnostic logs before optional SPI execution; all old commands and guards retained.",
+  "reviewReason": "Retain only the owned public SPI component and assembled package so future reader-only fixes reuse actual compilation; original limits/commands/guards unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

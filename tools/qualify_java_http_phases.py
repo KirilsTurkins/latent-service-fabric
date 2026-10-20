@@ -129,6 +129,15 @@ def native_source(prepared):
     return {'native': current, 'auxiliaryInputs': selected, 'equalToCompiledProducer': True}
 
 
+def component_profile(artifact, reason='java-phase-actual-selected-profile-drift'):
+    """Match the producer's component bound, retaining exact selected-profile identity."""
+    profile = read_json(artifact/'http-client-profile.json')
+    component = file_identity(artifact/'component.wasm', 64 * 1024 * 1024)
+    require(profile['profile'] == PHASE_PROFILE_ID
+        and profile['componentDigest'] == component['sha256'], reason)
+    return profile
+
+
 def execute(commands, binaries, wasi_sdk, output):
     output = fresh(output)
     before = {name: file_identity(ROOT/name) for name in MATERIALS}
@@ -152,10 +161,7 @@ def execute(commands, binaries, wasi_sdk, output):
         require(set(actual) == set(captured['originalJars'])
             and all(actual.get(name) == identity['digest'] for name, identity in captured['originalJars'].items()),
                 'java-phase-actual-classpath-drift')
-        profile = read_json(artifact/'http-client-profile.json')
-        require(profile['profile'] == PHASE_PROFILE_ID
-            and profile['componentDigest'] == digest(read_file(artifact/'component.wasm')),
-            'java-phase-actual-selected-profile-drift')
+        profile = component_profile(artifact)
         stage = 'signed-client-and-phase-controls'
         result = node_controls(artifact, {name: binaries[name] for name in ('latent', 'latentd', 'capsule_authoring')},
             output/'node', deadline=commands.deadline)

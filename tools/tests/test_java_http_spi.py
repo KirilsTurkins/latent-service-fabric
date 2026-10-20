@@ -108,3 +108,34 @@ class JavaHttpPublicSpi(unittest.TestCase):
             self.assertEqual(failed, {'status': 'failed', 'stage': 'project',
                 'defaultClientQualification': False, 'sameNodeCrossTenantHttpQualified': False})
             self.assertNotIn(str(original), (root/'output/FAILED.json').read_text())
+
+
+class JavaSpiComponentIdentityFence(unittest.TestCase):
+    def test_shared_producer_bound_identity_guard_runs_before_signed_spi_execution(self):
+        import time
+        from tools.rust_capsule_project import write_json
+        original = RuntimeError('preserved-shared-component-refusal')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary);artifact = root/'artifact';artifact.mkdir()
+            product = root/'product';product.write_bytes(b'public fixture')
+            write_json(artifact/'java-classpath.json', {'artifacts': [
+                {'id': 'fixture', 'originalDigest': 'sha256:'+'1'*64}]})
+            binaries = {name: product for name in ('latent', 'latentd', 'capsule_authoring',
+                'capsule_contracts', 'package')}
+            commands = SimpleNamespace(deadline=time.monotonic()+30)
+            with patch.object(campaign, 'MATERIALS', ()), \
+                    patch.object(campaign, 'project', return_value=root/'app'), \
+                    patch.object(campaign, 'resolve_review', return_value={'originalJars': {
+                        'fixture': {'digest': 'sha256:'+'1'*64}}}), \
+                    patch.object(campaign, 'compiler_cache', return_value=root/'cache'), \
+                    patch.object(campaign, 'build', return_value=artifact), \
+                    patch.object(campaign, 'component_profile', side_effect=original) as identity, \
+                    patch.object(campaign, 'node_controls') as node:
+                with self.assertRaises(RuntimeError) as caught:
+                    campaign.execute(commands, binaries, root/'wasi', root/'output')
+            self.assertIs(caught.exception, original)
+            identity.assert_called_once_with(artifact, 'java-spi-selected-profile-drift')
+            node.assert_not_called()
+            failed = read_json(root/'output/FAILED.json')
+            self.assertEqual(failed['stage'], 'offline-optional-spi-component')
+            self.assertFalse(failed['defaultClientQualification'])

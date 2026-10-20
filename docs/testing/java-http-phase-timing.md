@@ -208,3 +208,18 @@ by full graph equality. Default HTTP 0.3 remains strict, as do altered source
 records, resource owners, phase operations, exports and any further omission.
 Real retained-pair and mutation controls cover that boundary. Signed Java
 phase/default-client and tenant results remain pending.
+
+
+Run `39480063296`, job `118825984972`, completed the repaired JVM IR controls,
+C compilation, strict WIT comparison, component validation and normal package
+assembly. Its retained build observation identifies a 17,034,179-byte component
+`10997f52862068bc5570b33292ef4de56de3c3396f0324d8ba911d2a90fc56c5`.
+Artifact `12290348244` retains all 38 public JSON/log members. The qualifier then
+incorrectly applied the 4 MiB source-file reader to that component, before
+signing or guest execution. It now hashes with the producer's existing 64 MiB
+component bound, using the unchanged regular-file, mutation and exact digest
+checks. Controls retain the original 4 MiB refusal, accept a 17 MiB component,
+and reject altered profile/digest, over-64 MiB and nonregular inputs. No runtime
+or application budget changes. The owning artifact additionally retains only
+this public fixture's component and assembled package so a later reader-only
+repair can reuse them. Signed client/deadline and tenant execution is pending.

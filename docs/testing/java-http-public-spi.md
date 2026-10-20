@@ -50,3 +50,9 @@ owns its actual same-node positive and negative evidence. This optional-SPI
 programme deliberately reports no cross-tenant qualification and does not
 substitute a missing-provider refusal or two independent nodes for that proof.
 Neither HTTP aliases nor shared credentials are introduced here.
+
+The optional consumer uses the same exact profile/component identity fence as
+the default phase programme, under the existing 64 MiB Java component producer
+bound. Its owned public component/package and bounded WIT diagnostics are
+retained for source-bound reader repairs. These source controls are not signed
+SPI qualification; the six real calls and two authority denials remain pending.
