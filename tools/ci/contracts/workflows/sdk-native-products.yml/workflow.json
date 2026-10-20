@@ -13,7 +13,8 @@
           "diag/sdk-v7-native-products-20261020",
           "feat/http-phase-nominal-semantics-20261020",
           "fix/http-phase-unused-nominal-type-20261020",
-          "fix/http-phase-operational-authority-20261020"
+          "fix/http-phase-operational-authority-20261020",
+          "fix/runtime-wait-positive-observation-20261020"
         ]
       },
       "workflow_dispatch": null
@@ -25,7 +26,7 @@
   "requiredJobs": [
     "products"
   ],
-  "reviewReason": "Reviewed exact nominal HTTP phase authority fix: retain all original native-five build, twenty-five Rust and four Python controls, source/material checks, steps and bounds; append two exact-count declared-source metadata and real binding compiler controls.",
+  "reviewReason": "Add exact owned wait-pending observer producer branch; preserve all events/jobs and bounds",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/sdk-native-products.yml"
 }

@@ -2,7 +2,7 @@ name: SDK current native products
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/sdk-current-native-products-20261020', 'diag/sdk-v7-native-products-20261020', 'feat/http-phase-nominal-semantics-20261020', 'fix/http-phase-unused-nominal-type-20261020', 'fix/http-phase-operational-authority-20261020']
+    branches: ['feat/sdk-current-native-products-20261020', 'diag/sdk-v7-native-products-20261020', 'feat/http-phase-nominal-semantics-20261020', 'fix/http-phase-unused-nominal-type-20261020', 'fix/http-phase-operational-authority-20261020', 'fix/runtime-wait-positive-observation-20261020']
 permissions:
   contents: read
 concurrency:
@@ -96,8 +96,8 @@ jobs:
           observer=commands.run('positive-timer-observer-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-wasmtime','--lib','host::runtime::positive_timer_observer::tests::',
               '--','--test-threads=1')
-          require(b'test result: ok. 5 passed; 0 failed; 0 ignored;' in observer,
-              'native-products-positive-timer-five-controls')
+          require(b'test result: ok. 8 passed; 0 failed; 0 ignored;' in observer,
+              'native-products-positive-timer-eight-controls')
           nominal=commands.run('phase-nominal-type-owner-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-packaging','--lib','phase_nominal_owner_',
               '--','--test-threads=1')
