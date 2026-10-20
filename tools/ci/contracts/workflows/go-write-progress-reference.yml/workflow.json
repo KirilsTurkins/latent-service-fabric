@@ -1,0 +1,27 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-write-progress-${{ github.ref }}"
+    },
+    "name": "Go bounded write progress reference",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-stream-write-progress-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "reference"
+  ],
+  "reviewReason": "Require exact original chunk-boundary failure and eight bounded production-method reference controls; keep original owner, deadline, chunk/transfer limits, typed uncertainty and all signed/provider gates separate.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-write-progress-reference.yml"
+}

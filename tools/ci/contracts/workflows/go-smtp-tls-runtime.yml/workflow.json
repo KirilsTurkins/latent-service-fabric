@@ -1,0 +1,27 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-smtp-tls-runtime-${{ github.ref }}"
+    },
+    "name": "Execute ordinary Go SMTP and guest STARTTLS",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-smtp-starttls-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "runtime"
+  ],
+  "reviewReason": "Add one bounded ordinary Go SMTP and guest STARTTLS signed target with explicit trust/hostname verification, original owner limits, exact six outcomes and no host TLS/kernel qualification. Preserve every existing TCP programme and baseline.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-smtp-tls-runtime.yml"
+}

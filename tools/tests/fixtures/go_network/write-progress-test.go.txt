@@ -1,0 +1,270 @@
+package streamwrite
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"sync"
+	"testing"
+	"time"
+)
+
+// The projected Write method is byte-exact production source. These dependencies
+// are explicit deterministic protocol doubles, not a native network or guest.
+const lsfStreamMaximumChunk = 16384
+
+var ErrClosed = errors.New("closed")
+var errBusy = errors.New("busy")
+var now time.Time
+
+func lsfStreamTimeout(deadline time.Time) (uint32, error) {
+	if deadline.IsZero() {
+		return 0, nil
+	}
+	if !deadline.After(now) {
+		return 0, context.DeadlineExceeded
+	}
+	return uint32(deadline.Sub(now) / time.Millisecond), nil
+}
+
+type streamFailure struct {
+	AcceptedPrefixBytes uint32
+	MayHaveApplied      bool
+}
+type lsfStreamError struct{ failure streamFailure }
+
+func (e *lsfStreamError) Error() string { return "closed-stream-failure" }
+
+type result struct {
+	n       uint32
+	failure *streamFailure
+}
+
+func (r result) IsErr() bool        { return r.failure != nil }
+func (r result) Err() streamFailure { return *r.failure }
+func (r result) Ok() uint32         { return r.n }
+
+type call struct {
+	bytes   []byte
+	timeout uint32
+}
+type wire struct {
+	calls    []call
+	accepted []byte
+	replies  []result
+	after    func(int)
+	owner    *lsfStreamConn
+}
+
+func (w *wire) WriteContext(_ context.Context, b []byte, timeout uint32) result {
+	if !w.owner.busy {
+		panic("write direction escaped original owner")
+	}
+	if len(b) > lsfStreamMaximumChunk {
+		panic("host chunk bound widened")
+	}
+	w.calls = append(w.calls, call{append([]byte(nil), b...), timeout})
+	r := result{n: uint32(len(b))}
+	if len(w.replies) > 0 {
+		r = w.replies[0]
+		w.replies = w.replies[1:]
+	}
+	n := r.n
+	if r.IsErr() {
+		n = r.Err().AcceptedPrefixBytes
+	}
+	if int(n) <= len(b) {
+		w.accepted = append(w.accepted, b[:n]...)
+	}
+	if w.after != nil {
+		w.after(len(w.calls))
+	}
+	return r
+}
+
+type lsfStreamConn struct {
+	mu                       sync.Mutex
+	stream                   *wire
+	writeShut, busy, closing bool
+	writeDeadline            time.Time
+	admissions, releases     int
+}
+
+func (c *lsfStreamConn) begin(_ bool) (uint32, func(), error) {
+	if c.closing {
+		return 0, nil, ErrClosed
+	}
+	if c.busy {
+		return 0, nil, errBusy
+	}
+	timeout, err := lsfStreamTimeout(c.writeDeadline)
+	if err != nil {
+		return 0, nil, err
+	}
+	c.busy = true
+	c.admissions++
+	return timeout, func() {
+		if !c.busy {
+			panic("duplicate release")
+		}
+		c.busy = false
+		c.releases++
+	}, nil
+}
+func (c *lsfStreamConn) opError(op string, e error) error { return fmt.Errorf("%s: %w", op, e) }
+func conn() *lsfStreamConn {
+	c := &lsfStreamConn{stream: &wire{}}
+	c.stream.owner = c
+	now = time.Unix(1, 0)
+	return c
+}
+func heldOnce(t *testing.T, c *lsfStreamConn) {
+	t.Helper()
+	if c.busy || c.admissions != 1 || c.releases != 1 {
+		t.Fatalf("original-owner-not-retired: %d/%d/%t", c.admissions, c.releases, c.busy)
+	}
+}
+func payload(n int) []byte {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = byte(i % 251)
+	}
+	return b
+}
+
+type reader struct{ io.Reader } // Hide bytes.Reader.WriteTo: ordinary io.Copy's 32KiB path.
+func TestCopyCrossesChunkBoundary(t *testing.T) {
+	c := conn()
+	data := payload(40 * 1024)
+	n, err := io.Copy(c, reader{bytes.NewReader(data)})
+	if err != nil || n != int64(len(data)) || !bytes.Equal(c.stream.accepted, data) {
+		t.Fatalf("chunk-boundary-copy: n=%d error=%v accepted=%d", n, err, len(c.stream.accepted))
+	}
+	if len(c.stream.calls) != 3 || c.admissions != 2 || c.releases != 2 {
+		t.Fatal("copy-chunk-count-or-owner-scope")
+	}
+	for _, call := range c.stream.calls {
+		if len(call.bytes) > 16384 {
+			t.Fatal("chunk-bound-widened")
+		}
+	}
+}
+func TestDirectWriteAdvancesOnlyAcceptedBytes(t *testing.T) {
+	c := conn()
+	data := payload(40 * 1024)
+	c.stream.replies = []result{{n: 11}, {n: 5}}
+	n, err := c.Write(data)
+	if err != nil || n != len(data) || !bytes.Equal(c.stream.accepted, data) {
+		t.Fatalf("positive-prefix-progress: %d/%v", n, err)
+	}
+	if !bytes.Equal(c.stream.calls[1].bytes, data[11:11+16384]) || !bytes.Equal(c.stream.calls[2].bytes, data[16:16+16384]) {
+		t.Fatal("accepted-byte-replay")
+	}
+	heldOnce(t, c)
+}
+func TestErrorKeepsCumulativePrefixAndUncertaintyWithoutRetry(t *testing.T) {
+	c := conn()
+	data := payload(40 * 1024)
+	c.stream.replies = []result{{n: 16384}, {failure: &streamFailure{7, true}}}
+	n, err := c.Write(data)
+	var failure *lsfStreamError
+	if n != 16391 || !errors.As(err, &failure) || failure.failure.AcceptedPrefixBytes != 16391 || !failure.failure.MayHaveApplied {
+		t.Fatal("cumulative-uncertain-prefix-lost")
+	}
+	if len(c.stream.calls) != 2 || !bytes.Equal(c.stream.accepted, data[:n]) {
+		t.Fatal("error-retried-or-prefix-replayed")
+	}
+	heldOnce(t, c)
+}
+func TestZeroProgressStopsWithoutSpin(t *testing.T) {
+	c := conn()
+	c.stream.replies = []result{{n: 0}}
+	n, err := c.Write(payload(40 * 1024))
+	if n != 0 || !errors.Is(err, io.ErrShortWrite) || len(c.stream.calls) != 1 {
+		t.Fatal("zero-progress-spun")
+	}
+	heldOnce(t, c)
+}
+func TestAbsoluteDeadlineDoesNotRestartForEachFragment(t *testing.T) {
+	c := conn()
+	c.writeDeadline = now.Add(3 * time.Millisecond)
+	c.stream.after = func(_ int) { now = now.Add(2 * time.Millisecond) }
+	n, err := c.Write(payload(40 * 1024))
+	if n != 32768 || !errors.Is(err, context.DeadlineExceeded) || len(c.stream.calls) != 2 {
+		t.Fatalf("original-deadline-not-enforced: %d/%v/%d", n, err, len(c.stream.calls))
+	}
+	if c.stream.calls[0].timeout != 3 || c.stream.calls[1].timeout != 1 {
+		t.Fatal("per-fragment-timeout-reset")
+	}
+	heldOnce(t, c)
+}
+func TestSameDirectionRefusalAndSingleOwnerSurviveAllFragments(t *testing.T) {
+	c := conn()
+	c.stream.after = func(_ int) {
+		_, _, err := c.begin(true)
+		if !errors.Is(err, errBusy) {
+			t.Fatal("competing-write-admitted")
+		}
+	}
+	if _, err := c.Write(payload(40 * 1024)); err != nil {
+		t.Fatal(err)
+	}
+	heldOnce(t, c)
+}
+func TestImpossibleCountsFailClosedBeforeAnotherDispatch(t *testing.T) {
+	for _, r := range []result{{n: 16385}, {failure: &streamFailure{16385, true}}} {
+		c := conn()
+		c.stream.replies = []result{r}
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Fatal("foreign-count-accepted")
+				}
+			}()
+			_, _ = c.Write(payload(40 * 1024))
+		}()
+		if len(c.stream.calls) != 1 {
+			t.Fatal("foreign-count-dispatched-again")
+		}
+		heldOnce(t, c)
+	}
+}
+func TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules(t *testing.T) {
+	c := conn()
+	if n, err := c.Write(nil); n != 0 || err != nil || len(c.stream.calls) != 0 {
+		t.Fatal("empty-dispatch")
+	}
+	heldOnce(t, c)
+	c = conn()
+	c.closing = true
+	if _, err := c.Write([]byte{1}); !errors.Is(err, ErrClosed) || len(c.stream.calls) != 0 || c.admissions != 0 {
+		t.Fatal("closed-admitted")
+	}
+	c = conn()
+	c.writeShut = true
+	if _, err := c.Write([]byte{1}); !errors.Is(err, ErrClosed) || len(c.stream.calls) != 0 {
+		t.Fatal("half-closed-dispatch")
+	}
+	heldOnce(t, c)
+}
+func TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch(t *testing.T) {
+	for _, half := range []bool{false, true} {
+		c := conn()
+		c.stream.after = func(_ int) {
+			c.mu.Lock()
+			if half {
+				c.writeShut = true
+			} else {
+				c.closing = true
+			}
+			c.mu.Unlock()
+		}
+		n, err := c.Write(payload(40 * 1024))
+		if n != 16384 || !errors.Is(err, ErrClosed) || len(c.stream.calls) != 1 {
+			t.Fatalf("close-between-fragments: n=%d error=%v calls=%d", n, err, len(c.stream.calls))
+		}
+		heldOnce(t, c)
+	}
+}

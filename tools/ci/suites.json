@@ -2017,7 +2017,8 @@
         "deployments::transaction_selection::pin::tests::retained_old_route_snapshot_cannot_replace_the_actual_current_repository_owner",
         "http_routes::tests::direct_transaction_routes_roundtrip_with_fixed_scope_and_reject_method_widening",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
-        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
+        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
+        "deployments::tests::bindings::phase_nominal::phase_nominal_owner_compiles_without_legacy_authority_but_phase_and_callable_imports_remain_required"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -2028,7 +2029,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 267,
+      "minimumCases": 268,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -4327,14 +4328,15 @@
       "expectedCases": [
         "asynchronous_imports_require_the_exact_version_kind_and_complete_pinned_shape",
         "every_selected_host_contract_is_inspectable_without_a_provider_or_execution",
-        "provider_shapes_remain_subject_to_the_existing_semantic_work_ceilings"
+        "provider_shapes_remain_subject_to_the_existing_semantic_work_ceilings",
+        "phase_nominal_owner_metadata_requires_only_operational_source_bindings"
       ],
       "expectedIgnored": [],
       "id": "latent-packaging.test.host-abi",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 3,
+      "minimumCases": 4,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
