@@ -58,6 +58,11 @@ RECIPE += ("tools/java_guest/facilities.py",)
 
 
 def retain_logs(source: Path, output: Path) -> None:
+    preparation = source / 'coroutine-compiler-preparation.json'
+    if preparation.exists():
+        # This fixed compiler-owned identity record must survive the private
+        # build directory. Do not retain arbitrary neighbouring JSON files.
+        (output / preparation.name).write_bytes(read_file(preparation, 262144))
     target = output / "compiler-logs"
     target.mkdir(exist_ok=True)
     total = 0

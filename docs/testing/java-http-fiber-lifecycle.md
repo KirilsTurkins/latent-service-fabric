@@ -95,3 +95,15 @@ outbound requests; no lifecycle case passed. Failure-only evidence now retains
 the actual invocation, pending owner, controlled peer events and release state
 before preserving that same assertion. This is diagnostic retention, with all
 original result checks, provider ceilings and cancellation behavior unchanged.
+
+
+Head `b19a3612` reproduced the strict first held-header failure after a successful
+fresh preflight. The retained peer saw the held request but no later sibling;
+that alone cannot distinguish timer progress, an earlier Java exception, or an
+HTTP error followed by draining the accepted child. An additional caught
+fixture invocation now publishes only a bounded phase and closed numeric HTTP
+error categories. It retains the same provider ceilings and root budget, then
+runs every original strict case unchanged. Its observations are explicitly not
+qualification. The fixed compiler preparation record is copied from the actual
+private compiler directory before that directory is retired; unrelated JSON
+files remain excluded. No lifecycle cause or passed programme is claimed yet.

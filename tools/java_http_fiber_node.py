@@ -201,6 +201,68 @@ def invoke(client, node, target, peer, probe, mode, name):
     return result
 
 
+def closed_diagnostic(row):
+    """Decode only the fixture's closed numeric observation, never error text."""
+    import re
+    if type(row) is not dict:
+        return {'status': 'unavailable'}
+    decoded = row.get('decoded')
+    if (type(row.get('exitCode')) is not int or row['exitCode'] != 0 or row.get('processReaped') is not True
+            or type(decoded) is not list or len(decoded) != 1 or type(decoded[0]) is not str):
+        return {'status': 'unavailable'}
+    match = re.fullmatch(r'1:diagnostic:([1-7]):([0-9]{1,3}):([0-9]{1,3}):([01]):([01]):([01]):([0-9]{1,3}):([0-9]{1,3})', decoded[0])
+    if match is None:
+        return {'status': 'unavailable'}
+    phase, root, child, timer, entered, completed, sibling, child_status = map(int, match.groups())
+    codes = {0, *range(100, 116), 199, 200}
+    if root not in codes or child not in codes or sibling not in {0, 200} or child_status not in {0, 200}:
+        return {'status': 'unavailable'}
+    return {'status': 'observed', 'phase': phase, 'rootError': root, 'childError': child,
+        'timerFired': bool(timer), 'childEntered': bool(entered), 'childCompleted': bool(completed),
+        'siblingStatus': sibling, 'childStatus': child_status}
+
+
+def diagnose_pending(client, node, target, peer, probe):
+    """Additional caught observation; no lifecycle assertion is replaced."""
+    selected = selected_revision(client, target)
+    offset = len(peer.observation()['requests'])
+    origin = peer.origin()
+    process = start_call(client, narrowed_target(target, 0), 'java-standard-http', 'run',
+        [8, f"http://{origin['host']}:{origin['port']}"], 'pending-closed-diagnostic')
+    gate, released = None, False
+    try:
+        deadline = min(client.deadline, time.monotonic() + 125)
+        while not process.owner.exited():
+            require(time.monotonic() < deadline, 'java-http-fiber-diagnostic-deadline')
+            process.drain(); node.drain(); peer.poll(.005)
+            observed = peer.observation()
+            require(observed['failure'] is None, 'java-http-fiber-peer-failed')
+            gates = [item for item in peer.gates() if item.request > offset]
+            require(len(gates) <= 1, 'java-http-fiber-ambiguous-pending-request')
+            if gates and gate is None: gate = gates[0]
+            if gate is not None and not released and ready_sibling(observed, offset, gate):
+                peer.release(gate); released = True
+        row = finish_call(client, process)
+    finally:
+        process.close()
+    require(row['processReaped'] is True and row['response']['outcomeKnown'] is True
+        and row['response']['data'].get('resolvedRevision') == selected,
+        'java-http-fiber-diagnostic-original-owner')
+    for _ in range(64):
+        peer.poll(.005)
+        if peer.observation()['openConnections'] == 0: break
+    observation = peer.observation()
+    contacts = len(observation['requests']) - offset
+    require(contacts in {1, 2} and observation['openConnections'] == 0,
+        'java-http-fiber-diagnostic-contact-or-retirement')
+    value = {'schemaVersion': 'latent.java.http-fiber-caught-observation.v1', 'qualification': False,
+        'result': closed_diagnostic(row), 'contacts': contacts, 'releasedOnce': released,
+        'selectedRevision': selected, 'retired': sample(client, probe, 'after-diagnostic', 1),
+        'peer': observation}
+    write_json(client.evidence / 'pending-closed-diagnostic-observation.json', value)
+    return value
+
+
 def run(artifact, binaries, output, *, deadline):
     require(time.monotonic() < deadline, 'java-http-fiber-original-deadline-expired')
     output = fresh(output)
@@ -252,6 +314,8 @@ def run(artifact, binaries, output, *, deadline):
                             generation=str(target['generation']), grants=authorized)
             stage = 'fresh-preflight'
             result['preflight'] = invoke(client, node, target, peer, probe, 7, stage)
+            stage = 'pending-closed-diagnostic'
+            result['diagnostic'] = diagnose_pending(client, node, target, peer, probe)
             for mode, name in enumerate(CASES):
                 stage = name
                 result['cases'].append(invoke(client, node, target, peer, probe, mode, name))
@@ -265,7 +329,8 @@ def run(artifact, binaries, output, *, deadline):
             node = None
             result['peer'] = peer.close()
             validate_peer(result['peer'])
-            require(result['peer']['startedRequests'] == 14 and result['peer']['rejectedRequests'] == 0
+            require(result['peer']['startedRequests'] - result['diagnostic']['contacts'] == 14
+                    and result['peer']['rejectedRequests'] == 0
                     and result['peer']['committedMutations'] == 0
                     and all(row['role'] == 'primary' for row in result['peer']['requests']),
                     'java-http-fiber-peer-contact-or-replay')

@@ -18,6 +18,57 @@ public final class Capsule implements Bindings.Exports {
     private static volatile int childStatus;
     private static volatile String childContext;
     private static final ThreadLocal<String> context = new ThreadLocal<>();
+    private static volatile int diagnosticChildError;
+
+    private static int closedError(Throwable value) {
+        String[] codes = {"invalid-url", "invalid-request", "permission-denied", "request-too-large",
+            "response-too-large", "deadline-exceeded", "cancelled", "budget-exhausted", "dns-failed",
+            "tls-failed", "connection-failed", "unavailable", "uncertain", "invalid-state",
+            "unexpected-eof", "unsupported-encoding"};
+        for (int depth = 0; value != null && depth < 4; depth++, value = value.getCause()) {
+            if (value instanceof dev.latent.guest.client.HttpFailure) {
+                String code = ((dev.latent.guest.client.HttpFailure)value).code();
+                for (int index = 0; index < codes.length; index++) if (codes[index].equals(code)) return 100 + index;
+                return 199;
+            }
+        }
+        return 200;
+    }
+
+    /** Extra observation only; the unchanged strict mode zero still follows. */
+    private static String diagnose(String endpoint) {
+        int phase = 1, rootError = 0, siblingStatus = 0;
+        diagnosticChildError = 0;
+        Thread child = new Thread(() -> {
+            entered = 1;
+            try { childStatus = get(endpoint + "/conformance/hold/headers"); }
+            catch (Throwable error) { diagnosticChildError = closedError(error); }
+            finally { completed = 1; }
+        });
+        Timer timer = null;
+        try {
+            child.start(); phase = 2;
+            timer = new Timer(); phase = 3;
+            timer.schedule(new TimerTask() {
+                public void run() { timerFired = 1; }
+            }, 25);
+            phase = 4;
+            while ((entered == 0 || timerFired == 0) && completed == 0) Thread.yield();
+            phase = 5;
+            if (timerFired != 0) {
+                phase = 6;
+                siblingStatus = get(endpoint + "/conformance/json");
+                phase = 7;
+            }
+        } catch (Throwable error) { rootError = closedError(error); }
+        finally {
+            if (timer != null) timer.cancel();
+            try { child.join(); }
+            catch (Throwable error) { if (rootError == 0) rootError = closedError(error); }
+        }
+        return ":diagnostic:" + phase + ":" + rootError + ":" + diagnosticChildError + ":"
+            + timerFired + ":" + entered + ":" + completed + ":" + siblingStatus + ":" + childStatus;
+    }
 
     private static int get(String endpoint) {
         HttpRequest request = HttpRequest.get(endpoint).followRedirects(false);
@@ -37,6 +88,7 @@ public final class Capsule implements Bindings.Exports {
 
     public String run(Long which, String endpoint) {
         int invocation = ++calls;
+        if (which == 8) return invocation + diagnose(endpoint);
         if (which == 7) return invocation + ":fresh:" + get(endpoint + "/conformance/json")
             + ":" + entered + ":" + completed;
         context.set("root");

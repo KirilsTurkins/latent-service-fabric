@@ -612,7 +612,10 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 self.assertTrue(args[1].startswith(str(expected)))
                 return json.dumps({'schemaVersion':'latent.java.coroutine-phi-control.v1','mode':mode,'passed':True})
             compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run,directory=root/'compiler-logs')
+            compiler.directory.mkdir()
             receipt=patch.stage(compiler,project,root)
+            from tools.java_capsule_build import retain_logs
+            retain_logs(compiler.directory,root)
             self.assertEqual([call[0] for call in calls],['java-coroutine-patch',
                 'java-coroutine-original-control','java-coroutine-corrected-control'])
             self.assertEqual(core.read_bytes(),raw)
@@ -776,3 +779,73 @@ class JavaFailedLifecycleObservation(unittest.TestCase):
                 node.validate_observed_result({},0,{},SimpleNamespace(observation=lambda:{}),
                     SimpleNamespace(evidence=Path('unused')),0,None,None,False,None)
         self.assertIs(caught.exception,original)
+
+
+class JavaClosedPendingDiagnostic(unittest.TestCase):
+    def test_process_result_and_caught_observation_have_distinct_create_only_paths(self):
+        from itertools import count
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);client=SimpleNamespace(evidence=root,deadline=time.monotonic()+10)
+            process=SimpleNamespace(owner=SimpleNamespace(exited=lambda:True),close=mock.Mock())
+            selected={'publicationId':'published'}
+            row={'exitCode':0,'processReaped':True,'decoded':['1:diagnostic:5:0:105:0:1:1:0:0'],
+                'response':{'outcomeKnown':True,'data':{'resolvedRevision':selected}}}
+            steps=count()
+            def observed():
+                return {'requests':[] if next(steps)==0 else [{'request':1}], 'openConnections':0}
+            peer=SimpleNamespace(origin=lambda:{'host':'127.0.0.1','port':1},
+                observation=observed,poll=lambda _:None)
+            def finish(_client,_process):
+                node.write_json(root/'pending-closed-diagnostic.json',row)
+                return row
+            target={'budget':{'cpuFuel':1_000_000_000,'wallTimeLimitMillis':120000,'outboundRequests':8}}
+            with mock.patch.object(node,'selected_revision',return_value=selected), \
+                    mock.patch.object(node,'start_call',return_value=process), \
+                    mock.patch.object(node,'finish_call',side_effect=finish), \
+                    mock.patch.object(node,'sample',return_value={'active':0}):
+                value=node.diagnose_pending(client,SimpleNamespace(),target,peer,SimpleNamespace())
+            self.assertIs(value['qualification'],False)
+            self.assertEqual(value['result']['childError'],105)
+            self.assertEqual(read_json(root/'pending-closed-diagnostic.json'),row)
+            self.assertEqual(read_json(root/'pending-closed-diagnostic-observation.json'),value)
+            process.close.assert_called_once_with()
+
+    def test_only_exact_numeric_fixture_result_is_published(self):
+        value={'exitCode':0,'processReaped':True,'decoded':['1:diagnostic:6:111:105:1:1:1:0:0']}
+        self.assertEqual(node.closed_diagnostic(value),{'status':'observed','phase':6,'rootError':111,
+            'childError':105,'timerFired':True,'childEntered':True,'childCompleted':True,
+            'siblingStatus':0,'childStatus':0})
+        for changes in ({'decoded':['private/token/path']},{'decoded':[True]},
+                {'decoded':['1:diagnostic:6:999:105:1:1:1:0:0']},
+                {'decoded':['1:diagnostic:6:111:105:2:1:1:0:0']},
+                {'decoded':['1:diagnostic:6:111:105:1:1:1:302:0']},
+                {'decoded':['1:diagnostic:6:111:105:1:1:1:0:0','extra']},
+                {'exitCode':4},{'exitCode':False},{'processReaped':1}):
+            with self.subTest(changes=changes):
+                self.assertEqual(node.closed_diagnostic({**value,**changes}),{'status':'unavailable'})
+
+    def test_diagnostic_does_not_change_original_strict_result_or_budget_functions(self):
+        import ast,hashlib
+        # Source-derived immutable preimages; no historical Git object is needed
+        # in a hosted shallow checkout to protect the original strict programme.
+        expected={'validate_result': 'b34eca23f3b4ca0820e974863a342ae0b442bfe3055d042b9ac50a45f744032e', 'validate_observed_result': '9c22b499a68afa1357aa9f4947af14c11e8f41ba16b7ff2e99cffe7d7c1eaeaa', 'narrowed_target': '200c450f06e4f1132aef5e02d7d80601ad774ebeea9757906c92b8909bf6a952', 'invoke': '972fa506e550e8ec2b1244451b77bab51a8ab72c55d39ca43096735f60308e05'}
+        tree=ast.parse((campaign.ROOT/'tools/java_http_fiber_node.py').read_bytes())
+        for name,sha in expected.items():
+            current=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name==name)
+            self.assertEqual(hashlib.sha256(ast.dump(current,include_attributes=False).encode()).hexdigest(),sha)
+
+    def test_fixed_preparation_survives_actual_retention_and_unrelated_json_is_omitted(self):
+        from tools.java_capsule_build import retain_logs
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'private';source.mkdir();output=root/'public';output.mkdir()
+            name='coroutine-compiler-preparation.json'; raw=b'{"schemaVersion":"public-fixture-identities"}'
+            (source/name).write_bytes(raw);(source/'unrelated.json').write_bytes(b'private/path')
+            (source/'actual.log').write_bytes(b'fixed public compiler log')
+            retain_logs(source,output)
+            self.assertEqual((output/name).read_bytes(),raw)
+            self.assertEqual((output/'compiler-logs/actual.log').read_bytes(),b'fixed public compiler log')
+            self.assertFalse((output/'unrelated.json').exists())
+            (source/name).write_bytes(b' ' * 262145)
+            other=root/'bounded';other.mkdir()
+            with self.assertRaises(ValueError):retain_logs(source,other)
+            self.assertFalse((other/name).exists())
