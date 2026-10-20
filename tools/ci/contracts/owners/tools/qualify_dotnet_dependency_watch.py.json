@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind closed setup-call versus outer-handler exception metadata to compiler source",
+  "reviewReason": "Retain only fixed reader step and exact closed exception category when the source-bound failure observer itself refuses; preserve original failure and all identity/state gates.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b22624087c6eb74f3516bd65f1e406e3ed2fd5ad70b35e7115a87369f0d3af59"
+  "sha256": "e3237fdb0c1e680e9a5ae46ce8532016a7f0f5e9f45e919d05ae5fe6b6f94bbd"
 }

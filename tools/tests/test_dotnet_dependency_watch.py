@@ -875,3 +875,41 @@ class CompileSetupFailureBreadcrumbs(unittest.TestCase):
             install.assert_called_once_with(sdk,root/'output/generated',root/'output/project/lsf')
             self.assertEqual(calls,['declared-runtime-wit','bindings','bindings-drift','canonical-wit'])
             self.assertEqual(module.compile_failure_context(instance,caught.exception)['phase'],'sdk-facades')
+
+
+class FailureProducerReaderRefusal(unittest.TestCase):
+    def test_reader_import_failure_is_closed_without_losing_original_uncertain_exception(self):
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        for error in (NameError('private/path/token'), ModuleNotFoundError('private/module')):
+            with self.subTest(kind=type(error).__name__), tempfile.TemporaryDirectory() as temporary:
+                workspace, *_ = BoundCompilerReasonProjection().owned(Path(temporary).resolve())
+                original=RuntimeError('original cleanup uncertainty')
+                with patch.object(programme,'_bound_compile_reason',side_effect=error):
+                    with self.assertRaises(RuntimeError) as caught:
+                        try: raise original
+                        finally:
+                            public={'passed':False,'uncertain':True,'failure':'initial-build-failed'}
+                            programme.add_public_build_failure(public,workspace)
+                self.assertIs(caught.exception,original)
+                self.assertEqual(public['buildFailureMetadata'],{'qualification':False,'status':'unavailable',
+                    'readerPhase':'failure-producer','refusal':'unavailable','producerReaderStep':'imports',
+                    'readerExceptionKind':type(error).__name__})
+                self.assertIs(public['uncertain'],True)
+                self.assertNotIn('private',json.dumps(public))
+                self.assertNotIn('attempts',public['buildFailureMetadata'])
+
+    def test_actual_inventory_failure_has_fixed_reader_step_and_rejects_private_subclass_name(self):
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        class PrivateReaderError(RuntimeError): pass
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, *_ = BoundCompilerReasonProjection().owned(Path(temporary).resolve())
+            with patch('tools.dev_workflow.tool_inventory.validate',side_effect=PrivateReaderError('private/token')):
+                public={'passed':False};programme.add_public_build_failure(public,workspace)
+            self.assertEqual(public['buildFailureMetadata'],{'qualification':False,'status':'unavailable',
+                'readerPhase':'failure-producer','refusal':'unavailable','producerReaderStep':'tool-inventory',
+                'readerExceptionKind':'other'})
+            self.assertNotIn('PrivateReaderError',json.dumps(public))
+            self.assertNotIn('private/token',json.dumps(public))
+            self.assertNotIn('attempts',public['buildFailureMetadata'])

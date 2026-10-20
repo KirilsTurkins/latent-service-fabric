@@ -157,7 +157,7 @@ def _failure_file(root, relative, maximum):
         return paths.read(root, relative, maximum)
 
 
-def _bound_compile_reason(builds, entry_name, output, selected, failure):
+def _bound_compile_reason(builds, entry_name, output, selected, failure, *, observed=None):
     """Bind an exact static producer code; never interpret arbitrary failure text."""
     from tools.dev_workflow import paths, tool_inventory
     from tools.dev_workflow.common import decode, digest, sha
@@ -181,6 +181,7 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure):
         name, producer = 'tools/dotnet_guest/compiler.py', {'helper': 'dotnet-compile-setup'}
     else:
         return {}, []
+    if observed is not None: observed['producerStep'] = 'tool-inventory'
     descriptor = selected['descriptor']
     recorded = descriptor['build'].get('inventory')
     if recorded is None:
@@ -198,6 +199,7 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure):
         and type(descriptor['template']['ownerIssue']) is int
         and inventory['sourceCommit'] == descriptor['template']['revision'],
         'failure-projection-producer-identity')
+    if observed is not None: observed['producerStep'] = 'recipe-schema'
     recipe = decode(recipe_raw, tool_inventory.MAX_DOCUMENT)
     require(type(recipe) is dict and 0 < len(recipe) <= tool_inventory.MAX_FILES,
         'failure-projection-producer-schema')
@@ -207,6 +209,7 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure):
             and type(row['size']) is int and 0 <= row['size'] <= 4 * 1024 * 1024,
             'failure-projection-producer-schema')
         sha(row['digest'])
+    if observed is not None: observed['producerStep'] = 'source-binding'
     files = {row['path']: row for row in inventory['files']}
     source_root = Path(__file__).resolve().parents[1]
     evidence = [(builds, inventory_path, tool_inventory.MAX_DOCUMENT, inventory_raw),
@@ -259,9 +262,17 @@ _PROJECTION_REFUSALS = frozenset({'bound', 'owner', 'schema', 'changed', 'missin
     'missing', 'access', 'busy', 'unavailable'})
 
 
+_PRODUCER_READER_STEPS = frozenset({'imports', 'tool-inventory', 'recipe-schema', 'source-binding'})
+_READER_EXCEPTION_TYPES = (FileNotFoundError, PermissionError, OSError, ValueError,
+    TypeError, KeyError, AttributeError, NameError, ImportError, ModuleNotFoundError,
+    RuntimeError, RecursionError)
+_READER_EXCEPTION_KINDS = frozenset({kind.__name__ for kind in _READER_EXCEPTION_TYPES} | {'DevError', 'other'})
+
+
 class _ProjectionRefusal(Exception):
-    def __init__(self, phase, refusal):
+    def __init__(self, phase, refusal, *, producer_step=None, exception_kind=None):
         self.phase, self.refusal = phase, refusal
+        self.producer_step, self.exception_kind = producer_step, exception_kind
 
 
 def _projection_refusal(error):
@@ -300,7 +311,10 @@ def collect_build_failure_metadata(workspace):
     try:
         return _collect_build_failure_metadata(workspace, observed)
     except Exception as error:
-        raise _ProjectionRefusal(observed['phase'], _projection_refusal(error)) from None
+        from tools.dev_workflow.common import DevError
+        kind = type(error).__name__ if type(error) in (*_READER_EXCEPTION_TYPES, DevError) else 'other'
+        raise _ProjectionRefusal(observed['phase'], _projection_refusal(error),
+            producer_step=observed.get('producerStep'), exception_kind=kind) from None
 
 
 def _collect_build_failure_metadata(workspace, observed):
@@ -352,7 +366,9 @@ def _collect_build_failure_metadata(workspace, observed):
                                 and type(failure.get('formatVersion')) is int and failure['formatVersion'] == 1 else 'invalid')
                             row.update(projected)
                             observed['phase'] = 'failure-producer'
-                            reason, evidence = _bound_compile_reason(builds, entry.name, output, selected, failure)
+                            observed['producerStep'] = 'imports'
+                            reason, evidence = _bound_compile_reason(builds, entry.name, output, selected, failure,
+                                observed=observed)
                             row.update(reason)
                             if reason:
                                 evidence.append((builds, prefix + output + '/BUILD-FAILED.json', 65536, raw))
@@ -406,6 +422,10 @@ def add_public_build_failure(public, workspace):
         if (type(error) is _ProjectionRefusal and type(error.phase) is str and error.phase in _PROJECTION_PHASES
                 and type(error.refusal) is str and error.refusal in _PROJECTION_REFUSALS):
             value.update(readerPhase=error.phase, refusal=error.refusal)
+            if (error.phase == 'failure-producer' and type(error.producer_step) is str
+                    and error.producer_step in _PRODUCER_READER_STEPS
+                    and type(error.exception_kind) is str and error.exception_kind in _READER_EXCEPTION_KINDS):
+                value.update(producerReaderStep=error.producer_step, readerExceptionKind=error.exception_kind)
         public['buildFailureMetadata'] = value
 
 
