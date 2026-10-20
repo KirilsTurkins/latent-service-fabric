@@ -38,3 +38,16 @@ not establish TeaVM compilation, canonical-ABI aliases, signed component executi
 physical provider retirement or whole-issue #688/#741 completion. Those require
 the new V7 host and actual pending HTTP component programme; historical 0.3 native
 products cannot qualify this profile.
+
+The prepared public campaign uses an ordinary captured DavidWebb 1.3.0 project
+without replacing its nonzero timeout defaults. Its other standard URLConnection
+cases select explicit nonzero success, held-header and partial-body read expiry,
+root deadline/cancellation separation and a fresh request. A Linux connect case
+uses the same real full-accept-backlog premise as the maintained native ownership
+test: one `listen(1)` listener and two bounded fixture-owned TCP connections.
+They write no HTTP and do not warm or retry the guest. The guest's explicit
+`connect()` must report the connect-specific timeout; returning from connect,
+a read timeout, or a root interruption cannot satisfy that result. Separate
+pending-connect cases preserve the root deadline/cancellation distinction.
+This fixture and its pure ownership/source controls are preparation only; no
+TeaVM, V7 native or signed execution result is claimed yet.

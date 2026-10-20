@@ -128,3 +128,74 @@ class JavaHttpPhaseHostReference(unittest.TestCase):
                     self.assertEqual(result.returncode,0,result.stdout.decode('utf-8','replace'))
                 self.assertEqual(result.stdout.decode().strip(),expected)
             self.assertEqual((ROOT/'sdk/java-guest/client/dev/latent/guest/client/Connection.java').read_bytes(),original)
+
+
+class JavaHttpPhaseCampaignSource(unittest.TestCase):
+    def test_normal_project_binds_published_defaults_to_explicit_phase_world_and_unchanged_sdk(self):
+        from tools import java_http_phase_fixture as fixture
+        with tempfile.TemporaryDirectory() as temporary:
+            project = fixture.project(Path(temporary)/'application')
+            descriptor = json.loads((project/'capsule-project.json').read_bytes())
+            lock = json.loads((project/'sdk-lock.json').read_bytes())
+            source = (ROOT/fixture.SOURCE).read_bytes()
+            wit = (ROOT/fixture.WORLD).read_bytes()
+            self.assertEqual(descriptor['httpClient'], {'profile': PHASE})
+            self.assertEqual((project/'src/dev/latent/app/Capsule.java').read_bytes(), source)
+            self.assertEqual((project/'wit/world.wit').read_bytes(), wit)
+            self.assertEqual(lock['template']['sourceDigest'], digest(source))
+            self.assertEqual(lock['template']['witDigest'], digest(wit))
+            for package in ('http-v3', 'http-phases', 'activation-runtime'):
+                self.assertEqual((project/'wit/deps'/package/'package.wit').read_bytes(),
+                    (project/'vendor/lsf/wit/platform'/package/'package.wit').read_bytes())
+            for name, identity in lock['sdk'].items():
+                self.assertEqual(digest((project/'vendor/lsf'/name).read_bytes()), identity['digest'])
+            declaration = json.loads((project/'java-dependencies.json').read_bytes())
+            self.assertEqual(declaration['dependencies'], [{'exclusions': [], 'group': 'com.goebl',
+                'name': 'david-webb', 'scope': 'runtime', 'version': '1.3.0'}])
+
+    def test_default_library_and_actual_connect_boundary_do_not_relabel_root_or_header_wait(self):
+        from tools import java_http_phase_fixture as fixture
+        source = (ROOT/fixture.SOURCE).read_text(encoding='utf-8')
+        default = source.split('if (which == 0) {', 1)[1].split('boolean pendingHeaders', 1)[0]
+        self.assertIn('Webb.create().get(', default)
+        for override in ('connectTimeout(', 'readTimeout(', 'setConnectTimeout(', 'setReadTimeout('):
+            self.assertNotIn(override, default)
+        self.assertLess(source.index('connection.connect();'), source.index('int status = connection.getResponseCode();'))
+        self.assertIn('"http-connect-timeout".equals(timeout.getMessage())', source)
+        self.assertIn('"http-read-timeout".equals(timeout.getMessage())', source)
+        self.assertIn('if (which != 2 && which != 3) throw', source)
+        self.assertIn('if (connection != null) connection.disconnect();', source)
+        self.assertEqual(fixture.CASES[8:10], ('connect-root-deadline', 'connect-root-cancel'))
+
+    def test_connect_backlog_owns_exactly_two_bounded_connections_and_writes_no_http(self):
+        from tools import java_http_phase_fixture as fixture
+        from unittest import mock
+        listener, first, second = mock.Mock(), mock.Mock(), mock.Mock()
+        listener.getsockname.return_value = ('127.0.0.1', 12345)
+        with mock.patch.object(fixture.socket, 'socket', side_effect=[listener, first, second]) as create:
+            owned = fixture.ConnectBacklog()
+            self.assertEqual(create.call_count, 3)
+            listener.bind.assert_called_once_with(('127.0.0.1', 0))
+            listener.listen.assert_called_once_with(1)
+            for item in (first, second):
+                item.settimeout.assert_called_once_with(1)
+                item.connect.assert_called_once_with(('127.0.0.1', 12345))
+                item.send.assert_not_called()
+                item.sendall.assert_not_called()
+            self.assertEqual(owned.origin(), {'scheme': 'http', 'host': '127.0.0.1', 'port': 12345})
+            owned.close();owned.close()
+            for item in (listener, first, second): item.close.assert_called_once()
+            with self.assertRaisesRegex(ValueError, 'fixture-closed'): owned.origin()
+
+    def test_connect_setup_failure_preserves_original_and_closes_all_owned_sockets(self):
+        from tools import java_http_phase_fixture as fixture
+        from unittest import mock
+        listener, first, second = mock.Mock(), mock.Mock(), mock.Mock()
+        listener.getsockname.return_value = ('127.0.0.1', 12345)
+        original = OSError('original owned setup failure')
+        second.connect.side_effect = original
+        first.close.side_effect = OSError('cleanup unavailable')
+        with mock.patch.object(fixture.socket, 'socket', side_effect=[listener, first, second]):
+            with self.assertRaises(OSError) as caught: fixture.ConnectBacklog()
+        self.assertIs(caught.exception, original)
+        for item in (listener, first, second): item.close.assert_called_once()

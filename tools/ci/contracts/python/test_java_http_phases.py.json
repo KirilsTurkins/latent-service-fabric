@@ -1,5 +1,9 @@
 {
   "cases": [
+    "JavaHttpPhaseCampaignSource.test_connect_backlog_owns_exactly_two_bounded_connections_and_writes_no_http",
+    "JavaHttpPhaseCampaignSource.test_connect_setup_failure_preserves_original_and_closes_all_owned_sockets",
+    "JavaHttpPhaseCampaignSource.test_default_library_and_actual_connect_boundary_do_not_relabel_root_or_header_wait",
+    "JavaHttpPhaseCampaignSource.test_normal_project_binds_published_defaults_to_explicit_phase_world_and_unchanged_sdk",
     "JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile",
     "JavaHttpPhases.test_changed_sdk_or_staged_class_refuses_without_replacing_any_bytes",
     "JavaHttpPhases.test_declared_phase_import_selects_only_v7_and_cannot_mix_transaction_authority",
@@ -9,6 +13,54 @@
     "JavaHttpPhases.test_profile_receipt_binds_selected_transformation_and_preserves_old_boundary"
   ],
   "guards": {
+    "JavaHttpPhaseCampaignSource.test_connect_backlog_owns_exactly_two_bounded_connections_and_writes_no_http": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaignSource.test_connect_setup_failure_preserves_original_and_closes_all_owned_sockets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaignSource.test_default_library_and_actual_connect_boundary_do_not_relabel_root_or_header_wait": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaignSource.test_normal_project_binds_published_defaults_to_explicit_phase_world_and_unchanged_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile": {
       "bases": [
         "unittest.TestCase"
@@ -98,6 +150,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_phases.py",
-  "reviewReason": "Explicit V7 Java phase adapter source gates and host JDK modeled-port reference; no native or signed qualification claim",
+  "reviewReason": "Add four pure project/default/physical-backlog ownership controls; preserve all prior adapter cases, JDK reference and skip guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
