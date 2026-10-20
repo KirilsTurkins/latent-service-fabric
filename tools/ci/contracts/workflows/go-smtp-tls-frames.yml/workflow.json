@@ -1,0 +1,28 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "private-go-smtp-frames-${{ github.ref }}"
+    },
+    "name": "Private exact-component SMTP TLS numeric frames",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/go-smtp-tls-frames-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "frames"
+  ],
+  "reviewReason": "Private failure-only replay of one fixed public component; preserve exact original declared inputs, two existing numeric-frame overlays, source restoration, all production gates and limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-smtp-tls-frames.yml"
+}

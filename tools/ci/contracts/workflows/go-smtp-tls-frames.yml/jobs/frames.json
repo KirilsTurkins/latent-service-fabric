@@ -1,0 +1,69 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Private failed TLS replay is not production qualification",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install pinned source controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check fixed acquisition and numeric-only frame bounds",
+        "run": "python3 -m unittest tools.tests.test_go_smtp_tls_frames tools.tests.test_go_entry_frames -v"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-bin": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Reuse exact failed component and build only the private targeted harness",
+        "run": "python3 tools/diagnose_go_smtp_tls_frames.py --output \"$RUNNER_TEMP/go-smtp-private-frames\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded private numeric diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-smtp-private-frames-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-smtp-private-frames/*.json\n${{ runner.temp }}/go-smtp-private-frames/*.log\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "frames",
+  "kind": "job",
+  "reviewReason": "Private failure-only replay of one fixed public component; preserve exact original declared inputs, two existing numeric-frame overlays, source restoration, all production gates and limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-smtp-tls-frames.yml"
+}

@@ -1,0 +1,54 @@
+name: Private exact-component SMTP TLS numeric frames
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['diag/go-smtp-tls-frames-20261020']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: private-go-smtp-frames-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frames:
+    name: Private failed TLS replay is not production qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install pinned source controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check fixed acquisition and numeric-only frame bounds
+        run: python3 -m unittest tools.tests.test_go_smtp_tls_frames tools.tests.test_go_entry_frames -v
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: true
+      - name: Reuse exact failed component and build only the private targeted harness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/diagnose_go_smtp_tls_frames.py --output "$RUNNER_TEMP/go-smtp-private-frames"
+      - name: Retain bounded private numeric diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-smtp-private-frames-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-smtp-private-frames/*.json
+            ${{ runner.temp }}/go-smtp-private-frames/*.log
+          if-no-files-found: warn
+          retention-days: 7
