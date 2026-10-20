@@ -111,13 +111,17 @@ class EmbeddedLanguageReplay(unittest.TestCase):
     def test_separate_twenty_minute_manual_matrix_keeps_all_existing_jobs_untouched(self):
         workflow = yaml.safe_load((ROOT/'.github/workflows/embedded-resource-languages-reference.yml').read_bytes())
         events = workflow.get('on',workflow.get(True))
-        self.assertIsNone(events['workflow_dispatch'])
+        self.assertEqual(events['workflow_dispatch'],{'inputs':{'language':{
+            'description':'Select one corrected resource reference or both','type':'choice',
+            'required':False,'default':'both','options':['both','rust','typescript']}}})
         self.assertEqual(events['push']['branches'],['diagnostic/rust-typescript-embedded-resources-20261020'])
         self.assertEqual(set(events),{'push','workflow_dispatch'})
         self.assertEqual(workflow['permissions'],{'contents':'read','actions':'read'})
         self.assertEqual(set(workflow['jobs']),{'resources'})
         job = workflow['jobs']['resources']; self.assertEqual(job['timeout-minutes'],20)
-        self.assertEqual(job['strategy'],{'fail-fast':False,'matrix':{'language':['rust','typescript']}})
+        self.assertFalse(job['strategy']['fail-fast'])
+        self.assertEqual(job['strategy']['matrix'],{'language':
+            "${{ fromJSON(inputs.language == 'rust' && '[\"rust\"]' || inputs.language == 'typescript' && '[\"typescript\"]' || '[\"rust\",\"typescript\"]') }}"})
         steps = job['steps']; commands = '\n'.join(row.get('run','') for row in steps)
         self.assertNotIn('-p latentd',commands)
         self.assertNotIn('qualify_rust_capsules.py',commands)

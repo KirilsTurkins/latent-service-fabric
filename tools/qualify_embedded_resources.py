@@ -104,6 +104,20 @@ def observation(node, ancestry, language):
         'allKnownReaped':True,'cleanShutdown':True,'crossTenantQualification':False}
 
 
+def capture_compiler(language):
+    if language == 'rust':
+        # None selects cargo_native_authoring's captured-toolchain `rustup which`
+        # path. Passing the PATH shim would bypass that resolver and hit the
+        # unchanged regular-file/symlink refusal before native authoring starts.
+        return None
+    if language == 'go':
+        return Path(shutil.which('go') or 'missing-compiler')
+    require(language == 'typescript', 'embedded-resource-language')
+    node = Path(shutil.which('node') or 'missing-node')
+    npm = node.parent/'node_modules/npm/bin/npm-cli.js' if os.name == 'nt' else Path(shutil.which('npm') or 'missing-npm').resolve()
+    return node,npm
+
+
 def campaign(language, output, binaries, companions, ancestry, *, tools=None):
     require(language in LANGUAGES and sys.platform == 'linux' and sys.version_info >= (3,13)
         and os.geteuid() != 0, 'embedded-resource-unprivileged-linux-python313')
@@ -121,12 +135,7 @@ def campaign(language, output, binaries, companions, ancestry, *, tools=None):
     commands = Commands(ROOT,output,build_environment(output),deadline_seconds=1100,command_seconds=600)
     stage = 'ordinary-source-capture'
     try:
-        if language == 'typescript':
-            node = Path(shutil.which('node') or 'missing-node')
-            npm = node.parent/'node_modules/npm/bin/npm-cli.js' if os.name == 'nt' else Path(shutil.which('npm') or 'missing-npm').resolve()
-            compiler = (node,npm)
-        else:
-            compiler = Path(shutil.which('go' if language == 'go' else 'cargo') or 'missing-compiler')
+        compiler = capture_compiler(language)
         app,captured = capture(language,output/'application',output/'outside-originals',compiler)
         record['capture'] = captured
         before = inventory(snapshot(app))
