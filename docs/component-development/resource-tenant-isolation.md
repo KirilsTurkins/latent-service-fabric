@@ -125,3 +125,41 @@ barriers, exact zero peer counts, clean shutdown and final source/product
 identities. No Cargo, guest compiler, native build or successful sibling replay
 was performed.
 No six-language coupled or concurrent completion is claimed.
+
+## Retained .NET resource component
+
+The separate twenty-minute .NET reference reuses the exact original AOT
+component `ae70bb14ba532ab9cfcef0ea342e9929c08586e77d94e03d71f444ef0076fe74`
+from producer `a1028e1bd854700f27e75017349c58b88b53b0d5`. Only its fixed public
+member is acquired from that large archive. Five verbatim original compiler
+records come from the authenticated earlier closed-Console observation; both
+producers and every selected member preimage are fixed. Complete archive
+digests are recorded as API identities, without claiming they were downloaded
+or rehashed. No private source, NuGet payload, compiler cache or credentials
+is reconstructed.
+
+The original descriptor and four WIT files must match the original source
+inventory. Its public Cargo metadata and two package seeds are fetched only
+from the exact original Git revision and checked against the source/recipe
+inventories. The normal contracts tool must reproduce the original complete
+package-input inventory digest before derivation. Unknown or missing bytes
+fail closed.
+
+The maintained closed-only adapter transformation and normal composer must
+then preserve all ten original core modules and the complete public graph,
+changing only the four known private I/O operations (sixteen original async
+type declarations across the closed graph). The fresh
+observation has its own source, recipe, component digest and explicit
+`nativeAotCompilation:false` derivation material. It preserves the original
+AOT records verbatim and carries the original observation plus derivation as
+ordinary JSON assets; inherited typed compiler parameters describe ancestry.
+No schema allowance, BCL recompilation, core rewrite or runtime/HTTP async
+profile change is introduced. The normal packager and existing two-tenant
+signer/admission/controller remain authoritative.
+
+The proposed seven calls use the existing outside library's ordinary
+EmbeddedResource/StreamReader initializer and explicit trap, with original
+CLOCK/RANDOM/LOG declarations and independently scoped grants. No .NET SDK,
+NativeAOT, native host or original full baseline is rebuilt. Source controls
+are not signed execution; this .NET coupled programme is pending. Full
+concurrent/flush/cancellation/late-work requirements remain open.

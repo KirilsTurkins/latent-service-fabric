@@ -1,0 +1,82 @@
+name: Retained CLR resource tenant reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/dotnet-resource-tenant-derivation-20261020]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dotnet-resource-tenants-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tenants:
+    name: Closed CLR metadata and two resource tenant lifecycles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install controller requirements and verify closed public-input scope
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_dotnet_resource_tenants tools.tests.test_resource_tenant_isolation -v
+      - name: Authenticate fixed historical normal native products before executable restore
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12255531553 > "$RUNNER_TEMP/dotnet-resource-native-producer.json"
+          python3 -B tools/qualify_resource_tenants.py --verify-native-producer "$RUNNER_TEMP/dotnet-resource-native-producer.json"
+      - name: Restore the exact a4 normal native products
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdk-native-products-a4f05f3f243889cc7ba7a0404bdc76afec32d3c2
+          run-id: 39400186766
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/dotnet-resource-native
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Recompose original cores and require normal signed resource tenant lifecycles
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B tools/qualify_dotnet_resource_tenants.py \
+            --native "$RUNNER_TEMP/dotnet-resource-native" \
+            --native-producer "$RUNNER_TEMP/dotnet-resource-native-producer.json" \
+            --output "$RUNNER_TEMP/dotnet-resource-tenants"
+      - name: Retain fixed public ancestry derivation and actual node observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-resource-tenants-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/dotnet-resource-native-producer.json
+            ${{ runner.temp }}/dotnet-resource-tenants/qualified.json
+            ${{ runner.temp }}/dotnet-resource-tenants/FAILED.json
+            ${{ runner.temp }}/dotnet-resource-tenants/originals/acquisition.json
+            ${{ runner.temp }}/dotnet-resource-tenants/originals/original/*.json
+            ${{ runner.temp }}/dotnet-resource-tenants/originals/original/component.wasm
+            ${{ runner.temp }}/dotnet-resource-tenants/public-original/build/*.json
+            ${{ runner.temp }}/dotnet-resource-tenants/public-original/build/component.wasm
+            ${{ runner.temp }}/dotnet-resource-tenants/public-original/build/wit/**/*.wit
+            ${{ runner.temp }}/dotnet-resource-tenants/build-evidence/*.json
+            ${{ runner.temp }}/dotnet-resource-tenants/commands/*.json
+            ${{ runner.temp }}/dotnet-resource-tenants/commands/*.wac
+            ${{ runner.temp }}/dotnet-resource-tenants/commands/logs/**
+            ${{ runner.temp }}/dotnet-resource-tenants/coupled/qualified.json
+            ${{ runner.temp }}/dotnet-resource-tenants/coupled/FAILED.json
+            ${{ runner.temp }}/dotnet-resource-tenants/coupled/logs/**
+            ${{ runner.temp }}/dotnet-resource-tenants/coupled/examples-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-tenants/coupled/foreign-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-tenants/coupled/signed/my-greeting/build-observation.json
