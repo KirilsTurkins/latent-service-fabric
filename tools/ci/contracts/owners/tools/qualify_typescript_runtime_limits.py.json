@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_runtime_limits.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Correct evidence serialization after actual f894 bootstrap PASS: success responses explicitly carry error:null, not an omitted field. Treat null as no terminal error while preserving all exact result/limit/retirement checks and raw rows. No guest/SDK/profile change or broad retest; rerun only the failed focused programme.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d68b2008177a3764e189c5f14f72889348f9ba34a28365f7f29595999485c77b"
+}
