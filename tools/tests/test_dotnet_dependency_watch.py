@@ -334,3 +334,155 @@ class DeliveredCompilerHostPath(unittest.TestCase):
         self.selected['sh'].write_bytes(b'changed-selected-shell')
         with self.assertRaisesRegex(self.isolation.DependencyError, 'compiler-executable-mutated'):
             boundary.check_unchanged()
+
+
+class PublicBuildFailureMetadata(unittest.TestCase):
+    def owned(self, parent):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dev_workflow import paths, state, build_cache, build_control
+        from tools.dev_workflow.common import DevError
+        private = parent / 'private'; paths.new_directory(private)
+        workspace = state.workspace(private, 'test-dotnet-diagnostic', create=True)
+        paths.new_directory(workspace / 'builds')
+        attempt = workspace / 'builds' / ('a' * 32); paths.new_directory(attempt)
+        source = attempt / 'source'; paths.new_directory(source)
+        paths.new_directory(source / 'output'); paths.new_directory(source / 'build-cache')
+        source_id, recipe_id = 'sha256:' + '1' * 64, 'sha256:' + '2' * 64
+        state.atomic(workspace, 'project.json', {'snapshot': source_id, 'trust': recipe_id,
+            'descriptor': {'build': {'outputRoot': 'output'}}})
+        state.atomic(attempt, 'attempt.json', {'id': attempt.name, 'state': 'running',
+            'source': source_id, 'recipe': recipe_id, 'key': 'sha256:' + '3' * 64})
+        # Exercise the real control/session and cache-state writers, mocking only
+        # the Linux boot observation; no child process or compiler is executed.
+        instance = SimpleNamespace(guest_instance=lambda: {'bootId': 'test-instance'})
+        with patch.dict('sys.modules', {'tools.dev_workflow.service': instance}):
+            with self.assertRaises(DevError), build_control.session(workspace, 'b' * 32) as control:
+                control.attach(attempt)
+                build_cache.transition(attempt, 'uncertain')
+                raise DevError('guest-build-cleanup-unconfirmed', uncertain=True)
+        failure = source / 'output/BUILD-FAILED.json'
+        failure.write_text(json.dumps({'formatVersion': 1, 'stage': 'compile',
+            'reason': 'private compiler text', 'commands': [{'stage': 'native-aot',
+                'command': ['private application path'], 'exitCode': 1, 'seconds': 0.25}]}))
+        adapter = source / 'build-cache/compiler-stdout.log'
+        adapter.write_text(json.dumps({'schemaVersion': 'latent.dev.compiler-result.v1',
+            'language': 'dotnet', 'ownerIssue': 549, 'cleanup': 'uncertain',
+            'code': 'compiler-cleanup-unconfirmed'}))
+        return workspace, attempt, failure, adapter
+
+    def test_actual_owned_failure_producers_retain_closed_cause_and_bind_selection(self):
+        from tools.qualify_dotnet_dependency_watch import collect_build_failure_metadata
+        from tools.dev_workflow import state
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
+            result = collect_build_failure_metadata(workspace)
+            self.assertEqual(result['state'], 'uncertain')
+            self.assertEqual(result['reasonCode'], 'guest-build-cleanup-unconfirmed')
+            self.assertIs(result['qualification'], False)
+            self.assertEqual(len(result['attempts']), 1)
+            self.assertEqual(result['attempts'][0], {'state': 'uncertain',
+                'source': 'sha256:' + '1' * 64, 'recipe': 'sha256:' + '2' * 64,
+                'buildKey': 'sha256:' + '3' * 64, 'stage': 'compile',
+                'commands': [{'stage': 'native-aot', 'exitCode': 1}],
+                'adapterCode': 'compiler-cleanup-unconfirmed', 'adapterCleanup': 'uncertain'})
+            rendered = json.dumps(result)
+            for private in ('private compiler text', 'private application path', str(workspace), attempt.name):
+                self.assertNotIn(private, rendered)
+            saved = state.load(workspace, 'project.json'); saved['snapshot'] = 'sha256:' + '4' * 64
+            state.atomic(workspace, 'project.json', saved)
+            self.assertEqual(collect_build_failure_metadata(workspace)['attempts'], [])
+
+    def test_public_projection_rejects_unknown_fields_bools_and_unbounded_commands(self):
+        from tools.qualify_dotnet_dependency_watch import _public_build_failure
+        value = {'formatVersion': 1, 'stage': 'compile', 'reason': 'private unknown reason',
+            'commands': [{'stage': 'native-aot', 'exitCode': False},
+                         {'stage': 'private command', 'exitCode': 1}]}
+        self.assertEqual(_public_build_failure(value), {'stage': 'compile', 'commands': []})
+        self.assertEqual(_public_build_failure({**value, 'formatVersion': True}), {})
+        self.assertEqual(_public_build_failure({**value, 'commands': value['commands'] * 257}), {'stage': 'compile'})
+        self.assertEqual(_public_build_failure({**value, 'stage': 'private source path',
+            'reason': 'process-ownership', 'commands': []}), {'reasonCode': 'process-ownership', 'commands': []})
+
+    def test_running_complete_or_wrong_producer_never_claim_a_failure_cause(self):
+        from tools.qualify_dotnet_dependency_watch import collect_build_failure_metadata
+        from tools.dev_workflow import state, build_cache
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
+            active = state.load(workspace, 'active-build.json'); active['state'] = 'running'
+            state.atomic(workspace, 'active-build.json', active)
+            self.assertEqual(collect_build_failure_metadata(workspace)['attempts'], [])
+            active['state'] = 'uncertain'; state.atomic(workspace, 'active-build.json', active)
+            build_cache.transition(attempt, 'complete')
+            self.assertEqual(collect_build_failure_metadata(workspace)['attempts'], [])
+            build_cache.transition(attempt, 'uncertain')
+            original = json.loads(adapter.read_text())
+            for changed in ({'language': 'rust'}, {'ownerIssue': True}, {'ownerIssue': 544},
+                            {'schemaVersion': 'different-producer'}, {'cleanup': 'reaped'},
+                            {'code': 'private error'}, {'message': 'private message'}):
+                with self.subTest(changed=changed):
+                    adapter.write_text(json.dumps({**original, **changed}))
+                    self.assertNotIn('adapterCode', collect_build_failure_metadata(workspace)['attempts'][0])
+
+    def test_duplicate_nonfinite_oversize_and_hardlinked_metadata_refuse_safely(self):
+        import os
+        from tools.qualify_dotnet_dependency_watch import add_public_build_failure
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
+            original = failure.read_bytes()
+            for raw in (b'{"formatVersion":1,"stage":"compile","stage":"private"}',
+                        b'{"formatVersion":1,"seconds":NaN}', b' ' * 65537):
+                with self.subTest(rawBytes=len(raw)):
+                    failure.write_bytes(raw); public = {'passed': False, 'failure': 'initial-build-failed'}
+                    add_public_build_failure(public, workspace)
+                    self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+                    self.assertEqual(public['failure'], 'initial-build-failed')
+            failure.write_bytes(original)
+            os.link(failure, failure.parent / 'same-file')
+            public = {'passed': False}; add_public_build_failure(public, workspace)
+            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+
+    def test_attempt_bound_and_symlink_escape_never_read_foreign_metadata(self):
+        import os
+        from tools.qualify_dotnet_dependency_watch import add_public_build_failure
+        from tools.dev_workflow import paths
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
+            for number in range(4):
+                paths.new_directory(workspace / 'builds' / (str(number) * 32))
+            public = {'passed': False}; add_public_build_failure(public, workspace)
+            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+            for number in range(4):
+                (workspace / 'builds' / (str(number) * 32)).rmdir()
+            foreign = failure.parent.parent / 'foreign'; foreign.mkdir()
+            failure.unlink(); failure.parent.rmdir()
+            try:
+                os.symlink(foreign, failure.parent, target_is_directory=True)
+            except OSError:
+                # Windows developer-mode symlink privilege is optional locally;
+                # the same mandatory test exercises this branch on Linux CI.
+                if os.name != 'nt':
+                    raise
+            else:
+                (foreign / 'BUILD-FAILED.json').write_text('{"private":"must never read"}')
+                public = {'passed': False}; add_public_build_failure(public, workspace)
+                self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+
+    def test_observer_exception_cannot_replace_original_error_or_touch_success(self):
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        original = RuntimeError('original uncertain build failure')
+        public = {'passed': False, 'uncertain': True, 'failure': 'initial-build-failed'}
+        with patch.object(programme, 'collect_build_failure_metadata', side_effect=RuntimeError('private observer text')):
+            with self.assertRaises(RuntimeError) as seen:
+                try:
+                    raise original
+                finally:
+                    programme.add_public_build_failure(public, Path('private'))
+            self.assertIs(seen.exception, original)
+        self.assertIs(public['uncertain'], True)
+        self.assertNotIn('private observer text', json.dumps(public))
+        with patch.object(programme, 'collect_build_failure_metadata') as reader:
+            passed = {'passed': True}; programme.add_public_build_failure(passed, Path('private'))
+            programme.add_public_build_failure(public, None)
+            reader.assert_not_called(); self.assertEqual(passed, {'passed': True})

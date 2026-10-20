@@ -8,9 +8,13 @@ this programme does not manufacture publisher authentication or installation.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 import hashlib
 import importlib.util
 import json
+import itertools
+import re
+import stat
 import os
 from pathlib import Path
 import shutil
@@ -32,6 +36,131 @@ def require(value, reason):
 
 def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
+
+
+# Only actual producer enums and numeric statuses may leave the private build.
+_FAILURE_STAGES = frozenset({'capture', 'resource-inputs', 'contracts', 'compiler-inputs',
+    'executable-input-approval', 'compile', 'compatibility', 'package', 'recheck'})
+_COMMAND_STAGES = frozenset({'contracts', 'dotnet-version', 'wasm-tools-version',
+    'wit-bindgen-version', 'dotnet-sdks', 'nuget-content-hash', 'component-composer-version',
+    'declared-runtime-wit', 'bindings', 'bindings-drift', 'canonical-wit', 'locked-restore',
+    'native-aot', 'native-runtime-wit', 'closed-runtime-composition', 'validate',
+    'runtime-final-wit', 'surface', 'package', 'inspect'})
+_CONTROL_REASONS = frozenset({'guest-build-failed-last-deployment-retained',
+    'guest-build-cleanup-unconfirmed', 'language-adapter-result-invalid', 'build-deadline-exceeded',
+    'owned-process-cleanup-unconfirmed', 'guest-build-cancelled', 'guest-build-superseded',
+    'build-interrupted', 'build-complete', 'guest-restarted-build-interrupted'})
+
+
+def _failure_file(root, relative, maximum):
+    """Read only one fixed, anchored regular file; missing files are optional."""
+    from tools.dev_workflow import paths
+    parts = paths.relative(relative).split('/')
+    parent = root
+    with ExitStack() as held:
+        for index, part in enumerate(parts):
+            held.enter_context(paths.directory(parent))
+            path = parent / part
+            try:
+                metadata = path.lstat()
+            except FileNotFoundError:
+                return None
+            if index < len(parts) - 1:
+                require(stat.S_ISDIR(metadata.st_mode)
+                    and not getattr(metadata, 'st_file_attributes', 0) & 0x400,
+                    'failure-projection-unsafe-parent')
+            else:
+                paths.regular(metadata)
+            parent = path
+        return paths.read(root, relative, maximum)
+
+
+def _public_build_failure(value):
+    if (type(value) is not dict or type(value.get('formatVersion')) is not int
+            or value['formatVersion'] != 1):
+        return {}
+    result = {}
+    if type(value.get('stage')) is str and value['stage'] in _FAILURE_STAGES:
+        result['stage'] = value['stage']
+    # No arbitrary reason, command, path or hash of private text is published.
+    if type(value.get('reason')) is str and value['reason'] in {
+            'command-deadline', 'command-output-limit', 'process-cleanup', 'process-ownership',
+            'KeyboardInterrupt', 'SystemExit', 'FileNotFoundError', 'PermissionError',
+            'OSError', 'RuntimeError', 'TypeError', 'KeyError'}:
+        result['reasonCode'] = value['reason']
+    commands = value.get('commands')
+    if type(commands) is list and len(commands) <= 512:
+        result['commands'] = []
+        for command in commands[-8:]:
+            if (type(command) is dict and type(command.get('stage')) is str
+                    and command['stage'] in _COMMAND_STAGES
+                    and type(command.get('exitCode')) is int
+                    and -255 <= command['exitCode'] <= 255):
+                result['commands'].append({'stage': command['stage'], 'exitCode': command['exitCode']})
+    return result
+
+
+def collect_build_failure_metadata(workspace):
+    """Inspect only this owned workspace/current selection, without executing a recipe."""
+    from tools.dev_workflow import build_cache, paths, state
+    from tools.dev_workflow.common import decode, sha
+    from tools.dev_workflow import build_control
+    with paths.directory(workspace):
+        require(state.workspace(workspace.parent, workspace.name) == workspace,
+                'failure-projection-workspace-owner')
+        # The build creates this lock. Do not create a new workspace/control owner.
+        paths.read(workspace, 'build-control.lock', 1)
+        with state.lock(workspace, 'build-control.lock', timeout=1):
+            active = build_control.status(workspace)
+            result = {'qualification': False, 'state': active['state'], 'attempts': []}
+            if type(active.get('reason')) is str and active['reason'] in _CONTROL_REASONS:
+                result['reasonCode'] = active['reason']
+            if active['state'] not in {'reaped', 'uncertain'}:
+                return result
+            selected = state.load(workspace, 'project.json')
+            source, recipe = sha(selected['snapshot']), sha(selected['trust'])
+            output = paths.relative(selected['descriptor']['build']['outputRoot'])
+            builds = workspace / 'builds'
+            with paths.directory(builds):
+                entries = list(itertools.islice(builds.iterdir(), build_cache.MAX_ATTEMPTS + 1))
+                require(len(entries) <= build_cache.MAX_ATTEMPTS, 'failure-projection-attempt-limit')
+                for entry in sorted(entries):
+                    require(re.fullmatch('[0-9a-f]{32}', entry.name), 'failure-projection-owned-attempt')
+                    with paths.directory(entry):
+                        owner = build_cache.owner(entry)
+                        if (owner['state'] not in {'failed', 'uncertain'}
+                                or owner['source'] != source or owner['recipe'] != recipe):
+                            continue
+                        row = {'state': owner['state'], 'source': source, 'recipe': recipe, 'buildKey': owner['key']}
+                        prefix = entry.name + '/source/'
+                        raw = _failure_file(builds, prefix + output + '/BUILD-FAILED.json', 65536)
+                        if raw is not None:
+                            row.update(_public_build_failure(decode(raw, 65536)))
+                        raw = _failure_file(builds, prefix + 'build-cache/compiler-stdout.log', 262144)
+                        if raw is not None:
+                            adapter = decode(raw)
+                            if (type(adapter) is dict and set(adapter) == {'schemaVersion', 'language', 'ownerIssue', 'cleanup', 'code'}
+                                    and adapter['schemaVersion'] == 'latent.dev.compiler-result.v1'
+                                    and adapter['language'] == 'dotnet' and type(adapter['ownerIssue']) is int
+                                    and adapter['ownerIssue'] == 549 and type(adapter['code']) is str
+                                    and adapter['code'] in {'success', 'compiler-process-failed', 'compiler-cleanup-unconfirmed',
+                                        'compiler-cancelled', 'compiler-input-or-build-failed'}
+                                    and adapter['cleanup'] == ('uncertain' if adapter['code'] == 'compiler-cleanup-unconfirmed' else 'reaped')):
+                                row['adapterCode'], row['adapterCleanup'] = adapter['code'], adapter['cleanup']
+                        require(build_cache.owner(entry) == owner, 'failure-projection-state-changed')
+                        result['attempts'].append(row)
+            require(build_control.status(workspace) == active, 'failure-projection-state-changed')
+            return result
+
+
+def add_public_build_failure(public, workspace):
+    """A failed observation must never replace the original failure or uncertainty."""
+    if public.get('passed') is not False or workspace is None:
+        return
+    try:
+        public['buildFailureMetadata'] = collect_build_failure_metadata(workspace)
+    except Exception:
+        public['buildFailureMetadata'] = {'qualification': False, 'status': 'unavailable'}
 
 
 class ShutdownOnce:
@@ -107,6 +236,7 @@ def main() -> int:
         'commands': [], 'stages': [], 'phase': 'prepare'}
     began = time.monotonic()
     watcher = None
+    node_root = None
     shutdown = ShutdownOnce()
     frontend = root / 'latent-dev-source'
     events = root / 'frontend-events.jsonl'
@@ -195,7 +325,7 @@ def main() -> int:
         return offset
 
     def start_watch(label):
-        nonlocal workspace_name, watcher, shutdown
+        nonlocal workspace_name, watcher, shutdown, node_root
         require(watcher is None or watcher.poll() is not None, 'previous-watch-owner-not-retired')
         shutdown = ShutdownOnce()
         workspace_name = workspace_prefix + '-' + label
@@ -318,6 +448,7 @@ def main() -> int:
         report.update(passed=True, phase='complete', deploymentCount=3, cleanup='confirmed-normal-down')
         return 0
     except BaseException as error:
+        add_public_build_failure(report, node_root)
         report['failure'] = str(error) if isinstance(error, ValueError) else type(error).__name__
         raise
     finally:
@@ -360,6 +491,8 @@ def main() -> int:
                         'state': row['result']['state'], 'reaped': row['result']['reaped'],
                         'cleanShutdown': row['result']['cleanShutdown']} for row in report.get('shutdowns', [])],
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
+        if 'buildFailureMetadata' in report:
+            public['buildFailureMetadata'] = report['buildFailureMetadata']
         if 'failure' in report:
             public['failure'] = report['failure']
         write(root / 'public-qualification.json', public)

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Remove only the owned outside feed from the qualification policy after its application package is removed, retaining exact SDK feeds and missing-source denial",
+  "reviewReason": "Project only fixed owned failed-build metadata and closed causes without replacing uncertainty or publishing compiler text.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7a8f494054bbdfba65ebbcde4371047c5a8d3e7a1d2dbdac604f3d506f5fa916"
+  "sha256": "9b9bba59895a275c3f5e65b9227e014a731a608a1f37423c345c652858db8aa9"
 }
