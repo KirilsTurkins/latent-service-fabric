@@ -11,7 +11,8 @@
         "branches": [
           "feat/sdk-current-native-products-20261020",
           "diag/sdk-v7-native-products-20261020",
-          "feat/http-phase-nominal-semantics-20261020"
+          "feat/http-phase-nominal-semantics-20261020",
+          "fix/http-phase-unused-nominal-type-20261020"
         ]
       },
       "workflow_dispatch": null
@@ -23,7 +24,7 @@
   "requiredJobs": [
     "products"
   ],
-  "reviewReason": "Retain original five-product managed profile, 25-minute job and 1320-second common command deadline; preserve all eleven existing controls and add two closed nominal HTTP semantics/normal authoring controls after the actual contract shape failure. Add exact feature producer branch. No skipped or weakened controls.",
+  "reviewReason": "Retain original native build and thirteen controls; add exact emitted nominal-response omission control and four source-bound final-graph controls, with unchanged budgets and historical obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/sdk-native-products.yml"
 }

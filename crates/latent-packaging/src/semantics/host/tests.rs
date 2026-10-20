@@ -7,9 +7,11 @@ const STREAMING: &str = "latent:http/streaming@0.3.0";
 #[test]
 fn native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation() {
     let name = "latent:runtime-native/threads@0.1.0";
-    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
-        .interface(name)
-        .is_none());
+    assert!(
+        latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(name)
+            .is_none()
+    );
     assert_eq!(
         latent_core::PHASE3_HOST_ABI_V6
             .interface(name)
@@ -240,9 +242,11 @@ fn phase_semantics_bind_original_resource_owners_and_exact_versioned_extension()
         );
     }
     assert!(specification("latent:http/phase-timing@0.3.0").is_none());
-    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
-        .interface(cap)
-        .is_none());
+    assert!(
+        latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(cap)
+            .is_none()
+    );
 }
 
 #[test]
@@ -306,7 +310,72 @@ fn phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase(
     let mut exhausted = SemanticLimits::default();
     exhausted.max_type_nodes = 1;
     assert!(!check(&nominal, Some(selected), exhausted));
-    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+    assert!(
+        latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(phase)
+            .is_none()
+    );
+}
+
+#[test]
+fn phase_component_nominal_pruning_rejects_missing_or_changed_owned_types() {
+    let old = latent_core::PHASE3_HOST_ABI_V3
+        .interface(STREAMING)
+        .unwrap()
+        .wit;
+    let phase = "latent:http/phase-timing@0.4.0";
+    let selected = latent_core::PHASE3_HOST_ABI_V7
         .interface(phase)
-        .is_none());
+        .unwrap()
+        .wit;
+    let nominal: String = old
+        .lines()
+        .filter(|line| !line.contains(": async func"))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    let (before, response) = nominal.split_once("    record response {\n").unwrap();
+    let (_, after) = response.split_once("    }\n").unwrap();
+    let pruned = format!("{before}{after}");
+    let check = |source: &str, phase_source: Option<&str>, limits| {
+        let mut resolve = Resolve::default();
+        if resolve.push_source("old.wit", source).is_err() {
+            return false;
+        }
+        if let Some(source) = phase_source {
+            if resolve.push_source("phase.wit", source).is_err() {
+                return false;
+            }
+        }
+        let imports = resolve
+            .interfaces
+            .iter()
+            .filter_map(|(id, _)| {
+                let name = resolve.id_of(id)?;
+                (name == STREAMING || name == phase).then_some((name, id))
+            })
+            .collect();
+        validate(&resolve, &imports, limits).is_ok()
+    };
+    assert!(check(&pruned, Some(selected), SemanticLimits::default()));
+    assert!(!check(&pruned, None, SemanticLimits::default()));
+    for changed in [
+        pruned.replace("option<u64>", "option<u32>"),
+        pruned.replace("resource chunk;", "resource chunk; type extra = u32;"),
+        pruned.replace("resource body;", "type body = u32;"),
+        pruned.replace("resource upload;", "resource upload; hidden: async func();"),
+        pruned.replace("resource chunk;", ""),
+        nominal.replace("status: u16", "status: u32"),
+    ] {
+        assert!(!check(&changed, Some(selected), SemanticLimits::default()));
+    }
+    assert!(!check(
+        &pruned,
+        Some(&selected.replace("option<u32>", "option<u64>")),
+        SemanticLimits::default()
+    ));
+    let limits = SemanticLimits {
+        max_type_nodes: 1,
+        ..SemanticLimits::default()
+    };
+    assert!(!check(&pruned, Some(selected), limits));
 }

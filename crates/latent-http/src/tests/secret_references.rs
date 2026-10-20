@@ -287,3 +287,140 @@ async fn provider_bindings_reject_wrong_tenant_origin_header_and_guest_overrides
     store.close();
     f.clean().await;
 }
+
+#[tokio::test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "compose two real scoped secret stores and provider registrations on one bounded pool before refusing cross-use"
+)]
+async fn separate_http_installation_cannot_rebind_foreign_tenant_provider_or_origin_credentials() {
+    use latent_capabilities::broker::streaming_http::{
+        StreamingHttpError, StreamingHttpInvoker, StreamingHttpRequest,
+    };
+    let (f, store, _) = configured(32123, true).await;
+    let origin = f.provider.inner.config.destinations[0].origin.clone();
+    for (tenant, provider, port) in [
+        ("foreign", "http", origin.port),
+        ("a", "foreign-provider", origin.port),
+        ("a", "http", origin.port + 1),
+    ] {
+        let mut selected = origin.clone();
+        selected.port = port;
+        assert!(store
+            .bind_credential(
+                CredentialScope {
+                    tenant: TenantId(tenant.into()),
+                    provider_id: provider.into(),
+                    origin: selected,
+                },
+                "upstream-auth".into()
+            )
+            .is_err());
+    }
+    let binding = store
+        .bind_credential(
+            CredentialScope {
+                tenant: TenantId("a".into()),
+                provider_id: "http".into(),
+                origin: origin.clone(),
+            },
+            "upstream-auth".into(),
+        )
+        .unwrap();
+    let original = f.pools.snapshot().unwrap();
+    let injected = StreamingHttpProvider::install_with_secret_references(
+        f.pools.clone(),
+        "independent-http",
+        7,
+        0,
+        f.provider.inner.config.clone(),
+        HttpStreamLimits::default(),
+        vec![HttpCredentialReference {
+            destination: 0,
+            name: "authorization".into(),
+            binding,
+        }],
+    );
+    assert!(matches!(injected, Err(HttpError::InvalidRequest)));
+    let root = f.directory.path().join("independent-secrets");
+    std::fs::create_dir(&root).unwrap();
+    std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+    write(&root, b"Bearer synthetic-independent");
+    let independent = LocalSecretStore::open(
+        f.pools.clone(),
+        root,
+        SecretLimits::default(),
+        vec![],
+        Arc::new(SystemSecretClock),
+    )
+    .unwrap()
+    .await
+    .unwrap();
+    let mut selected = specs(&origin, "7");
+    selected[0].tenant = TenantId("b".into());
+    selected[0].purpose = SecretPurpose::ProviderCredential {
+        provider_id: "independent-http".into(),
+        origin: origin.clone(),
+    };
+    independent.reload(0, selected).unwrap().await.unwrap();
+    let binding = independent
+        .bind_credential(
+            CredentialScope {
+                tenant: TenantId("b".into()),
+                provider_id: "independent-http".into(),
+                origin,
+            },
+            "upstream-auth".into(),
+        )
+        .unwrap();
+    binding
+        .with_current_value(&mut |bytes| {
+            assert_eq!(bytes, b"Bearer synthetic-independent");
+            Ok(())
+        })
+        .unwrap();
+    let provider = StreamingHttpProvider::install_with_secret_references(
+        f.pools.clone(),
+        "independent-http",
+        7,
+        0,
+        f.provider.inner.config.clone(),
+        HttpStreamLimits::default(),
+        vec![HttpCredentialReference {
+            destination: 0,
+            name: "authorization".into(),
+            binding,
+        }],
+    )
+    .unwrap();
+    assert_ne!(
+        provider.reference().configuration_digest(),
+        f.provider.reference().configuration_digest()
+    );
+    assert_eq!(provider.reference().configuration_epoch(), 7);
+    let (session, control) = f.session(5000);
+    assert!(session.uses_provider(&f.provider.reference()).unwrap());
+    assert!(!session.uses_provider(&provider.reference()).unwrap());
+    assert!(matches!(
+        provider.start(
+            &session,
+            StreamingHttpRequest {
+                metadata: request(32123, HttpMethod::Get),
+                body_length: Some(0),
+            }
+        ),
+        Err(StreamingHttpError::Http(HttpError::PermissionDenied))
+    ));
+    assert_eq!(
+        control.budget.snapshot_at(Instant::now()).outbound_requests,
+        0
+    );
+    let after = f.pools.snapshot().unwrap();
+    assert_eq!(after.connections, original.connections);
+    assert_eq!(after.pending_requests, original.pending_requests);
+    assert_eq!(after.running_requests, original.running_requests);
+    drop(session);
+    store.close();
+    independent.close();
+    f.clean().await;
+}
