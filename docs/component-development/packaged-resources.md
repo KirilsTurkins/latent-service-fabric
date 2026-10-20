@@ -160,8 +160,15 @@ Unsupported; neither a generic trap nor a successful compiler build proves API
 support or refusal. Source controls currently pass; signed five-language results
 are pending and no whole criterion is complete. The Rust workflow has a separate
 20-minute child consuming an exact normal public bundle; the original 35-minute
-parent and all its commands remain mandatory. Other language execution wiring
-retains its own pending boundary. Actual results also project into the existing
+parent and all its commands remain mandatory. The C workflow also has a separate
+20-minute child using only its exact normal public products and pinned
+Zig/bindgen/wasm-tools. A default-false manual `qualify-scratch-refusals` selection
+runs the original 35-minute runtime job and this child, skipping only the
+separate unchanged 25-minute standard-facility campaign on that explicit manual
+selection. PR, push and default manual runs retain every original job, command
+and deadline. Other language execution
+wiring retains its own pending boundary. Neither the C nor Rust scratch child
+has a passing guest receipt yet. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.

@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}",
     "name": "Signed C standard clock and entropy profile",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -87,7 +88,7 @@
   },
   "jobId": "standard-facilities",
   "kind": "job",
-  "reviewReason": "Add explicit C23 captured raw resources and signed trap/fuel retirement while preserving all original C programmes and limits.",
+  "reviewReason": "Add explicit default-false manual scratch selection retaining mandatory original runtime35 and new same-products child20; skip only unchanged extra standards25 on that manual selection, with all PR/push/default jobs and commands preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

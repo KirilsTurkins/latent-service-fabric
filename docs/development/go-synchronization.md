@@ -28,20 +28,20 @@ does not invent a particular scheduling order between racing lock requests.
 | 8 | The original cancellation/deadline wins while condition work and a timer remain accepted. |
 | 9 | Atomic spin-loop work permits an eligible sibling to publish without application Gosched. |
 
-The positive fixture keeps the previous v5 test ceiling of16 tasks, including
-eight prepaid maintenance reservations, and four waits. A narrower10-task
+The positive fixture keeps the previous v5 test ceiling of 16 tasks, including
+eight prepaid maintenance reservations, and four waits. A narrower 10-task
 control must refuse application admission. Each successful invocation observes
 physical Store/backend retirement before another fresh Store runs. These are
 finite same-tenant controls, not a complete cross-tenant or native-cost matrix.
 
 The identical ordinary source is also compiled with the existing v1 profile
-without compiler checkpoints. Under the existing5,000,000-fuel negative bound,
+without compiler checkpoints. Under the existing 5,000,000-fuel negative bound,
 the channel/startup control must first succeed; then the atomic sibling case
 must exhaust fuel rather than receive progress credit. A fresh invocation must
 succeed afterward. This negative does not alter the positive budget or treat
 fuel termination as sibling progress.
 
-The pinned native Go1.27.2 reference runs modes0-5 and9 in separate processes.
+The pinned native Go 1.27.2 reference runs modes 0-5 and 9 in separate processes.
 Native main does not implement LSF's accepted-work drain, so late-root,
 blocked-work and cancellation cases retain their separate signed assertions.
 Reference parity alone is not guest compatibility.
@@ -64,7 +64,19 @@ own compiled/not-run status; the separate signed receipt is written only after
 all assertions and original owner cleanup pass. Source/component identities are
 checked before and after execution.
 
-This candidate has focused source controls; hosted native-reference/component
-and signed execution are pending until the exact run reports. It does not
-qualify low-level sockets/DNS/TLS, complete allocation/stack/kernel accounting,
-all scheduler interleavings, all native Go behavior or full #742 acceptance.
+Actual source `3c7cdfc7c181675f872c0dd3eb4cfe5b98a09ba4` passed the
+[dedicated hosted programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39354941044/job/118407470313):
+all seven native-reference modes and all 33 signed observations, with one exact
+libtest pass, zero failures/ignored cases and 47 filtered cases. The
+[bounded evidence record](../testing/evidence/go-synchronization-signed-2026-10-20.json)
+retains the 98 exact source hashes and before/after compiler/component identities.
+Artifact 12234864393 has SHA256
+`a9d53dbae9dd53e8aaffd6e85a3549d1fc4568d2041ae7044057d2d2bcf5d759`;
+the original 30,298-byte receipt has SHA256
+`38977e978332bfc6f146a6115da8f9826648c03491ba2bcab3643be4e8db4952`.
+Later documentation/development composition preserves the exercised Go sources;
+this original execution is not relabelled as a new composed run.
+
+This finite evidence does not qualify low-level sockets/DNS/TLS, complete
+allocation/stack/kernel accounting, cross-tenant reuse, all scheduler
+interleavings, all native Go behavior or full #742 acceptance.
