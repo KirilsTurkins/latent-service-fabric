@@ -195,3 +195,16 @@ pinned source, private JAR, all eight replaced class identities, actual loaded
 classes and every unrelated JAR entry remain checked. This new hosted control
 and the signed Java programme are pending; no component pass or C warning
 suppression is claimed.
+
+The corrected restored-array control, C compilation, component assembly and
+validation passed in run `39475616027`, job `118810665243`. Its strict WIT guard
+refused the emitted surface. The two existing bounded WIT JSON logs were then
+retained by run `39477502762`, job `118817154924`, artifact `12291420311`.
+Normal component emission omitted exactly the unused legacy HTTP `response`
+record; every nominal resource, phase operation, other import and export was
+identical. The selected phase comparator now binds the complete declared
+nominal-owner and phase graphs before permitting only that omission, followed
+by full graph equality. Default HTTP 0.3 remains strict, as do altered source
+records, resource owners, phase operations, exports and any further omission.
+Real retained-pair and mutation controls cover that boundary. Signed Java
+phase/default-client and tenant results remain pending.

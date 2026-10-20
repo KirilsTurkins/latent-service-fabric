@@ -14,7 +14,7 @@ import tomllib
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import BuildProcessError, run_bounded_result
 from tools.java_guest.bindings import generate
-from tools.java_guest.surface import surface as wit_surface
+from tools.java_guest.surface import surface as wit_surface, matches as matching_wit_surface
 from tools.java_guest.sdk import install as install_sdk
 from tools.java_guest import c_failure_context, coroutine_patch
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
@@ -433,7 +433,8 @@ class Compiler:
         if "import wasi:" in surface: raise ValueError("ambient WASI survived the closed Java runtime")
         expected = wit_surface(json.loads(self.run("expected-wit", "wasm-tools", "component", "wit", staged, "--json")), world)
         actual = wit_surface(json.loads(self.run("compiled-wit", "wasm-tools", "component", "wit", component, "--json")))
-        if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
+        if not matching_wit_surface(expected, actual, phase_profile=http_client_phase_profile):
+            raise ValueError("compiled Java component changed authoritative WIT semantics")
         details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
                    "semanticSurfaceDigest": digest(canonical(actual)), "closedFilesystem": filesystem_profile}
         if coroutine_profile is not None:
