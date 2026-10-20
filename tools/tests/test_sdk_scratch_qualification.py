@@ -63,7 +63,8 @@ class ScratchQualification(unittest.TestCase):
             before = qualifier.inventory(qualifier.snapshot(root))
             proof = qualifier.locked_dependencies('rust', root, Commands())
             self.assertEqual(calls, [('scratch-locked-dependency-download', 'cargo', 'fetch', '--locked',
-                '--target', 'wasm32-unknown-unknown', '--manifest-path', root/'Cargo.toml')])
+                '--manifest-path', root/'Cargo.toml')])
+            self.assertNotIn('--target', calls[0])
             self.assertEqual(qualifier.inventory(qualifier.snapshot(root)), before)
             self.assertFalse(proof['compilerExecution'])
             self.assertTrue(proof['subsequentBuildOffline'])

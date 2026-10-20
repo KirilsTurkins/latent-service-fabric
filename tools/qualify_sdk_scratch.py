@@ -149,12 +149,12 @@ def build_component(language, app, destination, binaries, *, tools=None, wasi_sd
 
 
 def locked_dependencies(language, app, commands):
-    """Seed only the owned fixture lock; a workspace fetch can select other versions."""
+    """Seed the whole owned lock, including native and target-specific resolver rows."""
     if language != 'rust':
         return None
     before = inventory(snapshot(app))
     commands.run('scratch-locked-dependency-download', 'cargo', 'fetch', '--locked',
-                 '--target', 'wasm32-unknown-unknown', '--manifest-path', app/'Cargo.toml')
+                 '--manifest-path', app/'Cargo.toml')
     require(inventory(snapshot(app)) == before, 'scratch-locked-download-mutated-source')
     return {'lock': file_identity(app/'Cargo.lock'), 'compilerExecution': False,
             'subsequentBuildOffline': True, 'sourceUnchanged': True}

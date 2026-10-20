@@ -184,7 +184,10 @@ Its scratch child then failed during offline compilation: the workspace fetch
 had not downloaded the owned fixture lock's `cpufeatures0.2.17`. No scratch guest
 ran. The qualifier now performs a bounded data-only `cargo fetch --locked`
 against that fixture's manifest, verifies its complete source inventory is
-unchanged, and retains the subsequent build's offline requirement. The separate
+unchanged, and retains the subsequent build's offline requirement. The first
+replay at de9eb70c30 then retained a second compile failure for `addr2line0.26.1`: '--target'
+filtered native rows out of that lock download. The corrected fetch has no target
+filter, so it acquires the whole exact lock without executing its packages. The separate
 default-false `replay-scratch-refusals` lane authenticates the passed38 public
 bundle, native five and four companions, then builds/signs one fresh component
 and requires the original27 plus six calls. Its 20-minute limit and the original

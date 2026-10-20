@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_sdk_scratch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
+  "reviewReason": "Explicit reviewed actual Rust replay repair: acquire all target rows of the owned exact Cargo.lock after de9 offline addr2line failure; preserve source mutation refusal and offline compilation, all old tests/cases retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "44cf865862b6470e081a956bd43913578bbda21837db856c7369442bf84c38cc"
+  "sha256": "ab0f2974484262005d86516e5a0784284090ec8d852095ccc782670183c70bd5"
 }
