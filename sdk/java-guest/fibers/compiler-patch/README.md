@@ -26,3 +26,16 @@ This is a compiler correction, not a C cast, erased loop, change of optimization
 level or scheduler allowance. Source-only controls do not establish successful
 component compilation or signed HTTP lifecycle behavior; those require the
 focused hosted campaign.
+
+The already-required original `classes` task records its resolved buildscript
+classpath. Each ordered artifact must match the pinned compiler inventory;
+only its single core JAR is replaced, with every transitive artifact retained.
+This avoids relying on file-dependency ordering alongside the original module.
+The original in-process compiler mode is checked, and `generateC` still refuses
+unless its actual `CTarget` classloader selects the exact owned replacement.
+A refusal retains only a closed loader category and bounded source digest.
+
+Run `39367488958`, job `118447530336`, established both real JVM IR controls,
+then refused at that load fence. It did not compile a component or execute the
+signed lifecycle programme. The corrected Gradle selection needs its own
+hosted result; the earlier refusal remains retained.

@@ -378,6 +378,7 @@ class Compiler:
             if set(source_packages) != application_source_names:
                 raise ValueError("incomplete Java captured source origins")
             write_json(destination / "source-origins.json", origins)
+            coroutine_patch.record_original_classpath(project)
             self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
             index = checkpoint_index(project / "build/classes/java/main", source_packages, application_classpath)
             target = project / "src/main/resources/META-INF/latent/runtime-checkpoints.classes"

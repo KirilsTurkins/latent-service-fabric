@@ -588,6 +588,10 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 '</component></components></verification-metadata>')
             original_script=read_file(campaign.ROOT/'sdk/java-guest/compiler.gradle')
             (project/'build.gradle').write_bytes(original_script)
+            patch.record_original_classpath(project)
+            (project/'coroutine-patch-original-classpath.json').write_text(json.dumps({
+                'schemaVersion':'latent.java.original-compiler-classpath.v1','outOfProcess':False,
+                'files':patch.jar_identities(cache,[core,hppc])}))
             calls=[]
             def run(stage,tool,*args):
                 calls.append((stage,tool,args))
@@ -638,3 +642,57 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                             prefix='com/carrotsearch/hppc/' if invalid=='unrelocated' else 'org/teavm/hppc/'
                             output.writestr(prefix+name+'.class',b'not a class' if invalid=='malformed' else b'\xca\xfe\xba\xbevalid')
                     with self.assertRaises((ValueError,KeyError)):patch.check_relocated_classes([jar])
+
+
+class ExactCoroutineCompilerClasspath(unittest.TestCase):
+    def test_record_hook_preserves_original_module_and_requires_exact_declared_preimage(self):
+        from tools.java_guest import coroutine_patch as patch
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary)
+            original = read_file(campaign.ROOT / 'sdk/java-guest/compiler.gradle')
+            build = project / 'build.gradle'; build.write_bytes(original)
+            patch.record_original_classpath(project)
+            script = build.read_text()
+            self.assertTrue(script.startswith(original.decode()))
+            for exact in ("tasks.named('classes')", 'buildscript.configurations.classpath', 'configuration.files.collect',
+                    'resolvedConfiguration.resolvedArtifacts', 'original-compiler-classpath.v1',
+                    'outOfProcess.get()', 'coroutine-patch-original-classpath.json'):
+                self.assertIn(exact, script)
+            with self.assertRaisesRegex(ValueError, 'classpath-record-drift'):
+                patch.record_original_classpath(project)
+            build.write_bytes(original.replace(b'teavm-gradle-plugin:0.15.0', b'teavm-gradle-plugin:0.16.0'))
+            with self.assertRaisesRegex(ValueError, 'classpath-record-drift'):
+                patch.record_original_classpath(project)
+
+    def test_exact_original_classpath_retains_order_and_rejects_unknown_missing_or_mutated_rows(self):
+        import json
+        from tools.java_guest import coroutine_patch as patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / 'cache'
+            core = cache / 'org.teavm/teavm-core/0.15.0/pin/teavm-core-0.15.0.jar'
+            library = cache / 'org.teavm/teavm-tooling/0.15.0/pin/teavm-tooling-0.15.0.jar'
+            app = cache / 'unrelated/app/1.0/pin/app-1.0.jar'
+            for index, path in enumerate((core, library, app)):
+                path.parent.mkdir(parents=True); path.write_bytes(b'pinned' + bytes([index]))
+            compiler = SimpleNamespace(dependency_cache=cache)
+            project = root / 'project'; project.mkdir()
+            rows = patch.jar_identities(cache, [core, library, app])
+            by_name = {row['coordinate']: row for row in rows}
+            selected = [row for row in rows if '/app/' not in row['coordinate']][::-1]
+            original = {'schemaVersion': 'latent.java.original-compiler-classpath.v1',
+                'outOfProcess': False, 'files': selected}
+            record = project / 'coroutine-patch-original-classpath.json'
+            record.write_text(json.dumps(original))
+            result = patch.original_classpath(compiler, project, [core, library, app])
+            self.assertEqual(result, [library, core])
+            self.assertNotIn(app, result)
+            for kind in ('missing-core', 'unknown', 'duplicate', 'changed', 'out-of-process'):
+                with self.subTest(kind=kind):
+                    value = json.loads(json.dumps(original))
+                    if kind == 'missing-core': value['files'] = value['files'][:1]
+                    elif kind == 'unknown': value['files'][0]['coordinate'] = 'private/unknown.jar'
+                    elif kind == 'duplicate': value['files'].append(value['files'][0])
+                    elif kind == 'changed': value['files'][0]['sha256'] = '0' * 64
+                    else: value['outOfProcess'] = True
+                    record.write_text(json.dumps(value))
+                    with self.assertRaises(ValueError): patch.original_classpath(compiler, project, [core, library, app])

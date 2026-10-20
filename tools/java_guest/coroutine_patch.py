@@ -134,10 +134,76 @@ def replace_jar(original: Path, classes: Path, target: Path) -> dict:
         'replacedClasses': identities, 'unchangedEntries': len(entries) - len(PATCH_CLASSES)}
 
 
+CLASSPATH_DECLARATION = "dependencies { classpath 'org.teavm:teavm-gradle-plugin:0.15.0' }"
+_CLASSPATH_RECORD_HOOK = """
+// Record the original resolved compiler graph in the already-required classes task.
+tasks.named('classes') {
+    doLast {
+        def configuration = buildscript.configurations.classpath
+        def artifacts = configuration.resolvedConfiguration.resolvedArtifacts
+        def rows = configuration.files.collect { selected ->
+            def artifact = artifacts.find { it.file.canonicalFile == selected.canonicalFile }
+            if (artifact == null || !selected.isFile() || selected.length() > 67108864) {
+                throw new GradleException('coroutine-patch-original-classpath-artifact')
+            }
+            def id = artifact.moduleVersion.id
+            [coordinate: id.group.replace('.', '/') + '/' + id.name + '/' + id.version + '/' + selected.name,
+             sha256: java.security.MessageDigest.getInstance('SHA-256').digest(selected.bytes).encodeHex().toString(),
+             bytes: selected.length()]
+        }
+        if (rows.isEmpty() || rows.size() > 512) throw new GradleException('coroutine-patch-original-classpath-bound')
+        def text = groovy.json.JsonOutput.toJson([
+            schemaVersion: 'latent.java.original-compiler-classpath.v1',
+            outOfProcess: tasks.named('generateC').get().outOfProcess.get(), files: rows])
+        if (text.getBytes('UTF-8').length > 262144) throw new GradleException('coroutine-patch-original-classpath-bound')
+        file('coroutine-patch-original-classpath.json').text = text
+    }
+}
+"""
+
+
+def record_original_classpath(project: Path) -> None:
+    build = project / 'build.gradle'
+    script = read_file(build).decode('utf-8')
+    if script.count(CLASSPATH_DECLARATION) != 1 or _CLASSPATH_RECORD_HOOK in script:
+        raise ValueError('coroutine-patch-classpath-record-drift')
+    build.write_bytes((script + _CLASSPATH_RECORD_HOOK).encode('utf-8'))
+
+
+def original_classpath(compiler, project: Path, jars: list[Path]) -> list[Path]:
+    from tools.rust_capsule_project import decode_json
+    record = decode_json(read_file(project / 'coroutine-patch-original-classpath.json', 262144))
+    if (type(record) is not dict or set(record) != {'schemaVersion', 'outOfProcess', 'files'}
+            or record['schemaVersion'] != 'latent.java.original-compiler-classpath.v1'
+            or record['outOfProcess'] is not False or type(record['files']) is not list
+            or not 0 < len(record['files']) <= 512):
+        raise ValueError('coroutine-patch-original-classpath-schema')
+    identities = {row['coordinate']: row for row in jar_identities(compiler.dependency_cache, jars)}
+    paths = {jar_identities(compiler.dependency_cache, [path])[0]['coordinate']: path for path in jars}
+    selected, seen = [], set()
+    for row in record['files']:
+        if (type(row) is not dict or set(row) != {'coordinate', 'sha256', 'bytes'}
+                or type(row['coordinate']) is not str or row['coordinate'] in seen
+                or type(row['bytes']) is not int or row != identities.get(row['coordinate'])):
+            raise ValueError('coroutine-patch-original-classpath-identity')
+        seen.add(row['coordinate']); selected.append(paths[row['coordinate']])
+    if sum(path.name == 'teavm-core-0.15.0.jar' for path in selected) != 1:
+        raise ValueError('coroutine-patch-original-classpath-core')
+    return selected
+
+
+def _groovy_path(path: Path) -> str:
+    value = path.as_posix()
+    if any(char in value for char in '\x00\r\n'):
+        raise ValueError('coroutine-patch-classpath-path')
+    return "'" + value.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def stage(compiler, project: Path, destination: Path) -> dict:
     # The first ordinary classes task has already populated the strictly checked cache.
     jars = checked_jars(compiler, project)
     check_relocated_classes(jars)
+    captured_classpath = original_classpath(compiler, project, jars)
     original = [path for path in jars if path.name == 'teavm-core-0.15.0.jar']
     if len(original) != 1:
         raise ValueError('coroutine-patch-core-selection')
@@ -165,19 +231,27 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     if identities != jar_identities(compiler.dependency_cache, checked_jars(compiler, project)):
         raise ValueError('coroutine-patch-original-input-mutated')
     build = project / 'build.gradle'; script = read_file(build).decode('utf-8')
-    before = "dependencies { classpath 'org.teavm:teavm-gradle-plugin:0.15.0' }"
-    after = ("dependencies { classpath files('compiler-patch/teavm-core-patched.jar'); "
-             "classpath 'org.teavm:teavm-gradle-plugin:0.15.0' }")
-    if script.count(before) != 1:
+    # Replace, rather than compete with, the exact original resolved graph.
+    # Its transitive files remain in their original order; no application JARs
+    # or guessed dependencies are added to the compiler loader.
+    selected_classpath = [replacement if path == original[0] else path for path in captured_classpath]
+    after = "dependencies { classpath files(" + ', '.join(map(_groovy_path, selected_classpath)) + ") }"
+    if script.count(CLASSPATH_DECLARATION) != 1 or script.count(_CLASSPATH_RECORD_HOOK) != 1:
         raise ValueError('coroutine-patch-buildscript-drift')
-    script = script.replace(before, after)
+    script = script.replace(_CLASSPATH_RECORD_HOOK, '').replace(CLASSPATH_DECLARATION, after)
     script += '''
 tasks.named('generateC') {
     doFirst {
+        if (outOfProcess.get() != false) throw new GradleException('coroutine-patch-process-mode-drift')
         def actual = Class.forName('org.teavm.backend.lowlevel.transform.CoroutineTransformation',
             false, org.teavm.backend.c.CTarget.class.classLoader)
         def selected = file('compiler-patch/teavm-core-patched.jar').canonicalFile
-        if (new File(actual.protectionDomain.codeSource.location.toURI()).canonicalFile != selected) {
+        def observed = new File(actual.protectionDomain.codeSource.location.toURI()).canonicalFile
+        if (!observed.isFile() || observed.length() > 67108864) throw new GradleException('coroutine-patch-loaded-source-bound')
+        println('latent.java.coroutine-loader.v1 ' + groovy.json.JsonOutput.toJson([
+            sourceKind: observed == selected ? 'owned-replacement' : observed == file('__ORIGINAL_CORE__').canonicalFile ? 'original-pinned' : 'other',
+            sourceSha256: java.security.MessageDigest.getInstance('SHA-256').digest(observed.bytes).encodeHex().toString()]))
+        if (observed != selected) {
             throw new GradleException('coroutine-patch-loaded-class-mismatch')
         }
         def hash = java.security.MessageDigest.getInstance('SHA-256').digest(selected.bytes).encodeHex().toString()
@@ -187,13 +261,16 @@ tasks.named('generateC') {
             selectedOwnedReplacement: true, replacementJarSha256: hash])
     }
 }
-'''.replace('__PATCH_SHA256__', receipt['replacementJarSha256'])
+'''.replace('__PATCH_SHA256__', receipt['replacementJarSha256']).replace('__ORIGINAL_CORE__',
+        original[0].as_posix().replace('\\', '\\\\').replace("'", "\\'"))
     build.write_bytes(script.encode('utf-8'))
     receipt.update(schemaVersion='latent.java.coroutine-compiler-patch.v1',
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),
         realOriginalIrDefectObserved=True, realCorrectedIrInputsPreserved=True,
         originalInputsUnchanged=True, checkedCompilerJars=identities,
-        publishedHppcRelocation='org.teavm.hppc')
+        publishedHppcRelocation='org.teavm.hppc',
+        originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]
+            for path in captured_classpath])
     return receipt
 
 
