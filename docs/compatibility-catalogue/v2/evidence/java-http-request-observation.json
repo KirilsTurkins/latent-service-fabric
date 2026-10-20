@@ -1,0 +1,108 @@
+{
+  "formatVersion": 1,
+  "buildType": "https://latent.dev/build/java-capsule/v1",
+  "source": {
+    "repository": "https://github.com/KirilsTurkins/latent-service-fabric",
+    "revision": "2753e8397c38214e741ec568474634d436c78e1bdb21126edc5c8d8fbec534d8",
+    "snapshotDigest": "sha256:2753e8397c38214e741ec568474634d436c78e1bdb21126edc5c8d8fbec534d8",
+    "repositoryTrust": "operator-asserted",
+    "capture": "explicit-input-files"
+  },
+  "componentDigest": "sha256:66d5fb812c59ba0b361667c8d86448fa89d834e2d19ba9102abadccba931d52b",
+  "componentSize": 1422921,
+  "materials": [
+    {
+      "name": "application-dependency-closure",
+      "digest": "sha256:5aba70ca917f234024da710f47c9835245f09f2b618499d292bc38a3089b8130",
+      "size": 6066
+    },
+    {
+      "name": "build-recipe",
+      "digest": "sha256:0f3fdc1b084cbbfcacb4b9566d5e96fbddb63c1e94cdd3fb3ddd39d6d9ed74af",
+      "size": 8745
+    },
+    {
+      "name": "clang",
+      "digest": "sha256:0ed7eeb0e922f6effcee5ebfa87cedf961676b78962291884cdac68d9138d5c4",
+      "size": 118680
+    },
+    {
+      "name": "compiler-closure",
+      "digest": "sha256:9face71178fe4de9aa0ecd2ed3fbf94e0394e56c0104061efed0eecfc9e9a7b3",
+      "size": 2952146
+    },
+    {
+      "name": "contracts-tool",
+      "digest": "sha256:bebc7b9dd97db0cbc8c6abd01dae7c48df56b407dec1267477438e02eefdc865",
+      "size": 7176880
+    },
+    {
+      "name": "dependency-lock",
+      "digest": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+      "size": 16525
+    },
+    {
+      "name": "generated-bindings",
+      "digest": "sha256:a511d34904affed4b9cef193c99d626436cfe0e681128f23c44070b78e263e3e",
+      "size": 7728
+    },
+    {
+      "name": "gradle",
+      "digest": "sha256:0b088fd5c9c972089c80c691b28cc4c65def93e1b814fc9f60f0734493954caf",
+      "size": 8700
+    },
+    {
+      "name": "java",
+      "digest": "sha256:7380ce48ed5013735d2c8414db54adb8f981e7933ff594bd36f3baccddaafba3",
+      "size": 16264
+    },
+    {
+      "name": "java-classpath-selection",
+      "digest": "sha256:795dfb8cf3fc1725673ccb8346ab6684214f1c50144794b353846bbe343a30e9",
+      "size": 6496
+    },
+    {
+      "name": "package-inputs",
+      "digest": "sha256:ddb2aee8f710c132b03d3adf4dbab49eb25a54b28c1e8bb52dccb0505ba91d6e",
+      "size": 1670
+    },
+    {
+      "name": "packager",
+      "digest": "sha256:cdf8ab7991faa472830a6346abe77bca2e83088952fc9b93f61a085a6c1996ee",
+      "size": 16302776
+    },
+    {
+      "name": "source-snapshot",
+      "digest": "sha256:2753e8397c38214e741ec568474634d436c78e1bdb21126edc5c8d8fbec534d8",
+      "size": 26516
+    },
+    {
+      "name": "toolchain-config",
+      "digest": "sha256:62520614d040d96620b62c3117d28cb4461019beb2ad43dbf836653821b3f4b3",
+      "size": 1044
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    },
+    {
+      "name": "wit-bindgen",
+      "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+      "size": 19856344
+    }
+  ],
+  "parameters": {
+    "compiler": "teavm-c",
+    "entryPoint": "dev.latent.app.Capsule",
+    "target": "wasm32-wasip1",
+    "bindings": "lsf-java-wit-v1",
+    "optimization": "O2",
+    "javaHeapBytes": 4194304
+  },
+  "startedAt": 1792137271,
+  "finishedAt": 1792137313,
+  "reproducibility": "not-checked",
+  "hermetic": false,
+  "dependencyCompleteness": "declared-inputs-incomplete"
+}

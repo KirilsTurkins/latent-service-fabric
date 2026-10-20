@@ -1,7 +1,8 @@
 # Informational compatibility catalogue
 
-The [version 1 catalogue](v1/README.md) and its [JSON data](v1/catalogue.json)
-publish finite package observations. The [schema](v1/schema.json) describes their
+The [version 2 catalogue](v2/README.md) and its [JSON data](v2/catalogue.json)
+publish finite package observations. [Version 1](v1/README.md) remains unchanged
+as the original Java-only edition. The [schema](v1/schema.json) describes their
 machine-readable structure. They are optional documentation: dependency capture,
 compiler selection, signing, admission and capability grants do not consume them.
 An unknown coordinate has the same opportunity to build and execute as a listed
@@ -10,8 +11,8 @@ coordinate using the same implemented API/profile and explicit authority.
 Read and verify the retained document bytes and entry bindings from a checkout:
 
 ```sh
-python -m tools.compatibility_catalogue docs/compatibility-catalogue/v1/catalogue.json
-python -m tools.compatibility_catalogue docs/compatibility-catalogue/v1/catalogue.json --json
+python -m tools.compatibility_catalogue docs/compatibility-catalogue/v2/catalogue.json
+python -m tools.compatibility_catalogue docs/compatibility-catalogue/v2/catalogue.json --json
 ```
 
 The reader performs no network request, build, installation, grant or invocation.
@@ -61,6 +62,26 @@ observation, not a new run or a current-development qualification. In particular
 the compiler's original profile document retains `qualification=pending`; its
 separate signed receipt supplies the finite execution result. Neither receipt is
 rewritten to make the other appear more qualified.
+
+Version 2 adds the exact Ky 2.2.0, Wretch 3.0.9 and outside private consumer
+from the signed TypeScript phase programme at source
+`01d913aae212bd3f5dd14550d5b78187c39008bd`,
+[run 39459627034/job 118755383589](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39459627034/job/118755383589),
+artifact 12282212612. Its sixteen public documents are byte-exact original
+artifact members, including the six historical Java documents. The npm entries
+use the original captured `node_modules/ky` and `node_modules/wretch` locations
+as their bound coordinates; the adjacent version and original archive digest
+identify the packages. The private entry binds its original name, version and
+captured package tree. It does not publish the private source payload.
+
+These entries describe their respective calls within one shared 27-guest,
+four-pre-entry-refusal programme, including two-tenant reuse and physical
+retirement. They do not assign every shared case to every client. The named
+2,000,000,000-fuel profile and finite owner limits remain explicit. Runtime
+selection receipts retain their original unknown/not-evaluated qualification;
+the separate signed receipt supplies the actual finite result. The catalogue
+does not infer a catalogue-absence result, new TLS qualification, native-memory
+bound or complete ticket closure from this evidence.
 
 Reusable API/runtime contracts remain separate from sample package entries:
 

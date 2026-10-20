@@ -1,0 +1,799 @@
+{
+  "inputs": {
+    "dependencies/npm/node_modules/ky/distribution/errors/KyError.js": {
+      "bytes": 716,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/errors/HTTPError.js": {
+      "bytes": 2471,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/KyError.js",
+          "kind": "import-statement",
+          "original": "./KyError.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/errors/NetworkError.js": {
+      "bytes": 1047,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/KyError.js",
+          "kind": "import-statement",
+          "original": "./KyError.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/is.js": {
+      "bytes": 1586,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/errors/NonError.js": {
+      "bytes": 1157,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/is.js",
+          "kind": "import-statement",
+          "original": "../utils/is.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/errors/ForceRetryError.js": {
+      "bytes": 2413,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/is.js",
+          "kind": "import-statement",
+          "original": "../utils/is.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/KyError.js",
+          "kind": "import-statement",
+          "original": "./KyError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/NonError.js",
+          "kind": "import-statement",
+          "original": "./NonError.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/errors/SchemaValidationError.js": {
+      "bytes": 1035,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/errors/TimeoutError.js": {
+      "bytes": 404,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/KyError.js",
+          "kind": "import-statement",
+          "original": "./KyError.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/core/constants.js": {
+      "bytes": 9025,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/errors/ResponseSizeError.js": {
+      "bytes": 905,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/KyError.js",
+          "kind": "import-statement",
+          "original": "./KyError.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/body.js": {
+      "bytes": 12017,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/constants.js",
+          "kind": "import-statement",
+          "original": "../core/constants.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/ResponseSizeError.js",
+          "kind": "import-statement",
+          "original": "../errors/ResponseSizeError.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/merge.js": {
+      "bytes": 21683,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/constants.js",
+          "kind": "import-statement",
+          "original": "../core/constants.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/is.js",
+          "kind": "import-statement",
+          "original": "./is.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/normalize.js": {
+      "bytes": 4209,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/constants.js",
+          "kind": "import-statement",
+          "original": "../core/constants.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/is.js",
+          "kind": "import-statement",
+          "original": "./is.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/timeout.js": {
+      "bytes": 1391,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/TimeoutError.js",
+          "kind": "import-statement",
+          "original": "../errors/TimeoutError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/body.js",
+          "kind": "import-statement",
+          "original": "./body.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/delay.js": {
+      "bytes": 639,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/options.js": {
+      "bytes": 2495,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/constants.js",
+          "kind": "import-statement",
+          "original": "../core/constants.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/merge.js",
+          "kind": "import-statement",
+          "original": "./merge.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/is-network-error.js": {
+      "bytes": 1691,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/is.js",
+          "kind": "import-statement",
+          "original": "./is.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/utils/type-guards.js": {
+      "bytes": 4060,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/HTTPError.js",
+          "kind": "import-statement",
+          "original": "../errors/HTTPError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/NetworkError.js",
+          "kind": "import-statement",
+          "original": "../errors/NetworkError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/ResponseSizeError.js",
+          "kind": "import-statement",
+          "original": "../errors/ResponseSizeError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/TimeoutError.js",
+          "kind": "import-statement",
+          "original": "../errors/TimeoutError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/ForceRetryError.js",
+          "kind": "import-statement",
+          "original": "../errors/ForceRetryError.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/core/retry-timing.js": {
+      "bytes": 6324,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/core/Ky.js": {
+      "bytes": 58472,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/HTTPError.js",
+          "kind": "import-statement",
+          "original": "../errors/HTTPError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/NetworkError.js",
+          "kind": "import-statement",
+          "original": "../errors/NetworkError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/NonError.js",
+          "kind": "import-statement",
+          "original": "../errors/NonError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/ForceRetryError.js",
+          "kind": "import-statement",
+          "original": "../errors/ForceRetryError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/SchemaValidationError.js",
+          "kind": "import-statement",
+          "original": "../errors/SchemaValidationError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/TimeoutError.js",
+          "kind": "import-statement",
+          "original": "../errors/TimeoutError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/body.js",
+          "kind": "import-statement",
+          "original": "../utils/body.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/merge.js",
+          "kind": "import-statement",
+          "original": "../utils/merge.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/normalize.js",
+          "kind": "import-statement",
+          "original": "../utils/normalize.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/timeout.js",
+          "kind": "import-statement",
+          "original": "../utils/timeout.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/delay.js",
+          "kind": "import-statement",
+          "original": "../utils/delay.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/options.js",
+          "kind": "import-statement",
+          "original": "../utils/options.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/is-network-error.js",
+          "kind": "import-statement",
+          "original": "../utils/is-network-error.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/is.js",
+          "kind": "import-statement",
+          "original": "../utils/is.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/type-guards.js",
+          "kind": "import-statement",
+          "original": "../utils/type-guards.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/retry-timing.js",
+          "kind": "import-statement",
+          "original": "./retry-timing.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/constants.js",
+          "kind": "import-statement",
+          "original": "./constants.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/ky/distribution/index.js": {
+      "bytes": 3211,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/Ky.js",
+          "kind": "import-statement",
+          "original": "./core/Ky.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/core/constants.js",
+          "kind": "import-statement",
+          "original": "./core/constants.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/merge.js",
+          "kind": "import-statement",
+          "original": "./utils/merge.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/KyError.js",
+          "kind": "import-statement",
+          "original": "./errors/KyError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/HTTPError.js",
+          "kind": "import-statement",
+          "original": "./errors/HTTPError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/SchemaValidationError.js",
+          "kind": "import-statement",
+          "original": "./errors/SchemaValidationError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/NetworkError.js",
+          "kind": "import-statement",
+          "original": "./errors/NetworkError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/TimeoutError.js",
+          "kind": "import-statement",
+          "original": "./errors/TimeoutError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/ResponseSizeError.js",
+          "kind": "import-statement",
+          "original": "./errors/ResponseSizeError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/errors/ForceRetryError.js",
+          "kind": "import-statement",
+          "original": "./errors/ForceRetryError.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/type-guards.js",
+          "kind": "import-statement",
+          "original": "./utils/type-guards.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/utils/merge.js",
+          "kind": "import-statement",
+          "original": "./utils/merge.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/wretch/dist/utils.js": {
+      "bytes": 979,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/wretch/dist/constants.js": {
+      "bytes": 161,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/wretch/dist/middleware.js": {
+      "bytes": 202,
+      "imports": [],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/wretch/dist/resolver.js": {
+      "bytes": 4903,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/middleware.js",
+          "kind": "import-statement",
+          "original": "./middleware.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/constants.js",
+          "kind": "import-statement",
+          "original": "./constants.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/wretch/dist/core.js": {
+      "bytes": 4982,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/utils.js",
+          "kind": "import-statement",
+          "original": "./utils.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/constants.js",
+          "kind": "import-statement",
+          "original": "./constants.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/resolver.js",
+          "kind": "import-statement",
+          "original": "./resolver.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/wretch/dist/index.js": {
+      "bytes": 692,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/core.js",
+          "kind": "import-statement",
+          "original": "./core.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/resolver.js",
+          "kind": "import-statement",
+          "original": "./resolver.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dependencies/npm/node_modules/outside-fetch-phase/index.mjs": {
+      "bytes": 189,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/index.js",
+          "kind": "import-statement",
+          "original": "wretch"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/default-client.ts": {
+      "bytes": 1399,
+      "imports": [
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/index.js",
+          "kind": "import-statement",
+          "original": "ky"
+        },
+        {
+          "path": "dependencies/npm/node_modules/wretch/dist/index.js",
+          "kind": "import-statement",
+          "original": "wretch"
+        },
+        {
+          "path": "dependencies/npm/node_modules/outside-fetch-phase/index.mjs",
+          "kind": "import-statement",
+          "original": "outside-fetch-phase"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/main.ts": {
+      "bytes": 3001,
+      "imports": [
+        {
+          "path": "src/default-client.ts",
+          "kind": "import-statement",
+          "original": "./default-client.js"
+        },
+        {
+          "path": "dependencies/npm/node_modules/ky/distribution/index.js",
+          "kind": "import-statement",
+          "original": "ky"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "../compiled/application.mjs.map": {
+      "imports": [],
+      "exports": [],
+      "inputs": {},
+      "bytes": 54696
+    },
+    "../compiled/application.mjs": {
+      "imports": [],
+      "exports": [
+        "api"
+      ],
+      "entryPoint": "src/main.ts",
+      "inputs": {
+        "dependencies/npm/node_modules/ky/distribution/errors/KyError.js": {
+          "bytesInOutput": 100
+        },
+        "dependencies/npm/node_modules/ky/distribution/errors/HTTPError.js": {
+          "bytesInOutput": 570
+        },
+        "dependencies/npm/node_modules/ky/distribution/errors/NetworkError.js": {
+          "bytesInOutput": 247
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/is.js": {
+          "bytesInOutput": 610
+        },
+        "dependencies/npm/node_modules/ky/distribution/errors/NonError.js": {
+          "bytesInOutput": 667
+        },
+        "dependencies/npm/node_modules/ky/distribution/errors/ForceRetryError.js": {
+          "bytesInOutput": 1206
+        },
+        "dependencies/npm/node_modules/ky/distribution/errors/SchemaValidationError.js": {
+          "bytesInOutput": 199
+        },
+        "dependencies/npm/node_modules/ky/distribution/errors/TimeoutError.js": {
+          "bytesInOutput": 209
+        },
+        "dependencies/npm/node_modules/ky/distribution/core/constants.js": {
+          "bytesInOutput": 3151
+        },
+        "dependencies/npm/node_modules/ky/distribution/errors/ResponseSizeError.js": {
+          "bytesInOutput": 329
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/body.js": {
+          "bytesInOutput": 6921
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/merge.js": {
+          "bytesInOutput": 10849
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/normalize.js": {
+          "bytesInOutput": 3023
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/timeout.js": {
+          "bytesInOutput": 621
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/delay.js": {
+          "bytesInOutput": 440
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/options.js": {
+          "bytesInOutput": 1010
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/is-network-error.js": {
+          "bytesInOutput": 1117
+        },
+        "dependencies/npm/node_modules/ky/distribution/utils/type-guards.js": {
+          "bytesInOutput": 513
+        },
+        "dependencies/npm/node_modules/ky/distribution/core/retry-timing.js": {
+          "bytesInOutput": 4633
+        },
+        "dependencies/npm/node_modules/ky/distribution/core/Ky.js": {
+          "bytesInOutput": 37493
+        },
+        "dependencies/npm/node_modules/ky/distribution/index.js": {
+          "bytesInOutput": 1005
+        },
+        "dependencies/npm/node_modules/wretch/dist/utils.js": {
+          "bytesInOutput": 819
+        },
+        "dependencies/npm/node_modules/wretch/dist/constants.js": {
+          "bytesInOutput": 129
+        },
+        "dependencies/npm/node_modules/wretch/dist/middleware.js": {
+          "bytesInOutput": 125
+        },
+        "dependencies/npm/node_modules/wretch/dist/resolver.js": {
+          "bytesInOutput": 3566
+        },
+        "dependencies/npm/node_modules/wretch/dist/core.js": {
+          "bytesInOutput": 3973
+        },
+        "dependencies/npm/node_modules/wretch/dist/index.js": {
+          "bytesInOutput": 168
+        },
+        "dependencies/npm/node_modules/outside-fetch-phase/index.mjs": {
+          "bytesInOutput": 159
+        },
+        "src/default-client.ts": {
+          "bytesInOutput": 1331
+        },
+        "src/main.ts": {
+          "bytesInOutput": 2776
+        }
+      },
+      "bytes": 117540
+    }
+  },
+  "capturedInputs": [
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/KyError.js",
+      "digest": "sha256:b46e5137772516bb91bff3a04f480af574d1e2392c44e8959025f3965c5502cc",
+      "size": 716
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/HTTPError.js",
+      "digest": "sha256:c428842775943e5c90da3d25c39222ec65649800354fbf4728421d3b0e507cb0",
+      "size": 2471
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/NetworkError.js",
+      "digest": "sha256:5ebafd205e49ab78e8ef79efa237976337612857416ad7b1a559c27f367c0c56",
+      "size": 1047
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/is.js",
+      "digest": "sha256:05906f9795e715791d86b166ed1344d887d2d225912c913f4d93962b49749c9e",
+      "size": 1586
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/NonError.js",
+      "digest": "sha256:b78c1ca344b3e97e3f2ee98013f3896650e5550902b636376e723285f83ed731",
+      "size": 1157
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/ForceRetryError.js",
+      "digest": "sha256:6359375a90d6906f3d3bf685c37ecc1dac5c5a5ca88122bc115c3de40a918292",
+      "size": 2413
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/SchemaValidationError.js",
+      "digest": "sha256:5b488bd7e65b49427f35efc8c23befc59288a0174df7ec9ec270dbb8b13b16df",
+      "size": 1035
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/TimeoutError.js",
+      "digest": "sha256:332df4eae23cec381f2d953b97649b8850b1613e157f2c7871ca41afa4c5c890",
+      "size": 404
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/core/constants.js",
+      "digest": "sha256:49369613966929146685b65a12a0696bd75f51cf3b6c53627e50c52722d378fa",
+      "size": 9025
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/errors/ResponseSizeError.js",
+      "digest": "sha256:bb45d5f39f39febda91ef8f8c06fe612e96ba76a2c0c882f32526e28ca495c29",
+      "size": 905
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/body.js",
+      "digest": "sha256:7fa01d31069120aba6ca72e04f8a0a82bf9d4e3d0dfe34ca5fb8d9cd81aea59f",
+      "size": 12017
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/merge.js",
+      "digest": "sha256:8ffeb91793ca394e16bee3e695eb1ed71f7a5731b7b863ac5c16a63fc85a5eed",
+      "size": 21683
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/normalize.js",
+      "digest": "sha256:37bc16fa8a124f5bb9df4822e57aaea4aa0fb32147a08ec996790cf0ae6045ce",
+      "size": 4209
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/timeout.js",
+      "digest": "sha256:1a3ed59800bced05c7692bc333e7799cdd43410558272637fa16d2b4cdc3409a",
+      "size": 1391
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/delay.js",
+      "digest": "sha256:09f08a9c656a76938ce5ad99d0cef2fa5f5d5df73b82d172dfcac4bfcc0267fe",
+      "size": 639
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/options.js",
+      "digest": "sha256:1b58d97f01bced6cdbaa5cc3c7d133042fbe8fd292fc66b25a5557edf90727bc",
+      "size": 2495
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/is-network-error.js",
+      "digest": "sha256:d22de9eff7d630c3087555cbd91ee6ed44aaa8e2a435fc57153e6a1df50b500e",
+      "size": 1691
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/utils/type-guards.js",
+      "digest": "sha256:6e491550e4e9fecbf8e295b8467b28b28cc5241e1430695f82e2e3fb794b3c12",
+      "size": 4060
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/core/retry-timing.js",
+      "digest": "sha256:35a8a75b485e49dcd073a55fe2c8e4e66ff93cb61fb51630ff6b6eaff5425dd4",
+      "size": 6324
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/core/Ky.js",
+      "digest": "sha256:01a149c34400d6de7bc0539fa3e49899a6108f7b8957a661c5565d6e29a7e1e7",
+      "size": 58472
+    },
+    {
+      "path": "dependencies/npm/node_modules/ky/distribution/index.js",
+      "digest": "sha256:ceb58f2a8ba3794e54a0a8254243e66d2a2bf012517b074abb7bf64b30d7a97c",
+      "size": 3211
+    },
+    {
+      "path": "dependencies/npm/node_modules/wretch/dist/utils.js",
+      "digest": "sha256:973ad9a6a2f058f6a27e5d4d8821e2ae3a3e8e13346d32e6041da5691190755f",
+      "size": 979
+    },
+    {
+      "path": "dependencies/npm/node_modules/wretch/dist/constants.js",
+      "digest": "sha256:12d1a4da3d1354a50fa77c803d4cfe709a5e5b410d50764cf7be0183a6408893",
+      "size": 161
+    },
+    {
+      "path": "dependencies/npm/node_modules/wretch/dist/middleware.js",
+      "digest": "sha256:bd1b7f90d1a33104b07a2edd4bc630ed7c7209ae63352468fa32c10a0415cbc3",
+      "size": 202
+    },
+    {
+      "path": "dependencies/npm/node_modules/wretch/dist/resolver.js",
+      "digest": "sha256:333b235c41298db37ef4ab7bf24006c145a735f7e8ee6e4b54cce7c015b139a7",
+      "size": 4903
+    },
+    {
+      "path": "dependencies/npm/node_modules/wretch/dist/core.js",
+      "digest": "sha256:a7678dd59019f675c6be4847fb1537ff6f6ed794ecaf0b37af13e44d716e7b94",
+      "size": 4982
+    },
+    {
+      "path": "dependencies/npm/node_modules/wretch/dist/index.js",
+      "digest": "sha256:9c1f2b80f204dcc35933b182e069207c871495a8ddfe0285d61acce9a8bc5ba5",
+      "size": 692
+    },
+    {
+      "path": "dependencies/npm/node_modules/outside-fetch-phase/index.mjs",
+      "digest": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+      "size": 189
+    },
+    {
+      "path": "src/default-client.ts",
+      "digest": "sha256:aa0c72f4bb8a338447471586b174c257e0db3fa51cd2617a99e689d67cf89b7b",
+      "size": 1399
+    },
+    {
+      "path": "src/main.ts",
+      "digest": "sha256:d21f233485e2eee3b971f8050348e85740ea85bc0a66a9d5d15e5af126f296f4",
+      "size": 3001
+    }
+  ],
+  "selection": {
+    "target": "wasm32-component",
+    "runtimeProfile": "spidermonkey-activation-promises-clocks-imports-v1",
+    "conditions": [
+      "browser"
+    ],
+    "nodePaths": [
+      "/tmp/lsf-typescript-capsule-q806z622/project/dependencies/npm/node_modules"
+    ],
+    "moduleRoot": "dependencies/npm/node_modules",
+    "inputIdentity": "sha256:2baf967a370a4431d61135a096f39de3882e0355299d9fc646d5a15765585109",
+    "platform": "neutral",
+    "mainFields": [
+      "module",
+      "main"
+    ],
+    "commonJs": "static-require-only",
+    "dynamicLoading": "unsupported",
+    "installScripts": "never-executed",
+    "standardFetchProfile": "lsf-fetch-phase-buffered-v2",
+    "nativeClockInterfaces": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:clock/wall@0.1.0"
+    ],
+    "standardEntropyProfile": "lsf-math-random-unsupported-v1"
+  },
+  "standardClockProfile": "lsf-standard-clock-native-v1",
+  "standardClockBackendDigest": "sha256:c098c408f18dc84a9558ec65948f8d13c719c59deb54fd9e33eb3d2ff0d69b0d",
+  "snapshotGuardDigest": "sha256:966738a36b12dc72957c314e7d8c91c925e5cf61e6fb138379c2e94e96cb552c",
+  "standardEntropyProfile": "lsf-math-random-unsupported-v1",
+  "standardEntropyBackendDigest": "sha256:1706ea166c07203e0151a588831b946414f3217f898aef1aa42c371a36f593cd",
+  "standardFetchProfile": "lsf-fetch-phase-buffered-v2",
+  "standardFetchBackendDigest": "sha256:f9d68be70a6ead9bd61d14e997860008f08e406d1505d6441420638c72a929ca",
+  "moduleResolution": "neutral-native-exports-import-require-default-with-explicit-custom-conditions"
+}
