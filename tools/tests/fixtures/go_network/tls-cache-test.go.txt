@@ -1,0 +1,192 @@
+package tlscache
+
+import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/asn1"
+	"errors"
+	"math/big"
+	"runtime"
+	"sync"
+	"testing"
+	"time"
+)
+
+func certificate(t *testing.T, serial int64, padding int) []byte {
+	t.Helper()
+	key := ed25519.NewKeyFromSeed(make([]byte, 32))
+	cert := &x509.Certificate{SerialNumber: big.NewInt(serial),
+		Subject:   pkix.Name{CommonName: "cache-reference.invalid"},
+		NotBefore: time.Unix(0, 0), NotAfter: time.Unix(2000000000, 0),
+		DNSNames: []string{"cache-reference.invalid"},
+		KeyUsage: x509.KeyUsageDigitalSignature}
+	if padding > 0 {
+		cert.ExtraExtensions = []pkix.Extension{{Id: asn1.ObjectIdentifier{1, 2, 3, 4}, Value: make([]byte, padding)}}
+	}
+	der, err := x509.CreateCertificate(rand.Reader, cert, cert, key.Public(), key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return der
+}
+func exactCertificate(t *testing.T, serial int64, size int) []byte {
+	t.Helper()
+	padding := size - 512
+	for range 5 {
+		der := certificate(t, serial, padding)
+		if len(der) == size {
+			return der
+		}
+		padding += size - len(der)
+	}
+	t.Fatal("cannot construct exact public certificate size")
+	return nil
+}
+func TestCacheRetainsIdentityThroughGC(t *testing.T) {
+	cache := new(weakCertCache)
+	der := certificate(t, 1, 0)
+	first, err := cache.newCert(der)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runtime.GC()
+	again, err := cache.newCert(append([]byte(nil), der...))
+	if err != nil || first != again || cache.used != 1 || cache.derSize != len(der) {
+		t.Fatal("retained certificate identity or charge changed")
+	}
+}
+func TestCacheRejectsOversizedDERBeforeParseOrCopy(t *testing.T) {
+	cache := new(weakCertCache)
+	der := make([]byte, lsfCertCacheMaximumDER+1)
+	var err error
+	allocs := testing.AllocsPerRun(100, func() { _, err = cache.newCert(der) })
+	if err != lsfCertCacheExhausted || allocs != 0 || cache.used != 0 || cache.derSize != 0 {
+		t.Fatalf("oversize admission allocated or parsed: allocations=%v", allocs)
+	}
+}
+func TestCacheRejectsNinthDistinctCertificateAndRetainsHits(t *testing.T) {
+	cache := new(weakCertCache)
+	der := certificate(t, 1, 0)
+	first, err := cache.newCert(der)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 2; i <= 8; i++ {
+		if _, err := cache.newCert(certificate(t, int64(i), 0)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	before := cache.derSize
+	if _, err := cache.newCert(certificate(t, 9, 0)); err != lsfCertCacheExhausted {
+		t.Fatal("ninth certificate admitted")
+	}
+	got, err := cache.newCert(der)
+	if err != nil || got != first || cache.used != 8 || cache.derSize != before {
+		t.Fatal("full cache lost hit/charge")
+	}
+}
+func TestCacheAggregateDERBudgetAndNoEviction(t *testing.T) {
+	cache := new(weakCertCache)
+	var first []byte
+	for i := 1; i <= 4; i++ {
+		der := exactCertificate(t, int64(i), lsfCertCacheMaximumDER)
+		if i == 1 {
+			first = der
+		}
+		if _, err := cache.newCert(der); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if cache.derSize != 65536 || cache.used != 4 {
+		t.Fatal("aggregate bound did not reach exact boundary")
+	}
+	runtime.GC()
+	if _, err := cache.newCert(certificate(t, 5, 0)); err != lsfCertCacheExhausted {
+		t.Fatal("aggregate overflow/eviction")
+	}
+	if _, err := cache.newCert(first); err != nil {
+		t.Fatal("existing hit refused at aggregate bound")
+	}
+	if cache.used != 4 || cache.derSize != 65536 {
+		t.Fatal("premature capacity refund")
+	}
+}
+func TestCacheParseFailureMatchesUpstreamAndConsumesNoEntry(t *testing.T) {
+	cache := new(weakCertCache)
+	for _, der := range [][]byte{nil, {1}, {48, 2, 1}} {
+		_, want := x509.ParseCertificate(der)
+		_, got := cache.newCert(der)
+		if want == nil || got == nil || want.Error() != got.Error() || errors.Is(got, lsfCertCacheExhausted) {
+			t.Fatal("upstream parser error changed")
+		}
+	}
+	if cache.used != 0 || cache.derSize != 0 {
+		t.Fatal("parse failure charged a cache entry")
+	}
+	if _, err := cache.newCert(certificate(t, 1, 0)); err != nil {
+		t.Fatal(err)
+	}
+}
+func TestFreshCacheStartsEmpty(t *testing.T) {
+	old := new(weakCertCache)
+	der := certificate(t, 1, 0)
+	first, err := old.newCert(der)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fresh := new(weakCertCache)
+	if fresh.used != 0 || fresh.derSize != 0 {
+		t.Fatal("fresh cache inherited state")
+	}
+	second, err := fresh.newCert(der)
+	if err != nil || second == first || fresh.used != 1 || old.used != 1 {
+		t.Fatal("fresh cache reused old object")
+	}
+}
+func TestConcurrentSameCertificatePublishesOnce(t *testing.T) {
+	cache := new(weakCertCache)
+	der := certificate(t, 1, 0)
+	var wait sync.WaitGroup
+	results := make(chan *x509.Certificate, 16)
+	for range 16 {
+		wait.Add(1)
+		go func() {
+			defer wait.Done()
+			value, err := cache.newCert(der)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			results <- value
+		}()
+	}
+	wait.Wait()
+	close(results)
+	var first *x509.Certificate
+	count := 0
+	for value := range results {
+		count++
+		if first == nil {
+			first = value
+		} else if value != first {
+			t.Fatal("duplicate concurrent parse published")
+		}
+	}
+	if count != 16 || cache.used != 1 || cache.derSize != len(der) {
+		t.Fatal("concurrent reservation drift")
+	}
+}
+func TestCacheExactPerDERBoundaryAndOneByteRefusal(t *testing.T) {
+	cache := new(weakCertCache)
+	if _, err := cache.newCert(exactCertificate(t, 1, 16384)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cache.newCert(exactCertificate(t, 2, 16385)); err != lsfCertCacheExhausted {
+		t.Fatal("per-DER cap drift")
+	}
+	if cache.used != 1 || cache.derSize != 16384 {
+		t.Fatal("refused DER modified charge")
+	}
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_smtp_tls_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Source-backed realTLS AddCleanup trap: derive authenticated private cache ONLY for declaredstream/v5, fixed8entries/16KiBperDER/64KiBtotal beforecopy/parse, retainstrongwithinStore; genericcleanuprefusal/TLSverificationunchanged. Require8actualexactcache refs thenonefresh6caseSMTPguest; no native5/fullGo.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "97c971ad7ed63d32bab8db0f8f27062b5ddc83fbcc08c6ad3f7ffbf8b4e11e1b"
+}

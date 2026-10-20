@@ -39,6 +39,7 @@
           "tools/tests/test_java_phase_native_products.py",
           "tools/tests/test_http_phase_native_products.py",
           "tools/tests/test_java_http_phases.py",
+          "tools/tests/test_java_timeout_exception.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -71,7 +72,7 @@
     "http-phase-clients",
     "http-public-spi"
   ],
-  "reviewReason": "Add a separate default-false manual public ConnectionFactory SPI programme; preserve every existing default-client/fiber job, command, condition and bound unchanged; no default-client or tenant evidence substitution.",
+  "reviewReason": "Keep all prior SPI and default-client controls; add exact successful8f source fetch and3 standard timeout-identity controls to the separate manual-only SPI job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

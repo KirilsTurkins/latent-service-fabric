@@ -1,0 +1,78 @@
+name: Execute ordinary Go SMTP and guest STARTTLS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/go-smtp-starttls-20261020']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-smtp-tls-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime:
+    name: Actual ordinary SMTP and verified guest TLS over declared TCP
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install pinned source controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact input ownership cancellation and fail-closed selection
+        run: python3 -m unittest tools.tests.test_go_smtp_tls_runtime tools.tests.test_go_network_runtime -v
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: true
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Authenticate the maintained compiler and official generator
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/go-smtp-tls-tools"
+          test ! -e "$out"
+          mkdir "$out"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$out/go.tar.gz" -C "$out"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/componentize-go.tar.gz" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz
+          echo "1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$out/componentize-go.tar.gz" -C "$out" componentize-go
+          echo "b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go" | sha256sum --check --strict
+          chmod 755 "$out/componentize-go"
+          test "$("$out/componentize-go" --version)" = 'componentize-go 0.4.3'
+          test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
+          python3 tools/go_guest/runtime.py --prepare-compiler "$out/go" --output "$out/go-async"
+          echo "$out" >> "$GITHUB_PATH"
+          echo "$out/go-async/bin" >> "$GITHUB_PATH"
+      - name: Compile ordinary SMTP guest TLS then execute one targeted signed harness
+        run: python3 tools/qualify_go_smtp_tls_runtime.py --reference-go "$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go" --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime"
+      - name: Retain bounded compiler and owner evidence including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-smtp-tls-runtime-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-smtp-tls-runtime/*.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/*.log
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/GO-SMTP-TLS-COMPILE.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/go-runtime-transformations.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/logs/**
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/build/component.wasm
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/build/component.wit
+          if-no-files-found: warn
+          retention-days: 7

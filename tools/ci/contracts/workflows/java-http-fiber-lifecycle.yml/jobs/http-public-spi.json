@@ -46,6 +46,14 @@
         }
       },
       {
+        "name": "Fetch the exact operational-authority native producer before SPI helper controls",
+        "run": "git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c"
+      },
+      {
+        "name": "Check the captured standard socket timeout exception identity",
+        "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
+      },
+      {
         "name": "Check optional SPI authority, original exception and native receipt controls",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_spi tools.tests.test_http_tenant_native_products -v\n"
       },
@@ -87,7 +95,7 @@
   },
   "jobId": "http-public-spi",
   "kind": "job",
-  "reviewReason": "Add a separate default-false manual public ConnectionFactory SPI programme; preserve every existing default-client/fiber job, command, condition and bound unchanged; no default-client or tenant evidence substitution.",
+  "reviewReason": "Keep all prior SPI and default-client controls; add exact successful8f source fetch and3 standard timeout-identity controls to the separate manual-only SPI job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
