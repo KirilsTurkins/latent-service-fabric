@@ -20,6 +20,9 @@ class JavaJoinedResources(unittest.TestCase):
             self.assertEqual(read_file(app/'src/dev/latent/app/Capsule.java'),read_file(ROOT/fixture.MATERIALS[0]))
             self.assertEqual(len(list((app/'src').rglob('*.java'))),1)
             wit=read_file(app/'wit/world.wit')
+            self.assertIn(b'greet: func(',read_file(ordinary/'wit/world.wit'))
+            self.assertIn(b'greet: async func(',wit)
+            self.assertNotIn(b'greet: func(',wit)
             for capability in fixture.CAPABILITIES:self.assertEqual(wit.count(('import '+capability+';').encode()),2 if 'clock/' in capability else 1)
             validate(snapshot(app))
 

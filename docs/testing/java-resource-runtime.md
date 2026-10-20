@@ -126,3 +126,18 @@ pinned TeaVM superclass: five old cases are RED, all eight corrected cases are
 GREEN. They include subsequent reads, bounded/maximum/zero/negative lengths,
 empty streams, mark/reset, close and independent readers. These host controls
 require a fresh signed guest result before any joined-runtime qualification.
+
+The corrected e977 guest passed parallel and foreign-fresh on the original f919
+host, then failed clear before logging in both the fresh063 run and the public
+69d retained-component replay. A bounded private observation host returned exact
+fresh/clear/parallel values without observing any trap; its trap-required outer
+job remains failed. The three private successes do not qualify the public host
+or prove the short clear sleep actually suspended.
+
+The joined fixture now declares its ordinary greeting export as `async func`,
+matching the maintained fiber conformance world's entry contract. It preserves
+the service name, Java/C ABI, original library code, all13 cases/order, grants
+and budgets. Actual binding generation keeps Java/C/header outputs byte-identical
+and changes only component-type metadata. This is a source-supported contract
+counterfactual until a fresh public-host joined programme establishes the causal
+result; no particular trap variant or joined13 pass is claimed yet.

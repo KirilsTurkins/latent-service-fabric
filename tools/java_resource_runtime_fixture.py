@@ -58,6 +58,8 @@ def project(directory):
     (app/'src/dev/latent/app/Capsule.java').write_bytes(source)
     wit = read_file(app/'wit/world.wit')
     require(wit.count(b'world service {') == 1, 'java-resource-runtime-original-world')
+    require(wit.count(b'greet: func(') == 1, 'java-resource-runtime-original-entry-signature')
+    wit = wit.replace(b'greet: func(', b'greet: async func(', 1)
     extra = ''.join('    import '+name+';\n' for name in CAPABILITIES[2:]).encode()
     wit = wit.replace(b'world service {', b'world service {\n'+extra, 1)
     (app/'wit/world.wit').write_bytes(wit)
