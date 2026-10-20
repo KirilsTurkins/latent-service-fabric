@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "latent.go.write-progress.observation.v1",
+  "run": 39443276481,
+  "job": 118698441927,
+  "artifact": {
+    "id": 12275249345,
+    "node_id": "MDg6QXJ0aWZhY3QxMjI3NTI0OTM0NQ==",
+    "name": "go-write-progress-fb79a7ab6ea86f53baec78ee341aca075c14a2ef",
+    "size_in_bytes": 3127,
+    "url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12275249345",
+    "archive_download_url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12275249345/zip",
+    "expired": false,
+    "digest": "sha256:8b77e54eddd5e4b9b884af2f326632433dd597bf8dbc173c91bf30f3f766fdb1",
+    "created_at": "2026-10-20T15:02:15Z",
+    "updated_at": "2026-10-20T15:02:15Z",
+    "expires_at": "2026-10-27T15:02:14Z",
+    "workflow_run": {
+      "id": 39443276481,
+      "repository_id": 1337591365,
+      "head_repository_id": 1337591365,
+      "head_branch": "feat/go-stream-write-progress-20261020",
+      "head_sha": "fb79a7ab6ea86f53baec78ee341aca075c14a2ef"
+    }
+  },
+  "archiveMembers": {
+    "current.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "current.stdout.log": {
+      "sha256": "8fbefd561102a1e2aec5170c4b07d33793d935afc1d4febb43106a45103bc2ab",
+      "size": 7045
+    },
+    "old.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "old.stdout.log": {
+      "sha256": "0ab24528cfd89c6134f5a5fa855e0940599f3cb90b7cf2e61e068ca402201fdd",
+      "size": 1505
+    },
+    "receipt.json": {
+      "sha256": "c13b1501a6e5b89cc39437467d5132b8d5106223184185c191977af41ea74ea4",
+      "size": 2445
+    }
+  },
+  "reference": {
+    "schemaVersion": "latent.go.write-progress.reference.v1",
+    "status": "passed",
+    "sourceRevision": "fb79a7ab6ea86f53baec78ee341aca075c14a2ef",
+    "baseline": "955da9c7465b88541e39b043203abb92782ae26a",
+    "oldMethodSha256": "73caccf7337e69c45e41806f8f22c0d192ee572e13cc150a6bb8f4d8a3e0b4da",
+    "currentMethodSha256": "1e101f7b858125ec9ed85a57ea075722bca02b2bfc5546d2e8db5404abe09cf2",
+    "inputs": {
+      "sdk/go-guest/runtime/net_stream.go.in": {
+        "sha256": "3fc6f9223108451fdb4ec1f1072c0555d1abb16352bfee22d7bf99a257038e58",
+        "size": 12010
+      },
+      "tools/tests/fixtures/go_network/write-progress-test.go.txt": {
+        "sha256": "b1d117c0dce0d6b1d089d93f11716dafdbc287f7287629a9dadba7ed76de5947",
+        "size": 6838
+      },
+      "tools/qualify_go_write_progress.py": {
+        "sha256": "2a0ad15e488d026e630b1d58a7829ea85db0b579db85c94e482cc942df5fb60f",
+        "size": 7895
+      },
+      "tools/owned_test_process.py": {
+        "sha256": "da38e62f58d2dc3cdd0517c2cc4c77f175afde5299a01bfed75488bb9a862283",
+        "size": 11348
+      },
+      "tools/build_observation.py": {
+        "sha256": "c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+        "size": 7868
+      },
+      "tools/test_run.py": {
+        "sha256": "9addafe512cbf8a9e5bfae80b6228a5eae32564cc74da47f7b45a54e1e3bc7e4",
+        "size": 27776
+      },
+      ".github/workflows/go-write-progress-reference.yml": {
+        "sha256": "1aad485a718c8f19d74e335f0f3a70899deecd0688dbd861099f3f32b05f7fdb",
+        "size": 2169
+      }
+    },
+    "evidenceKind": "exact-method-with-explicit-protocol-doubles",
+    "signedGuestExecuted": false,
+    "normalProviderInstalled": false,
+    "kernelAccountingQualified": false,
+    "sourceUnchanged": true,
+    "compiler": {
+      "name": "go",
+      "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+      "size": 17164055
+    },
+    "compilerVersion": "go version go1.27.2 linux/amd64",
+    "outcomes": {
+      "old": [
+        "TestCopyCrossesChunkBoundary"
+      ],
+      "current": [
+        "TestCopyCrossesChunkBoundary",
+        "TestDirectWriteAdvancesOnlyAcceptedBytes",
+        "TestErrorKeepsCumulativePrefixAndUncertaintyWithoutRetry",
+        "TestZeroProgressStopsWithoutSpin",
+        "TestAbsoluteDeadlineDoesNotRestartForEachFragment",
+        "TestSameDirectionRefusalAndSingleOwnerSurviveAllFragments",
+        "TestImpossibleCountsFailClosedBeforeAnotherDispatch",
+        "TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules"
+      ]
+    }
+  },
+  "verification": {
+    "allMembersCrcAndSha256": true,
+    "allSevenSourceInputsMatchGit": true,
+    "strictOriginalFailureAndEightCurrentPasses": true
+  },
+  "limitations": [
+    "Exact production Write method with explicit protocol doubles only.",
+    "No emitted component, live TCP/provider, final kernel retirement or full networking qualification."
+  ]
+}

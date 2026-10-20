@@ -130,7 +130,12 @@ A separate tiny Go reference projects the exact production method without body
 rewrites, with explicit deterministic protocol doubles. It must reproduce the
 original 40 KiB copy stopping at 16 KiB, then pass eight corrected progress,
 partial-error/uncertainty, zero-progress, original-deadline, ownership and refusal
-controls. Actual reference execution is pending. Those doubles do not establish
+controls. The [authenticated reference](../testing/evidence/go-write-progress-reference-2026-10-20.json)
+passed on source `fb79a7ab6ea86f53baec78ee341aca075c14a2ef`,
+[run 39443276481/job 118698441927](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39443276481/job/118698441927):
+the old copy returned 16,384 bytes and failed; all eight current cases passed.
+All five archive members passed CRC and SHA-256 checks, and all seven exercised
+source inputs match that Git source. Those doubles do not establish
 emitted-component, live TCP/provider, kernel or full networking qualification.
 The earlier twelve-case signed observation remains attributed to its original
 source; it is not relabelled as execution of this new method.
