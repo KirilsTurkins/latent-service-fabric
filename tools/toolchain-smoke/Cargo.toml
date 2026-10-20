@@ -173,6 +173,14 @@ bench = false
 doc = false
 
 [[example]]
+name = "rust-wasi-http-runtime"
+path = "examples/rust_wasi_http_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
 name = "dotnet-activation-runtime"
 path = "examples/dotnet_activation_runtime.rs"
 crate-type = ["cdylib"]
