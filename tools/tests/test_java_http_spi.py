@@ -154,6 +154,10 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         job = selected['jobs'].pop('http-public-spi')
         focused = yaml.safe_load((ROOT/'.github/workflows/java-http-fiber-lifecycle.yml').read_text())
         self.assertEqual(job, focused['jobs']['http-public-spi'])
+        fetch=next(i for i,step in enumerate(job['steps']) if step.get('name')=='Fetch exact original workflow baseline before SPI preservation controls')
+        controls=next(i for i,step in enumerate(job['steps']) if step.get('name')=='Check optional SPI authority, original exception and native receipt controls')
+        self.assertLess(fetch,controls)
+        self.assertEqual(job['steps'][fetch]['run'],'git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be')
         self.assertEqual(selected['jobs']['compiler-component'].pop('if'),
             "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
         self.assertEqual(selected['jobs']['dependency-ingestion']['if'],

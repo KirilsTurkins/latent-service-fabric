@@ -66,6 +66,10 @@
         "run": "python3 -B -m unittest tools.tests.test_java_phase_surface -v"
       },
       {
+        "name": "Fetch exact original workflow baseline before SPI preservation controls",
+        "run": "git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be"
+      },
+      {
         "name": "Check optional SPI authority, original exception and native receipt controls",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_spi tools.tests.test_http_tenant_native_products -v\n"
       },
@@ -107,7 +111,7 @@
   },
   "jobId": "http-public-spi",
   "kind": "job",
-  "reviewReason": "Copy exact separate public-SPI job to existing dispatchable workflow, same8outcomes/4contacts/freshcomponent, defaultfalse manual-only; no default qualification substitution.",
+  "reviewReason": "Fetch exactly the unchangedaa56 workflow baseline before preservation controls in shallow checkout; retain all originalSPI commands/cases/default guards and identical focused/manual jobs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
