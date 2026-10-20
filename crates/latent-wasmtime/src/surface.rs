@@ -338,6 +338,14 @@ fn validate_imports(
         if specification.binding == latent_core::HostInterfaceBinding::Provider
             && !(transactional && (name == transaction::STATE || name == transaction::INTENTS))
             && !providers.supports(name)
+            && !streaming::phase_type_owner(
+                component_type,
+                name,
+                &interface,
+                engine,
+                config.http_phase_timing,
+                providers.phase_http,
+            )
         {
             // Recognition is data-only. Providers require an installed trusted port;
             // a label or a package manifest cannot install I/O.

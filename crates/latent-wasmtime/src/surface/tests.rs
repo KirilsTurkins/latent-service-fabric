@@ -149,3 +149,115 @@ fn selected_async_signature_planning_keeps_exact_kind_and_type_work_bounds() {
         );
     }
 }
+
+#[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Finite encoded nominal-owner and negative admission shapes remain together."
+)]
+fn phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_calls() {
+    use wasm_encoder::{
+        Alias, Component, ComponentImportSection, ComponentOuterAliasKind, ComponentTypeRef,
+        ComponentTypeSection, InstanceType, PrimitiveValType, TypeBounds,
+    };
+    use wasmtime::component::types::ComponentItem;
+    let selected = latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY;
+    let original = latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY;
+    let mut config = wasmtime::Config::new();
+    crate::WasmtimeConfig::default()
+        .apply_engine(&mut config)
+        .unwrap();
+    let engine = wasmtime::Engine::new(&config).unwrap();
+    for extra in ["none", "call", "nested", "phase-absent"] {
+        let mut owner = InstanceType::new();
+        for name in ["upload", "body", "chunk"] {
+            owner.export(name, ComponentTypeRef::Type(TypeBounds::SubResource));
+        }
+        if extra == "call" {
+            let index = owner.type_count();
+            owner
+                .ty()
+                .function()
+                .params([] as [(&str, PrimitiveValType); 0])
+                .result(None);
+            owner.export("open", ComponentTypeRef::Func(index));
+        } else if extra == "nested" {
+            let index = owner.type_count();
+            owner.ty().instance(&InstanceType::new());
+            owner.export("hidden", ComponentTypeRef::Instance(index));
+        }
+        let mut types = ComponentTypeSection::new();
+        types.instance(&owner);
+        let mut imports = ComponentImportSection::new();
+        imports.import(original, ComponentTypeRef::Instance(0));
+        let mut encoded = Component::new();
+        encoded.section(&types).section(&imports);
+        if extra != "phase-absent" {
+            let mut aliases = wasm_encoder::ComponentAliasSection::new();
+            for name in ["upload", "body", "chunk"] {
+                aliases.alias(Alias::InstanceExport {
+                    instance: 0,
+                    kind: wasm_encoder::ComponentExportKind::Type,
+                    name,
+                });
+            }
+            encoded.section(&aliases);
+            let mut phases = InstanceType::new();
+            for (outer, name) in [(1, "upload"), (2, "body"), (3, "chunk")] {
+                let index = phases.type_count();
+                phases.alias(Alias::Outer {
+                    kind: ComponentOuterAliasKind::Type,
+                    count: 1,
+                    index: outer,
+                });
+                phases.export(name, ComponentTypeRef::Type(TypeBounds::Eq(index)));
+            }
+            let mut types = ComponentTypeSection::new();
+            types.instance(&phases);
+            let mut imports = ComponentImportSection::new();
+            imports.import(selected, ComponentTypeRef::Instance(4));
+            encoded.section(&types).section(&imports);
+        }
+        let component = wasmtime::component::Component::new(&engine, encoded.finish()).unwrap();
+        let component_type = component.component_type();
+        let (_, item) = component_type
+            .imports(&engine)
+            .find(|(name, _)| *name == original)
+            .unwrap();
+        let ComponentItem::ComponentInstance(interface) = item.ty else {
+            panic!("instance")
+        };
+        super::streaming::validate_phase_aliases(&component_type, &engine).unwrap();
+        for (enabled, installed) in [(false, false), (false, true), (true, false), (true, true)] {
+            assert_eq!(
+                super::streaming::phase_type_owner(
+                    &component_type,
+                    original,
+                    &interface,
+                    &engine,
+                    enabled,
+                    installed
+                ),
+                extra == "none" && enabled && installed
+            );
+        }
+        assert!(!super::streaming::phase_type_owner(
+            &component_type,
+            "example:unrelated/types@1.0.0",
+            &interface,
+            &engine,
+            true,
+            true
+        ));
+        assert!(!super::Providers {
+            phase_http: true,
+            ..super::Providers::default()
+        }
+        .supports(original));
+        assert!(super::Providers {
+            streaming_http: true,
+            ..super::Providers::default()
+        }
+        .supports(original));
+    }
+}

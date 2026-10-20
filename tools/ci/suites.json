@@ -7338,7 +7338,8 @@
         "host::tests::finite_default_table_limit_admits_go_minimum_and_rejects_excess",
         "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration",
         "bindings::compatibility_tests::phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes",
-        "config::tests::explicit_http_phase_profile_changes_preparation_identity_without_installing_authority"
+        "config::tests::explicit_http_phase_profile_changes_preparation_identity_without_installing_authority",
+        "surface::tests::phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_calls"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7351,7 +7352,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 381,
+      "minimumCases": 382,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
