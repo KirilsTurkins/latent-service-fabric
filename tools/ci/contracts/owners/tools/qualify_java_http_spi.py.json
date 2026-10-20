@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_http_spi.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add a separate default-false manual public ConnectionFactory SPI programme; preserve every existing default-client/fiber job, command, condition and bound unchanged; no default-client or tenant evidence substitution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "75988caec54280cdb3814f651108b045327b6a8d93d7563bef8c765d3fa472e4"
+}

@@ -27,7 +27,7 @@ from tools.rust_capsule_project import ROOT, digest, fresh, read_file, read_json
 MAX_SECONDS = 1500
 MATERIALS = tuple(dict.fromkeys((*PHASE_MATERIALS, SOURCE, WORLD,
     'tools/java_http_spi_fixture.py', 'tools/java_http_spi_node.py',
-    'tools/qualify_java_http_spi.py', 'tools/http_phase_native_products.py')))
+    'tools/qualify_java_http_spi.py', 'tools/http_tenant_native_products.py')))
 
 
 def execute(commands, binaries, wasi_sdk, output, selected_cache=None):
@@ -90,9 +90,9 @@ def execute(commands, binaries, wasi_sdk, output, selected_cache=None):
 def run(output, prepared, wasi_sdk, selected_cache=None):
     # This separate authenticator is supplied only after the nominal packaging
     # producer actually passes. Never silently substitute the historical77 tuple.
-    require((ROOT/'tools/http_phase_native_products.py').is_file(),
+    require((ROOT/'tools/http_tenant_native_products.py').is_file(),
         'java-spi-authenticated-nominal-products-helper-required')
-    products = importlib.import_module('tools.http_phase_native_products')
+    products = importlib.import_module('tools.http_tenant_native_products')
     history = products.verify_prepared(prepared);source = native_source(prepared)
     output = fresh(output);environment = build_environment(output)
     if 'JAVA_HOME' in os.environ: environment['JAVA_HOME'] = os.environ['JAVA_HOME']

@@ -31,23 +31,17 @@ may be reused; one new application component is still compiled normally. No
 native Cargo/toolchain rebuild is part of this campaign.
 
 **Current evidence:** focused source/controller controls pass. Actual compilation,
-signing and the six SPI outcomes have not run. This branch has no workflow or PR
-yet and requires the independent nominal-native authenticator before dispatch.
+signing and the six SPI outcomes have not run. The separate default-false `java_http_spi` workflow selector is prepared, but no
+SPI dispatch or PR has occurred. The native authority repair and compiler-owned
+`SocketTimeoutException` type must be integrated before this programme runs.
 It does not close #688 or #741 or replace the default-client proof.
 
 ## Same-node cross-tenant boundary
 
-The maintained node currently accepts one `httpStreaming` installation. Binding
-validation requires the installation's tenant and provider service, and scalar
-aliases explicitly exclude HTTP. Each provider credential is separately bound
-to its tenant, provider ID and origin. Therefore this programme makes no
-same-node cross-tenant HTTP claim. A second tenant's missing-provider refusal
-would prove a denial boundary, not a successful isolated second guest; two
-separate nodes would also not prove same-node isolation.
-
-The next production slice needs explicitly bounded additional HTTP installations
-with independent registrations, credential scopes and configuration digests,
-preserving the original fourteen-descriptor/global-pool ceilings and all grants.
-No HTTP alias or shared credential exception is introduced here. Actual
-cross-tenant success, secret isolation, late completion and retirement must run
-after that implementation with separately authenticated native products.
+The maintained node now supports bounded independent HTTP installations, with
+separate tenant/provider identities, credential stores, pools, configuration
+digests and grants. The separate programme in `java-http-tenant-isolation.md`
+owns its actual same-node positive and negative evidence. This optional-SPI
+programme deliberately reports no cross-tenant qualification and does not
+substitute a missing-provider refusal or two independent nodes for that proof.
+Neither HTTP aliases nor shared credentials are introduced here.

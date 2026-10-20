@@ -53,6 +53,11 @@
             "default": false,
             "description": "Fresh ordinary default clients and explicit V7 phase deadlines",
             "type": "boolean"
+          },
+          "java_http_spi": {
+            "default": false,
+            "description": "Separate optional public HttpRequest ConnectionFactory SPI campaign",
+            "type": "boolean"
           }
         }
       }
@@ -63,9 +68,10 @@
   },
   "requiredJobs": [
     "http-fiber-lifecycle",
-    "http-phase-clients"
+    "http-phase-clients",
+    "http-public-spi"
   ],
-  "reviewReason": "Add exact Java tenant/helper source and test paths; preserve all old workflow jobs, triggers, bounds and default behavior.",
+  "reviewReason": "Add a separate default-false manual public ConnectionFactory SPI programme; preserve every existing default-client/fiber job, command, condition and bound unchanged; no default-client or tenant evidence substitution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
