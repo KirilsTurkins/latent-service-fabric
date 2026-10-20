@@ -225,6 +225,20 @@ jobs:
         run: |
           set -o pipefail
           python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
+      - name: Export only exact normal public prerequisites for the separate Java scratch packet
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --export-bundle --language java
+          --native-qualification "$RUNNER_TEMP/java-capsule-authoring"
+          --native-directory "$GITHUB_WORKSPACE/target/debug"
+          --output "$RUNNER_TEMP/java-scratch-prepared"
+      - name: Retain verified normal Java products without keys or compiler caches
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/java-scratch-prepared/
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Capture and compile unchanged published Java worker libraries
         id: prepare-java-worker-libraries
         run: |
@@ -556,19 +570,6 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/guide/projects/results/**
           if-no-files-found: warn
           retention-days: 14
-      - name: Export only exact normal public prerequisites for the separate Java scratch packet
-        run: >-
-          python3 tools/qualify_sdk_scratch.py --export-bundle --language java
-          --native-qualification "$RUNNER_TEMP/java-capsule-authoring"
-          --native-directory "$GITHUB_WORKSPACE/target/debug"
-          --output "$RUNNER_TEMP/java-scratch-prepared"
-      - name: Retain verified normal Java products without keys or compiler caches
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: java-scratch-prepared-${{ github.sha }}
-          path: ${{ runner.temp }}/java-scratch-prepared/
-          if-no-files-found: error
-          retention-days: 3
 
   dependency-ingestion:
     if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}

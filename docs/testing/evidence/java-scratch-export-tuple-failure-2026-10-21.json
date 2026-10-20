@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "latent.java.scratch-export-failure.v1",
+  "status": "failed-original-export",
+  "source": {
+    "feature": "f0927b803729989bd3ba82da4516f7e640654aae",
+    "actualCheckout": "b72d041d077c0e3465fe7a38f54c5e3b8146ab4e"
+  },
+  "origin": {
+    "run": 39498943237,
+    "job": 118891175062,
+    "artifact": 12302012991,
+    "artifactBytes": 114824017,
+    "artifactSha256": "66e33a9d81ac6f667842795d772ecaeb480d110eab17d8067a2a90b6814ea6a8"
+  },
+  "failure": "scratch-original-native-tuple-mismatch",
+  "normalQualification": {
+    "status": "passed",
+    "componentTemplates": [
+      "greeting",
+      "word-count",
+      "shipping",
+      "http-status",
+      "recovery"
+    ],
+    "nodeInvocations": 29,
+    "nodeReceiptDigest": "sha256:6eec88181d20cd8b075547c5fcc4c077a5d0b8eaa9ebf59e870c0b3373d57c42",
+    "nodeClean": true,
+    "nodeReaped": true,
+    "sourceIdentityDigest": "sha256:5c479ad298434f515e64e894e0f1d053c1f05bcabf0fdb91a3adb759a4ad0029",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:8bec92fc5f8860d1bc38cff1b53aed16944488c065a86460a8142cf75208d132",
+        "bytes": 68831256
+      },
+      "latentd": {
+        "sha256": "sha256:af9a6542f596ffc64a820769109f8ddcec421913fde9f8a4a392f6ff6fe9c440",
+        "bytes": 185364008
+      },
+      "examples/package": {
+        "sha256": "sha256:5d1c60df2cab630e4bb19e06cc699b6cf0c930eef418822f025ab416220e2314",
+        "bytes": 17750192
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+        "bytes": 7245472
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:5c661ba4e2c67e43e3a7ed07f9d24e8348c4e6d8dbd06e157fd2a46f062880b8",
+        "bytes": 24017536
+      }
+    }
+  },
+  "laterOrdinaryDefaultBuild": {
+    "status": "passed",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:aefc9eddf0c41a7222e1de48192cc9a3aed77c25e31f4065c34301464bb30fa0",
+        "bytes": 71488064,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:f6d767db6e58e8d0717e04721a6c3ccdda3755eb1f03ece6dd5a27f8e1c45eda",
+        "bytes": 187430152,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:c2d023e7117a72cfbaa1d82d67941b680a3b862458ed6d5d89512b259eeb67a3",
+        "bytes": 20490656,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:6a6157d43ae3a76debf8242d2b93ad255db93453feb1d224c9ba6cd6e56aa2e0",
+        "bytes": 8062512,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:d13b648f847c4a1fda4dee74fd81c9732f7af8c069daff53582c6ac6a4f880df",
+        "bytes": 26562952,
+        "actualFeatures": []
+      }
+    },
+    "changedProducts": [
+      "latent",
+      "latentd",
+      "examples/package",
+      "examples/capsule_contracts",
+      "examples/capsule_authoring"
+    ]
+  },
+  "verification": {
+    "officialArtifactSha256": true,
+    "selectedReceiptMembersWithCrc": 3,
+    "allArchiveMembersValidated": false,
+    "noArchiveExtraction": true,
+    "newNativeOrGuestBuild": false
+  },
+  "repair": {
+    "freezeAfter": "Qualify standalone Java projects, nine SDK components, signed node and printed guide",
+    "beforeLaterCargoBuilds": true,
+    "originalStepCount": 45,
+    "retainedStepCount": 45,
+    "originalCommandsAndConditionsUnchanged": true,
+    "originalStrictTupleReaderUnchanged": true,
+    "newQualifiedExecutionClaim": false
+  },
+  "limitations": [
+    "This records an original failed export and its source-backed ordering repair.",
+    "The previously passed normal and ordinary-default results retain their separate exact identities.",
+    "No pass for a future export, scratch child or current aggregate CI is inferred."
+  ]
+}
