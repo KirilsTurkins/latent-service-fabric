@@ -35,6 +35,7 @@ impl WasmtimeBackend {
             .imports
             .len()
             .saturating_add(surface.type_imports.len())
+            .saturating_add(usize::from(surface.phase_type_owner))
             > 64
             || surface
                 .imports
@@ -62,7 +63,9 @@ impl WasmtimeBackend {
                 runtime.descriptor.metadata["component-digest"].clone(),
             ),
             profile,
-            import_count: (surface.imports.len() + surface.type_imports.len()) as u64,
+            import_count: (surface.imports.len()
+                + surface.type_imports.len()
+                + usize::from(surface.phase_type_owner)) as u64,
             function_count: surface.function_count() as u64,
             hostcall_fuel: surface.hostcall_fuel as u64,
             maximum_lifted_bytes: surface.value_codec_limits.max_lifted_bytes as u64,
@@ -76,8 +79,11 @@ impl WasmtimeBackend {
             type_imports: surface
                 .type_imports
                 .iter()
-                .cloned()
-                .map(ContractId)
+                .map(String::as_str)
+                .chain(surface.phase_type_owner.then_some(
+                    latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY,
+                ))
+                .map(|name| ContractId(name.to_owned()))
                 .collect(),
             exports,
         })

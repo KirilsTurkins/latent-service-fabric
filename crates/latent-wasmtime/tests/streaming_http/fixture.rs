@@ -111,6 +111,58 @@ pub struct Fixture {
     pub io: Arc<IoRuntime>,
     directory: tempfile::TempDir,
 }
+
+#[tokio::test]
+async fn phase_nominal_owner_has_no_operational_binding_or_session() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let f = Fixture::phase_timing(listener.local_addr().unwrap().port(), "/allowed").await;
+    let phase = latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY;
+    let nominal = latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY;
+    let before = (
+        f.broker.snapshot(),
+        f.pools.snapshot().unwrap(),
+        f.io.snapshot(),
+    );
+    let ready = f
+        .backend
+        .prepare_ready_from_repository(f.catalog.clone(), f.prepared.key.clone())
+        .await
+        .unwrap();
+    assert_eq!(ready.imports(), &[ContractId(phase.into())]);
+    let inspected = f.backend.inspect_ready(ready).unwrap();
+    assert_eq!(inspected.import_count, 2);
+    assert_eq!(inspected.imports, [ContractId(phase.into())]);
+    assert_eq!(inspected.type_imports, [ContractId(nominal.into())]);
+    let (mut request, control) = f.request("nominal-is-not-authority", 0);
+    assert_eq!(request.imports.len(), 1);
+    assert_eq!(request.imports[0].contract, phase);
+    request.imports.push(BoundImport {
+        capability: CapabilityId(nominal.into()),
+        contract: nominal.into(),
+        opaque_handle: "not-an-operational-grant".into(),
+    });
+    let report = f.backend.invoke_contained(request, &control).await;
+    assert_eq!(
+        report.outcome.unwrap_err().code,
+        latent_core::PlatformErrorCode::IncompatibleContract
+    );
+    assert_eq!(
+        before,
+        (
+            f.broker.snapshot(),
+            f.pools.snapshot().unwrap(),
+            f.io.snapshot()
+        )
+    );
+    f.idle();
+    assert!(f
+        .pools
+        .shutdown(Instant::now() + Duration::from_secs(2))
+        .await
+        .unwrap()
+        .is_clean());
+}
+
 impl Fixture {
     pub async fn new(port: u16, path: &str) -> Self {
         Self::with_publication(port, path, None).await
@@ -423,15 +475,6 @@ impl Fixture {
             contract: self.capability.into(),
             opaque_handle: "descriptive-only".into(),
         });
-        if self.capability == latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY {
-            // The component imports its original nominal type owner as well;
-            // this descriptive binding installs no legacy callable operation.
-            request.imports.push(BoundImport {
-                capability: CapabilityId(component::CAP.into()),
-                contract: component::CAP.into(),
-                opaque_handle: "descriptive-only".into(),
-            });
-        }
         (
             request,
             Control {

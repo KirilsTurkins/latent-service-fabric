@@ -32,6 +32,7 @@ pub(crate) struct Surface {
     functions: Vec<((String, String), Function)>,
     pub imports: BTreeSet<String>,
     pub type_imports: BTreeSet<String>,
+    pub phase_type_owner: bool,
     pub retained_bytes: usize,
     pub value_codec_limits: crate::values::ValueCodecLimits,
     pub hostcall_fuel: usize,
@@ -164,7 +165,7 @@ pub(crate) fn validate_with_providers(
     let mut remaining = config.value_codec_limits.max_type_nodes;
     let mut retained_bytes = 0;
     retain(1024, &mut retained_bytes, config)?;
-    let (imports, type_imports) = validate_imports(
+    let (imports, type_imports, phase_type_owner) = validate_imports(
         &component_type,
         engine,
         artifact,
@@ -263,6 +264,7 @@ pub(crate) fn validate_with_providers(
         functions: functions.into_iter().collect(),
         imports,
         type_imports,
+        phase_type_owner,
         retained_bytes,
         value_codec_limits: config.value_codec_limits,
         hostcall_fuel: config.hostcall_fuel,
@@ -300,7 +302,7 @@ fn validate_imports(
     remaining: &mut usize,
     retained_bytes: &mut usize,
     providers: Providers,
-) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
+) -> Result<(BTreeSet<String>, BTreeSet<String>, bool), PlatformError> {
     let mut imports = BTreeSet::new();
     let transactional = component_type
         .imports(engine)
@@ -322,6 +324,7 @@ fn validate_imports(
         streaming::validate_phase_aliases(component_type, engine)?;
     }
     let mut type_imports = BTreeSet::new();
+    let mut phase_type_owner = false;
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
         let ComponentItem::ComponentInstance(interface) = item.ty else {
@@ -335,17 +338,18 @@ fn validate_imports(
             type_imports.insert(name.to_owned());
             continue;
         };
+        let nominal_phase_owner = streaming::phase_type_owner(
+            component_type,
+            name,
+            &interface,
+            engine,
+            config.http_phase_timing,
+            providers.phase_http,
+        );
         if specification.binding == latent_core::HostInterfaceBinding::Provider
             && !(transactional && (name == transaction::STATE || name == transaction::INTENTS))
             && !providers.supports(name)
-            && !streaming::phase_type_owner(
-                component_type,
-                name,
-                &interface,
-                engine,
-                config.http_phase_timing,
-                providers.phase_http,
-            )
+            && !nominal_phase_owner
         {
             // Recognition is data-only. Providers require an installed trusted port;
             // a label or a package manifest cannot install I/O.
@@ -407,7 +411,13 @@ fn validate_imports(
             }
         }
         retain(256 + name.len(), retained_bytes, config)?;
-        imports.insert(name.to_owned());
+        if nominal_phase_owner {
+            // This exact nominal resource owner is linked by the phase host,
+            // not by the generic structural-type linker or an operational grant.
+            phase_type_owner = true;
+        } else {
+            imports.insert(name.to_owned());
+        }
     }
     let declared_imports = artifact
         .manifest
@@ -415,18 +425,20 @@ fn validate_imports(
         .iter()
         .map(|import| (import.contract.0.as_str(), import.optional))
         .collect::<BTreeMap<_, _>>();
+    let nominal_owner = latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY;
     if declared_imports.len() != artifact.manifest.imports.len()
+        || (phase_type_owner && !declared_imports.contains_key(nominal_owner))
         || imports
             .iter()
             .any(|name| !declared_imports.contains_key(name.as_str()))
-        || declared_imports
-            .iter()
-            .any(|(name, optional)| !optional && !imports.contains(*name))
+        || declared_imports.iter().any(|(name, optional)| {
+            !optional && !imports.contains(*name) && !(phase_type_owner && *name == nominal_owner)
+        })
     {
         return Err(incompatible("manifest imports disagree with the component"));
     }
 
-    Ok((imports, type_imports))
+    Ok((imports, type_imports, phase_type_owner))
 }
 
 fn validate_type_interface(

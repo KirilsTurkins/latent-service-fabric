@@ -8890,14 +8890,15 @@
         "traps_wrong_kind_stale_handles_and_abort_close_real_owners",
         "phases::phase_component_preserves_actual_latin1_and_observed_empty_reason_and_linear_body",
         "phases::phase_component_header_timeout_returns_uncertain_typed_error_and_closes_transport",
-        "phases::phase_component_body_timeout_reclaims_held_chunk_at_original_store_retirement"
+        "phases::phase_component_body_timeout_reclaims_held_chunk_at_original_store_retirement",
+        "fixture::phase_nominal_owner_has_no_operational_binding_or_session"
       ],
       "expectedIgnored": [],
       "id": "latent-wasmtime.test.streaming-http",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 13,
+      "minimumCases": 14,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
