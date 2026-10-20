@@ -171,7 +171,12 @@ ECMAScript has no standard filesystem API. The corresponding TypeScript packet
 removes its originals and invokes the real isolated compiler for reachable
 `node:fs` open/create/temp operations. Only the exact uninstalled-standard-module
 bundle diagnostic counts. This is compiler-refusal evidence, not a claim that a
-Node filesystem facade executes in the component. The owning language receipts
+Node filesystem facade executes in the component. A default-false `qualify-scratch-refusals`
+selection in the registered TypeScript workflow runs only these three compiler
+refusals under a separate 20-minute job, reusing authenticated historical public
+contracts/packager tools; it performs no native rebuild or node invocation.
+Its current compiler receipt and original compiled-source ancestry remain separate.
+The owning language receipts
 feed the existing SDK conformance work in #694; this adds no cross-language gate.
 
 Related: [captured dependencies](application-dependencies.md),

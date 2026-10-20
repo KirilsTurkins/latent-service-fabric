@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "ScratchReplay.test_changed_original_products_or_incomplete_refusal_never_publish_replay_pass",
+    "ScratchReplay.test_exact_historical_tools_are_checked_before_and_after_three_refusals",
+    "ScratchReplay.test_manual_only_job_cannot_trigger_original_language_jobs_or_build_a_host"
+  ],
+  "guards": {
+    "ScratchReplay.test_changed_original_products_or_incomplete_refusal_never_publish_replay_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c7ea7d3a06f687effc07c59d4b86c019896a832bcf9bdd993652f13085efb4aa",
+        "class:setup-sha256:2cc35aef52efb6a81c240457b421364ea6d9a4d7c929d7efbb3acf98bb925d08"
+      ],
+      "skipSites": []
+    },
+    "ScratchReplay.test_exact_historical_tools_are_checked_before_and_after_three_refusals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c7ea7d3a06f687effc07c59d4b86c019896a832bcf9bdd993652f13085efb4aa",
+        "class:setup-sha256:2cc35aef52efb6a81c240457b421364ea6d9a4d7c929d7efbb3acf98bb925d08"
+      ],
+      "skipSites": []
+    },
+    "ScratchReplay.test_manual_only_job_cannot_trigger_original_language_jobs_or_build_a_host": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c7ea7d3a06f687effc07c59d4b86c019896a832bcf9bdd993652f13085efb4aa",
+        "class:setup-sha256:2cc35aef52efb6a81c240457b421364ea6d9a4d7c929d7efbb3acf98bb925d08"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_scratch_replay.py",
+  "reviewReason": "Add only a default-false manual three-case captured node:fs refusal job using authenticated historical contracts/package tools, preserving all existing language commands, budgets and original native attribution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
