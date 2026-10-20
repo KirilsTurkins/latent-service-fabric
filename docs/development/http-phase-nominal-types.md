@@ -36,8 +36,14 @@ authenticated import engine/splicer, permit only that omission plus the already
 reviewed readiness pruning, and reject changed types, legacy calls or phase
 operations. All thirty-seven existing runtime-profile controls still pass.
 A separate native control checks the same closed omission, malformed owners,
-changed phase and the original comparison budget. Its fresh native run remains
-pending; previous receipts are not rewritten.
+changed phase and the original comparison budget. Its fresh native run passed in
+[run39443901256](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39443901256/job/118700610031):
+all25 Rust controls and four emitted-graph controls passed. The complete archive,
+five product hashes and exact source inventories are retained in the
+[native evidence](../testing/evidence/http-tenant-native-products-2026-10-20.json).
+The earlier c2a39082 run failed to compile one new test because it used a
+nonexistent budget accessor; the corrected test uses the existing snapshot API
+and preserves the same zero-charge assertion. Earlier receipts remain unchanged.
 
 This recognizes descriptive types. It installs no provider, grants no legacy
 operation, changes no default host profile and supplies no destination, credential

@@ -36,6 +36,10 @@ This is a source milestone for the same-node tenant-isolation requirement in
 #688/#691. The additive controls cover exact binding/profile selection, unchanged
 14-slot ceiling, malformed credentials, unique dispatch and original liveness
 errors, plus two real secret stores/registrations on one pool and refusal of a
-foreign sealed session before any outbound charge. Native compilation/execution
-and the signed same-node cross-tenant Java/TypeScript programmes are pending.
-Historical single-provider or native-product receipts do not qualify this change.
+foreign sealed session before any outbound charge. Native compilation and all six new tenant controls passed in
+[run39443901256](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39443901256/job/118700610031),
+including both real protected stores, exact selection and the zero-charge foreign
+session refusal. The complete source/product bindings are retained in the
+[native evidence](../testing/evidence/http-tenant-native-products-2026-10-20.json).
+Signed same-node cross-tenant Java/TypeScript programmes remain separate and
+pending. Historical single-provider receipts are not promoted.
