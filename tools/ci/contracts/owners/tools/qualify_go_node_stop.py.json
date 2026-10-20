@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_node_stop.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual signed Go live node stop: require accepted timer/Store barrier, original limits/deadlines, SIGTERM/reaped zero-owner shutdown and same signed products fresh restart; authenticate completed94d normal27 tuple with default prepared current-source guard unchanged and solely exact unused .NET helper compatibility; execution pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "dc3296825f4d9c96f0612a43acb3a008479489a57e7e64f4023e4d8eab42e81b"
+}

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_sdk_scratch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed additive .NET filesystem qualification: keep original six calls, all other languages, normal75min parent and20min scratch child; add six precise argument cases and explicit joined-CoreLib phase without filesystem grants or native host build.",
+  "reviewReason": "Actual signed Go live node stop: require accepted timer/Store barrier, original limits/deadlines, SIGTERM/reaped zero-owner shutdown and same signed products fresh restart; authenticate completed94d normal27 tuple with default prepared current-source guard unchanged and solely exact unused .NET helper compatibility; execution pending.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4b85d9d3132564f26ee6c80097742c802f0340b9079fcb282ad5e452a53c3b69"
+  "sha256": "5f1adb322183da40e8bbe94992e86eed566a1690090c47c6b50e5610c536c298"
 }
