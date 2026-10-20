@@ -15,6 +15,7 @@ OPERATIONS = ['register', 'park', 'wake', 'settle', 'close', 'timer-start', 'tim
 LIMITS = {'tasks':16, 'executors':2, 'queuedWork':16, 'waits':8, 'timers':8, 'results':8, 'nativeOwners':64}
 SCALARS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:log/log@0.1.0')
 SERVICE = 'my-greeting'
+RUNTIME_SERVICES = {'examples':'activation-host', 'foreign':'foreign-activation'}
 LIVE = ('execution-cell-leases', 'guest-invocations', 'guest-stores', 'guest-host-states', 'guest-component-instances')
 PENDING_MODES = {'node-stop-pending':'pending', 'node-stop-drain':'drain'}
 
@@ -34,13 +35,13 @@ def configure(settings, capsule):
             'resource-runtime-exact-declared-imports')
     resources.configure(settings, {**capsule, 'imports':[r for r in imports if r['contract'] != ACTIVATION]}, 'typescript')
     providers = settings['providers']
-    providers['activationRuntime'] = {'identity':{'id':'activation','tenant':'examples','service':'runtime-host','epoch':1},
+    providers['activationRuntime'] = {'identity':{'id':'activation','tenant':'examples','service':RUNTIME_SERVICES['examples'],'epoch':1},
                                       'limits':dict(LIMITS)}
     providers['scalarAliases'].append({'source':'activation', 'identity':{
-        'id':'activation-foreign','tenant':'foreign','service':'foreign-runtime','epoch':1}})
+        'id':'activation-foreign','tenant':'foreign','service':RUNTIME_SERVICES['foreign'],'epoch':1}})
     for tenant in resources.TENANTS:
         providers['bindings'].append({'name':'activation-'+tenant,'tenant':tenant,'consumerService':SERVICE,
-            'providerService':'runtime-host' if tenant == 'examples' else 'foreign-runtime',
+            'providerService':RUNTIME_SERVICES[tenant],
             'contract':ACTIVATION,'providerBinding':'activation-'+tenant+'-installed'})
     require(len(providers['bindings']) == 9 and len(providers['scalarAliases']) == 4,
             'resource-runtime-original-provider-capacity')
@@ -53,7 +54,8 @@ def grant(client, node, manifest, publication, target, tenant):
     resources.require_denied_before_guest(denied)
     identity = 'activation' if tenant == 'examples' else 'activation-foreign'
     rows = [r for r in node.startup_record['providers'] if r['id'] == identity]
-    require(len(rows) == 1 and rows[0]['tenant'] == tenant and rows[0]['capability'] == ACTIVATION
+    require(len(rows) == 1 and rows[0]['tenant'] == tenant and rows[0]['service'] == RUNTIME_SERVICES[tenant]
+            and rows[0]['capability'] == ACTIVATION
             and rows[0]['profile'] == 'activation-owned-v1' and rows[0]['configurationEpoch'] == '1',
             'resource-runtime-exact-installed-profile')
     binding_id, policy_id = 'activation-'+tenant+'-installed', 'resource-activation-'+tenant

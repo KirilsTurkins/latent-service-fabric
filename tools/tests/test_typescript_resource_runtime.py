@@ -54,11 +54,31 @@ class ResourceRuntimeBoundaries(unittest.TestCase):
             self.assertEqual(selected['providers']['activationRuntime']['limits'],runtime.LIMITS)
             alias=selected['providers']['scalarAliases'][-1]
             self.assertEqual(alias,{'source':'activation','identity':{'id':'activation-foreign',
-                'tenant':'foreign','service':'foreign-runtime','epoch':1}})
+                'tenant':'foreign','service':'foreign-activation','epoch':1}})
             bindings=[b for b in selected['providers']['bindings'] if b['contract']==runtime.ACTIVATION]
             self.assertEqual([b['tenant'] for b in bindings],['examples','foreign'])
             self.assertTrue(all(b['consumerService']=='my-greeting' for b in bindings))
             self.assertNotIn('grants',selected['providers']['activationRuntime'])
+
+    def test_activation_identity_keeps_the_native_installation_scope_distinct_from_clocks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);node=root/'node';node.mkdir();signed=root/'signed';signed.mkdir()
+            (signed/'policy.json').write_bytes(b'{}\n')
+            _path,settings=configure(node,signed,12345,language='typescript')
+            runtime.configure(settings,self.capsule())
+            providers=settings['providers'];activation=providers['activationRuntime']['identity']
+            # The native installation rejects a shared tenant/service with clocks.
+            for field in ('http','clockMonotonic','clockWall'):
+                identity=providers[field]['identity']
+                self.assertNotEqual((activation['tenant'],activation['service']),
+                                    (identity['tenant'],identity['service']))
+            self.assertEqual(activation['service'],'activation-host')
+            self.assertEqual(providers['clockMonotonic']['identity']['service'],'runtime-host')
+            self.assertEqual(providers['clockWall']['identity']['service'],'runtime-host')
+            bindings=[b for b in providers['bindings'] if b['contract']==runtime.ACTIVATION]
+            self.assertEqual([(b['tenant'],b['providerService']) for b in bindings],
+                             [('examples','activation-host'),('foreign','foreign-activation')])
+            self.assertEqual(providers['activationRuntime']['limits'],runtime.LIMITS)
 
     def test_unknown_optional_duplicate_or_undeclared_runtime_import_is_refused(self):
         for change in ('missing','optional','duplicate','foreign'):
