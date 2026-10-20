@@ -717,6 +717,40 @@ class CompilerDownloadBounds(unittest.TestCase):
 
 
 class SelectedRecipeImports(unittest.TestCase):
+    def test_dotnet_lazy_managed_entropy_import_is_owned_by_the_actual_staged_recipe(self):
+        import subprocess
+        staged = self.stage('dotnet')
+        script = '''import importlib,pathlib,sys
+root=pathlib.Path(sys.argv[1]).resolve();sys.path.insert(0,str(root))
+module=importlib.import_module('tools.dotnet_guest.managed_entropy')
+assert callable(module.prepare)
+for name,loaded in tuple(sys.modules.items()):
+    if name.startswith('tools.') and getattr(loaded,'__file__',None):
+        assert pathlib.Path(loaded.__file__).resolve().is_relative_to(root),name
+print('owned-managed-entropy-import')
+'''
+        result = subprocess.run([sys.executable, '-I', '-B', '-c', script, str(staged)],
+            cwd=staged.parent, stdin=subprocess.DEVNULL, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace')[:4096])
+        self.assertEqual(result.stdout.decode('ascii').splitlines(), ['owned-managed-entropy-import'])
+        self.assertEqual(result.stderr, b'')
+        self.assertEqual((staged/'tools/dotnet_guest/managed_entropy.py').read_bytes(),
+            (Path(__file__).resolve().parents[2]/'tools/dotnet_guest/managed_entropy.py').read_bytes())
+
+    def test_missing_staged_dotnet_entropy_helper_never_falls_back_to_checkout(self):
+        import subprocess
+        staged = self.stage('dotnet')
+        (staged/'tools/dotnet_guest/managed_entropy.py').unlink(missing_ok=True)
+        script = '''import importlib,pathlib,sys
+sys.path.insert(0,str(pathlib.Path(sys.argv[1]).resolve()))
+importlib.import_module('tools.dotnet_guest.managed_entropy')
+'''
+        result = subprocess.run([sys.executable, '-I', '-B', '-c', script, str(staged)],
+            cwd=staged.parent, stdin=subprocess.DEVNULL, capture_output=True, timeout=30)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b"ModuleNotFoundError: No module named 'tools.dotnet_guest.managed_entropy'", result.stderr)
+        self.assertEqual(result.stdout, b'')
+
     def stage(self, language):
         from tools.dev_tool_distribution import recipe
         owned = tempfile.TemporaryDirectory()
