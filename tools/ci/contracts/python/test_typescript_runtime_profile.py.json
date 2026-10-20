@@ -5,6 +5,9 @@
     "TypeScriptAbortSourceTests.test_pinned_abort_source_change_is_rejected_before_derivation",
     "TypeScriptAbortSourceTests.test_pinned_timeout_conversion_precedes_signal_graph_allocation",
     "TypeScriptAbortSourceTests.test_unrepresentable_timeout_is_explicit_and_never_promotes_qualification",
+    "TypeScriptClockCompiledGraphTests.test_actual_clock_component_accepts_only_exact_reviewed_envelope_and_readiness_pruning",
+    "TypeScriptClockCompiledGraphTests.test_clock_pruning_preserves_all_eight_functions_three_types_clocks_exports_and_omitted_ABI",
+    "TypeScriptClockCompiledGraphTests.test_clock_pruning_refuses_any_engine_receipt_change_including_core_source_and_version",
     "TypeScriptCompiledGraphTests.test_actual_compiled_graph_accepts_only_source_bound_import_profile_pruning",
     "TypeScriptCompiledGraphTests.test_complete_activation_surface_keeps_original_strict_graph_comparison",
     "TypeScriptCompiledGraphTests.test_private_pruning_never_ignores_http_ownership_clock_export_or_extra_import",
@@ -93,6 +96,42 @@
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptClockCompiledGraphTests.test_actual_clock_component_accepts_only_exact_reviewed_envelope_and_readiness_pruning": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:34d0a50a57ec6eb9837a30917e5816cf0de04a55d50e0ce4d6cf6ab37a0947a7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptClockCompiledGraphTests.test_clock_pruning_preserves_all_eight_functions_three_types_clocks_exports_and_omitted_ABI": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:34d0a50a57ec6eb9837a30917e5816cf0de04a55d50e0ce4d6cf6ab37a0947a7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptClockCompiledGraphTests.test_clock_pruning_refuses_any_engine_receipt_change_including_core_source_and_version": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:34d0a50a57ec6eb9837a30917e5816cf0de04a55d50e0ce4d6cf6ab37a0947a7"
       ],
       "skipSites": []
     },
@@ -447,6 +486,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_runtime_profile.py",
-  "reviewReason": "Bind the actual decoded Fetch graph to only two complete authenticated import-engine activation encodings; preserve public HTTP/clocks/exports and all mandatory signatures.",
+  "reviewReason": "Preserve all existing source/import-profile controls; add three actual e611 CLOCK parser-graph controls binding the complete canonical engine envelope and exact reviewed readiness-only pruning, with engine/signature/clock/export/extra-import negatives; no signed pass claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

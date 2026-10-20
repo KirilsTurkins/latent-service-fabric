@@ -253,4 +253,12 @@ fn protected_provider_configuration_is_opt_in_closed_and_side_effect_free() {
     std::fs::write(&path, serde_json::to_vec(&combined).unwrap()).unwrap();
     let combined = super::NodeConfig::load(&path).unwrap().derive().unwrap();
     assert_eq!(combined.control_blocking_threads(), 2);
+    assert_eq!(
+        combined.worker_stacks.control.maximum_threads(),
+        combined.control_workers() + 2
+    );
+    assert_eq!(
+        combined.worker_stacks.control.maximum_mapping_bytes(),
+        (combined.control_workers() + 2) * crate::worker_stacks::THREAD_MAPPING_ALLOWANCE
+    );
 }
