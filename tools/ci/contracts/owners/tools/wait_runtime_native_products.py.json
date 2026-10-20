@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/wait_runtime_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fixed successful f919 native producer tuple through shared strict factory, no moving-source selection or qualification mint",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "2c44e1bfbb75cb3507bd4408c867828da91ccdae66b052eed109e55b5a63502c"
+}

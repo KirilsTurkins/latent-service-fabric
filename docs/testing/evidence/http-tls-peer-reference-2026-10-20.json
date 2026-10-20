@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "latent.http.tls-peer-independent-review.v1",
+  "status": "passed",
+  "source": "66f3219ae4579b5e6b6f43650f6028271ba24715",
+  "run": 39455143226,
+  "job": 118739931277,
+  "artifact": 12280656715,
+  "archive": "sha256:6325ddf3ad28e58203f0028eed311ca7e5d3aef932033f51adfb76955baf0777",
+  "archiveBytes": 2993,
+  "members": {
+    "certificate.der": {
+      "bytes": 440,
+      "sha256": "c4af3824dddc4f7eb2a7750828b7038feacd7e682d6bc4afd62ed0b52c6f66ff"
+    },
+    "qualified.json": {
+      "bytes": 18822,
+      "sha256": "b2cc86453f904572934f04ab4763002460aa3f92980b6246d54d8aaacad9f539"
+    }
+  },
+  "sourceMaterialsVerified": {
+    "tools/qualify_http_tls_peer.py": {
+      "sha256": "sha256:ca194b2fad9e0374827685b08603165a70361fda1b5dc32d4711a76912910d2f",
+      "bytes": 4425
+    },
+    "tools/http_tls_peer_reference.py": {
+      "sha256": "sha256:e9b1a3fdab0b8cb5d2a303159141efe5c358a23ca6d6f3f2f8b4a10ea861e267",
+      "bytes": 6382
+    },
+    "tools/standard_http/tls_peer.py": {
+      "sha256": "sha256:b9ceee3de15ed7695979dcbce7259e6f575e435d1f70f464fad4aaf7b5c6ea77",
+      "bytes": 11296
+    },
+    "tools/standard_http/peer.py": {
+      "sha256": "sha256:8fa65529659ef2e53166e821da4a86c1622bec1bcec080b050d7e4e4bd04db1f",
+      "bytes": 18941
+    },
+    "tools/standard_http/protocol.py": {
+      "sha256": "sha256:495fb9756c377ba086627f51a69f5e1721fe21b83a5c16b4b97344f3d049b5c7",
+      "bytes": 6517
+    },
+    "tools/standard_http/vectors.py": {
+      "sha256": "sha256:00dc2c620e29f01e54e0c1c23ed3e5f845c1251b62ad0af9bf819be3063683a9",
+      "bytes": 5636
+    },
+    "tools/standard_http/observations.py": {
+      "sha256": "sha256:701478e4b994453e95dd9d9e92dee685493fd3ddec9eb347d939298b13543c20",
+      "bytes": 8185
+    },
+    "tools/owned_test_process.py": {
+      "sha256": "sha256:da38e62f58d2dc3cdd0517c2cc4c77f175afde5299a01bfed75488bb9a862283",
+      "bytes": 11348
+    },
+    ".github/workflows/http-tls-fixture.yml": {
+      "sha256": "sha256:d50cfb285572da16bd000eb1fc0ffaf1dc48432deb1860484ce6c66467eae395",
+      "bytes": 1743
+    }
+  },
+  "publicCertificate": {
+    "sha256": "sha256:c4af3824dddc4f7eb2a7750828b7038feacd7e682d6bc4afd62ed0b52c6f66ff",
+    "bytes": 440
+  },
+  "portableControlsPassed": 10,
+  "realTlsControls": [
+    "tls12-json",
+    "tls13-json",
+    "hostname-refused",
+    "trust-refused",
+    "stalled-handshake-retired",
+    "early-tls-body-close"
+  ],
+  "allMemberCrcAndSourceVerified": true,
+  "signedGuestExecuted": false,
+  "providerAccountingQualified": false,
+  "kernelAccountingQualified": false,
+  "privateKeyRetained": false
+}

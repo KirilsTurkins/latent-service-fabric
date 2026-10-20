@@ -32,6 +32,7 @@ NATIVE_TEST_ONLY = frozenset(('crates/latent-wasmtime/tests/go_smtp_tls.rs',
     'crates/latent-wasmtime/tests/go_smtp_tls/setup.rs'))
 MATERIALS = ('tools/qualify_go_http_tenants.py','tools/go_http_tenant_fixture.py','tools/go_http_tenant_node.py',
     'tools/go_http_library_fixture.py','tools/go_catalogue_free_build.py','tools/go_http_tenant_native_products.py',
+    'tools/wait_runtime_native_products.py','tools/sdk_native_products_reader.py',
     'tools/go_standard_http_node.py','tools/go_standard_http_project.py','tools/go_http_adversarial.py',
     'tools/resource_tenant_node.py','tools/qualify_resource_tenants.py','tools/rust_capsule_node.py',
     'tools/phase2_operator_process.py','tools/phase2_operator_scenario.py','tools/phase3_resource_identity.py',
@@ -69,6 +70,23 @@ def native_compatibility(prepared):
         'auxiliaryCompileInputs':auxiliary,'currentNativeCompilationClaimed':False}
 
 
+def future_native_compatibility(prepared):
+    """Authenticate the current future replay tuple separately from 1ad/6f5."""
+    from tools import wait_runtime_native_products as future
+    proof = future.verify_prepared(prepared)
+    current = source_identity(ROOT)
+    require(current == git_source_identity(future.SOURCE),
+        'go-http-tenant-future-native-source-drift')
+    materials = future.READER._git_materials()
+    auxiliary = {name:row for name,row in materials.items()
+        if name.startswith(('wit/','schemas/','examples/echo-contract/wit/'))}
+    require(auxiliary and all(file_identity(ROOT/name) == row for name,row in auxiliary.items()),
+        'go-http-tenant-future-producer-abi-or-schema-drift')
+    return {'producer':proof,'compiledSource':future.SOURCE,'consumerNativeSource':current,
+        'consumerNativeReference':future.SOURCE,'reviewedUncompiledTestDelta':[],
+        'auxiliaryCompileInputs':auxiliary,'currentNativeCompilationClaimed':False}
+
+
 def qualify(prepared: Path,output: Path):
     require(sys.platform == 'linux','go-http-tenant-linux-required')
     output = fresh(output)
@@ -82,9 +100,10 @@ def qualify(prepared: Path,output: Path):
         'httpsTransportSupported':False,'commands':[]}
     stage = 'authenticate-five-native-products'
     try:
-        original_native = native_compatibility(prepared)
+        original_native = future_native_compatibility(prepared)
         record['native'] = original_native
-        products = native_products(prepared)
+        from tools.wait_runtime_native_products import native_products as future_products
+        products = future_products(prepared)
         for path in products.values():path.chmod(0o700)
         native = {name:products[name]
             for name in ('latent','latentd','capsule_authoring','capsule_contracts','package')}
@@ -132,7 +151,7 @@ def qualify(prepared: Path,output: Path):
             output/'node',min(deadline,time.monotonic()+300))
         require(record['node']['status'] == 'passed' and len(record['node']['cases']) == 19
             and before == {name:file_identity(ROOT/name) for name in MATERIALS}
-            and original_native == native_compatibility(prepared) and original_go == file_identity(go)
+            and original_native == future_native_compatibility(prepared) and original_go == file_identity(go)
             and record['build'] == {name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}
             and catalogue.verify(compiler) == staged and time.monotonic() < deadline,
             'go-http-tenant-final-source-component-native-and-compiler-freeze')

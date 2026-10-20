@@ -88,3 +88,15 @@ was corrected by restoring the original namespace-install prerequisite; no
 isolation guard was weakened. The successful result keeps the original v4
 owner limits and frozen native source. It establishes no managed-v5 HTTP,
 HTTPS, concurrent-tenant, late-remote or kernel accounting qualification.
+
+## Maintained future replay tuple
+
+The final development composition retains the tested 6f5 acquisition code in
+`tools/go_http_tenant_native_products.py` and keeps the shared 8f TypeScript
+helper intact. Its executed observation above remains exactly 1ad/6f5. The
+maintained workflow uses the separately authenticated f919 wait-observer native
+products through the canonical fixed-tuple reader for future builds. It requires
+exact current native source and auxiliary ABI/schema identities; the old 0c313
+historical guard is not broadened. No 19-case execution or new compilation is
+attributed to f919 by this source composition. Guest sources, compiler inputs,
+node/controller oracles and all limits remain unchanged.

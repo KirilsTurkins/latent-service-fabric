@@ -5,6 +5,7 @@ mod lease;
 mod local;
 #[path = "../../../../latent-packaging/tests/fixtures/mod.rs"]
 mod package_fixture;
+mod phase_nominal;
 mod publications;
 mod rejections;
 mod slow_preparation;

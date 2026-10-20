@@ -29,18 +29,18 @@
       },
       {
         "name": "Check source capture catalogue absence tenant authority and strict peer oracles",
-        "run": "python3 -B -m unittest tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products -v"
+        "run": "python3 -B -m unittest tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products tools.tests.test_sdk_native_products_reader -v"
       },
       {
         "name": "Authenticate the fixed native source revision",
-        "run": "git fetch --no-tags origin 6f5f180136d140ac670561695260f71514781015"
+        "run": "git fetch --no-tags origin 6f5f180136d140ac670561695260f71514781015\ngit fetch --no-tags origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b\n"
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Acquire five exact independently installed HTTP products without rebuilding",
-        "run": "python3 -B tools/go_http_tenant_native_products.py --output \"$RUNNER_TEMP/go-http-tenant-native\""
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/go-http-tenant-native\""
       },
       {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
@@ -72,7 +72,7 @@
   },
   "jobId": "tenants",
   "kind": "job",
-  "reviewReason": "Keep the signed Go 6f5 native acquisition implementation byte-exact in a distinct module while retaining the current shared 8f TypeScript producer; module-path-only composition, no new execution claim.",
+  "reviewReason": "Preserve actual 1ad/6f5 signed proof and its frozen guards while selecting the independently authenticated current f919 canonical reader for future workflow runs; all guest/controller/original bounds unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-http-tenant-catalogue.yml"
 }

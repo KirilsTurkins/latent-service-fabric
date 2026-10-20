@@ -203,4 +203,29 @@ class GoHttpTenantControls(unittest.TestCase):
                     node.peer_outcome(altered,tenant)
 
 
+class FutureGoHttpNativeTests(unittest.TestCase):
+    def test_future_tuple_is_separate_and_current_source_exact_without_relabelling_actual_1ad(self):
+        from tools import wait_runtime_native_products as future
+        from tools import qualify_go_http_tenants as q
+        from tools.java_replay_materials import git_source_identity
+        from tools.phase3_resource_identity import source_identity
+        self.assertEqual(future.SOURCE,'f9192fb5785ca7bed8b33dbb869b3d775b72ab4b')
+        self.assertEqual(q.SOURCE,'6f5f180136d140ac670561695260f71514781015')
+        self.assertEqual(source_identity(q.ROOT),git_source_identity(future.SOURCE))
+        proof={'compiledSource':future.SOURCE,'signedQualification':False}
+        auxiliary={'wit/host-abi-phase3-v7.json':q.file_identity(q.ROOT/'wit/host-abi-phase3-v7.json')}
+        with patch.object(future,'verify_prepared',return_value=proof), \
+                patch.object(future.READER,'_git_materials',return_value=auxiliary):
+            result=q.future_native_compatibility(Path('prepared'))
+            self.assertEqual(result['compiledSource'],future.SOURCE)
+            self.assertEqual(result['reviewedUncompiledTestDelta'],[])
+            self.assertIs(result['currentNativeCompilationClaimed'],False)
+            with patch.object(q,'source_identity',return_value={'unreviewed':'source'}), \
+                    self.assertRaisesRegex(WorkflowError,'future-native-source-drift'):
+                q.future_native_compatibility(Path('prepared'))
+            with patch.object(future.READER,'_git_materials',return_value={}), \
+                    self.assertRaisesRegex(WorkflowError,'future-producer-abi-or-schema-drift'):
+                q.future_native_compatibility(Path('prepared'))
+
+
 if __name__ == '__main__':unittest.main()

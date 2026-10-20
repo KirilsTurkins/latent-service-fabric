@@ -34,13 +34,15 @@ jobs:
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Check source capture catalogue absence tenant authority and strict peer oracles
-        run: python3 -B -m unittest tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products -v
+        run: python3 -B -m unittest tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products tools.tests.test_sdk_native_products_reader -v
       - name: Authenticate the fixed native source revision
-        run: git fetch --no-tags origin 6f5f180136d140ac670561695260f71514781015
+        run: |
+          git fetch --no-tags origin 6f5f180136d140ac670561695260f71514781015
+          git fetch --no-tags origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
       - name: Acquire five exact independently installed HTTP products without rebuilding
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/go_http_tenant_native_products.py --output "$RUNNER_TEMP/go-http-tenant-native"
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/go-http-tenant-native"
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
