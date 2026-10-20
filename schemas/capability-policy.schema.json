@@ -544,7 +544,8 @@
             "latent:intents/staging@0.1.0",
             "latent:runtime/activation@0.1.0",
             "latent:network/streams@0.1.0",
-            "latent:runtime-native/threads@0.1.0"
+            "latent:runtime-native/threads@0.1.0",
+            "latent:http/phase-timing@0.4.0"
           ]
         },
         "operations": {
@@ -1112,6 +1113,39 @@
               },
               "resources": {
                 "$ref": "#/$defs/context"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:http/phase-timing@0.4.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "open",
+                    "write",
+                    "finish",
+                    "read",
+                    "chunk-bytes",
+                    "trailers",
+                    "abort-upload",
+                    "abort-body"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/http"
               }
             }
           }

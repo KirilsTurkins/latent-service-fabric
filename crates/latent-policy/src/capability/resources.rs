@@ -332,7 +332,9 @@ impl ResourceConstraint {
                 | (Self::Log { .. }, "latent:log/log@0.1.0")
                 | (
                     Self::Http { .. },
-                    "latent:http/client@0.2.0" | "latent:http/streaming@0.3.0"
+                    "latent:http/client@0.2.0"
+                        | "latent:http/streaming@0.3.0"
+                        | "latent:http/phase-timing@0.4.0"
                 )
                 | (Self::Stream { .. }, "latent:network/streams@0.1.0")
                 | (

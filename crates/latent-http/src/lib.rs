@@ -10,6 +10,7 @@ mod headers;
 mod network;
 pub mod protocol;
 mod provider;
+mod reason;
 mod streaming;
 mod tls;
 pub use config::{
@@ -18,7 +19,10 @@ pub use config::{
 pub use credentials::{HttpCredential, HttpCredentialReference};
 use latent_capabilities::broker::http::HttpError;
 pub use provider::{HttpProvider, HTTP_PROVIDER_PROFILE};
-pub use streaming::{HttpStreamLimits, StreamingHttpProvider, STREAMING_HTTP_PROVIDER_PROFILE};
+pub use streaming::{
+    HttpStreamLimits, StreamingHttpProvider, PHASE_TIMING_HTTP_PROVIDER_PROFILE,
+    STREAMING_HTTP_PROVIDER_PROFILE,
+};
 
 #[cfg(test)]
 mod tests;

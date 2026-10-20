@@ -1,4 +1,4 @@
-use super::{component, support};
+use super::{component, phase_component, support};
 use latent_artifacts::{
     ArtifactRepository, LifecycleScope, ManagedPublicationUpload, ReleaseActor, ReleaseActorKind,
     ReleaseMutationContext, ReleaseOperationPrecondition, ReleaseUseEligibility,
@@ -94,6 +94,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture {
+    capability: &'static str,
     ceiling: latent_core::ResourceBudget,
     _guest_runtime: support::guest_runtime::Runtime,
     _factory: WasmtimeComponentEngineFactory,
@@ -110,14 +111,62 @@ pub struct Fixture {
     pub io: Arc<IoRuntime>,
     directory: tempfile::TempDir,
 }
+
+#[tokio::test]
+async fn phase_nominal_owner_has_no_operational_binding_or_session() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let f = Fixture::phase_timing(listener.local_addr().unwrap().port(), "/allowed").await;
+    let phase = latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY;
+    let nominal = latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY;
+    let before = (
+        f.broker.snapshot(),
+        f.pools.snapshot().unwrap(),
+        f.io.snapshot(),
+    );
+    let ready = f
+        .backend
+        .prepare_ready_from_repository(f.catalog.clone(), f.prepared.key.clone())
+        .await
+        .unwrap();
+    assert_eq!(ready.imports(), &[ContractId(phase.into())]);
+    let inspected = f.backend.inspect_ready(ready).unwrap();
+    assert_eq!(inspected.import_count, 2);
+    assert_eq!(inspected.imports, [ContractId(phase.into())]);
+    assert_eq!(inspected.type_imports, [ContractId(nominal.into())]);
+    let (mut request, control) = f.request("nominal-is-not-authority", 0);
+    assert_eq!(request.imports.len(), 1);
+    assert_eq!(request.imports[0].contract, phase);
+    request.imports.push(BoundImport {
+        capability: CapabilityId(nominal.into()),
+        contract: nominal.into(),
+        opaque_handle: "not-an-operational-grant".into(),
+    });
+    let report = f.backend.invoke_contained(request, &control).await;
+    assert_eq!(
+        report.outcome.unwrap_err().code,
+        latent_core::PlatformErrorCode::IncompatibleContract
+    );
+    assert_eq!(
+        before,
+        (
+            f.broker.snapshot(),
+            f.pools.snapshot().unwrap(),
+            f.io.snapshot()
+        )
+    );
+    f.idle();
+    assert!(f
+        .pools
+        .shutdown(Instant::now() + Duration::from_secs(2))
+        .await
+        .unwrap()
+        .is_clean());
+}
+
 impl Fixture {
     pub async fn new(port: u16, path: &str) -> Self {
         Self::with_publication(port, path, None).await
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "compose the real catalog, grants, provider and fresh Store with explicit owner lifetimes"
-    )]
     pub async fn with_publication(
         port: u16,
         path: &str,
@@ -127,6 +176,40 @@ impl Fixture {
             latent_artifacts::ManagedPublicationReceipt,
         )>,
     ) -> Self {
+        Self::configured(port, path, publication, false).await
+    }
+    pub async fn phase_timing(port: u16, path: &str) -> Self {
+        Self::configured(port, path, None, true).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "compose the same real owners with an explicit phase profile"
+    )]
+    async fn configured(
+        port: u16,
+        path: &str,
+        publication: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_core::ReleaseDigest,
+            latent_artifacts::ManagedPublicationReceipt,
+        )>,
+        phase_timing: bool,
+    ) -> Self {
+        let capability = if phase_timing {
+            phase_component::CAP
+        } else {
+            component::CAP
+        };
+        let bytes = if phase_timing {
+            phase_component::bytes
+        } else {
+            component::bytes
+        };
+        let capsule = if phase_timing {
+            super::packages::phase_capsule
+        } else {
+            super::packages::capsule
+        };
         let mut ceiling = support::budget();
         ceiling.outbound_requests = 8;
         ceiling.wall_time_limit_millis = Some(5000);
@@ -142,18 +225,23 @@ impl Fixture {
                 .unwrap(),
             );
             let mut artifact = support::artifact_bytes(
-                component::bytes(&format!("http://localhost:{port}{path}")),
+                bytes(&format!("http://localhost:{port}{path}")),
                 &[component::CONTRACT],
             );
-            artifact.contracts = super::packages::artifact(&super::packages::capsule(&format!(
-                "http://localhost:{port}{path}"
-            )))
-            .contracts;
+            artifact.contracts =
+                super::packages::artifact(&capsule(&format!("http://localhost:{port}{path}")))
+                    .contracts;
             artifact.manifest.execution.resource_budget_ceiling = ceiling.clone();
             artifact.manifest.imports.push(ContractImport {
-                contract: ContractId(component::CAP.into()),
+                contract: ContractId(capability.into()),
                 optional: false,
             });
+            if phase_timing {
+                artifact.manifest.imports.push(ContractImport {
+                    contract: ContractId(component::CAP.into()),
+                    optional: true,
+                });
+            }
             let release = artifact.descriptor.release_digest.clone();
             let receipt = catalog
                 .publish_managed(
@@ -241,7 +329,12 @@ impl Fixture {
                 redirect_destinations: vec![],
             }],
         };
-        let provider = StreamingHttpProvider::install(
+        let install_provider = if phase_timing {
+            StreamingHttpProvider::install_phase_timing
+        } else {
+            StreamingHttpProvider::install
+        };
+        let provider = install_provider(
             pools.clone(),
             "http-stream",
             1,
@@ -261,6 +354,8 @@ impl Fixture {
             &publication,
             provider.reference().configuration_digest(),
             port,
+            capability,
+            phase_timing,
         );
         let revision = ResolvedRevision {
             target: latent_routing::InvocationTarget {
@@ -277,7 +372,7 @@ impl Fixture {
             attributes: Metadata::new(),
         };
         let guest_runtime =
-            support::guest_runtime::Runtime::new(&broker, &policies, &publication, component::CAP);
+            support::guest_runtime::Runtime::new(&broker, &policies, &publication, capability);
         let plan = broker
             .compile_plan(
                 &revision,
@@ -297,12 +392,20 @@ impl Fixture {
             broker.clone(),
             Arc::new(Plans(plan)),
         ));
-        runtime
-            .install_streaming_http(Arc::new(provider.clone()))
-            .unwrap();
+        if phase_timing {
+            runtime
+                .install_phase_http(Arc::new(provider.clone()))
+                .unwrap();
+        } else {
+            runtime
+                .install_streaming_http(Arc::new(provider.clone()))
+                .unwrap();
+        }
         guest_runtime.install(&runtime);
+        let mut backend_config = support::config();
+        backend_config.http_phase_timing = phase_timing;
         let factory = WasmtimeComponentEngineFactory::with_catalog(
-            support::config(),
+            backend_config,
             WasmtimeHostServices {
                 clock: clock.clone(),
                 log_sink: None,
@@ -322,6 +425,7 @@ impl Fixture {
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
+            capability,
             ceiling,
             _guest_runtime: guest_runtime,
             _factory: factory,
@@ -367,8 +471,8 @@ impl Fixture {
         );
         request.activation.resolved_revision = Some(self.revision.clone());
         request.imports.push(BoundImport {
-            capability: CapabilityId(component::CAP.into()),
-            contract: component::CAP.into(),
+            capability: CapabilityId(self.capability.into()),
+            contract: self.capability.into(),
             opaque_handle: "descriptive-only".into(),
         });
         (
@@ -458,14 +562,26 @@ impl Fixture {
         );
     }
 }
-fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &str, port: u16) {
+fn install(
+    store: &PolicyStore,
+    publication: &ReleaseUseEligibility,
+    digest: &str,
+    port: u16,
+    capability: &str,
+    phase_timing: bool,
+) {
+    let profile = if phase_timing {
+        "bounded-streaming-http-phase-timing-v1"
+    } else {
+        "bounded-streaming-http-identity-v1"
+    };
     for (id, kind, value) in [
         (
             "p",
             RecordKind::Policy,
             json!({"formatVersion":1,"tenant":"tests","rules":[{
                 "id":"allow", "effect":"allow","principals":[{"kind":"service","subject":"generic-test"}],
-                "services":["generic"], "publications":[publication.publication().as_str()], "capability":component::CAP,
+                "services":["generic"], "publications":[publication.publication().as_str()], "capability":capability,
                 "operations":["open"], "resources":{"kind":"http","origins":[{"scheme":"http","host":"localhost","port":port}],"methods":["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"],"paths":["/allowed"],"pathPrefixes":[]},
                 "ceiling":{"operations":1,"inputBytes":65536,"outputBytes":65536,"wallTimeMillis":5000}
             }]}),
@@ -473,8 +589,8 @@ fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &st
         (
             "binding",
             RecordKind::ProviderBinding,
-            json!({"formatVersion":1,"tenant":"tests","capability":component::CAP,
-            "providerProfile":"bounded-streaming-http-identity-v1","configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
+            json!({"formatVersion":1,"tenant":"tests","capability":capability,
+            "providerProfile":profile,"configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
         ),
     ] {
         store
