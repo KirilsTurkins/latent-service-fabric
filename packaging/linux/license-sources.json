@@ -71,6 +71,34 @@
         "wasmtime-internal-versioned-export-macros": "48.0.6",
         "wasmtime-internal-wit-bindgen": "48.0.6"
       }
+    },
+    {
+      "repository": "https://github.com/bytecodealliance/wasmtime",
+      "sourceCommit": "c6846e13f64b07b7912d372db141397058b55f99",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "sourceUrl": "https://github.com/bytecodealliance/wasmtime/blob/c6846e13f64b07b7912d372db141397058b55f99/LICENSE",
+      "donor": {
+        "name": "wasmtime",
+        "version": "48.0.7",
+        "file": "LICENSE"
+      },
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
+      "packages": {
+        "cranelift-assembler-x64": "0.135.7",
+        "cranelift-assembler-x64-meta": "0.135.7",
+        "cranelift-bitset": "0.135.7",
+        "cranelift-isle": "0.135.7",
+        "cranelift-srcgen": "0.135.7",
+        "pulley-interpreter": "48.0.7",
+        "pulley-macros": "48.0.7",
+        "wasmtime-internal-component-macro": "48.0.7",
+        "wasmtime-internal-component-util": "48.0.7",
+        "wasmtime-internal-core": "48.0.7",
+        "wasmtime-internal-jit-debug": "48.0.7",
+        "wasmtime-internal-jit-icache-coherence": "48.0.7",
+        "wasmtime-internal-versioned-export-macros": "48.0.7",
+        "wasmtime-internal-wit-bindgen": "48.0.7"
+      }
     }
   ]
 }

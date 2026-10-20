@@ -3,7 +3,7 @@
   "id": "lsf-host-abi-phase3-v6",
   "world": "latent:platform/capsule@0.6.0",
   "digest": "sha256:0ab48964b4c617fd03515413628632295962c02cb52f54cda9ee447d54666b09",
-  "wasmtimeVersion": "48.0.6",
+  "wasmtimeVersion": "48.0.7",
   "guestGenerator": "wit-bindgen@0.62.0",
   "interfaces": [
     {
