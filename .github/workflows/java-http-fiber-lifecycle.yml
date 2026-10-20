@@ -317,6 +317,8 @@ jobs:
         run: python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v
       - name: Check the captured standard socket timeout exception identity
         run: python3 -B -m unittest tools.tests.test_java_timeout_exception -v
+      - name: Check exact selected phase emission before optional SPI compilation
+        run: python3 -B -m unittest tools.tests.test_java_phase_surface -v
       - name: Check optional SPI authority, original exception and native receipt controls
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -370,6 +372,8 @@ jobs:
             ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-coroutine-*.log
             ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm.log
             ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm-context.command.json
+            ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-expected-wit.log
+            ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-compiled-wit.log
             ${{ runner.temp }}/java-http-spi/campaign/node/qualification.json
             ${{ runner.temp }}/java-http-spi/campaign/node/FAILED.json
             ${{ runner.temp }}/java-http-spi/campaign/node/controls/*.json
