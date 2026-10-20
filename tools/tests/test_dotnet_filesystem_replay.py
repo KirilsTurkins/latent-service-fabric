@@ -84,6 +84,7 @@ class DotnetFilesystemReplay(unittest.TestCase):
         self.assertEqual(job['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.closed_filesystem_replay }}")
         commands = '\n'.join(step.get('run', '') for step in job['steps'])
         self.assertIn('tools/replay_dotnet_filesystem.py --prepare', commands)
+        self.assertIn('git fetch --no-tags --depth=1 origin 75b408ea0184936aa1dc21df2c9dd5e6c44bbc46 ' + replay.PRODUCTION, commands)
         self.assertNotIn('cargo build', commands)
         self.assertNotIn('cargo test', commands)
         self.assertIn('--tools "$RUNNER_TEMP/dotnet-authoring-tools"', commands)
