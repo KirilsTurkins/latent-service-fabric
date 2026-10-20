@@ -17,7 +17,8 @@ from tools.dev_workflow.common import require
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = 'sdk/c-guest/runtime-fixtures/context-lowering/'
 SOURCES = ('tools/qualify_c_context_lowering.py', FIXTURE+'probe.c', FIXTURE+'control.cjs',
-    FIXTURE+'tls-keys.c', FIXTURE+'tls-keys.cjs', 'sdk/c-guest/runtime/tls-keys.c',
+    FIXTURE+'tls-keys.c', FIXTURE+'tls-keys.cjs', FIXTURE+'tss.c', FIXTURE+'tss.cjs',
+    'sdk/c-guest/runtime/tls-keys.c',
     'crates/latent-component-threading/src/c_context.rs',
     'crates/latent-component-threading/src/bin/c-context.rs',
     'crates/latent-component-threading/src/lib.rs',
@@ -139,6 +140,19 @@ def run(output, zig, transformer, node):
             'clearBeforeDestructor':True,'reentryRefused':True,'canonicalChildCreated':False,
             'nativeRuntimeExecuted':False,'pthreadProfileQualified':False}, 'c-context-tls-key-control-result')
         report['tlsKeys'] = tls_keys
+        command([zig,*options,*selected,*header_flags,ROOT/(FIXTURE+'tss.c'),
+                 ROOT/'sdk/c-guest/runtime/tls-keys.c',*link,'-o',output/'tss.wasm'])
+        preimage = identity(output/'tss.wasm')
+        command([transformer,output/'tss.wasm','sha256:'+preimage['sha256'],output/'tss'])
+        tss = json.loads(command([node,'--max-old-space-size=128',ROOT/(FIXTURE+'tss.cjs'),
+            output/'tss/core.wasm',output/'tss/receipt.json']))
+        require(tss == {'schemaVersion':'latent.c.c11-tss-control.v1','status':'passed',
+            'actualCompiledCoreExecuted':True,'contextErrnoIsolation':True,'staleKeyRefusal':True,
+            'sharedPthreadKeyLimit':128,'destructorPassLimit':4,'cyclicPendingRetained':True,
+            'clearBeforeDestructor':True,'reentryRefused':True,'deleteDoesNotRunDestructor':True,
+            'c11ErrorReturns':True,'canonicalChildCreated':False,'nativeRuntimeExecuted':False,
+            'pthreadProfileQualified':False}, 'c-context-c11-tss-control-result')
+        report['c11Tss'] = tss
         require(header_identity(header_roots)==headers, 'c-context-wasi-headers-changed')
         require({name:identity(ROOT/name,16*1024*1024) for name in SOURCES}==original,
                 'c-context-source-changed')
@@ -146,7 +160,8 @@ def run(output, zig, transformer, node):
                 'c-context-tool-changed')
         report['products'] = {name:identity(output/name) for name in
             ('selected.wasm','ordinary-static.wasm','selected.ll','selected/core.wasm','selected/receipt.json',
-             'tls-keys.wasm','tls-keys/core.wasm','tls-keys/receipt.json')}
+             'tls-keys.wasm','tls-keys/core.wasm','tls-keys/receipt.json',
+             'tss.wasm','tss/core.wasm','tss/receipt.json')}
         report['status']='passed'
         return report
     finally:

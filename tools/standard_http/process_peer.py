@@ -11,7 +11,13 @@ if __package__ in {None, ''}:
 from tools.standard_http.peer import Peer
 
 
-def run(credential: Path):
+def run(credential: Path, *, certificate: Path | None = None, private_key: Path | None = None):
+    if (certificate is None) != (private_key is None):
+        raise ValueError('standard-http-tls-certificate-key-pair-required')
+    if certificate is not None:
+        for path in (certificate, private_key):
+            if not path.is_absolute() or path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 65536:
+                raise ValueError('standard-http-tls-regular-bounded-input-required')
     stopping = False
 
     def stop(_number, _frame):
@@ -24,7 +30,11 @@ def run(credential: Path):
         raise ValueError('standard-http-private-credential-required')
     with credential.open('rb') as source:
         authorization = source.read(129)
-    peer = Peer(authorization, maximum_seconds=300)
+    if certificate is None:
+        peer = Peer(authorization, maximum_seconds=300)
+    else:
+        from tools.standard_http.tls_peer import TLSPeer
+        peer = TLSPeer(authorization, certificate, private_key, maximum_seconds=300)
     try:
         print(json.dumps({'destinations': peer.provider_destinations(), 'origins': {
             role: peer.origin(role) for role in ('primary', 'secondary')}}), flush=True)
@@ -43,4 +53,7 @@ def run(credential: Path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--credential', required=True, type=Path)
-    run(parser.parse_args().credential)
+    parser.add_argument('--certificate', type=Path)
+    parser.add_argument('--private-key', type=Path)
+    args = parser.parse_args()
+    run(args.credential, certificate=args.certificate, private_key=args.private_key)

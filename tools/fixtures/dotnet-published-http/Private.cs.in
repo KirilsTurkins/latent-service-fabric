@@ -1,0 +1,25 @@
+using System;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace @NAMESPACE@;
+
+public static class Worker {
+    private static int calls;
+    public static async Task<string> Get(string endpoint, CancellationToken token) {
+        if (++calls != 1) throw new InvalidOperationException("private library state survived activation");
+        using var client = new HttpClient();
+        using var response = await client.GetAsync(endpoint, HttpCompletionOption.ResponseHeadersRead, token);
+        using var input = await response.Content.ReadAsStreamAsync(token);
+        using var document = await JsonDocument.ParseAsync(input, cancellationToken: token);
+        var body = document.RootElement;
+        if (!response.IsSuccessStatusCode) return (int)response.StatusCode + ":error:" + body.GetProperty("message").GetString();
+        var items = body.GetProperty("items");
+        if (items.GetArrayLength() != 2) throw new InvalidOperationException("actual private HTTP parsing changed");
+        return (int)response.StatusCode + ":domain:" + body.GetProperty("id").GetInt32() + ":"
+            + body.GetProperty("name").GetString() + ":" + items[0].GetString() + "|"
+            + items[1].GetString() + ":" + body.GetProperty("empty").GetString();
+    }
+}

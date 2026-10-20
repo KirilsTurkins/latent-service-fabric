@@ -1,7 +1,7 @@
 name: C compiler stack and TLS mechanism
 on:
   push:
-    branches: [feat/c-tls-keys-20261020]
+    branches: [feat/c-tls-keys-20261020, feat/c11-context-tss-20261020]
     paths:
       - 'crates/latent-component-threading/**'
       - 'sdk/c-guest/runtime-fixtures/context-lowering/**'
@@ -62,5 +62,7 @@ jobs:
             ${{ runner.temp }}/c-context-mechanism/selected/*.wasm
             ${{ runner.temp }}/c-context-mechanism/tls-keys/*.json
             ${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm
+            ${{ runner.temp }}/c-context-mechanism/tss/*.json
+            ${{ runner.temp }}/c-context-mechanism/tss/*.wasm
           if-no-files-found: warn
           retention-days: 7

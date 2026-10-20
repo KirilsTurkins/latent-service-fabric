@@ -17,6 +17,6 @@
       <IlcReference Include="$(LsfTaskWaitAssembly)" />
     </ItemGroup>
     <WriteLinesToFile File="$(LsfTaskWaitReferenceReceipt)"
-        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+        Lines="$(LsfTaskWaitAssembly)" Overwrite="false" Encoding="UTF-8" />
   </Target>
 </Project>
