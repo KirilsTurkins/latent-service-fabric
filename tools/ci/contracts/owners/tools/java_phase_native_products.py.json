@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/java_phase_native_products.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add focused V7 standard Fetch signed consumer and exact native acquisition; preserve all historical commands and cases.",
+  "reviewReason": "Pin the completed shared V7 producer and add direct CLI bootstrap; preserve existing acquisition guards and source/native separation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1e11c122c911055f748d5c50e79bf6c64c1bdfbe3058ee5d478097e10ca0e786"
+  "sha256": "a0e5366adc088cf68b98ea020d11c68dde5cf3b86d410362e05e6c320efd9326"
 }
