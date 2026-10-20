@@ -32,10 +32,10 @@ from tools.typescript_guest.build import build
 IDENTITIES = (('outside-fetch-alpha', '1.0.0'), ('outside-fetch-delta', '2.4.0'))
 VECTORS = (
     ('ky-json', 0, '/conformance/json', 'ky:'),
-    ('ofetch-json', 1, '/conformance/json', 'ofetch:'),
+    ('wretch-json', 1, '/conformance/json', 'wretch:'),
     ('outside-json', 2, '/conformance/json', 'outside:'),
     ('ky-http404-unsupported', 3, '/conformance/status/404', 'ky:unsupported:response-status-text'),
-    ('ofetch-http404-unsupported', 4, '/conformance/status/404', 'ofetch:unsupported:response-status-text'),
+    ('wretch-http404-error', 4, '/conformance/status/404', 'wretch:error:404'),
     ('ky-fresh', 0, '/conformance/json', 'ky:'),
 )
 

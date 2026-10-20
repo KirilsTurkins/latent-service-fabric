@@ -1,4 +1,4 @@
-"""Normal captured Ky/ofetch callers; native execution is a separate gate."""
+"""Normal captured Ky/Wretch callers; native execution is a separate gate."""
 from __future__ import annotations
 
 import json
@@ -16,10 +16,10 @@ from tools.rust_capsule_project import ROOT, digest, inventory, read_file, snaps
 from tools.typescript_application_dependencies import resolve
 from tools.typescript_guest.runtime_profile import IMPORT_PROFILE
 
-PACKAGES = {'ky': '2.2.0', 'ofetch': '1.5.1'}
+PACKAGES = {'ky': '2.2.0', 'wretch': '3.0.9'}
 INTEGRITIES = {
     'ky': 'sha512-4+B63kyZt+Y8snQiUGydK1vgY9xYQJZEh9K/nIAIEts+gYJzy1EiAw3BbK8xpWRuWUpN70SNCMjqRGTm75xxIA==',
-    'ofetch': 'sha512-2W4oUZlVaqAPAil6FUg/difl6YhqhUR7x2eZY4bQCko22UXg3hptq9KLQdqFClV+Wu85UX7hNtdGTngi/1BxcA==',
+    'wretch': 'sha512-RXJQp5aOBfHQaDCLRyFXQooWDBOHrQxVgCH/6OFaFPBKjeUiXMQ3NV1b8qqI7CR+v4meVBWYs242P8n+rWRjzA==',
 }
 MAIN = b'''import type * as Contract from '../generated/interfaces/examples-typescript-fetch-api.js';
 import {request, initialized} from './default-client.js';
@@ -33,14 +33,14 @@ export const api: typeof Contract = {
 };
 '''
 CLIENT = '''import ky, {HTTPError} from 'ky';
-import {ofetch, FetchError} from 'ofetch';
+import wretch from 'wretch';
 import {read} from '@PRIVATE@';
 export const initialized = typeof fetch === 'function' && typeof Request === 'function' &&
   typeof Response === 'function' && typeof Headers === 'function' &&
-  typeof ky === 'function' && typeof ofetch === 'function';
+  typeof ky === 'function' && typeof wretch === 'function';
 export async function request(mode: number, url: string): Promise<string> {
   if (mode === 0) return `ky:${JSON.stringify(await ky.get(url).json())}`;
-  if (mode === 1) return `ofetch:${JSON.stringify(await ofetch(url))}`;
+  if (mode === 1) return `wretch:${JSON.stringify(await wretch(url).get().json())}`;
   if (mode === 2) return `outside:${JSON.stringify(await read(url))}`;
   if (mode === 3) {
     try { await ky.get(url).json(); }
@@ -53,24 +53,22 @@ export async function request(mode: number, url: string): Promise<string> {
     throw new Error('published-fetch-ky-missing-http-error');
   }
   if (mode === 4) {
-    try { await ofetch(url); }
+    try { await wretch(url).get().json(); }
     catch (error) {
-      if (error instanceof FetchError && error.statusCode === 404 && error.data.status === 404)
-        return 'ofetch:error:404';
-      if (error instanceof TypeError && error.message === 'lsf-fetch-buffered-v1:unsupported:response-status-text')
-        return 'ofetch:unsupported:response-status-text';
+      if (error instanceof wretch.WretchError && error.status === 404)
+        return 'wretch:error:404';
       throw error;
     }
-    throw new Error('published-fetch-ofetch-missing-http-error');
+    throw new Error('published-fetch-wretch-missing-http-error');
   }
   throw new TypeError('published-fetch-mode');
 }
 '''
-PRIVATE = b'''import {ofetch} from 'ofetch';
+PRIVATE = b'''import wretch from 'wretch';
 let calls = 0;
 export async function read(url) {
   if (++calls !== 1) throw new Error('outside-fetch-state-reused');
-  return await ofetch(url);
+  return await wretch(url).get().json();
 }
 '''
 
@@ -97,7 +95,7 @@ def capture(app: Path, outside: Path, private_name: str, private_version: str) -
     outside.mkdir(mode=0o700)
     declaration = {'name': private_name, 'version': private_version, 'type': 'module',
         'license': 'Apache-2.0', 'exports': {'types': './index.d.ts', 'import': './index.mjs'},
-        'dependencies': {'ofetch': PACKAGES['ofetch']}}
+        'dependencies': {'wretch': PACKAGES['wretch']}}
     (outside/'package.json').write_bytes((json.dumps(declaration, indent=2)+'\n').encode())
     (outside/'index.mjs').write_bytes(PRIVATE)
     (outside/'index.d.ts').write_bytes(b'export function read(url: string): Promise<unknown>;\n')

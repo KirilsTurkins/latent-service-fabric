@@ -43,9 +43,9 @@ class PublishedFetchTests(unittest.TestCase):
             self.assertEqual(value['limits']['wallTimeLimitMillis'], 120000)
             caller = (app/'src/default-client.ts').read_text()
             self.assertIn("import ky, {HTTPError} from 'ky'", caller)
-            self.assertIn("import {ofetch, FetchError} from 'ofetch'", caller)
+            self.assertIn("import wretch from 'wretch'", caller)
             self.assertIn("await ky.get(url).json()", caller)
-            self.assertIn("await ofetch(url)", caller)
+            self.assertIn("await wretch(url).get().json()", caller)
             self.assertNotRegex(caller, r'\bfetch\s*:\s*(?:[a-zA-Z_({])')
             self.assertIn("from 'outside-fetch-alpha'", caller)
             self.assertNotIn('latent:', caller)
@@ -56,19 +56,20 @@ class PublishedFetchTests(unittest.TestCase):
                 with self.subTest(name=name), self.assertRaises(WorkflowError):
                     fixture.project(Path(temporary)/'never-created', name)
 
-    def test_private_source_is_transitive_ordinary_ofetch_and_variants_differ(self):
-        self.assertIn(b"import {ofetch} from 'ofetch'", fixture.PRIVATE)
-        self.assertIn(b'return await ofetch(url)', fixture.PRIVATE)
+    def test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ(self):
+        self.assertIn(b"import wretch from 'wretch'", fixture.PRIVATE)
+        self.assertIn(b'return await wretch(url).get().json()', fixture.PRIVATE)
         self.assertNotIn(b'fetch: ', fixture.PRIVATE)
         self.assertEqual(len(set(qualify.IDENTITIES)), 2)
         self.assertEqual(len({name for name, _version in qualify.IDENTITIES}), 2)
         self.assertEqual(len({version for _name, version in qualify.IDENTITIES}), 2)
-        self.assertEqual(fixture.PACKAGES, {'ky':'2.2.0','ofetch':'1.5.1'})
+        self.assertEqual(fixture.PACKAGES, {'ky':'2.2.0','wretch':'3.0.9'})
 
     def test_default_error_helper_unsupported_is_never_claimed_as_http_error_qualification(self):
         errors = [row for row in qualify.VECTORS if row[2].endswith('/404')]
         self.assertEqual(len(errors), 2)
-        self.assertTrue(all('unsupported' in row[0] and 'unsupported:response-status-text' in row[3] for row in errors))
+        self.assertEqual(errors[0], ('ky-http404-unsupported',3,'/conformance/status/404','ky:unsupported:response-status-text'))
+        self.assertEqual(errors[1], ('wretch-http404-error',4,'/conformance/status/404','wretch:error:404'))
         self.assertIn("error.message === 'lsf-fetch-buffered-v1:unsupported:response-status-text'", fixture.CLIENT)
         self.assertNotIn('throwHttpErrors: false', fixture.CLIENT)
         self.assertNotIn('ignoreResponseError: true', fixture.CLIENT)

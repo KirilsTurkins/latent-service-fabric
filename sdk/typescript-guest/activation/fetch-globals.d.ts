@@ -1,6 +1,27 @@
 // Candidate buffered API only; the compiler adds these declarations only with
 // the exact async-import runtime and declared typed streaming HTTP capability.
 type HeadersInit = Headers | Iterable<readonly [string, string]> | Record<string, string>;
+
+// Erased result types do not install Blob/FormData constructors or body support.
+interface Blob { readonly size: number; readonly type: string; }
+interface FormData { readonly [Symbol.toStringTag]: string; }
+declare class URL {
+    constructor(url: string | URL, base?: string | URL);
+    href: string;
+    protocol: string;
+    username: string;
+    password: string;
+    host: string;
+    hostname: string;
+    port: string;
+    pathname: string;
+    search: string;
+    hash: string;
+    readonly origin: string;
+    readonly searchParams: URLSearchParams;
+    toString(): string;
+    toJSON(): string;
+}
 declare class URLSearchParams implements Iterable<[string, string]> {
     constructor(init?: string | Iterable<readonly [string, string]> | Record<string, string>);
     readonly size: number;
