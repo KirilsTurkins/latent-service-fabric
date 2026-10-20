@@ -181,6 +181,12 @@ jobs:
               '--','--exact','--test-threads=1')
           require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in release_command_name,
               'native-products-release-preparation-one-command-name-control')
+          release_dispatch=commands.run('release-preparation-dispatch-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent','--lib',
+              'management::execute::tests::parsed_release_prepare_keeps_management_dispatch_and_exact_selection',
+              '--','--exact','--test-threads=1')
+          require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in release_dispatch,
+              'native-products-release-preparation-one-dispatch-control')
           require(before==source_identity(root) and materials==material_identities(),
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)
