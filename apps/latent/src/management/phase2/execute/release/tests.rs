@@ -32,3 +32,32 @@ fn committed_publication_requires_descriptor_and_exact_admitted_package() {
     value.release = None;
     publication_identity(&value, Some(&expected)).unwrap();
 }
+
+#[test]
+fn prepared_release_projection_is_bounded_lossless_and_never_execution_authority() {
+    let value = proto::PrepareReleaseResponse {
+        publication: Some(proto::PublicationRef {
+            id: format!("publication:sha256:{}", "a".repeat(64)),
+            tenant: "examples".into(),
+        }),
+        lifecycle_generation: u64::MAX,
+        component_digest: format!("sha256:{}", "b".repeat(64)),
+        prepared: true,
+    };
+    projection::checked(&value, 4096).unwrap();
+    let output = value.clone().project();
+    assert_eq!(output["lifecycleGeneration"], u64::MAX.to_string());
+    assert_eq!(output["executionAuthorized"], false);
+    assert!(output.get("handle").is_none());
+    for index in 0..5 {
+        let mut invalid = value.clone();
+        match index {
+            0 => invalid.publication = None,
+            1 => invalid.lifecycle_generation = 0,
+            2 => invalid.prepared = false,
+            3 => invalid.component_digest = "not-a-digest".into(),
+            _ => invalid.component_digest.reserve(4096),
+        }
+        assert!(projection::checked(&invalid, 4096).is_err());
+    }
+}

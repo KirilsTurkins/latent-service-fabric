@@ -44,17 +44,19 @@ class FrozenNativeProducts:
     retains its fixed members, source/material verification, limits and origin
     checks for later exact tuples without copying another acquisition algorithm.
     """
-    def __init__(self, *, source, run, job, artifact, receipts, branch, stages, event='push'):
+    def __init__(self, *, source, run, job, artifact, receipts, branch, stages, event='push', include_protocol=False):
         require(type(source) is str and re.fullmatch(r'[0-9a-f]{40}', source)
             and type(run) is int and run > 0 and type(job) is int and job > 0
             and type(branch) is str and re.fullmatch(r'[A-Za-z0-9._/-]{1,128}', branch)
             and type(event) is str and event in ('push', 'workflow_dispatch')
+            and type(include_protocol) is bool
             and type(stages) is tuple and 0 < len(stages) <= 32
             and len(set(stages)) == len(stages)
             and all(type(stage) is str and re.fullmatch(r'[a-z0-9-]{1,80}', stage) for stage in stages),
             'sdk-native-frozen-configuration')
         self.source, self.run, self.job, self.branch = source, run, job, branch
         self.stages, self.event = stages, event
+        self.include_protocol = include_protocol
         # Own detached data so callers cannot mutate the original pin dictionaries.
         self.artifact, self.receipts = copy.deepcopy(artifact), copy.deepcopy(receipts)
         self._pins()
@@ -87,6 +89,10 @@ class FrozenNativeProducts:
         """One bounded Git batch binds all actual auxiliary compile-input trees."""
         trees = {'wit': (2048, 8*1024**2), 'schemas': (256, 4*1024**2),
                  'examples/echo-contract/wit': (128, 1024**2)}
+        # Historical tuples retain exactly their original auxiliary tree set.
+        # New generated-RPC producers opt in before freezing immutable pins.
+        if self.include_protocol:
+            trees['api/proto'] = (128, 1024**2)
         raw = subprocess.check_output(['git', 'ls-tree', '-rz', self.source, '--',
             *MATERIALS, *trees], cwd=ROOT, timeout=30)
         require(len(raw) <= 1024**2, 'sdk-native-material-tree-bound')

@@ -3,6 +3,7 @@ mod lifecycle;
 mod package;
 #[cfg(test)]
 mod package_tests;
+mod preparation;
 mod publication;
 mod selector;
 #[cfg(test)]
@@ -19,6 +20,7 @@ use super::{
 };
 
 pub use conversion::{release_descriptor_from_proto, release_descriptor_to_proto};
+pub use preparation::{MAX_RELEASE_PREPARATION_WAIT_MILLIS, RELEASE_PREPARATION_RPC_PATH};
 pub use web::{
     MAX_WEB_MUTATION_WAIT_MILLIS, MAX_WEB_PREPARATION_WAIT_MILLIS, WEB_EVIDENCE_RPC_PATH,
     WEB_PREPARATION_RPC_PATH, WEB_PUBLICATION_RPC_PATH,
@@ -26,6 +28,13 @@ pub use web::{
 
 #[tonic::async_trait]
 impl proto::release_service_server::ReleaseService for ManagementServiceAdapter {
+    async fn prepare_release(
+        &self,
+        request: Request<proto::PrepareReleaseRequest>,
+    ) -> Result<Response<proto::PrepareReleaseResponse>, Status> {
+        self.release_prepare(request).await
+    }
+
     async fn prepare_web_publication(
         &self,
         request: Request<proto::PrepareWebPublicationRequest>,
