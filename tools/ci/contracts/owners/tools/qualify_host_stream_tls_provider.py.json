@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_tls_provider.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add test-only actual bounded TLS provider real-peer controls with unchanged public refusal, original23-case ownership catalogue and finite source-bound witness; accounting remains unqualified",
+  "reviewReason": "Extend actual current bounded TLS reference with maximum-valid TLS1.2/1.3 and last physical trust-owner controls; preserve all23 old cases, public refusal, original900-second timeout and every original allowance; no production qualification",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9c34cae94b988645deb31f7d2f0c8669781cd067af4fe71194ee0bf5c77b846e"
+  "sha256": "ebc8b72200a414211d57508919201c5c9d83a5ba72bf618ad913c2a91b07ce51"
 }
