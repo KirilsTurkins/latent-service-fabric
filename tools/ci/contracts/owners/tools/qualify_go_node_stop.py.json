@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_node_stop.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual6a76 first fresh signed call PASS then strict global audit-loss oracle FAIL (157drops); source try_lock proves optional loss can occur with queue space. Require every original named timer/start/next/close positive witness, exact scope/unique fully paged query, plus new actual tenant/node ProviderCall ownership and live Store/caller. Retain raw loss; never infer absence, exclusivity or full stream coverage. Same queue64/guest/cell/request/terminal limits. Two old-source counterexamples/current29 focused PASS; complete live-stop execution pending.",
+  "reviewReason": "Actual d277/run39386430188 source-preflight refusal before compiler/node: authenticate exact Java and root-reviewed resource default-off unused workflow helpers and original/current full3299-file inventories whose only native delta is the uncompiled startup integration test runtime-stack assertions. Retain original94d normal27/native5 attribution; receipt explicitly reports declared inventory inequality and no native rebuild. Unknown helper/inventory/preimage/used-source drift refused; generic prepared remains current and strict. Original18 tests byte-AST-equal, two new controls, all31 focused PASS. No guest/native run claimed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "376f956d51b7e2a0fe15ec865f2076620f5537e07d7e093a96ce717b1ed318f7"
+  "sha256": "24f42a5b9875a93f3f62737bcd23f49b0319dc733e60b6c15c849ce89c19d2eb"
 }
