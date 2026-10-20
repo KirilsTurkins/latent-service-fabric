@@ -72,6 +72,35 @@ class HttpErrorPortTests(unittest.TestCase):
         (self.tools / "http-errors/HttpErrors.dll").write_bytes(b"different-parent-helper")
         self.assertEqual((destination / "http-errors/HttpErrors.dll").read_bytes(), b"control-compiler-tool")
 
+    def test_captured_cache_binds_exact_authenticated_framework_paths(self):
+        cache = self.root / "private-nuget-cache"
+        selected = tuple(cache / http_errors.PACKAGE / folder / "System.Net.Http.dll"
+                         for folder in ("lib", "native-hidden"))
+        for path in selected:
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"control-original")
+        port = self.prepare(package_cache=cache)
+        self.assertEqual(port.originals, selected)
+        document = http_errors.XML.fromstring((self.project / "Capsule.csproj").read_bytes())
+        self.assertEqual(document.findtext(".//LsfHttpErrorOriginalPublic"), http_errors.msbuild_literal(selected[0]))
+        self.assertEqual(document.findtext(".//LsfHttpErrorOriginalPrivate"), http_errors.msbuild_literal(selected[1]))
+        port.recheck()
+        selected[0].write_bytes(b"unknown-framework")
+        with self.assertRaisesRegex(ValueError, "unsupported-material"):
+            port.recheck()
+
+    def test_captured_cache_unknown_framework_denies_before_rewrite_or_project_mutation(self):
+        cache = self.root / "private-nuget-cache"
+        for folder in ("lib", "native-hidden"):
+            path = cache / http_errors.PACKAGE / folder / "System.Net.Http.dll"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"unknown-framework")
+        before = (self.project / "Capsule.csproj").read_bytes()
+        with self.assertRaisesRegex(ValueError, "unsupported-material"):
+            self.prepare(package_cache=cache)
+        self.assertEqual((self.project / "Capsule.csproj").read_bytes(), before)
+        self.assertEqual(self.stages, [])
+
     def test_namespace_capture_rejects_unknown_framework_before_creating_destination(self):
         from tools.dotnet_compiler_isolation import stage_http_errors
         http_errors.source_paths(self.tools)[0].write_bytes(b"unknown-framework")
@@ -89,6 +118,10 @@ class HttpErrorPortTests(unittest.TestCase):
         wasi = [*sorted(runtime.WASI_HTTP_IMPORTS), "wasi:random/random@0.2.6", "wasi:random/insecure@0.2.6"]
         compiler, work, output = fixture.application(fixture.root, emitted=[runtime.CLOCK, *wasi], final=declared)
         compiler.http_error_tools = self.tools
+        for original in http_errors.source_paths(self.tools):
+            captured = compiler.package_cache / original.relative_to(self.tools / "packages")
+            captured.parent.mkdir(parents=True, exist_ok=True)
+            captured.write_bytes(original.read_bytes())
         compiler.generated_materials, compiler.compiler_patches = [], []
         compiler.wac.write_bytes(b"owned unit-boundary component composer")
         original_run, original_native = compiler.run, compiler.native_aot
@@ -119,6 +152,7 @@ class HttpErrorPortTests(unittest.TestCase):
             return original_run(stage, executable, *arguments)
         def native(project, compiled, wrapper):
             port = compiler.http_error_port
+            self.assertTrue(all(compiler.package_cache in path.parents for path in port.originals))
             self.assertIn(port.assembly, compiler.isolation.read_only_inputs)
             self.assertIn(port.targets, compiler.isolation.read_only_inputs)
             original_native(project, compiled, wrapper)
