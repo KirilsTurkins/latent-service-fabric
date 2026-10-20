@@ -92,6 +92,11 @@ class JavaResourceRuntime(unittest.TestCase):
         for name, data in sources.items():
             self.assertEqual((self.project / 'src/main/java/dev/latent/guest/resources' / name).read_bytes(), data)
         self.assertEqual(receipt['generatedSources'], json.loads(inventory(sources)))
+        stream_name = 'dev/latent/guest/resources/ImmutableResourceStream.java'
+        stream = (self.sdk / 'resources/compiler' / stream_name).read_bytes()
+        self.assertEqual((self.project / 'src/main/java' / stream_name).read_bytes(), stream)
+        self.assertEqual(receipt['compilerPortSources'][stream_name],
+                         json.loads(inventory({stream_name: stream}))[stream_name])
         resources.recheck(self.data, receipt)
         self.assertNotIn(b'java.lang.ClassLoader', sources['ImmutableResources.java'])
 
@@ -116,7 +121,7 @@ class JavaResourceRuntime(unittest.TestCase):
         self.assertIn(b'java.util.Objects.requireNonNull(name)', generated['ImmutableResources.java'])
         self.assertIn(b'default: return null;', generated['ImmutableResources.java'])
         self.assertIn(b'\\u96ea', generated['ImmutableResources.java'])
-        self.assertIn(b'new java.io.ByteArrayInputStream', generated['Data0000.java'])
+        self.assertIn(b'new ImmutableResourceStream', generated['Data0000.java'])
         self.assertEqual(generated, resources.generated_sources({'data/quote-\u96ea.txt': payload}))
 
     def test_immutable_sdk_or_generated_source_collision_fails_before_compiler(self):
@@ -150,6 +155,7 @@ class JavaResourceRuntime(unittest.TestCase):
     def test_resource_port_is_part_of_each_new_project_sdk_source_identity(self):
         sources = sdk_snapshot(self.sdk)
         self.assertIn('resources/compiler/dev/latent/guest/resources/compiler/ImmutableResourcePlugin.java', sources)
+        self.assertIn('resources/compiler/dev/latent/guest/resources/ImmutableResourceStream.java', sources)
         self.assertEqual(sources['resources/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin'],
                          b'dev.latent.guest.resources.compiler.ImmutableResourcePlugin\n')
 

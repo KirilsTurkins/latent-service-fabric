@@ -1,7 +1,8 @@
 # Java resources retained by ordinary timer callbacks
 
 The new `examples/java-resource-runtime` fixture is a candidate for the existing
-`teavm-activation-fibers-io-v1` profile. It adds no compiler or scheduler port.
+`teavm-activation-fibers-io-v1` profile. It uses the existing scheduler port;
+the compiler-owned immutable resource stream corrects the locked bulk reads.
 An application calls an outside parent JAR, which depends on a second resource
 JAR. The normal add-local, resolve, exact review and CAS path captures both JARs
 and their UTF-8/NUL, binary and empty data before the originals are removed.
@@ -105,3 +106,23 @@ observes only fresh, clear and parallel under the same grants and caps. Exact
 success values and real traps remain separate raw observations; every call must
 still be known/reaped and physically retired. Its `diagnostic.json` explicitly
 sets `originalProgrammePassed:false` and cannot qualify the normal 13 programme.
+
+The [retained diagnostic observation and direct stream controls](evidence/java-resource-stream-bulk-read-reference-2026-10-20.json)
+record three real traps: fresh and clear before any log bytes, and parallel after
+219 bytes. The diagnostic job succeeded in retaining those observations; it did
+not pass the joined programme. The exact TeaVM 0.15.0 class-library JAR exposes
+the cause: `readAllBytes()` and `readNBytes(int)` copy bytes without advancing
+the stream position. The unchanged outside library correctly requires EOF after
+reading the remainder.
+
+Generated resources now return a compiler-owned `ByteArrayInputStream` subclass.
+Only its two bulk-read methods change: copy before advancing, reject negative
+lengths without mutation, and bound the count before addition. `readAllBytes`
+retains the standard JDK method's synchronization. The locked class-library JAR,
+all inherited methods, fresh per-open arrays, application source, EOF assertion,
+authority and budgets remain unchanged. The ordinary SDK snapshot and resource
+profile bind the exact helper source. Direct controls execute against the real
+pinned TeaVM superclass: five old cases are RED, all eight corrected cases are
+GREEN. They include subsequent reads, bounded/maximum/zero/negative lengths,
+empty streams, mark/reset, close and independent readers. These host controls
+require a fresh signed guest result before any joined-runtime qualification.
