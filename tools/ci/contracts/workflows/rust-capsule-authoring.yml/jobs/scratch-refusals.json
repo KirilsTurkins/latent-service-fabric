@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed ordinary Rust scratch refusal and fresh-state packet",
+    "needs": "authoring",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the existing bounded compiler namespace and pinned bindings",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\ncargo fetch --locked --target wasm32-unknown-unknown\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Read only this run's identity-checked existing native products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "rust-scratch-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-scratch-prepared"
+        }
+      },
+      {
+        "name": "Check captured-source and exact-outcome refusal controls",
+        "run": "python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification"
+      },
+      {
+        "name": "Execute original signed programme and six ordinary filesystem refusal calls",
+        "run": "python3 tools/qualify_sdk_scratch.py --language rust --native-qualification \"$RUNNER_TEMP/rust-scratch-prepared\" --output \"$RUNNER_TEMP/rust-scratch-refusals\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded diagnostic evidence including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-scratch-refusals-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-scratch-refusals/qualification.json\n${{ runner.temp }}/rust-scratch-refusals/FAILED.json\n${{ runner.temp }}/rust-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/rust-scratch-refusals/logs/**\n${{ runner.temp }}/rust-scratch-refusals/build/*.json\n${{ runner.temp }}/rust-scratch-refusals/build/logs/**\n${{ runner.temp }}/rust-scratch-refusals/build/component.wasm\n${{ runner.temp }}/rust-scratch-refusals/build/component.wit\n${{ runner.temp }}/rust-scratch-refusals/node/workflow.json\n${{ runner.temp }}/rust-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/rust-scratch-refusals/node/controls/*.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "scratch-refusals",
+  "kind": "job",
+  "reviewReason": "Preserve all original Rust jobs and35-minute authoring commands; add a20-minute same-normal-products scratch child and existing source-bound compatibility projection, with unknown errors/traps separated from concrete Unsupported.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}

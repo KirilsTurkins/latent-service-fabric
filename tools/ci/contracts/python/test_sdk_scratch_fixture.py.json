@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "ScratchFixture.test_five_standard_creators_preserve_sdk_profile_wit_limits_and_greeting_cases",
+    "ScratchFixture.test_invalid_language_and_typescript_case_refuse_before_any_project_writes",
+    "ScratchFixture.test_operations_are_genuine_standard_APIs_and_never_provider_or_application_filesystem_shims"
+  ],
+  "guards": {
+    "ScratchFixture.test_five_standard_creators_preserve_sdk_profile_wit_limits_and_greeting_cases": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:be032c0ec823c9f296250a94981c50fa801de68bd47899311f350c11c0d9b09d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScratchFixture.test_invalid_language_and_typescript_case_refuse_before_any_project_writes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:be032c0ec823c9f296250a94981c50fa801de68bd47899311f350c11c0d9b09d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScratchFixture.test_operations_are_genuine_standard_APIs_and_never_provider_or_application_filesystem_shims": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:be032c0ec823c9f296250a94981c50fa801de68bd47899311f350c11c0d9b09d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_scratch_fixture.py",
+  "reviewReason": "Prepare ordinary five-language scratch API and exact reached node:fs compiler refusal packets without any filesystem grant, preserving normal source/native/package inputs, owner retirement, fresh state and separate Unsupported classification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

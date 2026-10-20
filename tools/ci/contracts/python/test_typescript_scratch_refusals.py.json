@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "TypeScriptScratchRefusals.test_capture_setup_generic_trap_and_wrong_profile_do_not_count_as_filesystem_refusal",
+    "TypeScriptScratchRefusals.test_real_bundle_refusal_does_not_claim_a_node_runtime_or_signed_component",
+    "TypeScriptScratchRefusals.test_success_component_or_uncompleted_compiler_refuses"
+  ],
+  "guards": {
+    "TypeScriptScratchRefusals.test_capture_setup_generic_trap_and_wrong_profile_do_not_count_as_filesystem_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5256d804886d9d373d5bef0ec89f674161f7784c16d1ce8949687b8d5b11e7dc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptScratchRefusals.test_real_bundle_refusal_does_not_claim_a_node_runtime_or_signed_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5256d804886d9d373d5bef0ec89f674161f7784c16d1ce8949687b8d5b11e7dc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptScratchRefusals.test_success_component_or_uncompleted_compiler_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5256d804886d9d373d5bef0ec89f674161f7784c16d1ce8949687b8d5b11e7dc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_scratch_refusals.py",
+  "reviewReason": "Prepare ordinary five-language scratch API and exact reached node:fs compiler refusal packets without any filesystem grant, preserving normal source/native/package inputs, owner retirement, fresh state and separate Unsupported classification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
