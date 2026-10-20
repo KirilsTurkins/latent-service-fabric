@@ -43,10 +43,27 @@ Run the finite source controls with:
 python -B -m unittest tools.tests.test_java_resource_conformance -v
 ```
 
-Those controls do not establish a signed pass. The new programme is pending
-actual component execution. Compiler-cache acquisition may compile its ordinary
+Those source controls are separate from the actual signed observation below.
+Compiler-cache acquisition may compile its ordinary
 warm-up greeting; that output is separate from the observed resource component.
 An explicitly historical diagnostic replay must retain its original native and
 companion ancestry and cannot manufacture a current normal qualification.
 Concurrent callbacks, root cancellation, pending flush, cross-tenant state and
 the full six-language resource/error matrix remain open under #681/#736.
+
+## Actual finite observation
+
+[Run39383037165/job118496297846](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39383037165/job/118496297846),
+frozen source7b5119c, passed all39 outcomes: original29 plus ten new calls,
+36 physical samples,16 zero-active-owner samples and clean shutdown. All seven
+data cases returned exact values, followed by the explicit trap and fresh binary
+recovery. Actual wall1792480163322ms and monotonic12766821029ns both exceeded
+32bits, with no sleep or test-clock override. Wall was inside the retained host
+interval; monotonic origin remains activation-local.
+
+The [source-bound observation](../testing/evidence/java-resource-conformance-signed-2026-10-20.json)
+authenticates artifact12247220241/all418 members, all79 exercised production
+materials, the fresh619577-byte greeting/component/source inventory and original
+79d companions/03a helpers/75 host ancestry. No native/five-template rebuild or
+fabricated current normal receipt was used. The required coupled runtime/
+concurrent/cross-tenant matrix remains open.

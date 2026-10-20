@@ -310,4 +310,6 @@ the supported logging, wall/monotonic clock and approved entropy paths alongside
 their profile, grant, provenance and error limitations. The new
 [Java resource conformance programme](java-resource-conformance.md) separately
 requires exact transitive binary/empty/text and independent-stream results;
-source controls alone do not establish its pending signed outcome.
+its finite39-outcome signed observation is now source-bound. The separate
+[Go/Rust/TypeScript resource breadth programme](embedded-resource-conformance.md)
+is still pending signed execution.

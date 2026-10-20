@@ -52,5 +52,5 @@ The individual guides link finite signed observations and failed predecessors.
 They are not a current-head build of every profile or the required coupled
 six-language programme. Concurrent resource/log callbacks, root cancellation,
 pending flush, late completion and fresh cross-tenant state remain explicit
-work under #681/#736. The new [Java resource conformance](java-resource-conformance.md)
-programme is still pending actual execution; its source controls are not a pass.
+work under #681/#736. The [Java resource conformance](java-resource-conformance.md) observation
+now proves its finite39-outcome programme; it does not close those coupled rows.
