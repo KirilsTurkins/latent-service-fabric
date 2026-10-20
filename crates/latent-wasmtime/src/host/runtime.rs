@@ -22,6 +22,8 @@ use wasmtime::{component::Linker, AsContextMut};
 mod fixed_result;
 pub(super) use fixed_result::Completion;
 use fixed_result::FixedValue;
+mod positive_timer_observer;
+use positive_timer_observer::{Event as TimerEvent, Observer as TimerObserver};
 
 pub(crate) const CAPABILITY: &str = "latent:runtime/activation@0.1.0";
 const STOP_OBSERVATION: Duration = Duration::from_millis(10);
@@ -33,12 +35,14 @@ pub(crate) struct Table {
     timers: Vec<RuntimeTimer>,
     runtime: ActivationRuntime,
     pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
+    timer_observer: Option<TimerObserver>,
     _allocation: HostMemoryReservation,
 }
 impl Table {
     fn new(
         budget: latent_core::ActivationBudget,
         limits: RuntimeLimits,
+        timer_observer: Option<TimerObserver>,
     ) -> Result<Self, PlatformError> {
         let bytes = limits.total() as u64 * std::mem::size_of::<RuntimeOwner>() as u64
             + u64::from(limits.timers) * std::mem::size_of::<RuntimeTimer>() as u64
@@ -70,6 +74,7 @@ impl Table {
             timers,
             runtime,
             native_stacks: None,
+            timer_observer,
             _allocation: allocation,
         })
     }
@@ -98,7 +103,12 @@ fn table(state: &mut HostState) -> Result<&mut Table, PlatformError> {
         )
     })?;
     if state.runtime.is_none() {
-        state.runtime = Some(Table::new(state.accounting.budget().clone(), limits)?);
+        let observer = TimerObserver::for_activation(&state.context.activation_id.0);
+        state.runtime = Some(Table::new(
+            state.accounting.budget().clone(),
+            limits,
+            observer,
+        )?);
     }
     let table = state.runtime.as_mut().expect("initialized table");
     table.runtime.check_live()?;
@@ -260,6 +270,9 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
     });
     sync!("close", (), (), |table| {
         table.runtime.close();
+        if let Some(observer) = &table.timer_observer {
+            observer.record(TimerEvent::RootClose, table.runtime.snapshot().owners);
+        }
         Ok(())
     });
     sync!("observe", (), (), |table| {
@@ -302,6 +315,9 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                     )?;
                     let value = timer.token();
                     table.timers.push(timer);
+                    if let Some(observer) = &table.timer_observer {
+                        observer.record(TimerEvent::StartAccepted, table.runtime.snapshot().owners);
+                    }
                     Ok(wit::Token {
                         generation: value.generation,
                         id: value.id,
@@ -439,7 +455,7 @@ fn prepare_wait(
             return PreparedWait {
                 result: Err(error),
                 failed_call: None,
-            }
+            };
         }
     };
     let result = (|| {
@@ -495,7 +511,7 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
             return PreparedWait {
                 result: Err(error),
                 failed_call: None,
-            }
+            };
         }
     };
     let result = (|| {
@@ -519,6 +535,9 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
             .find(|timer| timer.token() == token)
             .ok_or_else(|| failure(PlatformErrorCode::InvalidArgument, "runtime-timer-token"))?;
         let timer_wait = timer.begin_wait()?;
+        if let Some(observer) = &table.timer_observer {
+            observer.record(TimerEvent::NextEntered, table.runtime.snapshot().owners);
+        }
         let requested = timer_wait.requested();
         Ok(WaitingTimer {
             runtime: table.runtime.clone(),
