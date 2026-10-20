@@ -14,5 +14,8 @@ public final class HttpSubstitution implements SubstitutionPolicy {
         sink.selectClasses(name -> name.startsWith(STANDARD) && API.contains(name.substring(STANDARD.length())))
             .replacePackage("java.net", "dev.latent.guest.client.net")
             .dontFallbackWhenNoSubstitution();
+        sink.selectClasses(name -> name.equals("javax.net.ssl.HttpsURLConnection"))
+            .replacePackage("javax.net.ssl", "dev.latent.guest.client.ssl")
+            .dontFallbackWhenNoSubstitution();
     }
 }

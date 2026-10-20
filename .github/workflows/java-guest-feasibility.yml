@@ -5,6 +5,8 @@ on:
     branches: [development]
     paths:
       - 'sdk/java-guest/**'
+      - 'examples/java-http-request/**'
+      - 'examples/java-david-webb/**'
       - 'examples/java-http-composition/**'
       - 'examples/java-transaction-schema/**'
       - 'contracts/state/application-aggregate-*.schema.json'
@@ -278,12 +280,35 @@ jobs:
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Test published Java factory capture and replay identity controls
+        run: python3 -B -m unittest tools.tests.test_java_published_http tools.tests.test_java_published_replay -v
+      - name: Qualify two unchanged published Java clients through the same standard backend
+        run: >-
+          python3 -B tools/qualify_java_published_http.py
+          --output "$RUNNER_TEMP/java-published-http"
+          --native "$RUNNER_TEMP/java-server-lifecycle/selected-native"
+          --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json"
+          --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2"
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/java-published-http/qualification.json
+            ${{ runner.temp }}/java-published-http/FAILED.json
+            ${{ runner.temp }}/java-published-http/campaign/qualification.json
+            ${{ runner.temp }}/java-published-http/campaign/http-request/qualification.json
+            ${{ runner.temp }}/java-published-http/campaign/http-request/build/*.json
+            ${{ runner.temp }}/java-published-http/campaign/http-request/provider/qualification.json
+            ${{ runner.temp }}/java-published-http/campaign/http-request/provider/after-*.json
+            ${{ runner.temp }}/java-published-http/campaign/http-request/provider/controls/standard-*.json
+            ${{ runner.temp }}/java-published-http/campaign/webb-build/*.json
+            ${{ runner.temp }}/java-published-http/campaign/webb-build/compiler-logs/*-java-to-c.log
+            ${{ runner.temp }}/java-published-http/campaign/webb-node/qualification.json
+            ${{ runner.temp }}/java-published-http/campaign/webb-node/after-*.json
+            ${{ runner.temp }}/java-published-http/campaign/webb-node/controls/standard-*.json
             ${{ runner.temp }}/java-private-http/qualification.json
             ${{ runner.temp }}/java-private-http/FAILED.json
             ${{ runner.temp }}/java-private-http/variant-*/build/BUILD-COMPLETE.json

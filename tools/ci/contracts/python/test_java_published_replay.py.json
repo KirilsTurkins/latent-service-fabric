@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "PublishedJavaReplay.test_actual_campaign_passthrough_keeps_native_history_separate",
+    "PublishedJavaReplay.test_observer_failure_preserves_original_campaign_exception",
+    "PublishedJavaReplay.test_product_change_after_campaign_refuses_before_success_receipt"
+  ],
+  "guards": {
+    "PublishedJavaReplay.test_actual_campaign_passthrough_keeps_native_history_separate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c904cbcfcc6ecf37d8f19935b5e93aa95d863fb746fcc0f8e3e23b4b84d1f5cd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaReplay.test_observer_failure_preserves_original_campaign_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c904cbcfcc6ecf37d8f19935b5e93aa95d863fb746fcc0f8e3e23b4b84d1f5cd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedJavaReplay.test_product_change_after_campaign_refuses_before_success_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c904cbcfcc6ecf37d8f19935b5e93aa95d863fb746fcc0f8e3e23b4b84d1f5cd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_published_replay.py",
+  "reviewReason": "Preserve historical native identities and original failure in explicit replay",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
