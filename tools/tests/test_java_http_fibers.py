@@ -1275,3 +1275,42 @@ class JavaProducerReceiptPreimages(unittest.TestCase):
             with mock.patch.object(products,'git_source_identity',side_effect=RuntimeError('must-not-read-git')), \
                     self.assertRaisesRegex(WorkflowError,'receipt-preimage'):
                 products.verify_prepared(root)
+
+
+class JavaHostImportFairness(unittest.TestCase):
+    def test_selected_async_poll_yields_without_consuming_or_replaying_owned_calls(self):
+        from tools.java_guest import async_imports
+        from tools.java_guest.model import Graph
+        from tools.java_guest.bindings import generate
+        import inspect
+        data = {
+            'worlds': [{'name': 'service', 'imports': {'interface-1': {'interface': {'id': 1}}},
+                'exports': {'interface-0': {'interface': {'id': 0}}}, 'package': 0}],
+            'interfaces': [
+                {'name': 'api', 'package': 0, 'types': {}, 'functions': {'run': {
+                    'name': 'run', 'kind': 'freestanding', 'params': [], 'result': 'u32'}}},
+                {'name': 'pending', 'package': 0, 'types': {}, 'functions': {'wait': {
+                    'name': 'wait', 'kind': 'async-freestanding', 'params': [], 'result': 'u32'}}}],
+            'types': [],
+            'packages': [{'name': 'examples:sample@1.0.0', 'interfaces': {'api': 0, 'pending': 1},
+                'worlds': {'service': 0}}]}
+        header = ('void exports_examples_sample_api_run(uint32_t *ret);\n'
+            'extern probe_subtask_status_t examples_sample_pending_wait(uint32_t *result);\n')
+        graph = Graph(data, 'service', header, async_imports=True)
+        source = async_imports.generate(graph)
+        poll = source.split('void lsf_java_async_poll(void) {', 1)[1].split('\n}', 1)[0]
+        self.assertIn('if (!lsf_async_set_exists) return;', poll)
+        self.assertEqual(poll.count('probe_thread_yield();'), 1)
+        self.assertLess(poll.index('if (!lsf_async_set_exists) return;'), poll.index('probe_thread_yield();'))
+        self.assertLess(poll.index('probe_thread_yield();'), poll.index('probe_waitable_set_poll('))
+        self.assertLess(poll.index('probe_waitable_set_poll('), poll.index('lsf_async_event(&event);'))
+        for unsafe in ('probe_waitable_set_wait(', 'probe_subtask_drop(', 'lsf_java_async_begin(',
+                'lsf_java_async_take(', 'lsf_java_async_cancel_root_wait(', 'lsf_release(',
+                'lsf_async_count--', 'lsf_async_set_exists = false'):
+            self.assertNotIn(unsafe, poll)
+        # The selected generator remains behind the existing explicit profile;
+        # polling a retained set neither grants new WIT operations nor rebuilds a call.
+        dispatch = inspect.getsource(generate)
+        self.assertIn('async_imports.generate(model) if fiber_io_profile else c.generate(model)', dispatch)
+        self.assertIn('lsf_async_count < 64', source)
+        self.assertIn('probe_waitable_set_wait(lsf_async_set, &event); lsf_async_event(&event);', source)

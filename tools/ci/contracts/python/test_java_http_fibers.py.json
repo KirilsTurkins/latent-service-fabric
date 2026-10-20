@@ -21,6 +21,7 @@
     "JavaExplicitNativeProducer.test_source_profile_and_closed_receipt_fields_cannot_be_relabelled",
     "JavaFailedLifecycleObservation.test_failed_actual_result_keeps_pending_peer_and_original_assertion",
     "JavaFailedLifecycleObservation.test_observation_error_never_replaces_original_result_failure",
+    "JavaHostImportFairness.test_selected_async_poll_yields_without_consuming_or_replaying_owned_calls",
     "JavaHttpDiagnosticCallBoundary.test_diagnostic_only_explicit_connect_keeps_all_strict_java_callers_byte_exact",
     "JavaHttpDiagnosticCallBoundary.test_unknown_boundary_extra_payload_or_unreaped_result_never_projects",
     "JavaHttpDiagnosticCallBoundary.test_v2_closed_operation_boundary_distinguishes_open_from_headers_without_raw_text",
@@ -307,6 +308,18 @@
       "skipSites": []
     },
     "JavaFailedLifecycleObservation.test_observation_error_never_replaces_original_result_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHostImportFairness.test_selected_async_poll_yields_without_consuming_or_replaying_owned_calls": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -837,6 +850,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Preserve all63cases/guards; add refusal of changed prepared receipt preimages before Git/product access and pin independently verified actual a4f artifact metadata.",
+  "reviewReason": "Preserve all 64 case bodies and skip guards; add selected async bridge host-yield ordering/ownership/source-selection control for the real 9c fuel-exhaustion regression.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

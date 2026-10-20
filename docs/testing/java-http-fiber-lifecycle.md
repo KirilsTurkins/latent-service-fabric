@@ -144,3 +144,23 @@ bounded stderr, after cleanup, into `controls/http-refusals.json`. Raw stderr,
 URLs, identities and exception messages are excluded. Observer retention cannot
 replace the original assertion or cleanup failure, and the projection always
 has `qualification=false`; an absent marker is not evidence of success.
+
+
+On source `9cfea774`, run `39404622270`, job `118567443579`, the
+new a4f-native campaign built successfully and passed its ordinary HTTP preflight.
+Both pending modes then exhausted exactly 1,000,000,000 fuel with one accepted
+TCP connection and no request bytes. The bounded native refusal projection
+contained no records. This establishes neither sibling progress nor a provider
+refusal cause; the prior `854f4b5a` admission failure remains separate.
+
+The selected fiber-I/O bridge now uses the maintained canonical
+`probe_thread_yield()` before polling a retained waitable set. A Java
+`Thread.yield()` only reschedules the guest queue; `waitable-set.poll` itself
+does not suspend to the host executor. Without the canonical yield, a continuously
+runnable guest readiness loop can starve the pending host import. The new yield
+retains every original call/result/wait owner; it performs no take, cancellation,
+operation replay, sleep or budget change. It may also yield voluntarily when
+a retained set contains a completion not yet consumed. The synchronous bridge
+and its default profile are unchanged. The identical signed lifecycle programme
+must still pass on a newly compiled component; source controls alone do not
+qualify the repair.
