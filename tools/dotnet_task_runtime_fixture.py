@@ -12,7 +12,7 @@ from tools.dotnet_application_dependencies import resolve
 from tools.dotnet_guest.compiler import Compiler
 from tools.dotnet_guest.project import create
 from tools.dotnet_guest import entropy_grants
-from tools.dotnet_guest.runtime import ACTIVATION
+from tools.dotnet_guest.runtime import ACTIVATION, WALL
 from tools.phase2_operator_process import require
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, snapshot
@@ -149,7 +149,7 @@ def declare(project: Path):
     require(source.count('greet: func(') == 1 and source.count('world service {') == 1,
             'dotnet-task-canonical-greeting')
     wit.write_text(source.replace('greet: func(', 'greet: async func(')
-        .replace('world service {', 'world service {\n    import ' + ACTIVATION + ';'), encoding='utf-8')
+        .replace('world service {', 'world service {\n    import ' + ACTIVATION + ';\n    import ' + WALL + ';'), encoding='utf-8')
     for name, body in snapshot(ROOT / 'wit/platform/activation-runtime').items():
         target = project / 'wit/deps/activation-runtime' / name
         target.parent.mkdir(parents=True, exist_ok=True)
