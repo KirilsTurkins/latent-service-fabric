@@ -172,7 +172,14 @@ decoded result. Both original failures remain retained; the new joined Task
 wait candidate still requires fresh signed pending/disposal and retirement
 qualification.
 
-## Joined Task wait candidate
+## Original joined Task wait derivation
+
+The initial derivation described below required the HTTP profile and left finite
+waits unsupported. The current maintained task profile also works without HTTP;
+its separately selected [finite/cancellable wait extension](../testing/dotnet-finite-task-waits.md)
+now has eighteen signed outcomes with explicit CLOCK, ACTIVATION, WALL and RANDOM
+and an authenticated async export. The historical source and results below are
+preserved; they are not fresh qualification of the extension.
 
 The pinned WASI CoreLib has a concrete additional boundary: direct
 `TaskAwaiter.GetResult()` enters `Task.InternalWaitCore` for a pending Task,
