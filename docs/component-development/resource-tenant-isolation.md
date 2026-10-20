@@ -125,3 +125,55 @@ barriers, exact zero peer counts, clean shutdown and final source/product
 identities. No Cargo, guest compiler, native build or successful sibling replay
 was performed.
 No six-language coupled or concurrent completion is claimed.
+
+## Retained .NET resource component
+
+The separate twenty-minute .NET reference reuses the exact original AOT
+component `ae70bb14ba532ab9cfcef0ea342e9929c08586e77d94e03d71f444ef0076fe74`
+from producer `a1028e1bd854700f27e75017349c58b88b53b0d5`. Only its fixed public
+member is acquired from that large archive. Five verbatim original compiler
+records come from the authenticated earlier closed-Console observation; both
+producers and every selected member preimage are fixed. Complete archive
+digests are recorded as API identities, without claiming they were downloaded
+or rehashed. No private source, NuGet payload, compiler cache or credentials
+is reconstructed.
+
+The original descriptor and four WIT files must match the original source
+inventory. Its public Cargo metadata and two package seeds are fetched only
+from the exact original Git revision and checked against the source/recipe
+inventories. The normal contracts tool must reproduce the original complete
+package-input inventory digest before derivation. Unknown or missing bytes
+fail closed.
+
+The maintained closed-only adapter transformation and normal composer must
+then preserve all ten original core modules and the complete public graph,
+changing only the four known private I/O operations (sixteen original async
+type declarations across the closed graph). The fresh
+observation has its own source, recipe, component digest and explicit
+`nativeAotCompilation:false` derivation material. It preserves the original
+AOT records verbatim and carries the original observation plus derivation as
+ordinary JSON assets; inherited typed compiler parameters describe ancestry.
+No schema allowance, BCL recompilation, core rewrite or runtime/HTTP async
+profile change is introduced. The normal packager and existing two-tenant
+signer/admission/controller remain authoritative.
+
+The existing outside library's ordinary EmbeddedResource/StreamReader
+initializer and explicit trap now passed the fresh seven-call programme in
+[run39420425077/job118619700956](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39420425077/job/118619700956)
+at source `2159d9e8871421d14298af3f1f9d0e4618a465ce`, with original
+CLOCK/RANDOM/LOG declarations and independently scoped grants. The
+[authenticated observation](../testing/evidence/dotnet-resource-tenants-signed-2026-10-20.json)
+checks all230 archive members,31 Git-bound helpers, ten unchanged core modules,
+the complete public graph and four private I/O type changes. The selected
+3,002,308-byte component reproduces the earlier `f6fdeac776f931cadafa997668cb7802747bb3dcecb7ebb7e326617e6de0f418`
+component exactly; this result comes from fresh metadata derivation, packaging,
+signing and admitted execution, rather than borrowing its earlier Console pass.
+
+All seven calls plus the independent missing-grant denial were known and reaped;
+nine physical samples, eight zero-owner samples, exact zero peer contacts,
+clean shutdown and final source/product identities passed. The first fd7 setup
+failure remains failed: a real-runner red/green control covers creation of the
+owned command directory before codec selection. No .NET SDK, NativeAOT, native
+host or original full baseline was rebuilt. The maintained twenty-minute lane
+is explicit manual-only after its initial branch indexing. Full concurrent,
+pending-flush, root-cancellation and late-work requirements remain open.

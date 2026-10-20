@@ -17,8 +17,8 @@ connection-establishment boundary. Nonzero `setReadTimeout` values select respon
 headers and each subsequent provider read, independently. Zero remains an absent
 phase timer. Neither setter extends or replaces the original activation deadline.
 Only the new typed connect/read timeout outcomes become `SocketTimeoutException`;
-the original root deadline and cancellation remain their original `HttpFailure`
-codes. A timed-out header operation retains its explicit uncertain-completion
+original root interruption retains its root outcome or `HttpFailure` code and
+cannot satisfy a phase-timeout assertion. A timed-out header operation retains its explicit uncertain-completion
 cause. Failed operations preserve the first exception and never recreate or
 replay an upload or body read.
 
@@ -51,5 +51,21 @@ They write no HTTP and do not warm or retry the guest. The guest's explicit
 `connect()` must report the connect-specific timeout; returning from connect,
 a read timeout, or a root interruption cannot satisfy that result. Separate
 pending-connect cases preserve the root deadline/cancellation distinction.
-This fixture and its pure ownership/source controls are preparation only; no
-TeaVM, V7 native or signed execution result is claimed yet.
+The maintained campaign plans 16 signed invocations: eleven primary cases and
+five fresh calls after terminal operations, with two separate zero-fuel authority
+denials. The three connect cases own separate full backlogs, require a real
+connecting-pool owner and issue no HTTP. The one-second connect timer leaves a
+finite observation window; root-deadline cases retain the original three-second
+root bound, and provider/activation ceilings are unchanged. The exact peer oracle
+requires thirteen HTTP contacts, no secondary contact or mutation, physical zero
+owners after each invocation, and a clean/reaped final node. Results, shutdown,
+peer and product checks are retained separately before the compact summary.
+
+V7 native producer `77bf0e3f3b68e17342b6146abd6f2de34a3efa00`, run
+`39420914927` / job `118621322461`, completed successfully. Its five products,
+eleven filtered controls, exact native sources and 114 compile materials are
+authenticated separately from the current Java fixture/compiler source. The
+consumer refuses a different native source or any extra/changed WIT, schema or
+echo compile input; it does not rebuild native binaries or relabel the old a4
+products. Actual TeaVM compilation and these signed Java outcomes remain pending.
+The programme is a partial #688/#741 qualification, not whole-issue closure.

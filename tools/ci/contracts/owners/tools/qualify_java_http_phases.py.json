@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_http_phases.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one default-false explicit V7 Java phase qualification; preserve the complete original fiber job, every step/command/field/limit/default. Fetch exact producer source before controls, capture three public runtime JARs normally and require one fresh phase component with two ordinary clients plus operation/root/retirement boundaries. No native rebuild, oracle weakening or full-ticket claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "bbf0ed797a66986cc67d7215bbcf196732385f24e3e109344be899845d70aad5"
+}

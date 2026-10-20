@@ -41,7 +41,7 @@ public final class Capsule implements Bindings.Exports {
         try {
             connection = (HttpURLConnection)new URL(endpoint + path).openConnection();
             connection.setInstanceFollowRedirects(false);
-            connection.setConnectTimeout(which == 7 ? 100 : which >= 8 ? 5000 : 1000);
+            connection.setConnectTimeout(which == 7 ? 1000 : which >= 8 ? 5000 : 1000);
             connection.setReadTimeout(which == 2 || which == 3 ? 100 : 5000);
             if (which == 1 || which == 6) connection.setReadTimeout(1000);
             if (which >= 7) {
