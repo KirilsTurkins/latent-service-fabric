@@ -346,6 +346,18 @@ impl Runtime {
         owner
     }
 
+    /// Add only tenant-scoped policies for existing provider registrations.
+    /// This test-operator helper allocates no second provider or executor.
+    pub fn authorize_additional_tenant(
+        &self,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+    ) {
+        self.authorize(policies, tenant, scopes, call_wall_millis);
+    }
+
     fn authorize(
         &self,
         policies: &PolicyStore,
