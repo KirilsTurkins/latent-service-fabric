@@ -1,0 +1,54 @@
+name: Ordinary managed client response boundaries
+on:
+  push:
+    branches: ['feat/dotnet-http-library-edges-20261020']
+    paths: ['.github/workflows/dotnet-http-library-edges.yml', 'tools/dotnet_http_library_edges_node.py', 'tools/qualify_dotnet_http_library_edges.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: dotnet-http-library-edges-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  signed-boundaries:
+    name: Original Flurl Refit component with real malformed and bounded responses
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install existing locked reader dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Fetch the exact original native and component sources
+        run: git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b 7e3de703bc7666cee9407ff15205b9d5809a9c20
+      - name: Check original archive and native provenance boundaries
+        run: python3 -B -m unittest tools.tests.test_dotnet_published_http_replay tools.tests.test_sdk_native_products_reader -v
+      - name: Authenticate five original native products without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/edges-native"
+      - name: Execute ten ordinary library body boundaries and two pre-entry refusals
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/qualify_dotnet_http_library_edges.py --native "$RUNNER_TEMP/edges-native" --output "$RUNNER_TEMP/http-library-edges"
+      - name: Retain public ancestry and actual signed response-boundary outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-http-library-edges-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/edges-native/*.json
+            ${{ runner.temp }}/http-library-edges/*.json
+            ${{ runner.temp }}/http-library-edges/node/*.json
+            ${{ runner.temp }}/http-library-edges/node/controls/*.json
+            ${{ runner.temp }}/http-library-edges/original/published-http/FAILED.json
+            ${{ runner.temp }}/http-library-edges/original/published-http/catalogue-free-source.json
+            ${{ runner.temp }}/http-library-edges/original/published-http/node/FAILED.json
+            ${{ runner.temp }}/http-library-edges/original/published-http/build/*.json

@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "dotnet-http-library-edges-${{ github.ref }}"
+    },
+    "name": "Ordinary managed client response boundaries",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/dotnet-http-library-edges-20261020"
+        ],
+        "paths": [
+          ".github/workflows/dotnet-http-library-edges.yml",
+          "tools/dotnet_http_library_edges_node.py",
+          "tools/qualify_dotnet_http_library_edges.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "signed-boundaries"
+  ],
+  "reviewReason": "Add10 real signed unchanged Flurl/Refit malformed-JSON/framing/truncation/body-limit and fresh-state outcomes plus2pre-entry refusals using authenticated original component/native products; preserve all existing jobs/cases/commands/limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-http-library-edges.yml"
+}
