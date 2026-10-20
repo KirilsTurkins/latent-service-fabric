@@ -35,7 +35,17 @@ the real ignored libtest target and before/after source snapshots. Wrapper
 success, incomplete or reordered rows, wrong tenants, private fields, ignored
 execution or a different target cannot qualify this programme.
 
-Hosted execution is pending. This programme does not establish full scheduler
+The actual [44ff run 39366826549](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39366826549),
+job 118445451209, passed all 34 required observations and 20 guest activations.
+Libtest reports one passed, zero failed/ignored and 50 filtered cases (38.56 s).
+The three fresh native reference modes 0/1/2 each returned 42 with empty stderr.
+Bounded artifact 12240787508 and the [lossless receipt](../testing/evidence/go-queued-signed-2026-10-20.json)
+bind the exact tested source, component/compiler and 104 unchanged before/after
+Git source identities. The subsequent composition adds only the disjoint Rust
+scratch qualification slice and these evidence/documentation records; every
+selected Go/compiler and entire native source object remains byte-identical.
+These results are source-specific, not a fresh native execution of later
+composition heads. This programme does not establish full scheduler
 fairness, every late-wake/race/cost scenario or low-level network/DNS/TLS
 accounting. The synthetic auxiliary callee remains separately attributed to its
 handwritten constructor and is never invoked or described as compiled Go.
