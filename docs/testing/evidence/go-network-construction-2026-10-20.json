@@ -1,0 +1,282 @@
+{
+  "schemaVersion": "latent.go.network-construction.observation.v1",
+  "source": "7701689942f66f3168592942b7e282a116cdda2f",
+  "run": 39414844795,
+  "job": 118601242065,
+  "artifact": 12261675518,
+  "archiveBytes": 976934,
+  "archiveDigest": "sha256:7d358db22da550bae3e511734bd4fcc28c3c027912931f83a04e21a64fcdfadf",
+  "members": {
+    "build/component.wasm": {
+      "bytes": 3304114,
+      "sha256": "0ba0ff732702c3e1c4eecf0ebf9527d602ccbfc7b08b51e893fd8bd4a20ccffe"
+    },
+    "build/module/export_examples_go_standard_network_api/wit_bindings.go": {
+      "bytes": 322,
+      "sha256": "85332256104f9c9bd7d387474240bbaa5dee089ad3075075a832295bab65c9c4"
+    },
+    "build/component.wit": {
+      "bytes": 3132,
+      "sha256": "41d6d900cd0d001076b623016e4f740801317e02b4bf5fed1e70295ef65f1168"
+    },
+    "build/module/latent_clock_monotonic/wit_bindings.go": {
+      "bytes": 483,
+      "sha256": "187eaf35e0f2e9236d4e22764a89c78a3711f84188c24239083e008e2d50a710"
+    },
+    "build/module/latent_clock_wall/wit_bindings.go": {
+      "bytes": 496,
+      "sha256": "52f8f7f290ef57618a7240d864282d0944696433cd1917a9121b943b71d6a8f9"
+    },
+    "build/module/latent_network_streams/wit_bindings.go": {
+      "bytes": 30532,
+      "sha256": "1e7f2cc31b7f0ab42e56361472c5a2b1d256fa6874885fcdaacd27387315412d"
+    },
+    "build/module/latent_random_random/wit_bindings.go": {
+      "bytes": 3080,
+      "sha256": "6149a3a0b1a5c7ed2a25bfa1919c3ab4b2f352f8644897eb11a7b915122a8ee0"
+    },
+    "build/module/latent_runtime_activation/wit_bindings.go": {
+      "bytes": 13319,
+      "sha256": "d9f2c9f0bd13a073b99ad31ce0c9ac1291d4d09d8ea6b11616b11f0f0cf0580e"
+    },
+    "go-runtime-transformations.json": {
+      "bytes": 9581,
+      "sha256": "80e3febe55d56d740145ceeb00c53fbd79d0445859682b30e23fd65847cfdc5e"
+    },
+    "logs/00-reference-go-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/00-reference-go-version.stdout.txt": {
+      "bytes": 32,
+      "sha256": "ed4307d760c597256afdc696a61d47d13e832615d7741ead11c64966a440b376"
+    },
+    "logs/01-actual-private-owner-reference.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/01-actual-private-owner-reference.stdout.txt": {
+      "bytes": 5643,
+      "sha256": "ef48084256032349bbb12d194d44ffee8c100a4b5a263c61988c55bc46080f4c"
+    },
+    "logs/02-go-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/02-go-version.stdout.txt": {
+      "bytes": 32,
+      "sha256": "ed4307d760c597256afdc696a61d47d13e832615d7741ead11c64966a440b376"
+    },
+    "logs/03-generator-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/03-generator-version.stdout.txt": {
+      "bytes": 22,
+      "sha256": "514e02ab3233fb815f58fa1142020085204acbd76979d17a411f011906a93307"
+    },
+    "logs/04-validator-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/04-validator-version.stdout.txt": {
+      "bytes": 42,
+      "sha256": "f85fc42a5a4fd6614999a2f41e14fd84eae869d81f0b344672b6d3874400375e"
+    },
+    "logs/05-go-root.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/05-go-root.stdout.txt": {
+      "bytes": 50,
+      "sha256": "753534840cdf25f3a85aaabe1f71502f5f2ad9d8363f40912b320bb486354727"
+    },
+    "logs/06-checkpoint-parser-host.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/06-checkpoint-parser-host.stdout.txt": {
+      "bytes": 12,
+      "sha256": "c52c38c24a1d6ea7a150d991a07f07a94214b949a497d483b73732bcb2b2693d"
+    },
+    "logs/07-checkpoint-parser-controls.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/07-checkpoint-parser-controls.stdout.txt": {
+      "bytes": 35,
+      "sha256": "154d7457c3cb4c8cb9070f4ba934047eaa0a80b6cb3ba88d8fc860b66d1f4e4f"
+    },
+    "logs/08-checkpoint-parser-build.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/08-checkpoint-parser-build.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/09-typed-bindings.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/09-typed-bindings.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/10-typed-bindings.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/10-typed-bindings.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/11-locked-module-download.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/11-locked-module-download.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/12-vendor-locked-module.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/12-vendor-locked-module.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/13-checkpoint-selected-packages.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/13-checkpoint-selected-packages.stdout.txt": {
+      "bytes": 132896,
+      "sha256": "dbeb96198bfd2279e27de2ac442f3406b0c0f1d2a8a04f047beb3901f9b0e0c2"
+    },
+    "logs/14-checkpoint-parser.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/14-checkpoint-parser.stdout.txt": {
+      "bytes": 517,
+      "sha256": "fb30dab490d7505bcca573e120a7120a1395f07e4b09ad61ed2ecf64f9d8d1c5"
+    },
+    "logs/15-closed-runtime.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/15-closed-runtime.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/16-component-build.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/16-component-build.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/17-component-validate.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/17-component-validate.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/18-component-wit.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/18-component-wit.stdout.txt": {
+      "bytes": 3132,
+      "sha256": "41d6d900cd0d001076b623016e4f740801317e02b4bf5fed1e70295ef65f1168"
+    },
+    "qualification.json": {
+      "bytes": 2416,
+      "sha256": "6fd3963ea84c70a5ebfd2ca44005b262f334ccb0c12de218415ffe05d9891b5c"
+    },
+    "recipe-inputs.json": {
+      "bytes": 8115,
+      "sha256": "f112f51c59e920f8ba3940f0e3b3c4f32979dd7b2681e5ee412f253eb74e4e8a"
+    },
+    "source-inputs.json": {
+      "bytes": 216,
+      "sha256": "703e86f0ad64d469163007b551aa357aac1f2402007af3643ab7fc76b931457f"
+    }
+  },
+  "receipt": {
+    "schemaVersion": "latent.go.network.compile.v1",
+    "status": "passed",
+    "profile": "go-component-activation-v5",
+    "qualification": "construction-and-private-owner-reference-only",
+    "signedExecution": "not-run",
+    "providerInstalled": false,
+    "kernelAccountingQualified": false,
+    "sourceDigest": "sha256:703e86f0ad64d469163007b551aa357aac1f2402007af3643ab7fc76b931457f",
+    "sdkDigest": "sha256:f34c39035855bd62bbee8338313aa8ea4819afda17d534d12998a8f6ca0256e8",
+    "recipeDigest": "sha256:f112f51c59e920f8ba3940f0e3b3c4f32979dd7b2681e5ee412f253eb74e4e8a",
+    "commandLimits": {
+      "overallSeconds": 900,
+      "perCommandSeconds": 600
+    },
+    "ownerReference": {
+      "cases": [
+        "TestIndependentReadWriteAndSameDirectionRefusal",
+        "TestCloseCancelsBothDirectionsButWaitsForRealAcknowledgements",
+        "TestSendShutdownSharesWriteOwnerAndPreservesRead",
+        "TestCloseWithoutBorrowRetainsOneFinalOwner",
+        "TestInvalidOwnerDirectionOrContextNeverBorrows",
+        "TestDuplicateReleaseFailsClosedWithoutRefundingAnotherDirection"
+      ],
+      "sourceDigest": "sha256:e29d238af67a70bba64d4237003d434f75669904135052353430ebcab54a6fcc",
+      "testsDigest": "sha256:3c9ad8852ff421358f1b7495537569cb88a91aaaa766b4fc0a5975e6f9871d62",
+      "stdoutDigest": "sha256:ef48084256032349bbb12d194d44ffee8c100a4b5a263c61988c55bc46080f4c",
+      "compiler": {
+        "name": "go",
+        "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+        "size": 17164055
+      },
+      "hostIoExecution": false
+    },
+    "componentDigest": "sha256:0ba0ff732702c3e1c4eecf0ebf9527d602ccbfc7b08b51e893fd8bd4a20ccffe",
+    "bindingDigest": "sha256:698cd1dd0cba9fbb388762a972ac0d440e803008a4c7066b6cafe9f76cc03a61",
+    "tools": {
+      "go": {
+        "name": "go",
+        "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+        "size": 17164055
+      },
+      "componentize-go": {
+        "name": "componentize-go",
+        "digest": "sha256:b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb",
+        "size": 13330416
+      },
+      "wasm-tools": {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      },
+      "go-checkpoints": {
+        "name": "go-checkpoints",
+        "digest": "sha256:6446e733c27879a8fb25d14ebbe26c91647677f9122c91f6e2a6bca4008ace65",
+        "size": 4812744
+      }
+    }
+  },
+  "sourceChecks": {
+    "allMemberHashesChecked": 50,
+    "recipeGitFilesChecked": 62,
+    "sdkGitFilesChecked": 74,
+    "sourceGitFilesChecked": 2,
+    "transformationCount": 30
+  },
+  "qualifies": "six-standalone-private-owner-controls-and-actual-component-construction-only",
+  "signedGuestExecution": false,
+  "providerInstalled": false,
+  "kernelAccountingQualified": false,
+  "ordinaryTcpExecution": false
+}

@@ -201,6 +201,23 @@ class GoNetworkSourceTests(unittest.TestCase):
             self.assertIn('Err: lsfStreamUnsupported()',
                 re.search(r'(?ms)^func DialTCP\(.*?^\}', tcp)[0])
 
+    def test_global_resolver_replacement_and_nondefault_settings_are_refused_before_host_dispatch(self):
+        source = (SDK / 'runtime/net_stream.go.in').read_text()
+        self.assertIn('var lsfStreamOriginalDefaultResolver = DefaultResolver', source)
+        guard = re.search(r'(?ms)^func lsfStreamDefaultResolverSupported\(\).*?^\}', source)[0]
+        for predicate in ('resolver == lsfStreamOriginalDefaultResolver', 'resolver != nil',
+                          '!resolver.PreferGo', '!resolver.StrictErrors', 'resolver.Dial == nil'):
+            self.assertIn(predicate, guard)
+        dial = re.search(r'(?ms)^func lsfStreamDial\(.*?^\}', source)[0]
+        self.assertLess(dial.index('!lsfStreamDefaultResolverSupported()'), dial.index('lsfNetwork.ConnectContext('))
+        self.assertIn('return failure(lsfStreamUnsupported())', dial)
+        fixture = (SDK / 'runtime/network-conformance/main.go').read_text()
+        for mutation in ('net.DefaultResolver = &net.Resolver{}', 'net.DefaultResolver.PreferGo = true',
+                         'net.DefaultResolver.StrictErrors = true', 'net.DefaultResolver.Dial = func('):
+            self.assertIn(mutation, fixture)
+        self.assertIn('panic("custom default resolver must never run")', fixture)
+        self.assertIn('return "unsupported-custom-default-resolver"', fixture)
+
     def test_injection_or_changed_template_cannot_publish_a_projection(self):
         for module in ('../escape', 'example//bad', 'quote"bad', 'line\nbad', '', 'x' * 257):
             with tempfile.TemporaryDirectory() as temporary:

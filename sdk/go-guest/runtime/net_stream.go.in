@@ -16,6 +16,17 @@ import (
 
 const lsfStreamMaximumChunk = 16384
 
+// Pin the real package initializer's resolver before application initialization.
+// The host performs only its own sealed resolution; it cannot silently replace
+// a caller's installed resolver or its nondefault public settings.
+var lsfStreamOriginalDefaultResolver = DefaultResolver
+
+func lsfStreamDefaultResolverSupported() bool {
+	resolver := DefaultResolver
+	return resolver == lsfStreamOriginalDefaultResolver && resolver != nil &&
+		!resolver.PreferGo && !resolver.StrictErrors && resolver.Dial == nil
+}
+
 type lsfStreamError struct{ failure lsfNetwork.StreamError }
 
 func (e *lsfStreamError) Error() string {
@@ -133,7 +144,7 @@ func lsfStreamDial(ctx context.Context, d *Dialer, network, address string) (Con
 		panic("nil context")
 	}
 	failure := func(err error) (Conn, error) { return nil, &OpError{Op: "dial", Net: network, Err: err} }
-	if network != "tcp" || d.LocalAddr != nil || d.Resolver != nil || d.Cancel != nil || d.Control != nil ||
+	if !lsfStreamDefaultResolverSupported() || network != "tcp" || d.LocalAddr != nil || d.Resolver != nil || d.Cancel != nil || d.Control != nil ||
 		d.ControlContext != nil || d.DualStack || d.FallbackDelay > 0 || d.KeepAlive != 0 ||
 		d.KeepAliveConfig != (KeepAliveConfig{}) || d.mptcpStatus == mptcpEnabledDial {
 		return failure(lsfStreamUnsupported())

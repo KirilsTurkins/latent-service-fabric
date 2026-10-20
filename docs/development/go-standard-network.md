@@ -43,6 +43,13 @@ uses an actual context deadline. The WIT exposes no local endpoint, so
 `LocalAddr` is nil; `RemoteAddr` describes the declared target, not a resolved
 peer address. This is not full `net.Conn` compatibility.
 
+The port pins the original package-initialized `DefaultResolver`. Replacing it
+or changing its public `PreferGo`, `StrictErrors` or `Dial` settings returns
+`errors.ErrUnsupported` before host dispatch; those custom paths are never
+silently replaced by the host resolver. The ordinary fixture includes all four
+negative cases. The earlier construction receipt below predates this additive
+refusal guard and those cases; their actual guest execution remains pending.
+
 The focused construction lane builds one ordinary-source component and runs
 six standalone Go controls against the exact private owner: independent
 directions, same-direction refusal, cancellation followed by real drain,
@@ -52,8 +59,13 @@ release. The component includes ordinary `net` calls for closed unsupported,
 pre-cancelled, expired and eventual TCP exchange paths. Construction does not
 execute those guest paths. The receipt distinguishes native owner-reference
 execution from emitted-component construction and leaves signed/provider/kernel
-qualification false. Both actual hosted outcomes are pending until retained
-terminal evidence is checked. No native LSF host is rebuilt by this lane.
+qualification false. The [authenticated source observation](../testing/evidence/go-network-construction-2026-10-20.json)
+records exact source `7701689942f66f3168592942b7e282a116cdda2f`, actual run
+39414844795/job 118601242065: all six standalone owner controls and actual
+managed-v5 component construction passed. All 50 retained members, 62 recipe
+files, 74 SDK files and both ordinary fixture inputs were checked. The emitted
+3,304,114-byte component retains the stream import and no ambient WASI import.
+Its guest cases were not executed. No native LSF host was rebuilt by this lane.
 
 Pinned pure generation was checked locally with official componentize-go
 0.4.3 (source `148dba505f8c6c64ad84db777cfde5e34e25098b`, bindings

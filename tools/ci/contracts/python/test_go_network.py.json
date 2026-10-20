@@ -5,6 +5,7 @@
     "GoNetworkSourceTests.test_close_restores_only_untransferred_own_handle_and_cancellation_keeps_uncertainty",
     "GoNetworkSourceTests.test_every_generated_function_preimage_and_single_derivation_is_required",
     "GoNetworkSourceTests.test_full_upstream_preimages_are_required_before_any_overlay_is_created",
+    "GoNetworkSourceTests.test_global_resolver_replacement_and_nondefault_settings_are_refused_before_host_dispatch",
     "GoNetworkSourceTests.test_incomplete_or_nonboolean_dispatcher_selection_cannot_publish_overlay",
     "GoNetworkSourceTests.test_injection_or_changed_template_cannot_publish_a_projection",
     "GoNetworkSourceTests.test_no_declared_stream_preserves_the_ordinary_sdk_path",
@@ -64,6 +65,18 @@
       "skipSites": []
     },
     "GoNetworkSourceTests.test_full_upstream_preimages_are_required_before_any_overlay_is_created": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
+        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
+      ],
+      "skipSites": []
+    },
+    "GoNetworkSourceTests.test_global_resolver_replacement_and_nondefault_settings_are_refused_before_host_dispatch": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -174,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_network.py",
-  "reviewReason": "Exact source/generator preimages cancellation acknowledgement uncertainty and explicit v5/import/resource ownership fail-closed boundaries.",
+  "reviewReason": "Retain all 13 controls and add fail-closed original DefaultResolver identity/settings before any owned host dispatch.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

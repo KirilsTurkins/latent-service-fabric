@@ -61,6 +61,29 @@ func Run(which uint32, address string) string {
 			return "payload-error"
 		}
 		return "ordinary-tcp-exchange"
+	case 5, 6, 7, 8:
+		original := net.DefaultResolver
+		preferGo, strictErrors, dial := original.PreferGo, original.StrictErrors, original.Dial
+		defer func() {
+			net.DefaultResolver = original
+			original.PreferGo, original.StrictErrors, original.Dial = preferGo, strictErrors, dial
+		}()
+		switch which {
+		case 5:
+			net.DefaultResolver = &net.Resolver{}
+		case 6:
+			net.DefaultResolver.PreferGo = true
+		case 7:
+			net.DefaultResolver.StrictErrors = true
+		case 8:
+			net.DefaultResolver.Dial = func(context.Context, string, string) (net.Conn, error) {
+				panic("custom default resolver must never run")
+			}
+		}
+		connection, err := net.Dial("tcp", address)
+		if connection == nil && errors.Is(err, errors.ErrUnsupported) {
+			return "unsupported-custom-default-resolver"
+		}
 	}
 	return "unexpected-result"
 }
