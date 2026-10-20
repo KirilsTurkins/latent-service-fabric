@@ -1,0 +1,963 @@
+{
+  "schemaVersion": "lsf.compatibility.catalogue.v1",
+  "authority": "none",
+  "packageEligibility": "independent-of-catalogue",
+  "documents": {
+    "qualification": {
+      "path": "evidence/java-http-request-qualification.json",
+      "sha256": "sha256:10ce3688924bb12f435acf84ae6ed19f27c5fb2fab7cf5db3aecf32fdc91d5eb",
+      "bytes": 26984,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/qualification.json"
+      }
+    },
+    "observation": {
+      "path": "evidence/java-http-request-observation.json",
+      "sha256": "sha256:a6bebc2aa2b960932d3c4edf3991ba685da0f79e2d35f3c414a99e523b6ea978",
+      "bytes": 3469,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/build-observation.json"
+      }
+    },
+    "dependencies": {
+      "path": "evidence/java-http-request-dependencies.json",
+      "sha256": "sha256:5aba70ca917f234024da710f47c9835245f09f2b618499d292bc38a3089b8130",
+      "bytes": 6066,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/application-dependencies.json"
+      }
+    },
+    "profile": {
+      "path": "evidence/java-http-request-profile.json",
+      "sha256": "sha256:5f7a405f56110ecd5e36a31f958f6dbf2019675c7ec985b0c1af557d9556cad2",
+      "bytes": 2568,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/http-client-profile.json"
+      }
+    },
+    "bindings": {
+      "path": "evidence/java-http-request-bindings.json",
+      "sha256": "sha256:a511d34904affed4b9cef193c99d626436cfe0e681128f23c44070b78e263e3e",
+      "bytes": 7728,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/bindings.json"
+      }
+    },
+    "compatibility": {
+      "path": "evidence/java-http-request-compatibility.json",
+      "sha256": "sha256:c50591efc7e51f23655af0adfbd73b119e64b99755a92beb7db2c6d1c73a0438",
+      "bytes": 1252,
+      "origin": {
+        "source": "160107c857a70f141d2ab74d79fe195d40498ebe",
+        "run": 38859355061,
+        "job": 116837864409,
+        "artifact": 12033094958,
+        "member": "java-capsule-authoring/standard-http-library/build/compatibility-report.json"
+      }
+    },
+    "ts-qualification": {
+      "path": "evidence/ts-qualification.json",
+      "sha256": "sha256:91f475c0a814580fe60b104f68cbb008a94321567a07805185fcc46a9d3221bb",
+      "bytes": 8210,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/qualification.json"
+      }
+    },
+    "ts-node": {
+      "path": "evidence/ts-node.json",
+      "sha256": "sha256:b21405ae1e80ef4a255d4048d353404087dd6901b3eb35882ab03fadae441f4c",
+      "bytes": 70736,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/node/qualification.json"
+      }
+    },
+    "ts-observation": {
+      "path": "evidence/ts-observation.json",
+      "sha256": "sha256:4f3fe0fda1a0a6a7791adcf5f126b16edc7fa6753756adf08c48bb6f75c33211",
+      "bytes": 4512,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/build/build-observation.json"
+      }
+    },
+    "ts-dependencies": {
+      "path": "evidence/ts-dependencies.json",
+      "sha256": "sha256:8cfbb8930a8cb86e79019dc53ec61192a7cae71d1034e92bd2af335fe2ffca0b",
+      "bytes": 48330,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/build/application-dependencies.json"
+      }
+    },
+    "ts-capture": {
+      "path": "evidence/ts-capture.json",
+      "sha256": "sha256:c09fdbff787199a7eefa7eb4bcf78f8cd710329e95a403d25fc454f8c0e2fe85",
+      "bytes": 2227,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/dependency-capture.json"
+      }
+    },
+    "ts-bindings": {
+      "path": "evidence/ts-bindings.json",
+      "sha256": "sha256:446ca2c315db421645b64d73203c086b04f220797671319e4e10252f4c3b253b",
+      "bytes": 1338,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/build/bindings.json"
+      }
+    },
+    "ts-bundle": {
+      "path": "evidence/ts-bundle.json",
+      "sha256": "sha256:fc34bf37b070e3473d88c27da1e2a10fe2ade2a4633134f2b2ac57b67bfa972c",
+      "bytes": 27909,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/build/bundle-selected-inputs.json"
+      }
+    },
+    "ts-runtime": {
+      "path": "evidence/ts-runtime.json",
+      "sha256": "sha256:91e5977e0472c3c94490671034a80ec6694c43a1ca09c2d3efdbbef48a5d4cf8",
+      "bytes": 15274,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/build/typescript-runtime-selection.json"
+      }
+    },
+    "ts-standard-runtime": {
+      "path": "evidence/ts-standard-runtime.json",
+      "sha256": "sha256:7003f5aba32c1594de7f034daeca64208a7719837a4ca2726747d5729613413a",
+      "bytes": 4458,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/build/standard-runtime-selection.json"
+      }
+    },
+    "ts-wit": {
+      "path": "evidence/ts-wit.json",
+      "sha256": "sha256:77171a4bd311caecf6bf8231a80d91283e36a012070278e25f77835b48c818ae",
+      "bytes": 1364,
+      "origin": {
+        "source": "01d913aae212bd3f5dd14550d5b78187c39008bd",
+        "run": 39459627034,
+        "job": 118755383589,
+        "artifact": 12282212612,
+        "member": "phase-fetch/build/wit-lock.json"
+      }
+    },
+    "go-qualification": {
+      "path": "evidence/go-qualification.json",
+      "sha256": "sha256:156ae0944f033fdc69c97dc05ebeebddb10f36e37e86fd9905610ef05bd78835",
+      "bytes": 119335,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/qualified.json"
+      }
+    },
+    "go-node": {
+      "path": "evidence/go-node.json",
+      "sha256": "sha256:3d1334194db654088a141edbc515bdea1a2771ad6138ca9238b5ed2060819860",
+      "bytes": 80613,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/node/qualified.json"
+      }
+    },
+    "go-observation": {
+      "path": "evidence/go-observation.json",
+      "sha256": "sha256:1b50ddc9843396f1bd72cb876b8b7e85a1a93ce74553f59fee54c67f53b012db",
+      "bytes": 3510,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/build-observation.json"
+      }
+    },
+    "go-dependencies": {
+      "path": "evidence/go-dependencies.json",
+      "sha256": "sha256:44cc050b055c371eb4b21eefe3ceb517e901d79f8c0cf490613fd2e86fcffda5",
+      "bytes": 344563,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/application-dependencies.json"
+      }
+    },
+    "go-runtime": {
+      "path": "evidence/go-runtime.json",
+      "sha256": "sha256:209518b0bbff545c4e1d617a5ec18db56cc9bd0036a0a81372dd377a07032c32",
+      "bytes": 3538,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/standard-runtime-selection.json"
+      }
+    },
+    "go-transformations": {
+      "path": "evidence/go-transformations.json",
+      "sha256": "sha256:97b1a857001d2c365d803ec1aa507c1a7fe3a50b5f80fcf165511b4b72c3a5d7",
+      "bytes": 80071,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/go-runtime-transformations.json"
+      }
+    },
+    "go-wit": {
+      "path": "evidence/go-wit.json",
+      "sha256": "sha256:7ad33125d6596fcc41f6de945abfccfef16469d573e19f4377628357cbf840a2",
+      "bytes": 1132,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/wit-lock.json"
+      }
+    }
+  },
+  "entries": [
+    {
+      "language": "java",
+      "package": {
+        "coordinate": "com.github.kevinsawicki:http-request:6.0",
+        "version": "6.0",
+        "artifactDigest": "sha256:673dd02ade4196ab511e812a6857dacaeb5716dea83aa217dba654824b5d5476"
+      },
+      "packageBindings": {
+        "coordinate": {
+          "document": "dependencies",
+          "pointer": "/artifacts/0/id",
+          "valueDigest": "sha256:35bc1e25edde0c0976c5716c0d46f2364be00cd813bc967be01d390987e94c02"
+        },
+        "version": {
+          "document": "dependencies",
+          "pointer": "/artifacts/0/metadata/resolution/version",
+          "valueDigest": "sha256:77eac2dd6000501d0d7d1324f16d72d6aaa6f789756e3675e01611183f48a04f"
+        },
+        "artifactDigest": {
+          "document": "dependencies",
+          "pointer": "/artifacts/0/files/0/digest",
+          "valueDigest": "sha256:2dfed22486cb54fa2e63c7732436efc7472a4e59eb392e1873f98c9c8c5dd3ce"
+        }
+      },
+      "status": "tested-default-path",
+      "surface": "Plain HTTP URLConnection default factories, parsed bodies and finite owner retirement",
+      "construction": "ordinary-default",
+      "bindings": {
+        "source": {
+          "document": "observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:b4f3c342fe037e5d59b89600623b2e09cb1e7b23d566ee7b5a3e67bef05a1cfc"
+        },
+        "component": {
+          "document": "observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:12ad8624e3bc09e9880be9f713f09c8ad4be7364c249e0309e6b9daab0d4d93a"
+        },
+        "graph": {
+          "document": "dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:5aba70ca917f234024da710f47c9835245f09f2b618499d292bc38a3089b8130"
+        },
+        "configuration": {
+          "document": "dependencies",
+          "pointer": "/selection",
+          "valueDigest": "sha256:799a1a3514ca53933ffe311553e3c40f55378e95190b8f318d2d9d8eac55ed9a"
+        },
+        "compiler": {
+          "document": "observation",
+          "pointer": "/materials",
+          "valueDigest": "sha256:6942bbc0ecc31f12032f58c2241a1fccd29d8f91b0af8fc1ed6e27cf02c8c0e9"
+        },
+        "engine": {
+          "document": "qualification",
+          "pointer": "/nativeProducts/latentd",
+          "valueDigest": "sha256:dd6eb78d2d509afa3fff17d1fa791c061db43e2f86895d6c0b2629fc3d8bd870"
+        },
+        "runtime": {
+          "document": "profile",
+          "pointer": "/runtimeAdapterDigest",
+          "valueDigest": "sha256:920827902401fd3e9919d1183d490cb1a620c91960a3ecc5162c9b0745962aff"
+        },
+        "backend": {
+          "document": "profile",
+          "pointer": "",
+          "valueDigest": "sha256:3b2c1d1b9cebdcf0207a406e7a0c908dd5e45aa567476f716165319862cef822"
+        },
+        "automaticPatches": {
+          "document": "profile",
+          "pointer": "/inputs",
+          "valueDigest": "sha256:d20da8294764d81a45bac09cbe6dfe1bb067150608debf5d192783b79706811a"
+        },
+        "wit": {
+          "document": "bindings",
+          "pointer": "",
+          "valueDigest": "sha256:a86f316ce700918841f80f8071167280041a5da18ded87991fe5eef5ef49d420"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "claims": [
+          "Thirteen signed/admitted cases passed through ordinary client factories and the typed HTTP provider.",
+          "Eleven primary peer contacts, one mutation and no secondary contact; node and peer cleanup retained.",
+          "The exact original JAR is captured; deterministic classpath selection and compiler-owned platform substitutions are recorded separately."
+        ],
+        "source": {
+          "document": "qualification",
+          "pointer": "/sourceInputs/sha256",
+          "valueDigest": "sha256:b4f3c342fe037e5d59b89600623b2e09cb1e7b23d566ee7b5a3e67bef05a1cfc"
+        },
+        "component": {
+          "document": "qualification",
+          "pointer": "/component/sha256",
+          "valueDigest": "sha256:12ad8624e3bc09e9880be9f713f09c8ad4be7364c249e0309e6b9daab0d4d93a"
+        }
+      },
+      "limitations": [
+        "One published client; no two-client or private-client acceptance.",
+        "Plain HTTP synchronous factory/body/early-close subset; full async/cancel/HTTPS matrix pending.",
+        "Native RSS is sampled; no allocator/native/kernel upper-bound claim.",
+        "This historical observation does not qualify current development, HTTPS, a second independent client or all runtime APIs.",
+        "The compiler profile receipt retains qualification=pending; the separate signed receipt supplies only the thirteen listed outcomes.",
+        "The native node binary identifies the tested engine closure; this catalogue does not infer a standalone engine hash or allocator bound."
+      ],
+      "identity": "sha256:123893c2c82e106f6b8f8c16b978f100746b9687b0acea91ecf999314c6ec827",
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23"
+    },
+    {
+      "language": "typescript",
+      "package": {
+        "coordinate": "node_modules/ky",
+        "version": "2.2.0",
+        "artifactDigest": "sha256:0ec981cc23fc9f4619a61d90646220476dd61f56383cf6d510f469de7908f98a"
+      },
+      "status": "tested-default-path",
+      "surface": "Ky 2.2.0: ordinary global fetch, parsed JSON and finite phase lifecycle",
+      "construction": "ordinary-default",
+      "packageBindings": {
+        "coordinate": {
+          "document": "ts-dependencies",
+          "pointer": "/artifacts/1/metadata/nativeLocation",
+          "valueDigest": "sha256:d2402499b34bb8f77c5ac9f190ecf31dbfc99a8e3de33f924aff1bc88a5453da"
+        },
+        "version": {
+          "document": "ts-capture",
+          "pointer": "/packages/ky/version",
+          "valueDigest": "sha256:157cbd2270b01c0f99cde3b7b073a759d621eea16610475bb61441d0c9b42c65"
+        },
+        "artifactDigest": {
+          "document": "ts-dependencies",
+          "pointer": "/artifacts/1/original/digest",
+          "valueDigest": "sha256:56b4c87b513cbb2ec11b9d2b096837eebce4b3555ac8c0d53e813b5980c43efb"
+        }
+      },
+      "bindings": {
+        "source": {
+          "document": "ts-qualification",
+          "pointer": "/source",
+          "valueDigest": "sha256:af899ca4030658bb08950e7e98a8c7af84eeab3fe7722da83af90f6df6470ad0"
+        },
+        "component": {
+          "document": "ts-qualification",
+          "pointer": "/build/component/sha256",
+          "valueDigest": "sha256:6814d5cffddcf9461f418ea0259b2e1ff29e4194e0636f782f7d89608ba84b2c"
+        },
+        "graph": {
+          "document": "ts-dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:8cfbb8930a8cb86e79019dc53ec61192a7cae71d1034e92bd2af335fe2ffca0b"
+        },
+        "configuration": {
+          "document": "ts-node",
+          "pointer": "/ownerProfile",
+          "valueDigest": "sha256:349e1ef705cc1d4fa65993cede4bc3589bb6129f04ae006f22a045ce4caa0326"
+        },
+        "compiler": {
+          "document": "ts-observation",
+          "pointer": "/materials/5",
+          "valueDigest": "sha256:57da8230d256d2bdb377b5345fdebc8c69b074e510b7a9ba47f314f9a811ed5a"
+        },
+        "engine": {
+          "document": "ts-runtime",
+          "pointer": "/engineInput",
+          "valueDigest": "sha256:be650765ec6eccecc0f8745ff90e160c1f7a42db436ba5f44b6bf469d68cddb3"
+        },
+        "runtime": {
+          "document": "ts-runtime",
+          "pointer": "",
+          "valueDigest": "sha256:d9957b7bb84be54bbe19fbabace72e7c268948ec472cb166fa91c13f39a7435a"
+        },
+        "backend": {
+          "document": "ts-bundle",
+          "pointer": "/standardFetchBackendDigest",
+          "valueDigest": "sha256:92a8450915fbd3f652cb2ada9e926af226c60db7dab32130d92fb4c3cc236467"
+        },
+        "automaticPatches": {
+          "document": "ts-standard-runtime",
+          "pointer": "/transformations",
+          "valueDigest": "sha256:c02ca606bcc7e6116264f643c7ce6b5cecda1d1726784e82e73e05ac536447b2"
+        },
+        "wit": {
+          "document": "ts-wit",
+          "pointer": "",
+          "valueDigest": "sha256:3459e4e5bc6e53b1f73c72fd882fa250845b777044480d88e5262b969a47fa44"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "ts-qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "source": {
+          "document": "ts-qualification",
+          "pointer": "/source",
+          "valueDigest": "sha256:af899ca4030658bb08950e7e98a8c7af84eeab3fe7722da83af90f6df6470ad0"
+        },
+        "component": {
+          "document": "ts-qualification",
+          "pointer": "/build/component/sha256",
+          "valueDigest": "sha256:6814d5cffddcf9461f418ea0259b2e1ff29e4194e0636f782f7d89608ba84b2c"
+        },
+        "claims": [
+          "Unmodified ordinary client code affects parsed domain results through global fetch, without an injected application transport.",
+          "The exact shared component passed 27 guest invocations and four pre-entry refusals across the recorded phase/default-client and two-tenant programme.",
+          "All 31 invocation retirements retain physical-owner and provider checks; two public-abort barriers keep outstanding owners charged before peer release.",
+          "Original source, captured graph, package bytes, native producer and emitted runtime/compiler/WIT identities are retained independently."
+        ]
+      },
+      "limitations": [
+        "This finite historical component/profile observation does not certify every API, middleware retry, TLS or raw socket path.",
+        "The phase programme uses the named 2,000,000,000 initial-fuel profile and owner limits64 tasks/2executors/64queue/8waits/8timers/8results/256native; no minimum-cost claim.",
+        "Per-client evidence is restricted to that client's actual recorded calls; aggregate phase and tenant counts are shared programme results.",
+        "The runtime selection still records qualification=unknown/apiSupport=not-evaluated; the separate signed receipt supplies finite passing evidence.",
+        "No allocator/kernel upper bound, clean-host distribution, full six-language gate or catalogue-absence result is inferred from this programme."
+      ],
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:866e6c0c8358c0c4f4e43ec1cd22ad4a0a6480256b820cc7a11afb8cd91cafa7"
+    },
+    {
+      "language": "typescript",
+      "package": {
+        "coordinate": "node_modules/wretch",
+        "version": "3.0.9",
+        "artifactDigest": "sha256:56e6ceda0b565e7ec119749d2ed1b63bc1e83084c02446990a48c062bd1f9214"
+      },
+      "status": "tested-default-path",
+      "surface": "Wretch 3.0.9: ordinary global fetch, parsed JSON and finite phase lifecycle",
+      "construction": "ordinary-default",
+      "packageBindings": {
+        "coordinate": {
+          "document": "ts-dependencies",
+          "pointer": "/artifacts/2/metadata/nativeLocation",
+          "valueDigest": "sha256:46d3527e74e4c06d417900dca9d1e25a9c51654671e76771d4c2578b1106e403"
+        },
+        "version": {
+          "document": "ts-capture",
+          "pointer": "/packages/wretch/version",
+          "valueDigest": "sha256:e36e8fa91a997ba79d942d405b151441f7f077943fe334059dfdf5824a84491c"
+        },
+        "artifactDigest": {
+          "document": "ts-dependencies",
+          "pointer": "/artifacts/2/original/digest",
+          "valueDigest": "sha256:5d05c5abd0f14c164e40ae07c382982d1a58f709004622d273f5ff6ca0b4b2a9"
+        }
+      },
+      "bindings": {
+        "source": {
+          "document": "ts-qualification",
+          "pointer": "/source",
+          "valueDigest": "sha256:af899ca4030658bb08950e7e98a8c7af84eeab3fe7722da83af90f6df6470ad0"
+        },
+        "component": {
+          "document": "ts-qualification",
+          "pointer": "/build/component/sha256",
+          "valueDigest": "sha256:6814d5cffddcf9461f418ea0259b2e1ff29e4194e0636f782f7d89608ba84b2c"
+        },
+        "graph": {
+          "document": "ts-dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:8cfbb8930a8cb86e79019dc53ec61192a7cae71d1034e92bd2af335fe2ffca0b"
+        },
+        "configuration": {
+          "document": "ts-node",
+          "pointer": "/ownerProfile",
+          "valueDigest": "sha256:349e1ef705cc1d4fa65993cede4bc3589bb6129f04ae006f22a045ce4caa0326"
+        },
+        "compiler": {
+          "document": "ts-observation",
+          "pointer": "/materials/5",
+          "valueDigest": "sha256:57da8230d256d2bdb377b5345fdebc8c69b074e510b7a9ba47f314f9a811ed5a"
+        },
+        "engine": {
+          "document": "ts-runtime",
+          "pointer": "/engineInput",
+          "valueDigest": "sha256:be650765ec6eccecc0f8745ff90e160c1f7a42db436ba5f44b6bf469d68cddb3"
+        },
+        "runtime": {
+          "document": "ts-runtime",
+          "pointer": "",
+          "valueDigest": "sha256:d9957b7bb84be54bbe19fbabace72e7c268948ec472cb166fa91c13f39a7435a"
+        },
+        "backend": {
+          "document": "ts-bundle",
+          "pointer": "/standardFetchBackendDigest",
+          "valueDigest": "sha256:92a8450915fbd3f652cb2ada9e926af226c60db7dab32130d92fb4c3cc236467"
+        },
+        "automaticPatches": {
+          "document": "ts-standard-runtime",
+          "pointer": "/transformations",
+          "valueDigest": "sha256:c02ca606bcc7e6116264f643c7ce6b5cecda1d1726784e82e73e05ac536447b2"
+        },
+        "wit": {
+          "document": "ts-wit",
+          "pointer": "",
+          "valueDigest": "sha256:3459e4e5bc6e53b1f73c72fd882fa250845b777044480d88e5262b969a47fa44"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "ts-qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "source": {
+          "document": "ts-qualification",
+          "pointer": "/source",
+          "valueDigest": "sha256:af899ca4030658bb08950e7e98a8c7af84eeab3fe7722da83af90f6df6470ad0"
+        },
+        "component": {
+          "document": "ts-qualification",
+          "pointer": "/build/component/sha256",
+          "valueDigest": "sha256:6814d5cffddcf9461f418ea0259b2e1ff29e4194e0636f782f7d89608ba84b2c"
+        },
+        "claims": [
+          "Unmodified ordinary client code affects parsed domain results through global fetch, without an injected application transport.",
+          "The exact shared component passed 27 guest invocations and four pre-entry refusals across the recorded phase/default-client and two-tenant programme.",
+          "All 31 invocation retirements retain physical-owner and provider checks; two public-abort barriers keep outstanding owners charged before peer release.",
+          "Original source, captured graph, package bytes, native producer and emitted runtime/compiler/WIT identities are retained independently."
+        ]
+      },
+      "limitations": [
+        "This finite historical component/profile observation does not certify every API, middleware retry, TLS or raw socket path.",
+        "The phase programme uses the named 2,000,000,000 initial-fuel profile and owner limits64 tasks/2executors/64queue/8waits/8timers/8results/256native; no minimum-cost claim.",
+        "Per-client evidence is restricted to that client's actual recorded calls; aggregate phase and tenant counts are shared programme results.",
+        "The runtime selection still records qualification=unknown/apiSupport=not-evaluated; the separate signed receipt supplies finite passing evidence.",
+        "No allocator/kernel upper bound, clean-host distribution, full six-language gate or catalogue-absence result is inferred from this programme."
+      ],
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:e21e2c37825a3823dba46de5ee755421d0ef92557e8178383d41e29e49b5fcff"
+    },
+    {
+      "language": "typescript",
+      "package": {
+        "coordinate": "outside-fetch-phase",
+        "version": "1.0.0",
+        "artifactDigest": "sha256:5d5389233a4422ba2a90d5dbe8cd38b78cbf5c5ec191627db25326aea22ec557"
+      },
+      "status": "tested-default-path",
+      "surface": "Outside developer-owned Wretch consumer: ordinary global fetch, parsed JSON and finite phase lifecycle",
+      "construction": "ordinary-default",
+      "packageBindings": {
+        "coordinate": {
+          "document": "ts-capture",
+          "pointer": "/privateConsumer/identity",
+          "valueDigest": "sha256:4517b6310862e8c371258199410573fcada1bad6fa74870f07470b00418e4475"
+        },
+        "version": {
+          "document": "ts-capture",
+          "pointer": "/privateConsumer/version",
+          "valueDigest": "sha256:30faf2bf5a6b4da77a52f9f054eff455f12e00216c3fe8965dbf86309ed4e200"
+        },
+        "artifactDigest": {
+          "document": "ts-dependencies",
+          "pointer": "/artifacts/0/original/digest",
+          "valueDigest": "sha256:13abc555b353bca428211049c7d50abe0feee68e2755a99de37e51b07e26d8b8"
+        }
+      },
+      "bindings": {
+        "source": {
+          "document": "ts-qualification",
+          "pointer": "/source",
+          "valueDigest": "sha256:af899ca4030658bb08950e7e98a8c7af84eeab3fe7722da83af90f6df6470ad0"
+        },
+        "component": {
+          "document": "ts-qualification",
+          "pointer": "/build/component/sha256",
+          "valueDigest": "sha256:6814d5cffddcf9461f418ea0259b2e1ff29e4194e0636f782f7d89608ba84b2c"
+        },
+        "graph": {
+          "document": "ts-dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:8cfbb8930a8cb86e79019dc53ec61192a7cae71d1034e92bd2af335fe2ffca0b"
+        },
+        "configuration": {
+          "document": "ts-node",
+          "pointer": "/ownerProfile",
+          "valueDigest": "sha256:349e1ef705cc1d4fa65993cede4bc3589bb6129f04ae006f22a045ce4caa0326"
+        },
+        "compiler": {
+          "document": "ts-observation",
+          "pointer": "/materials/5",
+          "valueDigest": "sha256:57da8230d256d2bdb377b5345fdebc8c69b074e510b7a9ba47f314f9a811ed5a"
+        },
+        "engine": {
+          "document": "ts-runtime",
+          "pointer": "/engineInput",
+          "valueDigest": "sha256:be650765ec6eccecc0f8745ff90e160c1f7a42db436ba5f44b6bf469d68cddb3"
+        },
+        "runtime": {
+          "document": "ts-runtime",
+          "pointer": "",
+          "valueDigest": "sha256:d9957b7bb84be54bbe19fbabace72e7c268948ec472cb166fa91c13f39a7435a"
+        },
+        "backend": {
+          "document": "ts-bundle",
+          "pointer": "/standardFetchBackendDigest",
+          "valueDigest": "sha256:92a8450915fbd3f652cb2ada9e926af226c60db7dab32130d92fb4c3cc236467"
+        },
+        "automaticPatches": {
+          "document": "ts-standard-runtime",
+          "pointer": "/transformations",
+          "valueDigest": "sha256:c02ca606bcc7e6116264f643c7ce6b5cecda1d1726784e82e73e05ac536447b2"
+        },
+        "wit": {
+          "document": "ts-wit",
+          "pointer": "",
+          "valueDigest": "sha256:3459e4e5bc6e53b1f73c72fd882fa250845b777044480d88e5262b969a47fa44"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "ts-qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "source": {
+          "document": "ts-qualification",
+          "pointer": "/source",
+          "valueDigest": "sha256:af899ca4030658bb08950e7e98a8c7af84eeab3fe7722da83af90f6df6470ad0"
+        },
+        "component": {
+          "document": "ts-qualification",
+          "pointer": "/build/component/sha256",
+          "valueDigest": "sha256:6814d5cffddcf9461f418ea0259b2e1ff29e4194e0636f782f7d89608ba84b2c"
+        },
+        "claims": [
+          "Unmodified ordinary client code affects parsed domain results through global fetch, without an injected application transport.",
+          "The exact shared component passed 27 guest invocations and four pre-entry refusals across the recorded phase/default-client and two-tenant programme.",
+          "All 31 invocation retirements retain physical-owner and provider checks; two public-abort barriers keep outstanding owners charged before peer release.",
+          "Original source, captured graph, package bytes, native producer and emitted runtime/compiler/WIT identities are retained independently."
+        ]
+      },
+      "limitations": [
+        "This finite historical component/profile observation does not certify every API, middleware retry, TLS or raw socket path.",
+        "The phase programme uses the named 2,000,000,000 initial-fuel profile and owner limits64 tasks/2executors/64queue/8waits/8timers/8results/256native; no minimum-cost claim.",
+        "Per-client evidence is restricted to that client's actual recorded calls; aggregate phase and tenant counts are shared programme results.",
+        "The runtime selection still records qualification=unknown/apiSupport=not-evaluated; the separate signed receipt supplies finite passing evidence.",
+        "No allocator/kernel upper bound, clean-host distribution, full six-language gate or catalogue-absence result is inferred from this programme."
+      ],
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:462b3d45c5fb77d0bca89ff00a46e1e918ba222879b2e1dd17747a5016c378b4"
+    },
+    {
+      "language": "go",
+      "package": {
+        "coordinate": "github.com/dghubble/sling",
+        "version": "v1.4.0",
+        "artifactDigest": "sha256:4be5cd6d457945267c0baeb989fc8618439a7f9d1d0cd7d9ae6241092aa36e97"
+      },
+      "status": "tested-default-path",
+      "surface": "Ordinary default net/http client, parsed domain JSON and finite two-tenant lifecycle",
+      "construction": "ordinary-default",
+      "packageBindings": {
+        "coordinate": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/1/metadata/module",
+          "valueDigest": "sha256:dd4fc1fe8d7577ea84c9e6c6bdb018ab6da636cb144ae0d5129a0bb8f084516e"
+        },
+        "version": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/1/metadata/version",
+          "valueDigest": "sha256:341108a26955174147269504d65e86b479f40916a14296d8ab7c2f840c6205ef"
+        },
+        "artifactDigest": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/1/original/digest",
+          "valueDigest": "sha256:cd260f7ed934a55a7749c1124fb16a6a3fb07a9dfefe89a387ee4b9a26e4b756"
+        }
+      },
+      "bindings": {
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "graph": {
+          "document": "go-dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:44cc050b055c371eb4b21eefe3ceb517e901d79f8c0cf490613fd2e86fcffda5"
+        },
+        "configuration": {
+          "document": "go-node",
+          "pointer": "/runtimeLimits",
+          "valueDigest": "sha256:2e6d41ff1d074ecfff3079c760effec2c8aeb6b8092270067d7178a67179aa7e"
+        },
+        "compiler": {
+          "document": "go-observation",
+          "pointer": "/materials",
+          "valueDigest": "sha256:a33e34355f223310ec75fcd06affe2e62eae499974045b89879807b40bb8e86c"
+        },
+        "engine": {
+          "document": "go-qualification",
+          "pointer": "/native/producer/products/latentd",
+          "valueDigest": "sha256:ff96570288df4fa7ad6b38ccabc5096224ee1d8aace8e99dbee841e2f68487f0"
+        },
+        "runtime": {
+          "document": "go-runtime",
+          "pointer": "",
+          "valueDigest": "sha256:7ce76e1991d8e84414e9bae385b0076ed381911b5f051b64873c18a74e94d53f"
+        },
+        "backend": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "automaticPatches": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "wit": {
+          "document": "go-wit",
+          "pointer": "",
+          "valueDigest": "sha256:4e791ca520b837036865c7343d9f9e43d36af279c8a05bec3df243381f53da9d"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "go-qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "claims": [
+          "Unchanged published client code uses its ordinary default http.Client and affects actual domain parsing, without an injected application transport.",
+          "One fresh captured catalogue-free component passed the shared nineteen-case and four-pre-entry-refusal programme across two tenants.",
+          "Exactly fifteen authorized peer contacts and nineteen post-guest physical-owner/provider zero observations are retained with clean node shutdown.",
+          "The captured private dependency supplies ordinary goroutine/WaitGroup/time.Sleep/embed behavior; its source is not published in this catalogue."
+        ]
+      },
+      "limitations": [
+        "Each client is qualified only for its respective recorded cases; shared programme counts do not assign every case to every library.",
+        "Historical go-component-activation-v4 uses8tasks/2executors/8queue/16waits/8timers/8results/8native; no managed-v5 maintenance-accounting result is inferred.",
+        "The executed native producer is6f5, with its exact source/product evidence. Future f919 reader configuration is not a new nineteen-case execution.",
+        "The engine binding identifies the actual native node binary; no independent engine hash, allocator/kernel bound, HTTPS or production stream qualification is claimed.",
+        "The runtime-selection receipt retains its original unknown/not-evaluated scope; the separate signed receipt supplies the finite passing result."
+      ],
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:72d128affbd1df4b4dca218f1cf3426d8db094b04df0b44b09793599d432b2fa"
+    },
+    {
+      "language": "go",
+      "package": {
+        "coordinate": "github.com/carlmjohnson/requests",
+        "version": "v0.24.3",
+        "artifactDigest": "sha256:b238ca2a884502748c351dee01f3f831b2b2de173e1d6e501ce1bdd1e3f4bd60"
+      },
+      "status": "tested-default-path",
+      "surface": "Ordinary default net/http client, parsed domain JSON and finite two-tenant lifecycle",
+      "construction": "ordinary-default",
+      "packageBindings": {
+        "coordinate": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/0/metadata/module",
+          "valueDigest": "sha256:b8cfe0b0804b534f7773a85eece061f5908ec8eecd8fc6073780d03711869495"
+        },
+        "version": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/0/metadata/version",
+          "valueDigest": "sha256:133a17fb9e57bbba4c26bc584e6361b7d7f0a3e822d599025778aef5156e3874"
+        },
+        "artifactDigest": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/0/original/digest",
+          "valueDigest": "sha256:e4e4d8c99eb5abd99257446e03f5497acefff14375dff6c074cf37d5d73ccc34"
+        }
+      },
+      "bindings": {
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "graph": {
+          "document": "go-dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:44cc050b055c371eb4b21eefe3ceb517e901d79f8c0cf490613fd2e86fcffda5"
+        },
+        "configuration": {
+          "document": "go-node",
+          "pointer": "/runtimeLimits",
+          "valueDigest": "sha256:2e6d41ff1d074ecfff3079c760effec2c8aeb6b8092270067d7178a67179aa7e"
+        },
+        "compiler": {
+          "document": "go-observation",
+          "pointer": "/materials",
+          "valueDigest": "sha256:a33e34355f223310ec75fcd06affe2e62eae499974045b89879807b40bb8e86c"
+        },
+        "engine": {
+          "document": "go-qualification",
+          "pointer": "/native/producer/products/latentd",
+          "valueDigest": "sha256:ff96570288df4fa7ad6b38ccabc5096224ee1d8aace8e99dbee841e2f68487f0"
+        },
+        "runtime": {
+          "document": "go-runtime",
+          "pointer": "",
+          "valueDigest": "sha256:7ce76e1991d8e84414e9bae385b0076ed381911b5f051b64873c18a74e94d53f"
+        },
+        "backend": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "automaticPatches": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "wit": {
+          "document": "go-wit",
+          "pointer": "",
+          "valueDigest": "sha256:4e791ca520b837036865c7343d9f9e43d36af279c8a05bec3df243381f53da9d"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "go-qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "claims": [
+          "Unchanged published client code uses its ordinary default http.Client and affects actual domain parsing, without an injected application transport.",
+          "One fresh captured catalogue-free component passed the shared nineteen-case and four-pre-entry-refusal programme across two tenants.",
+          "Exactly fifteen authorized peer contacts and nineteen post-guest physical-owner/provider zero observations are retained with clean node shutdown.",
+          "The captured private dependency supplies ordinary goroutine/WaitGroup/time.Sleep/embed behavior; its source is not published in this catalogue."
+        ]
+      },
+      "limitations": [
+        "Each client is qualified only for its respective recorded cases; shared programme counts do not assign every case to every library.",
+        "Historical go-component-activation-v4 uses8tasks/2executors/8queue/16waits/8timers/8results/8native; no managed-v5 maintenance-accounting result is inferred.",
+        "The executed native producer is6f5, with its exact source/product evidence. Future f919 reader configuration is not a new nineteen-case execution.",
+        "The engine binding identifies the actual native node binary; no independent engine hash, allocator/kernel bound, HTTPS or production stream qualification is claimed.",
+        "The runtime-selection receipt retains its original unknown/not-evaluated scope; the separate signed receipt supplies the finite passing result."
+      ],
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:dd38a3396539e3eaef1be21a7186b9e0df77d3c3f52f9cea8589f77a8b3e48bc"
+    }
+  ]
+}
