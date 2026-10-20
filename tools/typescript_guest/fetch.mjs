@@ -98,17 +98,78 @@ export function installFetch(http, snapshotActive, target = globalThis) {
     forEach(callback, thisArg) { for (const [key, value] of this.entries()) callback.call(thisArg, value, key, this); }
     getSetCookie() { throw unsupported('Headers.getSetCookie'); }
   }
-  function bodyRecord(owner, content) { records.set(owner, {content, used: false}); }
+  function bodyRecord(owner, content) { records.set(owner, {content, used: false, stream: null, controller: null}); }
+  function unread(record) {
+    if (record.used || record.stream?.locked) throw new TypeError('body-already-used');
+  }
+  function bodyStream(record) {
+    if (record.stream !== null) return record.stream;
+    if (typeof target.ReadableStream !== 'function') throw unsupported('streaming-body');
+    let offset = record.used ? record.content.byteLength : 0;
+    const stream = new target.ReadableStream({
+      start(controller) {
+        record.controller = controller;
+        if (record.used) controller.close();
+      },
+      pull(controller) {
+        record.used = true;
+        if (offset < record.content.byteLength) {
+          const end = Math.min(offset + 65536, record.content.byteLength);
+          controller.enqueue(record.content.slice(offset, end));
+          offset = end;
+        }
+        if (offset === record.content.byteLength) controller.close();
+      },
+      cancel() { record.used = true; offset = record.content.byteLength; },
+    }, {highWaterMark: 0});
+    const getReader = stream.getReader.bind(stream), cancel = stream.cancel.bind(stream);
+    Object.defineProperties(stream, {
+      getReader: {value(options) {
+        const reader = getReader(options), read = reader.read.bind(reader);
+        Object.defineProperty(reader, 'read', {value(...args) { record.used = true; return read(...args); }});
+        return reader;
+      }},
+      cancel: {value(reason) {
+        if (!stream.locked) record.used = true;
+        return cancel(reason);
+      }},
+      tee: {value() { throw unsupported('Body.tee'); }},
+      pipeTo: {value() { throw unsupported('Body.pipeTo'); }},
+      pipeThrough: {value() { throw unsupported('Body.pipeThrough'); }},
+      values: {value() { throw unsupported('Body.values'); }},
+      [Symbol.asyncIterator]: {value() { throw unsupported('Body.values'); }},
+    });
+    record.stream = stream;
+    return stream;
+  }
   class Body {
     get bodyUsed() { return records.get(this).used; }
     get body() {
-      if (records.get(this).content === null) return null;
-      throw unsupported('streaming-body');
+      const record = records.get(this);
+      return record.content === null ? null : bodyStream(record);
     }
     async arrayBuffer() {
       const record = records.get(this);
-      if (record.used) throw new TypeError('body-already-used');
-      if (record.content !== null) record.used = true;
+      unread(record);
+      if (record.content !== null && typeof target.ReadableStream === 'function') bodyStream(record);
+      if (record.stream !== null) {
+        const reader = record.stream.getReader(), chunks = [];
+        let length = 0;
+        for (;;) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          length += value.byteLength;
+          if (length > maxBody) throw new RangeError('fetch-body-limit');
+          chunks.push(value);
+        }
+        const result = new Uint8Array(length);
+        let offset = 0;
+        for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.byteLength; }
+        return result.buffer;
+      }
+      if (record.content !== null) {
+        record.used = true;
+      }
       return (record.content ?? new Uint8Array()).slice().buffer;
     }
     async text() { return decoder.decode(await this.arrayBuffer()); }
@@ -129,13 +190,10 @@ export function installFetch(http, snapshotActive, target = globalThis) {
     if (!['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].includes(normalized)) throw unsupported('method:' + original);
     return normalized;
   }
-  const allowedInit = new Set(['method', 'headers', 'body', 'signal', 'redirect', 'credentials', 'mode', 'cache',
-    'integrity', 'keepalive', 'referrer', 'referrerPolicy', 'duplex']);
   class Request extends Body {
     constructor(input, init = {}) {
       super();
       if (init == null) init = {};
-      for (const key of Object.keys(init)) if (!allowedInit.has(key)) throw unsupported('RequestInit.' + key);
       const previous = input instanceof Request ? input : null;
       this.url = canonicalUrl(previous ? previous.url : input);
       this.method = method(init.method ?? previous?.method ?? 'GET');
@@ -161,7 +219,7 @@ export function installFetch(http, snapshotActive, target = globalThis) {
         content = extracted.content;
         if (extracted.type !== null && !this.headers.has('content-type')) this.headers.set('content-type', extracted.type);
       } else if (previous) {
-        if (previous.bodyUsed) throw new TypeError('body-already-used');
+        unread(records.get(previous));
         content = bytes(records.get(previous).content);
         inheritBody = content !== null;
       } else content = null;
@@ -172,7 +230,7 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       if (inheritBody) records.get(previous).used = true;
     }
     clone() {
-      if (this.bodyUsed) throw new TypeError('body-already-used');
+      unread(records.get(this));
       const result = new Request(this.url, {method: this.method, headers: this.headers, signal: this.signal,
         redirect: this.redirect, credentials: this.credentials, mode: this.mode, body: records.get(this).content});
       return result;
@@ -198,7 +256,7 @@ export function installFetch(http, snapshotActive, target = globalThis) {
     }
     get ok() { return this.status >= 200 && this.status <= 299; }
     clone() {
-      if (this.bodyUsed) throw new TypeError('body-already-used');
+      unread(records.get(this));
       if (errorResponses.has(this)) return Response.error();
       const statusText = Object.getOwnPropertyDescriptor(this, 'statusText');
       const result = new Response(records.get(this).content, {status: this.status,

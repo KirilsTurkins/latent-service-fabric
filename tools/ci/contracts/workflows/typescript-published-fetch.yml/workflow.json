@@ -1,0 +1,45 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-published-fetch-${{ github.ref }}"
+    },
+    "name": "TypeScript published Fetch clients",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-published-fetch-20261020"
+        ],
+        "paths": [
+          ".github/workflows/typescript-published-fetch.yml",
+          "tools/typescript_published_fetch_fixture.py",
+          "tools/typescript_fetch_replay_inputs.py",
+          "tools/qualify_typescript_published_fetch.py",
+          "tools/typescript_guest/fetch.mjs",
+          "sdk/typescript-guest/activation/fetch-globals.d.ts",
+          "tools/tests/test_typescript_published_fetch.py",
+          "tools/tests/test_typescript_buffered_reader.py"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "diagnose-owner-profile": {
+            "default": false,
+            "description": "Collect a distinct bounded owner-profile differential after original failure",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "published-fetch"
+  ],
+  "reviewReason": "Preserve the mandatory original owner profile and command; opt-in diagnostic reuses the same actual signed input in a separate node with fixed finite owner limits and cannot change original qualification failure.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-published-fetch.yml"
+}

@@ -490,7 +490,7 @@ const referenceReset = new globalThis.Request(reference, {signal: null});
 assert.equal(reset.signal.aborted, referenceReset.signal.aborted);
 assert.equal(reset.signal.aborted, false);
 assert.throws(() => new Response('bytes').body, /unsupported:streaming-body/);
-assert.throws(() => new Request('https://example.test', {unknown: true}), /unsupported:RequestInit.unknown/);
+assert.equal(new Request('https://example.test', {unknown: true}).method, 'GET');
 """)
 
     def test_pending_typed_exchange_http_errors_chunk_retirement_and_no_replay(self):
