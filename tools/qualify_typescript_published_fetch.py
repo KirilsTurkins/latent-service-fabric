@@ -32,7 +32,7 @@ from tools.typescript_guest.build import build
 
 IDENTITIES = (('outside-fetch-alpha', '1.0.0'), ('outside-fetch-delta', '2.4.0'))
 CLIENT_OWNER_PROFILE = 'typescript-published-client-owners-v1'
-CLIENT_OWNER_LIMITS = {**base.OWNER_LIMITS, 'tasks': 64, 'queuedWork': 64}
+CLIENT_OWNER_LIMITS = {**base.OWNER_LIMITS, 'tasks': 64, 'queuedWork': 64, 'nativeOwners': 256}
 VECTORS = (
     ('ky-json', 0, '/conformance/json', 'ky:'),
     ('wretch-json', 1, '/conformance/json', 'wretch:'),

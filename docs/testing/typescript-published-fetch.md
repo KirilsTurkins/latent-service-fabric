@@ -46,7 +46,7 @@ runtime and HTTP grants must refuse with zero fuel/outbound work. Each real
 request uses the existing provider fixture; post-call physical owners must
 retire, exactly six peer requests must complete, and node/peer shutdown must
 be clean. The explicitly selected `typescript-published-client-owners-v1`
-operator profile allows Task64/Queue64 while retaining Native64, Executor2,
+operator profile allows Task64/Queue64/Native256 while retaining Executor2,
 Wait8/Timer8/Result8 and one outbound request per call. It applies identically
 to every client and outside identity. The smaller ordinary Fetch profile stays
 Task16/Queue16/Native64; its historical client failures remain failures. This
@@ -121,3 +121,11 @@ next normal two-identity run explicitly selects64/64 while retaining Native64.
 That pair has not yet passed and is not inferred from the larger diagnostic.
 All eight outcomes, both grant denials, all six real contacts and physical
 retirement remain mandatory. Failure under this profile remains failure.
+
+The normal5baccbaf attempt at64/64/64 passed Wretch JSON, transitive outside
+JSON and ordinary Wretch404 handling, but all three Ky calls still trapped.
+Artifact12244433338 retains that failed result (SHA256
+c190fafcfcabf22f1f2f2cb8d0457358603db1ced647228f6e2a8f619d3cc1b9).
+The selected normal client profile now uses the previously observed64/64/256
+combination uniformly. The complete two-identity programme must still pass;
+this does not establish minimum capacities or fix/classify an engine defect.

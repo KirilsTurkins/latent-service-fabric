@@ -25,9 +25,9 @@ class PublishedFetchTests(unittest.TestCase):
             path.write_text(json.dumps(original))
             selected=qualify.client_owner_configuration(path)
             self.assertEqual(selected,{'name':'typescript-published-client-owners-v1',
-                'limits':{**qualify.base.OWNER_LIMITS,'tasks':64,'queuedWork':64}})
+                'limits':{**qualify.base.OWNER_LIMITS,'tasks':64,'queuedWork':64,'nativeOwners':256}})
             actual=json.loads(path.read_bytes())
-            self.assertEqual(actual['providers']['activationRuntime']['limits']['nativeOwners'],64)
+            self.assertEqual(actual['providers']['activationRuntime']['limits']['nativeOwners'],256)
             actual['providers']['activationRuntime']['limits']=dict(qualify.base.OWNER_LIMITS)
             self.assertEqual(actual,original)
             before=path.read_bytes()
