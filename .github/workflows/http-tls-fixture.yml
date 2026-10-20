@@ -1,0 +1,44 @@
+name: Controlled HTTP TLS fixture
+on:
+  push:
+    branches: ['feat/http-tls-fixture-20261020']
+    paths:
+      - '.github/workflows/http-tls-fixture.yml'
+      - 'tools/standard_http/tls_peer.py'
+      - 'tools/http_tls_peer_reference.py'
+      - 'tools/qualify_http_tls_peer.py'
+      - 'tools/tests/test_http_tls_peer.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: http-tls-fixture-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fixture:
+    name: Six real TLS peer controls without a guest or provider build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install the existing locked reference dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check closed TLS readiness and receipt controls
+        run: python3 -B -m unittest tools.tests.test_http_tls_peer -v
+      - name: Execute actual TLS versions trust hostname and transport retirement
+        run: python3 -B tools/qualify_http_tls_peer.py --output "$RUNNER_TEMP/http-tls-peer"
+      - name: Retain public certificate and bounded transport receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: http-tls-peer-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/http-tls-peer/*.json
+            ${{ runner.temp }}/http-tls-peer/certificate.der
+          if-no-files-found: warn
+          retention-days: 7
