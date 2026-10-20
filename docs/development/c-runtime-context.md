@@ -50,8 +50,18 @@ retains failure records. It executes no canonical child, signed component,
 production node, dependency library or libc thread implementation.
 
 The focused workflow runs the original twenty Rust parser/transform controls
-and six new C mechanism controls, then this compiler control. Actual hosted
-execution is pending. It builds only the small parser/encoder tool, with no
+and six new C mechanism controls, then this compiler control. The exact
+[e6e52433 run39408486561/job118580143884](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39408486561/job/118580143884)
+passed all26 Rust cases and the compiled C/core-Wasm control. The
+[source-bound observation](../testing/evidence/c-context-mechanism-2026-10-20.json)
+records artifact12258655842 (8,635 bytes), all24 member digests, all9 exact
+Git input identities and an independent replay of the retained core under
+pinned Node. The actual C root/child records retain separate TLS counters
+8/9 then9/11 and stack addresses65472/131008, including callback reentry and
+all six invalid-context traps. The original untransformed output fails isolation;
+ordinary static lowering is concretely refused for absent TLS-base export.
+This remains a compiler mechanism control, with no canonical child or native
+runtime execution and no pthread-profile qualification. It builds only the small parser/encoder tool, with no
 native engine or application build. C ABI creation/join/identity, errno and key
 TLS destructors, mutex/condition/timed waits, CPU checkpoints, ordinary sockets,
 root draining, cancellation and cross-tenant physical reuse still require their
