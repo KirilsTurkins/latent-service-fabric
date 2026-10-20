@@ -118,7 +118,9 @@ def configuration(directory, signed):
         'consumerService': SERVICE, 'providerService': 'activation-host',
         'contract': oracle.ACTIVATION, 'providerBinding': 'activation-installed'})
     require(len(value['providers']['bindings']) == 4, 'Go-node-stop-four-explicit-bindings')
-    write_json(path, value)
+    encoded = json.dumps(value, indent=2).encode() + b'\n'
+    require(len(encoded) <= 262144, 'Go-node-stop-owned-config-bound')
+    path.write_bytes(encoded)
     return path
 
 

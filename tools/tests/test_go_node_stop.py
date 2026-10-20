@@ -47,6 +47,26 @@ def stopped():
 
 
 class GoNodeStop(unittest.TestCase):
+    def test_configuration_updates_the_actual_already_created_owned_file_with_original_limits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            signed, node = root / 'signed', root / 'node'
+            signed.mkdir()
+            node.mkdir()
+            (signed / 'policy.json').write_bytes(b'{}')
+            path = reference.configuration(node, signed)
+            self.assertEqual(path, node / 'node.json')
+            value = json.loads(path.read_bytes())
+            self.assertEqual(value['providers']['activationRuntime']['limits'], probe.OWNER_LIMITS)
+            self.assertEqual(len(value['providers']['bindings']), 4)
+            self.assertEqual(value['execution']['maximumWallTimeMillis'], 120000)
+            self.assertEqual(value['cells'], [{'class': 'standard', 'capacity': 1, 'queueCapacity': 2,
+                                              'maximumMemoryBytes': 67108864}])
+            self.assertEqual(value['shutdownGraceMillis'], 5000)
+            self.assertEqual(value['dataDirectory'], 'data')
+            self.assertEqual((node / 'policy.json').read_bytes(), b'{}')
+            self.assertLessEqual(path.stat().st_size, 262144)
+
     def test_fixture_uses_original_greeting_with_explicit_v5_and_unchanged_sdk_wit_and_budgets(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

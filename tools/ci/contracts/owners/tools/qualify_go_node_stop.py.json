@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_node_stop.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual signed Go live node stop: require accepted timer/Store barrier, original limits/deadlines, SIGTERM/reaped zero-owner shutdown and same signed products fresh restart; authenticate completed94d normal27 tuple with default prepared current-source guard unchanged and solely exact unused .NET helper compatibility; execution pending.",
+  "reviewReason": "Actual35795 run39377821189 failed before node startup: configure_node already owns node.json; rewrite only that owned config through bounded262144B bytes instead of exclusive-create writer. Real helper regression old FileExistsError RED/new GREEN, original settings/limits retained, all26 focused PASS; live-stop still pending.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dc3296825f4d9c96f0612a43acb3a008479489a57e7e64f4023e4d8eab42e81b"
+  "sha256": "0ae8f2dffa55779ecb8e7560fe56f613dc82fd2c218d92daafa4b58be82085ed"
 }
