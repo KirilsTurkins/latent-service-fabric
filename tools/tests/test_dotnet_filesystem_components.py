@@ -75,7 +75,11 @@ class FilesystemComponentReplay(unittest.TestCase):
 
     def test_manual_lane_keeps_original20_minute_bound_and_needs_no_compiler_or_host_build(self):
         model = workflow_model((replay.ROOT/'.github/workflows/dotnet-filesystem-component-replay.yml').read_text())
-        self.assertEqual(set(model['on']), {'workflow_dispatch'})
+        self.assertEqual(set(model['on']), {'workflow_dispatch', 'push'})
+        self.assertEqual(model['on']['push'], {
+            'branches': ['diagnostic/dotnet-closed-filesystem-replay-20261020'],
+            'paths': ['.github/workflows/dotnet-filesystem-component-replay.yml',
+                'tools/replay_dotnet_filesystem_components.py', 'tools/tests/test_dotnet_filesystem_components.py']})
         job = model['jobs']['replay']; self.assertEqual(job['timeout-minutes'], 20)
         self.assertNotIn('needs', job)
         commands = '\n'.join(s.get('run','') for s in job['steps'])

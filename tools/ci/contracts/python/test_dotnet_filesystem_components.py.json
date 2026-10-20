@@ -70,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_filesystem_components.py",
-  "reviewReason": "Five controls for exact original source/signer inventory, unavailable layers, origin failure and manual noncompiling lane",
+  "reviewReason": "Retain five cases and require exact three-path/one-diagnostic-branch push allowlist alongside manual event",
   "schemaVersion": "latent.ci.contracts.v1"
 }

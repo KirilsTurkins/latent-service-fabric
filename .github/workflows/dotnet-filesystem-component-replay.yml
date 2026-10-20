@@ -2,6 +2,13 @@ name: Retained .NET filesystem component replay
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - diagnostic/dotnet-closed-filesystem-replay-20261020
+    paths:
+      - .github/workflows/dotnet-filesystem-component-replay.yml
+      - tools/replay_dotnet_filesystem_components.py
+      - tools/tests/test_dotnet_filesystem_components.py
 
 permissions:
   contents: read
