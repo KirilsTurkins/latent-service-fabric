@@ -611,7 +611,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 expected=core if mode=='original' else project/'compiler-patch/teavm-core-patched.jar'
                 self.assertTrue(args[1].startswith(str(expected)))
                 return json.dumps({'schemaVersion':'latent.java.coroutine-phi-control.v1','mode':mode,'passed':True})
-            compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run)
+            compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run,directory=root/'compiler-logs')
             receipt=patch.stage(compiler,project,root)
             self.assertEqual([call[0] for call in calls],['java-coroutine-patch',
                 'java-coroutine-original-control','java-coroutine-corrected-control'])
@@ -743,3 +743,36 @@ class CoroutineLoadedCopyTests(unittest.TestCase):
                 'coroutine-compiler-preparation.json'):
             self.assertIn(required,source)
         self.assertNotIn('if (observed != selected)',source)
+
+
+class JavaFailedLifecycleObservation(unittest.TestCase):
+    def test_failed_actual_result_keeps_pending_peer_and_original_assertion(self):
+        import json
+        from tools.phase2_operator_process import WorkflowError
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            original=WorkflowError('java-http-fiber-ordinary-result')
+            peer=SimpleNamespace(observation=lambda:{'schemaVersion':'fixture',
+                'startedRequests':2,'requests':[{'vector':'pending-headers'},{'vector':'domain-json'}]})
+            row={'exitCode':4,'decoded':None,'response':{'error':{'code':'guest-trap'}}}
+            with mock.patch.object(node,'validate_result',side_effect=original):
+                with self.assertRaises(WorkflowError) as caught:
+                    node.validate_observed_result(row,0,{},peer,SimpleNamespace(evidence=root),1,
+                        Gate('a'*32,2,'headers'),{'occupied':1},False,None)
+            self.assertIs(caught.exception,original)
+            value=json.loads((root/'invocation-failure.json').read_bytes())
+            self.assertEqual(value['invocation'],row)
+            self.assertEqual(value['peer']['startedRequests'],2)
+            self.assertEqual(value['pendingOwner'],{'occupied':1})
+            self.assertEqual(value['gate'],{'request':2,'phase':'headers'})
+            self.assertIs(value['releasedOnce'],False)
+            self.assertEqual(value['requestOffset'],1)
+
+    def test_observation_error_never_replaces_original_result_failure(self):
+        original=RuntimeError('original guest result')
+        with (mock.patch.object(node,'validate_result',side_effect=original),
+                mock.patch.object(node,'write_json',side_effect=ValueError('observer failure'))):
+            with self.assertRaises(RuntimeError) as caught:
+                node.validate_observed_result({},0,{},SimpleNamespace(observation=lambda:{}),
+                    SimpleNamespace(evidence=Path('unused')),0,None,None,False,None)
+        self.assertIs(caught.exception,original)

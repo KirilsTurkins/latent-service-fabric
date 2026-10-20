@@ -304,7 +304,7 @@ tasks.named('generateC') {
     preparation = json.dumps(receipt, sort_keys=True, separators=(',', ':')).encode('utf-8')
     if len(preparation) > 262144:
         raise ValueError('coroutine-patch-preparation-bound')
-    (destination / 'coroutine-compiler-preparation.json').write_bytes(preparation)
+    (compiler.directory.parent / 'coroutine-compiler-preparation.json').write_bytes(preparation)
     return receipt
 
 

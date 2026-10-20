@@ -4,6 +4,8 @@
     "CoroutineLoadedCopyTests.test_gradle_load_fence_keeps_source_and_three_resource_identities",
     "ExactCoroutineCompilerClasspath.test_exact_original_classpath_retains_order_and_rejects_unknown_missing_or_mutated_rows",
     "ExactCoroutineCompilerClasspath.test_record_hook_preserves_original_module_and_requires_exact_declared_preimage",
+    "JavaFailedLifecycleObservation.test_failed_actual_result_keeps_pending_peer_and_original_assertion",
+    "JavaFailedLifecycleObservation.test_observation_error_never_replaces_original_result_failure",
     "JavaHttpFiberControlBoundaries.test_changed_candidate_refuses_before_review_cache_or_compilation",
     "JavaHttpFiberControlBoundaries.test_failure_observer_preserves_original_exception",
     "JavaHttpFiberControlBoundaries.test_missing_pending_witness_cannot_pass_an_early_root_return",
@@ -74,6 +76,30 @@
       "skipSites": []
     },
     "ExactCoroutineCompilerClasspath.test_record_hook_preserves_original_module_and_requires_exact_declared_preimage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaFailedLifecycleObservation.test_failed_actual_result_keeps_pending_peer_and_original_assertion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaFailedLifecycleObservation.test_observation_error_never_replaces_original_result_failure": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -460,6 +486,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Bind exact loaded compiler bytes including Gradle original copies and all three resource identities",
+  "reviewReason": "Retain original failed lifecycle result and controlled peer/pending ownership without changing assertions",
   "schemaVersion": "latent.ci.contracts.v1"
 }

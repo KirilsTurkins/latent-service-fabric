@@ -84,3 +84,14 @@ loaded class-resource identities and their same-JAR/classloader ownership,
 instead of identical filesystem paths. A different JAR or transformed class
 still refuses. Expected preparation identities are retained before `generateC`;
 this correction does not claim a passed component or lifecycle programme.
+
+
+Exact head `78311a7772` subsequently compiled and signed the component. Its
+loaded compiler receipt verified that `2cf7cf02...` was a byte-identical Gradle
+copy of the selected private JAR, including all three class resources. The
+ordinary fresh HTTP preflight returned 200 with one outbound request and clean
+retirement. The first concurrent held-header case then trapped after two
+outbound requests; no lifecycle case passed. Failure-only evidence now retains
+the actual invocation, pending owner, controlled peer events and release state
+before preserving that same assertion. This is diagnostic retention, with all
+original result checks, provider ceilings and cancellation behavior unchanged.

@@ -108,6 +108,27 @@ def validate_result(row, mode, selected):
                 and data['terminalState'] == code.replace('-', '_'), 'java-http-fiber-terminal-result')
 
 
+def validate_observed_result(row, mode, selected, peer, client, offset,
+                             gate, active, released, cancelled):
+    """Retain this public fixture's pending evidence before an assertion escapes."""
+    try:
+        validate_result(row, mode, selected)
+    except BaseException:
+        try:
+            value = {'schemaVersion': 'latent.java.http-fiber-failure-observation.v1',
+                'qualification': False, 'mode': mode, 'invocation': row,
+                'requestOffset': offset, 'pendingOwner': active,
+                'gate': None if gate is None else {'request': gate.request, 'phase': gate.phase},
+                'releasedOnce': released, 'cancel': cancelled, 'peer': peer.observation()}
+            if len(json.dumps(value, allow_nan=False).encode('utf-8')) > 1024 * 1024:
+                value = {'schemaVersion': 'latent.java.http-fiber-failure-observation.v1',
+                    'qualification': False, 'status': 'unavailable', 'refusal': 'bound'}
+            write_json(client.evidence / 'invocation-failure.json', value)
+        except Exception:
+            pass
+        raise
+
+
 def invoke(client, node, target, peer, probe, mode, name):
     """One invocation and at most one release/cancel; no operation replay."""
     chosen = narrowed_target(target, mode)
@@ -150,7 +171,8 @@ def invoke(client, node, target, peer, probe, mode, name):
         row = finish_call(client, process)
     finally:
         process.close()
-    validate_result(row, mode, selected)
+    validate_observed_result(row, mode, selected, peer, client, offset,
+                             gate, active, released, cancelled)
     if mode != 7:
         require(gate is not None and active is not None, 'java-http-fiber-no-actual-pending-witness')
     if mode in (0, 1):
