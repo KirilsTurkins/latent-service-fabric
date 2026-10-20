@@ -10,6 +10,11 @@ from tools.rust_capsule_project import write_json
 
 
 class DotnetFilesystemReplay(unittest.TestCase):
+    def test_historical_acquisition_static_input_closure_is_present_with_its_exact_original_hash(self):
+        record = replay.original.expected_original_inputs()
+        self.assertEqual(set(record), {'runtime', 'sdk', 'wit', 'schemas', 'guide', 'helpers'})
+        self.assertGreater(len(record['helpers']), 40)
+
     def test_production_source_guard_checks_recipe_sdk_wit_and_all_current_fixture_inputs(self):
         with patch.object(replay.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stdout=b'')) as checked, \
                 patch.object(replay.subprocess, 'check_output', side_effect=[b'', b'fixture-source\n']):
