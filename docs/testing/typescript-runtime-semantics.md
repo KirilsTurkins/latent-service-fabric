@@ -27,6 +27,15 @@ real peer must observe zero contacts. Source, packaged component, compiler
 recipes, historical products and raw failure rows remain retained and bound.
 Source/type checks or host Node reference outcomes are not signed execution.
 
-Actual results are pending. This finite programme does not qualify all callback
-causes, recurrence storms/catch-up, arbitrary races, cross-tenant reuse, native
-stack/heap costs, selected socket modules or the complete #745/#736 matrices.
+The [signed observation](evidence/typescript-runtime-semantics-signed-2026-10-20.json)
+passed all 15 calls in [run 39394512962](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39394512962/job/118533782955)
+on frozen source `1a56c53aa2dd738c1afd7e4f95577462c19a2061`. All raw result
+oracles, source/component/build identities, 15 physical-retirement and zero-owner
+observations, the clean node stop and zero real peer contacts were independently
+checked. The synchronous loop consumed exactly 50,000,000 fuel; same-budget
+bootstrap and fresh calls succeeded. The engine and native products remain the
+explicit authenticated historical profile, not a development rebuild.
+
+This finite programme does not qualify all callback causes, recurrence
+storms/catch-up, arbitrary races, cross-tenant reuse, native stack/heap costs,
+selected socket modules or the complete #745/#736 matrices.
