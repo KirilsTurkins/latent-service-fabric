@@ -67,11 +67,15 @@ reference CLR controls pass with SDK10.0.303. The pinned BCL Timer.Change return
 false after cancellation; the fixture preserves that behavior. No callback,
 scheduler or Timer implementation is replaced.
 
-Actual execution of this expanded sixteen-case programme is pending. It keeps
-the original twelve cases and reaches exactly48 recorded invocations, within the
-existing48-call ceiling, original provider limits and all four missing-grant
-denials. The retained twelve-case receipt above belongs to its original source
-and does not qualify these additional cases. Complete simultaneous reset/dispose
+All sixteen cases passed the fresh signed NativeAOT
+[run39352737634](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39352737634/job/118400465348).
+The [expanded source-bound receipt](../testing/evidence/dotnet-timer-lifecycle-signed-2026-10-20.json)
+records exactly48 known/reaped invocations within the original48-call ceiling,
+22 provider-idle observations,40 complete physical process-tree samples, all
+four isolated missing-grant denials and clean node/peer shutdown. All eight
+exercised helper/compiler source files and the full runtime-input digest match
+the integrated source. The identified historical native binaries are reused;
+this does not claim a rebuilt current host. Complete simultaneous reset/dispose
 races, shutdown/tenant fencing and managed CPU scheduling remain separate.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
