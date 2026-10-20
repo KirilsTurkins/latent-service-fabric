@@ -69,3 +69,28 @@ helper/fixture/native identities are rechecked after fresh normal signing and
 the unchanged 13-outcome node programme. No Java compiler, JDK, NativeAOT, host
 or engine build runs in this 20-minute replay. The earlier owning failure stays
 failed; no successful joined runtime outcome is claimed until that replay passes.
+
+
+The retained-component replay at 7b3 reached the first signed parallel call and
+failed with a real known/reaped guest trap, 235 charged log bytes and no completed
+joined cases. That failed execution is preserved. The host charges the complete
+correlated JSON envelope: the original two callback messages need 234+235 bytes,
+which cannot both succeed under the unchanged 256-byte activation limit. Several
+later long activation IDs also made a single verbose record exceed that limit.
+
+The corrected fixture keeps every original activation ID, grant and limit. Each
+ordinary PrintStream write uses one ASCII marker; the longest existing record
+is 255 bytes. Only the two callback log checks serialize: the first must succeed,
+the second must expose PrintStream's sticky bounded error. Resource readers,
+clock/RNG calls, ThreadLocal values and the callback rendezvous stay concurrent.
+The parallel result includes `logs=accepted:sticky-error`; later fresh Stores
+must again accept their ordinary write. This is an error-policy assertion, not a
+log-delivery or asynchronous-flush claim.
+
+The [bounded JDK reference](evidence/java-resource-runtime-budget-reference-2026-10-20.json)
+uses an explicitly controlled host-only correlated-byte sink: original source
+is RED, corrected parallel/fresh/clear/caught-callback modes are GREEN. It records
+Windows CRLF separately from the Linux guest LF envelope. That reference sink
+is never compiled into the component and does not qualify guest execution.
+The source change requires one fresh joined guest compilation through the
+original maintained 30-minute lane; the new signed 13 programme remains pending.

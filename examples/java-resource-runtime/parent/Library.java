@@ -14,16 +14,36 @@ public final class Library {
         if (!value) throw new IllegalStateException("resource-runtime-observable");
     }
 
-    private static void facilities(String name) {
+    private static void observations() {
         long before = System.nanoTime();
         long wall = System.currentTimeMillis();
         byte[] bytes = new byte[8];
         new SecureRandom().nextBytes(bytes);
         require(System.nanoTime() >= before && before >= 0 && wall > 0x1_0000_0000L);
         java.util.Arrays.fill(bytes, (byte) 0);
-        System.out.println("resource-" + name);
+    }
+
+    private static boolean writeLog(String name) {
+        // Correlation is host-derived and charged too. One ASCII byte keeps
+        // every existing activation's complete record inside the 256-byte cap.
+        System.out.print(name.charAt(0));
         System.out.flush();
-        require(!System.out.checkError());
+        return System.out.checkError();
+    }
+
+    private static void facilities(String name) {
+        observations();
+        require(!writeLog(name));
+    }
+
+    private static void parallelLog(Shared state, String name) {
+        // Only the two log expectations serialize. Resource readers, clocks,
+        // RNG, ThreadLocal state and the callback rendezvous remain independent.
+        synchronized (state) {
+            require(state.logWrites < 2);
+            require(writeLog(name) == (state.logWrites == 1));
+            state.logWrites++;
+        }
     }
 
     private static final class Shared {
@@ -31,6 +51,7 @@ public final class Library {
         int completed;
         int first;
         int second;
+        int logWrites;
         Throwable failure;
     }
 
@@ -70,7 +91,8 @@ public final class Library {
         Timer second = new Timer("resource-second", true);
         first.schedule(callback(state, () -> {
             arrive(state, "first");
-            facilities("first");
+            observations();
+            parallelLog(state, "first");
             state.first = Data.read(data.first);
             require(state.first == 255);
             Data.remainder(data.first);
@@ -79,7 +101,8 @@ public final class Library {
         }), 1);
         second.schedule(callback(state, () -> {
             arrive(state, "second");
-            facilities("second");
+            observations();
+            parallelLog(state, "second");
             state.second = Data.read(data.second);
             require(state.second == 255);
             Data.remainder(data.second);
@@ -90,8 +113,8 @@ public final class Library {
             while (state.completed != 2 && state.failure == null) waitOn(state);
         }
         first.cancel(); second.cancel();
-        require(state.failure == null && "root".equals(local.get()));
-        return "resource-runtime|parallel=" + state.first + ":" + state.second + "|callbacks=2|fresh=1";
+        require(state.failure == null && state.logWrites == 2 && "root".equals(local.get()));
+        return "resource-runtime|parallel=" + state.first + ":" + state.second + "|callbacks=2|logs=accepted:sticky-error|fresh=1";
     }
 
     private static String fresh(Data data, String name) {

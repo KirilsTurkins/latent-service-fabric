@@ -23,7 +23,7 @@ MATERIALS = tuple(EXAMPLE+'/'+name for name in ('Capsule.java', 'parent/Library.
 CAPABILITIES = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0',
                 'latent:random/random@0.1.0', 'latent:log/log@0.1.0',
                 'latent:runtime/activation@0.1.0')
-EXPECTED = {'parallel': 'resource-runtime|parallel=255:255|callbacks=2|fresh=1',
+EXPECTED = {'parallel': 'resource-runtime|parallel=255:255|callbacks=2|logs=accepted:sticky-error|fresh=1',
             'fresh': 'resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1',
             'clear': 'resource-runtime|clear=00ff80410d0a|empty=0|fresh=1',
             'callback-error':'resource-runtime|callback-error=IllegalStateException|fresh=1'}
