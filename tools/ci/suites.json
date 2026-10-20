@@ -2560,14 +2560,15 @@
         "tests::phase_timing::original_root_deadline_and_cancellation_are_never_reported_as_phase_timeouts",
         "reason::tests::fragmented_informational_and_raw_final_reason_do_not_capture_body_or_stale_bytes",
         "reason::tests::malformed_status_and_bounded_prefix_or_reason_refuse_without_growing_storage",
-        "tests::phase_timing::informational_reason_is_not_returned_and_phase_pooled_capture_has_no_retired_owner"
+        "tests::phase_timing::informational_reason_is_not_returned_and_phase_pooled_capture_has_no_retired_owner",
+        "tests::secret_references::separate_http_installation_cannot_rebind_foreign_tenant_provider_or_origin_credentials"
       ],
       "expectedIgnored": [],
       "id": "latent-http.lib.latent-http",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 77,
+      "minimumCases": 78,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [
@@ -4145,14 +4146,17 @@
         "semantics::wasm::tests::data::excess_and_truncated_data_vectors_remain_rejected_before_execution",
         "semantics::wasm::tests::data::lowering_function_slots_does_not_reclassify_data_segments_as_functions",
         "semantics::wasm::tests::data::valid_data_segments_at_the_pinned_parser_ceiling_validate_without_execution",
-        "semantics::host::tests::phase_semantics_bind_original_resource_owners_and_exact_versioned_extension"
+        "semantics::host::tests::phase_semantics_bind_original_resource_owners_and_exact_versioned_extension",
+        "semantics::authoring::tests::phase_nominal_owner_supports_normal_contract_derivation_without_legacy_operations",
+        "semantics::host::tests::phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase",
+        "semantics::host::tests::phase_component_nominal_pruning_rejects_missing_or_changed_owned_types"
       ],
       "expectedIgnored": [],
       "id": "latent-packaging.lib.latent-packaging",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 87,
+      "minimumCases": 90,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
@@ -10365,7 +10369,12 @@
         "config::tests::providers::scalar_aliases::activation_aliases_keep_original_configuration_and_exact_binding_scope",
         "standalone::start::tests::provider_startup::activation_aliases_publish_original_limits_to_two_tenants_and_reap",
         "config::tests::providers::http_streaming::phase_selection_is_explicit_strict_and_never_aliases_the_original_contract",
-        "config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects"
+        "config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects",
+        "config::tests::providers::http_streaming::independent_http_installations_require_exact_tenant_service_and_profile_bindings",
+        "config::tests::providers::http_streaming::additional_http_installations_share_the_original_fourteen_identity_ceiling",
+        "config::tests::providers::http_streaming::additional_http_credentials_keep_closed_file_and_destination_inputs",
+        "standalone::providers::runtime::http::streaming::tests::selection_never_queries_foreign_providers_and_requires_one_sealed_match",
+        "standalone::providers::runtime::http::streaming::tests::selection_preserves_liveness_errors_without_fallback_or_partial_dispatch"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10434,7 +10443,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 461,
+      "minimumCases": 466,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

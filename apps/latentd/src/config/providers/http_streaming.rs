@@ -5,8 +5,8 @@ use latent_http::{HttpProviderConfig, HttpStreamLimits};
 use serde::Deserialize;
 
 use super::{
-    invalid, present, validate_http_credentials, ConfiguredProviders, ProviderIdentity,
-    ProviderSecretFile,
+    invalid, present, validate_http_credentials, ConfiguredProviders, HostBinding,
+    ProviderIdentity, ProviderSecretFile,
 };
 
 /// Explicit installation of the existing typed HTTP 0.3 provider. Neither its
@@ -90,5 +90,66 @@ impl HttpStreamingInstallation {
             }
         }
         Ok(())
+    }
+}
+
+impl ConfiguredProviders {
+    pub(crate) fn http_streaming_installations(
+        &self,
+    ) -> impl Iterator<Item = &HttpStreamingInstallation> {
+        self.http_streaming
+            .iter()
+            .chain(&self.additional_http_streaming)
+    }
+
+    pub(crate) fn validate_http_streaming_installations(&self) -> Result<(), PlatformError> {
+        if self.additional_http_streaming.capacity() > 16
+            || self.installation_identities().count() + self.scalar_aliases.len() > 14
+        {
+            return Err(invalid("providers.additionalHttpStreaming.capacity"));
+        }
+        for http in self.http_streaming_installations() {
+            http.validate_installation(self)?;
+        }
+        for http in &self.additional_http_streaming {
+            if self
+                .installation_identities()
+                .filter(|other| other.id == http.identity.id)
+                .count()
+                != 1
+                || self.installation_identities().any(|other| {
+                    other.id != http.identity.id
+                        && other.tenant == http.identity.tenant
+                        && other.service == http.identity.service
+                })
+                || self
+                    .scalar_aliases
+                    .iter()
+                    .any(|alias| alias.identity.id == http.identity.id)
+            {
+                return Err(invalid("providers.identity"));
+            }
+        }
+        Ok(())
+    }
+
+    pub(super) fn http_streaming_binding(
+        &self,
+        binding: &HostBinding,
+        phase: bool,
+    ) -> Option<&ProviderIdentity> {
+        let matching = || {
+            self.http_streaming_installations()
+                .filter(move |http| http.phase_timing == phase)
+        };
+        // Prefer the exact installation scope; the fallback retains the original
+        // singleton scope refusal when no installation matches this tenant.
+        matching()
+            .find(|http| {
+                http.identity.tenant == binding.tenant
+                    && http.identity.service == binding.provider_service
+            })
+            .or_else(|| matching().next())
+            .map(|http| &http.identity)
     }
 }
