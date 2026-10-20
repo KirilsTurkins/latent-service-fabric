@@ -11,11 +11,13 @@ complete Client and Request implementations are authenticated and kept intact.
 The finite standard path and two captured clients have signed qualification in
 [PR #1043](https://github.com/KirilsTurkins/latent-service-fabric/pull/1043):
 [the recorded owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39178228657/job/117825251956)
-ran the 33 standard cases and 30 cases each for Sling and Requests, including
+ran the 33 standard cases and 30 cases per original/renamed variant (15 Sling and
+15 Requests cases in each), including
 renamed outside modules with unavailable original inputs. Those results retain
 their original source identities. They establish this selected HTTP profile;
 [#692](https://github.com/KirilsTurkins/latent-service-fabric/issues/692) still
-requires the remaining explicit redirect, lifecycle and isolation matrix.
+requires the remaining isolation and currentness matrix. The additional redirect
+and root lifecycle results are recorded below.
 
 The ordinary engine's finite table ceiling is 12,000 entries. The captured Go
 linker reserves 4,096 slots before its function entries: the observed standard
@@ -150,7 +152,8 @@ when the field is absent. A canonical explicit field uses only the first value,
 trims surrounding SP/HTAB, and an empty value suppresses the field. Noncanonical
 direct-map User-Agent spellings fail explicitly before contact. The peer records
 only header presence, byte length and SHA256 to check these semantics without
-retaining header bytes. Those signed checks remain unqualified until executed.
+retaining header bytes. These four User-Agent cases passed in the recorded
+33-case signed gate; the result retains that gate's original source identities.
 
 Original Client code owns redirects, cookies, authentication and request
 repetition. Every attempt reaches the typed backend and must independently pass
@@ -220,8 +223,8 @@ ordinary fixture. HTTPS, the wider default-client/runtime matrix and complete
 #692 acceptance remain separate; no full-ticket result follows from this slice.
 
 The [two published client capture gate](go-default-http-libraries.md) adds
-ordinary library request/JSON paths and private transitive workers as a separate
-pending qualification. It preserves this original standard-API gate.
+ordinary library request/JSON paths and private transitive workers as a separately
+passed finite qualification. It preserves this original standard-API gate.
 
 ## Additional lifecycle and redirect gate
 
@@ -271,3 +274,7 @@ and five fixture/runner files match the passed replay exactly. This is not a fre
 current-native or current-compiler observation. The two captured-client programmes
 retain their own receipts and bounds. Cross-tenant isolation, catalogue-removal
 qualification and the remaining #692/#742 requirements remain separate.
+
+The [new tenant and catalogue-free programme](go-http-tenant-catalogue.md) owns
+those two next gates and a separately labelled delegating custom RoundTripper.
+Its source controls do not supply signed qualification before actual execution.

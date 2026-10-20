@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_http_tenants.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one fresh captured ordinary Go HTTP component built without catalogue data and strict independent tenant authority/retirement gates; preserve frozen native products and original limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a8f92cb727ed2ec9140df35a9b8329fb3b33efa2d7ec7ac03b51f7e4a2091bbd"
+}

@@ -1,0 +1,28 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-http-tenant-catalogue-${{ github.ref }}"
+    },
+    "name": "Go HTTP catalogue-free and independent tenant qualification",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-http-tenant-catalogue-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "tenants"
+  ],
+  "reviewReason": "Add one fresh captured ordinary Go HTTP component built without catalogue data and strict independent tenant authority/retirement gates; preserve frozen native products and original limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-http-tenant-catalogue.yml"
+}
