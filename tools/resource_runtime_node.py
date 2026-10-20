@@ -137,17 +137,22 @@ def pending_witness(inventory, usage, pages, activation, stderr):
                     and identity.get('providerOutcome') == 'AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED':starts.append(sequence)
             if observed['kind'] == 'PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED' and identity['operation'] == 'timer-next' \
                     and observed['outcome'] == 'AUDIT_OBSERVATION_OUTCOME_SUCCEEDED':waits.append(sequence)
-    if not starts or not waits or max(waits) <= max(starts):return None
-    require(len(epochs) == 1,'resource-runtime-single-activation-audit-epoch')
+    dropped=[integer(page['data']['coverage']['droppedObservations']) for page in pages]
+    correlated=bool(starts and waits and max(waits)>max(starts))
+    if not correlated and not any(dropped):return None
+    require(len(epochs)<=1 and (not correlated or len(epochs)==1),'resource-runtime-single-activation-audit-epoch')
     positive = positive_timer(stderr, activation)
     if positive is None:return None
     return {'activation':activation,'physicalOwners':{name:1 for name in LIVE},
             'completedTimerStarts':starts,'laterTimerWaitAdmissions':waits,'retainedProviderCall':True,
+            'auditTimerCorrelationAvailable':correlated,'explicitlyLossyAuditCapture':not correlated,
             'positiveTimer':positive, 'auditEventsAloneProveTypedSuccess':False,
-            'auditDroppedObservations':[p['data']['coverage']['droppedObservations'] for p in pages]}
+            'auditDroppedObservations':dropped}
 
 
-def wait_pending(client, pending, probe, target, output, label):
+def wait_pending(client, pending, probe, target, output, label, *, observer_offset=0):
+    require(type(observer_offset) is int and 0<=observer_offset<=timer_observer.MAXIMUM_STDERR,
+            'resource-runtime-invocation-observer-offset')
     original=client.deadline
     deadline = min(original,time.monotonic()+10)
     client.deadline=deadline
@@ -167,7 +172,7 @@ def wait_pending(client, pending, probe, target, output, label):
             inventory=client.call('node','get','operator-workflow-test')['data']['inventory']
             usage=client.call('capability','list','--deployment',target['name'],'--include-node-usage')['data']
             client.node.drain()
-            witness=pending_witness(inventory,usage,pages,pending.authoring_activation,bytes(client.node.buffers[1]))
+            witness=pending_witness(inventory,usage,pages,pending.authoring_activation,bytes(client.node.buffers[1])[observer_offset:])
             if witness is not None:
                 require(not pending.owner.exited(),'resource-runtime-pending-ended-before-witness')
                 record={'witness':witness,'inventory':inventory,'providerUsage':usage,'auditPages':pages,
@@ -216,9 +221,10 @@ def programme(clients, targets, probe, output, component):
     for mode in ('cancel','deadline'):
         client,target=clients['examples'],targets['examples'];label='node-stop-pending' if mode=='cancel' else 'node-stop-drain'
         revision=selected_revision(client,target)
+        client.node.drain();observer_offset=len(client.node.buffers[1])
         pending=start_call(client,target,'resource-runtime','run',['pending'],label,wall=3000 if mode=='deadline' else None)
         try:
-            live=wait_pending(client,pending,probe,target,output,label)
+            live=wait_pending(client,pending,probe,target,output,label,observer_offset=observer_offset)
             cancellation=None
             if mode=='cancel':
                 cancellation=client.call('activation','cancel',label,'--reason','Owned resource callback cancellation')

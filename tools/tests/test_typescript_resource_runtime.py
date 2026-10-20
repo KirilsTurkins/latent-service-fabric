@@ -154,6 +154,41 @@ class ResourceRuntimeBoundaries(unittest.TestCase):
             with self.subTest(change=change),self.assertRaises(WorkflowError):
                 runtime.pending_witness(inventory,usage,pages,'node-stop-pending',self.timer_records())
 
+    def test_known_loss_requires_native_token_success_and_preserves_zero_loss_refusal(self):
+        inventory,usage,pages=self.witness();pages[0]['data']['records']=[]
+        self.assertIsNone(runtime.pending_witness(inventory,usage,pages,'node-stop-pending',self.timer_records()))
+        pages[0]['data']['coverage']['droppedObservations']='1194'
+        proof=runtime.pending_witness(inventory,usage,pages,'node-stop-pending',self.timer_records())
+        self.assertFalse(proof['auditTimerCorrelationAvailable']);self.assertTrue(proof['explicitlyLossyAuditCapture'])
+        self.assertEqual(proof['auditDroppedObservations'],[1194])
+        self.assertIsNone(runtime.pending_witness(inventory,usage,pages,'node-stop-pending',b''))
+        retired=copy.deepcopy(inventory);retired['topology']['entries'][0]['activeCount']='0'
+        self.assertIsNone(runtime.pending_witness(retired,usage,pages,'node-stop-pending',self.timer_records()))
+        for invalid in (True,'-1','not-a-counter'):
+            pages[0]['data']['coverage']['droppedObservations']=invalid
+            with self.subTest(invalid=invalid),self.assertRaises(WorkflowError):
+                runtime.pending_witness(inventory,usage,pages,'node-stop-pending',self.timer_records())
+
+    def test_prior_native_pair_before_this_invocation_is_never_a_pending_witness(self):
+        inventory,usage,pages=self.witness();pages[0]['data']['records']=[]
+        pages[0]['data']['coverage']['droppedObservations']='1'
+        def read(*args,**kwargs):
+            if args[0]=='audit':return pages[0]
+            if args[0]=='node':return {'data':{'inventory':inventory}}
+            if args[0]=='capability':return {'data':usage}
+            self.fail('unexpected control')
+        raw=self.timer_records()
+        pending=SimpleNamespace(owner=SimpleNamespace(exited=lambda:False),
+            authoring_activation='node-stop-pending',authoring_started_unix_millis=1)
+        client=SimpleNamespace(deadline=time.monotonic()+100,call=read,
+            node=SimpleNamespace(drain=lambda:None,buffers=[b'',raw]))
+        with tempfile.TemporaryDirectory() as temporary,patch.object(runtime,'sample',return_value={}),patch.object(runtime.time,'sleep'):
+            output=Path(temporary)
+            with self.assertRaisesRegex(RuntimeError,'pending-witness-attempts'):
+                runtime.wait_pending(client,pending,None,{'name':'controlled'},output,'old-pair',observer_offset=len(raw))
+            observed=runtime.wait_pending(client,pending,None,{'name':'controlled'},output,'new-pair',observer_offset=0)
+            self.assertTrue(observed['witness']['retainedProviderCall'])
+
     def test_completed_or_dispatched_audit_never_substitutes_for_actual_accepted_timer_wait(self):
         i,u,p=self.witness()
         for raw in (b'',runtime.timer_observer.PREFIX+b'|pending|start-accepted|1|2|0|1\n'):
