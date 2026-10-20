@@ -1,0 +1,244 @@
+{
+  "cases": [
+    "GoNodeStop.test_barrier_requires_actual_live_store_and_host_completed_body_timers_not_just_a_wait",
+    "GoNodeStop.test_component_build_failure_cannot_run_a_node_or_write_successful_qualification",
+    "GoNodeStop.test_configuration_updates_the_actual_already_created_owned_file_with_original_limits",
+    "GoNodeStop.test_exact_successful_producer_artifact_cannot_be_substituted_with_other_head_job_or_failure",
+    "GoNodeStop.test_failed_tuple_integrity_never_reaches_a_new_component_or_signer",
+    "GoNodeStop.test_fixture_uses_original_greeting_with_explicit_v5_and_unchanged_sdk_wit_and_budgets",
+    "GoNodeStop.test_fresh_after_restart_binds_actual_resolved_revision_and_original_consumption",
+    "GoNodeStop.test_historical_normal_tuple_allows_only_exact_unused_dotnet_extension_and_keeps_default_strict",
+    "GoNodeStop.test_initializer_only_or_other_activation_cannot_stand_in_for_accepted_body_work",
+    "GoNodeStop.test_live_barrier_read_failure_restores_the_original_deadline_and_never_signals_node",
+    "GoNodeStop.test_missing_dropped_duplicate_or_partial_audit_is_not_a_live_work_barrier",
+    "GoNodeStop.test_named_timer_events_require_real_retained_provider_calls_with_the_store",
+    "GoNodeStop.test_optional_global_loss_does_not_replace_or_erase_the_required_named_positive_witnesses",
+    "GoNodeStop.test_original_limits_are_go_limits_and_readiness_does_not_raise_any_capacity",
+    "GoNodeStop.test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer",
+    "GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results",
+    "GoNodeStop.test_shutdown_requires_each_original_physical_owner_zero_and_real_joined_reaped_report",
+    "GoNodeStop.test_uncertain_transport_is_retained_without_inventing_cancellation_or_retirement"
+  ],
+  "guards": {
+    "GoNodeStop.test_barrier_requires_actual_live_store_and_host_completed_body_timers_not_just_a_wait": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_component_build_failure_cannot_run_a_node_or_write_successful_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_configuration_updates_the_actual_already_created_owned_file_with_original_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_exact_successful_producer_artifact_cannot_be_substituted_with_other_head_job_or_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_failed_tuple_integrity_never_reaches_a_new_component_or_signer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_fixture_uses_original_greeting_with_explicit_v5_and_unchanged_sdk_wit_and_budgets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_fresh_after_restart_binds_actual_resolved_revision_and_original_consumption": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_historical_normal_tuple_allows_only_exact_unused_dotnet_extension_and_keeps_default_strict": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_initializer_only_or_other_activation_cannot_stand_in_for_accepted_body_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_live_barrier_read_failure_restores_the_original_deadline_and_never_signals_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_missing_dropped_duplicate_or_partial_audit_is_not_a_live_work_barrier": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_named_timer_events_require_real_retained_provider_calls_with_the_store": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_optional_global_loss_does_not_replace_or_erase_the_required_named_positive_witnesses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_original_limits_are_go_limits_and_readiness_does_not_raise_any_capacity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_shutdown_requires_each_original_physical_owner_zero_and_real_joined_reaped_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_uncertain_transport_is_retained_without_inventing_cancellation_or_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_node_stop.py",
+  "reviewReason": "Actual6a76 first fresh signed call PASS then strict global audit-loss oracle FAIL (157drops); source try_lock proves optional loss can occur with queue space. Require every original named timer/start/next/close positive witness, exact scope/unique fully paged query, plus new actual tenant/node ProviderCall ownership and live Store/caller. Retain raw loss; never infer absence, exclusivity or full stream coverage. Same queue64/guest/cell/request/terminal limits. Two old-source counterexamples/current29 focused PASS; complete live-stop execution pending. Explicit module fixture review: add provider_usage success fixture and barrier forwarding helper for new required provider owner argument. All16 old cases retained; bases/decorators/skip sites/class guards identical; no environment skip added.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

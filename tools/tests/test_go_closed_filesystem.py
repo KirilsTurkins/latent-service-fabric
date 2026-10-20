@@ -34,6 +34,61 @@ def output(rows):
 
 
 class GoClosedFilesystem(unittest.TestCase):
+    def test_prepare_only_authenticates_both_sources_and_passes_both_bounded_products_without_running_rust(self):
+        original, current = closed.adapter_sources()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment, calls, parsed = {}, [], []
+            class Commands:
+                def run(self, stage, *command):
+                    calls.append(command)
+                    if command == ('wasm-tools', '--version'):
+                        return b'wasm-tools 1.254.0\n'
+                    self_source, destination = Path(command[2]), Path(command[4])
+                    parsed.append(self_source.read_bytes())
+                    destination.write_bytes(b'controlled-test-wasm')
+                    return b''
+            result = reference.prepare_adapter_inputs(root, environment, Commands())
+            self.assertEqual(parsed, [original, current])
+            self.assertEqual(set(environment), {'LSF_GO_CLOSED_ADAPTER_OLD', 'LSF_GO_CLOSED_ADAPTER_CURRENT'})
+            for label in ('old', 'current'):
+                self.assertEqual(environment['LSF_GO_CLOSED_ADAPTER_' + label.upper()], str(root / (label + '.wasm')))
+                self.assertEqual(result['wasm'][label]['bytes'], len(b'controlled-test-wasm'))
+            self.assertFalse(result['actualAdapterExecution'])
+            self.assertEqual(calls[0], ('wasm-tools', '--version'))
+            self.assertEqual([call[:2] for call in calls[1:]], [('wasm-tools', 'parse')] * 2)
+
+    def test_prepare_only_refuses_unknown_parser_and_oversized_binary_before_passing_any_input(self):
+        for version, size in [(b'wasm-tools 1.255.0\n', 8), (b'wasm-tools 1.254.0\n', 65537)]:
+            with self.subTest(version=version, size=size), tempfile.TemporaryDirectory() as temporary:
+                environment, calls = {}, []
+                class Commands:
+                    def run(self, stage, *command):
+                        calls.append(command)
+                        if command == ('wasm-tools', '--version'):
+                            return version
+                        Path(command[4]).write_bytes(b'x' * size)
+                        return b''
+                with self.assertRaisesRegex(RuntimeError, 'pinned-wasm-tools|resource-identity-bound'):
+                    reference.prepare_adapter_inputs(Path(temporary), environment, Commands())
+                self.assertEqual(environment, {})
+                self.assertEqual(len(calls), 1 if size == 8 else 2)
+
+    def test_generic_runtime_prepares_both_exact_adapter_inputs_before_the_unchanged_full_rust_gate(self):
+        source = (Path(__file__).resolve().parents[1] / 'validate_contracts.sh').read_text()
+        prepare = 'python3 tools/qualify_go_closed_filesystem.py --prepare-adapters-only --output "${GO_CLOSED_ADAPTERS}"'
+        command = ('cargo test -p latent-wasmtime --test generic_backend --locked -- \\\n'
+                   '            --ignored --nocapture --test-threads=1')
+        self.assertEqual(source.count(prepare), 1)
+        self.assertEqual(source.count(command), 1)
+        self.assertLess(source.index(prepare), source.index(command))
+        prefix = source[source.index(prepare):source.index(command)]
+        self.assertIn('LSF_GO_CLOSED_ADAPTER_OLD="${GO_CLOSED_ADAPTERS}/old.wasm" \\', prefix)
+        self.assertIn('LSF_GO_CLOSED_ADAPTER_CURRENT="${GO_CLOSED_ADAPTERS}/current.wasm" \\', prefix)
+        for existing in ('LSF_GENERIC_COMPONENT', 'LSF_GENERIC_FIXTURES', 'LSF_ENGINE_MEMORY_COMPONENT', 'LSF_ECHO_COMPONENT'):
+            self.assertIn(existing, prefix)
+        self.assertNotIn('--skip', prefix)
+
     def test_only_path_open_result_changes_from_the_authenticated_closed_preimage(self):
         original, current = closed.adapter_sources()
         self.assertEqual(hashlib.sha256(original).hexdigest(), closed.ORIGINAL_SHA256)

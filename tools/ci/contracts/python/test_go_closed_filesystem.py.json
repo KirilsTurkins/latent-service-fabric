@@ -2,10 +2,13 @@
   "cases": [
     "GoClosedFilesystem.test_Go_ENOTSUP_is_not_standard_errors_Is_Unsupported_but_ENOSYS_is",
     "GoClosedFilesystem.test_adapter_requires_both_real_old_current_results_and_unchanged_discovery_authority",
+    "GoClosedFilesystem.test_generic_runtime_prepares_both_exact_adapter_inputs_before_the_unchanged_full_rust_gate",
     "GoClosedFilesystem.test_ignored_other_target_partial_execution_and_oversized_output_are_not_adapter_evidence",
     "GoClosedFilesystem.test_old_adapter_alias_or_any_unrelated_source_change_fails_before_execution",
     "GoClosedFilesystem.test_only_path_open_result_changes_from_the_authenticated_closed_preimage",
     "GoClosedFilesystem.test_original_normal_programme_and_all_six_calls_cannot_be_dropped_or_replaced_by_a_new_grant",
+    "GoClosedFilesystem.test_prepare_only_authenticates_both_sources_and_passes_both_bounded_products_without_running_rust",
+    "GoClosedFilesystem.test_prepare_only_refuses_unknown_parser_and_oversized_binary_before_passing_any_input",
     "GoClosedFilesystem.test_real_go_fixture_requires_standard_errors_Is_before_publishing_numeric_ENOSYS",
     "GoClosedFilesystem.test_strict_actual_packet_requires_all_three_exact_numeric_and_standard_Unsupported_results"
   ],
@@ -23,6 +26,18 @@
       "skipSites": []
     },
     "GoClosedFilesystem.test_adapter_requires_both_real_old_current_results_and_unchanged_discovery_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_generic_runtime_prepares_both_exact_adapter_inputs_before_the_unchanged_full_rust_gate": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -82,6 +97,30 @@
       ],
       "skipSites": []
     },
+    "GoClosedFilesystem.test_prepare_only_authenticates_both_sources_and_passes_both_bounded_products_without_running_rust": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_prepare_only_refuses_unknown_parser_and_oversized_binary_before_passing_any_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "GoClosedFilesystem.test_real_go_fixture_requires_standard_errors_Is_before_publishing_numeric_ENOSYS": {
       "bases": [
         "unittest.TestCase"
@@ -109,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_closed_filesystem.py",
-  "reviewReason": "Closed Go path_open returns pinned ENOSYS52, preserving every other adapter byte/preopen8 and all existing gates; actual fixture checks errors.Is Unsupported and strict52, retain old/current adapter plus mandatorynormal27+six signed programme; native evidence pending.",
+  "reviewReason": "Actual CI118482127658 fails before Wasmtime compilation because generic backend invokes the original exact Go52 case without either required adapter env. Reuse the existing authenticated old/current source producer and pinned wasm-tools1.254.0 in prepare-only mode, pass BOTH fixed paths through unchanged full generic --ignored command. No test/skip/Cargo/native changes; same original64KiB/10k native gate. Old harness RED/current40 focused PASS; local real pinned WAT parsing prepares1246/1245B inputs but supplies no new Rust execution credit.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
