@@ -193,7 +193,8 @@ def qualify(native_directory,tools,output):
         'runtimeInputs':{'sha256':digest(runtime_source),'bytes':len(runtime_source)},
         'compilerInstallation':{name:file_identity(tools/name,16*1024**2) for name in
             ('INSTALL-COMPLETE.json','runtime-inputs.json','wasi-sdk.json')},
-        'nativeProductsBuilt':0,'engineRebuilt':False,'guestComponentsCompiled':1,'nativeAotCompilationPerformed':True,
+        'nativeProductsBuilt':0,'engineRebuilt':False,'guestComponentsCompiled':0,'freshNativeAotRequired':True,
+        'nativeAotCompilationAttempted':False,
         'historicalGuestQualificationRelabelled':False,'fullTicketQualification':False}
     stage='outside-transitive-managed-library-capture'
     try:
@@ -201,8 +202,10 @@ def qualify(native_directory,tools,output):
         record['capture']=fixture.capture(app,output/'outside',tools)
         before=inventory(snapshot(app));write_json(output/'capture.json',record['capture'])
         stage='one-fresh-normal-offline-native-aot-component'
+        record['nativeAotCompilationAttempted']=True
         artifact=build(app,output/'build',native['capsule_contracts'],native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric',tools=tools,offline=True)
+        record.update(guestComponentsCompiled=1,nativeAotCompilationSucceeded=True)
         record['freshBuild']=build_evidence(artifact)
         stage='normal-sign-admit-and-joined-runtime-programme';observed=execute(artifact,native,output/'node')
         require(observed['status']=='passed' and inventory(snapshot(app))==before

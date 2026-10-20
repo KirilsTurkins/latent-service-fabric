@@ -66,10 +66,23 @@ class DotnetResourceRuntimeFixture(unittest.TestCase):
             library=root/'outside/library';original=fixture.inventory(fixture.source_files(library))
             output=library/'child/bin/Release';output.mkdir(parents=True)
             (output/'public-controlled.dll').write_bytes(b'controlled build output')
+            for base in (library,library/'child'):
+                generated=base/'obj/Release/net10.0';generated.mkdir(parents=True)
+                (generated/'.NETCoreApp,Version=v10.0.AssemblyAttributes.cs').write_bytes(b'ordinary MSBuild output')
+            # This is the actual old order: snapshot rejects generated paths
+            # before the later dictionary filter could exclude build outputs.
+            with self.assertRaisesRegex(ValueError,'nonportable project path'):snapshot(library)
             fixture.unchanged_library(library,original)
             (library/'Library.cs').write_bytes(b'changed source')
             with self.assertRaisesRegex(RuntimeError,'original-library-source-changed'):
                 fixture.unchanged_library(library,original)
+
+    def test_nonportable_or_changed_original_source_is_not_hidden_by_output_pruning(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);_app,_proof=fixture.project(root/'project',root/'outside')
+            library=root/'outside/library'
+            (library/'child/source,invalid.cs').write_bytes(b'outside source')
+            with self.assertRaisesRegex(ValueError,'nonportable project path'):fixture.source_files(library)
 
     def test_foreign_originals_are_rejected_before_project_creation(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_resource_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Record current finite managed resource callback qualifier fingerprint; exact new source and historical compiled product identities remain distinct, original runtime limits and compiler gates retained.",
+  "reviewReason": "Preserve all original managed resource fixture controls and guards; prune only known root/child bin/obj outputs BEFORE portable-path validation after actual19ff MSBuild capture failure. Add original-source refusal counterexample; keep aggregate source limits and all runtime/compiler authority gates.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ccdfcfdd67ead917609506225002bd9f992d1b3fdf7e3fc173ec41217f9e4d73"
+  "sha256": "6dd5cbb08c16dcd113369fabe457ee19b22734fe438684776b76be322d59c995"
 }

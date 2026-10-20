@@ -21,7 +21,7 @@ from tools.dotnet_guest.runtime import ACTIVATION, CLOCK, WALL, RANDOM, LOG
 from tools.dotnet_task_runtime_fixture import declare as declare_tasks
 from tools.phase2_operator_process import require
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, digest, inventory, read_file, snapshot
+from tools.rust_capsule_project import ROOT, MAX_FILES, MAX_SOURCE, digest, inventory, read_file, snapshot
 
 PACKAGES=('Outside.ResourceRuntime.Library','Outside.ResourceRuntime.Data')
 DATA={'text.txt':'Gr\u00fc\u00dfe\0\u96ea\n'.encode(),
@@ -202,8 +202,12 @@ def package(identity,assembly,*,child):
 
 
 def source_files(directory:Path):
-    return {name:raw for name,raw in snapshot(directory).items()
-            if not any(part in {'bin','obj'} for part in Path(name).parts)}
+    # Prune only the two controlled projects' outputs before portable source
+    # validation: MSBuild writes comma/equal-containing names beneath obj.
+    files=snapshot(directory,exclude=('bin','obj','child'))
+    files.update({'child/'+name:raw for name,raw in snapshot(directory/'child',exclude=('bin','obj')).items()})
+    require(len(files)<=MAX_FILES and sum(map(len,files.values()))<=MAX_SOURCE,'resource-dotnet-source-capture-bound')
+    return files
 
 
 def unchanged_library(directory:Path,original:bytes):
