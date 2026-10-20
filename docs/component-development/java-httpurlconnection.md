@@ -66,6 +66,16 @@ The finite profile rejects explicit proxies and socket-address resolution with
 concrete errors before DNS or contact. It supplies no socket or proxy transport.
 These standard API substitutions do not inspect dependency coordinates.
 
+The profile also supplies the canonical abstract `javax.net.ssl.HttpsURLConnection`
+type for ordinary libraries' optional HTTPS type checks. It remains distinct from
+the final plain-HTTP `Connection`: an HTTP connection never passes that test.
+Construction and the supplied hostname-verifier/socket-factory setters are
+catchably unsupported (`java-https-standard-type-not-qualified`); null setter
+arguments retain their standard `IllegalArgumentException`. No verifier, socket
+factory, certificate, TLS connection or successful placeholder is created.
+The ordinary HTTPS URL factory retains its original pre-dispatch refusal.
+This finite type surface is not a qualified HTTPS implementation.
+
 Each upload/body/chunk uses the generated owned WIT resource. Stream close,
 disconnect and errors release guest ownership without claiming physical retirement;
 the original installed provider retains charges through actual cleanup or

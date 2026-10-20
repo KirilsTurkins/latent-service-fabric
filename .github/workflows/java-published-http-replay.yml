@@ -63,6 +63,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
+      - name: Check actual host JDK HTTP type and pre-effect refusal controls
+        run: python3 -B -m unittest discover -s sdk/java-guest/tests -p test_client.py -v
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0

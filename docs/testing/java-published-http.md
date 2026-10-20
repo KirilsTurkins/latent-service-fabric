@@ -50,3 +50,16 @@ source controls, not JAR/TeaVM execution. The actual two-client signed result
 is pending. HTTPS/certificate APIs, independent timeout phases, applicable
 pending/sibling/cancellation behavior and broader #688/#741 requirements remain
 separate and open.
+
+### Retained compiler blocker and type boundary
+
+The exact `6d4a2c7` focused attempt (`39348412136` / `118386521135`)
+completed the first published client's 13-case gate, then stopped in TeaVM
+`generateC`: `javax.net.ssl.HttpsURLConnection` was absent at Webb's ordinary
+`prepareSslConnection` type check. Artifact `12232471661` retains only that
+public fixture's bounded `java-to-c` compiler log in addition to the existing
+structured receipts. No Webb component or SSL transport failure is claimed.
+The source correction supplies a canonical abstract HTTPS type with explicit
+unsupported construction/mutators, retaining plain HTTP identity and the
+original HTTPS factory refusal. Host type/refusal controls are source evidence;
+the corrected two-component signed gate remains required.

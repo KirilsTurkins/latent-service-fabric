@@ -78,5 +78,21 @@ class HttpClient(unittest.TestCase):
             self.assertIn("RESPONSE_MESSAGE_MODEL_CONTROLS=6; COMPONENT_QUALIFICATION=pending", result.stdout)
 
 
+    @unittest.skipUnless(shutil.which("javac") and shutil.which("java"), "native JDK controls")
+    def test_https_type_identity_preserves_plain_http_and_refuses_tls_before_effects(self):
+        sdk = ROOT / "sdk/java-guest"
+        sources = list((sdk / "client/dev").rglob("*.java"))
+        sources += list((sdk / "tests/client").glob("*.java"))
+        sources += [sdk / "runtime/dev/latent/guest" / name for name in
+                    ("Option.java", "Result.java", "Unit.java", "Unsigned64.java")]
+        with tempfile.TemporaryDirectory() as temporary:
+            subprocess.run(["javac", "-proc:none", "-encoding", "UTF-8", "-d", temporary, *map(str, sources)],
+                           check=True, capture_output=True, timeout=30)
+            result = subprocess.run(["java", "-cp", temporary, "dev.latent.guest.client.HttpsType"],
+                                    check=True, capture_output=True, text=True, timeout=15)
+            self.assertIn("HTTPS_TYPE_MODEL_CONTROLS=5; COMPONENT_QUALIFICATION=pending; TLS_QUALIFICATION=unsupported",
+                          result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
