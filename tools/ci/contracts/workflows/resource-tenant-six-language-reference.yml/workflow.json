@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "resource-tenants-extension-${{ github.ref }}"
+    },
+    "name": "C Rust and Java resource tenant reference",
+    "on": {
+      "workflow_dispatch": {
+        "inputs": {
+          "rust-only": {
+            "default": false,
+            "description": "Retry only the registered Rust component without repeating successful siblings",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "tenants"
+  ],
+  "reviewReason": "Indexing push completed; retain manual qualification with default original three-language matrix and a default-false Rust-only retry selector so successful C/Java siblings are not repeated after an argparse-only preflight fix.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/resource-tenant-six-language-reference.yml"
+}

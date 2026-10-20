@@ -231,8 +231,9 @@ def qualify(language, original: Path, expected: dict, native: Path, producer: di
 
 
 if __name__ == '__main__':
+    from tools.resource_tenant_originals import ORIGINALS
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--language',choices=('go','typescript','java'))
+    parser.add_argument('--language',choices=tuple(ORIGINALS))
     parser.add_argument('--verify-native-producer',type=Path)
     parser.add_argument('--verify-original-producer',type=Path)
     for name in ('original','original-producer','native','native-producer','output'):

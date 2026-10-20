@@ -81,3 +81,47 @@ This is a finite #681 AC8/mandatory lifecycle slice and supporting #679
 evidence; neither whole ticket is complete. Concurrent readers/callbacks,
 pending flush, cancellation, late completion and a public guest request-identity
 API are not qualified by these sequential calls.
+
+## C, Java and Rust extension
+
+The separate bounded C/Java/Rust reference keeps the first Go/TypeScript source
+frozen. Java reuses its exact qualified39 component and original compile
+records; only known WIT/data bytes matching both original inventories are
+restored. It uses no JDK, Java compiler or host build.
+
+The C23 ancestor archive has all812 members authenticated but omits its raw
+compiler observation and other normal signer metadata. That absent record is
+not invented. The C extension builds exactly one fresh greeting through the
+normal captured C23 compiler from the maintained outside library/data fixture,
+after removing the original outside paths. It preserves the actual new build
+observation and independently records the old C23 finite ancestry. It does
+not repeat the original C35 baseline or build native/engine tools. The same
+seven-call two-tenant controller then consumes this new observed component.
+Rust reuses its exact authenticated33-call component, with its single missing
+public WIT restored only after matching both original inventories. It invokes
+no Cargo, Rust compiler or host build. The [C seven-call observation](../testing/evidence/c-resource-tenants-signed-2026-10-20.json)
+and [Java seven-call observation](../testing/evidence/java-resource-tenants-signed-2026-10-20.json)
+bind actual source `8435f5057a00900eb2d782f3a963f3d2f01208d5` in
+[run39413019080](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39413019080).
+Both language jobs passed all seven calls, physical/owner-zero barriers,
+independent credentials, five exact zero peer counters, clean node/peer
+retirement and the final source/product checks. All 161 C and 119 Java archive
+members were authenticated. C records one actual new captured guest build and
+no native build; Java retains its original component and compiler records.
+
+The overall run remains failed because Rust's CLI rejected its registered
+language before guest work. A real subprocess control reproduces that old
+exit2 and verifies the closed registered-origin selection, foreign-origin
+refusal and unknown-language refusal after correction. The original two C
+control guards remain identical. A default-false Rust-only manual selector
+retains the default three-language steps and twenty-minute bounds while
+avoiding repeats of the successful siblings. The corrected Rust-only
+[run39414718984](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39414718984)
+passed at source `cb17c6c9081f90628afa693690e9eebfe10c92a8`.
+Its [authenticated seven-call observation](../testing/evidence/rust-resource-tenants-signed-2026-10-20.json)
+checks all 98 archive members, 24 recorded Git helpers, exact original Rust33
+component and compiler records, all seven outcomes, physical/owner-zero
+barriers, exact zero peer counts, clean shutdown and final source/product
+identities. No Cargo, guest compiler, native build or successful sibling replay
+was performed.
+No six-language coupled or concurrent completion is claimed.
