@@ -87,13 +87,21 @@
         "run": "python3 tools/replay_dotnet_tasks.py --prepared \"$RUNNER_TEMP/task-prepared\" --host \"$RUNNER_TEMP/task-prepared/selected-host\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-task-runtime\""
       },
       {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "if": "always()",
+        "name": "Observe ordinary .NET filesystem errors using the same authenticated native products",
+        "run": "python3 tools/replay_dotnet_scratch.py --prepared \"$RUNNER_TEMP/task-prepared\" --host \"$RUNNER_TEMP/task-prepared/selected-host\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-scratch-refusals\""
+      },
+      {
         "if": "always()",
         "name": "Retain bounded source, compiler, component and node evidence",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-tasks-focused-${{ github.sha }}",
-          "path": "${{ runner.temp }}/task-prepared/retrieval.json\n${{ runner.temp }}/task-prepared/selected-host/host-retrieval.json\n${{ runner.temp }}/dotnet-task-runtime/qualified.json\n${{ runner.temp }}/dotnet-task-runtime/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/replay-materials.json\n${{ runner.temp }}/dotnet-task-runtime/logs/**\n${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**\n${{ runner.temp }}/dotnet-task-runtime/build/*.json\n${{ runner.temp }}/dotnet-task-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-task-runtime/build/logs/**\n${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json",
+          "path": "${{ runner.temp }}/task-prepared/retrieval.json\n${{ runner.temp }}/task-prepared/selected-host/host-retrieval.json\n${{ runner.temp }}/dotnet-task-runtime/qualified.json\n${{ runner.temp }}/dotnet-task-runtime/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/replay-materials.json\n${{ runner.temp }}/dotnet-task-runtime/logs/**\n${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**\n${{ runner.temp }}/dotnet-task-runtime/build/*.json\n${{ runner.temp }}/dotnet-task-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-task-runtime/build/logs/**\n${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json\n${{ runner.temp }}/dotnet-scratch-refusals/qualification.json\n${{ runner.temp }}/dotnet-scratch-refusals/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/replay-materials.json\n${{ runner.temp }}/dotnet-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/dotnet-scratch-refusals/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/build/*.json\n${{ runner.temp }}/dotnet-scratch-refusals/build/component.wasm\n${{ runner.temp }}/dotnet-scratch-refusals/build/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/node/workflow.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/FAILED.json",
           "retention-days": 3
         }
       }
@@ -102,7 +110,7 @@
   },
   "jobId": "task-reference",
   "kind": "job",
-  "reviewReason": "Add explicit default-off focused managed task/timer replay using authenticated frozen historical native products and fresh current application compilation; preserve normal commands and75-minute bound.",
+  "reviewReason": "Add independently failing ordinary .NET filesystem observation using the same fixed authenticated historical native products and current strict scratch programme. Preserve original Task command/assertions, all declarations, budgets and35-minute ceiling; no current-native source claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

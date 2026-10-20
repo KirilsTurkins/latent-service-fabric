@@ -505,6 +505,11 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: python3 tools/replay_dotnet_tasks.py --prepared "$RUNNER_TEMP/task-prepared" --host "$RUNNER_TEMP/task-prepared/selected-host" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-task-runtime"
+    - name: Observe ordinary .NET filesystem errors using the same authenticated native products
+      if: always()
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 tools/replay_dotnet_scratch.py --prepared "$RUNNER_TEMP/task-prepared" --host "$RUNNER_TEMP/task-prepared/selected-host" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-scratch-refusals"
     - name: Retain bounded source, compiler, component and node evidence
       if: always()
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -525,5 +530,15 @@ jobs:
           ${{ runner.temp }}/dotnet-task-runtime/node/workflow.json
           ${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json
           ${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json
+          ${{ runner.temp }}/dotnet-scratch-refusals/qualification.json
+          ${{ runner.temp }}/dotnet-scratch-refusals/FAILED.json
+          ${{ runner.temp }}/dotnet-scratch-refusals/replay-materials.json
+          ${{ runner.temp }}/dotnet-scratch-refusals/compatibility-execution-report.json
+          ${{ runner.temp }}/dotnet-scratch-refusals/logs/**
+          ${{ runner.temp }}/dotnet-scratch-refusals/build/*.json
+          ${{ runner.temp }}/dotnet-scratch-refusals/build/component.wasm
+          ${{ runner.temp }}/dotnet-scratch-refusals/build/logs/**
+          ${{ runner.temp }}/dotnet-scratch-refusals/node/workflow.json
+          ${{ runner.temp }}/dotnet-scratch-refusals/node/FAILED.json
         if-no-files-found: warn
         retention-days: 3
