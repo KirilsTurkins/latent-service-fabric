@@ -12,6 +12,19 @@ from tools.phase2_operator_process import WorkflowError
 
 
 class JavaPhaseNativeProducts(unittest.TestCase):
+    def test_direct_cli_bootstraps_repository_without_pythonpath_or_network(self):
+        import os
+        import subprocess
+        import sys
+
+        with tempfile.TemporaryDirectory() as temporary:
+            completed = subprocess.run([sys.executable, '-B', str(Path(native.__file__)), '--help'],
+                cwd=temporary, env={**os.environ, 'PYTHONPATH': ''},
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+            self.assertEqual(completed.returncode, 0, completed.stderr.decode())
+            self.assertIn(b'--output', completed.stdout)
+            self.assertEqual(list(Path(temporary).iterdir()), [])
+
     def test_unfrozen_pins_refuse_before_network_or_output(self):
         with patch.object(native, 'ARTIFACT', None), patch.object(native, 'api') as api:
             with self.assertRaisesRegex(WorkflowError, 'completed-producer-pins-required'):
