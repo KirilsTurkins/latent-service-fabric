@@ -91,3 +91,69 @@ fn preparation_keeps_shorter_transport_timeout_and_requires_authentication() {
         tonic::Code::Unauthenticated
     );
 }
+
+#[test]
+fn only_exact_release_prepare_path_gets_independent_bounded_setup_time() {
+    let config = configuration();
+    for (path, maximum) in [
+        (
+            latent_wire::management::RELEASE_PREPARATION_RPC_PATH,
+            Duration::from_millis(latent_wire::management::MAX_RELEASE_PREPARATION_WAIT_MILLIS),
+        ),
+        (
+            "/latent.control.v1.ReleaseService/PrepareRelease/",
+            config.request_timeout,
+        ),
+        (
+            "/latent.control.v1.ReleaseService/prepareRelease",
+            config.request_timeout,
+        ),
+        (
+            "/latent.invocation.v1.InvocationService/Invoke",
+            config.request_timeout,
+        ),
+    ] {
+        let mut input = request(path);
+        input
+            .headers_mut()
+            .insert("grpc-timeout", "99999999S".parse().unwrap());
+        let before = std::time::Instant::now();
+        auth::authenticate(&mut input, &config, &SystemActivationClock).unwrap();
+        let after = std::time::Instant::now();
+        let expires = input
+            .extensions()
+            .get::<AuthenticatedInvocationContext>()
+            .unwrap()
+            .transport_expires_at()
+            .unwrap();
+        assert!(expires >= before + maximum && expires <= after + maximum);
+    }
+}
+
+#[test]
+fn release_setup_transport_keeps_shorter_timeout_and_authentication() {
+    let config = configuration();
+    let mut input = request(latent_wire::management::RELEASE_PREPARATION_RPC_PATH);
+    input
+        .headers_mut()
+        .insert("grpc-timeout", "9m".parse().unwrap());
+    let before = std::time::Instant::now();
+    auth::authenticate(&mut input, &config, &SystemActivationClock).unwrap();
+    let after = std::time::Instant::now();
+    let expires = input
+        .extensions()
+        .get::<AuthenticatedInvocationContext>()
+        .unwrap()
+        .transport_expires_at()
+        .unwrap();
+    assert!(
+        expires >= before + Duration::from_millis(9) && expires <= after + Duration::from_millis(9)
+    );
+    input.headers_mut().remove("authorization");
+    assert_eq!(
+        auth::authenticate(&mut input, &config, &SystemActivationClock)
+            .unwrap_err()
+            .code(),
+        tonic::Code::Unauthenticated
+    );
+}

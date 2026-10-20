@@ -110,21 +110,15 @@ async fn prepare_ready(
     expires: Instant,
     limits: &super::super::super::ManagementLimits,
 ) -> Result<latent_executor::PreparedReadiness, Status> {
-    if Instant::now() >= expires {
-        return Err(Status::deadline_exceeded("web preparation wait expired"));
-    }
-    // This timer opts the same owned preparation into the backend's bounded
-    // currentness-read window. It neither replays an accepted job nor renews
-    // its original publication/grant. The outer ORIGINAL transport/request
-    // deadline also covers every read wait and retires this future on expiry.
-    let timer = latent_node::CurrentnessReadTimer;
-    tokio::time::timeout_at(
-        expires.into(),
-        backend.prepare_ready_from_repository_with_wait(repository, key, &timer),
+    super::super::preparation::ready(
+        backend,
+        repository,
+        key,
+        expires,
+        limits,
+        "web preparation wait expired",
     )
     .await
-    .map_err(|_| Status::deadline_exceeded("web preparation wait expired"))?
-    .map_err(|failure| platform_status(failure, limits))
 }
 
 fn deadline(request: &Request<proto::PrepareWebPublicationRequest>) -> Result<Instant, Status> {

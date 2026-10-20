@@ -274,3 +274,30 @@ impl Project for proto::RenewReleaseEvidenceResponse {
         })
     }
 }
+
+impl Project for proto::PrepareReleaseResponse {
+    fn validate(&self, tree: &mut Tree) -> Result<(), Failure> {
+        tree.message::<Self>()?;
+        self.publication
+            .as_ref()
+            .ok_or_else(invalid_response)?
+            .validate(tree)?;
+        tree.text(&self.component_digest, 71)?;
+        if self.lifecycle_generation == 0
+            || !self.prepared
+            || !crate::management::canonical_digest(&self.component_digest)
+        {
+            return Err(invalid_response());
+        }
+        Ok(())
+    }
+    fn project(self) -> Value {
+        json!({
+            "publication": self.publication.map(Project::project),
+            "lifecycleGeneration": self.lifecycle_generation.to_string(),
+            "componentDigest": self.component_digest,
+            "prepared": self.prepared,
+            "executionAuthorized": false,
+        })
+    }
+}

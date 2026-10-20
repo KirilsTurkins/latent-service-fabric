@@ -19,6 +19,7 @@ mod tests;
 pub(super) async fn execute(operation: Operation, session: &Session) -> Result<Outcome, Failure> {
     match operation {
         Operation::PublishRelease(request) => publish(request, session).await,
+        Operation::PrepareRelease(request) => prepare(request, session).await,
         Operation::GetReleaseLifecycle(request) => lifecycle(request, session).await,
         Operation::LookupReleaseReceipt(request) => get_receipt(request, session).await,
         Operation::ChangeReleaseLifecycle(request) => change(request, session).await,
@@ -290,4 +291,20 @@ async fn renew(
     }
     let rejected = receipt.disposition == proto::ReleaseOperationDisposition::Rejected as i32;
     Ok(mutation(value.project(), rejected))
+}
+
+async fn prepare(
+    request: proto::PrepareReleaseRequest,
+    session: &Session,
+) -> Result<Outcome, Failure> {
+    let selected = request.publication.clone().ok_or_else(invalid_input)?;
+    let generation = request.lifecycle_generation;
+    let value = call!(session, ReleaseServiceClient, prepare_release, request);
+    if selected.tenant != session.tenant()
+        || value.publication.as_ref() != Some(&selected)
+        || value.lifecycle_generation != generation
+    {
+        return Err(invalid_response());
+    }
+    Ok(Outcome::success(value.project()))
 }
