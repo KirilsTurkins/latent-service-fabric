@@ -383,8 +383,12 @@ class Compiler:
                 'original': port['frameworkInput'], 'selected': port['derived'],
                 'selection': {key: port[key] for key in ('sourceCaptureDigest', 'targetsDigest', 'method',
                     'maximumNestedWaits', 'completion', 'exceptionPropagation', 'nestedTaskIdentity',
+                    'finiteAndCancellableWaits', 'generatedHelperCount',
                     'originalWaitBodyDigest', 'originalLoopBodyDigest', 'originalDispatchBodyDigest',
                     'unchangedOriginalMethods', 'completeOriginalWaitRemainderPreserved', 'nativeAotReferenceBinding')}})
+            if port['finiteAndCancellableWaits'] == 'original-Task-WhenAny-Delay':
+                self.compiler_patches[-1]['selection'].update({key: port[key] for key in (
+                    'finiteWaitCleanup', 'zeroTimeout', 'waitCancellation', 'publicWaitValidationAndExceptions')})
             self.generated_materials.extend((self.task_wait_port.identity,
                 file_identity(command.output / 'task-wait-port.json', 'dotnet-task-wait-port', http_errors.MAX_RECEIPT)))
         filesystem = self.filesystem_port.finish(project, command.output)

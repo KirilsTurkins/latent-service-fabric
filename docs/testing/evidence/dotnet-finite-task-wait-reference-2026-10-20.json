@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "latent.dotnet.finite-task-wait.reference.v1",
+  "status": "passed",
+  "sdk": "10.0.303",
+  "runtime": ".NET 10.0.11",
+  "originalCoreLib": {
+    "sha256": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "bytes": 5694976
+  },
+  "pinnedCecilSha256": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+  "infiniteOnlyOriginalAndNewAssemblyByteIdentical": true,
+  "infiniteOnlyOriginalAndNewReceiptsEqual": true,
+  "infiniteOnlyDerivedSha256": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+  "finiteDerivedSha256": "sha256:a4319cf5f26e186ffedefa623e81f0636cd2f6131ec980e3e723768277405872",
+  "oldSourceFiniteSelectionRedCases": 1,
+  "currentFocusedPythonControls": 21,
+  "generatedHelperControl": {
+    "derivedCorelib": "a4319cf5f26e186ffedefa623e81f0636cd2f6131ec980e3e723768277405872",
+    "originalProbe": "8e321f919eb5cc9ba0b96102dc4f3470cc2b861e54e3f0202235ece6f461a21b",
+    "controlledProbe": "b7c28ce908d52dcd4614a1671ae9a450b53d89c40d9870de35dcd567b4c90ad3",
+    "method": "System.Boolean System.Threading.WasiEventLoop::LsfWaitForActualTaskOrTimeout(System.Threading.Tasks.Task,System.Int32,System.Threading.CancellationToken)",
+    "instructions": 42,
+    "finallyHandlers": 2,
+    "sourceOpcodesPreserved": true,
+    "sourceBranchesAndLocalsAndHandlersPreserved": true,
+    "exactlyOnePrivatePumpCallMappedToHostAwaiter": 1,
+    "wasmRuntimeQualified": false
+  },
+  "reference": {
+    "framework": ".NET 10.0.11",
+    "cases": [
+      {
+        "name": "completed-success-precancel",
+        "original": "true",
+        "derived": "true",
+        "passed": true
+      },
+      {
+        "name": "zero-incomplete-precancel",
+        "original": "false-incomplete",
+        "derived": "false-incomplete",
+        "passed": true
+      },
+      {
+        "name": "invalid-timeout-before-complete",
+        "original": "ArgumentOutOfRangeException:millisecondsTimeout",
+        "derived": "ArgumentOutOfRangeException:millisecondsTimeout",
+        "passed": true
+      },
+      {
+        "name": "finite-success",
+        "original": "true-original-task",
+        "derived": "true-original-task",
+        "passed": true
+      },
+      {
+        "name": "finite-cancellable-success",
+        "original": "true-original-task",
+        "derived": "true-original-task",
+        "passed": true
+      },
+      {
+        "name": "timeout-false-then-fresh",
+        "original": "false-then-true-original-token-live",
+        "derived": "false-then-true-original-token-live",
+        "passed": true
+      },
+      {
+        "name": "infinite-cancel",
+        "original": "OperationCanceledException:original-token;task-preserved",
+        "derived": "OperationCanceledException:original-token;task-preserved",
+        "passed": true
+      },
+      {
+        "name": "finite-cancel",
+        "original": "OperationCanceledException:original-token;task-preserved",
+        "derived": "OperationCanceledException:original-token;task-preserved",
+        "passed": true
+      },
+      {
+        "name": "incomplete-precancel",
+        "original": "OperationCanceledException:original-token",
+        "derived": "OperationCanceledException:original-token",
+        "passed": true
+      },
+      {
+        "name": "completed-fault-over-precancel",
+        "original": "AggregateException:original-fault",
+        "derived": "AggregateException:original-fault",
+        "passed": true
+      },
+      {
+        "name": "pending-fault",
+        "original": "AggregateException:original-fault",
+        "derived": "AggregateException:original-fault",
+        "passed": true
+      },
+      {
+        "name": "own-cancel-aggregate",
+        "original": "AggregateException:original-task-token",
+        "derived": "AggregateException:original-task-token",
+        "passed": true
+      },
+      {
+        "name": "own-cancel-wait-token-precedence",
+        "original": "OperationCanceledException:original-wait-token",
+        "derived": "OperationCanceledException:original-wait-token",
+        "passed": true
+      }
+    ],
+    "wasmExecution": false,
+    "originalQueuePumpExecuted": false,
+    "helperIlExecuted": true
+  },
+  "signedGuestQualification": false,
+  "nativeAotCompilation": false,
+  "nativeHostBuilt": false,
+  "originalWasiQueuePumpExecuted": false,
+  "whole746Complete": false,
+  "affectedPortCompositionPythonControls": 49
+}
