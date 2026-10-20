@@ -2,7 +2,9 @@
   "cases": [
     "EmbeddedLanguageReplay.test_component_producer_requires_every_exact_published_identity",
     "EmbeddedLanguageReplay.test_only_four_public_companions_and_fixed_normal_records_are_selected",
+    "EmbeddedLanguageReplay.test_only_the_three_exact_old_greeting_calls_are_projected_with_untouched_ancestry",
     "EmbeddedLanguageReplay.test_pinned_normal_receipt_binds_original_names_counts_and_all_four_markers",
+    "EmbeddedLanguageReplay.test_projection_rejects_unknown_missing_reordered_common_or_foreign_extra_calls",
     "EmbeddedLanguageReplay.test_rehashed_duplicate_or_wrong_normal_counts_and_changed_marker_are_refused",
     "EmbeddedLanguageReplay.test_separate_twenty_minute_manual_matrix_keeps_all_existing_jobs_untouched"
   ],
@@ -15,7 +17,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
-        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+        "class:setup-sha256:663e4887721c98c27664ffb5096002187f261f5908b0def3990cae302f26e530"
       ],
       "skipSites": []
     },
@@ -27,7 +29,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
-        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+        "class:setup-sha256:663e4887721c98c27664ffb5096002187f261f5908b0def3990cae302f26e530"
+      ],
+      "skipSites": []
+    },
+    "EmbeddedLanguageReplay.test_only_the_three_exact_old_greeting_calls_are_projected_with_untouched_ancestry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
+        "class:setup-sha256:663e4887721c98c27664ffb5096002187f261f5908b0def3990cae302f26e530"
       ],
       "skipSites": []
     },
@@ -39,7 +53,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
-        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+        "class:setup-sha256:663e4887721c98c27664ffb5096002187f261f5908b0def3990cae302f26e530"
+      ],
+      "skipSites": []
+    },
+    "EmbeddedLanguageReplay.test_projection_rejects_unknown_missing_reordered_common_or_foreign_extra_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
+        "class:setup-sha256:663e4887721c98c27664ffb5096002187f261f5908b0def3990cae302f26e530"
       ],
       "skipSites": []
     },
@@ -51,7 +77,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
-        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+        "class:setup-sha256:663e4887721c98c27664ffb5096002187f261f5908b0def3990cae302f26e530"
       ],
       "skipSites": []
     },
@@ -63,13 +89,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
-        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+        "class:setup-sha256:663e4887721c98c27664ffb5096002187f261f5908b0def3990cae302f26e530"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_embedded_resource_language_replay.py",
-  "reviewReason": "Retain native regular-file policy by selecting the existing captured Rust toolchain resolver after actual PATH-shim refusal; add default-both manual single-language replay without changing any existing command or deadline.",
+  "reviewReason": "Exact report-only projection of three authenticated replaced-greeting generator calls, preserving historical30 and every ordinary27 call/order; original failed job retained and actual33 node results reprojected without rerun. Explicit review: added pure projection_fixture class helper only; all old cases/decorators/bases/skips and module setup unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
