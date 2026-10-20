@@ -915,6 +915,160 @@ class FailureProducerReaderRefusal(unittest.TestCase):
             self.assertNotIn('attempts',public['buildFailureMetadata'])
 
 
+class CompileCommandFailureProjection(unittest.TestCase):
+    def owned(self, root, context):
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.dev_workflow import state
+        from tools.dev_workflow.common import digest, encode
+        from tools.rust_capsule_project import ROOT
+        result=BoundCompilerReasonProjection().owned(root)
+        workspace,attempt,failure,adapter,inventory,recipe=result
+        selected=json.loads(recipe.read_bytes())
+        names={name for rows in programme._COMPILE_COMMAND_REASONS.values() for name in rows['sources']}
+        for name in names:
+            raw=(ROOT/name).read_bytes();selected[name]={'digest':digest(raw),'size':len(raw)}
+        recipe.write_bytes(encode(selected))
+        value=json.loads(inventory.read_bytes());value.pop('identity')
+        value['files']=[{'path':'recipe/'+name,'sha256':row['digest'],'size':row['size']}
+            for name,row in sorted(selected.items())]
+        value['identity']=digest(encode(value));inventory.write_bytes(encode(value))
+        project=state.load(workspace,'project.json')
+        project['descriptor']['build']['inventory']['sha256']=digest(inventory.read_bytes())
+        state.atomic(workspace,'project.json',project)
+        value=json.loads(failure.read_bytes());value['reason']='private uncaptured failure text'
+        value['compileCommand']=context;failure.write_bytes(encode(value))
+        return result
+
+    def test_actual_run_records_resolve_wrap_and_execution_before_original_exception(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock, patch
+        from tools.dotnet_guest import compiler
+        from tools.build_process import BuildProcessError
+        from tools.application_dependency_store import DependencyError
+        with tempfile.TemporaryDirectory() as temporary:
+            executable=Path(temporary)/'owned-tool';executable.write_bytes(b'model-only-no-execution')
+            for boundary,error in (('resolve-executable',FileNotFoundError('private/path')),
+                    ('containment-wrap',DependencyError('compiler-executable-not-captured')),
+                    ('command-execution',BuildProcessError('command-deadline'))):
+                with self.subTest(boundary=boundary):
+                    holder=object.__new__(compiler.Compiler)
+                    holder.commands=SimpleNamespace(root=Path(temporary),environment={},run=Mock(side_effect=error))
+                    holder.isolation=SimpleNamespace(wrap=Mock(side_effect=error if boundary=='containment-wrap' else None,
+                        return_value=['owned-wrapper']))
+                    with patch.object(compiler.Path,'resolve',side_effect=error) if boundary=='resolve-executable' else patch.object(holder.commands,'environment',{}):
+                        with self.assertRaises(type(error)) as caught:
+                            holder.run('locked-restore',executable,'private-argument')
+                    self.assertIs(caught.exception,error)
+                    context=compiler.compile_command_context(holder)
+                    self.assertEqual(context['stage'],'locked-restore')
+                    self.assertEqual(context['boundary'],boundary)
+                    self.assertEqual(context['exceptionKind'],type(error).__name__)
+                    if boundary!='resolve-executable':self.assertEqual(context['reasonCode'],error.args[0])
+                    self.assertNotIn('private',json.dumps(context))
+                    if boundary!='command-execution':holder.commands.run.assert_not_called()
+
+    def test_success_preserves_original_arguments_and_clears_previous_failure(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools.dotnet_guest import compiler
+        with tempfile.TemporaryDirectory() as temporary:
+            executable=Path(temporary)/'tool';executable.write_bytes(b'model-only')
+            holder=object.__new__(compiler.Compiler)
+            holder.commands=SimpleNamespace(root=Path(temporary),environment={},run=Mock(return_value=b'original-result'))
+            for isolated in (False,True):
+                holder.isolation=SimpleNamespace(wrap=Mock(return_value=['wrapper','same-args'])) if isolated else None
+                holder.compile_command_failure={'private':'stale'}
+                self.assertEqual(holder.run('locked-restore',executable,'literal',17),b'original-result')
+                self.assertIsNone(compiler.compile_command_context(holder))
+                holder.commands.run.assert_called_with('locked-restore',*(['wrapper','same-args'] if isolated else [executable.resolve(),'literal',17]))
+                if isolated:holder.isolation.wrap.assert_called_once_with(executable.resolve(),['literal','17'],holder.commands.root,{})
+
+    def test_optional_observer_failure_unknown_stage_and_private_exception_do_not_mask_error(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from tools.dotnet_guest import compiler
+        class PrivateFailure(RuntimeError):pass
+        with tempfile.TemporaryDirectory() as temporary:
+            executable=Path(temporary)/'tool';executable.write_bytes(b'model-only')
+            holder=object.__new__(compiler.Compiler);holder.isolation=None
+            original=PrivateFailure('private/path/credential')
+            holder.commands=SimpleNamespace(run=Mock(side_effect=original))
+            with self.assertRaises(PrivateFailure) as caught:holder.run('locked-restore',executable)
+            self.assertIs(caught.exception,original)
+            context=compiler.compile_command_context(holder)
+            self.assertEqual(context['exceptionKind'],'other')
+            self.assertNotIn('reasonCode',context);self.assertNotIn('PrivateFailure',json.dumps(context))
+            with self.assertRaises(PrivateFailure) as caught:holder.run('private-stage',executable)
+            self.assertIs(caught.exception,original);self.assertIsNone(compiler.compile_command_context(holder))
+            with patch.object(compiler,'_command_failure',side_effect=ValueError('observer error')):
+                with self.assertRaises(PrivateFailure) as caught:holder.run('locked-restore',executable)
+            self.assertIs(caught.exception,original);self.assertIsNone(compiler.compile_command_context(holder))
+
+    def test_bound_command_reaches_public_receipt_without_raw_reason_or_uncertainty_change(self):
+        from tools.dotnet_guest import compiler
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.build_process import BuildProcessError
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve();executable=root/'tool';executable.write_bytes(b'model-only')
+            holder=object.__new__(compiler.Compiler);holder.isolation=None
+            original=BuildProcessError('process-cleanup')
+            holder.commands=SimpleNamespace(run=Mock(side_effect=original))
+            with self.assertRaises(BuildProcessError) as caught:holder.run('locked-restore',executable)
+            self.assertIs(caught.exception,original)
+            context=compiler.compile_command_context(holder)
+            workspace,*_=self.owned(root,context)
+            public={'passed':False,'uncertain':True,'failure':'initial-build-failed'}
+            programme.add_public_build_failure(public,workspace)
+            self.assertEqual(public['buildFailureMetadata']['attempts'][0]['compileCommand'],context)
+            self.assertIs(public['uncertain'],True);self.assertIs(public['passed'],False)
+            self.assertNotIn('private',json.dumps(public));self.assertNotIn(str(root),json.dumps(public))
+
+    def test_command_shape_and_reason_source_tampering_are_refused(self):
+        from tools import qualify_dotnet_dependency_watch as programme
+        good={'schemaVersion':'latent.dotnet.compile-command-failure.v1','stage':'locked-restore',
+            'boundary':'command-execution','exceptionKind':'BuildProcessError',
+            'reasonSource':'build-process','reasonCode':'command-deadline'}
+        for changes in ({'stage':'private/command'},{'boundary':'private'},
+                {'exceptionKind':'PrivateException'},{'reasonCode':'command-deadline private'},
+                {'reasonSource':'private'},{'private':'extra'},{'reasonCode':True},
+                {'exceptionKind':'OSError'},{'reasonSource':['build-process']}):
+            with self.subTest(changes=changes),tempfile.TemporaryDirectory() as temporary:
+                workspace,*_=self.owned(Path(temporary).resolve(),{**good,**changes})
+                public={'passed':False};programme.add_public_build_failure(public,workspace)
+                self.assertNotIn('compileCommand',json.dumps(public))
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve();workspace,attempt,failure,adapter,inventory,recipe=self.owned(root,good)
+            rows=json.loads(recipe.read_bytes());rows['tools/build_process_linux.py']['digest']='sha256:'+'9'*64
+            recipe.write_text(json.dumps(rows))
+            public={'passed':False};programme.add_public_build_failure(public,workspace)
+            self.assertNotIn('attempts',public['buildFailureMetadata'])
+
+    def test_closed_command_enums_and_reasons_match_actual_producers(self):
+        import ast
+        from tools.dotnet_guest import compiler,build
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.rust_capsule_project import ROOT
+        self.assertEqual(programme._COMPILE_COMMAND_STAGES,compiler.COMPILE_COMMAND_STAGES)
+        self.assertEqual(programme._COMPILE_COMMAND_BOUNDARIES,compiler.COMPILE_COMMAND_BOUNDARIES)
+        self.assertEqual(programme._COMPILE_COMMAND_REASONS,compiler.COMPILE_COMMAND_REASONS)
+        source=ast.parse((ROOT/'tools/dotnet_guest/compiler.py').read_bytes())
+        stages={node.args[0].value for node in ast.walk(source) if isinstance(node,ast.Call)
+            and isinstance(node.func,ast.Attribute) and isinstance(node.func.value,ast.Name)
+            and node.func.value.id=='self' and node.func.attr=='run' and node.args
+            and isinstance(node.args[0],ast.Constant)}
+        self.assertEqual(stages,compiler.COMPILE_COMMAND_STAGES)
+        for value in compiler.COMPILE_COMMAND_REASONS.values():
+            self.assertLessEqual(set(value['sources']),set(build.RECIPE))
+            actual=set()
+            for name in value['sources']:
+                for node in ast.walk(ast.parse((ROOT/name).read_bytes())):
+                    if isinstance(node,ast.Call) and isinstance(node.func,ast.Name) and node.func.id in {'BuildProcessError','DependencyError'} and node.args and isinstance(node.args[0],ast.Constant):
+                        actual.add(node.args[0].value)
+            self.assertLessEqual(value['codes'],actual)
+
+
 class DeliveredFailureProducerBinding(unittest.TestCase):
     def test_closed_enums_match_real_producer_and_delivered_helper_omits_compiler(self):
         from tools import qualify_dotnet_dependency_watch as programme

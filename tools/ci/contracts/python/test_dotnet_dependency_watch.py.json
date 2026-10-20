@@ -8,6 +8,12 @@
     "BoundCompilerReasonProjection.test_projection_failure_preserves_original_exception_identity",
     "CapturedCompilerIdentity.test_changed_original_or_captured_compiler_is_rejected",
     "CapturedCompilerIdentity.test_relocated_exact_compiler_copy_is_accepted",
+    "CompileCommandFailureProjection.test_actual_run_records_resolve_wrap_and_execution_before_original_exception",
+    "CompileCommandFailureProjection.test_bound_command_reaches_public_receipt_without_raw_reason_or_uncertainty_change",
+    "CompileCommandFailureProjection.test_closed_command_enums_and_reasons_match_actual_producers",
+    "CompileCommandFailureProjection.test_command_shape_and_reason_source_tampering_are_refused",
+    "CompileCommandFailureProjection.test_optional_observer_failure_unknown_stage_and_private_exception_do_not_mask_error",
+    "CompileCommandFailureProjection.test_success_preserves_original_arguments_and_clears_previous_failure",
     "CompileSetupFailureBreadcrumbs.test_actual_compile_prefix_marks_sdk_failure_before_original_call",
     "CompileSetupFailureBreadcrumbs.test_malformed_context_or_changed_compiler_recipe_never_claims_breadcrumb",
     "CompileSetupFailureBreadcrumbs.test_real_setup_boundary_preserves_exception_and_projects_only_closed_context",
@@ -137,6 +143,78 @@
       "fixtureGuards": [
         "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompileCommandFailureProjection.test_actual_run_records_resolve_wrap_and_execution_before_original_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:9ab89ca9c2fee00e4938880af99ef8480bcd1ae867d3efce718e886f932b833b"
+      ],
+      "skipSites": []
+    },
+    "CompileCommandFailureProjection.test_bound_command_reaches_public_receipt_without_raw_reason_or_uncertainty_change": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:9ab89ca9c2fee00e4938880af99ef8480bcd1ae867d3efce718e886f932b833b"
+      ],
+      "skipSites": []
+    },
+    "CompileCommandFailureProjection.test_closed_command_enums_and_reasons_match_actual_producers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:9ab89ca9c2fee00e4938880af99ef8480bcd1ae867d3efce718e886f932b833b"
+      ],
+      "skipSites": []
+    },
+    "CompileCommandFailureProjection.test_command_shape_and_reason_source_tampering_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:9ab89ca9c2fee00e4938880af99ef8480bcd1ae867d3efce718e886f932b833b"
+      ],
+      "skipSites": []
+    },
+    "CompileCommandFailureProjection.test_optional_observer_failure_unknown_stage_and_private_exception_do_not_mask_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:9ab89ca9c2fee00e4938880af99ef8480bcd1ae867d3efce718e886f932b833b"
+      ],
+      "skipSites": []
+    },
+    "CompileCommandFailureProjection.test_success_preserves_original_arguments_and_clears_previous_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:9ab89ca9c2fee00e4938880af99ef8480bcd1ae867d3efce718e886f932b833b"
       ],
       "skipSites": []
     },
@@ -551,6 +629,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_dependency_watch.py",
-  "reviewReason": "Preserve all39 prior cases and guards; add actual helper archive/flat fixture selected-recipe binding and hostile preimage controls without importing compiler code",
+  "reviewReason": "Preserve all existing watch controls and add closed command boundary producer-to-public failure controls with original exception identity",
   "schemaVersion": "latent.ci.contracts.v1"
 }

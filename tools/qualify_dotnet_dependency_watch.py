@@ -147,6 +147,40 @@ _COMPILE_EXCEPTION_KINDS = frozenset({'FileExistsError', 'FileNotFoundError', 'P
     'JSONDecodeError', 'DependencyError', 'BuildProcessError', 'other'})
 
 
+_COMPILE_COMMAND_STAGES = frozenset({'bindings', 'bindings-drift', 'canonical-wit',
+    'closed-runtime-composition', 'declared-runtime-wit', 'locked-restore', 'native-aot',
+    'native-runtime-wit', 'runtime-final-wit', 'surface', 'validate'})
+_COMPILE_COMMAND_BOUNDARIES = frozenset({'resolve-executable', 'containment-wrap', 'command-execution'})
+_COMPILE_COMMAND_REASONS = {
+    'build-process': {'sources': ('tools/build_process.py', 'tools/build_process_linux.py'), 'codes': frozenset({
+        'command-context-invalid', 'command-deadline', 'command-environment-invalid', 'command-exit',
+        'command-failed', 'command-invalid', 'command-output-limit', 'command-output-limit-invalid',
+        'command-timeout-invalid', 'process-main-thread-required', 'process-platform-unsupported',
+        'python-version-unsupported', 'child-reaper-unsupported', 'process-cleanup', 'process-ownership'})},
+    'compiler-isolation': {'sources': ('tools/captured_compiler_isolation.py',), 'codes': frozenset({
+        'compiler-executable-not-captured', 'compiler-working-directory-outside-captured-workspace'})},
+}
+
+
+def _closed_compile_command(value):
+    """The failed command boundary only; never argv, cwd, output or error text."""
+    fields = {'schemaVersion', 'stage', 'boundary', 'exceptionKind'}
+    if (type(value) is not dict or set(value) not in (fields, fields | {'reasonSource', 'reasonCode'})
+            or value.get('schemaVersion') != 'latent.dotnet.compile-command-failure.v1'
+            or type(value.get('stage')) is not str or value['stage'] not in _COMPILE_COMMAND_STAGES
+            or type(value.get('boundary')) is not str or value['boundary'] not in _COMPILE_COMMAND_BOUNDARIES
+            or type(value.get('exceptionKind')) is not str or value['exceptionKind'] not in _COMPILE_EXCEPTION_KINDS):
+        return None
+    if 'reasonCode' in value:
+        source = value['reasonSource']
+        expected_kind = {'build-process': 'BuildProcessError', 'compiler-isolation': 'DependencyError'}
+        if (type(source) is not str or source not in _COMPILE_COMMAND_REASONS
+                or value['exceptionKind'] != expected_kind[source]
+                or type(value['reasonCode']) is not str or value['reasonCode'] not in _COMPILE_COMMAND_REASONS[source]['codes']):
+            return None
+    return dict(value)
+
+
 def _failure_file(root, relative, maximum):
     """Read only one fixed, anchored regular file; missing files are optional."""
     from tools.dev_workflow import paths
@@ -180,6 +214,7 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure, *, obse
         return {}, []
     matched = [(name, producer) for name, producer in _COMPILE_REASON_PRODUCERS.items()
                if failure['reason'] in producer['codes']]
+    command = _closed_compile_command(failure.get('compileCommand'))
     setup = failure.get('compileSetup')
     valid_setup = (type(setup) is dict and set(setup) == {'schemaVersion', 'phase', 'exceptionKind', 'exceptionBoundary'}
         and setup.get('schemaVersion') == 'latent.dotnet.compile-setup-failure.v1'
@@ -189,8 +224,8 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure, *, obse
         and setup['exceptionBoundary'] in {'setup-call', 'build-handler'})
     if len(matched) == 1:
         name, producer = matched[0]
-    elif not matched and valid_setup:
-        name, producer = 'tools/dotnet_guest/compiler.py', {'helper': 'dotnet-compile-setup'}
+    elif not matched and (valid_setup or command is not None):
+        name, producer = 'tools/dotnet_guest/compiler.py', {'helper': 'dotnet-compile-setup' if valid_setup else 'dotnet-compile-command'}
     else:
         return {}, []
     if observed is not None: observed['producerStep'] = 'tool-inventory'
@@ -227,7 +262,8 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure, *, obse
     evidence = [(builds, inventory_path, tool_inventory.MAX_DOCUMENT, inventory_raw),
                 (builds, recipe_path, tool_inventory.MAX_DOCUMENT, recipe_raw)]
     # The serializer, call path and code's own helper must all be this version.
-    for helper in dict.fromkeys(('tools/dotnet_guest/build.py', 'tools/dotnet_guest/compiler.py', name)):
+    command_sources = _COMPILE_COMMAND_REASONS[command['reasonSource']]['sources'] if command is not None and 'reasonSource' in command else ()
+    for helper in dict.fromkeys(('tools/dotnet_guest/build.py', 'tools/dotnet_guest/compiler.py', name, *command_sources)):
         data = _failure_file(source_root, helper, 4 * 1024 * 1024)
         require(data is not None, 'failure-projection-producer-identity')
         identity = {'digest': digest(data), 'size': len(data)}
@@ -240,6 +276,11 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure, *, obse
         result['reasonCode'] = producer['codes'][failure['reason']]
     if valid_setup:
         result['compileSetup'] = setup
+    if command is not None:
+        result['compileCommand'] = command
+        if command_sources:
+            result['commandReasonProducer'] = {'helper': command['reasonSource'],
+                'digests': [recipe[helper]['digest'] for helper in command_sources]}
     return result, evidence
 
 

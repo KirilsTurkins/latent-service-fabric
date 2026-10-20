@@ -27,6 +27,53 @@ COMPILE_EXCEPTION_KINDS = frozenset({'FileExistsError', 'FileNotFoundError', 'Pe
     'IsADirectoryError', 'NotADirectoryError', 'OSError', 'ValueError', 'TypeError', 'KeyError',
     'IndexError', 'AttributeError', 'NameError', 'RuntimeError', 'AssertionError', 'ImportError',
     'JSONDecodeError', 'DependencyError', 'BuildProcessError', 'other'})
+COMPILE_COMMAND_STAGES = frozenset({'bindings', 'bindings-drift', 'canonical-wit',
+    'closed-runtime-composition', 'declared-runtime-wit', 'locked-restore', 'native-aot',
+    'native-runtime-wit', 'runtime-final-wit', 'surface', 'validate'})
+COMPILE_COMMAND_BOUNDARIES = frozenset({'resolve-executable', 'containment-wrap', 'command-execution'})
+COMPILE_COMMAND_REASONS = {
+    'build-process': {'sources': ('tools/build_process.py', 'tools/build_process_linux.py'), 'codes': frozenset({
+        'command-context-invalid', 'command-deadline', 'command-environment-invalid', 'command-exit',
+        'command-failed', 'command-invalid', 'command-output-limit', 'command-output-limit-invalid',
+        'command-timeout-invalid', 'process-main-thread-required', 'process-platform-unsupported',
+        'python-version-unsupported', 'child-reaper-unsupported', 'process-cleanup', 'process-ownership'})},
+    'compiler-isolation': {'sources': ('tools/captured_compiler_isolation.py',), 'codes': frozenset({
+        'compiler-executable-not-captured', 'compiler-working-directory-outside-captured-workspace'})},
+}
+
+
+def compile_command_context(compiler):
+    """The failed command boundary only; never argv, cwd, output or error text."""
+    value = getattr(compiler, 'compile_command_failure', None)
+    fields = {'schemaVersion', 'stage', 'boundary', 'exceptionKind'}
+    if (type(value) is not dict or set(value) not in (fields, fields | {'reasonSource', 'reasonCode'})
+            or value.get('schemaVersion') != 'latent.dotnet.compile-command-failure.v1'
+            or type(value.get('stage')) is not str or value['stage'] not in COMPILE_COMMAND_STAGES
+            or type(value.get('boundary')) is not str or value['boundary'] not in COMPILE_COMMAND_BOUNDARIES
+            or type(value.get('exceptionKind')) is not str or value['exceptionKind'] not in COMPILE_EXCEPTION_KINDS):
+        return None
+    if 'reasonCode' in value:
+        source = value['reasonSource']
+        expected_kind = {'build-process': 'BuildProcessError', 'compiler-isolation': 'DependencyError'}
+        if (type(source) is not str or source not in COMPILE_COMMAND_REASONS
+                or value['exceptionKind'] != expected_kind[source]
+                or type(value['reasonCode']) is not str or value['reasonCode'] not in COMPILE_COMMAND_REASONS[source]['codes']):
+            return None
+    return dict(value)
+
+
+def _command_failure(stage, boundary, error):
+    from tools.application_dependency_store import DependencyError
+    from tools.build_process import BuildProcessError
+    if type(stage) is not str or stage not in COMPILE_COMMAND_STAGES:
+        return None
+    value = {'schemaVersion': 'latent.dotnet.compile-command-failure.v1', 'stage': stage,
+        'boundary': boundary, 'exceptionKind': _compile_exception_kind(error)}
+    source = 'build-process' if type(error) is BuildProcessError else 'compiler-isolation' if type(error) is DependencyError else None
+    reason = error.args[0] if source is not None and len(error.args) == 1 else None
+    if source is not None and type(reason) is str and reason in COMPILE_COMMAND_REASONS[source]['codes']:
+        value.update(reasonSource=source, reasonCode=reason)
+    return value
 
 
 def _compile_exception_kind(error):
@@ -195,11 +242,24 @@ class Compiler:
             self.isolation = stage(self, commands.root.parent)
 
     def run(self, name, executable, *arguments):
-        executable = Path(executable).resolve(strict=True)
-        if self.isolation is None:
-            return self.commands.run(name, executable, *arguments)
-        return self.commands.run(name, *self.isolation.wrap(executable, [str(value) for value in arguments],
-            self.commands.root, self.commands.environment))
+        self.compile_command_failure = None
+        boundary = 'resolve-executable'
+        try:
+            executable = Path(executable).resolve(strict=True)
+            if self.isolation is None:
+                boundary = 'command-execution'
+                return self.commands.run(name, executable, *arguments)
+            boundary = 'containment-wrap'
+            wrapped = self.isolation.wrap(executable, [str(value) for value in arguments],
+                self.commands.root, self.commands.environment)
+            boundary = 'command-execution'
+            return self.commands.run(name, *wrapped)
+        except BaseException as error:
+            try:
+                self.compile_command_failure = _command_failure(name, boundary, error)
+            except Exception:
+                pass  # Optional closed evidence must preserve the original failure.
+            raise
 
     def native_aot(self, project: Path, output: Path, wrapper: Path):
         from tools.dotnet_guest.outputs import capture
@@ -232,6 +292,7 @@ class Compiler:
             raise
 
     def compile(self, work: Path, world: str, output: Path):
+        self.compile_command_failure = None
         self.compile_failure_phase = 'source-projection'
         self.compile_failure_kind = None
         if self.isolation is not None and not output.resolve().is_relative_to(self.isolation.workspace):

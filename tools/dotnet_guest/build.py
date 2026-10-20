@@ -13,7 +13,7 @@ from tools import guest_compatibility_build, guest_dependency_inputs, guest_reso
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
-from tools.dotnet_guest.compiler import Compiler, compile_failure_context
+from tools.dotnet_guest.compiler import Compiler, compile_failure_context, compile_command_context
 from tools.dotnet_guest.project import validate
 from tools.application_dependencies import prepare, verify_inputs
 from tools.application_dependency_approval import request as execution_request, approve as approve_execution
@@ -187,10 +187,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         return output
     except BaseException as error:
         setup = compile_failure_context(compiler, error) if stage == "compile" else None
+        command_failure = compile_command_context(compiler) if stage == "compile" else None
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else [],
-            **({"compileSetup": setup} if setup is not None else {})})
+            **({"compileSetup": setup} if setup is not None else {}),
+            **({"compileCommand": command_failure} if command_failure is not None else {})})
         guest_compatibility_build.failure_report(output, "dotnet", stage)
         try:
             from tools.dotnet_guest.compatibility import retain_failure
