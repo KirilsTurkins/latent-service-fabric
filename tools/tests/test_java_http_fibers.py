@@ -782,6 +782,77 @@ class JavaFailedLifecycleObservation(unittest.TestCase):
 
 
 class JavaClosedPendingDiagnostic(unittest.TestCase):
+    def test_pending_usage_is_closed_numeric_and_has_no_identity_or_payload_fields(self):
+        value={'nextPageToken':None,'nodeUsage':{'unavailable':[],'counters':{
+            'io_calls':'2','io_occupied_running_slots':'1','pool_pending_requests':'1',
+            'private/path':'credential'}},'tenantUsage':{'unavailable':[],'counters':{
+            'calls':'2','waiting':'1','live_children':'1','private':'payload'}}}
+        expected={'status':'observed','node':{'io_calls':2,'io_occupied_running_slots':1,
+            'pool_pending_requests':1},'tenant':{'calls':2,'waiting':1,'live_children':1}}
+        self.assertEqual(node.closed_usage(value),expected)
+        for changes in ({'nextPageToken':'private'}, {'nodeUsage':{'unavailable':['private'],'counters':{}}},
+                {'nodeUsage':{'unavailable':[],'counters':{'io_calls':True}}},
+                {'tenantUsage':{'unavailable':[],'counters':{'waiting':'private'}}},
+                {'tenantUsage':{'unavailable':[],'counters':{'waiting':str(2**64)}}}):
+            with self.subTest(changes=tuple(changes)):
+                self.assertEqual(node.closed_usage({**value,**changes}),{'status':'unavailable'})
+
+    def test_optional_usage_and_audit_failures_do_not_expose_private_exception_or_retry(self):
+        client=SimpleNamespace(call=mock.Mock(side_effect=RuntimeError('private/path/token')))
+        self.assertEqual(node.observe_usage(client,{'name':'owned'}),{'status':'unavailable'})
+        client.call.assert_called_once_with('capability','list','--deployment','owned','--include-node-usage')
+        client.call.reset_mock()
+        self.assertEqual(node.observe_audit(client,'owned-call'),{'status':'unavailable'})
+        client.call.assert_called_once_with('audit','query','--scope','tenant','--page-size','64')
+
+    def test_audit_observer_retains_one_public_bounded_page_and_never_follows_cursor(self):
+        value={'category':'success','data':{'records':[{'data':{'observation':{
+            'identities':{'capability':{'rootActivation':'owned-call','capability':node.ACTIVATION,
+                'operation':'register','private':'payload'}},'reason':'capacity'}}}],
+            'page':{'nextPageToken':'opaque-owned-cursor'},
+            'coverage':{'scanned':'1','droppedObservations':'2','unknownOutcomes':'0'}}}
+        client=SimpleNamespace(call=mock.Mock(return_value=value))
+        self.assertEqual(node.observe_audit(client,'owned-call'),{'status':'observed','complete':False,
+            'rows':[{'capability':node.ACTIVATION,'operation':'register','reason':'capacity'}],
+            'coverage':{'scanned':1,'droppedObservations':2,'unknownOutcomes':0}})
+        client.call.assert_called_once()
+        client.call.return_value={'category':'success','data':{'padding':'x'*262145}}
+        self.assertEqual(node.observe_audit(client,'owned-call'),{'status':'unavailable'})
+
+    def test_pending_diagnostic_samples_two_owner_snapshots_without_replaying_invocation(self):
+        import itertools
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);selected={'publicationId':'published'}
+            usage={'nextPageToken':None,'nodeUsage':{'unavailable':[],'counters':{'io_calls':'2'}},
+                'tenantUsage':{'unavailable':[],'counters':{'calls':'2'}}}
+            page={'category':'success','data':{'records':[],'page':{'nextPageToken':None},
+                'coverage':{'scanned':'0','droppedObservations':'0','unknownOutcomes':'0'}}}
+            def call(*args):return {'data':usage} if args[0]=='capability' else page
+            client=SimpleNamespace(evidence=root,deadline=10000,call=mock.Mock(side_effect=call))
+            process=SimpleNamespace(owner=SimpleNamespace(exited=mock.Mock(side_effect=[False]*4+[True])),
+                close=mock.Mock(),drain=mock.Mock())
+            samples=itertools.count()
+            peer=SimpleNamespace(origin=lambda:{'host':'127.0.0.1','port':1},poll=mock.Mock(),
+                gates=lambda:[Gate('a'*32,1,'headers')],
+                observation=lambda:{'requests':[] if next(samples)==0 else [{'request':1}],
+                    'openConnections':0,'failure':None})
+            row={'exitCode':0,'processReaped':True,'decoded':['1:diagnostic:6:107:112:1:1:1:0:0'],
+                'response':{'outcomeKnown':True,'data':{'resolvedRevision':selected,'activationId':'owned-call'}}}
+            target={'name':'owned','budget':{'cpuFuel':1_000_000_000,'wallTimeLimitMillis':120000,'outboundRequests':8}}
+            with mock.patch.object(node,'selected_revision',return_value=selected), \
+                    mock.patch.object(node,'start_call',return_value=process) as start, \
+                    mock.patch.object(node,'finish_call',return_value=row) as finish, \
+                    mock.patch.object(node,'sample',return_value={'active':0}), \
+                    mock.patch.object(node,'ready_sibling',return_value=False), \
+                    mock.patch.object(node.time,'monotonic',side_effect=itertools.count(1000,.4)):
+                result=node.diagnose_pending(client,SimpleNamespace(drain=mock.Mock()),target,peer,SimpleNamespace())
+            start.assert_called_once();finish.assert_called_once();process.close.assert_called_once()
+            self.assertEqual(len(result['pendingUsage']),2)
+            self.assertTrue(all(row['usage']['node']['io_calls']==2 for row in result['pendingUsage']))
+            self.assertEqual(client.call.call_count,3)
+            self.assertEqual(result['audit']['rows'],[])
+            self.assertIs(result['qualification'],False)
+
     def test_process_result_and_caught_observation_have_distinct_create_only_paths(self):
         from itertools import count
         with tempfile.TemporaryDirectory() as temporary:

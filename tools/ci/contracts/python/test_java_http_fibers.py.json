@@ -4,9 +4,13 @@
     "CoroutineLoadedCopyTests.test_gradle_load_fence_keeps_source_and_three_resource_identities",
     "ExactCoroutineCompilerClasspath.test_exact_original_classpath_retains_order_and_rejects_unknown_missing_or_mutated_rows",
     "ExactCoroutineCompilerClasspath.test_record_hook_preserves_original_module_and_requires_exact_declared_preimage",
+    "JavaClosedPendingDiagnostic.test_audit_observer_retains_one_public_bounded_page_and_never_follows_cursor",
     "JavaClosedPendingDiagnostic.test_diagnostic_does_not_change_original_strict_result_or_budget_functions",
     "JavaClosedPendingDiagnostic.test_fixed_preparation_survives_actual_retention_and_unrelated_json_is_omitted",
     "JavaClosedPendingDiagnostic.test_only_exact_numeric_fixture_result_is_published",
+    "JavaClosedPendingDiagnostic.test_optional_usage_and_audit_failures_do_not_expose_private_exception_or_retry",
+    "JavaClosedPendingDiagnostic.test_pending_diagnostic_samples_two_owner_snapshots_without_replaying_invocation",
+    "JavaClosedPendingDiagnostic.test_pending_usage_is_closed_numeric_and_has_no_identity_or_payload_fields",
     "JavaClosedPendingDiagnostic.test_process_result_and_caught_observation_have_distinct_create_only_paths",
     "JavaFailedLifecycleObservation.test_failed_actual_result_keeps_pending_peer_and_original_assertion",
     "JavaFailedLifecycleObservation.test_observation_error_never_replaces_original_result_failure",
@@ -91,6 +95,18 @@
       ],
       "skipSites": []
     },
+    "JavaClosedPendingDiagnostic.test_audit_observer_retains_one_public_bounded_page_and_never_follows_cursor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaClosedPendingDiagnostic.test_diagnostic_does_not_change_original_strict_result_or_budget_functions": {
       "bases": [
         "unittest.TestCase"
@@ -116,6 +132,42 @@
       "skipSites": []
     },
     "JavaClosedPendingDiagnostic.test_only_exact_numeric_fixture_result_is_published": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaClosedPendingDiagnostic.test_optional_usage_and_audit_failures_do_not_expose_private_exception_or_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaClosedPendingDiagnostic.test_pending_diagnostic_samples_two_owner_snapshots_without_replaying_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaClosedPendingDiagnostic.test_pending_usage_is_closed_numeric_and_has_no_identity_or_payload_fields": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -538,6 +590,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Add closed pending-error projection and distinct create-only output paths; preserve all37 existing guards/assertions and actual private-preparation retention.",
+  "reviewReason": "Retain strict lifecycle tests and add bounded numeric pending-owner snapshots and one source-closed public audit page projection without retry or changed limits",
   "schemaVersion": "latent.ci.contracts.v1"
 }

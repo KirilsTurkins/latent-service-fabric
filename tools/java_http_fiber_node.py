@@ -222,6 +222,73 @@ def closed_diagnostic(row):
         'siblingStatus': sibling, 'childStatus': child_status}
 
 
+def _counter(value):
+    import re
+    require(type(value) is int or type(value) is str and re.fullmatch(r'0|[1-9][0-9]{0,19}', value),
+        'java-http-fiber-counter-invalid')
+    value = int(value)
+    require(0 <= value < 2**64, 'java-http-fiber-counter-invalid')
+    return value
+
+
+def closed_usage(value):
+    """Only fixed numeric owner counters, never resource names or messages."""
+    try:
+        require(type(value) is dict and value['nextPageToken'] is None, 'java-http-fiber-usage-page')
+        result = {'status': 'observed'}
+        groups = {'node': (*ACTIVE_COUNTERS, 'pool_clients', 'pool_connections',
+            'audit_capture_dropped', 'audit_dropped_observations', 'audit_unavailable_events'),
+            'tenant': ('calls', 'handles', 'results', 'sessions', 'waiting', 'live_children',
+                'reserved_buffer_bytes', 'delegated_memory_bytes', 'retired_sessions_with_resources')}
+        for scope, names in groups.items():
+            usage = value[scope + 'Usage']
+            require(type(usage) is dict and usage['unavailable'] == [] and type(usage['counters']) is dict,
+                'java-http-fiber-usage-unavailable')
+            result[scope] = {name: _counter(usage['counters'][name]) for name in names if name in usage['counters']}
+            require(bool(result[scope]), 'java-http-fiber-usage-empty')
+        return result
+    except Exception:
+        return {'status': 'unavailable'}
+
+
+def observe_usage(client, target):
+    try:
+        value = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')
+        return closed_usage(value['data'])
+    except Exception:
+        return {'status': 'unavailable'}
+
+
+def observe_audit(client, activation):
+    """One normal public audit page; project only this fixture's closed facts."""
+    try:
+        require(type(activation) is str and 0 < len(activation) <= 256, 'java-http-fiber-audit-activation')
+        value = client.call('audit', 'query', '--scope', 'tenant', '--page-size', '64')
+        require(len(json.dumps(value, allow_nan=False).encode()) <= 262144 and value['category'] == 'success',
+            'java-http-fiber-audit-bound')
+        data = value['data']
+        require(type(data['records']) is list and len(data['records']) <= 64, 'java-http-fiber-audit-records')
+        rows = []
+        for record in data['records']:
+            observed = record['data'].get('observation', record['data'].get('outcome', {}))
+            context = (observed.get('identities') or {}).get('capability') or {}
+            capability, operation, reason = context.get('capability'), context.get('operation'), observed.get('reason')
+            if context.get('rootActivation') != activation:
+                continue
+            operations = OPS if capability == ACTIVATION else ['open', 'write', 'finish', 'read',
+                'chunk-bytes', 'trailers', 'abort-upload', 'abort-body'] if capability == 'latent:http/streaming@0.3.0' else []
+            if (type(operation) is str and operation in operations and type(reason) is str
+                    and reason in {'verified', 'rejected', 'admitted', 'policy-denied', 'capacity',
+                        'unavailable', 'unsupported', 'not-started', 'mutation-uncertain'}):
+                rows.append({'capability': capability, 'operation': operation, 'reason': reason})
+        return {'status': 'observed', 'rows': rows,
+            'complete': data['page']['nextPageToken'] is None,
+            'coverage': {name: _counter(data['coverage'][name]) for name in
+                ('scanned', 'droppedObservations', 'unknownOutcomes')}}
+    except Exception:
+        return {'status': 'unavailable'}
+
+
 def diagnose_pending(client, node, target, peer, probe):
     """Additional caught observation; no lifecycle assertion is replaced."""
     selected = selected_revision(client, target)
@@ -229,7 +296,8 @@ def diagnose_pending(client, node, target, peer, probe):
     origin = peer.origin()
     process = start_call(client, narrowed_target(target, 0), 'java-standard-http', 'run',
         [8, f"http://{origin['host']}:{origin['port']}"], 'pending-closed-diagnostic')
-    gate, released = None, False
+    gate, released, held_at = None, False, None
+    usage = []
     try:
         deadline = min(client.deadline, time.monotonic() + 125)
         while not process.owner.exited():
@@ -239,7 +307,12 @@ def diagnose_pending(client, node, target, peer, probe):
             require(observed['failure'] is None, 'java-http-fiber-peer-failed')
             gates = [item for item in peer.gates() if item.request > offset]
             require(len(gates) <= 1, 'java-http-fiber-ambiguous-pending-request')
-            if gates and gate is None: gate = gates[0]
+            if gates and gate is None:
+                gate, held_at = gates[0], time.monotonic()
+            if held_at is not None and len(usage) < 2:
+                elapsed = time.monotonic() - held_at
+                if elapsed >= (.1, 1.)[len(usage)]:
+                    usage.append({'elapsedMillis': int(elapsed * 1000), 'usage': observe_usage(client, target)})
             if gate is not None and not released and ready_sibling(observed, offset, gate):
                 peer.release(gate); released = True
         row = finish_call(client, process)
@@ -257,6 +330,7 @@ def diagnose_pending(client, node, target, peer, probe):
         'java-http-fiber-diagnostic-contact-or-retirement')
     value = {'schemaVersion': 'latent.java.http-fiber-caught-observation.v1', 'qualification': False,
         'result': closed_diagnostic(row), 'contacts': contacts, 'releasedOnce': released,
+        'pendingUsage': usage, 'audit': observe_audit(client, row['response']['data'].get('activationId')),
         'selectedRevision': selected, 'retired': sample(client, probe, 'after-diagnostic', 1),
         'peer': observation}
     write_json(client.evidence / 'pending-closed-diagnostic-observation.json', value)
