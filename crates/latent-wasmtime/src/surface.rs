@@ -115,6 +115,7 @@ pub(crate) struct Providers {
     pub local_services: bool,
     pub http: bool,
     pub streaming_http: bool,
+    pub phase_http: bool,
     pub outbound_streams: bool,
     pub blobs: bool,
     pub secrets: bool,
@@ -136,6 +137,8 @@ impl Providers {
             || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
             || (self.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+            || (self.phase_http
+                && name == latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY)
             || (self.outbound_streams
                 && name == latent_capabilities::broker::network::STREAM_CAPABILITY)
     }
@@ -307,12 +310,17 @@ fn validate_imports(
     }
     let profile = if transactional {
         latent_core::PHASE4_HOST_ABI_V1
+    } else if config.http_phase_timing {
+        latent_core::PHASE3_HOST_ABI_V7
     } else if config.owned_native_threads {
         latent_core::PHASE3_HOST_ABI_V6
     } else {
         latent_core::PHASE3_HOST_ABI_CURRENT
     };
     let transaction_resource = transaction::command_resource(component_type, engine);
+    if config.http_phase_timing {
+        streaming::validate_phase_aliases(component_type, engine)?;
+    }
     let mut type_imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
@@ -372,6 +380,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::network::STREAM_CAPABILITY => networking::validate(name, &function, &interface, engine)?,
                             transaction::STATE | transaction::INTENTS => transaction::validate(specification.interface, name, &function, &interface, engine, transaction_resource)?,
                             _ => return Err(incompatible("unsupported host resource interface")),

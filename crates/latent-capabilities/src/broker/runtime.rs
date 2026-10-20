@@ -12,6 +12,7 @@ pub struct ActivationCapabilityRuntime {
     plans: RwLock<Option<Arc<dyn CapabilityPlanSource>>>,
     local_services: OnceLock<Arc<dyn super::LocalServiceInvoker>>,
     streaming_http: OnceLock<Arc<dyn super::streaming_http::StreamingHttpInvoker>>,
+    phase_http: OnceLock<Arc<dyn super::streaming_http::StreamingHttpInvoker>>,
     outbound_streams: OnceLock<Arc<dyn super::network::OutboundStreamInvoker>>,
     http: OnceLock<Arc<dyn super::http::OutboundHttpInvoker>>,
     blobs: OnceLock<Arc<dyn super::blob::BlobInvoker>>,
@@ -32,6 +33,7 @@ impl ActivationCapabilityRuntime {
             local_services: OnceLock::new(),
             http: OnceLock::new(),
             streaming_http: OnceLock::new(),
+            phase_http: OnceLock::new(),
             outbound_streams: OnceLock::new(),
             blobs: OnceLock::new(),
             events: OnceLock::new(),
@@ -92,6 +94,18 @@ impl ActivationCapabilityRuntime {
         &self,
     ) -> Result<Arc<dyn super::streaming_http::StreamingHttpInvoker>, PlatformError> {
         self.streaming_http.get().cloned().ok_or_else(denied)
+    }
+    /// A new phase profile never replaces the existing v0.3 provider.
+    pub fn install_phase_http(
+        &self,
+        invoker: Arc<dyn super::streaming_http::StreamingHttpInvoker>,
+    ) -> Result<(), PlatformError> {
+        self.phase_http.set(invoker).map_err(|_| denied())
+    }
+    pub fn phase_http(
+        &self,
+    ) -> Result<Arc<dyn super::streaming_http::StreamingHttpInvoker>, PlatformError> {
+        self.phase_http.get().cloned().ok_or_else(denied)
     }
     pub fn install_outbound_streams(
         &self,

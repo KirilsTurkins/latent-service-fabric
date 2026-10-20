@@ -29,6 +29,7 @@ pub(super) struct Body {
     trailers_seen: bool,
     eof: bool,
     failed: Option<Error>,
+    phase_failure: Option<latent_capabilities::broker::streaming_http::HttpPhaseError>,
 }
 pub(super) fn begin(mut exchange: Exchange, capture_reason: bool) -> Result<Body, Error> {
     let reply = exchange.response.take().ok_or(Error::InvalidState)?;
@@ -109,6 +110,7 @@ pub(super) fn begin(mut exchange: Exchange, capture_reason: bool) -> Result<Body
         trailers_seen: false,
         eof: false,
         failed: None,
+        phase_failure: None,
     })
 }
 fn wire_reason_phrase<T>(reply: &http::Response<T>) -> Result<Option<&[u8]>, HttpError> {
@@ -373,6 +375,61 @@ impl HttpBody for Body {
         maximum_bytes: usize,
     ) -> BoxFuture<'_, Result<Option<IoOutputChunk>, Error>> {
         Box::pin(self.next(maximum_bytes))
+    }
+    fn read_with_timeout(
+        &mut self,
+        maximum_bytes: usize,
+        timeout_millis: Option<u32>,
+    ) -> BoxFuture<
+        '_,
+        Result<Option<IoOutputChunk>, latent_capabilities::broker::streaming_http::HttpPhaseError>,
+    > {
+        use latent_capabilities::broker::streaming_http::HttpPhaseError;
+        if let Err(error) = self.exchange.call.io().checkpoint() {
+            return Box::pin(async move { Err(error.into()) });
+        }
+        if let Some(error) = self.phase_failure {
+            return Box::pin(async move { Err(error) });
+        }
+        if timeout_millis.is_none_or(|millis| millis == 0) {
+            return Box::pin(async move { self.next(maximum_bytes).await.map_err(Into::into) });
+        }
+        if !self.exchange.inner.phase_timing {
+            return Box::pin(async { Err(HttpPhaseError::Unsupported) });
+        }
+        let deadline = match super::phase::Deadline::new(
+            self.exchange.call.io().stop_handle(),
+            timeout_millis,
+        ) {
+            Ok(deadline) => deadline,
+            Err(error) => return Box::pin(async move { Err(error) }),
+        };
+        Box::pin(async move {
+            match deadline
+                .wait(
+                    self.next(maximum_bytes),
+                    HttpPhaseError::ReadTimeout {
+                        external_completion_uncertain: false,
+                    },
+                )
+                .await
+            {
+                Ok(result) => result.map_err(Into::into),
+                Err(error) => {
+                    // The borrowed read future has been destroyed. Close its
+                    // actual transport before reporting any phase failure;
+                    // retained chunks/body metadata keep their original charges.
+                    self.phase_failure = Some(error);
+                    // A retired phase stream is invalid for the legacy API;
+                    // do not manufacture an original activation deadline.
+                    self.failed = Some(Error::InvalidState);
+                    self.pending = Bytes::new();
+                    self.exchange.socket = None;
+                    self.exchange.terminal_audit().await;
+                    Err(error)
+                }
+            }
+        })
     }
     fn trailers(&self) -> Result<&HttpHeaderBlock, Error> {
         self.exchange.call.io().checkpoint()?;

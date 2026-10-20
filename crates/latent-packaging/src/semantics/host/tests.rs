@@ -189,3 +189,58 @@ fn phase4_resources_are_never_accepted_as_application_export_authority() {
     let interface = imports["latent:state/key-value@0.2.0"];
     assert!(application.interface(interface, interface).is_err());
 }
+
+#[test]
+fn phase_semantics_bind_original_resource_owners_and_exact_versioned_extension() {
+    let cap = "latent:http/phase-timing@0.4.0";
+    let original = latent_core::PHASE3_HOST_ABI_V3
+        .interface(STREAMING)
+        .unwrap()
+        .wit;
+    let selected = latent_core::PHASE3_HOST_ABI_V7.interface(cap).unwrap().wit;
+    let local_owner = selected
+        .replace(
+            "{request, upload, body, chunk, header, http-error}",
+            "{request, body, chunk, header, http-error}",
+        )
+        .replace(
+            "    record response {",
+            "    resource upload;\n    record response {",
+        );
+    assert_ne!(local_owner, selected);
+    for (source, accepted) in [
+        (selected.to_owned(), true),
+        (local_owner, false),
+        (selected.replace("option<u32>", "option<u64>"), false),
+        (
+            selected.replace(
+                "reason-phrase: option<list<u8>>",
+                "reason-phrase: option<string>",
+            ),
+            false,
+        ),
+        (selected.replace("open: async func", "open: func"), false),
+    ] {
+        let mut resolve = Resolve::default();
+        resolve.push_source("original.wit", original).unwrap();
+        resolve.push_source("phase.wit", &source).unwrap();
+        let id = resolve
+            .interfaces
+            .iter()
+            .find_map(|(id, _)| (resolve.id_of(id).as_deref() == Some(cap)).then_some(id))
+            .unwrap();
+        assert_eq!(
+            validate(
+                &resolve,
+                &BTreeMap::from([(cap.into(), id)]),
+                SemanticLimits::default()
+            )
+            .is_ok(),
+            accepted
+        );
+    }
+    assert!(specification("latent:http/phase-timing@0.3.0").is_none());
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(cap)
+        .is_none());
+}

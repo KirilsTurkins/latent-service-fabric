@@ -19,6 +19,10 @@ use std::{
 };
 
 pub const HTTP_PROVIDER_PROFILE: &str = "bounded-http-v1";
+pub(crate) enum StreamingProfile {
+    Identity(crate::streaming::HttpStreamLimits),
+    PhaseTiming(crate::streaming::HttpStreamLimits),
+}
 #[derive(Clone)]
 pub struct HttpProvider {
     pub(crate) inner: Arc<Inner>,
@@ -27,6 +31,7 @@ pub(crate) struct Inner {
     pub config: HttpProviderConfig,
     pub credential_references: Vec<HttpCredentialReference>,
     pub streaming: Option<crate::streaming::HttpStreamLimits>,
+    pub phase_timing: bool,
     pub installed: InstalledProvider,
     pub tls: Arc<rustls::ClientConfig>,
     pub resolver: Resolver,
@@ -77,8 +82,13 @@ impl HttpProvider {
         expected_epoch: u64,
         config: HttpProviderConfig,
         credentials: CredentialInput<'_, '_>,
-        streaming: Option<crate::streaming::HttpStreamLimits>,
+        streaming: Option<StreamingProfile>,
     ) -> Result<Self, HttpError> {
+        let (streaming, phase_timing) = match streaming {
+            None => (None, false),
+            Some(StreamingProfile::Identity(limits)) => (Some(limits), false),
+            Some(StreamingProfile::PhaseTiming(limits)) => (Some(limits), true),
+        };
         config.validate()?;
         let (credentials, references) = match credentials {
             CredentialInput::Inline(values) => (values, Vec::new()),
@@ -87,7 +97,7 @@ impl HttpProvider {
         if references.capacity() > 16 {
             return Err(HttpError::InvalidRequest);
         }
-        let (capability, profile, operation) = profile(&config, streaming)?;
+        let (capability, profile, operation) = profile(&config, streaming, phase_timing)?;
         let configuration = pools.reserve_protocol_metadata(
             65536
                 + usize::from(config.public_roots) * 256 * 1024
@@ -110,6 +120,9 @@ impl HttpProvider {
         if let Some(limits) = streaming {
             hash.0.update(b"streaming-identity-v1\0");
             serde_json::to_writer(&mut hash, &limits).map_err(|_| HttpError::InvalidRequest)?;
+        }
+        if phase_timing {
+            hash.0.update(b"explicit-http-phase-timing-v1\0");
         }
         serde_json::to_writer(&mut hash, &config).map_err(|_| HttpError::InvalidRequest)?;
         // Public content identity excludes credentials. Their opaque installed
@@ -146,6 +159,7 @@ impl HttpProvider {
                 config,
                 credential_references: references,
                 streaming,
+                phase_timing,
                 installed,
                 tls,
                 resolver: Resolver::new(),
@@ -234,7 +248,11 @@ fn invalid() -> PlatformError {
 fn profile(
     config: &HttpProviderConfig,
     streaming: Option<crate::streaming::HttpStreamLimits>,
+    phase_timing: bool,
 ) -> Result<(&'static str, &'static str, &'static str), HttpError> {
+    if phase_timing && streaming.is_none() {
+        return Err(HttpError::InvalidRequest);
+    }
     let selected = if let Some(limits) = streaming {
         limits.validate()?;
         if config.limits.maximum_redirects != 0
@@ -245,11 +263,19 @@ fn profile(
         {
             return Err(HttpError::InvalidRequest);
         }
-        (
-            latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY,
-            crate::streaming::STREAMING_HTTP_PROVIDER_PROFILE,
-            "open",
-        )
+        if phase_timing {
+            (
+                latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY,
+                crate::streaming::PHASE_TIMING_HTTP_PROVIDER_PROFILE,
+                "open",
+            )
+        } else {
+            (
+                latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY,
+                crate::streaming::STREAMING_HTTP_PROVIDER_PROFILE,
+                "open",
+            )
+        }
     } else {
         (HTTP_CAPABILITY, HTTP_PROVIDER_PROFILE, "send")
     };

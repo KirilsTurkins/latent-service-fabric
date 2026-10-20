@@ -3,6 +3,7 @@ mod dns;
 mod fixture;
 mod http;
 mod ownership;
+mod phase_timing;
 mod protocol;
 mod redirects;
 mod responses;

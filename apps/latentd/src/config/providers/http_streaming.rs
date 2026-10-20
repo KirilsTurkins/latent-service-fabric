@@ -17,6 +17,9 @@ pub struct HttpStreamingInstallation {
     pub identity: ProviderIdentity,
     pub configuration: HttpProviderConfig,
     pub limits: HttpStreamLimits,
+    /// Explicitly select the new V7/HTTP0.4 profile; absence keeps HTTP0.3.
+    #[serde(default)]
+    pub phase_timing: bool,
     #[serde(default, deserialize_with = "present")]
     pub credential_directory: Option<PathBuf>,
     #[serde(default)]

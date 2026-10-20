@@ -17,6 +17,7 @@ use wasmtime::{
     AsContextMut,
 };
 mod body;
+pub(crate) mod phases;
 pub(super) mod table;
 mod upload;
 use table::{Kind, Value};

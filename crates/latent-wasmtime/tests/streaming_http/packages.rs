@@ -1,4 +1,4 @@
-use super::{component, support as runtime_fixture};
+use super::{component, phase_component, support as runtime_fixture};
 use latent_artifacts::package::{
     artifact_blob_digest, encode_wit_lock, LayerRole, WitLock, WitLockedPackage,
 };
@@ -24,6 +24,23 @@ pub fn capsule(url: &str) -> PackageBundle {
             json!("U32"),
         )],
         true,
+        false,
+    )
+}
+pub fn phase_capsule(url: &str) -> PackageBundle {
+    build(
+        "streaming-http",
+        phase_component::bytes(url),
+        phase_component::WORLD,
+        component::CONTRACT,
+        vec![function(
+            "run",
+            true,
+            vec![json!({"name":"which","value_type":"U32","documentation":null})],
+            json!("U32"),
+        )],
+        true,
+        true,
     )
 }
 #[expect(
@@ -46,7 +63,13 @@ fn build(
     contract: &str,
     functions: Vec<Value>,
     caller: bool,
+    phase_timing: bool,
 ) -> PackageBundle {
+    let capability = if phase_timing {
+        phase_component::CAP
+    } else {
+        component::CAP
+    };
     let package = format!("tests:{name}");
     let world = format!("{package}/service@1.0.0");
     let mut interface = json!({"id":contract,"functions":functions,"documentation":null});
@@ -66,7 +89,7 @@ fn build(
     manifest["component"]["world"] = json!(world);
     manifest["exports"] = json!([contract]);
     manifest["imports"] = if caller {
-        json!([{"contract":component::CAP,"optional":false}])
+        json!([{"contract":capability,"optional":false}])
     } else {
         json!([])
     };
@@ -111,12 +134,35 @@ fn build(
             wit.as_bytes().to_vec(),
         ));
     }
+    if caller && phase_timing {
+        let wit = latent_core::PHASE3_HOST_ABI_V7
+            .interface(phase_component::CAP)
+            .unwrap()
+            .wit;
+        locked.push(WitLockedPackage {
+            id: "latent:http@0.4.0".into(),
+            source_path: "wit/http-phases.wit".into(),
+            digest: artifact_blob_digest(wit.as_bytes()),
+            dependencies: vec!["latent:http@0.3.0".into()],
+        });
+        layers.push(fixture::layer(
+            "wit/http-phases.wit",
+            LayerRole::Asset,
+            "text/plain",
+            wit.as_bytes().to_vec(),
+        ));
+    }
     locked.push(WitLockedPackage {
         id: format!("{package}@1.0.0"),
         source_path: "wit/service.wit".into(),
         digest: artifact_blob_digest(source.as_bytes()),
         dependencies: if caller {
-            vec!["latent:http@0.3.0".into()]
+            vec![if phase_timing {
+                "latent:http@0.4.0"
+            } else {
+                "latent:http@0.3.0"
+            }
+            .into()]
         } else {
             vec![]
         },

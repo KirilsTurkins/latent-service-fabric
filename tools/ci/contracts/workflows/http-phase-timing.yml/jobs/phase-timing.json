@@ -1,0 +1,56 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Real transport and component HTTP phase boundaries",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Check frozen profiles and real TCP TLS phase retirement",
+        "run": "cargo test --locked -p latent-core --lib host_profile::phase_timing_tests:: -- --nocapture\ncargo test --locked -p latent-http --lib tests::phase_timing:: -- --nocapture\n"
+      },
+      {
+        "name": "Check exact semantic and prepared component contracts",
+        "run": "cargo test --locked -p latent-packaging --lib phase_semantics_bind_original_resource_owners_and_exact_versioned_extension -- --nocapture\ncargo test --locked -p latent-wasmtime --lib phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes -- --nocapture\ncargo test --locked -p latent-wasmtime --lib explicit_http_phase_profile_changes_preparation_identity_without_installing_authority -- --nocapture\n"
+      },
+      {
+        "name": "Execute the new canonical ABI with actual sockets and fresh Stores",
+        "run": "cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture\n"
+      },
+      {
+        "name": "Check explicit node selection and original protected limits",
+        "run": "cargo test --locked -p latentd --lib config::tests::providers::http_streaming::phase_selection_is_explicit_strict_and_never_aliases_the_original_contract -- --exact --nocapture\ncargo test --locked -p latentd --lib config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects -- --exact --nocapture\n"
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "phase-timing",
+  "kind": "job",
+  "reviewReason": "Run fifteen additive exact HTTP phase controls over real sockets and fresh component Stores without changing any prior command or deadline.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/http-phase-timing.yml"
+}

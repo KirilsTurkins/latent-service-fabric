@@ -41,6 +41,7 @@ fn main() -> io::Result<()> {
     write_web_bindings(&output, &platform_wit)?;
     write_activation_bindings(&output, &platform_wit)?;
     write_native_bindings(&output, &platform_wit)?;
+    write_http_phase_bindings(&output, &platform_wit)?;
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -392,6 +393,25 @@ fn write_transaction_guest_bindings(output: &Path, wit: &Path) -> io::Result<()>
         generate_all,
         type_section_suffix: "-phase4-transaction",
     }});"#
+        ),
+    )
+}
+
+fn write_http_phase_bindings(output: &Path, platform: &Path) -> io::Result<()> {
+    let wit = output.join("http-phase-wit");
+    recreate(&wit)?;
+    copy_wit_tree(&platform.join("http-v3"), &wit.join("deps/http-v3"))?;
+    copy_wit_tree(&platform.join("http-phases"), &wit.join("deps/http-phases"))?;
+    fs::write(wit.join("world.wit"), "package latent:http-phase-host@0.1.0; world profile { import latent:http/streaming@0.3.0; import latent:http/phase-timing@0.4.0; }\n")?;
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("http_phase_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+            path: {path}, world: "latent:http-phase-host/profile@0.1.0",
+            imports: {{ default: async | trappable }}, exports: {{ default: async }},
+            with: {{ "latent:http/streaming@0.3.0": crate::host::streaming::latent::http0_3_0::streaming }},
+        }});"#
         ),
     )
 }

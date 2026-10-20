@@ -73,3 +73,55 @@ pub(crate) fn validate(
     }
     Ok(())
 }
+
+/// The extension carries the same affine owners, never lookalike resources
+/// with new component identities. When both versions are imported, aliases
+/// must refer to exactly the same original resource types.
+pub(crate) fn validate_phase_aliases(
+    component: &wasmtime::component::types::Component,
+    engine: &Engine,
+) -> Result<(), PlatformError> {
+    use latent_capabilities::broker::streaming_http::{
+        PHASE_TIMING_CAPABILITY, STREAMING_HTTP_CAPABILITY,
+    };
+    let instance = |selected| {
+        component.imports(engine).find_map(|(name, item)| {
+            if name != selected {
+                return None;
+            }
+            match item.ty {
+                ComponentItem::ComponentInstance(interface) => Some(interface),
+                _ => None,
+            }
+        })
+    };
+    let Some(phases) = instance(PHASE_TIMING_CAPABILITY) else {
+        return Ok(());
+    };
+    let Some(original) = instance(STREAMING_HTTP_CAPABILITY) else {
+        // The complete new interface supplies its own unchanged continuations.
+        // Exact semantic WIT validation still binds aliases to the old owners.
+        return Ok(());
+    };
+    let resource = |interface: &ComponentInstance, selected| {
+        interface.exports(engine).find_map(|(name, item)| {
+            if name != selected {
+                return None;
+            }
+            match item.ty {
+                ComponentItem::Resource(resource) => Some(resource),
+                _ => None,
+            }
+        })
+    };
+    for name in ["upload", "body", "chunk"] {
+        let expected = resource(&original, name)
+            .ok_or_else(|| incompatible("HTTP phase timing resource dependency is missing"))?;
+        if resource(&phases, name) != Some(expected) {
+            return Err(incompatible(
+                "HTTP phase timing resource alias differs from its original owner",
+            ));
+        }
+    }
+    Ok(())
+}

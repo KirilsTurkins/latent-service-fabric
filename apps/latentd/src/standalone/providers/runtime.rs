@@ -214,7 +214,12 @@ impl ProviderRuntime {
                 // Retain the actual store before any later installation/binding
                 // can fail. Startup rollback uses the same retirement/join path.
                 owner.streaming_secrets = secrets;
-                let provider = latent_http::StreamingHttpProvider::install_with_secret_references(
+                let install = if http.phase_timing {
+                    latent_http::StreamingHttpProvider::install_phase_timing_with_secret_references
+                } else {
+                    latent_http::StreamingHttpProvider::install_with_secret_references
+                };
+                let provider = install(
                     owner.pools.clone(),
                     &http.identity.id,
                     http.identity.epoch,
@@ -225,7 +230,13 @@ impl ProviderRuntime {
                 )
                 .map_err(|_| unavailable())?;
                 providers.push(owner.record(&http.identity, provider.reference()));
-                owner.runtime.install_streaming_http(Arc::new(provider))?;
+                if http.phase_timing {
+                    owner
+                        .runtime
+                        .install_phase_timing_http(Arc::new(provider))?;
+                } else {
+                    owner.runtime.install_streaming_http(Arc::new(provider))?;
+                }
             }
             if let Some(blob) = &config.blob {
                 let root = settings

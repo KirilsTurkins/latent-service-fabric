@@ -545,3 +545,59 @@ fn blob_preparation_requires_exact_owned_chunk_and_async_shapes() {
     )
     .is_err());
 }
+
+#[test]
+fn phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes() {
+    let engine = engine();
+    let cap = latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY;
+    let spec = latent_core::PHASE3_HOST_ABI_V7.interface(cap).unwrap();
+    let old = latent_core::PHASE3_HOST_ABI_V3
+        .interface("latent:http/streaming@0.3.0")
+        .unwrap();
+    let encode = |source: &str| {
+        fixture::with_host(
+            fixture::Options::default(),
+            cap,
+            &host_fixture::interface_with_dependencies(
+                &[("old.wit", old.wit), ("new.wit", source)],
+                cap,
+                None,
+            ),
+        )
+    };
+    let mut linker = Linker::<HostState>::new(&engine);
+    crate::host::streaming_http::phases::install(&mut linker, std::sync::Arc::new(TestStreaming))
+        .unwrap();
+    let validate = |component: &Component| -> wasmtime::Result<()> {
+        let ty = component.component_type();
+        crate::surface::streaming::validate_phase_aliases(&ty, &engine)
+            .map_err(|e| wasmtime::Error::msg(e.message))?;
+        let (_, item) = ty.imports(&engine).next().unwrap();
+        let wasmtime::component::types::ComponentItem::ComponentInstance(interface) = item.ty
+        else {
+            panic!("phase interface")
+        };
+        for (name, item) in interface.exports(&engine) {
+            if let wasmtime::component::types::ComponentItem::ComponentFunc(function) = item.ty {
+                crate::surface::streaming::validate(name, &function, &interface, &engine)
+                    .map_err(|e| wasmtime::Error::msg(e.message))?;
+            }
+        }
+        linker.instantiate_pre(component).map(|_| ())
+    };
+    validate(&Component::new(&engine, encode(spec.wit)).unwrap()).unwrap();
+    for altered in [
+        spec.wit.replace("option<u32>", "option<u64>"),
+        spec.wit.replace(
+            "reason-phrase: option<list<u8>>",
+            "reason-phrase: option<string>",
+        ),
+        spec.wit.replace("read-timeout(bool)", "read-timeout"),
+        spec.wit.replace("target: upload", "target: borrow<upload>"),
+        spec.wit.replace("source: borrow<body>", "source: body"),
+        spec.wit.replace("finish: async func", "finish: func"),
+    ] {
+        assert_ne!(altered, spec.wit);
+        assert!(validate(&Component::new(&engine, encode(&altered)).unwrap()).is_err());
+    }
+}

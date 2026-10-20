@@ -279,7 +279,8 @@ impl ConfiguredProviders {
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
                 "latent:network/streams@0.1.0" => self.outbound_streams.as_ref().map(|v| &v.identity),
-                "latent:http/streaming@0.3.0" => self.http_streaming.as_ref().map(|http| &http.identity),
+                "latent:http/streaming@0.3.0" => self.http_streaming.as_ref().filter(|http| !http.phase_timing).map(|http| &http.identity),
+                "latent:http/phase-timing@0.4.0" => self.http_streaming.as_ref().filter(|http| http.phase_timing).map(|http| &http.identity),
                 latent_core::activation_runtime::CAPABILITY => self.activation_runtime.as_ref().map(|runtime| &runtime.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),

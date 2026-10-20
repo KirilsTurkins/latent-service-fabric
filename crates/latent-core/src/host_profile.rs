@@ -45,7 +45,9 @@ impl HostInterfaceSpec {
     #[must_use]
     pub fn resource_types(&self) -> &'static [&'static str] {
         match self.interface {
-            "latent:http/streaming@0.3.0" => &["upload", "body", "chunk"],
+            "latent:http/streaming@0.3.0" | "latent:http/phase-timing@0.4.0" => {
+                &["upload", "body", "chunk"]
+            }
             "latent:blob/blob@0.2.0" => &["chunk"],
             "latent:network/streams@0.1.0" => &["connection", "chunk"],
             "latent:state/key-value@0.2.0" => &["transaction", "query-view", "page"],
@@ -331,6 +333,38 @@ pub const PHASE3_HOST_ABI_V6: HostAbiProfile = HostAbiProfile {
     interfaces: &PHASE3_V6_INTERFACES,
 };
 
+const PHASE3_V7_INTERFACES: [HostInterfaceSpec; 17] = [
+    PHASE3_V6_INTERFACES[0],
+    PHASE3_V6_INTERFACES[1],
+    PHASE3_V6_INTERFACES[2],
+    PHASE3_V6_INTERFACES[3],
+    PHASE3_V6_INTERFACES[4],
+    PHASE3_V6_INTERFACES[5],
+    PHASE3_V6_INTERFACES[6],
+    PHASE3_V6_INTERFACES[7],
+    PHASE3_V6_INTERFACES[8],
+    PHASE3_V6_INTERFACES[9],
+    PHASE3_V6_INTERFACES[10],
+    PHASE3_V6_INTERFACES[11],
+    PHASE3_V6_INTERFACES[12],
+    PHASE3_V6_INTERFACES[13],
+    PHASE3_V6_INTERFACES[14],
+    PHASE3_V6_INTERFACES[15],
+    HostInterfaceSpec {
+        interface: "latent:http/phase-timing@0.4.0",
+        package: "latent:http",
+        binding: HostInterfaceBinding::Provider,
+        wit: include_str!("../../../wit/platform/http-phases/package.wit"),
+        asynchronous: true,
+    },
+];
+/// Explicit HTTP phase-timing profile. Every earlier interface remains frozen;
+/// CURRENT stays V5 and actual provider installation is independently required.
+pub const PHASE3_HOST_ABI_V7: HostAbiProfile = HostAbiProfile {
+    id: "lsf-host-abi-phase3-v7",
+    interfaces: &PHASE3_V7_INTERFACES,
+};
+
 /// Explicit transaction definition profile. Selection requires a separately
 /// installed engine and current authority; ordinary Phase3 selection stays separate.
 pub const PHASE4_HOST_ABI_V1: HostAbiProfile = HostAbiProfile {
@@ -524,5 +558,36 @@ mod tests {
         let mut renamed = PHASE3_HOST_ABI_V2;
         renamed.id = "lsf-host-abi-phase3-v3";
         assert_ne!(current, identity(renamed));
+    }
+}
+
+#[cfg(test)]
+mod phase_timing_tests {
+    use super::*;
+    #[test]
+    fn v7_is_additive_and_never_changes_any_prior_profile_or_current_default() {
+        assert_eq!(PHASE3_HOST_ABI_CURRENT, PHASE3_HOST_ABI_V5);
+        assert_eq!(
+            PHASE3_HOST_ABI_V7.interfaces().len(),
+            PHASE3_HOST_ABI_V6.interfaces().len() + 1
+        );
+        for previous in PHASE3_HOST_ABI_V6.interfaces() {
+            assert_eq!(
+                PHASE3_HOST_ABI_V7.interface(previous.interface),
+                Some(previous)
+            );
+        }
+        let name = "latent:http/phase-timing@0.4.0";
+        assert!(PHASE3_HOST_ABI_V6.interface(name).is_none());
+        let phase = PHASE3_HOST_ABI_V7.interface(name).unwrap();
+        assert_eq!(phase.binding, HostInterfaceBinding::Provider);
+        assert!(phase.asynchronous);
+        assert_eq!(phase.resource_types(), &["upload", "body", "chunk"]);
+        assert!(PHASE3_HOST_ABI_V7
+            .interface("latent:http/phase-timing@0.3.0")
+            .is_none());
+        for operation in ["open", "finish", "read"] {
+            assert!(phase.operation_is_asynchronous(operation));
+        }
     }
 }

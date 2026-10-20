@@ -242,3 +242,39 @@ fn applying_policy_enables_required_containment_and_caps_pool_concurrency() {
     assert_eq!(pooling.active_instance_limit(), 2);
     pooling.apply_engine(&mut wasmtime::Config::new()).unwrap();
 }
+
+#[test]
+fn explicit_http_phase_profile_changes_preparation_identity_without_installing_authority() {
+    let original = WasmtimeConfig::default();
+    assert!(!original.http_phase_timing);
+    let old = original.profile(DispatchMode::Generic);
+    let mut phase = original.clone();
+    phase.http_phase_timing = true;
+    phase.validate().unwrap();
+    let selected = phase.profile(DispatchMode::Generic);
+    assert_eq!(
+        old.configuration["host-abi-profile"],
+        latent_core::PHASE3_HOST_ABI_CURRENT.id
+    );
+    assert_eq!(
+        selected.configuration["host-abi-profile"],
+        latent_core::PHASE3_HOST_ABI_V7.id
+    );
+    assert_ne!(
+        old.configuration["host-abi-digest"],
+        selected.configuration["host-abi-digest"]
+    );
+    assert_ne!(
+        old.configuration["configuration-digest"],
+        selected.configuration["configuration-digest"]
+    );
+    assert_eq!(phase.maximum_memory_bytes, original.maximum_memory_bytes);
+    assert_eq!(phase.maximum_fuel, original.maximum_fuel);
+    assert_eq!(
+        phase.maximum_active_instances,
+        original.maximum_active_instances
+    );
+    assert!(!phase.owned_native_threads);
+    phase.transactional_state = true;
+    assert!(phase.validate().is_err());
+}

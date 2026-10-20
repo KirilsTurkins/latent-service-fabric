@@ -16,9 +16,11 @@ use std::{
     time::{Duration, Instant},
 };
 mod exchange;
+mod phase;
 mod response;
 pub(crate) mod wire;
 pub const STREAMING_HTTP_PROVIDER_PROFILE: &str = "bounded-streaming-http-identity-v1";
+pub const PHASE_TIMING_HTTP_PROVIDER_PROFILE: &str = "bounded-streaming-http-phase-timing-v1";
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HttpStreamLimits {
@@ -73,7 +75,7 @@ impl StreamingHttpProvider {
                 expected_epoch,
                 config,
                 crate::credentials::CredentialInput::Inline(credentials),
-                Some(limits),
+                Some(crate::provider::StreamingProfile::Identity(limits)),
             )?,
         })
     }
@@ -94,13 +96,58 @@ impl StreamingHttpProvider {
                 expected_epoch,
                 config,
                 crate::credentials::CredentialInput::References(references),
-                Some(limits),
+                Some(crate::provider::StreamingProfile::Identity(limits)),
             )?,
         })
     }
     #[must_use]
     pub fn reference(&self) -> ProviderReference {
         self.provider.reference()
+    }
+
+    /// Install a distinct, explicitly selected authority for HTTP phase timers.
+    pub fn install_phase_timing(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: HttpProviderConfig,
+        limits: HttpStreamLimits,
+        credentials: &[HttpCredential<'_>],
+    ) -> Result<Self, HttpError> {
+        Ok(Self {
+            provider: HttpProvider::install_profile(
+                pools,
+                logical_id,
+                epoch,
+                expected_epoch,
+                config,
+                crate::credentials::CredentialInput::Inline(credentials),
+                Some(crate::provider::StreamingProfile::PhaseTiming(limits)),
+            )?,
+        })
+    }
+
+    pub fn install_phase_timing_with_secret_references(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: HttpProviderConfig,
+        limits: HttpStreamLimits,
+        references: Vec<crate::HttpCredentialReference>,
+    ) -> Result<Self, HttpError> {
+        Ok(Self {
+            provider: HttpProvider::install_profile(
+                pools,
+                logical_id,
+                epoch,
+                expected_epoch,
+                config,
+                crate::credentials::CredentialInput::References(references),
+                Some(crate::provider::StreamingProfile::PhaseTiming(limits)),
+            )?,
+        })
     }
 }
 impl StreamingHttpInvoker for StreamingHttpProvider {
@@ -148,5 +195,71 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
             client,
             admission,
         )))
+    }
+    fn start_with_connect_timeout(
+        &self,
+        session: &CapabilitySession,
+        request: StreamingHttpRequest,
+        timeout_millis: Option<u32>,
+    ) -> Result<
+        latent_capabilities::broker::streaming_http::PhaseHttpInvocation,
+        latent_capabilities::broker::streaming_http::HttpPhaseError,
+    > {
+        let inner = &self.provider.inner;
+        if timeout_millis.is_none_or(|millis| millis == 0) {
+            let opening = self.start(session, request)?;
+            return Ok(Box::pin(async move { opening.await.map_err(Into::into) }));
+        }
+        if !inner.phase_timing {
+            return Err(latent_capabilities::broker::streaming_http::HttpPhaseError::Unsupported);
+        }
+        if !session.uses_provider(&self.reference())? {
+            return Err(HttpError::PermissionDenied.into());
+        }
+        let limits = inner.streaming.expect("streaming configuration");
+        if request.metadata.body.is_some()
+            || request
+                .body_length
+                .is_some_and(|n| n > limits.maximum_input_bytes)
+        {
+            return Err(HttpError::InvalidRequest.into());
+        }
+        let destination = destination::parse(&request.metadata.url, &inner.config)?;
+        inner.check_credential_tenant(session.tenant(), destination.index)?;
+        let size = headers::validate(
+            &request.metadata,
+            &inner.config.destinations[destination.index],
+            inner.config.limits,
+        )?;
+        let now = Instant::now();
+        let original = session.deadline()?;
+        let deadline = request.metadata.timeout_millis.map_or(original, |millis| {
+            now + Duration::from_millis(millis).min(original.saturating_duration_since(now))
+        });
+        let client = inner.client(destination.index)?;
+        let admission = inner.pools.admit_until(&client, session, deadline)?;
+        let memory = Arc::new(admission.reserve_input(size.retained, 4096)?);
+        let deadline = phase::Deadline::new(admission.stop_handle(), timeout_millis)?;
+        let opening = exchange::open(
+            Arc::clone(inner),
+            crate::execute::RequestOwner {
+                request: request.metadata,
+                destination,
+                memory,
+                logical: size.logical,
+            },
+            request.body_length,
+            client,
+            admission,
+        );
+        Ok(Box::pin(async move {
+            deadline
+                .wait(
+                    opening,
+                    latent_capabilities::broker::streaming_http::HttpPhaseError::ConnectTimeout,
+                )
+                .await?
+                .map_err(Into::into)
+        }))
     }
 }

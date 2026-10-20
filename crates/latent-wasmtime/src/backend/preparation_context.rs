@@ -174,6 +174,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if let Some(invoker) = self.phase_http() {
+            crate::host::streaming_http::phases::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind HTTP phase timing import",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.outbound_streams() {
             crate::host::networking::install(&mut linker, invoker).map_err(|_| {
                 platform_error(
@@ -267,6 +276,14 @@ impl PreparationContext {
         &self,
     ) -> Option<Arc<dyn latent_capabilities::broker::streaming_http::StreamingHttpInvoker>> {
         self.capabilities.as_ref()?.upgrade()?.streaming_http().ok()
+    }
+    pub(super) fn phase_http(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::streaming_http::StreamingHttpInvoker>> {
+        if !self.config.http_phase_timing {
+            return None;
+        }
+        self.capabilities.as_ref()?.upgrade()?.phase_http().ok()
     }
     pub(super) fn http(
         &self,

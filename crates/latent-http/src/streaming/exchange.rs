@@ -10,7 +10,8 @@ use latent_capabilities::broker::{
     io::{IoMemory, IoTransfer, IoTransferOptions},
     pools::{PoolAdmission, PoolCall, PooledConnection, ProviderClient},
     streaming_http::{
-        HttpBody, HttpUpload, StreamingHttpError as Error, STREAMING_HTTP_CAPABILITY,
+        HttpBody, HttpUpload, StreamingHttpError as Error, PHASE_TIMING_CAPABILITY,
+        STREAMING_HTTP_CAPABILITY,
     },
     AuditProviderOutcome, CapabilityCallCost, CapabilityStreamBudget,
 };
@@ -50,9 +51,14 @@ pub(super) async fn open(
     let limits = inner.streaming.expect("stream profile");
     let ready = admission.wait().await?;
     let cost = cost(&inner, &input, length)?;
+    let capability = if inner.phase_timing {
+        PHASE_TIMING_CAPABILITY
+    } else {
+        STREAMING_HTTP_CAPABILITY
+    };
     let mut call = ready
         .dispatch(
-            STREAMING_HTTP_CAPABILITY,
+            capability,
             "open",
             ResourceTarget::Http {
                 origin: &input.destination.origin,
@@ -253,7 +259,52 @@ impl HttpUpload for Upload {
             }
             state.sender.end();
             state.progress(false).await?;
-            super::response::begin(state, false).map(|body| Box::new(body) as Box<dyn HttpBody>)
+            let capture_reason = state.inner.phase_timing;
+            super::response::begin(state, capture_reason)
+                .map(|body| Box::new(body) as Box<dyn HttpBody>)
+        })
+    }
+    fn finish_with_read_timeout(
+        self: Box<Self>,
+        timeout_millis: Option<u32>,
+    ) -> BoxFuture<
+        'static,
+        Result<Box<dyn HttpBody>, latent_capabilities::broker::streaming_http::HttpPhaseError>,
+    > {
+        use latent_capabilities::broker::streaming_http::HttpPhaseError;
+        if timeout_millis.is_none_or(|millis| millis == 0) {
+            let pending = self.finish();
+            return Box::pin(async move { pending.await.map_err(Into::into) });
+        }
+        let Some(state) = self.state.as_ref() else {
+            return Box::pin(async { Err(Error::InvalidState.into()) });
+        };
+        if !state.inner.phase_timing {
+            return Box::pin(async { Err(HttpPhaseError::Unsupported) });
+        }
+        let deadline =
+            match super::phase::Deadline::new(state.call.io().stop_handle(), timeout_millis) {
+                Ok(deadline) => deadline,
+                Err(error) => return Box::pin(async move { Err(error) }),
+            };
+        let wrote = Arc::clone(&state.wrote);
+        let pending = self.finish();
+        Box::pin(async move {
+            match deadline
+                .wait(
+                    pending,
+                    HttpPhaseError::ReadTimeout {
+                        external_completion_uncertain: true,
+                    },
+                )
+                .await
+            {
+                Ok(result) => result.map_err(Into::into),
+                Err(HttpPhaseError::ReadTimeout { .. }) => Err(HttpPhaseError::ReadTimeout {
+                    external_completion_uncertain: wrote.load(Ordering::Acquire),
+                }),
+                Err(error) => Err(error),
+            }
         })
     }
 }
@@ -272,10 +323,18 @@ fn cost(
     framing[1..9].copy_from_slice(&length_bytes);
     framing[9..].copy_from_slice(&limits.maximum_output_bytes.to_le_bytes());
     let digest = metadata_digest.with_context(&framing)?;
+    let reason_metadata = if inner.phase_timing {
+        // The original head and its canonical-ABI result copy coexist during
+        // finish. Prepay both bounded capacities before provider dispatch.
+        2 * (latent_capabilities::broker::http::MAXIMUM_HTTP_REASON_BYTES + 128)
+    } else {
+        0
+    };
     Ok(CapabilityCallCost::new(
         4 * inner.config.limits.maximum_header_bytes
             + inner.config.limits.maximum_headers * 128
-            + 2048,
+            + 2048
+            + reason_metadata,
     )
     .with_typed_input_bytes(input.logical)
     .with_typed_request_digest(digest)

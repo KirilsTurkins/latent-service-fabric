@@ -16,6 +16,7 @@ pub(super) fn specification(name: &str) -> Option<&'static HostInterfaceSpec> {
         // Descriptive exact-WIT recognition only. CURRENT and actual provider
         // installation remain unchanged; the native host profile is explicit.
         .or_else(|| latent_core::PHASE3_HOST_ABI_V6.interface(name))
+        .or_else(|| latent_core::PHASE3_HOST_ABI_V7.interface(name))
 }
 
 pub(super) fn validate(
@@ -37,6 +38,16 @@ pub(super) fn validate(
             values.interface(*id, *id)?;
             continue;
         };
+        if name == "latent:http/phase-timing@0.4.0" {
+            let dependency = PHASE3_HOST_ABI_CURRENT
+                .interface("latent:http/streaming@0.3.0")
+                .expect("immutable phase timing resource dependency");
+            if loaded.insert(dependency.wit) {
+                trusted
+                    .push_source(dependency.interface, dependency.wit)
+                    .map_err(|_| incompatible("invalid-pinned-host-wit"))?;
+            }
+        }
         if name == "latent:runtime-native/threads@0.1.0" {
             let dependency = PHASE3_HOST_ABI_CURRENT
                 .interface("latent:runtime/activation@0.1.0")

@@ -313,6 +313,16 @@ pub enum IoWorkPhase {
     Retired,
 }
 impl IoStopHandle {
+    /// Observe only the already-owned operation. A weak handle cannot keep an
+    /// activation alive, extend its deadline, or authorize provider work.
+    pub fn checkpoint(&self) -> Result<(), PlatformError> {
+        self.operation.upgrade().ok_or_else(retired)?.check()
+    }
+    pub fn deadline(&self) -> Result<Instant, PlatformError> {
+        let operation = self.operation.upgrade().ok_or_else(retired)?;
+        operation.check()?;
+        Ok(operation.effective_deadline())
+    }
     #[must_use]
     pub fn phase(&self) -> IoWorkPhase {
         self.operation

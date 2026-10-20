@@ -110,6 +110,8 @@ pub struct WasmtimeConfig {
     /// Installs the scoped Phase 4 linker. Actual access still requires an
     /// activation-owned transaction host with the same ledger and identity.
     pub transactional_state: bool,
+    /// Additive V7 HTTP phase interface; no provider or destination is implied.
+    pub http_phase_timing: bool,
     pub target_triple: String,
     pub cpu_feature_set: String,
     pub maximum_component_bytes: usize,
@@ -195,6 +197,7 @@ impl Default for WasmtimeConfig {
             angular_renderer: false,
             java_guest: false,
             transactional_state: false,
+            http_phase_timing: false,
             activation_runtime: None,
             owned_native_stacks: false,
             owned_native_threads: false,
@@ -265,6 +268,9 @@ impl WasmtimeConfig {
         if self.owned_native_threads
             && (!self.owned_native_stacks || self.java_guest || self.transactional_state)
         {
+            return Err(invalid_config());
+        }
+        if self.http_phase_timing && self.transactional_state {
             return Err(invalid_config());
         }
         self.validate_renderer()?;

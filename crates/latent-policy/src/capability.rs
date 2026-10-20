@@ -176,6 +176,16 @@ fn operation(contract: &str, name: &str) -> bool {
             "abort-upload",
             "abort-body",
         ],
+        "latent:http/phase-timing@0.4.0" => &[
+            "open",
+            "write",
+            "finish",
+            "read",
+            "chunk-bytes",
+            "trailers",
+            "abort-upload",
+            "abort-body",
+        ],
         "latent:telemetry/custom@0.1.0" => &["emit-metric"],
         "latent:service/invoke@0.1.0" => &["call"],
         "latent:state/key-value@0.2.0" => &[

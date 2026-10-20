@@ -2209,14 +2209,15 @@
         "transaction_contract::tests::fingerprint_sorts_but_never_erases_presence_or_stale_edit_inputs",
         "activation_runtime::tests::continuations_require_live_original_generation_before_any_admission",
         "activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock",
-        "host_profile::tests::explicit_v6_adds_only_exact_native_retirement_and_keeps_v5_default"
+        "host_profile::tests::explicit_v6_adds_only_exact_native_retirement_and_keeps_v5_default",
+        "host_profile::phase_timing_tests::v7_is_additive_and_never_changes_any_prior_profile_or_current_default"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 140,
+      "minimumCases": 141,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -2547,14 +2548,20 @@
         "tests::tls::stalled_tls_handshake_cancels_and_closes_without_application_effects",
         "tests::tls::tls_requires_both_approved_peer_and_correct_trusted_hostname",
         "tests::validation::special_addresses_require_exact_opt_in_even_with_broad_networks",
-        "tests::validation::url_and_header_grammar_rejects_smuggling_and_ambient_credentials"
+        "tests::validation::url_and_header_grammar_rejects_smuggling_and_ambient_credentials",
+        "tests::phase_timing::old_streaming_profile_rejects_nonzero_phase_contract_before_contact",
+        "tests::phase_timing::connect_phase_waits_for_real_tls_and_retires_the_stalled_transport",
+        "tests::phase_timing::connected_transport_does_not_charge_later_response_headers_to_connect_timer",
+        "tests::phase_timing::header_phase_timeout_keeps_written_request_uncertain_and_never_replays",
+        "tests::phase_timing::body_phase_timeout_closes_io_while_prior_chunks_keep_their_original_charge",
+        "tests::phase_timing::original_root_deadline_and_cancellation_are_never_reported_as_phase_timeouts"
       ],
       "expectedIgnored": [],
       "id": "latent-http.lib.latent-http",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 68,
+      "minimumCases": 74,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [
@@ -4131,14 +4138,15 @@
         "semantics::wasm::tests::data::data_segments_still_consume_the_original_aggregate_budget_across_modules",
         "semantics::wasm::tests::data::excess_and_truncated_data_vectors_remain_rejected_before_execution",
         "semantics::wasm::tests::data::lowering_function_slots_does_not_reclassify_data_segments_as_functions",
-        "semantics::wasm::tests::data::valid_data_segments_at_the_pinned_parser_ceiling_validate_without_execution"
+        "semantics::wasm::tests::data::valid_data_segments_at_the_pinned_parser_ceiling_validate_without_execution",
+        "semantics::host::tests::phase_semantics_bind_original_resource_owners_and_exact_versioned_extension"
       ],
       "expectedIgnored": [],
       "id": "latent-packaging.lib.latent-packaging",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 86,
+      "minimumCases": 87,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
@@ -7325,7 +7333,9 @@
         "backend::call_phase::tests::only_generic_runtime_failure_gets_the_actual_closed_call_boundary",
         "backend::call_phase::tests::call_boundary_does_not_relabel_traps_accounting_or_lifecycle_failures",
         "host::tests::finite_default_table_limit_admits_go_minimum_and_rejects_excess",
-        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration"
+        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration",
+        "bindings::compatibility_tests::phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes",
+        "config::tests::explicit_http_phase_profile_changes_preparation_identity_without_installing_authority"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7338,7 +7348,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 379,
+      "minimumCases": 381,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8864,14 +8874,17 @@
         "no_streaming_provider_means_no_prepared_stream_import",
         "resource_guest_drains_chunks_and_trailers_then_reclaims_all_owners",
         "streaming_package_preserves_exact_owned_resources_and_value_only_exports",
-        "traps_wrong_kind_stale_handles_and_abort_close_real_owners"
+        "traps_wrong_kind_stale_handles_and_abort_close_real_owners",
+        "phases::phase_component_preserves_actual_latin1_and_observed_empty_reason_and_linear_body",
+        "phases::phase_component_header_timeout_returns_uncertain_typed_error_and_closes_transport",
+        "phases::phase_component_body_timeout_reclaims_held_chunk_at_original_store_retirement"
       ],
       "expectedIgnored": [],
       "id": "latent-wasmtime.test.streaming-http",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 13,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -10322,7 +10335,9 @@
         "worker_stacks::tests::linux::timed_out_shutdown_retains_live_blocking_thread_owner_until_real_stop",
         "worker_stacks::tests::two_blocking_workers_have_one_shared_checked_stack_envelope",
         "standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row",
-        "standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity"
+        "standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity",
+        "config::tests::providers::http_streaming::phase_selection_is_explicit_strict_and_never_aliases_the_original_contract",
+        "config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10391,7 +10406,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 456,
+      "minimumCases": 458,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

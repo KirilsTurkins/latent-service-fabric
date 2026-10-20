@@ -1,0 +1,78 @@
+name: HTTP phase timing conformance
+
+on:
+  push:
+    branches: [feat/java-http-phase-profile-20261020]
+  pull_request:
+    paths:
+      - '.github/workflows/http-phase-timing.yml'
+      - 'crates/latent-capabilities/src/broker/**'
+      - 'crates/latent-component-bindings/**'
+      - 'crates/latent-core/src/host_profile.rs'
+      - 'crates/latent-http/**'
+      - 'crates/latent-packaging/src/semantics/host/**'
+      - 'crates/latent-packaging/src/semantics/host.rs'
+      - 'crates/latent-policy/src/capability/**'
+      - 'crates/latent-policy/src/capability.rs'
+      - 'crates/latent-wasmtime/**'
+      - 'apps/latentd/src/config/**'
+      - 'apps/latentd/src/standalone/providers/runtime.rs'
+      - 'wit/platform/http-phases/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'tools/ci/suites.json'
+      - 'tools/ci/contracts/workflows/http-phase-timing.yml/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+
+jobs:
+  phase-timing:
+    name: Real transport and component HTTP phase boundaries
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Check frozen profiles and real TCP TLS phase retirement
+        run: |
+          cargo test --locked -p latent-core --lib host_profile::phase_timing_tests:: -- --nocapture
+          cargo test --locked -p latent-http --lib tests::phase_timing:: -- --nocapture
+      - name: Check exact semantic and prepared component contracts
+        run: |
+          cargo test --locked -p latent-packaging --lib phase_semantics_bind_original_resource_owners_and_exact_versioned_extension -- --nocapture
+          cargo test --locked -p latent-wasmtime --lib phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes -- --nocapture
+          cargo test --locked -p latent-wasmtime --lib explicit_http_phase_profile_changes_preparation_identity_without_installing_authority -- --nocapture
+      - name: Execute the new canonical ABI with actual sockets and fresh Stores
+        run: |
+          cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture
+      - name: Check explicit node selection and original protected limits
+        run: |
+          cargo test --locked -p latentd --lib config::tests::providers::http_streaming::phase_selection_is_explicit_strict_and_never_aliases_the_original_contract -- --exact --nocapture
+          cargo test --locked -p latentd --lib config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects -- --exact --nocapture
