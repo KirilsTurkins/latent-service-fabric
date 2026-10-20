@@ -1,0 +1,553 @@
+{
+  "schemaVersion": "latent.dotnet.resource-tenant-signed-observation.v1",
+  "status": "passed",
+  "source": "2159d9e8871421d14298af3f1f9d0e4618a465ce",
+  "run": 39420425077,
+  "job": 118619700956,
+  "artifact": 12262764233,
+  "archiveBytes": 2251515,
+  "archiveDigest": "sha256:f84a15fda3b9e4602eef618a180e361b664d8f59126de192d2623c37fc1ca129",
+  "archiveMembersVerified": 230,
+  "qualifiedReceipt": {
+    "member": "dotnet-resource-tenants/qualified.json",
+    "sha256": "sha256:a3d0481e593e87f015c6530a78e6fe11a6add3fc52a304be8b03ed3abc2f6dda",
+    "bytes": 15691
+  },
+  "nodeReceipt": {
+    "member": "dotnet-resource-tenants/coupled/qualified.json",
+    "sha256": "sha256:62a18f4eac1ae6bdd7295645f1ba4f8d4c2ace985c203e8048bff6152dbf6480",
+    "bytes": 193639
+  },
+  "exercisedMaterialsMatchGit": {
+    "tools/qualify_dotnet_resource_tenants.py": {
+      "sha256": "sha256:4f183527a997a01793657aaeb195270c6944cd15a5b2193c1534a04759d48881",
+      "bytes": 6029
+    },
+    "tools/dotnet_resource_originals.py": {
+      "sha256": "sha256:9eb815832e2ef47016470e3c222b2c1f18b087917ab30d87e43178ba1a8b5784",
+      "bytes": 11899
+    },
+    "tools/dotnet_resource_recomposition.py": {
+      "sha256": "sha256:39b30268315239450dc1eda7285d5cc8201e5a20f8fca457b733ead09330c8f1",
+      "bytes": 15166
+    },
+    "tools/dotnet_guest/closed_io.py": {
+      "sha256": "sha256:9c20870094bca55db53f334d56c00722268b756a6de6605737550dfa55c3d7ab",
+      "bytes": 10194
+    },
+    "tools/dotnet_guest/internal_io.py": {
+      "sha256": "sha256:e59192c316a2a7be67dedba27ab29845a08225910f070d05c7746377a68048fd",
+      "bytes": 17531
+    },
+    "tools/dotnet_guest/composer.py": {
+      "sha256": "sha256:24e70af828520adc48293edc9339c4073354658aa1fb2bbd5dbc88fe5819a88e",
+      "bytes": 9061
+    },
+    "tools/dotnet_guest/compatibility.py": {
+      "sha256": "sha256:7d3ea4691f0e6bac2b075ab0465c9e2a01b6e82d3e21c80ec37c3fbcafa93e90",
+      "bytes": 10562
+    },
+    "tools/qualify_resource_tenants.py": {
+      "sha256": "sha256:805c5f634ae5a3197b4de5f434eca78a88b01e354d63ee9d2c55288e4a539fc2",
+      "bytes": 16957
+    },
+    "tools/resource_tenant_inputs.py": {
+      "sha256": "sha256:ad3c9bf7a0564151b203e28077f1ed899144f6eaaa5055675896ff457913982d",
+      "bytes": 7175
+    },
+    "tools/resource_tenant_node.py": {
+      "sha256": "sha256:32cb8d1c9feac256fc51568eba390c79cebdd47f7dd4fe365f8ff08613633926",
+      "bytes": 12424
+    },
+    "tools/resource_tenant_originals.py": {
+      "sha256": "sha256:13ba36570518d564d4a1bbd8e017d9e72db82d44a7c9185106875bc2e4482231",
+      "bytes": 10719
+    },
+    "tools/rust_capsule_node.py": {
+      "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+      "bytes": 18922
+    },
+    "tools/rust_capsule_project.py": {
+      "sha256": "sha256:216da6ad5b821381bde28e42e13b8b6ef47ff3faf93b539e0166c880d6fc2360",
+      "bytes": 14549
+    },
+    "tools/java_server_tenants.py": {
+      "sha256": "sha256:f53f7265d33a43b4e0c3cdee5a71ec316695c4e2fba24eb01222d3260990e5a8",
+      "bytes": 18967
+    },
+    "tools/phase2_operator_process.py": {
+      "sha256": "sha256:5ee4304a9b20d54a05f655114b6a358c72cae3bfe0292e8b213bf4af6197e659",
+      "bytes": 15043
+    },
+    "tools/phase2_operator_scenario.py": {
+      "sha256": "sha256:eb024da258700494ebee27fa84de2a17ae2d5f84354641ca126222d677ec6a35",
+      "bytes": 21456
+    },
+    "tools/phase3_resource_identity.py": {
+      "sha256": "sha256:ca979a245b623bd588fe6ce32aec1de3a45a00e8bb0d6e49c6554417051327b0",
+      "bytes": 3354
+    },
+    "tools/phase3_resource_os.py": {
+      "sha256": "sha256:2d3a7b610bb2ceece7116d0a6ad824dcefbb9113042bb019a9c3407e73858140",
+      "bytes": 8840
+    },
+    "tools/phase3_resource_profile.py": {
+      "sha256": "sha256:633a3eb3e639014ef221cf5180a533ea595cca32a761d53fe2d4e305d658a818",
+      "bytes": 9743
+    },
+    "tools/sdk_provider_scenario.py": {
+      "sha256": "sha256:54c213bb7e3261e10adbf83434cf47852217fc0249df3f011decf69db781c3eb",
+      "bytes": 10998
+    },
+    "tools/rust_capsule_cases.py": {
+      "sha256": "sha256:d96e528c134ec40974b07d3b3fc0cf3ea2d3b07a17201ab440ed6e89e710533f",
+      "bytes": 8645
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "sha256": "sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7",
+      "bytes": 34233
+    },
+    "tools/build_observation.py": {
+      "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+      "bytes": 7868
+    },
+    "tools/build_process.py": {
+      "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+      "bytes": 9063
+    },
+    "tools/build_process_linux.py": {
+      "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+      "bytes": 3853
+    },
+    "tools/qualify_sdk_scratch.py": {
+      "sha256": "sha256:037b59b85d186442f7bafca7ee6292cf00cb1154cd4f8d5774822e2708aed98d",
+      "bytes": 16948
+    },
+    "tools/embedded_resource_fixture.py": {
+      "sha256": "sha256:a1c7d2f9534c7b32ab1ebf92ff4303a582ff3575f91b88401e49eb2f55cec5af",
+      "bytes": 9712
+    },
+    "tools/java_resource_fixture.py": {
+      "sha256": "sha256:c653a9958b0e7bb0899f60ee706770dd95d08deeee7e2514fb80b818d878c4ba",
+      "bytes": 5033
+    },
+    "tools/java_capsule_project.py": {
+      "sha256": "sha256:b1ba19f44a5c26d5b3b4003a50b50a9cf6909a119a3a3daafeadd51417de22af",
+      "bytes": 11252
+    },
+    "tools/dotnet_standard_console_fixture.py": {
+      "sha256": "sha256:af18066a3f99aa1e709e0b2401e1f7431823accb8b70bdf2e73fbd2256761bf8",
+      "bytes": 13255
+    },
+    "tools/c_compiled_resource_fixture.py": {
+      "sha256": "sha256:b20da4f2e9b5c15518ca0ebbb97d2e9f024d9b0a4981afc9a508be8589b3dbba",
+      "bytes": 8731
+    }
+  },
+  "originalAotComponent": {
+    "sha256": "sha256:ae70bb14ba532ab9cfcef0ea342e9929c08586e77d94e03d71f444ef0076fe74",
+    "bytes": 2985677
+  },
+  "component": {
+    "sha256": "sha256:f6fdeac776f931cadafa997668cb7802747bb3dcecb7ebb7e326617e6de0f418",
+    "bytes": 3002308
+  },
+  "componentMatchesHistoricalF6fd": true,
+  "historicalConsoleExecutionBorrowed": false,
+  "freshMetadataDerivationAndSignedExecution": true,
+  "originalAotRecordsVerbatim": true,
+  "originalPublicPackageInputs": {
+    "digest": "sha256:22470ff1ceb04a38c8a58e8a38725e719ba96a219ecc01b29dae15e54311960c",
+    "size": 1185
+  },
+  "allTenCoreModulesByteIdentical": true,
+  "coreModules": [
+    {
+      "sha256": "sha256:f9e7b2a0b6dc8929d329c78855f7011181082bfd703128ceb656306c309cecf0",
+      "bytes": 64525
+    },
+    {
+      "sha256": "sha256:931db02d6b536ce8262dc4b84400190f60f0984423a6057b7e10ed6d4d66eebc",
+      "bytes": 373
+    },
+    {
+      "sha256": "sha256:6aef07b563d173d9e4ac5f358e59e3290605ad51932c47992ec2936ff3248311",
+      "bytes": 208
+    },
+    {
+      "sha256": "sha256:084565fd3c4fe749900210e6313d2d8925d4ae627a5fbe0ee496640d31b181d2",
+      "bytes": 25632
+    },
+    {
+      "sha256": "sha256:bc24f770e21c5c8abe34d240f4d815545aa4a7c10f08c7e0faeef52216b348df",
+      "bytes": 128
+    },
+    {
+      "sha256": "sha256:34cdd0c6170e6b94fc64a51acca6d4dba65719133b29ca2617d4b686ea53e8d7",
+      "bytes": 107
+    },
+    {
+      "sha256": "sha256:0a0d6edcdd639cea0cf6e1b6b27c0ed447a60cf779aac06d491b9ffb93f1e04c",
+      "bytes": 2828260
+    },
+    {
+      "sha256": "sha256:55a21deb046bf633d0de6303e509fe6e4649fb83bab95fe3120173af90e51bf0",
+      "bytes": 513
+    },
+    {
+      "sha256": "sha256:b79f7e63696e1be2dfbc8d1b991af79383e1175b2eeaa17ea21d8bcb813bbee2",
+      "bytes": 265
+    },
+    {
+      "sha256": "sha256:c31cc6ffd33735cbd42510e5afdd4cd5adf9b8591bd9c2af517674101268c9ea",
+      "bytes": 24
+    }
+  ],
+  "publicGraphEquivalent": true,
+  "onlyFourOriginalBclIoTypesRestored": [
+    "wasi:io/poll@0.2.6#[method]pollable.block",
+    "wasi:io/poll@0.2.6#poll",
+    "wasi:io/streams@0.2.6#[method]input-stream.blocking-read",
+    "wasi:io/streams@0.2.6#[method]output-stream.blocking-flush"
+  ],
+  "nativeAotCompilationPerformed": false,
+  "nativeProductsBuilt": 0,
+  "componentMetadataDerivations": 1,
+  "metadataDerivation": {
+    "metadataRecipeSource": "2159d9e8871421d14298af3f1f9d0e4618a465ce",
+    "compiledSource": "a1028e1bd854700f27e75017349c58b88b53b0d5",
+    "nativeAotCompilation": false,
+    "originalComponent": {
+      "sha256": "sha256:ae70bb14ba532ab9cfcef0ea342e9929c08586e77d94e03d71f444ef0076fe74",
+      "bytes": 2985677
+    },
+    "referenceComponent": {
+      "sha256": "sha256:b60b981ac3f0f4e9bc858e88e293302483465178a7ad4127f66f2283a29e1ae4",
+      "bytes": 3003450
+    },
+    "selectedComponent": {
+      "sha256": "sha256:f6fdeac776f931cadafa997668cb7802747bb3dcecb7ebb7e326617e6de0f418",
+      "bytes": 3002308
+    },
+    "publicGraphEquivalent": true,
+    "allCoreModulesByteIdentical": true,
+    "actualProductionClosedAdapterDerivation": {
+      "profile": "dotnet-private-synchronous-closed-io-v1",
+      "runtimeProfile": "closed-logging",
+      "originalDigest": "sha256:07e5a5aa3435a4b8a0b17300c82559cde1e577a1cb42ed975142e1d54e6d77d0",
+      "selectedDigest": "sha256:3ff945edeed5e593e0b23f8685c07fbea678fdb7323326a9f43b2b523ba61412",
+      "referenceGraphDigest": "sha256:0b7f54f627021c99b9324c4c029e66b7af8fc41cf7a00a54cd38a56325ae6a10",
+      "sourceWitInputsDigest": "sha256:ff7c9a9871a8504f491f8e07e5523da740f0a9d75eae364b8db783891416a0bb",
+      "functions": {
+        "wasi:io/poll@0.2.6": [
+          "[method]pollable.block",
+          "poll"
+        ],
+        "wasi:io/streams@0.2.6": [
+          "[method]input-stream.blocking-read",
+          "[method]output-stream.blocking-flush"
+        ]
+      },
+      "coreModules": [
+        {
+          "digest": "sha256:f9e7b2a0b6dc8929d329c78855f7011181082bfd703128ceb656306c309cecf0",
+          "size": 64525
+        },
+        {
+          "digest": "sha256:931db02d6b536ce8262dc4b84400190f60f0984423a6057b7e10ed6d4d66eebc",
+          "size": 373
+        },
+        {
+          "digest": "sha256:6aef07b563d173d9e4ac5f358e59e3290605ad51932c47992ec2936ff3248311",
+          "size": 208
+        }
+      ],
+      "coreBytesUnchanged": true,
+      "applicationImportsUnchanged": true,
+      "signedExecution": "not-run"
+    },
+    "actualProductionComposition": true,
+    "originalBCLImportsRestored": [
+      "wasi:io/poll@0.2.6#[method]pollable.block",
+      "wasi:io/poll@0.2.6#poll",
+      "wasi:io/streams@0.2.6#[method]input-stream.blocking-read",
+      "wasi:io/streams@0.2.6#[method]output-stream.blocking-flush"
+    ],
+    "operation": "component-metadata-derivation",
+    "inheritedCompilerParametersDescribeAncestry": true,
+    "originalObservationDigest": "sha256:b3aa9da0f1f784774a6733d8e81cc4956ed60a000c5dbe85323913b542f98fee"
+  },
+  "freshBuild": {
+    "language": "dotnet",
+    "originalBuild": {
+      "formatVersion": 1,
+      "componentDigest": "sha256:f6fdeac776f931cadafa997668cb7802747bb3dcecb7ebb7e326617e6de0f418",
+      "sourceDigest": "sha256:9cb2b0239a080492f030890ac72cff83c235a0eef95037b6868fb992d6709926",
+      "observationDigest": "sha256:8dac609dd3cbd6be4d1ccbf94fd02a3c76d2fb36ab7634492e2fa101215cb163",
+      "operation": "component-metadata-derivation",
+      "nativeAotCompilation": false
+    },
+    "component": {
+      "sha256": "sha256:f6fdeac776f931cadafa997668cb7802747bb3dcecb7ebb7e326617e6de0f418",
+      "bytes": 3002308
+    },
+    "buildObservation": {
+      "sha256": "sha256:8dac609dd3cbd6be4d1ccbf94fd02a3c76d2fb36ab7634492e2fa101215cb163",
+      "bytes": 6782
+    },
+    "sourceInputs": {
+      "sha256": "sha256:9cb2b0239a080492f030890ac72cff83c235a0eef95037b6868fb992d6709926",
+      "bytes": 764
+    },
+    "packageInputs": {
+      "package-source.json": {
+        "sha256": "sha256:3aff24a65d53b19702315ce0024ba669abc87a9a730acf50c06f4899c77c895c",
+        "bytes": 1486
+      },
+      "component.wasm": {
+        "sha256": "sha256:f6fdeac776f931cadafa997668cb7802747bb3dcecb7ebb7e326617e6de0f418",
+        "bytes": 3002308
+      },
+      "capsule.json": {
+        "sha256": "sha256:eab0d0c2ff10c2177afc18c2ca86fbda0055642bbc2d7e7b669eff2947c00d5b",
+        "bytes": 987
+      },
+      "contracts.json": {
+        "sha256": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+        "bytes": 674
+      },
+      "wit-lock.json": {
+        "sha256": "sha256:24e760186138d4ffbd884c388e48a0d67b866b10c44de724ba3f5cb043a02623",
+        "bytes": 901
+      },
+      "compatibility-report.json": {
+        "sha256": "sha256:bdee81749e276a8f258e9df55bd414b22f3a64e1782bfbc5d0985cb8bd94fb8c",
+        "bytes": 1164
+      },
+      "wit/deps/clock/package.wit": {
+        "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "bytes": 139
+      },
+      "wit/deps/log/package.wit": {
+        "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+        "bytes": 418
+      },
+      "wit/deps/random/package.wit": {
+        "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+        "bytes": 272
+      },
+      "wit/world.wit": {
+        "sha256": "sha256:896b8f81581e845dd17cb18baebed859e8bf978b1c6e189c2fdc8c6d3aa0009f",
+        "bytes": 257
+      },
+      "dotnet-inherited-aot-observation.json": {
+        "sha256": "sha256:b3aa9da0f1f784774a6733d8e81cc4956ed60a000c5dbe85323913b542f98fee",
+        "bytes": 6433
+      },
+      "dotnet-metadata-derivation.json": {
+        "sha256": "sha256:5a4698e7813014427d0640ef939dee1415bd3943498395d0a99beddfd655019b",
+        "bytes": 2483
+      }
+    },
+    "nativeGuestRecompiled": false,
+    "historicalCompileRecordsRewritten": false
+  },
+  "native": {
+    "producer": {
+      "artifact": 12255531553,
+      "artifactBytes": 65925279,
+      "artifactDigest": "sha256:0b5756327d92f45e59e65da2f9d059d6f7e464e59830e43761931c97c4391e8e",
+      "run": 39400186766,
+      "source": "a4f05f3f243889cc7ba7a0404bdc76afec32d3c2",
+      "normalProfile": "normal-managed-guest-default-features",
+      "guestComponentsCompiled": false,
+      "signedQualification": false
+    },
+    "nativeSource": {
+      "sha256": "sha256:d4dad6d54a4f348817e33818e5f744370186bc20904124e961877f036fe97961",
+      "files": 3301,
+      "bytes": 25861866,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "materials": {
+      ".github/workflows/sdk-native-products.yml": {
+        "sha256": "sha256:a6b086a4ee2842c19f1707d8d12bea1272c4bc9923a965a7834a026dac1dbff9",
+        "bytes": 6089
+      },
+      ".cargo/managed-guest.toml": {
+        "sha256": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+        "bytes": 652
+      },
+      "tools/qualify_rust_capsules.py": {
+        "sha256": "sha256:fac4196052dc39012bed473194f9b91757396769be2967177a9cae87fb0395c6",
+        "bytes": 36770
+      },
+      "tools/toolchain.toml": {
+        "sha256": "sha256:83574cfd769a6c26613e3e3f5be36f302d34270a7d61aaa4a80ccbea9a4df19d",
+        "bytes": 1044
+      },
+      "tools/rust_capsule_build.py": {
+        "sha256": "sha256:a00cb2afce425556cc0a9a776c5a23f757c3012f3440eda6c0e1cc709e0a2948",
+        "bytes": 45923
+      },
+      "tools/build_observation.py": {
+        "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+        "bytes": 7868
+      },
+      "tools/build_process.py": {
+        "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+        "bytes": 9063
+      },
+      "tools/build_process_linux.py": {
+        "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "bytes": 3853
+      }
+    },
+    "products": {
+      "latent": {
+        "sha256": "sha256:02d9b09e992f4a6c95aa8d7bdf327c9fb9c946b476fa3f263c5d447513748793",
+        "bytes": 68801952
+      },
+      "latentd": {
+        "sha256": "sha256:9f69fcb013782efb53202afb5b5d84ba5eb30831ec4174d3fc6b37bf40e9ed94",
+        "bytes": 184305808
+      },
+      "examples/package": {
+        "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+        "bytes": 17726192
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+        "bytes": 7224720
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:f27b0972c5595d70357e5eb361d432eff925a5292f948a0134c4699bbffd445e",
+        "bytes": 23986200
+      }
+    },
+    "receipt": {
+      "sha256": "sha256:f6022e637a01a4bf8740ae0f66c4cc3728c0bc45cca852d1746cff666ed16ad4",
+      "bytes": 3105
+    },
+    "sourceInputs": {
+      "sha256": "sha256:cb2d0d7b2a4948669f23461773caf96d9f651107fecb435c13b6ead59e9f3121",
+      "bytes": 1563
+    },
+    "compiledCurrentConsumerSource": false,
+    "nativeRebuiltByConsumer": false
+  },
+  "cases": [
+    {
+      "tenant": "examples",
+      "phase": "initial",
+      "activation": "resource-dotnet-examples-initial",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "initialized-once:Gr\u00fc\u00dfe"
+        }
+      ]
+    },
+    {
+      "tenant": "examples",
+      "phase": "trap",
+      "activation": "resource-dotnet-examples-trap",
+      "exitCode": 4,
+      "decoded": null
+    },
+    {
+      "tenant": "foreign",
+      "phase": "after-other-trap",
+      "activation": "resource-dotnet-foreign-after-other-trap",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "initialized-once:Gr\u00fc\u00dfe"
+        }
+      ]
+    },
+    {
+      "tenant": "examples",
+      "phase": "fresh",
+      "activation": "resource-dotnet-examples-fresh",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "initialized-once:Gr\u00fc\u00dfe"
+        }
+      ]
+    },
+    {
+      "tenant": "foreign",
+      "phase": "trap",
+      "activation": "resource-dotnet-foreign-trap",
+      "exitCode": 4,
+      "decoded": null
+    },
+    {
+      "tenant": "examples",
+      "phase": "after-other-trap",
+      "activation": "resource-dotnet-examples-after-other-trap",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "initialized-once:Gr\u00fc\u00dfe"
+        }
+      ]
+    },
+    {
+      "tenant": "foreign",
+      "phase": "fresh",
+      "activation": "resource-dotnet-foreign-fresh",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "initialized-once:Gr\u00fc\u00dfe"
+        }
+      ]
+    }
+  ],
+  "signedCalls": 7,
+  "additionalMissingGrantDenial": 1,
+  "allInvocationsKnownAndReaped": 8,
+  "physicalSamples": 9,
+  "zeroOwnerSamples": 8,
+  "ownerCounterNames": [
+    "broker_sessions",
+    "broker_handles",
+    "broker_calls",
+    "broker_results",
+    "broker_buffer_bytes",
+    "pool_active_connections",
+    "pool_connecting_connections",
+    "pool_pending_requests",
+    "pool_running_requests",
+    "pool_workers",
+    "pool_cleanup_jobs",
+    "io_calls",
+    "io_occupied_running_slots",
+    "io_queued_calls",
+    "io_staged_bytes",
+    "io_result_bytes",
+    "io_buffers",
+    "io_streams"
+  ],
+  "peerShutdown": {
+    "counts": {
+      "requests": 0,
+      "authorized": 0,
+      "unexpected": 0,
+      "holds": 0,
+      "closedHolds": 0
+    },
+    "closed": true,
+    "reaped": true,
+    "exitCode": 0
+  },
+  "nodeCleanReaped": true,
+  "finalIdentityBlockExecuted": true,
+  "concurrentPendingFlushCancellationLateQualified": false,
+  "fullTicketQualification": false
+}

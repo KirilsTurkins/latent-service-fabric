@@ -72,10 +72,11 @@
       },
       {
         "env": {
-          "GH_TOKEN": "${{ github.token }}"
+          "GH_TOKEN": "${{ github.token }}",
+          "RESOURCE_LANGUAGE": "${{ matrix.language }}"
         },
         "name": "Acquire only pinned public companion components and normal provenance",
-        "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"${{ matrix.language }}\" --acquire --output \"$RUNNER_TEMP/embedded-original\""
+        "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"$RESOURCE_LANGUAGE\" --acquire --output \"$RUNNER_TEMP/embedded-original\""
       },
       {
         "if": "matrix.language == 'rust'",
@@ -88,8 +89,11 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/embedded-tools\""
       },
       {
+        "env": {
+          "RESOURCE_LANGUAGE": "${{ matrix.language }}"
+        },
         "name": "Build one fresh greeting sign and require the complete original plus six new calls",
-        "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"${{ matrix.language }}\" \\\n  --original \"$RUNNER_TEMP/embedded-original\" --normal-qualification \"$RUNNER_TEMP/embedded-native-normal\" \\\n  --producer-receipt \"$RUNNER_TEMP/embedded-native-producer.json\" --tools \"$RUNNER_TEMP/embedded-tools\" \\\n  --output \"$RUNNER_TEMP/embedded-resources\"\n"
+        "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"$RESOURCE_LANGUAGE\" \\\n  --original \"$RUNNER_TEMP/embedded-original\" --normal-qualification \"$RUNNER_TEMP/embedded-native-normal\" \\\n  --producer-receipt \"$RUNNER_TEMP/embedded-native-producer.json\" --tools \"$RUNNER_TEMP/embedded-tools\" \\\n  --output \"$RUNNER_TEMP/embedded-resources\"\n"
       },
       {
         "if": "always()",
@@ -113,7 +117,7 @@
   },
   "jobId": "resources",
   "kind": "job",
-  "reviewReason": "Retain native regular-file policy by selecting the existing captured Rust toolchain resolver after actual PATH-shim refusal; add default-both manual single-language replay without changing any existing command or deadline.",
+  "reviewReason": "Reviewed security-only replacement of two inline matrix expressions with quoted step environment variables; identical closed language matrix, selected CLI arguments, commands, deadlines and coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/embedded-resource-languages-reference.yml"
 }
