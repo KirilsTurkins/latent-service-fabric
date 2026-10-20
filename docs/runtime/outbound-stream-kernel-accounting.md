@@ -106,6 +106,15 @@ the private hook and upstream cookie chain with explicit doubles; the outer
 constructor insertions remain source-only evidence. Complete live installation,
 physical allocation closure and sealed final-free gates stay open.
 
+The subsequent [physical extent prerequisite](../../research/standard-outbound/linux-6.12-lineage/allocation-closure.md)
+distinguishes allocator-slot return from actual backing-allocation retirement.
+Its additive private recipe keeps all five object-return kinds charged in a
+nonreusable held state. A checked disjoint planner uses the same original
+reservations/slots; explicit model geometry does not authenticate a kernel.
+NAPI/page-pool allocation before socket lookup, shared cache/route/deferred
+ownership, complete physical costs and sealed backing final-free still lack
+trusted installation. The actual constructor and normal provider remain closed.
+
 The finite ss vocabulary is checked against the [primary iproute2 format source](https://github.com/iproute2/iproute2/blob/v6.17.0/misc/ss.c).
 The actual installed tool digest is retained independently; that format reference
 is not an authenticated source binding for the runner kernel or tool binary.
