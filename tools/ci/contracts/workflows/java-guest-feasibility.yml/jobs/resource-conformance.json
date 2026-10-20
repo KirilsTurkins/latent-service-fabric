@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed transitive Java resource bytes streams and clock longs",
+    "needs": "compiler-component",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only the pinned ordinary Java component compiler",
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Read only this run's verified normal native products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "java-scratch-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-scratch-prepared"
+        }
+      },
+      {
+        "name": "Install the same namespace prerequisite on this separate child host",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Check exact data capture clock parsing and unchanged normal programme",
+        "run": "python3 -B -m unittest tools.tests.test_java_resource_conformance -v"
+      },
+      {
+        "name": "Compile one fresh resource greeting offline and require original29 plus ten calls",
+        "run": "python3 tools/qualify_java_resources.py --native-qualification \"$RUNNER_TEMP/java-scratch-prepared\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/java-resource-conformance\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain public source resource provenance actual results and cleanup",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-resource-conformance-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-resource-conformance/qualified.json\n${{ runner.temp }}/java-resource-conformance/FAILED.json\n${{ runner.temp }}/java-resource-conformance/logs/**\n${{ runner.temp }}/java-resource-conformance/build/*.json\n${{ runner.temp }}/java-resource-conformance/build/component.wasm\n${{ runner.temp }}/java-resource-conformance/build/compiler-logs/**\n${{ runner.temp }}/java-resource-conformance/build/logs/**\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-resource-conformance/node/workflow.json\n${{ runner.temp }}/java-resource-conformance/node/FAILED.json\n${{ runner.temp }}/java-resource-conformance/node/controls/*.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "resource-conformance",
+  "kind": "job",
+  "reviewReason": "Add one bounded Java resource conformance child; preserve all original Java workflow jobs/commands/deadlines and normal29 cases. Exact transitive bytes/stream/clock/trap/fresh controls, original capability and owner fences; no native host rebuild or whole-ticket claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-guest-feasibility.yml"
+}

@@ -40,7 +40,15 @@
           "wit/platform/**"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "qualify-scratch-refusals": {
+            "default": false,
+            "description": "Run the unchanged normal Java prerequisite and separate filesystem refusal packet",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -48,9 +56,11 @@
   },
   "requiredJobs": [
     "compiler-component",
-    "dependency-ingestion"
+    "dependency-ingestion",
+    "resource-conformance",
+    "scratch-refusals"
   ],
-  "reviewReason": "Add exact fixture triggers preserving all original normal jobs",
+  "reviewReason": "Add one bounded Java resource conformance child; preserve all original Java workflow jobs/commands/deadlines and normal29 cases. Exact transitive bytes/stream/clock/trap/fresh controls, original capability and owner fences; no native host rebuild or whole-ticket claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

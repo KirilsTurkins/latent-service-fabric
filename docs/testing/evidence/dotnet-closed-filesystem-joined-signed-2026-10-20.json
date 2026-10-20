@@ -1,0 +1,92 @@
+{
+  "actualInvocations": 79,
+  "allMaterialBytesEqualExactDiagnosticGitSource": true,
+  "allMembersCrcVerified": true,
+  "archiveMembers": 759,
+  "artifact": {
+    "digest": "sha256:aaf0532f054e22c0124748515decf6b23137f55e9f4d6ed2616399eecb74d267",
+    "id": 12244113860,
+    "size_in_bytes": 3520652
+  },
+  "compiledJobConclusion": "failure",
+  "compiledSource": "cd6e9ac279f14efe39370f3ece5a338a56d4e617",
+  "fullTicketQualification": false,
+  "job": 118476056909,
+  "materials": {
+    "sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.cs": "sha256:9bd6caab33bc94359c0fb14abcc785242b36ecddf69674751932385940d0a081",
+    "sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.targets": "sha256:198e1533e263aea1b6ec5ab802665b07a14b180140b229dbd5514cd1d0472254",
+    "tools/dotnet_closed_filesystem_fixture.py": "sha256:6f4c3545ac2b9032d11b2d2508ffe9e6522950a67edf5844110b6f76e356ece9",
+    "tools/dotnet_filesystem_runtime.py": "sha256:3598c79cebef3877260a154d4f3954f3e41e45d8549f094aa72299b9a9cc1752",
+    "tools/dotnet_guest/closed_filesystem.py": "sha256:2c77c57e4effb35dd4d013ae89cdf3e9575e8760f7405597ad7e6d3744ecc287",
+    "tools/dotnet_guest/task_wait.py": "sha256:0487cc194de56a5e750cf3ca0357dd75b016fdc58448384d0ff668fa4a7bd2c9",
+    "tools/qualify_dotnet_closed_filesystem.py": "sha256:82c368c9b7b8bf0f9d4be0577ceba4de1dc92e5cae661a5af67a392686de32c5",
+    "tools/qualify_sdk_scratch.py": "sha256:4b85d9d3132564f26ee6c80097742c802f0340b9079fcb282ad5e452a53c3b69",
+    "tools/replay_dotnet_filesystem_components.py": "sha256:b8c838de4c602963c5b9e15a909e1a19584b5b1301bc4e145c83143ed69ea330",
+    "tools/run_rust_capsule_workflow.py": "sha256:528266f02ff5346dc7345ca47005183b592cc7aee2cb2994869cee6a1ea6cad9",
+    "tools/rust_capsule_node.py": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+    "tools/sdk_scratch_fixture.py": "sha256:34f8448fa8f6d2ea3fc10c02ab38576a9e5bbc61539f61632c9418935f323891",
+    "tools/sdk_scratch_probe.py": "sha256:30ea4ab542c12d47fca48af37ed0bbcea0ef4d31f97a19fcabccc4d5b5d8898d"
+  },
+  "nativeAotRecompiled": false,
+  "nativeHostRebuilt": false,
+  "normalReceiptFabricated": false,
+  "originalArtifact": 12242646393,
+  "phases": {
+    "joined": {
+      "allKnownAndReaped": true,
+      "argumentValidationCases": 6,
+      "caughtUnsupported": 3,
+      "cleanShutdown": true,
+      "component": {
+        "bytes": 2098426,
+        "sha256": "sha256:2764a1b36bf109d14d521a69cbb4fa212266b1811dd5e5acf71b45ccb4f905b2"
+      },
+      "coreLib": {
+        "digest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb",
+        "name": "closed-filesystem-derived-corelib",
+        "size": 5605888
+      },
+      "invocations": 40,
+      "originalAotObservationDigest": "sha256:9aa455741513f7c1f2494d2d965ca309738859ed5c451b9c9599797181981987",
+      "originalSourceDigest": "sha256:425887961fb3709e9e4f877e744e726a20349b8a39f83d150b60c4e2ffc4c537",
+      "physicalSamples": 36,
+      "separateZeroEntryActivationDenial": true,
+      "workflow": {
+        "bytes": 408599,
+        "sha256": "sha256:31c5ffeaf0b9d12035122a0586e5326b5d1da0a2108b338df9ec3e90b36db907"
+      },
+      "zeroActiveOwnerSamples": 18
+    },
+    "pure": {
+      "allKnownAndReaped": true,
+      "argumentValidationCases": 6,
+      "caughtUnsupported": 3,
+      "cleanShutdown": true,
+      "component": {
+        "bytes": 2018541,
+        "sha256": "sha256:d436d3b9a47636a15b39115c34171d3401a1ecab643da8a82a2f6ac1058812e3"
+      },
+      "coreLib": {
+        "digest": "sha256:953314dee4f7c25f202b2d44536c6c84439aa3042cb7a2ccc95ee7a74227d43b",
+        "name": "closed-filesystem-derived-corelib",
+        "size": 5603840
+      },
+      "invocations": 39,
+      "originalAotObservationDigest": "sha256:508d84fda07ccadf9d17f649e029760284cf25d6fb0d3a3db344ba95f1db0f76",
+      "originalSourceDigest": "sha256:ae5e78907fa796fad6df7889714b19e26b41bd68ee3637db06ff5a9a0200fa98",
+      "physicalSamples": 36,
+      "separateZeroEntryActivationDenial": false,
+      "workflow": {
+        "bytes": 405009,
+        "sha256": "sha256:3c05f16e441ef207fc48645850d92f57ed9dd36845c51d3bca96755d2e47c305"
+      },
+      "zeroActiveOwnerSamples": 18
+    }
+  },
+  "productionSource": "82328e9c5f6ca1fd22fd3970cee8ded0a1e01abc",
+  "run": 39376610797,
+  "schemaVersion": "latent.dotnet.closed-filesystem.component-replay.observation.v1",
+  "source": "c26632b1927779975a98fd14000c81803fb7957b",
+  "status": "passed",
+  "writableScratchImplemented": false
+}

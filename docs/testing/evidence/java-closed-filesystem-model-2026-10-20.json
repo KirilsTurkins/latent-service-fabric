@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "latent.java.closed-filesystem.model.v1",
+  "status": "passed-source-and-actual-locked-model-only",
+  "originalModel": {
+    "exitCode": 1,
+    "expectedFailure": "unexpected-refusal-operation",
+    "actualStderrSha256": "sha256:2c933b84be175453456f9cd4bb3862a7b7a84b8e8aaa494874d9282a13831529"
+  },
+  "derivedModel": {
+    "exitCode": 0,
+    "stdout": "CLOSED_FILESYSTEM_MODEL PASS originals-native;unsupported=2;posix-target;other-bodies=31;validation-resources;layout=5;repeat;application-owner"
+  },
+  "artifacts": [
+    {
+      "path": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+      "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+      "size": 17718996,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar",
+      "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+      "size": 2956367,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar",
+      "sha256": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+      "size": 16527,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar",
+      "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+      "size": 12599,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar",
+      "sha256": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+      "size": 34800,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar",
+      "sha256": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+      "size": 73343,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar",
+      "sha256": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+      "size": 51412,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar",
+      "sha256": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+      "size": 126383,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar",
+      "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6",
+      "size": 1509391,
+      "platform": "any"
+    }
+  ],
+  "source": {
+    "sdk/java-guest/facilities/compiler/dev/latent/guest/facilities/compiler/ClosedFilesystemPlugin.java": {
+      "sha256": "sha256:fb6d1a42f967a6e2e6aafd41ba4d72fa0b8ee5e1649ea138a4a21eb4c4ca5ab2",
+      "bytes": 4752
+    },
+    "sdk/java-guest/facilities/conformance/ClosedFilesystemModelControl.java": {
+      "sha256": "sha256:de247d65eb2db805a60811858e3c77a03ba63fb58b4ca0010325a0aff3122efa",
+      "bytes": 6180
+    }
+  },
+  "otherBackendBodiesUnchanged": 31,
+  "javaIoValidationAndClasspathResourceBodiesUnchanged": true,
+  "layoutNegativeControls": 5,
+  "nativeOrComponentBuild": false,
+  "signedQualification": "pending"
+}

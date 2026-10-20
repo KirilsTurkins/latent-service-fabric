@@ -283,10 +283,31 @@ passed at source99eaccd694 in run39350623578/job118393691728: all three outside
 packages were captured/reviewed, originals removed and the actual compiler
 completed with the exact uninstalled-module refusal. All112 compiler materials
 remain exact after composition. This executes no node and qualifies no native
-filesystem result; the native-language programmes remain separately pending.
+filesystem result; each native-language observation retains its own scope.
+The Java workflow also exports its exact passed normal public products, then
+runs one fresh Java component in a separate 20-minute scratch child. The original
+55-minute parent steps and deadline remain intact. The default-false manual
+`qualify-scratch-refusals` selector skips only the unrelated dependency-ingestion
+matrix; normal PR/manual runs retain it. The child uses the same pinned JDK,
+Gradle, WASI SDK and bindings, with no Rust setup or native-host build. It retains
+every caught category and compatibility-report finding: a Java FileNotFound or
+generic I/O error is unresolved behavior, not a reached Unsupported result.
+The [actual Java packet](java-closed-filesystem.md) now records41 known/reaped
+outcomes, including three precise caught Unsupported operations, six original
+argument-error categories and clean physical/provider retirement. The failed
+outer report expected39 rather than the Java baseline29 plus12; strict
+source-backed reprojection retains that failure and verifies41. It grants no
+filesystem provider or scratch storage.
 The owning language receipts
 feed the existing SDK conformance work in #694; this adds no cross-language gate.
 
 Related: [captured dependencies](application-dependencies.md),
 [compatibility reports](library-compatibility.md), and
 [guest SDK development](guest-sdk.md).
+
+The [six-language standard facility matrix](standard-facilities.md) publishes
+the supported logging, wall/monotonic clock and approved entropy paths alongside
+their profile, grant, provenance and error limitations. The new
+[Java resource conformance programme](java-resource-conformance.md) separately
+requires exact transitive binary/empty/text and independent-stream results;
+source controls alone do not establish its pending signed outcome.
