@@ -548,6 +548,28 @@ fn blob_preparation_requires_exact_owned_chunk_and_async_shapes() {
 
 #[test]
 fn phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes() {
+    use sha2::{Digest, Sha256};
+    let profile = latent_core::PHASE3_HOST_ABI_V7;
+    let manifest: serde_json::Value =
+        serde_json::from_str(include_str!("../../../../wit/host-abi-phase3-v7.json")).unwrap();
+    let mut identity = Sha256::new();
+    profile.visit_identity_bytes(|bytes| identity.update(bytes));
+    assert_eq!(manifest["id"], profile.id);
+    assert_eq!(
+        manifest["digest"],
+        format!("sha256:{:x}", identity.finalize())
+    );
+    let entries = manifest["interfaces"].as_array().unwrap();
+    assert_eq!(entries.len(), profile.interfaces().len());
+    for (entry, spec) in entries.iter().zip(profile.interfaces()) {
+        assert_eq!(entry["interface"], spec.interface);
+        assert_eq!(entry["package"], spec.package);
+        assert_eq!(entry["asynchronous"], spec.asynchronous);
+        assert_eq!(
+            entry["sourceSha256"],
+            format!("sha256:{:x}", Sha256::digest(spec.wit.as_bytes()))
+        );
+    }
     let engine = engine();
     let cap = latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY;
     let spec = latent_core::PHASE3_HOST_ABI_V7.interface(cap).unwrap();

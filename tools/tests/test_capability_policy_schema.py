@@ -53,6 +53,7 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         matrix = json.loads((ROOT / "wit/host-abi-phase3-v5.json").read_text(encoding="utf-8"))
         native = json.loads((ROOT / "wit/host-abi-phase3-v6.json").read_text(encoding="utf-8"))
         transactions = json.loads((ROOT / "wit/host-abi-phase4-v1.json").read_text(encoding="utf-8"))
+        phase = json.loads((ROOT / "wit/host-abi-phase3-v7.json").read_text(encoding="utf-8"))
         native_threads = "latent:runtime-native/threads@0.1.0"
         self.assertNotIn(native_threads, {entry["interface"] for entry in matrix["interfaces"]})
         self.assertIn(native_threads, {entry["interface"] for entry in native["interfaces"]})
@@ -60,7 +61,7 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))
                   for cap, operations in re.findall(r'"(latent:[^\"]+)"\s*=>\s*&\[(.*?)\]', rust, re.S)}
         expected = {}
-        for entry in matrix["interfaces"] + native["interfaces"] + transactions["interfaces"]:
+        for entry in matrix["interfaces"] + native["interfaces"] + transactions["interfaces"] + phase["interfaces"]:
             interface = entry["interface"].split("/")[1].split("@")[0]
             text = (ROOT / entry["source"]).read_text(encoding="utf-8")
             active = False

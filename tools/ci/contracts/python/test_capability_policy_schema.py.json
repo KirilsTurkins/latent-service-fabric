@@ -1,7 +1,7 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Retain all original cases and guards; compare frozen V5, explicit native V6 and Phase4 operations, and reject foreign native-thread operations, resources and versions without default authority.",
+  "reviewReason":"Keep all six existing tests/assertions/guards; parity now also enumerates exact additive V7 matrix rather than omitting its policy operations",
   "module":"tools/tests/test_capability_policy_schema.py",
   "cases":["CapabilityPolicySchemaTests.test_capability_operation_and_resource_kinds_cannot_be_mixed","CapabilityPolicySchemaTests.test_identifiers_and_paths_reject_trailing_newlines_and_dot_segments","CapabilityPolicySchemaTests.test_native_threads_require_exact_start_operation_and_context_resource","CapabilityPolicySchemaTests.test_policy_operation_table_matches_each_frozen_wit_interface","CapabilityPolicySchemaTests.test_published_examples_and_closed_required_fields","CapabilityPolicySchemaTests.test_state_scopes_require_explicit_entity_and_bounded_exact_policy_tuple"],
   "guards":{
