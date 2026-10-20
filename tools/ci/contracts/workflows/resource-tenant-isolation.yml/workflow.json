@@ -1,0 +1,23 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "resource-tenants-${{ github.ref }}"
+    },
+    "name": "Same-node resource tenant isolation",
+    "on": {
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "tenants"
+  ],
+  "reviewReason": "Remove only the temporary feature-branch indexing trigger after its actual run; preserve manual qualification, both original jobs, commands and deadlines without a duplicate seven-call replay.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/resource-tenant-isolation.yml"
+}

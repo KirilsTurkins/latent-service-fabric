@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "ResourceTenantIsolation.test_foreign_credential_denial_keeps_authorized_scope_unchanged_and_restores_config",
+    "ResourceTenantIsolation.test_grants_are_bound_to_the_selected_tenant_subject_service_and_publication",
+    "ResourceTenantIsolation.test_native_receipt_rechecks_every_product_and_exact_required_control_stages",
+    "ResourceTenantIsolation.test_neutral_deployments_only_change_own_operator_scope_and_leave_original_bytes_model_intact",
+    "ResourceTenantIsolation.test_original_producers_refuse_foreign_archive_or_run_even_with_valid_looking_digests",
+    "ResourceTenantIsolation.test_producer_requires_fixed_run_source_repo_and_normal_identity_without_guest_claim",
+    "ResourceTenantIsolation.test_provider_barrier_requires_all_eighteen_configured_owner_counters_available_and_zero",
+    "ResourceTenantIsolation.test_public_wit_restoration_must_match_both_original_source_and_package_inventories",
+    "ResourceTenantIsolation.test_restored_java_objects_require_exact_original_index_membership_and_payload",
+    "ResourceTenantIsolation.test_seven_call_order_traps_one_scope_then_checks_fresh_resources_in_both_scopes",
+    "ResourceTenantIsolation.test_two_tenant_aliases_keep_original_single_cell_and_observation_provider_unchanged",
+    "ResourceTenantIsolation.test_unknown_optional_duplicate_imports_or_preexisting_shared_authority_fail_closed",
+    "ResourceTenantIsolation.test_unused_observation_peer_requires_exact_zero_counts_and_actual_reap"
+  ],
+  "guards": {
+    "ResourceTenantIsolation.test_foreign_credential_denial_keeps_authorized_scope_unchanged_and_restores_config": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_grants_are_bound_to_the_selected_tenant_subject_service_and_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_native_receipt_rechecks_every_product_and_exact_required_control_stages": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_neutral_deployments_only_change_own_operator_scope_and_leave_original_bytes_model_intact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_original_producers_refuse_foreign_archive_or_run_even_with_valid_looking_digests": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_producer_requires_fixed_run_source_repo_and_normal_identity_without_guest_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_provider_barrier_requires_all_eighteen_configured_owner_counters_available_and_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_public_wit_restoration_must_match_both_original_source_and_package_inventories": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_restored_java_objects_require_exact_original_index_membership_and_payload": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_seven_call_order_traps_one_scope_then_checks_fresh_resources_in_both_scopes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_two_tenant_aliases_keep_original_single_cell_and_observation_provider_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_unknown_optional_duplicate_imports_or_preexisting_shared_authority_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    },
+    "ResourceTenantIsolation.test_unused_observation_peer_requires_exact_zero_counts_and_actual_reap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fafb3a3cad142b9a0723b79aa4a9009ad737f91f6e78399eb36953b6b01201d",
+        "class:setup-sha256:23b3977b4ef97e300032e57246eada2c77ede92516106b3c46afd4db5f7ceef2"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_resource_tenant_isolation.py",
+  "reviewReason": "Retain all twelve original guards and cases; add exact zero-contact peer counts and actual process retirement refusal control after observed seven-call outer comparator failure.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

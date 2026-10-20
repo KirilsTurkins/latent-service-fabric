@@ -43,7 +43,7 @@ package inputs, materials, outputs, owner samples and shutdown.
 Nine focused source/capture/protocol controls pass, including old text-only
 Go embedding rejected by the broader asset-selection gate, missing transitive
 edges, unselected npm data, removed NUL, false fresh output, live owners and
-changed normal activation names. These are source controls. **The Go35 and TypeScript33 node programmes passed; the corrected Rust reference remains pending.** Existing compiler-level
+changed normal activation names. These are source controls. **The Go35, Rust33 and TypeScript33 node programmes passed; TypeScript retains its separately failed outer comparator.** Existing compiler-level
 missing/traversal/collision/limit/tamper controls and their shared production
 paths remain distinct from runtime data observations.
 
@@ -152,3 +152,5 @@ The node's own source/binary before-after checks passed. The outer comparator
 failed before its final integrity block, so this record claims neither that block
 ran nor a new complete qualifier marker. No guest calls, native products or
 historical qualification were rebuilt or relabelled for the report correction.
+
+The corrected Rust-only [706880 run39407973986/job118578463764](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39407973986/job/118578463764) passed. Its [source-bound observation](../testing/evidence/rust-embedded-resources-signed-2026-10-20.json) binds all328 authenticated archive members, ten exact Git helpers, the62-row source inventory and26,481-byte component. All original27 plus six new calls passed:33 known/reaped,30 physical samples,12 available zero-owner samples and clean shutdown. Both original outside trees were removed; the reviewed CAS/native vendor graph was compiled offline in a fresh Cargo home. The source helper/test/contract equals merged#1205, while native/companion ancestry remains historical94d/Rust38. The earlier2187 composition correctly failed that strict native-source preflight and remains failed; no compatibility allowance was widened.
