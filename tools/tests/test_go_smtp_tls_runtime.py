@@ -102,5 +102,71 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
             self.assertNotIn('GO-NETWORK-COMPILE.json', source)
 
 
+    def test_tls_cache_overlay_authenticates_exact_upstream_and_keeps_generic_cleanup_refused(self):
+        import hashlib
+        from tools.go_guest import network, activation
+        source = (ROOT / 'tools/tests/fixtures/go_network/crypto/tls/cache.go').read_bytes()
+        self.assertEqual(hashlib.sha256(source).hexdigest(), network.PREIMAGES['crypto/tls/cache.go'])
+        self.assertEqual(source.count(b'runtime.AddCleanup('), 2)
+        guard = (ROOT / 'tools/go_guest/activation.py').read_text()
+        self.assertIn('LSF Go cleanup callbacks are not qualified', guard)
+        self.assertNotIn('crypto/tls/cache.go', activation.PREIMAGES)
+        compiler = (ROOT / 'tools/go_guest/compiler.py').read_text()
+        selection = compiler.index('            if network_context:\n                from tools.go_guest.network import prepare')
+        self.assertLess(selection, compiler.index('replacements.update(prepare_network'))
+        # Other certificate, handshake, authentication and hostname source is
+        # never selected by this private-cache-only derivation.
+        self.assertEqual([p for p in network.PREIMAGES if p.startswith('crypto/')], ['crypto/tls/cache.go'])
+
+    def test_cache_admission_precedes_allocating_parse_and_key_copy_with_no_cleanup_or_eviction(self):
+        source = (ROOT / runtime.CACHE_TEMPLATE).read_text()
+        admission = source.index('if len(der) > lsfCertCacheMaximumDER')
+        self.assertLess(admission, source.index('x509.ParseCertificate(der)'))
+        self.assertLess(admission, source.index('der: string(der)'))
+        for bound in ('lsfCertCacheMaximumEntries = 8', 'lsfCertCacheMaximumDER = 16 * 1024',
+                      'lsfCertCacheMaximumTotalDER = 64 * 1024'):
+            self.assertIn(bound, source)
+        self.assertIn('entries [lsfCertCacheMaximumEntries]lsfCertCacheEntry', source)
+        self.assertIn('len(der) > lsfCertCacheMaximumTotalDER-wcc.derSize', source)
+        self.assertLess(source.index('wcc.mu.Lock()'), source.index('x509.ParseCertificate(der)'))
+        self.assertIn('defer wcc.mu.Unlock()', source)
+        self.assertIn('return nil, err', source)
+        self.assertIn('wcc.used++', source)
+        self.assertIn('wcc.derSize += len(der)', source)
+        for absent in ('runtime.AddCleanup(', 'weak.Make(', 'go func', 'append(', 'delete(', 'wcc.used--', 'wcc.derSize -='):
+            self.assertNotIn(absent, source)
+
+    def test_reference_projects_only_package_declaration_and_requires_all_eight_actual_passes(self):
+        source = (ROOT / runtime.CACHE_TEMPLATE).read_bytes()
+        projected = runtime.cache_reference_source(source)
+        self.assertEqual(projected.replace(b'\npackage tlscache\n', b'\npackage tls\n'), source)
+        for bad in (source.replace(b'\n', b'\r\n'), source + b'\npackage tls\n', b'x' * 16385):
+            with self.assertRaises(ValueError): runtime.cache_reference_source(bad)
+        rows = [{'Package': 'example.invalid/tlscache', 'Action': 'pass', 'Test': case} for case in runtime.CACHE_CASES]
+        rows.append({'Package': 'example.invalid/tlscache', 'Action': 'pass'})
+        encode = lambda values: b'\n'.join(json.dumps(row).encode() for row in values)
+        self.assertEqual(runtime.cache_reference_outcomes(encode(rows)), list(runtime.CACHE_CASES))
+        for values in (rows[:-2] + rows[-1:], rows + rows[:1], [dict(rows[0], Action='skip')] + rows[1:],
+                       [dict(rows[0], Package='private')] + rows[1:], [dict(rows[0], Action='fail')] + rows[1:]):
+            with self.assertRaises(ValueError): runtime.cache_reference_outcomes(encode(values))
+        with self.assertRaises(ValueError): runtime.cache_reference_outcomes(b'{"Package":"example.invalid/tlscache","Action":"pass","Action":"skip"}')
+
+    def test_reference_covers_actual_cache_identity_admission_gc_parse_concurrency_and_fresh_state(self):
+        source = (ROOT / runtime.CACHE_TESTS).read_text()
+        for case in runtime.CACHE_CASES:
+            self.assertEqual(source.count('func ' + case + '('), 1)
+        for expression in ('testing.AllocsPerRun(100', 'runtime.GC()', 'x509.ParseCertificate(der)',
+                           'cache.used != 8', 'cache.derSize != 65536', 'exactCertificate(t, 2, 16385)',
+                           'fresh.used != 0', 'for range 16', 'value != first'):
+            self.assertIn(expression, source)
+        controller = (ROOT / 'tools/qualify_go_smtp_tls_runtime.py').read_text()
+        self.assertIn('CACHE_TESTS}', controller)
+        self.assertLess(controller.index('record[\'cacheReference\']'), controller.index('compiler.compile('))
+        self.assertIn("GOPROXY='off'", controller)
+        self.assertEqual(controller.count('compiler.compile('), 1)
+        self.assertIn("'--test', 'go_smtp_tls'", controller)
+        self.assertNotIn("'--workspace'", controller)
+
+
 if __name__ == '__main__':
     unittest.main()

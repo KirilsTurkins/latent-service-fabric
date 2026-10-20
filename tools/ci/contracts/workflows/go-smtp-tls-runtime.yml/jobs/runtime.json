@@ -52,7 +52,7 @@
       },
       {
         "name": "Compile ordinary SMTP guest TLS then execute one targeted signed harness",
-        "run": "python3 tools/qualify_go_smtp_tls_runtime.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/go-smtp-tls-runtime\""
+        "run": "python3 tools/qualify_go_smtp_tls_runtime.py --reference-go \"$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go\" --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/go-smtp-tls-runtime\""
       },
       {
         "if": "always()",
@@ -70,7 +70,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Own the finite ordinary SMTP and explicit guest STARTTLS qualification, preserving original TCP/runtime bounds and refusing any host-TLS/kernel promotion.",
+  "reviewReason": "Source-backed realTLS AddCleanup trap: derive authenticated private cache ONLY for declaredstream/v5, fixed8entries/16KiBperDER/64KiBtotal beforecopy/parse, retainstrongwithinStore; genericcleanuprefusal/TLSverificationunchanged. Require8actualexactcache refs thenonefresh6caseSMTPguest; no native5/fullGo.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-smtp-tls-runtime.yml"
 }

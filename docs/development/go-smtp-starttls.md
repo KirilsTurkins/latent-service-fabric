@@ -23,8 +23,42 @@ user-space owners before the next invocation. No retry, reconnect or protocol
 replay is added. The strict receipt requires all six ordered cases, six peer
 contacts, six zero-user-owner rows and clean logical-provider stop.
 
-Actual execution is pending. Local source/reader controls and a Rust protocol
-peer are not an upstream native-Go execution or guest success. This candidate
+The first actual source `ca723d3c693eb1a8d62972ac96ae017b4d38e277`
+constructed the component and passed plaintext SMTP, then failed its first TLS
+1.3 handshake with `unreachable-code` in
+[run 39437307701/job 118677626944](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39437307701/job/118677626944).
+The [retained trap observation](../testing/evidence/go-smtp-tls-cache-trap-2026-10-20.json)
+binds an exact-component private numeric-frame replay. All nine frames mapped, including
+`runtime.AddCleanup` from `crypto/tls`'s private certificate cache during server
+certificate verification. That callback is explicitly refused by the maintained
+runtime; this is a source-backed cache integration defect, not a successful TLS
+observation. The original failure and private replay remain separately retained.
+
+The correction authenticates the complete
+[Go 1.27.2 private cache source](https://github.com/golang/go/blob/go1.27.2/src/crypto/tls/cache.go)
+before replacing only that cache in the declared-stream managed-v5 path. Its
+fixed strong cache admits at most eight distinct certificates, at most 16 KiB per
+DER value and 64 KiB aggregate DER. It checks capacity before copying a key or
+calling the upstream x509 parser. Admitted parse errors pass through unchanged;
+no certificate, chain, hostname, signature, trust or authentication check is
+removed. Cache hits reuse the existing parsed object even when capacity is full.
+
+The fixed entries, retained DER and parsed objects remain invocation-local Wasm
+heap memory under the original 64 MiB heap/GC limit until Store destruction.
+There is no eviction, cleanup callback, hidden task, early refund or persistent
+cross-invocation cache. A fresh Store initializes an empty cache. The aggregate
+DER limit is a finite guest cache admission bound, not a claim that parsed
+objects consume only DER bytes or that it establishes a native/kernel quota.
+Generic application `runtime.AddCleanup` remains explicitly refused.
+
+The same lane first executes eight exact-production-cache Go reference controls:
+GC retention, zero-allocation oversized refusal, ninth-entry refusal, exact
+aggregate capacity/no eviction, unchanged parser errors, fresh-instance state,
+concurrent cache-hit identity and exact per-DER boundary. Only its package
+declaration changes in that reference. It then constructs one fresh ordinary Go
+component and reruns the original six signed cases, with unchanged grants and
+runtime/provider bounds. Corrected reference and signed TLS execution are
+pending. Local source controls do not establish either actual outcome. This candidate
 does not qualify ordinary `SendMail` with implicit system roots, authentication,
 email delivery, arbitrary protocol clients, host TLS or full networking.
 The explicit development logical provider remains distinct from a normal

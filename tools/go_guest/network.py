@@ -12,6 +12,7 @@ from tools.go_guest.runtime import checked_sources, replace_once
 
 PROFILE = 'go-net-declared-streams-v1'
 PREIMAGES = {
+    'crypto/tls/cache.go': '553ad7a40a9b198bea838833e3e5ed5660ec9b031ad75f58a9ea119e44bd3bfb',
     'net/dial.go': '1ea8719962e33747db841fae362a339c29315fde2c5554a344b2935aa6f803b5',
     'net/lookup.go': 'e8b6b0a0dc7ca0715fe14e6599b1784dc85ce59689e0cb3f9a7fe3eea26ada19',
     'net/tcpsock.go': '0c3392bd7c2966f894e01ea27514623cf09dc2660e426049219f7e5ee3ec0f74',
@@ -74,9 +75,16 @@ def prepare(goroot: Path, sdk: Path, output: Path, module: str) -> dict[str, str
     # Only the removed public DNS bodies referenced this package. Preserve its
     # original dependency/initialization edge instead of deleting the import.
     lookup = replace_once(lookup, '\t"internal/stringslite"\n', '\t_ "internal/stringslite"\n')
+    # Only the declared-stream managed-v5 path uses this bounded private cache.
+    # Its whole upstream file was authenticated before any overlay is published.
+    # Application cleanup callbacks remain explicitly refused by activation.py.
+    cert_cache = (sdk / 'runtime/tls_cert_cache.go.in').read_text(encoding='utf-8')
+    if not cert_cache.startswith('// Compiler-owned bounded Go TLS certificate cache.\npackage tls\n'):
+        raise ValueError('go-standard-network-tls-cache-template-shape')
     output.mkdir()
     replacements = {}
-    for name, text in {'net/dial.go': dial, 'net/tcpsock.go': tcp, 'net/lookup.go': lookup}.items():
+    for name, text in {'net/dial.go': dial, 'net/tcpsock.go': tcp, 'net/lookup.go': lookup,
+                       'crypto/tls/cache.go': cert_cache}.items():
         path = output / name.replace('/', '_')
         path.write_text(text, encoding='utf-8', newline='\n')
         replacements[str(goroot / 'src' / name)] = str(path)

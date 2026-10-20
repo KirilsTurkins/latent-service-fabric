@@ -8,6 +8,7 @@ Guest crypto/tls is distinct from a host TLS provider/accounting qualification.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -30,6 +31,14 @@ from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file
 from tools.stage_runtime_wit import stage
 from tools.test_run import redact
 
+CACHE_TEMPLATE = 'sdk/go-guest/runtime/tls_cert_cache.go.in'
+CACHE_TESTS = 'tools/tests/fixtures/go_network/tls-cache-test.go.txt'
+CACHE_CASES = ('TestCacheRetainsIdentityThroughGC', 'TestCacheRejectsOversizedDERBeforeParseOrCopy',
+    'TestCacheRejectsNinthDistinctCertificateAndRetainsHits', 'TestCacheAggregateDERBudgetAndNoEviction',
+    'TestCacheParseFailureMatchesUpstreamAndConsumesNoEntry', 'TestFreshCacheStartsEmpty',
+    'TestConcurrentSameCertificatePublishesOnce', 'TestCacheExactPerDERBoundaryAndOneByteRefusal')
+REFERENCE_GO_SHA = '548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0'
+
 CASE = 'signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection'
 SUITE = 'latent-wasmtime.test.go_smtp_tls'
 EXPECTED = (
@@ -51,7 +60,7 @@ def encoded(value: dict) -> bytes:
 
 def source_inputs(root: Path) -> dict:
     names = set(BUILD_RECIPE) | {'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml',
-        'tools/qualify_go_smtp_tls_runtime.py', 'tools/ci/suites.d/go-smtp-tls-runtime.json'}
+        'tools/qualify_go_smtp_tls_runtime.py', 'tools/ci/suites.d/go-smtp-tls-runtime.json', CACHE_TESTS}
     # Bind data included by Rust fixtures as well as .rs/manifest files. Do not
     # silently omit include_bytes/include_str inputs or authenticated vendor code.
     listed = subprocess.check_output(['git', 'ls-files', '-z'], cwd=root, timeout=30)
@@ -108,7 +117,38 @@ def outcomes(raw: bytes) -> dict:
     return {'cases': rows, 'userSpaceOwners': owners, 'completion': complete[0]}
 
 
-def qualify(root: Path, output: Path, revision: str) -> dict:
+def cache_reference_source(raw: bytes) -> bytes:
+    if len(raw) > 16384 or b'\r' in raw or raw.count(b'\npackage tls\n') != 1:
+        raise ValueError('Go-tls-cache-reference-source-shape')
+    # Only the package declaration changes; the production cache body is exact.
+    return raw.replace(b'\npackage tls\n', b'\npackage tlscache\n', 1)
+
+
+def cache_reference_outcomes(raw: bytes) -> list[str]:
+    if len(raw) > 1024 * 1024:
+        raise ValueError('Go-tls-cache-reference-output-bound')
+    cases, packages = [], []
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result: raise ValueError('Go-tls-cache-reference-duplicate-field')
+            result[key] = value
+        return result
+    for line in raw.splitlines():
+        row = json.loads(line, object_pairs_hook=unique)
+        if not isinstance(row, dict) or row.get('Package') != 'example.invalid/tlscache':
+            raise ValueError('Go-tls-cache-reference-package')
+        action, name = row.get('Action'), row.get('Test')
+        if action not in {'start', 'run', 'output', 'pass'} or name is not None and name not in CACHE_CASES:
+            raise ValueError('Go-tls-cache-reference-failed-skipped-or-unknown')
+        if action == 'pass':
+            (packages if name is None else cases).append('pass' if name is None else name)
+    if cases != list(CACHE_CASES) or packages != ['pass']:
+        raise ValueError('Go-tls-cache-reference-all-eight-required')
+    return cases
+
+
+def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict:
     environment = dict(os.environ, CARGO_BUILD_JOBS='2', CARGO_INCREMENTAL='0',
                        CARGO_TARGET_DIR=str(root / 'target'), LSF_GUEST_SDK_LANGUAGE='go')
     artifacts.require_source(root, revision, environment)
@@ -123,12 +163,12 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
               'kernelAccountingQualified': False, 'fullGoNetworkingQualified': False, 'hostTlsAccountingQualified': False}
     deadline = time.monotonic() + 1800
 
-    def command(args: list[str], name: str, timeout: int, maximum: int):
+    def command(args: list[str], name: str, timeout: int, maximum: int, *, env=None):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise ValueError('Go-smtp-tls-runtime-overall-deadline')
         try:
-            result = run_owned(args, cwd=root, env=environment, timeout=min(timeout, remaining),
+            result = run_owned(args, cwd=root, env=environment if env is None else env, timeout=min(timeout, remaining),
                                maximum=maximum, separate_stderr=True)
         except ProcessFailure as error:
             result = error.result
@@ -143,6 +183,31 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
         return result.output
 
     try:
+        reference_go = reference_go.resolve(strict=True)
+        reference_before = read_file(reference_go, 64 * 1024 * 1024)
+        if hashlib.sha256(reference_before).hexdigest() != REFERENCE_GO_SHA:
+            raise ValueError('Go-tls-cache-reference-compiler-preimage')
+        reference = output / 'cache-reference'; reference.mkdir()
+        (reference / 'go.mod').write_bytes(b'module example.invalid/tlscache\n\ngo 1.27.2\n')
+        cache_source = read_file(root / CACHE_TEMPLATE, 16384)
+        cache_tests = read_file(root / CACHE_TESTS, 16384)
+        (reference / 'cache.go').write_bytes(cache_reference_source(cache_source))
+        (reference / 'cache_test.go').write_bytes(cache_tests)
+        reference_env = dict(environment, GOOS='linux', GOARCH='amd64', CGO_ENABLED='0',
+            GOTOOLCHAIN='local', GOENV='off', GOWORK='off', GOFLAGS='', GOPROXY='off',
+            GOSUMDB='off', GOMAXPROCS='2', GOCACHE=str(reference / 'cache'))
+        version = command([str(reference_go), 'version'], 'cache-go-version', 30, 4096, env=reference_env).decode().strip()
+        if version != 'go version go1.27.2 linux/amd64':
+            raise ValueError('Go-tls-cache-reference-compiler-version')
+        raw_reference = command([str(reference_go), '-C', str(reference), 'test', '-json',
+            '-count=1', '-timeout=15s', './...'], 'cache-reference', 120, 1024 * 1024, env=reference_env)
+        reference_cases = cache_reference_outcomes(raw_reference)
+        if reference_before != read_file(reference_go, 64 * 1024 * 1024):
+            raise ValueError('Go-tls-cache-reference-compiler-changed')
+        record['cacheReference'] = {'cases': reference_cases, 'compilerDigest': digest(reference_before),
+            'cacheSourceDigest': digest(cache_source), 'testSourceDigest': digest(cache_tests),
+            'projection': 'package-declaration-only; exact-production-cache-body',
+            'entries': 8, 'maximumDERBytes': 16384, 'maximumAggregateDERBytes': 65536}
         # Compile the real public smtp client and guest crypto/tls once.
         # Existing TCP components do not contain these ordinary protocol paths.
         prepared = output / 'fixture'
@@ -200,6 +265,7 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--reference-go', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
     arguments = parser.parse_args()
-    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit)))
+    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit, arguments.reference_go)))

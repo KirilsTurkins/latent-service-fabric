@@ -60,7 +60,7 @@ jobs:
           echo "$out" >> "$GITHUB_PATH"
           echo "$out/go-async/bin" >> "$GITHUB_PATH"
       - name: Compile ordinary SMTP guest TLS then execute one targeted signed harness
-        run: python3 tools/qualify_go_smtp_tls_runtime.py --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime"
+        run: python3 tools/qualify_go_smtp_tls_runtime.py --reference-go "$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go" --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime"
       - name: Retain bounded compiler and owner evidence including failures
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
