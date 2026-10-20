@@ -1,0 +1,69 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Actual byte-copy retirement, failed lowering and original finite limits",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Retain exact explicit native source before compilation",
+        "run": "mkdir -p \"$RUNNER_TEMP/random-byte-lowering\"\ntest -z \"$(git status --porcelain)\"\ntest \"$(git rev-parse HEAD)\" = '${{ github.sha }}'\ngit archive --format=tar.gz HEAD -- Cargo.toml Cargo.lock rust-toolchain.toml .cargo/config.toml apps crates sdk/rust tools/optimization-workloads > \"$RUNNER_TEMP/random-byte-lowering/source.tar.gz\"\ntest \"$(stat --format=%s \"$RUNNER_TEMP/random-byte-lowering/source.tar.gz\")\" -le 134217728\nsha256sum \"$RUNNER_TEMP/random-byte-lowering/source.tar.gz\" > \"$RUNNER_TEMP/random-byte-lowering/source.sha256\"\n"
+      },
+      {
+        "name": "Execute all original random controls plus sequential and failed byte lowering",
+        "run": "set -o pipefail\ncargo test --locked -p latent-wasmtime --test random -- --show-output 2>&1 | tee \"$RUNNER_TEMP/random-byte-lowering/random.log\"\ntest \"$(stat --format=%s \"$RUNNER_TEMP/random-byte-lowering/random.log\")\" -le 16777216\npython3 - <<'PY'\nimport json,os,pathlib,re\nroot=pathlib.Path(os.environ['RUNNER_TEMP'])/'random-byte-lowering'\nsuites=json.loads(pathlib.Path('tools/ci/suites.json').read_bytes())['suites']\nsuite=next(s for s in suites if s['id']=='latent-wasmtime.test.random')\nraw=(root/'random.log').read_bytes()\nnames=[n.decode() for n in re.findall(rb'^test ([A-Za-z0-9_:]+) \\.\\.\\. ok$',raw,re.M)]\nassert len(names)==len(set(names))==17 and sorted(names)==sorted(suite['expectedCases'])\nassert re.findall(rb'^test result: ok\\. (\\d+) passed; (\\d+) failed; (\\d+) ignored; (\\d+) measured; (\\d+) filtered out;',raw,re.M)==[(b'17',b'0',b'0',b'0',b'0')]\n(root/'tests.json').write_text(json.dumps({'source':os.environ['GITHUB_SHA'],'cases':names,'passed':17,'failed':0,'ignored':0,'filtered':0,'randomByteLimitRaised':False,'otherListRetentionChanged':False},indent=2)+'\\n')\nPY\n"
+      },
+      {
+        "name": "Build only the selected normal host for the subsequent library experiment",
+        "run": "cargo build --locked -p latentd --bin latentd --message-format=json-render-diagnostics > \"$RUNNER_TEMP/random-byte-lowering/native-build.jsonl\"\ntest \"$(stat --format=%s \"$RUNNER_TEMP/random-byte-lowering/native-build.jsonl\")\" -le 16777216\npython3 - <<'PY'\nimport hashlib,json,os,pathlib,shutil,subprocess\nroot=pathlib.Path(os.environ['RUNNER_TEMP'])/'random-byte-lowering'\nrows=[json.loads(line) for line in (root/'native-build.jsonl').read_bytes().splitlines()]\nartifacts=[r for r in rows if r.get('reason')=='compiler-artifact' and r['target']['name']=='latentd' and r.get('executable')]\nassert len(artifacts)==1\nartifact=artifacts[0];binary=pathlib.Path(artifact['executable'])\nassert binary.is_file() and not binary.is_symlink() and 0<binary.stat().st_size<=512*1024**2\nassert artifact['features']==[] and artifact['profile']=={'opt_level':'0','debuginfo':0,'debug_assertions':True,'overflow_checks':True,'test':False}\nsource=os.environ['GITHUB_SHA']\nassert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()==source\nassert not subprocess.check_output(['git','status','--porcelain']).strip()\nbinary_hash='sha256:'+hashlib.file_digest(binary.open('rb'),'sha256').hexdigest()\nshutil.copyfile(binary,root/'latentd')\ninfo={'schemaVersion':'latent.random-byte-lowering.host.v1','compiledSource':source,'sourceArchive':{'sha256':'sha256:'+hashlib.sha256((root/'source.tar.gz').read_bytes()).hexdigest(),'bytes':(root/'source.tar.gz').stat().st_size},'binary':{'sha256':binary_hash,'bytes':binary.stat().st_size},'features':artifact['features'],'profile':artifact['profile'],'ordinaryDefaults':True,'hermetic':False,'implicitCompilerInputs':'not-attested','tests':json.loads((root/'tests.json').read_bytes())}\n(root/'current-host.json').write_text(json.dumps(info,indent=2)+'\\n')\nPY\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded actual evidence including compiler failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "random-byte-lowering-${{ github.sha }}",
+          "path": "${{ runner.temp }}/random-byte-lowering/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 35
+  },
+  "jobId": "bytes",
+  "kind": "job",
+  "reviewReason": "Exact bounded17-case native random target plus one source-attributed normal host binary, preserving all15 original named cases and concurrent16-call limit; concrete bytes only retire after generated canonical allocation/copy, including failures.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/random-bytes-lowering-reference.yml"
+}

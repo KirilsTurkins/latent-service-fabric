@@ -4,6 +4,7 @@ use latent_capabilities::broker::random::{RandomError, RandomProvider, RANDOM_CA
 use latent_component_bindings::host::phase3::latent::random::random as wit;
 use std::{sync::Arc, time::Instant};
 use wasmtime::component::Linker;
+mod completion;
 
 pub(crate) fn install(
     linker: &mut Linker<HostState>,
@@ -29,17 +30,14 @@ pub(crate) fn install(
                 Err(error) => Err(error),
             };
             checkpoint(&mut store)?;
-            let result = result
-                .map(|mut completion| {
-                    // Keep the charge through canonical lowering and Store destruction.
+            let (result, owner) = match result {
+                Ok(mut completion) => {
                     let bytes = std::mem::take(&mut *completion.bytes);
-                    store
-                        .data_mut()
-                        .capabilities
-                        .retain_lowering(completion.owner);
-                    bytes
-                })
-                .map_err(convert);
+                    (Ok(bytes), Some(completion.owner))
+                }
+                Err(error) => (Err(convert(error)), None),
+            };
+            let result = completion::Bytes::new(result, owner);
             synchronize(&mut store)?;
             store.data_mut().record_host_call(started);
             Ok((result,))

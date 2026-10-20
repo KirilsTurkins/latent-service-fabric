@@ -115,10 +115,6 @@ impl Fixture {
     ) -> Self {
         Self::with_publication(source, limits, audit, None).await
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one real catalog, policy and runtime composition fixture in dependency order"
-    )]
     pub async fn with_publication(
         source: Option<Arc<dyn latent_capabilities::broker::random::TestEntropy>>,
         limits: latent_capabilities::broker::random::RandomLimits,
@@ -128,6 +124,23 @@ impl Fixture {
             latent_core::ReleaseDigest,
             latent_artifacts::ManagedPublicationReceipt,
         )>,
+    ) -> Self {
+        Self::with_component(source, limits, audit, publication, component::bytes()).await
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one real catalog, policy and runtime composition fixture in dependency order"
+    )]
+    pub async fn with_component(
+        source: Option<Arc<dyn latent_capabilities::broker::random::TestEntropy>>,
+        limits: latent_capabilities::broker::random::RandomLimits,
+        audit: Option<latent_audit::AuditHandle>,
+        publication: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_core::ReleaseDigest,
+            latent_artifacts::ManagedPublicationReceipt,
+        )>,
+        component: Vec<u8>,
     ) -> Self {
         let required = audit.is_some();
         let ceiling = support::budget();
@@ -142,7 +155,7 @@ impl Fixture {
                 )
                 .unwrap(),
             );
-            let mut artifact = support::artifact_bytes(component::bytes(), &[component::CONTRACT]);
+            let mut artifact = support::artifact_bytes(component, &[component::CONTRACT]);
             artifact.manifest.execution.resource_budget_ceiling = ceiling;
             artifact.manifest.imports.push(ContractImport {
                 contract: ContractId(component::CAP.into()),

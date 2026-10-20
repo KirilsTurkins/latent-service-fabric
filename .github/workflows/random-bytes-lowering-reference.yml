@@ -1,0 +1,107 @@
+name: Random byte canonical lowering reference
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: ['fix/random-bytes-lowering-20261020']
+    paths:
+      - 'crates/latent-wasmtime/src/host/random*'
+      - 'crates/latent-wasmtime/src/host/random/**'
+      - 'crates/latent-wasmtime/tests/random/**'
+      - 'tools/ci/suites.json'
+      - '.github/workflows/random-bytes-lowering-reference.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: random-byte-lowering-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+
+jobs:
+  bytes:
+    name: Actual byte-copy retirement, failed lowering and original finite limits
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Retain exact explicit native source before compilation
+        run: |
+          mkdir -p "$RUNNER_TEMP/random-byte-lowering"
+          test -z "$(git status --porcelain)"
+          test "$(git rev-parse HEAD)" = '${{ github.sha }}'
+          git archive --format=tar.gz HEAD -- Cargo.toml Cargo.lock rust-toolchain.toml .cargo/config.toml apps crates sdk/rust tools/optimization-workloads > "$RUNNER_TEMP/random-byte-lowering/source.tar.gz"
+          test "$(stat --format=%s "$RUNNER_TEMP/random-byte-lowering/source.tar.gz")" -le 134217728
+          sha256sum "$RUNNER_TEMP/random-byte-lowering/source.tar.gz" > "$RUNNER_TEMP/random-byte-lowering/source.sha256"
+      - name: Execute all original random controls plus sequential and failed byte lowering
+        run: |
+          set -o pipefail
+          cargo test --locked -p latent-wasmtime --test random -- --show-output 2>&1 | tee "$RUNNER_TEMP/random-byte-lowering/random.log"
+          test "$(stat --format=%s "$RUNNER_TEMP/random-byte-lowering/random.log")" -le 16777216
+          python3 - <<'PY'
+          import json,os,pathlib,re
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'random-byte-lowering'
+          suites=json.loads(pathlib.Path('tools/ci/suites.json').read_bytes())['suites']
+          suite=next(s for s in suites if s['id']=='latent-wasmtime.test.random')
+          raw=(root/'random.log').read_bytes()
+          names=[n.decode() for n in re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$',raw,re.M)]
+          assert len(names)==len(set(names))==17 and sorted(names)==sorted(suite['expectedCases'])
+          assert re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;',raw,re.M)==[(b'17',b'0',b'0',b'0',b'0')]
+          (root/'tests.json').write_text(json.dumps({'source':os.environ['GITHUB_SHA'],'cases':names,'passed':17,'failed':0,'ignored':0,'filtered':0,'randomByteLimitRaised':False,'otherListRetentionChanged':False},indent=2)+'\n')
+          PY
+      - name: Build only the selected normal host for the subsequent library experiment
+        run: |
+          cargo build --locked -p latentd --bin latentd --message-format=json-render-diagnostics > "$RUNNER_TEMP/random-byte-lowering/native-build.jsonl"
+          test "$(stat --format=%s "$RUNNER_TEMP/random-byte-lowering/native-build.jsonl")" -le 16777216
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,shutil,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'random-byte-lowering'
+          rows=[json.loads(line) for line in (root/'native-build.jsonl').read_bytes().splitlines()]
+          artifacts=[r for r in rows if r.get('reason')=='compiler-artifact' and r['target']['name']=='latentd' and r.get('executable')]
+          assert len(artifacts)==1
+          artifact=artifacts[0];binary=pathlib.Path(artifact['executable'])
+          assert binary.is_file() and not binary.is_symlink() and 0<binary.stat().st_size<=512*1024**2
+          assert artifact['features']==[] and artifact['profile']=={'opt_level':'0','debuginfo':0,'debug_assertions':True,'overflow_checks':True,'test':False}
+          source=os.environ['GITHUB_SHA']
+          assert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()==source
+          assert not subprocess.check_output(['git','status','--porcelain']).strip()
+          binary_hash='sha256:'+hashlib.file_digest(binary.open('rb'),'sha256').hexdigest()
+          shutil.copyfile(binary,root/'latentd')
+          info={'schemaVersion':'latent.random-byte-lowering.host.v1','compiledSource':source,'sourceArchive':{'sha256':'sha256:'+hashlib.sha256((root/'source.tar.gz').read_bytes()).hexdigest(),'bytes':(root/'source.tar.gz').stat().st_size},'binary':{'sha256':binary_hash,'bytes':binary.stat().st_size},'features':artifact['features'],'profile':artifact['profile'],'ordinaryDefaults':True,'hermetic':False,'implicitCompilerInputs':'not-attested','tests':json.loads((root/'tests.json').read_bytes())}
+          (root/'current-host.json').write_text(json.dumps(info,indent=2)+'\n')
+          PY
+      - name: Retain bounded actual evidence including compiler failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: random-byte-lowering-${{ github.sha }}
+          path: ${{ runner.temp }}/random-byte-lowering/
+          if-no-files-found: error
+          retention-days: 7
