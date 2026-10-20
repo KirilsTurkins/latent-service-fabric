@@ -13,7 +13,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "module:setup-sha256:f76714cd9aa1e972e6c46ad1bdf929addbb78702fda27a17b8bcde8752666880",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -25,7 +25,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "module:setup-sha256:f76714cd9aa1e972e6c46ad1bdf929addbb78702fda27a17b8bcde8752666880",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -37,7 +37,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "module:setup-sha256:f76714cd9aa1e972e6c46ad1bdf929addbb78702fda27a17b8bcde8752666880",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -49,7 +49,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:47c90a4d2f02d17c0e4d698694c5a580605bbbb08afb9b942e14e58ddcfb6d18",
+        "module:setup-sha256:f76714cd9aa1e972e6c46ad1bdf929addbb78702fda27a17b8bcde8752666880",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -57,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_scratch_wiring.py",
-  "reviewReason": "Give the separate child the unchanged normal namespace prerequisite on its own fresh VM; preserve all old commands and deadlines.",
+  "reviewReason": "Explicit diagnostic-only module-setup review: exact default-false replay guard normalization projects back to unchanged normal parent/child/dependency bodies; all four case IDs/decorators/skip sites unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

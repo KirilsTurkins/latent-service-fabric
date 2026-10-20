@@ -12,7 +12,16 @@ def signature(value):
 
 
 def model():
-    return workflow_model((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes().decode('utf-8'))
+    result = workflow_model((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes().decode('utf-8'))
+    inputs = result['on']['workflow_dispatch']['inputs']
+    if 'replay-closed-filesystem' in inputs:
+        assert inputs['replay-closed-filesystem']['type'] == 'boolean'
+        assert inputs['replay-closed-filesystem']['default'] is False
+        for name in ('compiler-component', 'scratch-refusals'):
+            assert result['jobs'][name].pop('if') == "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
+        assert result['jobs']['dependency-ingestion']['if'] == "${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}"
+        result['jobs']['dependency-ingestion']['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}"
+    return result
 
 
 class JavaScratchWiring(unittest.TestCase):

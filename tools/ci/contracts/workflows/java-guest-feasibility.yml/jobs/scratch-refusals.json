@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}",
     "name": "Signed ordinary Java filesystem refusal and fresh-state packet",
     "needs": "compiler-component",
     "runs-on": "ubuntu-24.04",
@@ -77,7 +78,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Give the separate child the unchanged normal namespace prerequisite on its own fresh VM; preserve all old commands and deadlines.",
+  "reviewReason": "Default-false diagnostic only: preserve complete original jobs; build current five Java components on exact retained native products with39 required outcomes and no fabricated normal Java receipt.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

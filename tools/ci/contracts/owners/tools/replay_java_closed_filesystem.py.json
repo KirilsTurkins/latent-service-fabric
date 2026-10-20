@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_java_closed_filesystem.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Default-false diagnostic only: preserve complete original jobs; build current five Java components on exact retained native products with39 required outcomes and no fabricated normal Java receipt.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0707b38a45c8874ba8b5ef98021f85897545fbafe4066efcadcac07e5b4d8a87"
+}

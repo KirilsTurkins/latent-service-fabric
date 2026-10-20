@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "JavaFilesystemReplay.test_current_five_components_are_built_and_signed_without_fabricating_a_normal_receipt",
+    "JavaFilesystemReplay.test_exact39_requires_three_unsupported_six_original_errors_and_every_owner_retired",
+    "JavaFilesystemReplay.test_full_original_workflow_and_job_bodies_survive_manual_projection",
+    "JavaFilesystemReplay.test_production_guard_denies_changed_source_or_dirty_tree"
+  ],
+  "guards": {
+    "JavaFilesystemReplay.test_current_five_components_are_built_and_signed_without_fabricating_a_normal_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaFilesystemReplay.test_exact39_requires_three_unsupported_six_original_errors_and_every_owner_retired": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaFilesystemReplay.test_full_original_workflow_and_job_bodies_survive_manual_projection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaFilesystemReplay.test_production_guard_denies_changed_source_or_dirty_tree": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_filesystem_replay.py",
+  "reviewReason": "Default-false diagnostic only: preserve complete original jobs; build current five Java components on exact retained native products with39 required outcomes and no fabricated normal Java receipt.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

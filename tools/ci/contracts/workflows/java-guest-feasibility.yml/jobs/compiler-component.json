@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": 1
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}",
     "name": "Actual Java sources, SDK ownership and enforced node",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -262,7 +263,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Preserve every original55-minute Java stage and compiler pin; append exact public same-run bundle export and separate20-minute scratch child, with default-false manual skip for unrelated dependency matrix. No native host rebuild or Unsupported pass claim.",
+  "reviewReason": "Default-false diagnostic only: preserve complete original jobs; build current five Java components on exact retained native products with39 required outcomes and no fabricated normal Java receipt.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

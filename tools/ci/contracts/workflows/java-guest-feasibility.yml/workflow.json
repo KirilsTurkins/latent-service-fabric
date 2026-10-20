@@ -46,6 +46,11 @@
             "default": false,
             "description": "Run the unchanged normal Java prerequisite and separate filesystem refusal packet",
             "type": "boolean"
+          },
+          "replay-closed-filesystem": {
+            "default": false,
+            "description": "Fresh five Java components and39 signed filesystem outcomes using exact retained native products",
+            "type": "boolean"
           }
         }
       }
@@ -55,11 +60,12 @@
     }
   },
   "requiredJobs": [
+    "closed-filesystem-reference",
     "compiler-component",
     "dependency-ingestion",
     "scratch-refusals"
   ],
-  "reviewReason": "Give the separate child the unchanged normal namespace prerequisite on its own fresh VM; preserve all old commands and deadlines.",
+  "reviewReason": "Default-false diagnostic only: preserve complete original jobs; build current five Java components on exact retained native products with39 required outcomes and no fabricated normal Java receipt.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
