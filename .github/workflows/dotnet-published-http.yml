@@ -1,0 +1,103 @@
+name: Published managed HTTP clients
+on:
+  push:
+    branches: ['feat/dotnet-published-http-20261020']
+    paths: ['.github/workflows/dotnet-published-http.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: dotnet-published-http-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  published-http:
+    name: Signed ordinary Flurl Refit and outside NuGet clients
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Fetch the exact successful native producer source
+        run: git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
+      - name: Check immutable capture real peer and compiler boundaries
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_dotnet_published_http_fixture tools.tests.test_dotnet_reflection_boundaries tools.tests.test_sdk_native_products_reader -v
+      - name: Install the normal captured compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Prepare the pinned compiler and current small closed-runtime adapters
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/published-bindgen"
+          export PATH="$RUNNER_TEMP/published-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/published-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/published-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Authenticate the five frozen products without a native host rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/published-native"
+      - name: Capture one actual component and execute ordinary library paths
+        run: python3 -B tools/qualify_dotnet_published_http.py --native "$RUNNER_TEMP/published-native" --tools "$RUNNER_TEMP/published-tools" --output "$RUNNER_TEMP/published-http"
+      - name: Retain bounded public original build and library evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-published-http-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/published-native/*.json
+            ${{ runner.temp }}/published-tools/INSTALL-COMPLETE.json
+            ${{ runner.temp }}/published-tools/runtime-inputs.json
+            ${{ runner.temp }}/published-tools/wasi-sdk.json
+            ${{ runner.temp }}/published-tools/logs/**
+            ${{ runner.temp }}/published-http/*.json
+            ${{ runner.temp }}/published-http/generator-approval-required/*.json
+            ${{ runner.temp }}/published-http/generator-approval-required/compiler.*.txt
+            ${{ runner.temp }}/published-http/build/*.json
+            ${{ runner.temp }}/published-http/build/compiler.*.txt
+            ${{ runner.temp }}/published-http/build/component.wasm
+            ${{ runner.temp }}/published-http/build/derived-*.dll
+            ${{ runner.temp }}/published-http/build/executable-input-outputs/**
+            ${{ runner.temp }}/published-http/build/package/**
+            ${{ runner.temp }}/published-http/build/logs/**
+            ${{ runner.temp }}/published-http/outside/compiler-*/logs/**
+            ${{ runner.temp }}/published-http/node/*.json
+            ${{ runner.temp }}/published-http/node/controls/*.json

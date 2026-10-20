@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "dotnet-published-http-${{ github.ref }}"
+    },
+    "name": "Published managed HTTP clients",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/dotnet-published-http-20261020"
+        ],
+        "paths": [
+          ".github/workflows/dotnet-published-http.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "published-http"
+  ],
+  "reviewReason": "Add a separate normal captured NativeAOT programme for unchanged Flurl4.0.2/Refit16.4 and two outside NuGet identities, twenty signed cases/two pre-entry refusals and strict15-contact physical-retirement oracle. Capture original generator closure, require its exact isolated approval, retain default compiler/stager behavior. Five new capture/real-peer/approval guards and twelve original boundary controls pass; actual guest results pending. Preserve every existing command, case, cap and failed receipt; no host/native baseline rebuild. Use authenticated f919 wait-observer products through the unchanged shared strict reader and exact frozen wrapper; six reader mutation guards pass. No source-equality waiver or native rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-published-http.yml"
+}
