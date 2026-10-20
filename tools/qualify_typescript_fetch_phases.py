@@ -33,6 +33,7 @@ from tools.typescript_guest.build import build
 
 SOURCES = ('.github/workflows/typescript-fetch-phases.yml', fixture.SOURCE,
     'tools/typescript_fetch_phase_fixture.py', 'tools/qualify_typescript_fetch_phases.py',
+    'tools/http_phase_wit.py',
     'tools/typescript_published_fetch_fixture.py', 'tools/qualify_typescript_published_fetch.py',
     'tools/qualify_typescript_fetch_runtime.py', 'tools/typescript_fetch_conformance.py',
     'tools/qualify_typescript_fetch_conformance.py', 'tools/java_phase_native_products.py',

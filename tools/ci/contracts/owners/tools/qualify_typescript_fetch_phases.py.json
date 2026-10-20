@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_fetch_phases.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add focused V7 standard Fetch signed consumer and exact native acquisition; preserve all historical commands and cases.",
+  "reviewReason": "Capture the nominal type-owner helper as a consumer input. No executable workflow/default/provider change.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4422d4c1bfecc52bfbcd2b57a4a735910c5b2fa0c9ea90819ba2b9db99f2104d"
+  "sha256": "604b6ea60e2c46294eaf1adf325933f67c5adf47fd4ada56adea9eb18868636d"
 }

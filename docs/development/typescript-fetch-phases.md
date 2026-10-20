@@ -63,3 +63,12 @@ selector inspected the phase import under V5 and refused before packaging.
 That failed run remains retained; re-inspection of its exact component/graph
 under the declared V7 profile has no link blocker, and actual signed execution
 still requires the focused lane.
+
+The `8981516dd6` retry compiled and packaged the phase component, then correctly
+refused its first invocation as incompatible-contract: WIT dependency resolution
+had implicitly imported all eight legacy streaming operations alongside their
+nominal resource types. The phase-only fixture now captures a canonical
+resource/type declaration with exactly those eight unused calls removed. Every
+original type and every phase function remains unchanged, as checked by the
+real wasm-tools 1.254.0 parser. No legacy provider or grant is added. Seven focused
+source/wire controls pass; actual signed execution of this correction is pending.

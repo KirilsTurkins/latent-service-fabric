@@ -18,6 +18,24 @@ from tools.typescript_guest.project import validate
 
 
 class PhaseExecutionTests(unittest.TestCase):
+    def test_nominal_dependency_preserves_every_original_type_and_removes_only_legacy_calls(self):
+        import re
+        source = (fixture.ROOT/'wit/platform/http-v3/package.wit').read_bytes()
+        projected = fixture.nominal_type_owner(source)
+        declarations = re.findall(rb'^    [a-z-]+: async func[^\n]*;\n', source, re.MULTILINE)
+        self.assertEqual(len(declarations), 8)
+        expected = source
+        for declaration in declarations:
+            expected = expected.replace(declaration, b'', 1)
+        self.assertEqual(projected, expected)
+        self.assertNotIn(b'func(', projected)
+        for resource in (b'upload', b'body', b'chunk'):
+            self.assertIn(b'resource '+resource+b';', projected)
+        for changed in (source+b'\n', source.replace(b'resource upload;', b'resource foreign;'),
+                        source.replace(b'option<u64>', b'option<u32>', 1), projected):
+            with self.assertRaisesRegex(WorkflowError, 'nominal-canonical-preimage'):
+                fixture.nominal_type_owner(changed)
+
     def test_declared_phase_profile_captures_its_manifest_without_changing_legacy_or_transaction_authority(self):
         from tools import guest_compatibility_build as compatibility
         from tools.dev_workflow.common import DevError

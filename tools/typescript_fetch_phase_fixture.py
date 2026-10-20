@@ -5,6 +5,7 @@ import hashlib
 from pathlib import Path
 
 from tools import typescript_published_fetch_fixture as published
+from tools.http_phase_wit import nominal_type_owner
 from tools.phase2_operator_process import require
 from tools.rust_capsule_project import ROOT, digest, read_file
 from tools.standard_http.peer import Peer
@@ -29,6 +30,7 @@ VECTORS = (
 )
 
 
+
 def project(directory: Path) -> Path:
     app = published.project(directory, PRIVATE_NAME)
     source = read_file(ROOT / SOURCE)
@@ -42,6 +44,8 @@ def project(directory: Path) -> Path:
     target = app / 'wit/deps/http-phases/package.wit'
     target.parent.mkdir(parents=True)
     target.write_bytes(read_file(app / 'vendor/lsf/wit/platform/http-phases/package.wit'))
+    nominal = app / 'wit/deps/http-v3/package.wit'
+    nominal.write_bytes(nominal_type_owner(read_file(nominal)))
     lock = json.loads(read_file(app / 'sdk-lock.json'))
     lock['template'] = {'name': 'typescript-phase-fetch', 'sourceDigest': digest(source),
                         'witDigest': digest(wit)}
