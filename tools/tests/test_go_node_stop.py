@@ -329,6 +329,59 @@ class GoNodeStop(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'actual-steps'):
             reference.validate_producer(changed)
 
+    def test_exact_java_helper_extension_is_unused_and_does_not_relabel_retained_products(self):
+        original = {'runtime': {'sha256': 'same'}, 'sdk': {'sha256': 'sdk'},
+            'helpers': {reference.WORKFLOW_HELPER: reference.ORIGINAL_HELPER,
+                        'go_guest/compiler.py': {'sha256': 'compiler'}}}
+        current = copy.deepcopy(original)
+        current['helpers'][reference.WORKFLOW_HELPER] = {
+            'sha256': 'sha256:42ad89492f745d5da1904d9341ec6baa15b8eeb09192830dc17c2931ebcf9e5a', 'bytes': 33706}
+        before = copy.deepcopy((original, current))
+        result = reference.compatible_normal_source(original, current)
+        self.assertTrue(result['nativeSdkWitSchemasAndUsedHelpersEqual'])
+        self.assertIsNone(result['nativeTestOnlyComposition'])
+        self.assertFalse(result['originalNormalProgrammeRelabelledAsCurrent'])
+        self.assertEqual((original, current), before)
+        # Source-reviewed default-off resource option; this programme does not
+        # call the helper or inherit that option's unexecuted qualification.
+        current['helpers'][reference.WORKFLOW_HELPER] = {
+            'sha256': 'sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7', 'bytes': 34233}
+        self.assertFalse(reference.compatible_normal_source(original, current)[
+            'originalNormalProgrammeRelabelledAsCurrent'])
+        current['helpers'][reference.WORKFLOW_HELPER]['bytes'] += 1
+        with self.assertRaisesRegex(RuntimeError, 'reviewed-unused-helper'):
+            reference.compatible_normal_source(original, current)
+
+    def test_exact_test_only_inventory_is_distinct_from_current_native_execution(self):
+        original = {'runtime': copy.deepcopy(reference.ORIGINAL_RUNTIME),
+            'sdk': {'sha256': 'same-sdk'}, 'wit': {'sha256': 'same-wit'},
+            'helpers': {reference.WORKFLOW_HELPER: reference.ORIGINAL_HELPER}}
+        current = copy.deepcopy(original)
+        current['runtime'] = copy.deepcopy(reference.TEST_ONLY_RUNTIME)
+        current['helpers'][reference.WORKFLOW_HELPER] = reference.JAVA_ONLY_HELPER
+        before = copy.deepcopy((original, current))
+        result = reference.compatible_normal_source(original, current)
+        self.assertFalse(result['nativeSdkWitSchemasAndUsedHelpersEqual'])
+        self.assertTrue(result['nativeProductionSdkWitSchemasAndUsedHelpersEqual'])
+        composition = result['nativeTestOnlyComposition']
+        self.assertEqual(composition['originalInventory'], original['runtime'])
+        self.assertEqual(composition['currentInventory'], current['runtime'])
+        self.assertEqual(composition['soleChangedSource']['path'], 'apps/latentd/tests/standalone_node/startup.rs')
+        self.assertFalse(composition['restoredExecutablesRebuilt'])
+        self.assertEqual((original, current), before)
+        for side in ('original', 'current'):
+            for field, value in [('sha256', 'unknown'), ('files', 3300), ('bytes', 25835712),
+                                 ('scope', 'other'), ('hermetic', True)]:
+                left, right = copy.deepcopy((original, current))
+                (left if side == 'original' else right)['runtime'][field] = value
+                with self.subTest(side=side, field=field), self.assertRaisesRegex(RuntimeError, 'must-match'):
+                    reference.compatible_normal_source(left, right)
+        for field in ('sdk', 'wit'):
+            value = copy.deepcopy(current)
+            value[field]['sha256'] = 'unknown'
+            with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'must-match'):
+                reference.compatible_normal_source(original, value)
+
     def test_failed_tuple_integrity_never_reaches_a_new_component_or_signer(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
