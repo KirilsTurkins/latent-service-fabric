@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/http_tenant_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Authenticate and acquire only independently verified6f5 products; replace the unmerged direct36ea command owner while retaining both original authenticators and all fourteen historical controls unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "11797e8e5d54d5ab17b64104867d218fdfb472a1b9eb5f11b469e81a78a9c3bc"
+}

@@ -19,6 +19,7 @@
           "tools/qualify_typescript_fetch_phases.py",
           "tools/java_phase_native_products.py",
           "tools/http_phase_native_products.py",
+          "tools/http_tenant_native_products.py",
           "tools/http_phase_wit.py",
           "tools/tests/test_typescript_phase_execution.py"
         ]
@@ -32,7 +33,7 @@
   "requiredJobs": [
     "phases"
   ],
-  "reviewReason": "Add same-component independent tenant HTTP programme; preserve every historical step, source guard and original resource limit.",
+  "reviewReason": "Retain all previous fetch controls and deadlines; acquire independently verified tenant-native source6f5 using a separate immutable authenticator and seven additive controls, preserving old77 and36ea pins.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-phases.yml"
 }

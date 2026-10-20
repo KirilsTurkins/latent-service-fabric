@@ -41,6 +41,7 @@ SOURCES = ('.github/workflows/typescript-fetch-phases.yml', fixture.SOURCE,
     'tools/typescript_published_fetch_fixture.py', 'tools/qualify_typescript_published_fetch.py',
     'tools/qualify_typescript_fetch_runtime.py', 'tools/typescript_fetch_conformance.py',
     'tools/qualify_typescript_fetch_conformance.py', 'tools/http_phase_native_products.py',
+    'tools/http_tenant_native_products.py',
     'tools/standard_http/peer.py', 'tools/standard_http/vectors.py',
     'tools/standard_http/protocol.py', 'tools/standard_http/observations.py')
 
@@ -337,7 +338,7 @@ def execute(artifact, native, output):
 
 
 def qualify(acquired: Path, native_input: Path, tools: Path, output: Path):
-    from tools.http_phase_native_products import native_products, verify_prepared
+    from tools.http_tenant_native_products import native_products, verify_prepared
     acquired, native_input, tools, output = (path.resolve() for path in (acquired, native_input, tools, output))
     require(ROOT != output and ROOT not in output.parents
         and all(output != path and output not in path.parents and path not in output.parents

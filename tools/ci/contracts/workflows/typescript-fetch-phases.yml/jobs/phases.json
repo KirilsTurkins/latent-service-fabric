@@ -25,6 +25,10 @@
         "run": "git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f"
       },
       {
+        "name": "Fetch the immutable tenant isolation producer source object",
+        "run": "git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015"
+      },
+      {
         "uses": "actions/setup-python",
         "with": {
           "python-version": "3.13.5"
@@ -55,6 +59,10 @@
         "run": "python3 -B -m unittest tools.tests.test_http_phase_native_products -v"
       },
       {
+        "name": "Check frozen tenant native producer authentication",
+        "run": "python3 -B -m unittest tools.tests.test_http_tenant_native_products -v"
+      },
+      {
         "name": "Check independent tenant HTTP configuration and captured component boundaries",
         "run": "python3 -B -m unittest tools.tests.test_typescript_fetch_tenants -v"
       },
@@ -78,7 +86,7 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Acquire the exact shared V7 native producer",
-        "run": "python3 -B tools/http_phase_native_products.py --output \"$RUNNER_TEMP/phase-native\""
+        "run": "python3 -B tools/http_tenant_native_products.py --output \"$RUNNER_TEMP/phase-native\""
       },
       {
         "name": "Build sign and execute actual phase Fetch programme",
@@ -100,7 +108,7 @@
   },
   "jobId": "phases",
   "kind": "job",
-  "reviewReason": "Add same-component independent tenant HTTP programme; preserve every historical step, source guard and original resource limit.",
+  "reviewReason": "Retain all previous fetch controls and deadlines; acquire independently verified tenant-native source6f5 using a separate immutable authenticator and seven additive controls, preserving old77 and36ea pins.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-phases.yml"
 }

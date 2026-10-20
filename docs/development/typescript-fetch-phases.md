@@ -97,11 +97,14 @@ bounds and retains the native hook's fixed two public IDs, sixteen-record bound
 and closed fields. The original Go decoder/profile is unchanged. These new signed
 observations remain pending.
 
-Host products now use the separately authenticated nominal-type correction at
-`36eaed79db`, [run39430989809](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39430989809/job/118655688632),
-with thirteen native controls. Original77 products and receipts remain frozen for
-their existing consumers. The C-context Cargo target and both actual new nominal
-Rust tests are registered additively; all prior rows/cases remain intact.
+Host products use the separately authenticated emitted-type and tenant correction
+at `6f5f180136`, [run39443901256](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39443901256/job/118700610031),
+with25 Rust and four emitted-graph controls. The new
+`http_tenant_native_products.py` authenticator pins the complete archive and
+source/products separately. Original77 and36ea helpers, products and receipts
+remain frozen for their existing consumers; all fourteen historical authentication
+controls still execute alongside the seven new ones. The C-context target and
+actual Rust cases remain registered additively, preserving every prior case.
 
 ## Independent tenant HTTP candidate
 
