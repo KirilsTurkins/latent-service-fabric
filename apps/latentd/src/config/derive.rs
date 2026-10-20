@@ -117,6 +117,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         inventory: StandaloneInventoryConfig {
             cell_classes: classes.into_keys().collect(),
             maximum_cache_descriptors: 0,
+            maximum_topology_entries: super::topology::MAXIMUM_ENTRIES,
             maximum_load_age: LOAD_MAXIMUM_AGE,
             ..StandaloneInventoryConfig::default()
         },
