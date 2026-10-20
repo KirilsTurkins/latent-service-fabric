@@ -9,7 +9,7 @@
     "on": {
       "push": {
         "branches": [
-          "feat/typescript-fetch-late-20261020"
+          "feat/typescript-late-completion-20261020"
         ],
         "paths": [
           ".github/workflows/typescript-fetch-late.yml",
@@ -28,7 +28,7 @@
   "requiredJobs": [
     "fetch-conformance"
   ],
-  "reviewReason": "Add separate signed ordinary Fetch late-completion programme with exact caller abort reason, one public rejection and no resolution while actual peer completes held headers/body, original budgets and physical retirement, plus fresh module state. Preserve every existing programme. Three source controls use real authenticated loopback peer and reject incomplete/abandoned/miscounted responses, bind original manifest/source, and forbid build failures from reaching signing/execution. Actual execution remains pending; no cross-tenant or intermediate-refund qualification.",
+  "reviewReason": "Correct owning push selector to the actual published PR branch. Preserve exact job, commands, source controls, budgets, permissions, timeout and artifact retention. No guest/compiler/native changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-late.yml"
 }

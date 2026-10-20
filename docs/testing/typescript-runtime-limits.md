@@ -37,6 +37,17 @@ The controller now supplies the same explicit bounded HTTP grant as the other
 zero-contact Fetch fixtures. This grants no implicit permission and does not
 relax the real peer's zero-contact check. No resource boundary ran in that attempt.
 
-Execution results are pending. Source controls and type checking alone do not
-qualify these boundaries. This programme does not establish late-completion or
-cross-tenant isolation and does not close the complete SDK or Fetch matrices.
+The [signed programme passed](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39388036371/job/118512548819)
+on `ee93cf81d45b6809d9dfdcede8245d810d545022`. Its [compact observation](evidence/typescript-runtime-limits-signed-2026-10-20.json)
+binds the authenticated archive, historical native inputs and component.
+All 15 calls had known outcomes and reaped callers; 15 physical retirement
+observations and zero-owner controls passed. All five nodes stopped cleanly,
+and the real peer observed zero contacts. Exact typed refusals followed 12 task,
+14 queued-work, 53 reachable Promise native-owner and eight timer admissions.
+The memory case returned `resource-exhausted` at 64,045,552 bytes, compared with
+9,519,600 bytes for bootstrap; fresh calls passed after every boundary.
+
+These measurements apply to the explicit profiles above, not minimum client
+requirements. Earlier controller failures remain failures. This programme does
+not establish late-completion or cross-tenant isolation and does not close the
+complete SDK or Fetch matrices.

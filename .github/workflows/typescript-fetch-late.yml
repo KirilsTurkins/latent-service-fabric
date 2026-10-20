@@ -1,7 +1,7 @@
 name: TypeScript late provider completion
 on:
   push:
-    branches: ['feat/typescript-fetch-late-20261020']
+    branches: ['feat/typescript-late-completion-20261020']
     paths:
       - '.github/workflows/typescript-fetch-late.yml'
       - 'sdk/typescript-guest/probes/fetch-late-completion/**'
