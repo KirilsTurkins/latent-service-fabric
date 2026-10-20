@@ -739,3 +739,77 @@ jobs:
             ${{ runner.temp }}/java-scratch-refusals/node/controls/*.json
           if-no-files-found: warn
           retention-days: 3
+
+  resource-conformance:
+    name: Signed transitive Java resource bytes streams and clock longs
+    needs: compiler-component
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: 3.13.5
+    - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      with:
+        distribution: temurin
+        java-version: 25.0.4+101.0.LTS
+    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      with:
+        version: 1.254.0
+    - name: Install only the pinned ordinary Java component compiler
+      shell: bash
+      run: "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip\
+        \ \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\n\
+        unzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180\
+        \ \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\n\
+        echo \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\
+        \ -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n"
+    - name: Read only this run's verified normal native products
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: java-scratch-prepared-${{ github.sha }}
+        path: ${{ runner.temp }}/java-scratch-prepared
+    - name: Install the same namespace prerequisite on this separate child host
+      run: 'sudo apt-get update
+
+        sudo apt-get install --yes bubblewrap
+
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+        '
+    - name: Check exact data capture clock parsing and unchanged normal programme
+      run: python3 -B -m unittest tools.tests.test_java_resource_conformance -v
+    - name: Compile one fresh resource greeting offline and require original29 plus ten calls
+      run: python3 tools/qualify_java_resources.py --native-qualification "$RUNNER_TEMP/java-scratch-prepared" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+        --output "$RUNNER_TEMP/java-resource-conformance"
+    - name: Retain public source resource provenance actual results and cleanup
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: java-resource-conformance-${{ github.sha }}
+        path: '${{ runner.temp }}/java-resource-conformance/qualified.json
+
+          ${{ runner.temp }}/java-resource-conformance/FAILED.json
+
+          ${{ runner.temp }}/java-resource-conformance/logs/**
+
+          ${{ runner.temp }}/java-resource-conformance/build/*.json
+
+          ${{ runner.temp }}/java-resource-conformance/build/component.wasm
+
+          ${{ runner.temp }}/java-resource-conformance/build/compiler-logs/**
+
+          ${{ runner.temp }}/java-resource-conformance/build/logs/**
+
+          ${{ runner.temp }}/java-resource-conformance/compiler/compiler-cache-selection.json
+
+          ${{ runner.temp }}/java-resource-conformance/node/workflow.json
+
+          ${{ runner.temp }}/java-resource-conformance/node/FAILED.json
+
+          ${{ runner.temp }}/java-resource-conformance/node/controls/*.json'
+        if-no-files-found: warn
+        retention-days: 3
