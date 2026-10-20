@@ -3,6 +3,14 @@
 Declare immutable files in `capsule-resources.json`. The six maintained builders
 use the same exact-byte package assembler. It reads captured project files and
 selected dependency resources; it never reads a new host path during assembly.
+Application declarations are validated at source capture, before language
+resolution, contracts tools or compiler execution. The C builder performs the
+same preflight immediately after its separate source capture. Missing bytes,
+unsafe paths, collisions and count/aggregate exhaustion retain their distinct
+static categories. Dependency-owned additions are still checked after their
+reviewed closure is available, and full package/member verification still runs
+before writing resource layers. Source capture may impose stricter file limits
+than the resource profile's upper bounds.
 
 ```json
 {
