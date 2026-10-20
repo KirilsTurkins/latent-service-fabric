@@ -14,6 +14,7 @@ pub enum ReleaseCommand {
     Get(PublicationArgs),
     List(ServicePageArgs),
     Lifecycle(PublicationArgs),
+    Prepare(super::release::PrepareReleaseArgs),
     Operation(OperationIdArgs),
     PublishPackage(super::release::PublishPackageArgs),
     Revoke(super::release::ChangeReleaseArgs),

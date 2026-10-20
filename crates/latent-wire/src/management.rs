@@ -45,9 +45,10 @@ pub use latent_rpc::control::v1 as proto;
 pub use limits::ManagementLimits;
 pub use policies::PolicyResponseService;
 pub use release::{
-    release_descriptor_from_proto, release_descriptor_to_proto, MAX_WEB_MUTATION_WAIT_MILLIS,
-    MAX_WEB_PREPARATION_WAIT_MILLIS, WEB_EVIDENCE_RPC_PATH, WEB_PREPARATION_RPC_PATH,
-    WEB_PUBLICATION_RPC_PATH,
+    release_descriptor_from_proto, release_descriptor_to_proto,
+    MAX_RELEASE_PREPARATION_WAIT_MILLIS, MAX_WEB_MUTATION_WAIT_MILLIS,
+    MAX_WEB_PREPARATION_WAIT_MILLIS, RELEASE_PREPARATION_RPC_PATH, WEB_EVIDENCE_RPC_PATH,
+    WEB_PREPARATION_RPC_PATH, WEB_PUBLICATION_RPC_PATH,
 };
 pub use resource::parse_inspection_resource;
 pub use rollouts::RolloutResponseService;

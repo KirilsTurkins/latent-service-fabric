@@ -251,6 +251,7 @@ fn name(command: &Command) -> &'static str {
             args::rollout::RolloutCommand::Promote(_) => "rollout promote",
             args::rollout::RolloutCommand::Rollback(_) => "rollout rollback",
         },
+        Command::Release(R::Prepare(_)) => "release prepare",
         Command::Release(R::Lifecycle(_)) => "release lifecycle",
         Command::Release(R::Operation(_)) => "release operation",
         Command::Release(R::PublishPackage(_)) => "release publish-package",
@@ -280,6 +281,22 @@ fn name(command: &Command) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exact_release_preparation_command_keeps_its_public_result_name() {
+        let publication = format!("publication:sha256:{}", "a".repeat(64));
+        let cli = Cli::try_parse_from([
+            "latent",
+            "release",
+            "prepare",
+            "--publication",
+            &publication,
+            "--lifecycle-generation",
+            "1",
+        ])
+        .unwrap();
+        assert_eq!(name(&cli.command), "release prepare");
+    }
 
     #[test]
     fn completions_bypass_the_entire_ordinary_execution_boundary() {

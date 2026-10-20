@@ -7,6 +7,9 @@
     "FrozenNativeReader.test_manual_producer_is_exactly_selected_without_relaxing_push_or_identity",
     "FrozenNativeReader.test_moving_source_duplicate_stages_and_unbounded_pins_are_refused",
     "FrozenNativeReader.test_only_fixed_regular_members_are_materialized_and_rechecked",
+    "FrozenNativeReader.test_protocol_selection_rejects_non_boolean_configuration",
+    "FrozenNativeReader.test_protocol_tree_absence_symlink_escape_and_object_tamper_are_refused",
+    "FrozenNativeReader.test_protocol_tree_is_explicit_additive_and_preserves_historical_materials",
     "FrozenNativeReader.test_unknown_or_non_string_producer_event_is_refused_at_configuration"
   ],
   "guards": {
@@ -18,7 +21,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     },
@@ -30,7 +33,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     },
@@ -42,7 +45,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     },
@@ -54,7 +57,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     },
@@ -66,7 +69,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     },
@@ -78,7 +81,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     },
@@ -90,7 +93,43 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_protocol_selection_rejects_non_boolean_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_protocol_tree_absence_symlink_escape_and_object_tamper_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_protocol_tree_is_explicit_additive_and_preserves_historical_materials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     },
@@ -102,13 +141,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
-        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+        "class:setup-sha256:591ea7c88ba04b4c1bff4bd1f22ae0c9a20967acb627027ba0ac0278a9b2c323"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_sdk_native_products_reader.py",
-  "reviewReason": "Bind exact manually dispatched SDK producer only through an explicit closed event selector; preserve push default and every original source/run/job/branch/workflow/artifact bound.",
+  "reviewReason": "Explicit class fixture review: add one pure mocked-Git helper and three tests; all eight prior test/setUp ASTs, decorators, bases and skip sites unchanged, only class setup digest includes the new helper.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

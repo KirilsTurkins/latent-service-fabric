@@ -23,7 +23,8 @@ pub(in crate::management) async fn execute(
     session: &Session,
 ) -> Result<Outcome, Failure> {
     match operation {
-        Operation::GetReleaseLifecycle(_)
+        Operation::PrepareRelease(_)
+        | Operation::GetReleaseLifecycle(_)
         | Operation::LookupReleaseReceipt(_)
         | Operation::ChangeReleaseLifecycle(_)
         | Operation::RenewReleaseEvidence(_)
