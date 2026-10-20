@@ -3,7 +3,9 @@
     "GoNodeStop.test_barrier_requires_actual_live_store_and_host_completed_body_timers_not_just_a_wait",
     "GoNodeStop.test_component_build_failure_cannot_run_a_node_or_write_successful_qualification",
     "GoNodeStop.test_configuration_updates_the_actual_already_created_owned_file_with_original_limits",
+    "GoNodeStop.test_exact_java_helper_extension_is_unused_and_does_not_relabel_retained_products",
     "GoNodeStop.test_exact_successful_producer_artifact_cannot_be_substituted_with_other_head_job_or_failure",
+    "GoNodeStop.test_exact_test_only_inventory_is_distinct_from_current_native_execution",
     "GoNodeStop.test_failed_tuple_integrity_never_reaches_a_new_component_or_signer",
     "GoNodeStop.test_fixture_uses_original_greeting_with_explicit_v5_and_unchanged_sdk_wit_and_budgets",
     "GoNodeStop.test_fresh_after_restart_binds_actual_resolved_revision_and_original_consumption",
@@ -56,7 +58,31 @@
       ],
       "skipSites": []
     },
+    "GoNodeStop.test_exact_java_helper_extension_is_unused_and_does_not_relabel_retained_products": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "GoNodeStop.test_exact_successful_producer_artifact_cannot_be_substituted_with_other_head_job_or_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_exact_test_only_inventory_is_distinct_from_current_native_execution": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -239,6 +265,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_node_stop.py",
-  "reviewReason": "Actual6a76 first fresh signed call PASS then strict global audit-loss oracle FAIL (157drops); source try_lock proves optional loss can occur with queue space. Require every original named timer/start/next/close positive witness, exact scope/unique fully paged query, plus new actual tenant/node ProviderCall ownership and live Store/caller. Retain raw loss; never infer absence, exclusivity or full stream coverage. Same queue64/guest/cell/request/terminal limits. Two old-source counterexamples/current29 focused PASS; complete live-stop execution pending. Explicit module fixture review: add provider_usage success fixture and barrier forwarding helper for new required provider owner argument. All16 old cases retained; bases/decorators/skip sites/class guards identical; no environment skip added.",
+  "reviewReason": "Actual d277/run39386430188 source-preflight refusal before compiler/node: authenticate exact Java and root-reviewed resource default-off unused workflow helpers and original/current full3299-file inventories whose only native delta is the uncompiled startup integration test runtime-stack assertions. Retain original94d normal27/native5 attribution; receipt explicitly reports declared inventory inequality and no native rebuild. Unknown helper/inventory/preimage/used-source drift refused; generic prepared remains current and strict. Original18 tests byte-AST-equal, two new controls, all31 focused PASS. No guest/native run claimed.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -71,10 +71,15 @@ The dedicated lane restores only the exact public normal-products artifact
 metadata, digest, actual baseline/export steps, native5 tuple and all original
 companions are authenticated before any restored binary executes. Native,
 Go SDK, WIT, schemas, authoring guide and used compiler/helper inputs must still
-match. The sole allowed metadata difference is the exact reviewed .NET-only
-extension of the unused normal-workflow helper; it is pinned by both whole-file
-hashes, not a general source exemption. The new programme never calls that
-helper. The ordinary prepared-products verifier still requires its complete
+match. The enumerated metadata differences are the exact reviewed .NET-only
+and Java/resource default-off extensions of the unused normal-workflow helper, plus the single
+native integration test's corrected runtime-stack topology assertions. Both
+whole native-source inventories and the test preimages are pinned; any other
+native inventory is refused. The receipt explicitly distinguishes this changed
+test inventory from byte-equal production source, and never claims a native
+rebuild. Helper changes are pinned by whole-file hashes, not a general source
+exemption. The new programme never calls that helper. The ordinary
+prepared-products verifier still requires its complete
 current source by default. Original27 remains attributed to its real source,
 and the lane builds one new fixture component without another native build or
 repeating that already-passed baseline.
