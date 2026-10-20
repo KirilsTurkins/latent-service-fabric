@@ -242,6 +242,73 @@ fn scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners(
 }
 
 #[test]
+fn activation_aliases_publish_original_limits_to_two_tenants_and_reap() {
+    let source = TempDir::new().unwrap();
+    let path = source.path().join("node.json");
+    let document = serde_json::json!({"formatVersion":1,
+        "dataDirectory":source.path().join("data"), "nodeId":"runtime-alias-startup", "bind":"127.0.0.1:0",
+        "credentials":[{"token":"LSF-PUBLIC-RUNTIME-ALIAS-TEST-ONLY", "subject":"operator",
+            "tenant":"examples", "role":"operator"}],
+        "budgetProfile":{"mode":"phase3","maximumOutboundRequests":0},
+        "audit":{"mode":"durable"}, "capabilityPolicies":{"formatVersion":1},
+        "providers":{"formatVersion":1,
+            "activationRuntime":{"identity":{"id":"activation","tenant":"examples",
+                "service":"runtime-host","epoch":7},"limits":{"tasks":16,"executors":2,
+                "queuedWork":16,"waits":8,"timers":8,"results":8,"nativeOwners":64}},
+            "bindings":[{"name":"foreign-runtime","tenant":"foreign","consumerService":"guest",
+                "providerService":"foreign-runtime-host","contract":"latent:runtime/activation@0.1.0",
+                "providerBinding":"foreign-runtime-installed"}],
+            "scalarAliases":[{"source":"activation","identity":{"id":"foreign-runtime",
+                "tenant":"foreign","service":"foreign-runtime-host","epoch":7}}]}});
+    std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let control = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(4)
+        .enable_all()
+        .build()
+        .unwrap();
+    let invocation = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(1)
+        .enable_all()
+        .build()
+        .unwrap();
+    for ordinal in 0..2 {
+        let mut settings = NodeConfig::load(&path).unwrap().derive().unwrap();
+        settings.data_directory = source.path().join(format!("runtime-alias-{ordinal}"));
+        let node = invocation
+            .block_on(StandaloneNode::start(
+                settings,
+                control.handle().clone(),
+                RuntimeThreads::default(),
+            ))
+            .unwrap();
+        let descriptors = serde_json::to_value(node.configured_providers()).unwrap();
+        let rows = descriptors.as_array().unwrap();
+        assert_eq!(rows.len(), 2);
+        let original = rows.iter().find(|row| row["tenant"] == "examples").unwrap();
+        let alias = rows.iter().find(|row| row["tenant"] == "foreign").unwrap();
+        for key in [
+            "capability",
+            "profile",
+            "configurationDigest",
+            "configurationEpoch",
+        ] {
+            assert_eq!(alias[key], original[key]);
+        }
+        assert_eq!(alias["capability"], "latent:runtime/activation@0.1.0");
+        assert_eq!(alias["profile"], "activation-owned-v1");
+        assert_eq!(alias["configurationEpoch"], "7");
+        let report = invocation.block_on(node.shutdown()).unwrap();
+        assert!(report.clean);
+        assert!(report.providers.unwrap().clean);
+    }
+    control.shutdown_timeout(Duration::from_secs(5));
+    invocation.shutdown_timeout(Duration::from_secs(5));
+}
+
+#[test]
 fn protected_http_credential_bootstrap_starts_and_reaps_thirty_two_times() {
     let source = TempDir::new().unwrap();
     let credentials = source.path().join("credentials");

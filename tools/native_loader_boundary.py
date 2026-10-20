@@ -44,6 +44,11 @@ LOADER = f"{CRATE}/src/aot/loader.rs"
 # requires a new review. The engine version is checked above both exceptions.
 FIXED_RESULT = f"{CRATE}/src/host/runtime/fixed_result.rs"
 FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b423626f3f"
+# The random-byte result forwards only Result<Vec<u8>, RandomError> through the
+# same pinned generated ABI. The exact output buffer is zeroized/freed before
+# its affine ProviderCall drops. No host pointer, resource or raw access is added.
+RANDOM_RESULT = f"{CRATE}/src/host/random/completion.rs"
+RANDOM_RESULT_SHA256 = "b56cdbeec6196b7ec45c83b64229a8a31ed52abd76901717ff5ab843f00323cf"
 # This third exception only allocates and unmaps guarded root stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
@@ -124,6 +129,11 @@ def validate(root: Path) -> list[str]:
         elif relative == FIXED_RESULT:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != FIXED_RESULT_SHA256:
                 errors.append("audited fixed-result lowering changed; review its pinned ABI and original physical owner")
+            else:
+                source = ""
+        elif relative == RANDOM_RESULT:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != RANDOM_RESULT_SHA256:
+                errors.append("audited random-result lowering changed; review pinned ABI, zeroization and physical output ownership")
             else:
                 source = ""
         elif relative == NATIVE_STACK:

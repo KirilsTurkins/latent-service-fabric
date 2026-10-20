@@ -557,7 +557,10 @@ fn phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes(
     assert_eq!(manifest["id"], profile.id);
     assert_eq!(
         manifest["digest"],
-        format!("sha256:{:x}", identity.finalize())
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(identity.finalize())
+        )
     );
     let entries = manifest["interfaces"].as_array().unwrap();
     assert_eq!(entries.len(), profile.interfaces().len());
@@ -567,7 +570,10 @@ fn phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes(
         assert_eq!(entry["asynchronous"], spec.asynchronous);
         assert_eq!(
             entry["sourceSha256"],
-            format!("sha256:{:x}", Sha256::digest(spec.wit.as_bytes()))
+            format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(spec.wit.as_bytes()))
+            )
         );
     }
     let engine = engine();

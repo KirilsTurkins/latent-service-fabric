@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "latent.typescript.published-fetch.observation.v1",
+  "status": "passed",
+  "run": 39379234452,
+  "job": 118484260198,
+  "head": "10bd9cc728cdf2dc91264a6c18bdcc41f683725f",
+  "artifact": 12244698707,
+  "archiveBytes": 9528219,
+  "archiveMembers": 380,
+  "archiveDigest": "sha256:94f68aba3e8932536ebd57cce267d1aeafe823647758f39fb01a2155cc5a8063",
+  "ownerProfile": "typescript-published-client-owners-v1",
+  "limits": {
+    "tasks": 64,
+    "executors": 2,
+    "queuedWork": 64,
+    "waits": 8,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 256
+  },
+  "originalOwnerLimits": {
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 16,
+    "waits": 8,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 64
+  },
+  "variants": [
+    {
+      "privateConsumer": {
+        "identity": "outside-fetch-alpha",
+        "version": "1.0.0",
+        "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+        "outsideOriginalRemoved": true
+      },
+      "source": "sha256:772ebdf593c39af9513502e60086e55f5145d887d365761e39d2fc35564fb4ee",
+      "acceptedLock": "sha256:42b534721ea821485114df0463d559b834f2c528b3590275172b32769fcfcb86",
+      "packages": {
+        "ky": {
+          "version": "2.2.0",
+          "integrity": "sha512-4+B63kyZt+Y8snQiUGydK1vgY9xYQJZEh9K/nIAIEts+gYJzy1EiAw3BbK8xpWRuWUpN70SNCMjqRGTm75xxIA=="
+        },
+        "wretch": {
+          "version": "3.0.9",
+          "integrity": "sha512-RXJQp5aOBfHQaDCLRyFXQooWDBOHrQxVgCH/6OFaFPBKjeUiXMQ3NV1b8qqI7CR+v4meVBWYs242P8n+rWRjzA=="
+        }
+      },
+      "build": {
+        "component": {
+          "sha256": "sha256:6f61372f1aa0463e581eebe0bdc9747a630766f437befcf45d93fe39e6c3e321",
+          "bytes": 12647681
+        },
+        "documents": {
+          "BUILD-COMPLETE.json": {
+            "sha256": "sha256:e33aca6de158897d6e2c60653df86065e848e42da7ca43854a1fa79b9610b1af",
+            "bytes": 2942
+          },
+          "build-observation.json": {
+            "sha256": "sha256:9e0b74035a28c0ecab003d97fded66240dc4e53e2224f86ac38e26d2dd581773",
+            "bytes": 4512
+          },
+          "source-inputs.json": {
+            "sha256": "sha256:772ebdf593c39af9513502e60086e55f5145d887d365761e39d2fc35564fb4ee",
+            "bytes": 15026
+          },
+          "recipe-inputs.json": {
+            "sha256": "sha256:f29f8b6beadc1ecd30f188be81923f7554f62361e62dec61df13c2613da2b5c3",
+            "bytes": 15436
+          },
+          "package-inputs.json": {
+            "sha256": "sha256:ab161cb8a94f95d36c1eeae7cc45dea014e1300cb3d91b678e336f805d2a5ee5",
+            "bytes": 1592
+          },
+          "typescript-runtime-selection.json": {
+            "sha256": "sha256:807877c5836a98b6061cddd7a03e337df4dafa0c4993251a7bfca7afff63c252",
+            "bytes": 15274
+          }
+        }
+      },
+      "execution": {
+        "sha256": "sha256:0ab3a77b5cb9825c6734d04eea026870d781f6e908c9c9f9b2753f1d82a49256",
+        "bytes": 11999
+      },
+      "cases": [
+        "buffered-reader-probe",
+        "buffered-json-probe",
+        "ky-json",
+        "wretch-json",
+        "outside-json",
+        "ky-http404-unsupported",
+        "wretch-http404-error",
+        "ky-fresh"
+      ],
+      "realContacts": 6,
+      "retirementSamples": 10,
+      "cleanNodeAndPeer": true
+    },
+    {
+      "privateConsumer": {
+        "identity": "outside-fetch-delta",
+        "version": "2.4.0",
+        "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+        "outsideOriginalRemoved": true
+      },
+      "source": "sha256:6ac8b66e6efa8568fb313e3a3a143dfa96ea65294e64cde209f8347a71d0c87c",
+      "acceptedLock": "sha256:463d057b7b0f9e5168c1b0eb6165188e840b2234484af2774275cb4faab194c8",
+      "packages": {
+        "ky": {
+          "version": "2.2.0",
+          "integrity": "sha512-4+B63kyZt+Y8snQiUGydK1vgY9xYQJZEh9K/nIAIEts+gYJzy1EiAw3BbK8xpWRuWUpN70SNCMjqRGTm75xxIA=="
+        },
+        "wretch": {
+          "version": "3.0.9",
+          "integrity": "sha512-RXJQp5aOBfHQaDCLRyFXQooWDBOHrQxVgCH/6OFaFPBKjeUiXMQ3NV1b8qqI7CR+v4meVBWYs242P8n+rWRjzA=="
+        }
+      },
+      "build": {
+        "component": {
+          "sha256": "sha256:ee1c6521efedf622f684918d10c13fe13d1a20743250fe4157c9a6185d15d326",
+          "bytes": 12647675
+        },
+        "documents": {
+          "BUILD-COMPLETE.json": {
+            "sha256": "sha256:11903e09d694decca9c9627a31053e89bfd0cd0953fd23a13a9d48c2802449df",
+            "bytes": 2942
+          },
+          "build-observation.json": {
+            "sha256": "sha256:f23ee5f7b14effd6d752193e76d7bd47152dab030507bf7fa998e7509e2c9e75",
+            "bytes": 4512
+          },
+          "source-inputs.json": {
+            "sha256": "sha256:6ac8b66e6efa8568fb313e3a3a143dfa96ea65294e64cde209f8347a71d0c87c",
+            "bytes": 15026
+          },
+          "recipe-inputs.json": {
+            "sha256": "sha256:f29f8b6beadc1ecd30f188be81923f7554f62361e62dec61df13c2613da2b5c3",
+            "bytes": 15436
+          },
+          "package-inputs.json": {
+            "sha256": "sha256:29e8b1c5428f45fb6a9e6b6b78084848566c37fe2b9ba2b8ad3eb7442efbefc1",
+            "bytes": 1592
+          },
+          "typescript-runtime-selection.json": {
+            "sha256": "sha256:807877c5836a98b6061cddd7a03e337df4dafa0c4993251a7bfca7afff63c252",
+            "bytes": 15274
+          }
+        }
+      },
+      "execution": {
+        "sha256": "sha256:0ec518ce3ce53f585985a27165e6ed09addcb91eda1dce489186af085181000d",
+        "bytes": 11999
+      },
+      "cases": [
+        "buffered-reader-probe",
+        "buffered-json-probe",
+        "ky-json",
+        "wretch-json",
+        "outside-json",
+        "ky-http404-unsupported",
+        "wretch-http404-error",
+        "ky-fresh"
+      ],
+      "realContacts": 6,
+      "retirementSamples": 10,
+      "cleanNodeAndPeer": true
+    }
+  ],
+  "historicalNativeSource": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "fullTicketQualification": false,
+  "defaultClientHttpErrorQualified": false,
+  "statusText": "unsupported-by-original-typed-response",
+  "earlierFailuresReclassified": false
+}

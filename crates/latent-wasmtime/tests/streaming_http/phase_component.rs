@@ -24,41 +24,73 @@ const OPS: [&str; 8] = [
 pub fn bytes(url: &str) -> Vec<u8> {
     let mut component = Component::new();
     let spec = latent_core::PHASE3_HOST_ABI_V7.interface(CAP).unwrap();
+    let original = "latent:http/streaming@0.3.0";
+    let resources = ["upload", "body", "chunk"];
+    let owner_types = [
+        "method",
+        "header",
+        "request",
+        "upload",
+        "body",
+        "chunk",
+        "response",
+        "http-error",
+    ];
+    let original_wit = latent_core::PHASE3_HOST_ABI_V3
+        .interface(original)
+        .unwrap()
+        .wit;
+    let owner = host::interface_types(original_wit, original);
+    let phase_type = u32::try_from(owner_types.len() + 1).unwrap();
+    let run_type = phase_type + 1;
+    let phase_resources = run_type + 1;
     let mut types = ComponentTypeSection::new();
-    types.instance(&host::interface_with_dependencies(
-        &[
-            (
-                "old-http.wit",
-                latent_core::PHASE3_HOST_ABI_V3
-                    .interface("latent:http/streaming@0.3.0")
-                    .unwrap()
-                    .wit,
-            ),
-            ("phase-http.wit", spec.wit),
-        ],
+    types.instance(&owner); // type 0: complete original named types, no operations.
+    component.section(&types);
+    let mut imports = ComponentImportSection::new();
+    imports.import(original, ComponentTypeRef::Instance(0));
+    component.section(&imports);
+    let mut aliases = ComponentAliasSection::new();
+    for name in owner_types {
+        aliases.alias(Alias::InstanceExport {
+            instance: 0,
+            kind: ComponentExportKind::Type,
+            name,
+        });
+    }
+    component.section(&aliases); // actual original named types 1..=8.
+    let owner_aliases: Vec<_> = owner_types
+        .into_iter()
+        .enumerate()
+        .map(|(index, name)| (original, name, u32::try_from(index + 1).unwrap()))
+        .collect();
+    let mut types = ComponentTypeSection::new();
+    types.instance(&host::interface_with_type_aliases(
+        &[("old-http.wit", original_wit), ("phase-http.wit", spec.wit)],
         spec.interface,
         None,
-    ));
+        &owner_aliases,
+    )); // selected phase interface, sharing all original named type identities.
     types
         .function()
         .async_(true)
         .params([("which", PrimitiveValType::U32)])
-        .result(Some(PrimitiveValType::U32.into()));
+        .result(Some(PrimitiveValType::U32.into())); // type immediately after the selected phase interface.
     component.section(&types);
     let mut imports = ComponentImportSection::new();
-    imports.import(CAP, ComponentTypeRef::Instance(0));
+    imports.import(CAP, ComponentTypeRef::Instance(phase_type));
     component.section(&imports);
     let mut aliases = ComponentAliasSection::new();
     for name in OPS {
         aliases.alias(Alias::InstanceExport {
-            instance: 0,
+            instance: 1,
             kind: ComponentExportKind::Func,
             name,
         });
     }
-    for name in ["upload", "body", "chunk"] {
+    for name in resources {
         aliases.alias(Alias::InstanceExport {
-            instance: 0,
+            instance: 1,
             kind: ComponentExportKind::Type,
             name,
         });
@@ -91,7 +123,7 @@ pub fn bytes(url: &str) -> Vec<u8> {
             ],
         );
     }
-    for resource in 2..5 {
+    for resource in phase_resources..phase_resources + 3 {
         canonical.resource_drop(resource);
     }
     canonical.waitable_set_new();
@@ -133,15 +165,23 @@ pub fn bytes(url: &str) -> Vec<u8> {
     });
     component.section(&aliases);
     let mut canonical = CanonicalFunctionSection::new();
-    canonical.lift(17, 1, []);
+    canonical.lift(17, run_type, []);
     component.section(&canonical);
     let mut instances = ComponentInstanceSection::new();
     instances.export_items([("run", ComponentExportKind::Func, 8)]);
     component.section(&instances);
     let mut exports = ComponentExportSection::new();
-    exports.export(CONTRACT, ComponentExportKind::Instance, 1, None);
+    exports.export(CONTRACT, ComponentExportKind::Instance, 2, None);
     component.section(&exports);
-    component.finish()
+    let bytes = component.finish();
+    // Test-owned bytes must be independently valid before the production
+    // preflight intentionally converts parser details to a closed error code.
+    wasmparser::Validator::new_with_features(
+        wasmparser::WasmFeatures::default() | wasmparser::WasmFeatures::CM_MORE_ASYNC_BUILTINS,
+    )
+    .validate_all(&bytes)
+    .unwrap();
+    bytes
 }
 fn memory_type() -> MemoryType {
     MemoryType {

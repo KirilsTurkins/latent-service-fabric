@@ -1,0 +1,104 @@
+name: SDK current native products
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/sdk-current-native-products-20261020']
+permissions:
+  contents: read
+concurrency:
+  group: sdk-native-products-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  products:
+    name: Build and retain five source-bound native products
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install the existing pinned Python recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Build the normal managed-guest host profile and freeze exact products
+        run: |
+          python3 -B - <<'PY'
+          import json, os, shutil, tomllib
+          from pathlib import Path
+          from tools.build_observation import build_environment
+          from tools.phase2_operator_process import require
+          from tools.phase3_resource_identity import file_identity, source_identity
+          from tools.rust_capsule_build import Commands
+          from tools.rust_capsule_project import fresh, write_json
+          root=Path.cwd();output=fresh(Path(os.environ['RUNNER_TEMP'])/'sdk-native-products')
+          pins=tomllib.loads((root/'rust-toolchain.toml').read_text())
+          require(pins['toolchain']['channel']=='1.97.1','native-products-original-rust-pin')
+          selected=('.github/workflows/sdk-native-products.yml','.cargo/managed-guest.toml',
+              'tools/qualify_rust_capsules.py','tools/toolchain.toml','tools/rust_capsule_build.py',
+              'tools/build_observation.py','tools/build_process.py','tools/build_process_linux.py')
+          before=source_identity(root);materials={p:file_identity(root/p) for p in selected}
+          write_json(output/'source-inputs.json',{'native':before,'materials':materials})
+          target=Path(os.environ.get('CARGO_TARGET_DIR',root/'target')).resolve()
+          environment=build_environment(output)
+          environment.update(CARGO_TARGET_DIR=str(target),RUSTUP_TOOLCHAIN='1.97.1',CARGO_INCREMENTAL='0',
+              CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0',
+              CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+              CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+          commands=Commands(root,output,environment,deadline_seconds=1320,command_seconds=1200)
+          compiler=commands.run('rust-version','rustc','--version').decode().strip()
+          require(compiler.startswith('rustc 1.97.1 ('),'native-products-rust-version')
+          commands.run('normal-host-build','cargo','--config',root/'.cargo/managed-guest.toml',
+              'build','--locked','-p','latent','-p','latentd','--bins','-p','latent-packaging',
+              '--example','package','--example','capsule_contracts','-p','latent-policy','--example','capsule_authoring')
+          commands.run('closed-http-refusal-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-capabilities','--lib','broker::http::refusal::tests::',
+              '--','--test-threads=1')
+          commands.run('neutral-resource-signing-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-policy','--example','capsule_authoring',
+              'authoring::resource_neutral::tests::','--','--test-threads=1')
+          require(before==source_identity(root) and materials=={p:file_identity(root/p) for p in selected},
+              'native-products-source-changed')
+          products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)
+          for name in ('latent','latentd','examples/package','examples/capsule_contracts','examples/capsule_authoring'):
+              source=target/'debug'/name;identity=file_identity(source,512*1024**2)
+              destination=owned/name.replace('/','-');shutil.copyfile(source,destination);destination.chmod(0o700)
+              require(file_identity(source,512*1024**2)==identity==file_identity(destination,512*1024**2),
+                  'native-products-capture-changed')
+              products[name]=identity
+          write_json(output/'native-products.json',{'schemaVersion':'latent.sdk.native-products.v1',
+              'status':'built','sourceRevision':os.environ['GITHUB_SHA'],'source':before,'materials':materials,
+              'compiler':compiler,'products':products,'commands':commands.records,
+              'profile':'normal-managed-guest-default-features','signedQualification':False,
+              'guestComponentsCompiled':False,'historicalReceiptRewritten':False})
+          PY
+      - name: Retain source-bound products and bounded build failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sdk-native-products-${{ github.sha }}
+          path: ${{ runner.temp }}/sdk-native-products/
+          if-no-files-found: warn
+          retention-days: 7

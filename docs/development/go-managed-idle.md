@@ -61,7 +61,15 @@ terminal path must pass original ledger finalization and physical backend
 idle checks. Earlier Go profiles keep all their existing gates and limits.
 
 Source and selection tests do not establish actual component execution. The
-new signed campaign remains pending until its owning workflow passes. This
+original managed-v5 signed campaign passed job118157357263 on its retained
+source/native tuple. Later actual campaigns independently passed ordinary
+[synchronization33](go-synchronization.md),
+[cross-tenant admission12](go-runtime-admission.md),
+[queued-owner34 observations/20guests](go-runtime-queued-ownership.md) and
+[timer43/native17](go-managed-timers.md), each with its own source and original
+limits. These results do not relabel earlier compiled/not-run receipts or
+historical failed guests. The [real live-node-stop](go-node-stop.md) campaign
+remains pending and is not replaced by those earlier idle-node shutdowns. This
 slice does not close [#736](https://github.com/KirilsTurkins/latent-service-fabric/issues/736)
 or [#742](https://github.com/KirilsTurkins/latent-service-fabric/issues/742):
 cross-language lifecycle coverage, complete host stack/TLS costs and the full

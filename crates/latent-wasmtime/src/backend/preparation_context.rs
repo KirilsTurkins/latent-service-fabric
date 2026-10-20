@@ -165,7 +165,9 @@ impl PreparationContext {
                 )
             })?;
         }
-        if let Some(invoker) = self.streaming_http() {
+        let original_streaming = self.streaming_http();
+        let original_streaming_installed = original_streaming.is_some();
+        if let Some(invoker) = original_streaming {
             crate::host::streaming_http::install(&mut linker, invoker).map_err(|_| {
                 platform_error(
                     PlatformErrorCode::Internal,
@@ -175,6 +177,15 @@ impl PreparationContext {
             })?;
         }
         if let Some(invoker) = self.phase_http() {
+            if !original_streaming_installed {
+                crate::host::streaming_http::install_resource_owner(&mut linker).map_err(|_| {
+                    platform_error(
+                        PlatformErrorCode::Internal,
+                        "failed to bind HTTP phase resource owner",
+                        false,
+                    )
+                })?;
+            }
             crate::host::streaming_http::phases::install(&mut linker, invoker).map_err(|_| {
                 platform_error(
                     PlatformErrorCode::Internal,

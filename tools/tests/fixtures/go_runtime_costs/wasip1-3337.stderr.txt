@@ -1,0 +1,401 @@
+# lsf-cost-stack-proof
+./main.go:6:6: cannot inline costRecursive: marked go:noinline
+./main.go:22:6: can inline main with cost 0 as: func() {  }
+./main.go:6:37: ready does not escape
+./main.go:6:60: release does not escape
+main.costRecursive STEXT size=16 align=0x0 args=0x28 locals=0x4028 funcid=0x0
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	TEXT	main.costRecursive(SB), ABIInternal, $16424-40
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Loop
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Get	PC_B
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	BrTable
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	End
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Get	SP
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Get	g
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32WrapI64
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Load	$16
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Const	$16296
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Add
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32LeU
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	If
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Get	SP
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Const	$8
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Sub
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Set	SP
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Get	SP
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I64Const	$main.costRecursive(SB)
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I64Store	$0
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Const	$0
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Call	runtime.morestack_noctxt(SB)
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	BrIf	$16
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	End
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Get	SP
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Const	$16424
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	I32Sub
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	Set	SP
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	FUNCDATA	$0, gclocals·8G4o6cA7li8hnlBdcXgyAQ==(SB)
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	FUNCDATA	$1, gclocals·yr4yLQlPnRVKirpHM7hJfw==(SB)
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:6)	FUNCDATA	$5, main.costRecursive.arginfo1(SB)
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	Get	SP
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	I64ExtendI32U
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	I64Const	$40
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	I64Add
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	I32WrapI64
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	I32Const	$0
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	I32Const	$8192
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:7)	MemoryFill
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Get	SP
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Load	$16440
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Set	R0
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Const	$0
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Set	R1
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I32Const	$3
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Set	PC_B
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Br	$14
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	End
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Get	SP
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64ExtendI32U
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Const	$40
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Add
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Get	R1
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Add
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I32WrapI64
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Get	R1
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Get	R0
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Xor
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Store8	$0
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Get	R1
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Const	$1
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Add
+	0x0002 00002 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Set	R1
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	End
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Get	R1
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64Const	$8192
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I64LtS
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	If
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	I32Const	$2
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Set	PC_B
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	Br	$13
+	0x0003 00003 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	End
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:8)	End
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	Get	SP
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	I64Load	$16432
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	I64Eqz
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	I32Eqz
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	If
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	I32Const	$9
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	Set	PC_B
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	Br	$12
+	0x0004 00004 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	End
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:10)	End
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	PCDATA	$1, $0
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	Get	SP
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	I32Const	$8
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	I32Sub
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	Set	SP
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	Get	SP
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	I64Const	$main.costRecursive+6(SB)
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	I64Store	$0
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	I32Const	$0
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	Call	runtime.GC(SB)
+	0x0005 00005 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	BrIf	$11
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:11)	End
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	Get	SP
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	Get	SP
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Load	$16448
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Store	$0
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	Get	SP
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64ExtendI32U
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Const	$8
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Add
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I32WrapI64
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Const	$main..stmp_0(SB)
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Store	$0
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	PCDATA	$1, $1
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	Get	SP
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I32Const	$8
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I32Sub
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	Set	SP
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	Get	SP
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Const	$main.costRecursive+7(SB)
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I64Store	$0
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	I32Const	$0
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	Call	runtime.chansend1(SB)
+	0x0006 00006 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	BrIf	$10
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:12)	End
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Get	SP
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Get	SP
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Load	$16456
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Store	$0
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Get	SP
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64ExtendI32U
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Const	$8
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Add
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I32WrapI64
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Const	$0
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Store	$0
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	PCDATA	$1, $2
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Get	SP
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I32Const	$8
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I32Sub
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Set	SP
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Get	SP
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Const	$main.costRecursive+8(SB)
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Store	$0
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I32Const	$0
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Call	runtime.chanrecv1(SB)
+	0x0007 00007 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	BrIf	$9
+	0x0008 00008 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	End
+	0x0008 00008 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I64Const	$0
+	0x0008 00008 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Set	R0
+	0x0008 00008 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	I32Const	$11
+	0x0008 00008 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Set	PC_B
+	0x0008 00008 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	Br	$7
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:13)	End
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Load	$16432
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Const	$-1
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Add
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Store	$0
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64ExtendI32U
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Const	$8
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Add
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I32WrapI64
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	R0
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Const	$1
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Add
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Store	$0
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64ExtendI32U
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Const	$16
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Add
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I32WrapI64
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Load	$16448
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Store	$0
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64ExtendI32U
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Const	$24
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Add
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I32WrapI64
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Load	$16456
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Store	$0
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I32Const	$8
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I32Sub
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Set	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Const	$main.costRecursive+10(SB)
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Store	$0
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I32Const	$0
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Call	main.costRecursive(SB)
+	0x0009 00009 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	BrIf	$7
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	End
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Get	SP
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64ExtendI32U
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Const	$32
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Add
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I32WrapI64
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	I64Load	$0
+	0x000a 00010 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	Set	R0
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:15)	End
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	SP
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64ExtendI32U
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Const	$8232
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Add
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I32WrapI64
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	SP
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64ExtendI32U
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Const	$40
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Add
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I32WrapI64
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I32Const	$8192
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	MemoryCopy
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	SP
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64ExtendI32U
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Const	$8232
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Add
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Set	R1
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Const	$0
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Set	R2
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I32Const	$13
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Set	PC_B
+	0x000b 00011 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Br	$4
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	End
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	R0
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	R1
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I32WrapI64
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Load8U	$0
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Add
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Set	R0
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	R2
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Const	$1
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Add
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Set	R2
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	R1
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Const	$1
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Add
+	0x000c 00012 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Set	R1
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	End
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Get	R2
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64Const	$8192
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I64LtS
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	If
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	I32Const	$12
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Set	PC_B
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	Br	$3
+	0x000d 00013 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	End
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:18)	End
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	Get	SP
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I64ExtendI32U
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I64Const	$16464
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I64Add
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I32WrapI64
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	Get	R0
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I64Store	$0
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	Get	SP
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I32Const	$16424
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I32Add
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	Set	SP
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	Get	SP
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I32Const	$8
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I32Add
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	Set	SP
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I32Const	$0
+	0x000e 00014 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	Return
+	0x000f 00015 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	End
+	0x000f 00015 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	End
+	0x000f 00015 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	UNDEF
+	0x000f 00015 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	End
+	0x000f 00015 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:19)	I32Const	$1
+	0x0000 02 01 7f 03 7e 23 00 21 01 02 40 03 40 02 40 02  ....~#.!..@.@.@.
+	0x0010 40 02 40 02 40 02 40 02 40 02 40 02 40 02 40 02  @.@.@.@.@.@.@.@.
+	0x0020 40 02 40 02 40 02 40 02 40 02 40 20 00 0e 0f 00  @.@.@.@.@.@ ....
+	0x0030 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0b  ................
+	0x0040 20 01 23 02 a7 28 02 10 41 a8 ff 00 6a 4d 04 40   .#..(..A...jM.@
+	0x0050 20 01 41 08 6b 22 01 24 00 20 01 42 37 03 00 41   .A.k".$. .B7..A
+	0x0060 00 10 23 00 21 01 0d 10 0b 20 01 41 a8 80 01 6b  ..#.!.... .A...k
+	0x0070 22 01 24 00 20 01 ad 42 28 7c a7 41 00 41 80 c0  ".$. ..B(|.A.A..
+	0x0080 00 fc 0b 00 20 01 29 03 b8 80 01 21 02 42 00 21  .... .)....!.B.!
+	0x0090 03 41 03 21 00 0c 0e 0b 20 01 ad 42 28 7c 20 03  .A.!.... ..B(| .
+	0x00a0 7c a7 20 03 20 02 85 3c 00 00 20 03 42 01 7c 21  |. . ..<.. .B.|!
+	0x00b0 03 0b 20 03 42 80 c0 00 53 04 40 41 02 21 00 0c  .. .B...S.@A.!..
+	0x00c0 0d 0b 0b 20 01 29 03 b0 80 01 50 45 04 40 41 09  ... .)....PE.@A.
+	0x00d0 21 00 0c 0c 0b 0b 20 01 41 08 6b 22 01 24 00 20  !..... .A.k".$.
+	0x00e0 01 42 37 03 00 41 00 10 23 00 21 01 0d 0b 0b 20  .B7..A..#.!....
+	0x00f0 01 20 01 29 03 c0 80 01 37 03 00 20 01 ad 42 08  . .)....7.. ..B.
+	0x0100 7c a7 42 37 03 00 20 01 41 08 6b 22 01 24 00 20  |.B7.. .A.k".$.
+	0x0110 01 42 37 03 00 41 00 10 23 00 21 01 0d 0a 0b 20  .B7..A..#.!....
+	0x0120 01 20 01 29 03 c8 80 01 37 03 00 20 01 ad 42 08  . .)....7.. ..B.
+	0x0130 7c a7 42 00 37 03 00 20 01 41 08 6b 22 01 24 00  |.B.7.. .A.k".$.
+	0x0140 20 01 42 37 03 00 41 00 10 23 00 21 01 0d 09 0b   .B7..A..#.!....
+	0x0150 42 00 21 02 41 0b 21 00 0c 07 0b 20 01 20 01 29  B.!.A.!.... . .)
+	0x0160 03 b0 80 01 42 7f 7c 37 03 00 20 01 ad 42 08 7c  ....B.|7.. ..B.|
+	0x0170 a7 20 02 42 01 7c 37 03 00 20 01 ad 42 10 7c a7  . .B.|7.. ..B.|.
+	0x0180 20 01 29 03 c0 80 01 37 03 00 20 01 ad 42 18 7c   .)....7.. ..B.|
+	0x0190 a7 20 01 29 03 c8 80 01 37 03 00 20 01 41 08 6b  . .)....7.. .A.k
+	0x01a0 22 01 24 00 20 01 42 37 03 00 41 00 10 23 00 21  ".$. .B7..A..#.!
+	0x01b0 01 0d 07 0b 20 01 ad 42 20 7c a7 29 03 00 21 02  .... ..B |.)..!.
+	0x01c0 0b 20 01 ad 42 a8 c0 00 7c a7 20 01 ad 42 28 7c  . ..B...|. ..B(|
+	0x01d0 a7 41 80 c0 00 fc 0a 00 00 20 01 ad 42 a8 c0 00  .A....... ..B...
+	0x01e0 7c 21 03 42 00 21 04 41 0d 21 00 0c 04 0b 20 02  |!.B.!.A.!.... .
+	0x01f0 20 03 a7 31 00 00 7c 21 02 20 04 42 01 7c 21 04   ..1..|!. .B.|!.
+	0x0200 20 03 42 01 7c 21 03 0b 20 04 42 80 c0 00 53 04   .B.|!.. .B...S.
+	0x0210 40 41 0c 21 00 0c 03 0b 0b 20 01 ad 42 d0 80 01  @A.!..... ..B...
+	0x0220 7c a7 20 02 37 03 00 20 01 41 a8 80 01 6a 22 01  |. .7.. .A...j".
+	0x0230 24 00 20 01 41 08 6a 22 01 24 00 41 00 0f 0b 0b  $. .A.j".$.A....
+	0x0240 00 0b 41 01 0b                                   ..A..
+	rel 92+1 t=R_ADDR main.costRecursive+0
+	rel 98+1 t=R_CALL runtime.morestack_noctxt+0
+	rel 226+1 t=R_ADDR main.costRecursive+6
+	rel 232+1 t=R_CALL runtime.GC+0
+	rel 259+1 t=R_ADDR main..stmp_0+0
+	rel 274+1 t=R_ADDR main.costRecursive+7
+	rel 280+1 t=R_CALL runtime.chansend1+0
+	rel 323+1 t=R_ADDR main.costRecursive+8
+	rel 329+1 t=R_CALL runtime.chanrecv1+0
+	rel 423+1 t=R_ADDR main.costRecursive+10
+	rel 429+1 t=R_CALL main.costRecursive+0
+main.main STEXT size=2 align=0x0 args=0x0 locals=0x0 funcid=0x0
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	TEXT	main.main(SB), ABIInternal, $0-0
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	Block
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	Get	PC_B
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	BrTable
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	End
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	FUNCDATA	$0, gclocals·g5+hNtRBP6YXNjfog7aZjQ==(SB)
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	FUNCDATA	$1, gclocals·g5+hNtRBP6YXNjfog7aZjQ==(SB)
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	Get	SP
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	I32Const	$8
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	I32Add
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	Set	SP
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	I32Const	$0
+	0x0000 00000 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	Return
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	End
+	0x0001 00001 (/home/runner/work/_temp/go-runtime-costs/stack-placement/project/main.go:22)	UNDEF
+	0x0000 01 01 7f 23 00 21 01 02 40 02 40 20 00 0e 01 00  ...#.!..@.@ ....
+	0x0010 01 0b 20 01 41 08 6a 22 01 24 00 41 00 0f 0b 00  .. .A.j".$.A....
+	0x0020 0b                                               .
+go:cuinfo.packagename.main SDWARFCUINFO dupok size=0 align=0x0
+	0x0000 6d 61 69 6e                                      main
+main..inittask SNOPTRDATA size=8 align=0x0
+	0x0000 00 00 00 00 00 00 00 00                          ........
+	rel 0+0 t=R_INITORDER runtime..inittask+0
+main..stmp_0 SRODATA static size=0 align=0x1
+runtime.memequal0·f SRODATA dupok size=8 align=0x0
+	0x0000 00 00 00 00 00 00 00 00                          ........
+	rel 0+8 t=R_ADDR runtime.memequal0+0
+runtime.memequal64·f SRODATA dupok size=8 align=0x0
+	0x0000 00 00 00 00 00 00 00 00                          ........
+	rel 0+8 t=R_ADDR runtime.memequal64+0
+runtime.gcbits.0100000000000000 SRODATA dupok size=8 align=0x8
+	0x0000 01 00 00 00 00 00 00 00                          ........
+type:.namedata.*struct {}- SRODATA dupok size=12 align=0x1
+	0x0000 00 0a 2a 73 74 72 75 63 74 20 7b 7d              ..*struct {}
+type:*struct {} SRODATA dupok size=56 align=0x8
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 69 d6 0f 04 28 08 08 16 00 00 00 00 00 00 00 00  i...(...........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=R_ADDR runtime.memequal64·f+0
+	rel 32+8 t=R_ADDR runtime.gcbits.0100000000000000+0
+	rel 40+4 t=R_ADDROFF type:.namedata.*struct {}-+0
+	rel 48+8 t=R_ADDR type:struct {}+0
+runtime.gcbits. SRODATA dupok size=0 align=0x8
+type:struct {} SRODATA dupok size=80 align=0x8
+	0x0000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0010 56 e1 fb 1a 0a 01 01 19 00 00 00 00 00 00 00 00  V...............
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	rel 24+8 t=R_ADDR runtime.memequal0·f+0
+	rel 32+8 t=R_ADDR runtime.gcbits.+0
+	rel 40+4 t=R_ADDROFF type:.namedata.*struct {}-+0
+	rel 44+4 t=RelocType(-32763) type:*struct {}+0
+	rel 56+8 t=R_ADDR type:struct {}+80
+gclocals·8G4o6cA7li8hnlBdcXgyAQ== SRODATA dupok size=11 align=0x4
+	0x0000 03 00 00 00 04 00 00 00 0c 08 00                 ...........
+gclocals·yr4yLQlPnRVKirpHM7hJfw== SRODATA dupok size=8 align=0x4
+	0x0000 03 00 00 00 00 00 00 00                          ........
+main.costRecursive.arginfo1 SRODATA static dupok size=9 align=0x1
+	0x0000 00 08 08 08 10 08 18 08 ff                       .........
+gclocals·g5+hNtRBP6YXNjfog7aZjQ== SRODATA dupok size=8 align=0x4
+	0x0000 01 00 00 00 00 00 00 00                          ........

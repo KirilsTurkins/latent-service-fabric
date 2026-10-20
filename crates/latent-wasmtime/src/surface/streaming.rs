@@ -74,6 +74,31 @@ pub(crate) fn validate(
     Ok(())
 }
 
+/// A selected phase provider already supplies the original nominal resource
+/// host types. This exception never supplies any legacy callable operation.
+pub(crate) fn phase_type_owner(
+    component: &wasmtime::component::types::Component,
+    name: &str,
+    interface: &ComponentInstance,
+    engine: &Engine,
+    selected: bool,
+    installed: bool,
+) -> bool {
+    use latent_capabilities::broker::streaming_http::{
+        PHASE_TIMING_CAPABILITY, STREAMING_HTTP_CAPABILITY,
+    };
+    selected
+        && installed
+        && name == STREAMING_HTTP_CAPABILITY
+        && component.imports(engine).any(|(name, item)| {
+            name == PHASE_TIMING_CAPABILITY
+                && matches!(item.ty, ComponentItem::ComponentInstance(_))
+        })
+        && interface
+            .exports(engine)
+            .all(|(_, item)| matches!(item.ty, ComponentItem::Type(_) | ComponentItem::Resource(_)))
+}
+
 /// The extension carries the same affine owners, never lookalike resources
 /// with new component identities. When both versions are imported, aliases
 /// must refer to exactly the same original resource types.

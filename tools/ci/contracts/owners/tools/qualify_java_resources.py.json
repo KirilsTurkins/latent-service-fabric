@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_resources.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one bounded Java resource conformance child; preserve all original Java workflow jobs/commands/deadlines and normal29 cases. Exact transitive bytes/stream/clock/trap/fresh controls, original capability and owner fences; no native host rebuild or whole-ticket claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "683a111ded0bb09d1011644570ceb455ce3b6d7dca74b1b3383a438f97e45465"
+}

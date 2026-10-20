@@ -78,7 +78,8 @@ pub fn scenario() {
             assert_eq!(inventory.cache_summary.entries, 0);
             assert!(inventory.cache_entries.is_empty());
             assert!(inventory.topology.available && inventory.topology.complete);
-            assert_eq!(inventory.topology.entries.len(), 23);
+            assert_eq!(inventory.topology.entries.len(), 25);
+            assert_runtime_stack_topology(&inventory.topology.entries);
             assert_catalog_topology(&inventory.topology.entries);
             assert_compiler_topology(&inventory.topology.entries);
             assert_cleanup_topology(&inventory.topology.entries);
@@ -154,5 +155,22 @@ fn assert_cleanup_topology(entries: &[NodeTopologyEntry]) {
             (row.configured_count, row.active_count),
             (configured, Some(active))
         );
+    }
+}
+
+fn assert_runtime_stack_topology(entries: &[NodeTopologyEntry]) {
+    for name in ["invocation-runtime-stack", "control-runtime-stack"] {
+        let mut matching = entries.iter().filter(|row| row.name == name);
+        let row = matching.next().expect("actual runtime stack envelope");
+        assert!(
+            matching.next().is_none(),
+            "duplicate runtime stack row: {name}"
+        );
+        assert_eq!(row.kind, "byte");
+        assert_eq!(row.ownership, ResourceOwnership::NodeFixed);
+        assert!(row.configured_count > 0);
+        assert!(row
+            .active_count
+            .is_some_and(|live| live <= row.configured_count));
     }
 }

@@ -132,7 +132,12 @@ impl ProviderRuntime {
             let mut providers = Vec::with_capacity(14);
             if let Some(installation) = &config.activation_runtime {
                 let registration = scalar::activation_runtime(&broker, installation)?;
-                providers.push(owner.record(&installation.identity, registration.reference()));
+                owner.record_scalar(
+                    config,
+                    &installation.identity,
+                    &registration.reference(),
+                    &mut providers,
+                );
                 owner.registrations.push(registration);
             }
             for (installation, logging) in [(&config.context, false), (&config.log, true)] {

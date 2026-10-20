@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "JavaResourceConformance.test_clock_parser_requires_actual_full_width_wall_and_ordered_bounded_monotonic",
+    "JavaResourceConformance.test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals",
+    "JavaResourceConformance.test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch",
+    "JavaResourceConformance.test_report_requires_original29_data_clock_and_owner_zero_without_count_relaxation",
+    "JavaResourceConformance.test_resource_child_preserves_all_original_jobs_commands_and_deadlines",
+    "JavaResourceConformance.test_selector_is_boolean_java_only_and_cannot_replace_scratch_programme",
+    "JavaResourceConformance.test_ten_calls_require_exact_resources_trap_fresh_and_actual_retirement_after_each",
+    "JavaResourceConformance.test_unknown_outcomes_wrong_bytes_side_effects_or_wrong_trap_cannot_qualify"
+  ],
+  "guards": {
+    "JavaResourceConformance.test_clock_parser_requires_actual_full_width_wall_and_ordered_bounded_monotonic": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceConformance.test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceConformance.test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceConformance.test_report_requires_original29_data_clock_and_owner_zero_without_count_relaxation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceConformance.test_resource_child_preserves_all_original_jobs_commands_and_deadlines": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceConformance.test_selector_is_boolean_java_only_and_cannot_replace_scratch_programme": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceConformance.test_ten_calls_require_exact_resources_trap_fresh_and_actual_retirement_after_each": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceConformance.test_unknown_outcomes_wrong_bytes_side_effects_or_wrong_trap_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_resource_conformance.py",
+  "reviewReason": "Explicitly review the import-only setup fingerprint change from subprocess to hashlib for pinned parsed-source preservation controls. All8 case IDs, class setup, bases, decorators and skip sites are identical; no historical Git object is required on shallow CI. No test, skip or product behavior changed.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

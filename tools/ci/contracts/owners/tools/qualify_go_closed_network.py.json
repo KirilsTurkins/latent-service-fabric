@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_closed_network.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Finite same-source upstream and closed WASI reference, exact tools before/after and no signed/provider qualification credit.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "32818e8df89a83fe91ec8cd6e4d9a1d7c3dc9a3c984df26dba0a315af88fd847"
+}

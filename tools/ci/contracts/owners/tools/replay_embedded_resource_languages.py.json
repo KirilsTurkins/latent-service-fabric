@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_embedded_resource_languages.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Exact report-only projection of three authenticated replaced-greeting generator calls, preserving historical30 and every ordinary27 call/order; original failed job retained and actual33 node results reprojected without rerun.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "73d9ccc68398cfe881114cd3de535bdb553ab7fcc30866c57e914889a9954330"
+}

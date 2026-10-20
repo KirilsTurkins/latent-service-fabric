@@ -1,0 +1,328 @@
+{
+  "run": 39401104026,
+  "job": 118555749380,
+  "artifact": 12256355058,
+  "head": "1a4ce9c56a3aeef5a460196bab7f669d6d7525da",
+  "knownReapedInvocations": 24,
+  "physicalRetirements": 24,
+  "zeroOwnerControls": 24,
+  "cleanNodes": 1,
+  "realPeerContacts": 0,
+  "cases": [
+    {
+      "name": "bootstrap",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "accepted-timer",
+      "mode": 1,
+      "decoded": [
+        "accepted-timer|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "16726111",
+      "logBytes": "221",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-accepted-timer",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "accepted-microtask",
+      "mode": 2,
+      "decoded": [
+        "accepted-microtask|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "16833883",
+      "logBytes": "230",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-accepted-microtask",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "accepted-chain",
+      "mode": 3,
+      "decoded": [
+        "accepted-chain|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "17856191",
+      "logBytes": "433",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-accepted-chain",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "unreachable-promise",
+      "mode": 4,
+      "decoded": [
+        "unreachable-promise|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "15016820",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-unreachable-promise",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "opaque-promise",
+      "mode": 5,
+      "decoded": null,
+      "error": "guest-trap",
+      "cpuFuel": "6834248",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-opaque-promise",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "callback-control",
+      "mode": 10,
+      "decoded": [
+        "callback-control|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "16851076",
+      "logBytes": "228",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-callback-control",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "callback-throw",
+      "mode": 6,
+      "decoded": null,
+      "error": "guest-trap",
+      "cpuFuel": "4404756",
+      "logBytes": "224",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-callback-throw",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "rejection-control",
+      "mode": 11,
+      "decoded": [
+        "rejection-control|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "16724888",
+      "logBytes": "225",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-rejection-control",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "unhandled-rejection",
+      "mode": 7,
+      "decoded": null,
+      "error": "guest-trap",
+      "cpuFuel": "4344002",
+      "logBytes": "229",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-unhandled-rejection",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "deadline-bootstrap",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 1000
+    },
+    {
+      "name": "live-interval",
+      "mode": 8,
+      "decoded": null,
+      "error": "deadline-exceeded",
+      "cpuFuel": "2774327",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 1000
+    },
+    {
+      "name": "fresh-after-live-interval",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 1000
+    },
+    {
+      "name": "root-rejection",
+      "mode": 9,
+      "decoded": null,
+      "error": "guest-trap",
+      "cpuFuel": "4244579",
+      "logBytes": "224",
+      "sourceLogSiteReached": true,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    },
+    {
+      "name": "fresh-after-root-rejection",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14787365",
+      "logBytes": "0",
+      "sourceLogSiteReached": false,
+      "preciseExceptionMessageExposed": false,
+      "wallTimeLimitMillis": 120000
+    }
+  ],
+  "component": {
+    "sha256": "sha256:cc89136e682e373e6d7fdc26d968f407c160fa340f4b93b97dc8c8dfe61a114f",
+    "bytes": 12464609
+  },
+  "historicalNative": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "genericTrapAloneProvesPreciseExceptionOrigin": false,
+  "fullTicketQualification": false,
+  "artifactArchive": {
+    "bytes": 8834837,
+    "sha256": "sha256:4c17210b255521fd793e4d793070c254e6a5242975a2a97c0e74fabe62c84f1c"
+  },
+  "sourceAndBuildDocumentsRechecked": true,
+  "allMembersCRCAndHashChecked": true
+}

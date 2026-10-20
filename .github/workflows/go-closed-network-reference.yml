@@ -1,0 +1,57 @@
+name: Actual Go closed network reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['fix/go-closed-network-20261020']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-closed-network-reference-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  closed-network:
+    name: Actual upstream fake listeners and closed Unsupported reference
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+      - name: Install pinned source controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Reject source drift and preserve original overlay and logging controls
+        run: python3 -m unittest tools.tests.test_go_closed_network tools.tests.test_go_runtime_overlay tools.tests.test_go_managed_idle tools.tests.test_go_standard_logging -v
+      - name: Authenticate the maintained upstream compiler
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/go-closed-network-tools"
+          test ! -e "$out"
+          mkdir "$out"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$out/go.tar.gz" -C "$out"
+          echo "$out/go/bin" >> "$GITHUB_PATH"
+      - name: Compile identical ordinary source and require both real counterfactual outcomes
+        run: python3 tools/qualify_go_closed_network.py --output "$RUNNER_TEMP/go-closed-network-reference"
+      - name: Retain bounded exact source compiler diagnostics and reference outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-closed-network-reference-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-closed-network-reference/*.json
+            ${{ runner.temp }}/go-closed-network-reference/logs/**
+            ${{ runner.temp }}/go-closed-network-reference/upstream.wasm
+            ${{ runner.temp }}/go-closed-network-reference/corrected.wasm
+          if-no-files-found: warn
+          retention-days: 7
