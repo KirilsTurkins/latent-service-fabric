@@ -47,3 +47,12 @@ passed all eight bounded observer controls. The corrected signed replay with 15 
 pending; the original failures remain failures. This campaign does not
 qualify native threads, `ThreadLocal` isolation, CPU preemption, asynchronous
 console flushing, a separately observed late wake, or whole-ticket completion.
+
+The f44 node-only replay reached a real native witness with Task0, Wait1,
+Timer1, then failed because its reader had assumed a positive Task count.
+The Timer PAL admits a Wait and the host admits a Timer; an HTTP task owner
+is absent in this no-HTTP fixture. The corrected reader requires one or more
+fresh real Pending records within the original configured limits, including
+positive Wait/Timer counts, plus the unchanged physical/provider barriers.
+Unknown, duplicate, stale, overflow and zero-owner records remain refusals.
+This correction does not qualify managed Task accounting or change a capacity.

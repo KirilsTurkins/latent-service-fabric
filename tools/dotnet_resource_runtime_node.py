@@ -121,10 +121,13 @@ def positive_timer(stderr,activation):
     # The genuine .NET Timer PAL owns a Wait plus wait-for's host Timer; it does
     # not call timer-start/next. Only the original read-wait Poll::Pending is a
     # positive witness. Earlier table events are never accepted as a substitute.
+    # No HTTP state means no Task owner is required. Rebuilt PAL timers can
+    # produce multiple real wait-for futures, each under the original limits.
     rows=[row for row in value['records'] if row['mode']==MODES[activation] and row['event']=='wait-pending']
     if not rows:return None
-    require(len(rows)==1 and rows[0]['waits']==1 and rows[0]['timers']==1
-        and 0<rows[0]['tasks']<=LIMITS['tasks'],'resource-dotnet-real-wait-for-pending')
+    require(0<len(rows)<=8 and all(0<=row['tasks']<=LIMITS['tasks']
+        and 1<=row['waits']<=LIMITS['waits'] and 1<=row['timers']<=LIMITS['timers'] for row in rows),
+        'resource-dotnet-real-wait-for-pending')
     return {'activation':activation,'records':rows,'nativeObserver':value,
         'positivePoint':'original runtime wait-for read-wait future returned Poll::Pending'}
 
@@ -218,6 +221,7 @@ def checked_invocation(row,component,revision,mode):
 def programme(clients,targets,probe,output,component):
     value={'status':'incomplete','cases':[],'attempts':[],'fullTicketQualification':False,
         'nativeThreadsQualified':False,'threadLocalQualified':False,'asyncFlushQueuePresent':False,
+        'managedTaskAccountingQualified':False,
         'lateWakeAttemptObserved':False,'concurrencyKind':'original-managed-TaskPool-and-TimerQueue'}
     def checkpoint():
         (output/'programme-progress.json').write_bytes((json.dumps(value,sort_keys=True,separators=(',',':'))+'\n').encode())

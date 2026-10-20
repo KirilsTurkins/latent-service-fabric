@@ -75,7 +75,7 @@ class ManagedResourceRuntime(unittest.TestCase):
             'nodeUsage':{'scope':'node','unavailable':[],'counters':{'broker_calls':'1'}}}
         pages=[{'category':'success','outcomeKnown':True,'data':{'page':{'nextPageToken':None},
             'coverage':{'droppedObservations':'1'},'records':[]}}]
-        stderr=runtime.observer.PREFIX+b'|pending|wait-pending|1|1|1|1\n'
+        stderr=runtime.observer.PREFIX+b'|pending|wait-pending|1|0|1|1\n'
         return inventory,usage,pages,stderr
 
     def test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss(self):
@@ -92,6 +92,20 @@ class ManagedResourceRuntime(unittest.TestCase):
             elif change=='zero-loss':p[0]['data']['coverage']['droppedObservations']='0'
             else:s=runtime.observer.PREFIX+b'|pending|start-accepted|1|1|0|1\n'
             with self.subTest(change=change):self.assertIsNone(runtime.pending_witness(i,u,p,'node-stop-pending',s))
+
+    def test_zero_task_actual_pending_and_multiple_waits_keep_original_limits_and_positive_point(self):
+        i,u,p,s=self.witness()
+        actual=runtime.pending_witness(i,u,p,'node-stop-pending',s)
+        self.assertEqual(actual['positiveTimer']['records'][0]['tasks'],0)
+        second=runtime.observer.PREFIX+b'|pending|wait-pending|2|0|2|2\n'
+        self.assertEqual(len(runtime.pending_witness(i,u,p,'node-stop-pending',s+second)
+            ['positiveTimer']['records']),2)
+        for counts in (b'0|0|1',b'0|1|0',b'9|1|1',b'0|17|1',b'0|1|9'):
+            raw=runtime.observer.PREFIX+b'|pending|wait-pending|1|'+counts+b'\n'
+            with self.subTest(counts=counts),self.assertRaises(WorkflowError):
+                runtime.pending_witness(i,u,p,'node-stop-pending',raw)
+        with self.assertRaises(WorkflowError):
+            runtime.pending_witness(i,u,p,'node-stop-pending',s+runtime.observer.PREFIX+b'|overflow\n')
 
     def test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence(self):
         i,u,_p,s=self.witness()
