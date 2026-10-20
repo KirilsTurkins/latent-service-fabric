@@ -42,7 +42,16 @@ The original grant-omission controls run before the guest programme. The native
 products are authenticated Wasmtime48.0.7 products; the lane performs no native
 host, engine or five-template rebuild.
 
-This programme is pending. No guest qualification is claimed from the managed
+The initial [owning attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39503801919/job/118907566115)
+failed before ILC: the filesystem validator expected the old nine-helper method
+count after the finite port added its tenth helper. Real pinned Cecil derivations
+reproduce the old rejection and now accept exactly 44,744 unjoined, 44,753 infinite
+and 44,754 finite unchanged methods. The count comes from the rechecked, validated
+TaskWait port; original C# rewrites and both filesystem method preimages remain
+unchanged. All 67 focused controls pass. The failed archive remains failed and
+provides no AOT or signed credit.
+
+The corrected programme is pending. No guest qualification is claimed from the managed
 controls. The existing sixteen-case task programme retains its cases, order,
 commands and limits; its exact port assertion now recognizes the selected finite
 mode, without claiming a new pass for historical receipts. CPU preemption,

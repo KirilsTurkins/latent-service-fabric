@@ -104,6 +104,18 @@ class Port:
     targets_identity: bytes
     evidence: dict
 
+    def validated_helper_count(self) -> int:
+        self.recheck()
+        fields = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest',
+            'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
+        finite = self.evidence.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
+        validate_receipt({key: value for key, value in self.evidence.items() if key not in fields}, finite=finite)
+        declarations = (runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM) if finite else (runtime.CLOCK, runtime.ACTIVATION)
+        if (self.evidence['derived'] != self.identity or self.evidence['outputDigest'] != self.identity['digest']
+                or self.evidence['selection']['requiredDeclarations'] != sorted(declarations)):
+            raise ValueError('task-wait-authenticated-helper-count')
+        return self.evidence['generatedHelperCount']
+
     def recheck(self) -> None:
         original(self.original)
         if inventory(snapshot(self.source)) != self.source_identity or read_file(self.targets, http_errors.MAX_RECEIPT) != self.targets_identity:

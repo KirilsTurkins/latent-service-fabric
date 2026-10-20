@@ -16,6 +16,16 @@ from tools.tests import test_dotnet_task_wait as controls
 
 
 class FiniteWaitProgramme(unittest.TestCase):
+    def test_current_native_source_requires_full_identity_of_the_authenticated_producer(self):
+        expected={'sha256':'sha256:'+'a'*64,'files':3315,'bytes':26086384}
+        with patch.object(qualification,'git_source_identity',return_value=expected) as original:
+            for observed in (expected,{**expected,'files':3316},{**expected,'sha256':'sha256:'+'b'*64}):
+                with self.subTest(observed=observed),patch.object(qualification,'source_identity',return_value=observed):
+                    if observed==expected:self.assertEqual(qualification.current_native_source(),expected)
+                    else:
+                        with self.assertRaisesRegex(WorkflowError,'must-match-producer'):qualification.current_native_source()
+            original.assert_called_with(qualification.products.SOURCE)
+
     def row(self,mode):
         revision={'releaseDigest':'sha256:'+'a'*64}
         usage={k:0 for k in ('outboundRequests','childCalls','effectCount','logBytes','stateReadBytes',

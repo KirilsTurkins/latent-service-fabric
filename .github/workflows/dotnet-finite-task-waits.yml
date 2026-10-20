@@ -54,7 +54,7 @@ jobs:
       - name: Check exact finite wait selection results and original lifecycle boundaries
         run: |
           python3 -m pip install -r tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_dotnet_finite_task_wait tools.tests.test_dotnet_finite_wait_programme tools.tests.test_dotnet_task_wait tools.tests.test_dotnet_resource_timer_observer -v
+          python3 -B -m unittest tools.tests.test_dotnet_finite_task_wait tools.tests.test_dotnet_finite_wait_programme tools.tests.test_dotnet_finite_filesystem tools.tests.test_dotnet_task_wait tools.tests.test_dotnet_resource_timer_observer -v
       - name: Install the normal captured compiler isolation boundary
         run: |
           sudo apt-get update

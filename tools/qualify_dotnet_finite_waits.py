@@ -16,6 +16,7 @@ from tools.dotnet_guest.compiler import runtime_inputs
 from tools.guest_compatibility_build import HOST_MANIFESTS, declared_host_abi
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
+from tools.java_replay_materials import git_source_identity
 from tools.qualify_sdk_scratch import package_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, snapshot, write_json
 
@@ -24,7 +25,7 @@ MATERIALS = tuple(sorted(set((*RECIPE,
     'tools/qualify_dotnet_finite_waits.py', 'tools/dotnet_finite_wait_fixture.py',
     'tools/dotnet_finite_wait_node.py', fixture.LIBRARY,
     'tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_probe.py',
-    'tools/wasmtime_48_0_7_native_products.py', 'tools/sdk_native_products_reader.py',
+    'tools/wasmtime_48_0_7_native_products.py', 'tools/sdk_native_products_reader.py', 'tools/java_replay_materials.py',
     'tools/dotnet_resource_runtime_node.py', 'tools/dotnet_resource_runtime_fixture.py',
     'tools/dotnet_resource_timer_observer.py', 'tools/resource_tenant_node.py',
     'tools/resource_runtime_node.py', 'tools/go_node_stop_probe.py', 'tools/go_node_stop_timer_observer.py',
@@ -34,12 +35,20 @@ MATERIALS = tuple(sorted(set((*RECIPE,
     'tools/phase3_resource_identity.py', 'tools/phase3_resource_os.py', 'tools/phase3_resource_profile.py',
     'tools/sdk_provider_scenario.py', 'wit/host-abi-phase3-v5.json',
     'sdk/dotnet-guest/tools/http-errors/TaskWait.cs', 'sdk/dotnet-guest/tools/http-errors/Program.cs',
-    'sdk/dotnet-guest/tools/http-errors/TaskWait.targets', '.github/workflows/dotnet-finite-task-waits.yml'))))
+    'sdk/dotnet-guest/tools/http-errors/TaskWait.targets', 'sdk/dotnet-guest/tools/http-errors/IdleTimerDriver.cs',
+    'sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.cs', 'sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.targets',
+    '.github/workflows/dotnet-finite-task-waits.yml'))))
 
 
 def recipe_inputs(artifact):
     host=HOST_MANIFESTS[declared_host_abi(read_json(artifact/'surface.json'))]
     return inventory({n:read_file(ROOT/n) for n in {*RECIPE,host}})
+
+
+def current_native_source():
+    current=source_identity(ROOT)
+    require(current==git_source_identity(products.SOURCE), 'finite-wait-current-native-source-must-match-producer')
+    return current
 
 
 def build_evidence(artifact):
@@ -95,7 +104,7 @@ def qualify(native_directory, tools, output):
     for path in native.values(): path.chmod(0o700)
     output=fresh(output)
     source=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip()
-    materials={n:file_identity(ROOT/n) for n in MATERIALS}; current=source_identity(ROOT)
+    materials={n:file_identity(ROOT/n) for n in MATERIALS}; current=current_native_source()
     runtime_source=runtime_inputs(ROOT)
     require(read_file(tools/'runtime-inputs.json')==runtime_source, 'finite-wait-current-installer-runtime-inputs')
     installation={n:file_identity(tools/n,16*1024**2) for n in ('INSTALL-COMPLETE.json','runtime-inputs.json','wasi-sdk.json')}
