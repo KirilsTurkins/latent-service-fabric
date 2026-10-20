@@ -8,6 +8,11 @@
     "BoundCompilerReasonProjection.test_projection_failure_preserves_original_exception_identity",
     "CapturedCompilerIdentity.test_changed_original_or_captured_compiler_is_rejected",
     "CapturedCompilerIdentity.test_relocated_exact_compiler_copy_is_accepted",
+    "CompileSetupFailureBreadcrumbs.test_actual_compile_prefix_marks_sdk_failure_before_original_call",
+    "CompileSetupFailureBreadcrumbs.test_malformed_context_or_changed_compiler_recipe_never_claims_breadcrumb",
+    "CompileSetupFailureBreadcrumbs.test_real_setup_boundary_preserves_exception_and_projects_only_closed_context",
+    "CompileSetupFailureBreadcrumbs.test_setup_success_returns_original_result_and_cleared_context_is_absent",
+    "CompileSetupFailureBreadcrumbs.test_unknown_context_does_not_publish_user_classes_or_arbitrary_phase",
     "DeliveredCompilerHostPath.test_absent_or_invalid_commands_path_never_inherits_parent_path",
     "DeliveredCompilerHostPath.test_absent_selected_shell_refuses_before_staging_without_ambient_fallback",
     "DeliveredCompilerHostPath.test_actual_stage_transports_explicit_path_to_shell_and_namespace_tool_capture",
@@ -119,6 +124,66 @@
       "skipSites": []
     },
     "CapturedCompilerIdentity.test_relocated_exact_compiler_copy_is_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompileSetupFailureBreadcrumbs.test_actual_compile_prefix_marks_sdk_failure_before_original_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompileSetupFailureBreadcrumbs.test_malformed_context_or_changed_compiler_recipe_never_claims_breadcrumb": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompileSetupFailureBreadcrumbs.test_real_setup_boundary_preserves_exception_and_projects_only_closed_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompileSetupFailureBreadcrumbs.test_setup_success_returns_original_result_and_cleared_context_is_absent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompileSetupFailureBreadcrumbs.test_unknown_context_does_not_publish_user_classes_or_arbitrary_phase": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -421,6 +486,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_dependency_watch.py",
-  "reviewReason": "Bind closed static compiler setup errors to the owned attempt and exact captured helper identities",
+  "reviewReason": "Retain exact setup-call exception category before uncertain cleanup; preserve every original case",
   "schemaVersion": "latent.ci.contracts.v1"
 }

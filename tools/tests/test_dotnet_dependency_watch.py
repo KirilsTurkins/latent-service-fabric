@@ -771,3 +771,107 @@ class BoundCompilerReasonProjection(unittest.TestCase):
             self.assertIs(caught.exception, original)
             self.assertNotIn('private input', json.dumps(public))
             self.assertIs(public['uncertain'], True)
+
+
+class CompileSetupFailureBreadcrumbs(unittest.TestCase):
+    def test_real_setup_boundary_preserves_exception_and_projects_only_closed_context(self):
+        from types import SimpleNamespace
+        from tools.dotnet_guest.compiler import Compiler, compile_failure_context
+        from tools import qualify_dotnet_dependency_watch as programme
+        for original in (NameError('private/key/path'), FileExistsError('private/key/path')):
+            with self.subTest(kind=type(original).__name__), tempfile.TemporaryDirectory() as temporary:
+                holder=SimpleNamespace()
+                def fail(): raise original
+                with self.assertRaises(type(original)) as caught:
+                    Compiler._setup(holder,'sdk-facades',fail)
+                self.assertIs(caught.exception,original)
+                context=compile_failure_context(holder,RuntimeError('later uncertain cleanup'))
+                self.assertEqual(context,{'schemaVersion':'latent.dotnet.compile-setup-failure.v1',
+                    'phase':'sdk-facades','exceptionKind':type(original).__name__,'exceptionBoundary':'setup-call'})
+                workspace, attempt, failure, adapter, inventory, recipe=BoundCompilerReasonProjection().owned(Path(temporary).resolve())
+                value=json.loads(failure.read_bytes()); value['reason']='private/key/path'; value['compileSetup']=context
+                failure.write_text(json.dumps(value))
+                public=programme.collect_build_failure_metadata(workspace)
+                row=public['attempts'][0]
+                self.assertEqual(row['compileSetup'],context)
+                self.assertEqual(row['reasonProducer']['helper'],'dotnet-compile-setup')
+                self.assertNotIn('reasonCode',row)
+                self.assertNotIn('private/key/path',json.dumps(public))
+                self.assertEqual(public['state'],'uncertain')
+                self.assertIs(public['qualification'],False)
+
+    def test_unknown_context_does_not_publish_user_classes_or_arbitrary_phase(self):
+        from types import SimpleNamespace
+        from tools.dotnet_guest.compiler import Compiler, compile_failure_context
+        class PrivateException(NameError): pass
+        holder=SimpleNamespace()
+        def fail(): raise PrivateException('credential')
+        with self.assertRaises(PrivateException): Compiler._setup(holder,'resource-installation',fail)
+        self.assertEqual(compile_failure_context(holder,PrivateException())['exceptionKind'],'other')
+        for phase in ('private/path',[],None):
+            holder.compile_failure_phase=phase
+            self.assertIsNone(compile_failure_context(holder,ValueError('private')))
+
+    def test_malformed_context_or_changed_compiler_recipe_never_claims_breadcrumb(self):
+        from tools import qualify_dotnet_dependency_watch as programme
+        good={'schemaVersion':'latent.dotnet.compile-setup-failure.v1','phase':'sdk-facades','exceptionKind':'NameError','exceptionBoundary':'setup-call'}
+        for changes in ({'phase':'private/path'},{'phase':[]},{'exceptionKind':'PrivateException'},
+                {'exceptionKind':True},{'exceptionBoundary':'private'},{'exceptionBoundary':[]},
+                {'schemaVersion':'unknown'},{'extra':'private'},None):
+            with self.subTest(changes=changes), tempfile.TemporaryDirectory() as temporary:
+                workspace, attempt, failure, adapter, inventory, recipe=BoundCompilerReasonProjection().owned(Path(temporary).resolve())
+                value=json.loads(failure.read_bytes());value['reason']='private'
+                value['compileSetup']={**good,**changes} if changes is not None else good
+                failure.write_text(json.dumps(value))
+                if changes is None:
+                    data=json.loads(recipe.read_bytes());data['tools/dotnet_guest/compiler.py']['digest']='sha256:'+'8'*64
+                    recipe.write_text(json.dumps(data))
+                public={'passed':False,'uncertain':True};programme.add_public_build_failure(public,workspace)
+                self.assertNotIn('compileSetup',json.dumps(public))
+                self.assertNotIn('PrivateException',json.dumps(public))
+                self.assertIs(public['uncertain'],True)
+
+    def test_setup_success_returns_original_result_and_cleared_context_is_absent(self):
+        from types import SimpleNamespace
+        from tools.dotnet_guest.compiler import Compiler,compile_failure_context
+        holder=SimpleNamespace();sentinel=object()
+        self.assertIs(Compiler._setup(holder,'sdk-facades',lambda:sentinel),sentinel)
+        holder.compile_failure_phase=None
+        self.assertIsNone(compile_failure_context(holder,ValueError('secret')))
+
+    def test_actual_compile_prefix_marks_sdk_failure_before_original_call(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dotnet_guest import compiler as module
+        from tools.dotnet_guest import retirement
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);work=root/'work';work.mkdir();sdk=root/'sdk';sdk.mkdir()
+            (work/'wit').mkdir();(work/'wit/world.wit').write_text('package sample:app; world guest {}')
+            (work/'src').mkdir();(work/'src/Main.cs').write_text('class Main {}')
+            (work/'Capsule.csproj').write_text('<Project />')
+            (sdk/'global.json').write_text('{}');(sdk/'nuget.config').write_text('<configuration />')
+            (sdk/'probes/smoke').mkdir(parents=True);(sdk/'probes/smoke/packages.lock.json').write_text('{}')
+            instance=object.__new__(module.Compiler)
+            instance.isolation=None;instance.sdk=sdk;instance.commands=SimpleNamespace(output=root)
+            instance.wasm=root/'wasm';instance.python=root/'python';instance.application_closure=None
+            original=FileExistsError('private owned path')
+            calls=[]
+            def run(stage,*args):
+                calls.append(stage)
+                if stage=='declared-runtime-wit': return b'{}'
+                if stage=='bindings':
+                    generated=Path(args[args.index('--out-dir')+1]);generated.mkdir()
+                    (generated/'bindings.json').write_text('{}')
+                if stage=='canonical-wit': return b'package sample:app; world guest {}'
+                return b''
+            instance.run=run
+            with (patch.object(module,'interface_names',return_value={'imports':[]}),
+                    patch.object(module.runtime,'select'),
+                    patch.object(retirement,'prepare',return_value=(work/'wit',None)),
+                    patch.object(module,'install_sdk',side_effect=original) as install):
+                with self.assertRaises(FileExistsError) as caught:
+                    instance.compile(work,'guest',root/'output')
+            self.assertIs(caught.exception,original)
+            install.assert_called_once_with(sdk,root/'output/generated',root/'output/project/lsf')
+            self.assertEqual(calls,['declared-runtime-wit','bindings','bindings-drift','canonical-wit'])
+            self.assertEqual(module.compile_failure_context(instance,caught.exception)['phase'],'sdk-facades')

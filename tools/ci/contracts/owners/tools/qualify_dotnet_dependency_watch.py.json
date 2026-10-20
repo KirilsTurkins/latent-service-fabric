@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Expose only exact source-bound static compiler setup error codes while retaining uncertain cleanup and all reader privacy gates",
+  "reviewReason": "Bind closed setup-call versus outer-handler exception metadata to compiler source",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ad0f3f1fe9f033764f398991c2a0a29da751c3e22b01c933f21d004400670ddf"
+  "sha256": "b22624087c6eb74f3516bd65f1e406e3ed2fd5ad70b35e7115a87369f0d3af59"
 }

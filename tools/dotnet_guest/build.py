@@ -13,7 +13,7 @@ from tools import guest_compatibility_build, guest_dependency_inputs, guest_reso
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
-from tools.dotnet_guest.compiler import Compiler
+from tools.dotnet_guest.compiler import Compiler, compile_failure_context
 from tools.dotnet_guest.project import validate
 from tools.application_dependencies import prepare, verify_inputs
 from tools.application_dependency_approval import request as execution_request, approve as approve_execution
@@ -52,7 +52,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     if tools == project_path or tools in project_path.parents or project_path in tools.parents:
         raise ValueError("compiler installation must be separate from captured application sources")
     repository, output = public_repository(repository), fresh(output)
-    commands, stage = None, "capture"
+    commands, compiler, stage = None, None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
         observed = guest_dependency_inputs.capture_source(project_path, 'dotnet')
@@ -186,9 +186,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})
         return output
     except BaseException as error:
+        setup = compile_failure_context(compiler, error) if stage == "compile" else None
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
-            "commands": commands.records if commands else []})
+            "commands": commands.records if commands else [],
+            **({"compileSetup": setup} if setup is not None else {})})
         guest_compatibility_build.failure_report(output, "dotnet", stage)
         try:
             from tools.dotnet_guest.compatibility import retain_failure

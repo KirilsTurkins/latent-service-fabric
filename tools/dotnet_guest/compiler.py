@@ -19,6 +19,38 @@ SDK_VERSION = "10.0.100"
 COMPONENT_VERSION = "0.8.0-preview00011"
 
 
+COMPILE_SETUP_PHASES = frozenset({'source-projection', 'project-inputs', 'sdk-facades',
+    'entropy-selection', 'managed-entropy-selection', 'dependency-configuration',
+    'protected-inputs', 'offline-configuration', 'task-wait-selection',
+    'http-error-selection', 'resource-installation', 'resource-protection', 'resource-verification'})
+COMPILE_EXCEPTION_KINDS = frozenset({'FileExistsError', 'FileNotFoundError', 'PermissionError',
+    'IsADirectoryError', 'NotADirectoryError', 'OSError', 'ValueError', 'TypeError', 'KeyError',
+    'IndexError', 'AttributeError', 'NameError', 'RuntimeError', 'AssertionError', 'ImportError',
+    'JSONDecodeError', 'DependencyError', 'BuildProcessError', 'other'})
+
+
+def _compile_exception_kind(error):
+    from tools.application_dependency_store import DependencyError
+    from tools.build_process import BuildProcessError
+    known = (FileExistsError, FileNotFoundError, PermissionError, IsADirectoryError,
+        NotADirectoryError, OSError, ValueError, TypeError, KeyError, IndexError,
+        AttributeError, NameError, RuntimeError, AssertionError, ImportError,
+        json.JSONDecodeError, DependencyError, BuildProcessError)
+    return type(error).__name__ if type(error) in known else 'other'
+
+
+def compile_failure_context(compiler, error):
+    """Closed setup position/type only; no exception text, path or arguments."""
+    phase = getattr(compiler, 'compile_failure_phase', None)
+    if type(phase) is not str or phase not in COMPILE_SETUP_PHASES:
+        return None
+    original_kind = getattr(compiler, 'compile_failure_kind', None)
+    captured = type(original_kind) is str and original_kind in COMPILE_EXCEPTION_KINDS
+    return {'schemaVersion': 'latent.dotnet.compile-setup-failure.v1',
+        'phase': phase, 'exceptionKind': original_kind if captured else _compile_exception_kind(error),
+        'exceptionBoundary': 'setup-call' if captured else 'build-handler'}
+
+
 def verify_application_resources(selected: dict, project: Path) -> None:
     """Recipe setup must not substitute reviewed trimming/resource bytes."""
     from tools.application_dependency_store import DependencyError, read_bytes
@@ -189,7 +221,19 @@ class Compiler:
             capture(output / 'generator-outputs', self.commands.output, self.executable_approval,
                     compiler_command_succeeded=True)
 
+    def _setup(self, phase, operation, *args, **kwargs):
+        self.compile_failure_phase = phase
+        self.compile_failure_kind = None
+        try:
+            return operation(*args, **kwargs)
+        except BaseException as error:
+            # Keep only the closed category before outer process cleanup runs.
+            self.compile_failure_kind = _compile_exception_kind(error)
+            raise
+
     def compile(self, work: Path, world: str, output: Path):
+        self.compile_failure_phase = 'source-projection'
+        self.compile_failure_kind = None
         if self.isolation is not None and not output.resolve().is_relative_to(self.isolation.workspace):
             raise ValueError('NativeAOT-output-outside-captured-build-workspace')
         output.mkdir()
@@ -230,6 +274,7 @@ class Compiler:
             path = project / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(read_file(work / name))
+        self.compile_failure_phase = 'project-inputs'
         for name, data in {
             "Capsule.csproj": read_file(work / "Capsule.csproj"),
             "global.json": read_file(self.sdk / "global.json"),
@@ -238,43 +283,45 @@ class Compiler:
             "component.wit": self.run("canonical-wit", self.wasm, "component", "wit", binding_source, "--no-docs"),
         }.items():
             (project / name).write_bytes(data)
-        facades = install_sdk(self.sdk, generated, project / "lsf")
+        facades = self._setup('sdk-facades', install_sdk, self.sdk, generated, project / "lsf")
         from tools.dotnet_guest.entropy import prepare as prepare_entropy
-        self.noncrypto_port = prepare_entropy(self, declared, project, output)
+        self.noncrypto_port = self._setup('entropy-selection', prepare_entropy, self, declared, project, output)
         self.managed_entropy_port = None
         if self.noncrypto_port is not None:
             from tools.dotnet_guest.managed_entropy import prepare as prepare_managed_entropy
-            self.managed_entropy_port = prepare_managed_entropy(self, project, output)
+            self.managed_entropy_port = self._setup('managed-entropy-selection', prepare_managed_entropy, self, project, output)
         if self.application_closure is not None:
-            selected = configure(self.application_closure, work, self.package_cache)
+            selected = self._setup('dependency-configuration', configure, self.application_closure, work, self.package_cache)
             self.cache_before = tree_identity({'nuget-packages': self.package_cache})
             write_json(command.output / 'nuget-build-inputs.json', selected)
-            self.isolation.protect_inputs(self.package_cache, work, project / 'src', project / 'lsf', project / 'Capsule.csproj', project / 'component.wit')
+            self._setup('protected-inputs', self.isolation.protect_inputs, self.package_cache, work, project / 'src', project / 'lsf', project / 'Capsule.csproj', project / 'component.wit')
             for name in resource_inputs:
-                self.isolation.protect_inputs(project / name)
+                self._setup('protected-inputs', self.isolation.protect_inputs, project / name)
         if self.offline:
+            self.compile_failure_phase = 'offline-configuration'
             # All locked packages must already be present. An empty source list
             # prohibits restore from silently reaching the network on a miss.
             (project / "nuget.config").write_text(
                 '<configuration><packageSources><clear /></packageSources></configuration>\n', encoding="utf-8")
         self.task_wait_port = None
-        if task_wait.selected(declared, receipt.get('asyncExportBridge')):
-            self.task_wait_port = task_wait.prepare(self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
+        if self._setup('task-wait-selection', task_wait.selected, declared, receipt.get('asyncExportBridge')):
+            self.task_wait_port = self._setup('task-wait-selection', task_wait.prepare, self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
                 declared, receipt.get('asyncExportBridge'), project, output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None)
         self.http_error_port = None
         if {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
-            self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
+            self.http_error_port = self._setup('http-error-selection', http_errors.prepare, self.sdk, self.http_error_tools, self.dotnet, declared, project,
                 output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None,
                 task_wait_port=self.task_wait_port)
-        resources = install_resources(snapshot(work, exclude=("dependencies", "application-vendor")), project)
+        resources = self._setup('resource-installation', install_resources, snapshot(work, exclude=("dependencies", "application-vendor")), project)
         if self.isolation is not None and resources is not None:
-            self.isolation.protect_inputs(project / "Capsule.csproj")
+            self._setup('resource-protection', self.isolation.protect_inputs, project / "Capsule.csproj")
             if resources.objects:
-                self.isolation.protect_inputs(project / "resources")
+                self._setup('resource-protection', self.isolation.protect_inputs, project / "resources")
         if self.application_closure is not None:
-            verify_application_resources(selected, project)
+            self._setup('resource-verification', verify_application_resources, selected, project)
+        self.compile_failure_phase = None
         self.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
             project / "nuget.config", "--locked-mode", "--packages", self.package_cache, "--disable-parallel",
             "-p:NuGetAudit=false", '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')

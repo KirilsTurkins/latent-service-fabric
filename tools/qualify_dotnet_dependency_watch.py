@@ -167,9 +167,20 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure):
         return {}, []
     matched = [(name, producer) for name, producer in _COMPILE_REASON_PRODUCERS.items()
                if failure['reason'] in producer['codes']]
-    if len(matched) != 1:
+    from tools.dotnet_guest.compiler import COMPILE_SETUP_PHASES, COMPILE_EXCEPTION_KINDS
+    setup = failure.get('compileSetup')
+    valid_setup = (type(setup) is dict and set(setup) == {'schemaVersion', 'phase', 'exceptionKind', 'exceptionBoundary'}
+        and setup.get('schemaVersion') == 'latent.dotnet.compile-setup-failure.v1'
+        and type(setup.get('phase')) is str and setup['phase'] in COMPILE_SETUP_PHASES
+        and type(setup.get('exceptionKind')) is str and setup['exceptionKind'] in COMPILE_EXCEPTION_KINDS
+        and type(setup.get('exceptionBoundary')) is str
+        and setup['exceptionBoundary'] in {'setup-call', 'build-handler'})
+    if len(matched) == 1:
+        name, producer = matched[0]
+    elif not matched and valid_setup:
+        name, producer = 'tools/dotnet_guest/compiler.py', {'helper': 'dotnet-compile-setup'}
+    else:
         return {}, []
-    name, producer = matched[0]
     descriptor = selected['descriptor']
     recorded = descriptor['build'].get('inventory')
     if recorded is None:
@@ -209,8 +220,12 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure):
             {'path': 'recipe/' + helper, 'sha256': identity['digest'], 'size': identity['size']},
             'failure-projection-producer-identity')
         evidence.append((source_root, helper, 4 * 1024 * 1024, data))
-    return {'reasonCode': producer['codes'][failure['reason']],
-        'reasonProducer': {'helper': producer['helper'], 'digest': recipe[name]['digest']}}, evidence
+    result = {'reasonProducer': {'helper': producer['helper'], 'digest': recipe[name]['digest']}}
+    if len(matched) == 1:
+        result['reasonCode'] = producer['codes'][failure['reason']]
+    if valid_setup:
+        result['compileSetup'] = setup
+    return result, evidence
 
 
 def _public_build_failure(value):
