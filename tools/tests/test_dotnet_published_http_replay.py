@@ -32,6 +32,20 @@ class PublishedHttpReplayTests(unittest.TestCase):
                 replay.unpack(b'unreviewed archive',output)
             self.assertFalse(output.exists())
 
+    def test_original_archive_is_downloaded_within_the_shared_eight_megabyte_range_limit(self):
+        class Remote:
+            def __init__(self):self.calls=[]
+            def read(self,count):
+                if not 0<count<=8*1024**2:raise ValueError('shared range limit')
+                self.calls.append(count)
+                return b'a'*count
+        remote=Remote();raw=replay.read_archive(remote)
+        self.assertEqual(remote.calls,[8*1024**2,replay.ARTIFACT['size_in_bytes']-8*1024**2])
+        self.assertEqual(len(raw),replay.ARTIFACT['size_in_bytes'])
+        with patch.object(remote,'read',return_value=b''):
+            with self.assertRaisesRegex(RuntimeError,'original-range-length'):
+                replay.read_archive(remote)
+
     def test_even_a_digest_bound_archive_cannot_escape_the_owned_build_directory(self):
         stream=io.BytesIO()
         with zipfile.ZipFile(stream,'w') as archive:

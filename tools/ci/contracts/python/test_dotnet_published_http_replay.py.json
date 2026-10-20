@@ -2,6 +2,7 @@
   "cases": [
     "PublishedHttpReplayTests.test_archive_authentication_refuses_before_any_materialization",
     "PublishedHttpReplayTests.test_even_a_digest_bound_archive_cannot_escape_the_owned_build_directory",
+    "PublishedHttpReplayTests.test_original_archive_is_downloaded_within_the_shared_eight_megabyte_range_limit",
     "PublishedHttpReplayTests.test_original_build_origin_never_accepts_a_different_archive_run_head_or_success_claim"
   ],
   "guards": {
@@ -29,6 +30,18 @@
       ],
       "skipSites": []
     },
+    "PublishedHttpReplayTests.test_original_archive_is_downloaded_within_the_shared_eight_megabyte_range_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:43fe7363d6f116fadcc933620210125e16c29f2f32203b1106a9d4ce375135e1",
+        "class:setup-sha256:ace2076757d0ab7d399d7a75ab3bbe0f412eacd8de59a0d37b325212e07c04de"
+      ],
+      "skipSites": []
+    },
     "PublishedHttpReplayTests.test_original_build_origin_never_accepts_a_different_archive_run_head_or_success_claim": {
       "bases": [
         "unittest.TestCase"
@@ -44,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_published_http_replay.py",
-  "reviewReason": "Keep original compiler commands and all20 signed plus2 denial gates; authenticate original successful7e3 component and replay after only unique progress filenames, without guest or native recompilation.",
+  "reviewReason": "Read original13.8MB artifact in two existing8MiB-bounded ranges, retain exact whole-archive SHA/size and all356 CRC checks. Add regression for real shared transfer bound and truncated range refusal.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -71,6 +71,16 @@ def unpack(raw,output):
     return {'members':rows,'expandedBytes':total,'archiveDigest':ARTIFACT['digest']}
 
 
+def read_archive(remote):
+    parts=[]
+    for offset in range(0,ARTIFACT['size_in_bytes'],8*1024**2):
+        count=min(8*1024**2,ARTIFACT['size_in_bytes']-offset)
+        part=remote.read(count)
+        require(len(part)==count,'published-dotnet-replay-original-range-length')
+        parts.append(part)
+    return b''.join(parts)
+
+
 def acquire(output):
     metadata=api(f'actions/artifacts/{ARTIFACT["id"]}');job=api(f'actions/jobs/{JOB}')
     validate_origin(metadata,job)
@@ -83,7 +93,7 @@ def acquire(output):
     else:raise ValueError('published-dotnet-replay-redirect-required')
     require(url.startswith('https://'),'published-dotnet-replay-public-https')
     remote=Ranges(url,ARTIFACT['size_in_bytes'])
-    inventory=unpack(remote.read(ARTIFACT['size_in_bytes']),output)
+    inventory=unpack(read_archive(remote),output)
     return output/PREFIX/'build',{'artifact':metadata,'job':job,'archive':inventory}
 
 

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_dotnet_published_http.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Keep original compiler commands and all20 signed plus2 denial gates; authenticate original successful7e3 component and replay after only unique progress filenames, without guest or native recompilation.",
+  "reviewReason": "Read original13.8MB artifact in two existing8MiB-bounded ranges, retain exact whole-archive SHA/size and all356 CRC checks. Add regression for real shared transfer bound and truncated range refusal.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fe1298e33b2f8ebccea01c9e6af7ba8799de828d83929f55caca26858c8a5974"
+  "sha256": "45fd75c79ee0582f261fc762b9cbadba845458de94db03c396a34dc5d4b7fe99"
 }
