@@ -15,6 +15,33 @@ PHASE = 'latent:http/phase-timing@0.4.0'
 
 
 class HttpPhaseContract(unittest.TestCase):
+    def test_explicit_raw_reason_capture_moves_prepaid_owner_without_legacy_parser_fallback(self):
+        network = (ROOT/'crates/latent-http/src/network.rs').read_text()
+        self.assertIn('pub(crate) struct ResponseSettings', network)
+        reason = (ROOT/'crates/latent-http/src/reason.rs').read_text()
+        exchange = (ROOT/'crates/latent-http/src/streaming/exchange.rs').read_text()
+        response = (ROOT/'crates/latent-http/src/streaming/response.rs').read_text()
+        start = exchange.index('let reason = if inner.phase_timing {')
+        connect = exchange.index('network::connect_with_reason(', start)
+        self.assertIn('MAXIMUM_HTTP_REASON_BYTES', exchange[start:connect])
+        self.assertIn('None', exchange[start:connect])
+        legacy = network.split('pub(crate) async fn connect_for(', 1)[1].split(
+            'pub(crate) async fn connect_with_reason(', 1)[0]
+        self.assertIn('reason: None', legacy)
+        self.assertIn('let before = buffer.filled().len();', network)
+        self.assertIn('reason.observe(&buffer.filled()[before..]);', network)
+        self.assertIn('settings.reason.is_none() || http.reason.is_some()', network)
+        self.assertIn('.take()', network.split('pub fn take_reason(', 1)[1].split('pub(crate) struct OwnedRequestBody', 1)[0])
+        self.assertIn('connection.take_reason(reply.version(), reply.status().as_u16())?', response)
+        self.assertNotIn('canonical_reason()', response)
+        self.assertNotIn('hyper::ext::ReasonPhrase', response)
+        self.assertIn('self.parser.status != status', reason)
+        self.assertIn('self.buffer.advance_written(self.parser.length)?;', reason)
+        self.assertIn('self.observed > 32768', reason)
+        self.assertIn('self.length == MAXIMUM_HTTP_REASON_BYTES', reason)
+        self.assertIn('self.status != 101', reason)
+        self.assertNotIn('Vec<', reason)
+
     def test_explicit_v7_matrix_retains_v6_sources_and_exact_native_identity(self):
         previous = json.loads((ROOT/'wit/host-abi-phase3-v6.json').read_bytes())
         matrix = json.loads((ROOT/'wit/host-abi-phase3-v7.json').read_bytes())

@@ -2554,14 +2554,17 @@
         "tests::phase_timing::connected_transport_does_not_charge_later_response_headers_to_connect_timer",
         "tests::phase_timing::header_phase_timeout_keeps_written_request_uncertain_and_never_replays",
         "tests::phase_timing::body_phase_timeout_closes_io_while_prior_chunks_keep_their_original_charge",
-        "tests::phase_timing::original_root_deadline_and_cancellation_are_never_reported_as_phase_timeouts"
+        "tests::phase_timing::original_root_deadline_and_cancellation_are_never_reported_as_phase_timeouts",
+        "reason::tests::fragmented_informational_and_raw_final_reason_do_not_capture_body_or_stale_bytes",
+        "reason::tests::malformed_status_and_bounded_prefix_or_reason_refuse_without_growing_storage",
+        "tests::phase_timing::informational_reason_is_not_returned_and_phase_pooled_capture_has_no_retired_owner"
       ],
       "expectedIgnored": [],
       "id": "latent-http.lib.latent-http",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 74,
+      "minimumCases": 77,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [

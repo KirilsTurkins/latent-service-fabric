@@ -24,6 +24,106 @@ fn input(port: u16) -> StreamingHttpRequest {
     }
 }
 
+pub(crate) async fn captured_wire_reason(
+    wire: &[u8],
+    phase: bool,
+) -> Result<Option<Vec<u8>>, Stream> {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let wire = wire.to_vec();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        read_request(&mut stream).await;
+        for fragment in wire.chunks(3) {
+            stream.write_all(fragment).await.unwrap();
+            tokio::task::yield_now().await;
+        }
+    });
+    let f = if phase {
+        fixture(port)
+    } else {
+        let mut config = config(port);
+        config.destinations[0].redirect_destinations.clear();
+        Fixture::streaming(
+            config,
+            HttpStreamLimits {
+                maximum_input_bytes: 1024,
+                maximum_output_bytes: 1024,
+                maximum_chunk_bytes: 4,
+                maximum_outstanding_chunks: 2,
+            },
+        )
+    };
+    let (session, _) = f.session(5000);
+    let result = async {
+        let upload = f
+            .streaming
+            .as_ref()
+            .unwrap()
+            .start(&session, input(port))?
+            .await?;
+        let body = upload.finish().await?;
+        Ok(body.head().reason_phrase().map(<[u8]>::to_vec))
+    }
+    .await;
+    drop(session);
+    tokio::time::timeout(Duration::from_secs(2), server)
+        .await
+        .unwrap()
+        .unwrap();
+    f.clean().await;
+    result
+}
+
+#[tokio::test]
+async fn informational_reason_is_not_returned_and_phase_pooled_capture_has_no_retired_owner() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        for phrase in [&b"Caf\xe9"[..], &b""[..]] {
+            read_request(&mut stream).await;
+            stream
+                .write_all(b"HTTP/1.1 103 Early hints\r\nX-Test: interim\r\n\r\nHTTP/1.1 200 ")
+                .await
+                .unwrap();
+            stream.write_all(phrase).await.unwrap();
+            stream
+                .write_all(b"\r\nContent-Length: 0\r\n\r\n")
+                .await
+                .unwrap();
+        }
+    });
+    let f = fixture(port);
+    for phrase in [&b"Caf\xe9"[..], &b""[..]] {
+        let (session, _) = f.session(5000);
+        let observer = session.observer();
+        let upload = f
+            .streaming
+            .as_ref()
+            .unwrap()
+            .start(&session, input(port))
+            .unwrap()
+            .await
+            .unwrap();
+        let mut body = upload.finish().await.unwrap();
+        assert_eq!(body.head().reason_phrase(), Some(phrase));
+        assert!(body.read(4).await.unwrap().is_none());
+        drop(body);
+        drop(session);
+        assert!(observer.is_quiescent());
+        assert_eq!(
+            f.io.snapshot(),
+            latent_capabilities::broker::io::IoSnapshot::default()
+        );
+    }
+    tokio::time::timeout(Duration::from_secs(2), server)
+        .await
+        .unwrap()
+        .unwrap();
+    f.clean().await;
+}
+
 #[tokio::test]
 async fn old_streaming_profile_rejects_nonzero_phase_contract_before_contact() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

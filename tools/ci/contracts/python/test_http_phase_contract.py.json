@@ -1,12 +1,25 @@
 {
   "cases": [
     "HttpPhaseContract.test_explicit_phase_policy_retains_http_resources_limits_and_closed_operations",
+    "HttpPhaseContract.test_explicit_raw_reason_capture_moves_prepaid_owner_without_legacy_parser_fallback",
     "HttpPhaseContract.test_explicit_v7_matrix_retains_v6_sources_and_exact_native_identity",
     "HttpPhaseContract.test_new_schema_rules_preserve_every_original_constraint",
     "HttpPhaseContract.test_v7_never_changes_the_frozen_default_or_old_manifest"
   ],
   "guards": {
     "HttpPhaseContract.test_explicit_phase_policy_retains_http_resources_limits_and_closed_operations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:23e7d3188b3ac4abb257b40ae0afebec560fec40a8f658dd3ffc795462df7b7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpPhaseContract.test_explicit_raw_reason_capture_moves_prepaid_owner_without_legacy_parser_fallback": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -57,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_http_phase_contract.py",
-  "reviewReason": "Retain explicit V7 policy registration alongside frozen default and source identities after hosted precontact rejection",
+  "reviewReason": "Fence explicit raw HTTP/1 reason capture before lossy parsing; preserve legacy defaults, prepaid owner transfer and existing phase guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

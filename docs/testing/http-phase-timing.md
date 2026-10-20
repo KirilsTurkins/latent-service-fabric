@@ -23,6 +23,15 @@ bytes as Latin1 without substituting a canonical phrase for an unobserved
 protocol. Both the retained head and its result copy are prepaid. The old response
 and old provider reserve no new reason metadata.
 
+For this explicit profile, a fixed-capacity observer reads the decrypted HTTP/1
+status line before pinned `httparse` drops non-ASCII reason bytes. The existing
+512-byte buffer moves directly into the retained head, and its connection slot
+is cleared before pool reuse. Informational responses do not replace the final
+reason; fragmented lines share the existing 32 KiB protocol-prefix bound. The
+observer does not inspect or retain response body bytes. Legacy connections do
+not allocate it. The earlier hosted failure on `Caf\xC3\xA9` is retained as a
+parser-loss failure; corrected native transport and component results are pending.
+
 The focused hosted lane checks the immutable profile, strict semantic aliases,
 prepared bindings, real stalled TLS/header/body sockets, original root precedence
 and fresh component Store retirement. Source formatting and catalogue validation

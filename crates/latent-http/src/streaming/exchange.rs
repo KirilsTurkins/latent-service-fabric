@@ -104,14 +104,25 @@ pub(super) async fn open(
                 input.destination.index,
             )
             .await?;
-        let mut socket = network::connect(
+        let reason = if inner.phase_timing {
+            Some(call.io().buffer(
+                latent_capabilities::broker::http::MAXIMUM_HTTP_REASON_BYTES,
+                128,
+            )?)
+        } else {
+            None
+        };
+        let mut socket = network::connect_with_reason(
             &inner.pools,
             &client,
             &call,
             destination,
             &answers,
             &inner.tls,
-            inner.config.limits.maximum_headers,
+            network::ResponseSettings {
+                maximum_headers: inner.config.limits.maximum_headers,
+                reason,
+            },
         )
         .await?;
         let Network::Http(connection) = socket.resource() else {
