@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "ScratchProbe.test_no_filesystem_grants_or_inferred_unknown_outcome_and_no_false_retirement",
+    "ScratchProbe.test_old_greeting_traps_unknown_and_malformed_values_do_not_become_api_evidence",
+    "ScratchProbe.test_only_bounded_exact_caught_results_count_and_not_found_is_not_unsupported",
+    "ScratchProbe.test_selector_refuses_alias_foreign_language_and_competing_campaign_before_output",
+    "ScratchProbe.test_six_calls_include_original_bound_owner_retirement_and_explicit_trap_fresh_pair"
+  ],
+  "guards": {
+    "ScratchProbe.test_no_filesystem_grants_or_inferred_unknown_outcome_and_no_false_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+      ],
+      "skipSites": []
+    },
+    "ScratchProbe.test_old_greeting_traps_unknown_and_malformed_values_do_not_become_api_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+      ],
+      "skipSites": []
+    },
+    "ScratchProbe.test_only_bounded_exact_caught_results_count_and_not_found_is_not_unsupported": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+      ],
+      "skipSites": []
+    },
+    "ScratchProbe.test_selector_refuses_alias_foreign_language_and_competing_campaign_before_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+      ],
+      "skipSites": []
+    },
+    "ScratchProbe.test_six_calls_include_original_bound_owner_retirement_and_explicit_trap_fresh_pair": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6f0d52ab0d8694b910e8ed937d85f7f7371f767f1e110499d982842b518b8746",
+        "class:setup-sha256:4262f70c8f166fd322d0682cf6de5487b5a277a697dae0154f86bdd6966b7ea4"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_scratch_probe.py",
+  "reviewReason": "Prepare ordinary five-language scratch API and exact reached node:fs compiler refusal packets without any filesystem grant, preserving normal source/native/package inputs, owner retirement, fresh state and separate Unsupported classification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

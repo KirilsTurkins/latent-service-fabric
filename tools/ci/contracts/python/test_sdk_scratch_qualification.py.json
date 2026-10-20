@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ScratchQualification.test_builder_uses_normal_default_runtime_and_only_rust_dotnet_offline_flags",
+    "ScratchQualification.test_exact_normal_native_companions_and_node_are_required_before_new_compile",
+    "ScratchQualification.test_public_bundle_contains_observed_products_and_no_keys_caches_or_original_library_source",
+    "ScratchQualification.test_rehashed_normal_receipt_cannot_hide_foreign_source_native_or_signer_payload"
+  ],
+  "guards": {
+    "ScratchQualification.test_builder_uses_normal_default_runtime_and_only_rust_dotnet_offline_flags": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScratchQualification.test_exact_normal_native_companions_and_node_are_required_before_new_compile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScratchQualification.test_public_bundle_contains_observed_products_and_no_keys_caches_or_original_library_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScratchQualification.test_rehashed_normal_receipt_cannot_hide_foreign_source_native_or_signer_payload": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_scratch_qualification.py",
+  "reviewReason": "Prepare ordinary five-language scratch API and exact reached node:fs compiler refusal packets without any filesystem grant, preserving normal source/native/package inputs, owner retirement, fresh state and separate Unsupported classification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
