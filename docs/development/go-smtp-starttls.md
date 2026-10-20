@@ -57,8 +57,22 @@ aggregate capacity/no eviction, unchanged parser errors, fresh-instance state,
 concurrent cache-hit identity and exact per-DER boundary. Only its package
 declaration changes in that reference. It then constructs one fresh ordinary Go
 component and reruns the original six signed cases, with unchanged grants and
-runtime/provider bounds. Corrected reference and signed TLS execution are
-pending. Local source controls do not establish either actual outcome. This candidate
+runtime/provider bounds. The [authenticated corrected observation](../testing/evidence/go-smtp-starttls-signed-2026-10-20.json)
+records [run 39447505901/job 118713217150](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39447505901/job/118713217150)
+at exact source `dcb4f99d9a10ca4c785c772c68a63bca0110c6af`: all eight native
+cache reference cases and all six ordered signed guest cases passed, with six
+real peer contacts, six zero-original-user-owner rows and clean logical-provider
+stop. The fresh component is 9,422,932 bytes, SHA-256
+`2913e0637d38cadb684b4d47686e039da90c50b9f54736b252788117a2a0f1fe`.
+All 54 archive members passed CRC/SHA-256 checks, and all 5,451 source-input rows
+(45,332,635 bytes) match that exercised Git source. The actual compiler transform
+binds the complete upstream cache preimage to the exact reference-tested cache.
+
+The cache-limit reference is distinct from signed oversized-certificate or full
+TLS adversarial qualification. The signed six-case result remains attributed to
+its original component/native source. Final source composition also includes the
+separately tested bounded Write progression and unrelated reviewed HTTP/native
+and TypeScript changes; it does not relabel that historical execution. This candidate
 does not qualify ordinary `SendMail` with implicit system roots, authentication,
 email delivery, arbitrary protocol clients, host TLS or full networking.
 The explicit development logical provider remains distinct from a normal
