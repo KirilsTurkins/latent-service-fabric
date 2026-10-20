@@ -707,6 +707,8 @@ jobs:
           path: ${{ runner.temp }}/java-scratch-prepared
       - name: Check exact source preservation and concrete error categories
         run: python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification tools.tests.test_java_scratch_wiring
+      - name: Check exact Java closed filesystem and preserved argument cases
+        run: python3 -B -m unittest tools.tests.test_java_closed_filesystem -v
       - name: Compile one fresh Java component and run the original signed programme plus six scratch outcomes
         run: >-
           python3 tools/qualify_sdk_scratch.py --language java

@@ -78,7 +78,19 @@ JAVA = r'''
         String label;
         boolean opened = false;
         try {
-            if (mode.equals("open")) {
+            if (mode.equals("argument-input-null")) {
+                try (java.io.InputStream value = new java.io.FileInputStream((String)null)) { opened = true; }
+            } else if (mode.equals("argument-output-null")) {
+                try (java.io.OutputStream value = new java.io.FileOutputStream((String)null)) { opened = true; }
+            } else if (mode.equals("argument-output-empty")) {
+                try (java.io.OutputStream value = new java.io.FileOutputStream("")) { opened = true; }
+            } else if (mode.equals("argument-file-null")) {
+                new java.io.File((String)null); opened = true;
+            } else if (mode.equals("argument-temp-null")) {
+                java.io.File.createTempFile(null, ".tmp", new java.io.File(".")); opened = true;
+            } else if (mode.equals("argument-temp-prefix")) {
+                java.io.File.createTempFile("x", ".tmp", new java.io.File(".")); opened = true;
+            } else if (mode.equals("open")) {
                 try (java.io.InputStream value = new java.io.FileInputStream("lsf-scratch-refusal")) { opened = true; }
             } else if (mode.equals("create") || mode.equals("trap")) {
                 java.io.File path = new java.io.File("lsf-scratch-refusal");
@@ -90,6 +102,8 @@ JAVA = r'''
                 value.delete();
             } else throw new IllegalArgumentException("scratch-mode");
             return "scratch|java|unexpected-success";
+        } catch (NullPointerException error) { label = "null-pointer";
+        } catch (IllegalArgumentException error) { label = "illegal-argument";
         } catch (java.io.FileNotFoundException error) { label = "file-not-found";
         } catch (java.io.IOException error) { label = "io-error";
         } catch (UnsupportedOperationException error) { label = "unsupported-operation";
