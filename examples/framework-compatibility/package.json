@@ -14,7 +14,7 @@
     "@angular/core": "20.3.32",
     "@angular/forms": "20.3.32",
     "@angular/platform-browser": "20.3.32",
-    "@angular/router": "20.3.32",
+    "@angular/router": "20.3.34",
     "@babel/core": "7.29.7",
     "@docusaurus/core": "3.10.2",
     "@docusaurus/preset-classic": "3.10.2",
