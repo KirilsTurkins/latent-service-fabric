@@ -57,7 +57,10 @@ a successful fresh invocation, with original owner-idle and shutdown fences.
 Native reference results supplement this signed gate. Source tests and a native
 reference alone do not establish component qualification.
 
-The campaign's signed result remains pending until its exact-source hosted job
-passes. Async/buffered logger drain, the full six-language facility matrix and
+The [source-bound retained-native campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39294094026/job/118201998691)
+passed the separate normal27 and logging35 programmes (24 retained plus11 new).
+Artifact12206648764 retains the fresh offline component and known/reaped outcomes.
+The component source and historical native source are separately bound; this is
+the original finite observation, not a current-head native compilation claim. Async/buffered logger drain, the full six-language facility matrix and
 cross-tenant concurrent qualification remain open under issues #681 and #742.
 This profile does not qualify general filesystem or POSIX descriptor APIs.

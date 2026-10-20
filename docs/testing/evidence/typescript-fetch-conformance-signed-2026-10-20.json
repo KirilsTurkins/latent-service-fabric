@@ -1,0 +1,152 @@
+{
+  "run": 39379220185,
+  "job": 118484212978,
+  "head": "e7e665e6ff013f377535defc3435da7bd10cc027",
+  "artifact": 12244982734,
+  "archiveDigest": "sha256:59e6ed85f9590e8d88a339aa984b686ed2c324cc94639a7d9e6674a9aa4a7aa2",
+  "cases": 31,
+  "knownReapedRows": 31,
+  "physicalRetirementObservations": 33,
+  "realContacts": 28,
+  "uncertainMutations": 1,
+  "redirectCredentialsScoped": true,
+  "cleanNodeAndPeerStop": true,
+  "readerBackendAndDeclarationsExact": true,
+  "component": "sha256:0e3bfbb8467a94771190413c98cfed8e56880c36ca81b35eaeffb56d3d5aa537",
+  "fullTicketQualification": false,
+  "historicalNative": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "schemaVersion": "latent.typescript.fetch-conformance.observation.v1",
+  "status": "passed",
+  "archiveBytes": 8910271,
+  "archiveMembers": 376,
+  "qualificationSources": {
+    ".github/workflows/typescript-fetch-conformance.yml": {
+      "sha256": "sha256:5adcfb3767ec665547348b42baff0fe10dfac4549c6db44bdd19323bf4f7cd11",
+      "bytes": 3422
+    },
+    "sdk/typescript-guest/probes/fetch-conformance/main.ts": {
+      "sha256": "sha256:62d908f32100b6cd6f182e81428c1a9f4fbea7e3309fa38f2b019608a2f53ff6",
+      "bytes": 6343
+    },
+    "tools/typescript_fetch_conformance.py": {
+      "sha256": "sha256:7ed172fde26c59d520e9338c03d78ce0ceffc705de6ab09e1d9da2df299564af",
+      "bytes": 9190
+    },
+    "tools/qualify_typescript_fetch_conformance.py": {
+      "sha256": "sha256:6e9efedf843f7e90cedbadbefb6a3c9400c610ee8c9f2185aed849584f0abe90",
+      "bytes": 11923
+    },
+    "tools/qualify_typescript_fetch_runtime.py": {
+      "sha256": "sha256:a1ce6d808d87444dbb43cd4eb2652a50785c1a50ea7153457d5c418a9312fccf",
+      "bytes": 22883
+    },
+    "tools/typescript_fetch_replay_inputs.py": {
+      "sha256": "sha256:a3d50006129a8947291e51372ee425c2dba56900ca5676d3fa97a2b8c8c17162",
+      "bytes": 8213
+    }
+  },
+  "build": {
+    "component": {
+      "sha256": "sha256:0e3bfbb8467a94771190413c98cfed8e56880c36ca81b35eaeffb56d3d5aa537",
+      "bytes": 12415267
+    },
+    "documents": {
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:cb7945f67b3a2727a00fbbc5fb8c613744ca7d64867352564c90c2becd49fc5e",
+        "bytes": 2943
+      },
+      "build-observation.json": {
+        "sha256": "sha256:ab08c4289c3c8e82b7cae98a532d764eecc174fdae21d9ee5d3762574a1400e4",
+        "bytes": 3708
+      },
+      "source-inputs.json": {
+        "sha256": "sha256:b6b3b712aa56eb7c310579df377a9a150b7846b10c727e9546c0dc2138bd0109",
+        "bytes": 14423
+      },
+      "recipe-inputs.json": {
+        "sha256": "sha256:f29f8b6beadc1ecd30f188be81923f7554f62361e62dec61df13c2613da2b5c3",
+        "bytes": 15436
+      },
+      "package-inputs.json": {
+        "sha256": "sha256:b25c6612b960d2f3df2d1edb5e805be3e187eeece144cbf16bb11b7a82a5877b",
+        "bytes": 1592
+      },
+      "typescript-runtime-selection.json": {
+        "sha256": "sha256:807877c5836a98b6061cddd7a03e337df4dafa0c4993251a7bfca7afff63c252",
+        "bytes": 15274
+      }
+    }
+  },
+  "execution": {
+    "sha256": "sha256:ddc3cbe284c55792aef93dc04252ab2d9a5c3af2ea8aca435e79330177d53390",
+    "bytes": 32512
+  },
+  "caseNames": [
+    "json-clone",
+    "http404-response",
+    "http500-response",
+    "method-get",
+    "method-head",
+    "method-post",
+    "method-put",
+    "method-patch",
+    "method-delete",
+    "method-options",
+    "already-aborted",
+    "reserved-header",
+    "used-request",
+    "buffered-reader",
+    "buffered-reader-cancel",
+    "get-body",
+    "malformed-json",
+    "truncated-body",
+    "malformed-framing",
+    "oversized-body",
+    "encoding-unsupported",
+    "redirect",
+    "redirect-denied",
+    "denied-target-no-contact",
+    "uncertain-post-no-replay",
+    "explicit-abort",
+    "operation-timeout",
+    "root-return-drains-accepted",
+    "root-cancel",
+    "root-deadline",
+    "fresh-after-lifecycle"
+  ],
+  "rootOwnerLimits": {
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 16,
+    "waits": 8,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 64
+  },
+  "missingRuntimeAndHttpGrants": "pre-entry denied; zero guest fuel/outbound",
+  "originalOneRequestFixtureChanged": false,
+  "separateRedirectFixtureOutboundLimit": 2,
+  "productionNativeCompiledAtThisSource": false,
+  "networkStreamingQualified": false,
+  "crossTenantQualified": false,
+  "currentComposition": {
+    "recipeDifferences": [
+      "tools/guest_dependency_inputs.py"
+    ],
+    "resourcePreflight": "no-declared-resources",
+    "allOtherRecipeBytesExact": true,
+    "capturedSourceMatchesLinuxJsonWriterProjection": true,
+    "normalizationLimitedToGeneratedJsonNewlines": [
+      "capsule-project.json",
+      "sdk-lock.json"
+    ],
+    "currentWholeRecipeCompilationClaimed": false
+  },
+  "priorUnexplainedDeleteFailure": {
+    "head": "6b08586fb21dd102530244b7977f6a9132e97880",
+    "artifact": 12244473211,
+    "status": "failed",
+    "cause": "unknown; invocation response was not retained",
+    "reclassified": false
+  }
+}

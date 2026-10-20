@@ -1,0 +1,205 @@
+{
+  "actualNodeStatus": "passed",
+  "archiveBytes": 4280819,
+  "archiveDigest": "sha256:538e248483f8afef0bc155f045b80e20dd8e4c7d5442f2087c839c31a972ea59",
+  "archiveMembers": 710,
+  "artifact": 12243715960,
+  "builds": {
+    "greeting": {
+      "componentDigest": "sha256:bfabe5d1bd7b61a414d9f8a04e9b9b2ba66ecf74ce211e043b891db2e092ad5e",
+      "currentApplicationSourceInventoryEqual": true,
+      "currentClosedFilesystemProfileEqual": true,
+      "currentRecipeDifferences": {
+        "tools/guest_dependency_inputs.py": {
+          "current": {
+            "digest": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+            "size": 10044
+          },
+          "observed": {
+            "digest": "sha256:38d9d3b47d4e4b3e8155742d4a769517d1b38660225b09f86509a8b6be086867",
+            "size": 9725
+          }
+        }
+      },
+      "currentResourcePreflightResult": "no-declared-resources",
+      "currentSourceDifferences": {},
+      "currentWholeRecipeCompilationClaimed": false,
+      "originalObservationDigest": "sha256:fa6d7832a5e675b5a9d87633bcea2f19047b821bd9b36c04a46fff87fa436ad1",
+      "originalRecipeDigest": "sha256:627c80ccd4733a2ade7404c714902490a080cfe8ff1fe9a04462d846132866b6",
+      "packageInputsDigest": "sha256:889b7dfb9f05b1a6d3cef9bf703d77567857390811bf91134553ecc45a57aa12",
+      "signerInputCount": 8,
+      "sourceDigest": "sha256:91356c5e4174dbf1bfb1c45a079c4bfba598e9591f07e104399d1dc77486f6c0",
+      "sourceRows": 197
+    },
+    "http-status": {
+      "componentDigest": "sha256:65381598a9bc76866631090cac2e6bfe769c2aec6cd732633e5e7a7cd10ebfd8",
+      "currentApplicationSourceInventoryEqual": true,
+      "currentClosedFilesystemProfileEqual": true,
+      "currentRecipeDifferences": {
+        "tools/guest_dependency_inputs.py": {
+          "current": {
+            "digest": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+            "size": 10044
+          },
+          "observed": {
+            "digest": "sha256:38d9d3b47d4e4b3e8155742d4a769517d1b38660225b09f86509a8b6be086867",
+            "size": 9725
+          }
+        }
+      },
+      "currentResourcePreflightResult": "no-declared-resources",
+      "currentSourceDifferences": {},
+      "currentWholeRecipeCompilationClaimed": false,
+      "originalObservationDigest": "sha256:262e4e81ecc23f830c4a09b26361a20b3df19ed7dd5d08e467b93c756ab86f3c",
+      "originalRecipeDigest": "sha256:627c80ccd4733a2ade7404c714902490a080cfe8ff1fe9a04462d846132866b6",
+      "packageInputsDigest": "sha256:fbeb611d628596cad32df3f386370b0cf460e69d418b3527e1d8f592b5016af5",
+      "signerInputCount": 9,
+      "sourceDigest": "sha256:fa10da30aed4dd471ae67356e4feba9b93a0ed7e0d3e7ff5e01cbf4212dac336",
+      "sourceRows": 197
+    },
+    "recovery": {
+      "componentDigest": "sha256:36ffe54e8d3110938869aa00ce66a30daf5cf3430d3da95db07a9758fe79fac0",
+      "currentApplicationSourceInventoryEqual": true,
+      "currentClosedFilesystemProfileEqual": true,
+      "currentRecipeDifferences": {
+        "tools/guest_dependency_inputs.py": {
+          "current": {
+            "digest": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+            "size": 10044
+          },
+          "observed": {
+            "digest": "sha256:38d9d3b47d4e4b3e8155742d4a769517d1b38660225b09f86509a8b6be086867",
+            "size": 9725
+          }
+        }
+      },
+      "currentResourcePreflightResult": "no-declared-resources",
+      "currentSourceDifferences": {},
+      "currentWholeRecipeCompilationClaimed": false,
+      "originalObservationDigest": "sha256:014dd09d55b144120815bc4c2aaacdc2a56abed34c82c9c272d779b84c937c78",
+      "originalRecipeDigest": "sha256:627c80ccd4733a2ade7404c714902490a080cfe8ff1fe9a04462d846132866b6",
+      "packageInputsDigest": "sha256:178ec0aa55fb78ef66ba46e0af83e7163e88370e129ecea7f449f6ae55f45109",
+      "signerInputCount": 8,
+      "sourceDigest": "sha256:3f6ee4d3d8cfe621491f44b010f92b6c8b87f01bc8714b15816815e2c3b1d490",
+      "sourceRows": 197
+    },
+    "shipping": {
+      "componentDigest": "sha256:e51d2fb50b0d545ba4b5a868479fa6e5095e5628ef1fa3b6d31da1908596c808",
+      "currentApplicationSourceInventoryEqual": true,
+      "currentClosedFilesystemProfileEqual": true,
+      "currentRecipeDifferences": {
+        "tools/guest_dependency_inputs.py": {
+          "current": {
+            "digest": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+            "size": 10044
+          },
+          "observed": {
+            "digest": "sha256:38d9d3b47d4e4b3e8155742d4a769517d1b38660225b09f86509a8b6be086867",
+            "size": 9725
+          }
+        }
+      },
+      "currentResourcePreflightResult": "no-declared-resources",
+      "currentSourceDifferences": {},
+      "currentWholeRecipeCompilationClaimed": false,
+      "originalObservationDigest": "sha256:c6279c88d0ab2b95ddca2bcd22511ccca2091742936e379b045800f38974a7f7",
+      "originalRecipeDigest": "sha256:627c80ccd4733a2ade7404c714902490a080cfe8ff1fe9a04462d846132866b6",
+      "packageInputsDigest": "sha256:ac8b34bf5065fcd6beb92a1d597f7f1f4d65888769f5861fa9c6173683701540",
+      "signerInputCount": 8,
+      "sourceDigest": "sha256:5803b5481adec7a620095e7876d259e8a3d7e19db830fa7e4282f564acf18112",
+      "sourceRows": 197
+    },
+    "word-count": {
+      "componentDigest": "sha256:0ad32ab9a17df94d5ac5534942709efa894e1470169c57bdacf8813edb8b37b3",
+      "currentApplicationSourceInventoryEqual": true,
+      "currentClosedFilesystemProfileEqual": true,
+      "currentRecipeDifferences": {
+        "tools/guest_dependency_inputs.py": {
+          "current": {
+            "digest": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+            "size": 10044
+          },
+          "observed": {
+            "digest": "sha256:38d9d3b47d4e4b3e8155742d4a769517d1b38660225b09f86509a8b6be086867",
+            "size": 9725
+          }
+        }
+      },
+      "currentResourcePreflightResult": "no-declared-resources",
+      "currentSourceDifferences": {},
+      "currentWholeRecipeCompilationClaimed": false,
+      "originalObservationDigest": "sha256:618ace4cabace5198309a29380a4dba5cfaee484d66c68581c190bdd74839159",
+      "originalRecipeDigest": "sha256:627c80ccd4733a2ade7404c714902490a080cfe8ff1fe9a04462d846132866b6",
+      "packageInputsDigest": "sha256:5d5016889a35baf3d82bad0bd608c386383d0c16ce28733ac5dace49fcc42022",
+      "signerInputCount": 8,
+      "sourceDigest": "sha256:6492fff2e30ebd3f297d7da06b142badb4b57848c744c3cbf639fa7ec28a9115",
+      "sourceRows": 197
+    }
+  },
+  "componentProgrammeRepeated": false,
+  "correctedStrictProjection": {
+    "caughtUnsupported": 3,
+    "cleanReapedShutdown": true,
+    "filesystemAndArgumentCalls": 12,
+    "invocations": 41,
+    "originalHostMemoryPair": true,
+    "originalProgrammeInvocations": 29,
+    "physicalSamples": 38,
+    "preservedArgumentErrors": 6,
+    "providerIdleSamples": 18
+  },
+  "failure": "diagnostic expected39 invocations/36 samples; actual Java baseline29 plus12 makes41/38",
+  "filesystemAuthorityAdded": false,
+  "fullTicketQualification": false,
+  "historicalOriginalDotnetReceiptRewritten": false,
+  "job": 118471006015,
+  "nativeHostRecompiled": false,
+  "nodeWorkflowDigest": "sha256:98966484037c6cee90694f616bd50b2b48b0481495fbc6cf9e84784b2b0512c6",
+  "normalJavaReceiptFabricated": false,
+  "overallJobConclusion": "failure",
+  "productionSource": "759b86c139473cbe06a0b51298ac13ea234cbffe",
+  "reprojectionImplementation": {
+    "digest": "sha256:189ea969b2d2a2fc47377f0c3808c7ac45cf5cabaada8e140901f09c772b68fb",
+    "path": "tools/replay_java_closed_filesystem.py"
+  },
+  "run": 39374983147,
+  "schemaVersion": "latent.java.closed-filesystem.signed-observation.v1",
+  "selectedHost": {
+    "actualRandomTests": 17,
+    "archiveDigest": "sha256:1fceae9a8e6e4a097cc7babc4c67c1eed0b8941e4d65ee134ec4a669200de818",
+    "artifact": 12237197879,
+    "binary": {
+      "bytes": 186366600,
+      "sha256": "sha256:faad2a5502519c05bf8dd8b27016cd70615fefd6aca7b8b2c37e3bbf2f91d818"
+    },
+    "compiledSource": "75b408ea0184936aa1dc21df2c9dd5e6c44bbc46",
+    "compiledTree": "4fe55ff6b68317fedcf4f05f2ff5a67d16681f5e",
+    "currentDevelopmentCompilationClaimed": false,
+    "features": [],
+    "job": 118421487525,
+    "ordinaryDefaults": true,
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "run": 39359322603,
+    "sourceArchive": {
+      "bytes": 5281580,
+      "sha256": "sha256:bf06389ad4900489f722be0acfe983ad5629f29eafad0198a3c11e7a0d8b535f"
+    },
+    "sourceIdentity": {
+      "bytes": 25790889,
+      "files": 3295,
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested",
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "sha256": "sha256:767e86c2b3f7484c6830208afb40c7217645ab56f64f637b087c565acfcd5889"
+    }
+  },
+  "source": "79d13eaa7da45882ad278c6d3ce09a971d111310",
+  "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39374983147/job/118471006015",
+  "writableScratchImplemented": false
+}

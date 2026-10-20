@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/typescript_fetch_replay_inputs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Correct frozen original artifact provenance: compiled merge0754391a has workflow-head secondparentaea63cc6; pin both identities and exact merge ancestry, retaining full archive and native hashes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a3d50006129a8947291e51372ee425c2dba56900ca5676d3fa97a2b8c8c17162"
+}

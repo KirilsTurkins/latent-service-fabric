@@ -1,0 +1,88 @@
+name: Actual Go live stack and GC reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/go-runtime-costs-20261020']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: go-runtime-costs-reference-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+
+jobs:
+  live-cost:
+    name: Actual Go default baseline and managed live stack GC and heap costs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Install pinned repository source controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Reject fabricated memory observations and changed original products
+        run: python3 -m unittest tools.tests.test_go_runtime_costs tools.tests.test_go_node_stop tools.tests.test_sdk_scratch_qualification -v
+      - name: Authenticate the completed exact producer before restoring any executable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/qualify_go_node_stop.py --record-producer --output "$RUNNER_TEMP/go-runtime-costs-producer.json"
+      - name: Restore only the authenticated public normal Go products
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36
+          run-id: 39373374237
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/go-runtime-costs-normal
+      - name: Install the existing network-denied compiler namespace
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the exact maintained Go compiler and generator
+        run: |
+          set -euo pipefail
+          cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
+          test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
+          mkdir -p "$RUNNER_TEMP/go-runtime-costs-tools"
+          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" -C "$RUNNER_TEMP/go-runtime-costs-tools"
+          python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/go-runtime-costs-tools/go" --output "$RUNNER_TEMP/go-runtime-costs-tools/go-async"
+          echo "$RUNNER_TEMP/go-runtime-costs-tools/go-async/bin" >> "$GITHUB_PATH"
+      - name: Compile identical ordinary source and execute both real signed profiles
+        run: python3 tools/qualify_go_runtime_costs.py --normal-qualification "$RUNNER_TEMP/go-runtime-costs-normal" --producer-receipt "$RUNNER_TEMP/go-runtime-costs-producer.json" --output "$RUNNER_TEMP/go-runtime-costs"
+      - name: Retain bounded source builds real memory results and physical retirement including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-runtime-costs-reference-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-runtime-costs-producer.json
+            ${{ runner.temp }}/go-runtime-costs/*.json
+            ${{ runner.temp }}/go-runtime-costs/logs/**
+            ${{ runner.temp }}/go-runtime-costs/stack-placement/*.json
+            ${{ runner.temp }}/go-runtime-costs/stack-placement/logs/**
+            ${{ runner.temp }}/go-runtime-costs/profile-*/*.json
+            ${{ runner.temp }}/go-runtime-costs/profile-*/logs/**
+            ${{ runner.temp }}/go-runtime-costs/profile-*/build/*.json
+            ${{ runner.temp }}/go-runtime-costs/profile-*/build/logs/**
+            ${{ runner.temp }}/go-runtime-costs/profile-*/build/component.wasm
+            ${{ runner.temp }}/go-runtime-costs/profile-*/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7

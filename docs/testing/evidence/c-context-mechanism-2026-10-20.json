@@ -1,0 +1,201 @@
+{
+  "schemaVersion": "latent.c.context-source-actual-review.v1",
+  "sourceRevision": "e6e52433cf187ca9479191451c09a734f9a9ae29",
+  "run": 39408486561,
+  "job": 118580143884,
+  "artifact": 12258655842,
+  "zipSha256": "2393ca51e64a1da310aab53c0dc080311f53619b1f9fedc0b71740f322e5cc32",
+  "zipBytes": 8635,
+  "members": {
+    "00.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "01.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "00.stdout.txt": {
+      "sha256": "aa037454b5e8320521a32b278a3f4aff05fc79009ab5503f5d4a1b9a33b38c47",
+      "bytes": 7
+    },
+    "01.stdout.txt": {
+      "sha256": "af7d5fe037d8f474ddde841d6db3f76ce8f2a42cb01d95de2df10222121b12ef",
+      "bytes": 185
+    },
+    "02.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "02.stdout.txt": {
+      "sha256": "b7677d3ec37ee1897ba07dc2cfe8292fe421c9ac93396cca5bbece486d1a2a41",
+      "bytes": 9
+    },
+    "03.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "03.stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "04.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "04.stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "05.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "05.stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "06.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "06.stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "07.stderr.txt": {
+      "sha256": "8a2be5dbf70b327019c5e33904c17ce642564ed3d6355e6003572d2741ffc285",
+      "bytes": 70
+    },
+    "07.stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "08.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "08.stdout.txt": {
+      "sha256": "6945451574cd1cb6562fbdd2105b3cd7f14e1c8bfde86d7cc7da51f5425b2d32",
+      "bytes": 561
+    },
+    "report.json": {
+      "sha256": "c9f0187a8e9a03c2f2f832e5b237a97b7e1948f24657ad0c93260112eb385e46",
+      "bytes": 4356
+    },
+    "ordinary-static.wasm": {
+      "sha256": "8c96a8f06693c52cd4a735fde25e494f796ff844ef6d130c5554060b0642c43a",
+      "bytes": 767
+    },
+    "selected/core.wasm": {
+      "sha256": "0d35cfa4dc9e30855c0707b60f23fc514f529468107b47b6b07050ccbd579962",
+      "bytes": 1146
+    },
+    "selected/receipt.json": {
+      "sha256": "caa9b36eb7a8afa3a4b939debc7866d049bc79199938346bbeded3afa2811112",
+      "bytes": 462
+    },
+    "selected.ll": {
+      "sha256": "dea909d03737f177c8316dcdf711eb7f98bb1974be7c9824aef940c7e087b247",
+      "bytes": 6892
+    },
+    "selected.wasm": {
+      "sha256": "6470cda3ffd1a4e1e13dbf83af5c20f05b4456383e1ac9e82f90121f285b2924",
+      "bytes": 864
+    }
+  },
+  "sourceMaterials": {
+    "tools/qualify_c_context_lowering.py": {
+      "sha256": "9c956cfd1da4908e97913513743a5711ae14a1155195554a3ed4908f4f4bfb38",
+      "bytes": 6656
+    },
+    "sdk/c-guest/runtime-fixtures/context-lowering/probe.c": {
+      "sha256": "02ff5eb4b1a4d038ec34d459a7f004a451573fe552510d4ff4e44c41b6957bd9",
+      "bytes": 859
+    },
+    "sdk/c-guest/runtime-fixtures/context-lowering/control.cjs": {
+      "sha256": "e7e3759c601a7c970bbaad2b33275c3e68cfa0e23bda574923a4b8fcab41045a",
+      "bytes": 3556
+    },
+    "crates/latent-component-threading/src/c_context.rs": {
+      "sha256": "60e2709f753283be986b986e8abb786fe2019bc3fcc346435855cdff91206fde",
+      "bytes": 22076
+    },
+    "crates/latent-component-threading/src/bin/c-context.rs": {
+      "sha256": "36011a3d247496ba74844f64cff256671ddc37087ae8c18a87c92e16f3802ce2",
+      "bytes": 2538
+    },
+    "crates/latent-component-threading/src/lib.rs": {
+      "sha256": "48040f1c394421d57c0b53a85a7a18a2d6fbed7f256f2fdcc32fe9bee732bddb",
+      "bytes": 23861
+    },
+    "crates/latent-component-threading/Cargo.toml": {
+      "sha256": "4aa9d3980b845949ddba6f2f0b148420fd0b4d9d918c9785d47f143ac5630355",
+      "bytes": 637
+    },
+    "Cargo.toml": {
+      "sha256": "0670f74a80d1e5e95b082bf8152da8260f634147957fe10add32336a59d5fea9",
+      "bytes": 3779
+    },
+    "Cargo.lock": {
+      "sha256": "950dd0a788724cd7c2ffe163b1dceb8b65399879754a62aade46f0492ef1705b",
+      "bytes": 112655
+    }
+  },
+  "sourceMaterialsGitExact": true,
+  "originalRustCases": 20,
+  "newCMechanismRustCases": 6,
+  "independentActualCoreNodeReplay": {
+    "schemaVersion": "latent.c.context-compiler-control.v1",
+    "status": "passed",
+    "originalControlRejected": true,
+    "actualCompiledCoreExecuted": true,
+    "callbackReentrancyControl": true,
+    "records": [
+      {
+        "context": 256,
+        "value": 1,
+        "stack": 65472,
+        "tls": 131072,
+        "counter": 8
+      },
+      {
+        "context": 320,
+        "value": 2,
+        "stack": 131008,
+        "tls": 196608,
+        "counter": 9
+      },
+      {
+        "context": 256,
+        "value": 1,
+        "stack": 65472,
+        "tls": 131072,
+        "counter": 9
+      },
+      {
+        "context": 320,
+        "value": 2,
+        "stack": 131008,
+        "tls": 196608,
+        "counter": 11
+      }
+    ],
+    "negativeControls": 6,
+    "canonicalChildCreated": false,
+    "nativeRuntimeExecuted": false,
+    "pthreadProfileQualified": false
+  },
+  "templateExtentUpperBound": 48,
+  "compilerDriverOutputEqualsWindowsControl": true,
+  "actualCompiledCoreExecuted": true,
+  "canonicalChildCreated": false,
+  "nativeRuntimeExecuted": false,
+  "pthreadProfileQualified": false,
+  "bootstrapOrAdmissionQualified": false,
+  "atomicMemoryModelQualified": false,
+  "toolBinariesIndependentlyRetained": false,
+  "hermetic": false,
+  "workflowConclusion": "success",
+  "sourceFrozenBeforeDocumentationOnlyDelivery": true
+}
