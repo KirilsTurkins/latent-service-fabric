@@ -113,3 +113,14 @@ rehashed normal counts/names, unknown outcomes and companion marker drift.
 These signed results remain pending. Original component ancestry, selected
 native ancestry and fresh current compiler/fixture source remain separate;
 neither historical normal receipt is relabelled as current compilation.
+
+The first Rust-only reference at source `192c7b92` failed before compilation in
+[job 118533625598](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39394464486/job/118533625598):
+the qualifier supplied the PATH `cargo` shim and the maintained regular-file
+check returned `dependency-link-denied`. The correction supplies no explicit
+Cargo path, selecting the existing captured-toolchain `rustup which` resolver.
+The original refusal remains in the retained log and
+[artifact 12254395006](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39394464486/artifacts/12254395006).
+The reference workflow now permits a manual `language=rust` retry; its default
+and push selections still include both languages. This source correction is not
+signed Rust execution evidence.

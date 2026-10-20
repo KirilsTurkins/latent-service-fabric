@@ -69,6 +69,16 @@ class EmbeddedResources(unittest.TestCase):
                     original = original.replace(b"\n    if (name.startsWith('resources:')) return resourceCase(name.slice(10));",b'',1)
                 self.assertEqual(digest(original),record['originalSource'])
 
+    def test_rust_capture_uses_the_maintained_pinned_toolchain_resolver_instead_of_path_shim(self):
+        with patch.object(qualification.shutil,'which',return_value='/shim/cargo') as located:
+            self.assertIsNone(qualification.capture_compiler('rust'))
+        located.assert_not_called()
+        with patch.object(qualification.shutil,'which',return_value='/tools/go') as located:
+            self.assertEqual(qualification.capture_compiler('go'),Path('/tools/go'))
+        located.assert_called_once_with('go')
+        with self.assertRaisesRegex(RuntimeError,'embedded-resource-language'):
+            qualification.capture_compiler('foreign')
+
     def test_missing_transitive_edge_cannot_be_called_a_captured_resource_closure(self):
         for language,key in (('go','module'),('rust','package')):
             first,second = fixture.PACKAGES[language]
