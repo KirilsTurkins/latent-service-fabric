@@ -130,6 +130,30 @@ class ResourceRuntimeBoundaries(unittest.TestCase):
             else:records.reverse();records[0]['sequence']='1';records[1]['sequence']='2'
             with self.subTest(change=change):self.assertIsNone(runtime.pending_witness(i,u,p,'node-stop-pending',self.timer_records()))
 
+    def test_only_exact_optional_audit_refusal_retains_native_and_physical_barriers(self):
+        inventory,usage,_pages=self.witness()
+        refused={'schemaVersion':'latent.cli.result.v1','category':'platform-failure','command':'audit query',
+            'data':{},'error':{'code':'resource-exhausted','details':[],
+                'message':'The platform reported a failure.','retryable':False},
+            'outcomeKnown':True,'requestDispatched':True}
+        proof=runtime.pending_witness(inventory,usage,[refused],'node-stop-pending',self.timer_records())
+        self.assertTrue(proof['retainedProviderCall'])
+        self.assertFalse(proof['auditReadRefusalIsBarrierEvidence'])
+        self.assertFalse(proof['auditReadRefusal']['barrierEvidence'])
+        self.assertIsNone(runtime.pending_witness(inventory,usage,[refused],'node-stop-pending',b''))
+        missing=copy.deepcopy(inventory);missing['topology']['entries'][0]['activeCount']='0'
+        self.assertIsNone(runtime.pending_witness(missing,usage,[refused],'node-stop-pending',self.timer_records()))
+        for change in ('unknown-error','unknown-outcome','raw-detail','wrong-command','partial-data','duplicate'):
+            selected=copy.deepcopy(refused);pages=[selected]
+            if change=='unknown-error':selected['error']['code']='internal'
+            elif change=='unknown-outcome':selected['outcomeKnown']=False
+            elif change=='raw-detail':selected['error']['details']=['untrusted']
+            elif change=='wrong-command':selected['command']='invoke'
+            elif change=='partial-data':selected['data']={'page':{'nextPageToken':None}}
+            else:pages.append(copy.deepcopy(refused))
+            with self.subTest(change=change),self.assertRaises(WorkflowError):
+                runtime.pending_witness(inventory,usage,pages,'node-stop-pending',self.timer_records())
+
     def test_completed_or_dispatched_audit_never_substitutes_for_actual_accepted_timer_wait(self):
         i,u,p=self.witness()
         for raw in (b'',runtime.timer_observer.PREFIX+b'|pending|start-accepted|1|2|0|1\n'):

@@ -35,7 +35,7 @@ MATERIALS = ('tools/qualify_typescript_resource_runtime.py','tools/resource_runt
     'tools/resource_tenant_node.py','tools/qualify_resource_tenants.py','tools/rust_capsule_node.py',
     'tools/phase2_operator_process.py','tools/phase2_operator_scenario.py','tools/phase3_resource_os.py',
     'tools/phase3_resource_identity.py','tools/sdk_provider_scenario.py','tools/typescript_guest/console.mjs',
-    'tools/go_node_stop_timer_observer.py','tools/go_entropy_replay_inputs.py',
+    'tools/go_node_stop_timer_observer.py','tools/go_node_stop_probe.py','tools/go_entropy_replay_inputs.py',
     'tools/qualify_typescript_fetch_runtime.py','tools/run_rust_capsule_workflow.py',
     'tools/rust_capsule_build.py','tools/rust_capsule_project.py','tools/build_observation.py',
     'tools/build_process_signals.py','tools/typescript_guest/runtime_profile.py',

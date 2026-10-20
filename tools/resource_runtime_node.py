@@ -107,6 +107,16 @@ def pending_witness(inventory, usage, pages, activation, stderr):
             'resource-runtime-provider-observation-scopes')
     if min(integer(usage['tenantUsage']['counters']['calls']),integer(usage['tenantUsage']['counters']['sessions']),
            integer(usage['nodeUsage']['counters']['broker_calls'])) < 1:return None
+    require(type(pages) is list and 0 < len(pages) <= 4,'resource-runtime-bounded-audit-observation')
+    if pages[0].get('category') != 'success':
+        from tools.go_node_stop_probe import refused_observation
+        require(len(pages)==1,'resource-runtime-one-refused-read-observation')
+        refused=refused_observation(pages[0])
+        positive=positive_timer(stderr,activation)
+        if positive is None:return None
+        return {'activation':activation,'physicalOwners':{name:1 for name in LIVE},
+            'retainedProviderCall':True,'positiveTimer':positive,'auditReadRefusal':refused,
+            'auditEventsAloneProveTypedSuccess':False,'auditReadRefusalIsBarrierEvidence':False}
     require(type(pages) is list and 0 < len(pages) <= 4 and pages[-1]['data']['page']['nextPageToken'] is None,
             'resource-runtime-complete-bounded-audit-page')
     starts, waits, identities, epochs = [], [], set(), set()
@@ -150,7 +160,9 @@ def wait_pending(client, pending, probe, target, output, label):
                 command=('audit','query','--scope','tenant','--page-size','64',
                          '--from-unix-millis',str(max(0,pending.authoring_started_unix_millis-1)))
                 if token is not None:command+=('--page-token',token)
-                page=client.call(*command);pages.append(page);token=page['data']['page']['nextPageToken']
+                page=client.call(*command,codes=(0,4));pages.append(page)
+                if page['category']!='success':break
+                token=page['data']['page']['nextPageToken']
                 if token is None:break
             inventory=client.call('node','get','operator-workflow-test')['data']['inventory']
             usage=client.call('capability','list','--deployment',target['name'],'--include-node-usage')['data']
