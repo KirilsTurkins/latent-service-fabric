@@ -78,3 +78,10 @@ new mutation, conflict retry, audit-cap increase or false cleanup acknowledgemen
 is introduced. This change still requires actual clean shutdown under the full
 programme's audit pressure; a clean low-pressure standalone node is insufficient.
 Component/package bytes are retained on subsequent attempts for exact reuse.
+
+Attempt6b08586f at the same original bounds failed its DELETE result check
+after eight passed cases. Artifact12244473211 retains the built component and
+failed stage (SHA25654bdd9de156918e879acefda730503e37dd85feb6fcf45bef2c791634bef48ff).
+The controller had omitted the failed invocation row, so its cause remains
+unknown. Every returned ordinary/gated/root/fresh invocation is now persisted
+before validation; no result, contact, budget or cleanup assertion changes.

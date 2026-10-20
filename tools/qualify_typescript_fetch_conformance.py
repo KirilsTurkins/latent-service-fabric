@@ -89,6 +89,7 @@ def execute(artifact, native, output):
             for name,mode,vector,expected,outbound in cases.vectors():
                 stage=name;before=peer.observation()['startedRequests']
                 row=cases.invoke(client,target,peer,mode,vector,'conformance-'+name)
+                write_json(output/('invocation-'+name+'.json'),row)
                 base.require_result(row,expected,outbound)
                 peer.poll(0)
                 require(peer.observation()['startedRequests']-before==outbound,'fetch-conformance-exact-contact-delta')
@@ -100,6 +101,7 @@ def execute(artifact, native, output):
                 ('root-return-drains-accepted',32,'pending-headers','accepted-fetch-root-return',.15)]:
                 stage=name
                 row=cases.invoke(client,target,peer,mode,vector,'conformance-'+name,release_after=release_after)
+                write_json(output/('invocation-'+name+'.json'),row)
                 base.require_result(row,expected,1)
                 result['cases'].append({'name':name,'outbound':1,'result':row['decoded'],'realGateReleased':True})
                 base.retire(client,probe,target,output,name)
@@ -119,6 +121,7 @@ def execute(artifact, native, output):
                         require(canceled['outcomeKnown'] and canceled['data']['disposition']=='accepted',
                             'fetch-conformance-root-cancel-acknowledgement')
                     row=cases.drive(client,process,peer)
+                    write_json(output/('invocation-'+name+'.json'),row)
                     require(row['exitCode']==4 and row['response']['error']['code']==code
                         and row['response']['outcomeKnown'] and row['processReaped'],'fetch-conformance-root-terminal')
                     require(row['response']['data']['consumption']['outboundRequests']==1,'fetch-conformance-root-charge')
@@ -129,6 +132,7 @@ def execute(artifact, native, output):
                 finally: process.close()
             stage='fresh-after-lifecycle'
             row=cases.invoke(client,target,peer,0,'domain-json','conformance-fresh')
+            write_json(output/'invocation-fresh-after-lifecycle.json',row)
             base.require_result(row,'200:'+cases.json_bytes(cases.DOMAIN).decode()+':used:clone',1)
             base.retire(client,probe,target,output,'fresh-after-lifecycle')
             result['cases'].append({'name':'fresh-after-lifecycle','outbound':1,'result':row['decoded']})
