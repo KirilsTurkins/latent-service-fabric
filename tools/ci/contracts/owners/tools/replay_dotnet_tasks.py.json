@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_tasks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Diagnostic-only: run strict published Polly qualifier with explicit separately authenticated old native products. Production normal-native acceptance remains unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7168454105a3dd101c40aaf15e3ce5a4d9d454790c3f259d032a5253d9c0a628"
+}
