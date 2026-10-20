@@ -11,6 +11,7 @@ import time
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
+from tools import java_http_refusal_diagnostic
 from tools.java_standard_http_node import SERVICE, configuration as http_configuration, grants as http_grants
 from tools.phase2_operator_process import require, read_json, write_json, stopped_record
 from tools.phase2_operator_scenario import connect, stop
@@ -349,6 +350,7 @@ def run(artifact, binaries, output, *, deadline):
         'binaries': before, 'cases': [], 'scope': 'finite-ordinary-http-and-fiber-io-lifecycle',
         'full688Qualified': False, 'full741Qualified': False}
     node = peer = None
+    diagnostic_node = client = None
     stage = 'sign'
     try:
         signed = output / 'releases'
@@ -368,7 +370,9 @@ def run(artifact, binaries, output, *, deadline):
                 min(deadline, time.monotonic()+280), evidence=output/'controls', invocation_timeout_millis=120000)
             config = configuration(work/'node', signed, peer, credential)
             stage = 'node'
-            node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1)
+            node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1,
+                http_refusal_diagnostic=True)
+            diagnostic_node = node
             probe = Probe(node, before['latentd'])
             source = signed/'java-standard-http'
             published = client.call('release', 'publish-package', source/'package', '--evidence', source/'evidence/index.json',
@@ -428,10 +432,14 @@ def run(artifact, binaries, output, *, deadline):
         # Preserve an original assertion if cleanup itself also reports failure.
         import sys
         original = sys.exc_info()[0] is not None
-        for owned in (node, peer):
-            if owned is not None:
-                try:
-                    owned.close()
-                except Exception:
-                    if not original:
-                        raise
+        try:
+            for owned in (node, peer):
+                if owned is not None:
+                    try:
+                        owned.close()
+                    except Exception:
+                        if not original:
+                            raise
+        finally:
+            if diagnostic_node is not None and client is not None:
+                java_http_refusal_diagnostic.retain(diagnostic_node, client.evidence)

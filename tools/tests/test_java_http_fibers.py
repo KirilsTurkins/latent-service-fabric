@@ -956,3 +956,144 @@ class JavaClosedPendingDiagnostic(unittest.TestCase):
             other=root/'bounded';other.mkdir()
             with self.assertRaises(ValueError):retain_logs(source,other)
             self.assertFalse((other/name).exists())
+
+
+class JavaHttpNativeRefusalReader(unittest.TestCase):
+    def test_closed_host_stage_category_reason_pairs_are_not_qualification(self):
+        from tools import java_http_refusal_diagnostic as diagnostic
+        for stage in diagnostic.STAGES:
+            for category in diagnostic.CATEGORIES:
+                for reason in diagnostic.REASONS:
+                    with self.subTest(stage=stage, category=category, reason=reason):
+                        row = diagnostic.observe(diagnostic.PREFIX + f" {stage} {category} {reason}\n".encode())
+                        self.assertEqual(row['records'], [{'stage': stage, 'category': category, 'reason': reason}])
+                        self.assertEqual(row['invalidMarkerCount'], 0)
+                        self.assertIs(row['qualification'], False)
+
+    def test_malformed_unknown_or_private_payload_never_enters_projection(self):
+        import json
+        from tools import java_http_refusal_diagnostic as diagnostic
+        prefix = diagnostic.PREFIX
+        malformed = [prefix + b' typed-http-conversion resource-exhausted PRIVATE/path',
+            prefix + b' unknown resource-exhausted busy',
+            prefix + b' pool-active-dial unknown busy',
+            prefix + b' pool-active-dial resource-exhausted busy private-secret',
+            prefix + b'\xff', prefix + b'  pool-active-dial resource-exhausted busy']
+        row = diagnostic.observe(b'\n'.join(malformed))
+        self.assertEqual(row['records'], [])
+        self.assertEqual(row['invalidMarkerCount'], len(malformed))
+        self.assertNotIn('PRIVATE', json.dumps(row))
+        self.assertNotIn('private-secret', json.dumps(row))
+        self.assertEqual(diagnostic.observe('not bytes')['status'], 'invalid-source')
+        self.assertEqual(diagnostic.observe(b'x' * (diagnostic.MAX_STDERR + 1))['status'], 'invalid-source')
+
+    def test_record_and_source_caps_preserve_incomplete_diagnostic_scope(self):
+        from tools import java_http_refusal_diagnostic as diagnostic
+        line = diagnostic.PREFIX + b' pool-active-dial resource-exhausted busy\n'
+        row = diagnostic.observe(line * 100)
+        self.assertEqual(len(row['records']), 16)
+        self.assertEqual(row['invalidMarkerCount'], 84)
+        self.assertTrue(row['atCaptureLimit'])
+        self.assertFalse(row['qualification'])
+        self.assertIn('no-execution-or-retirement-proof', row['scope'])
+
+    def test_only_owned_node_stderr_can_supply_closed_records(self):
+        import json
+        from tools import java_http_refusal_diagnostic as diagnostic
+        line = diagnostic.PREFIX + b' typed-http-conversion resource-exhausted capacity\n'
+        structured = json.dumps({'message': line.decode(), 'private': 'private-token'}).encode()
+        observed = SimpleNamespace(buffers=[line, structured])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            row = diagnostic.retain(observed, root)
+            self.assertEqual(row['records'], [])
+            self.assertNotIn('private-token', (root/'http-refusals.json').read_text())
+        observed.buffers[1] = line
+        with tempfile.TemporaryDirectory() as temporary:
+            row = diagnostic.retain(observed, Path(temporary))
+            self.assertEqual(row['records'], [{'stage': 'typed-http-conversion',
+                'category': 'resource-exhausted', 'reason': 'capacity'}])
+
+    def test_retention_failure_preserves_original_refusal_identity(self):
+        import json
+        from tools import java_http_refusal_diagnostic as diagnostic
+        original = RuntimeError('original-refusal')
+        observed = SimpleNamespace(buffers=[b'', diagnostic.PREFIX + b' pool-active-dial resource-exhausted busy\n'])
+        with mock.patch.object(diagnostic, 'write_json', side_effect=OSError('PRIVATE-/secret')):
+            with self.assertRaises(RuntimeError) as raised:
+                try:
+                    raise original
+                finally:
+                    row = diagnostic.retain(observed, Path('unused'))
+        self.assertIs(raised.exception, original)
+        self.assertEqual(row['status'], 'retention-unavailable')
+        self.assertNotIn('PRIVATE', json.dumps(row))
+
+    def test_node_only_explicit_opt_in_strips_ambient_flag_without_client_mutation(self):
+        from tools import java_http_refusal_diagnostic as diagnostic
+        from tools import phase2_operator_scenario as scenario
+        for enabled in (False, True, 1):
+            for failing in (False, True):
+                with self.subTest(enabled=enabled, failing=failing), tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    environment = {'HOME': '/original', diagnostic.ENVIRONMENT: 'ambient'}
+                    client = SimpleNamespace(environment=environment, cancellation=object(), directory=root,
+                        deadline=time.monotonic()+30, node=None)
+                    client.call = mock.Mock(return_value={'data': {'inventory': {'health': {'ready': True},
+                        'node': {name: 'fixed' for name in ('id', 'architecture', 'operatingSystem', 'cpuFeatures', 'trustClasses')}}}})
+                    owned = SimpleNamespace(close=mock.Mock())
+                    owned.line = mock.Mock(side_effect=RuntimeError('launch-failed') if failing else None,
+                        return_value={'endpoint': '127.0.0.1:1234'})
+                    seen = []
+                    def process(_argv, _cwd, child_environment, _cancellation, maximum):
+                        self.assertEqual(maximum, 262144)
+                        seen.append(child_environment)
+                        return owned
+                    with mock.patch.object(scenario, 'Process', side_effect=process):
+                        if failing:
+                            with self.assertRaisesRegex(RuntimeError, 'launch-failed'):
+                                scenario.connect(client, 'node', root, root/'config', 'examples', 1,
+                                    http_refusal_diagnostic=enabled)
+                            owned.close.assert_called_once_with()
+                        else:
+                            self.assertIs(scenario.connect(client, 'node', root, root/'config', 'examples', 1,
+                                http_refusal_diagnostic=enabled), owned)
+                    self.assertIs(client.environment, environment)
+                    self.assertEqual(environment, {'HOME': '/original', diagnostic.ENVIRONMENT: 'ambient'})
+                    self.assertEqual(seen[0].get(diagnostic.ENVIRONMENT), '1' if enabled is True else None)
+
+    def test_failed_real_run_retains_only_after_cleanup_and_preserves_original_failure(self):
+        from tools import java_http_refusal_diagnostic as diagnostic
+        for cleanup_failure in (False, True):
+            with self.subTest(cleanup_failure=cleanup_failure), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                output = root/'output'
+                evidence = root/'controls'; evidence.mkdir()
+                original = RuntimeError('original-profile-failure')
+                events = []
+                def close_node():
+                    events.append('node-close')
+                    if cleanup_failure:
+                        raise OSError('cleanup-failed')
+                owned = SimpleNamespace(close=mock.Mock(side_effect=close_node), buffers=[b'', b''])
+                peer = SimpleNamespace(close=mock.Mock(side_effect=lambda: events.append('peer-close')))
+                client = SimpleNamespace(evidence=evidence)
+                def retain(actual, destination):
+                    self.assertIs(actual, owned)
+                    self.assertEqual(destination, evidence)
+                    self.assertEqual(events, ['node-close', 'peer-close'])
+                    events.append('retained')
+                with mock.patch.object(node, 'file_identity', return_value={'digest': 'fixed'}), \
+                        mock.patch.object(node, 'run_bounded_result', return_value=SimpleNamespace(returncode=0)), \
+                        mock.patch.object(node, 'Peer', return_value=peer), \
+                        mock.patch.object(node, 'RecordingClient', return_value=client), \
+                        mock.patch.object(node, 'configuration', return_value=root/'config'), \
+                        mock.patch.object(node, 'connect', return_value=owned) as connect, \
+                        mock.patch.object(node, 'Probe', side_effect=original), \
+                        mock.patch.object(diagnostic, 'retain', side_effect=retain):
+                    with self.assertRaises(RuntimeError) as raised:
+                        node.run(root/'artifact', {'latent': root/'cli', 'latentd': root/'node',
+                            'capsule_authoring': root/'author'}, output, deadline=time.monotonic()+30)
+                self.assertIs(raised.exception, original)
+                self.assertEqual(events, ['node-close', 'peer-close', 'retained'])
+                self.assertIs(connect.call_args.kwargs['http_refusal_diagnostic'], True)

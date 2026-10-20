@@ -31,6 +31,13 @@
     "JavaHttpFiberSource.test_result_checks_actual_full_resolved_revision_and_known_reaped_outcome",
     "JavaHttpFiberSource.test_sibling_completion_before_pending_gate_cannot_prove_concurrent_progress",
     "JavaHttpFiberSource.test_terminal_codes_cannot_replace_cancellation_deadline_or_fuel",
+    "JavaHttpNativeRefusalReader.test_closed_host_stage_category_reason_pairs_are_not_qualification",
+    "JavaHttpNativeRefusalReader.test_failed_real_run_retains_only_after_cleanup_and_preserves_original_failure",
+    "JavaHttpNativeRefusalReader.test_malformed_unknown_or_private_payload_never_enters_projection",
+    "JavaHttpNativeRefusalReader.test_node_only_explicit_opt_in_strips_ambient_flag_without_client_mutation",
+    "JavaHttpNativeRefusalReader.test_only_owned_node_stderr_can_supply_closed_records",
+    "JavaHttpNativeRefusalReader.test_record_and_source_caps_preserve_incomplete_diagnostic_scope",
+    "JavaHttpNativeRefusalReader.test_retention_failure_preserves_original_refusal_identity",
     "JavaPublicCFailureContext.test_anchored_reader_rejects_hardlinks_and_linked_directories",
     "JavaPublicCFailureContext.test_default_and_success_paths_never_read_or_retain_source",
     "JavaPublicCFailureContext.test_exact_context_retains_real_declarations_control_flow_and_byte_identities",
@@ -422,6 +429,90 @@
       ],
       "skipSites": []
     },
+    "JavaHttpNativeRefusalReader.test_closed_host_stage_category_reason_pairs_are_not_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpNativeRefusalReader.test_failed_real_run_retains_only_after_cleanup_and_preserves_original_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpNativeRefusalReader.test_malformed_unknown_or_private_payload_never_enters_projection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpNativeRefusalReader.test_node_only_explicit_opt_in_strips_ambient_flag_without_client_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpNativeRefusalReader.test_only_owned_node_stderr_can_supply_closed_records": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpNativeRefusalReader.test_record_and_source_caps_preserve_incomplete_diagnostic_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpNativeRefusalReader.test_retention_failure_preserves_original_refusal_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaPublicCFailureContext.test_anchored_reader_rejects_hardlinks_and_linked_directories": {
       "bases": [
         "unittest.TestCase"
@@ -629,6 +720,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Localize caught public Java HTTP admission versus header failure with closed numeric markers; preserve every strict caller and old test guard.",
+  "reviewReason": "Retain every existing Java fiber case and guard; add seven closed host HTTP refusal reader and owned-node opt-in controls without execution or retirement credit.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
