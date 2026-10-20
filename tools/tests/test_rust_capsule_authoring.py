@@ -256,7 +256,7 @@ class RustDeclaredEnvironment(unittest.TestCase):
 
     def verified(self):
         from types import SimpleNamespace
-        return SimpleNamespace(identity=project.digest(b'captured-inputs'), lock={'artifacts': [
+        return SimpleNamespace(identity=project.digest(b'captured-inputs'), lock={'transformations': [], 'artifacts': [
             {'id': 'outside/build-script', 'role': 'build-tool'}], 'selection': {'runtimeProfile': 'closed'}})
 
     def test_actual_approval_is_stable_across_distinct_owned_build_roots(self):
@@ -430,7 +430,8 @@ class RustDeclaredEnvironment(unittest.TestCase):
             commands.environment['CARGO_BUILD_JOBS'] = '3'
             return project.digest(b'controlled bindings')
         closure = SimpleNamespace(lock={'selection': {'runtimeProfile': standard.DEFAULT}})
-        verified = SimpleNamespace(lock={'executableInputs': [], 'selection': closure.lock['selection']})
+        verified = SimpleNamespace(lock={'executableInputs': [], 'transformations': [], 'artifacts': [],
+            'selection': closure.lock['selection']})
         output = root / 'output'
         with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools), [])), \
                 patch.object(build.shutil, 'which', side_effect=lambda name, **_kwargs: str(scope.tools['shell' if name == 'sh' else name])), \

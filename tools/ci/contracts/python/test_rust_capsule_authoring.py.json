@@ -1,7 +1,7 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Review only explicit standard-profile module import and two stale fixture references after lazy recipe loading. Every existing test, skip predicate, decorator and class base remains unchanged; fixture hashes bind this exact import repair.",
+  "reviewReason":"Explicit reviewed controlled-lock completion after three real Rust owning failures: add only empty transformations/artifacts to test doubles so real entropy verification reaches unchanged environment/approval/output guards. Preserve every case, skip site, decorator and class base; only exact fixture fingerprints change.",
   "module":"tools/tests/test_rust_capsule_authoring.py",
   "cases":["RustDeclaredEnvironment.test_actual_approval_is_stable_across_distinct_owned_build_roots","RustDeclaredEnvironment.test_actual_builder_refuses_changed_environment_before_native_compile_boundary","RustDeclaredEnvironment.test_actual_namespace_forwarding_is_covered_without_disclosing_private_values","RustDeclaredEnvironment.test_changed_and_new_forwarded_values_refuse_before_any_compile_dispatch","RustDeclaredEnvironment.test_mutation_during_command_refuses_success_without_automatic_replay","RustDeclaredEnvironment.test_mutation_during_namespace_preparation_refuses_before_command","RustDeclaredEnvironment.test_new_valid_selection_changes_the_actual_request_and_refuses_old_consent","RustDeclaredEnvironment.test_paths_require_owned_directories_or_the_exact_captured_tool","RustDeclaredEnvironment.test_private_viewer_accepts_old_and_bound_receipts_and_refuses_raw_or_unknown_fields","RustDeclaredEnvironment.test_receipt_rewriting_or_rebinding_cannot_promote_a_changed_environment","RustDeclaredEnvironment.test_scalar_bounds_and_types_fail_with_a_closed_nonsecret_diagnostic","RustExecutableOutputMaterials.test_actual_builder_preserves_valid_approved_output_and_success_path","RustExecutableOutputMaterials.test_actual_builder_refuses_late_generated_output_change_before_success","RustExecutableOutputMaterials.test_changed_removed_or_added_outputs_refuse_after_capture","RustExecutableOutputMaterials.test_empty_build_tool_output_directories_cannot_expand_discovery_without_bound","RustExecutableOutputMaterials.test_existing_file_and_byte_caps_apply_jointly_to_all_output_roles","RustExecutableOutputMaterials.test_missing_target_and_linked_ancestor_refuse_with_closed_failures","RustExecutableOutputMaterials.test_receipt_rewrite_cannot_promote_changed_outputs","RustExecutableOutputMaterials.test_valid_host_target_and_macro_outputs_keep_exact_bounded_identities","RustProjectTests.test_additional_dependencies_require_exact_versions_and_no_path_escape","RustProjectTests.test_all_tutorials_and_capability_examples_create_valid_standalone_inputs","RustProjectTests.test_build_failure_retains_stage_but_cannot_publish_a_success_marker","RustProjectTests.test_build_rejects_source_output_overlap_before_tool_execution","RustProjectTests.test_build_script_must_be_captured_not_an_absolute_escape","RustProjectTests.test_captured_application_code_can_change_without_runtime_edits","RustProjectTests.test_cargo_and_manifest_identity_must_agree","RustProjectTests.test_cargo_configuration_and_toolchain_overrides_are_rejected","RustProjectTests.test_duplicate_nonfinite_and_excessively_nested_json_are_rejected","RustProjectTests.test_edited_sdk_does_not_satisfy_the_original_source_lock","RustProjectTests.test_fresh_projects_never_overwrite_existing_files","RustProjectTests.test_independent_project_preserves_canonical_source_and_exact_lock","RustProjectTests.test_manifest_fields_budgets_and_versions_are_closed","RustProjectTests.test_nonportable_and_colliding_package_names_are_rejected_before_creation","RustProjectTests.test_opt_in_diagnostics_keep_nonzero_status_without_false_success","RustProjectTests.test_overall_command_deadline_precedes_child_creation","RustProjectTests.test_reviewed_dependency_lock_rejects_changed_authoritative_checksums","RustProjectTests.test_sdk_inheritance_cannot_introduce_uncaptured_dependency_overrides","RustProjectTests.test_sdk_lock_shape_and_version_fail_closed","RustProjectTests.test_snapshot_enforces_file_byte_count_and_total_budgets","RustProjectTests.test_snapshot_excludes_only_root_build_and_git_data","RustProjectTests.test_snapshot_rejects_linked_files_directories_and_ancestors"],
   "guards":{
@@ -50,27 +50,27 @@
     "RustProjectTests.test_overall_command_deadline_precedes_child_creation":
       "2d635ad235739211f843c0c4d76f1ba9cc88b65abefaab572e0166d513aba944",
     "RustDeclaredEnvironment.test_actual_approval_is_stable_across_distinct_owned_build_roots":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_changed_and_new_forwarded_values_refuse_before_any_compile_dispatch":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_new_valid_selection_changes_the_actual_request_and_refuses_old_consent":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_scalar_bounds_and_types_fail_with_a_closed_nonsecret_diagnostic":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_paths_require_owned_directories_or_the_exact_captured_tool":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_actual_namespace_forwarding_is_covered_without_disclosing_private_values":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_receipt_rewriting_or_rebinding_cannot_promote_a_changed_environment":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_mutation_during_namespace_preparation_refuses_before_command":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_mutation_during_command_refuses_success_without_automatic_replay":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_private_viewer_accepts_old_and_bound_receipts_and_refuses_raw_or_unknown_fields":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustDeclaredEnvironment.test_actual_builder_refuses_changed_environment_before_native_compile_boundary":
-      "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d",
+      "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e",
     "RustExecutableOutputMaterials.test_valid_host_target_and_macro_outputs_keep_exact_bounded_identities":
       "1ca742b2645796625c4529e66e09c76e0a3d933cd5ef8226be2b02c721895a63",
     "RustExecutableOutputMaterials.test_existing_file_and_byte_caps_apply_jointly_to_all_output_roles":
@@ -91,7 +91,7 @@
   "guardDefinitions":{
     "2d635ad235739211f843c0c4d76f1ba9cc88b65abefaab572e0166d513aba944":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0401efa70aada4fb16a5f65f2ce71c992a84b7d94754e25a8600912459338d6e","class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"]},
     "63d347b2d075e6d21272badedb8c7f9134d3ffbc7b78a27320b2302141e67077":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(hasattr(os, 'symlink'), 'symlinks unavailable')"],"skipSites":["skip-control-sha256:a1d0c12328aaf10905d2f8a1ec135e61d3e4e5b997e22131674926bd3fafb92d","unittest.skipUnless(hasattr(os, 'symlink'), 'symlinks unavailable')"],"fixtureGuards":["module:setup-sha256:0401efa70aada4fb16a5f65f2ce71c992a84b7d94754e25a8600912459338d6e","class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"]},
-    "7efd362f8ad4af8a49133c43589bfed808d6c7b2df671562ad12ac07f4176e8d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0401efa70aada4fb16a5f65f2ce71c992a84b7d94754e25a8600912459338d6e","class:setup-sha256:320dc41f8156fcfde4f52ceeaed10bca7d5a1e211a40b759c0c08e27bcd33d28"]},
+    "ddac22ae4c239b19cc1108c833ed0e641b8926cb2f3c7679ad1987554c34598e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0401efa70aada4fb16a5f65f2ce71c992a84b7d94754e25a8600912459338d6e","class:setup-sha256:4fe85c74f134436e30036446f4eb18631d496897a86f4a6e9ea35d6c3e326737"]},
     "1ca742b2645796625c4529e66e09c76e0a3d933cd5ef8226be2b02c721895a63":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0401efa70aada4fb16a5f65f2ce71c992a84b7d94754e25a8600912459338d6e","class:setup-sha256:6a5fee1c65e16d16a15212703579ad54217dd3a1782b1657314c36d337711921"]}
   }
 }

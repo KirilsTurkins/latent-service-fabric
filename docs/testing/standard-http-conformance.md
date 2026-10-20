@@ -3,8 +3,9 @@
 `latent.standard-http.conformance.v1` identifies the common controlled-peer
 vectors and observation predicates in [tools/standard_http](../../tools/standard_http/).
 They exercise HTTP operations independently of library names. The initial
-implementation qualifies the bounded peer protocol only. It does not qualify a
-language backend, an ordinary default client, host memory accounting, or #680.
+implementation qualifies the bounded peer protocol only. Language/component
+receipts below have their own source and execution scope; the peer alone proves
+no ordinary default client or host memory accounting.
 
 ## Current host contract
 
@@ -128,14 +129,90 @@ paths, body APIs and runtime initialization beneath direct/transitive code.
 Unsupported members need precise #679 diagnostics. An optional injected
 transport remains a separate public extension and cannot qualify a default path.
 
-| Language | Required ordinary API boundary | Runtime prerequisite | Current delivery boundary |
+| Language | Ordinary API and default backend selection | Initialization / async ownership | Current delivery boundary |
 | --- | --- | --- | --- |
-| Java #688 | Selected standard HTTP constructor; current source candidate uses `HttpURLConnection` | #741 | Source candidate; complete default-library/TLS/redirect/timeout evidence pending |
-| Rust #689 | Useful selected standard/ecosystem API plus its ordinary default reactor/executor | #743 | Shared API/runtime selection and default-client implementation pending |
-| C #690 | Useful selected source API/ABI over maintained libc/platform boundaries | #744 | Shared API/ABI selection and default-client implementation pending |
-| TypeScript #691 | Ordinary `globalThis.fetch`, `Request`, `Response`, `Headers` and `AbortSignal` | #745 | Actual async export/microtask/body/default-global qualification pending |
-| Go #692 | `http.Client`, default client/transport and advertised concrete `Transport` members | #742 | Default transport, goroutine/net-poll/context/body qualification pending |
-| .NET #693 | Ordinary `HttpClient` using the maintained WASI/BCL handler | #746 | Three-adapter source candidate; actual CLR/default-client/sibling progress pending |
+| Java #688 | `URL.openConnection()` / `HttpURLConnection` through the compiler-owned connection factory; unchanged callers keep that factory | Maintained TeaVM connection implementation; synchronous acquisition/body ownership, with #741 owning wider logical-thread/timer semantics | Actual standard and published `http-request` signed subsets, plus private captured wrappers; complete two-client/options/async/TLS matrix remains with #688 |
+| Rust #689 | Planned `reqwest::Client::new()`, `Client::builder().build()` and `RequestBuilder::send().await` through reqwest's ordinary native backend | Planned Tokio runtime, timer and reactor integration beneath unchanged dependency code; #743 owns runtime support | Named reference plan below; no maintained default reqwest backend or qualified LSF runtime profile is claimed |
+| C #690 | Planned libcurl easy API: `curl_global_init`, `curl_easy_init`, `curl_easy_setopt`, `curl_easy_perform`, `curl_easy_getinfo`, `curl_easy_cleanup` | Planned libc/platform port plus ordinary libcurl multi readiness/callback path for asynchronous use; #744 owns runtime support | Named reference plan below; no maintained libcurl port or qualified LSF runtime profile is claimed |
+| TypeScript #691 | `globalThis.fetch`, `Request`, `Response`, `Headers`, `AbortSignal`; maintained compiler-owned global implementation, without injected transport | App-realm promises, body/abort continuation and #745 microtask/runtime owner | Actual parsed UTF-8/HTTP-error/fresh signed subset; complete browser-compatible options/body/async matrix remains with #691 |
+| Go #692 | `http.Client`, `http.DefaultClient`, `http.DefaultTransport` and advertised `Transport` members through the maintained standard-library backend | Maintained Go activation/net-poll/context ownership; #742 owns the wider runtime | Actual normal, standard and adversarial signed subsets including redirect/credential and root-retirement controls; complete standard-client contract remains with #692 |
+| .NET #693 | Ordinary `HttpClient` / BCL handler through the selected `dotnet-http-runtime` composition, without application handler replacement | Activation-owned WASI HTTP/poll/stream adapter; #746 owns the wider managed runtime | Actual original, synchronous `Send` and async/pre-cancel signed subsets; complete handler/options/managed-runtime contract remains with #693 |
+
+### Named Rust and C reference plan
+
+These are implementation targets for #689 and #690, not new package eligibility
+rules or shipped backend profiles. Capture the selected library version, features,
+TLS/resolver backend, target, runtime/automatic patch and final WIT identity before
+qualifying a port. The shared contract does not require every language port to
+finish before a direct API mapping can ship.
+
+The Rust reference is [reqwest 0.13.5's native async `Client`](https://docs.rs/reqwest/0.13.5/reqwest/struct.Client.html)
+and its [builder options](https://docs.rs/reqwest/0.13.5/reqwest/struct.ClientBuilder.html).
+Its [versioned native backend manifest](https://github.com/seanmonstar/reqwest/blob/v0.13.5/Cargo.toml)
+selects hyper/hyper-util with Tokio networking/timers; `default-tls` selects
+rustls, with its explicit crypto-provider and platform-verifier dependencies.
+Those default backend dependencies must be ported/captured or refused precisely,
+not silently replaced by a different application client or permissive verifier.
+Its ordinary factory, initialization failures, response/status/body/error values
+and connection reuse must remain observable through unchanged dependency calls.
+The native API is target-gated upstream; naming it does not make it available on
+the maintained component target. #689 must supply and qualify the underlying
+Tokio readiness/timer/backend integration rather than requiring a caller-provided
+LSF client, executor or transport. Ordinary `#[tokio::main]` and
+`tokio::runtime::Builder` initialization must either select a supported scheduler
+with its actual worker/timer limits or refuse precisely; a multithread selection
+cannot silently become a single-thread executor. A blocking facade needs
+separately supported logical-thread parking; synchronous waiting on an async
+export is insufficient.
+
+The C reference is the [libcurl easy interface](https://curl.se/libcurl/c/curl_easy_perform.html),
+with ordinary [global/easy initialization](https://curl.se/libcurl/c/curl_easy_init.html),
+write/header callbacks, result codes and cleanup. Asynchronous use selects the
+[libcurl multi interface](https://curl.se/libcurl/c/libcurl-multi.html):
+`curl_multi_init`, `curl_multi_add_handle`, `curl_multi_perform`,
+`curl_multi_poll`, `curl_multi_info_read`, `curl_multi_remove_handle` and
+`curl_multi_cleanup`. #690 must pin a concrete libcurl release/build and preserve
+its C ABI, callback ownership and readiness behavior; no libcurl version is yet
+a qualified LSF HTTP profile. A port may map known HTTP operations to typed HTTP.
+A socket-level backend instead needs independently approved opaque stream/TLS
+composition and exact endpoint grants; it cannot derive typed HTTP authority by
+inspecting bytes or fall back to sockets after a typed denial.
+
+For both plans, record reference defaults and explicit option changes for
+redirects, retries, proxies, authentication, cookies, pooling, decompression,
+TLS and connect/read/total timeouts. Preserve them where supported. Reject
+unsupported selections precisely before effects instead of silently disabling
+options, adding attempts or substituting success. Every additional library call
+remains independently authorized and charged. Per-call timeouts narrow the
+original root deadline; neither initialization nor a reconnect resets it.
+
+### Existing closed WASI HTTP composition
+
+The maintained .NET example is a concrete composition profile, not a claim that
+all WASI HTTP versions or all language runtimes work. Its internal interfaces are
+[`wasi:http/types` and `wasi:http/outgoing-handler` at `0.2.0`](../../sdk/dotnet-guest/runtime/wit/deps/http.wit),
+with [`wasi:io` poll/streams at `0.2.6`](../../sdk/dotnet-guest/runtime/wit/deps/io.wit).
+The [runtime selector](../../tools/dotnet_guest/runtime.py) requires both actual
+emitted HTTP imports and exact declared `latent:runtime/activation@0.1.0` and
+`latent:http/streaming@0.3.0` authority to select `dotnet-http-runtime` (or its
+separately selected logging variant). Declared authority alone selects no HTTP
+adapter. Unsupported versions, duplicate imports, ambient WASI declarations and
+undeclared emitted imports refuse.
+
+The [compiler](../../tools/dotnet_guest/compiler.py) composes the emitted graph
+through the selected adapter using the pinned component toolchain. The
+[composer](../../tools/dotnet_guest/composer.py) binds exact named edges and checks
+the resulting graph and binary again. Canonical ABI/resource compatibility is
+checked by real composition, not import renaming or semver substitution. Final
+imports must stay within the declared LSF surface; no filesystem, socket or
+process authority is supplied by the internal WASI interface names.
+
+Historical signed evidence includes [#1085's original plus synchronous `Send` cases](https://github.com/KirilsTurkins/latent-service-fabric/issues/693#issuecomment-6258891568)
+and [#1091's original plus async/pre-cancel cases](https://github.com/KirilsTurkins/latent-service-fabric/issues/693#issuecomment-6261245915).
+Each preserves its own component, compiler, adapter, host and source identities;
+these receipts are not rebound to current source. They establish a useful
+closed-WASI outgoing HTTP slice, including real peer calls and retirement, while
+#693/#746 retain their broader unsupported and unqualified surfaces.
 
 Every row must execute at least two unchanged independently maintained clients
 through the same selected backend and ordinary constructors, plus a compatible
@@ -195,6 +272,7 @@ clean pools and reusable execution. Encoded GET 200/302 entity responses remain
 unsupported. The controlled peer also verifies real HEAD gzip metadata and an
 empty wire payload.
 
-These Rust cases are registered for hosted execution; adding them and running
-the Python peer does not establish a hosted component pass or complete #680.
-The provider identity, WIT, limits and authority rules remain unchanged.
+The [#1074 bodyless slice records the actual host/component result](https://github.com/KirilsTurkins/latent-service-fabric/issues/680#issuecomment-6257071756).
+That source-bound receipt supplements the peer controls; it does not qualify
+all language APIs or every vector. Provider identity, WIT, limits and authority
+rules are unchanged by the metadata correction.

@@ -158,13 +158,27 @@
           "path": "${{ runner.temp }}/rust-git-prepared/",
           "retention-days": 3
         }
+      },
+      {
+        "name": "Export exact normal public prerequisites for the separate scratch packet",
+        "run": "python3 tools/qualify_sdk_scratch.py --export-bundle --language rust --native-qualification \"$RUNNER_TEMP/rust-capsule-authoring\" --output \"$RUNNER_TEMP/rust-scratch-prepared\""
+      },
+      {
+        "name": "Retain identity-checked normal scratch prerequisites",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "rust-scratch-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-scratch-prepared/",
+          "retention-days": 3
+        }
       }
     ],
     "timeout-minutes": 35
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Preserve every original signed authoring stage, step, condition and35minute deadline; append closed public signer-input export and artifact upload for separate Git execution.",
+  "reviewReason": "Add a separately bounded20-minute signed Rust scratch-refusal child using exact normal public products; preserve all original authoring commands/jobs/35-minute limit and source-only other-language scope.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
