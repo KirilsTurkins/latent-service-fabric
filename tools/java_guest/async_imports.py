@@ -56,8 +56,11 @@ struct lsf_async_call {
     union {''']
     for function in selected:
         output.append('struct {')
-        for index, parameter in enumerate(function['cParams'][:len(function['params'])]):
-            output.append(parameter['type'] + ' arg' + str(index) + ';')
+        if 'cAggregate' in function:
+            output.append(function['cParams'][0]['type'] + ' args;')
+        else:
+            for index, parameter in enumerate(function['cParams'][:len(function['params'])]):
+                output.append(parameter['type'] + ' arg' + str(index) + ';')
         if function.get('result') is not None:
             output.append(function['cParams'][-1]['type'] + ' result;')
         if not function['params'] and function.get('result') is None:
@@ -101,10 +104,15 @@ void *lsf_java_async_begin(int32_t operation, void *bytes, int32_t length) {
         prefix = 'call->data.op' + str(function['operation'])
         arguments = []
         output.append('case ' + str(function['operation']) + ': {')
-        for index, (parameter, native) in enumerate(zip(function['params'], function['cParams'])):
-            member = prefix + '.arg' + str(index)
-            output.extend(codec.emit(parameter['type'], member, 'read', '&input'))
-            arguments.append(('&' if native['pointer'] else '') + member)
+        if 'cAggregate' in function:
+            for parameter, field in zip(function['params'], function['cAggregate']):
+                output.extend(codec.emit(parameter['type'], prefix + '.args.' + field['name'], 'read', '&input'))
+            arguments.append('&' + prefix + '.args')
+        else:
+            for index, (parameter, native) in enumerate(zip(function['params'], function['cParams'])):
+                member = prefix + '.arg' + str(index)
+                output.extend(codec.emit(parameter['type'], member, 'read', '&input'))
+                arguments.append(('&' if native['pointer'] else '') + member)
         output.append('lsf_finish(&input);')
         if function.get('result') is not None: arguments.append('&' + prefix + '.result')
         output.append('call->status = ' + function['symbol'] + '(' + ', '.join(arguments) + '); break; }')
@@ -196,7 +204,9 @@ void *lsf_java_async_take(void *address, int32_t cancelled_root_wait) {
         prefix = 'call->data.op' + str(function['operation'])
         output.append('case ' + str(function['operation']) + ': {')
         for index, parameter in enumerate(function['params']):
-            output.extend(codec.emit(parameter['type'], prefix + '.arg' + str(index), 'free', 'NULL'))
+            member = (prefix + '.args.' + function['cAggregate'][index]['name']
+                if 'cAggregate' in function else prefix + '.arg' + str(index))
+            output.extend(codec.emit(parameter['type'], member, 'free', 'NULL'))
         if function.get('result') is not None:
             output.append('if (state == PROBE_SUBTASK_RETURNED) {')
             output.extend(codec.emit(function['result'], prefix + '.result', 'write', '&output'))

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "latent.http.operational-native-products.evidence.v1",
+  "status": "passed",
+  "compiledSource": "8f7780dd0a35e3375524d72e7dfaddf847deaa5c",
+  "producer": {
+    "run": 39453477174,
+    "job": 118734133231,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39453477174/job/118734133231"
+  },
+  "artifact": {
+    "id": 12280886264,
+    "size_in_bytes": 66088564,
+    "digest": "sha256:be34c00e1c6d5971a750843de75715170c4dd6bd2319bd60110002954a82b76f"
+  },
+  "archive": {
+    "members": 31,
+    "expandedBytes": 303200765,
+    "allCrcChecked": true
+  },
+  "nativeSource": {
+    "sha256": "sha256:08f1f1c51b9a383c596fe395a4835d4bfc0db1fbd9fbea0a3793eb03b0bb6173",
+    "files": 3315,
+    "bytes": 26082963,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "auxiliaryMaterials": {
+    "rows": 114,
+    "bytes": 496929,
+    "boundByReceipt": "source-inputs.json"
+  },
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:85397c7e67e24604e0e09b91e8eb214d13be10fa34d5527066c817ab81fc8f55",
+      "bytes": 21390
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:b338d101d5fd34a4cff354f690d70c514bf4188715bd67b7955e38db34f9bea1",
+      "bytes": 18937
+    }
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:91fde4e00730a4fd87d401974261fbd0e4d3d10376227faf2c137ace89edd14f",
+      "bytes": 68829688
+    },
+    "latentd": {
+      "sha256": "sha256:37cbee0224b363668b25ec6913864f046f648b149eff947fb8dcdbec0dec6127",
+      "bytes": 185263640
+    },
+    "examples/package": {
+      "sha256": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+      "bytes": 17750192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:1118e6a628e40d9c7b228756f767cf7ebf18b02acdfdf4d9c7d749d87410a56b",
+      "bytes": 24017528
+    }
+  },
+  "controls": {
+    "rustPassed": 27,
+    "pythonPassed": 4,
+    "selectedRustIgnored": 0,
+    "stages": [
+      "rust-version",
+      "normal-host-build",
+      "closed-http-refusal-controls",
+      "neutral-resource-signing-controls",
+      "positive-timer-observer-controls",
+      "phase-nominal-type-owner-controls",
+      "phase-emitted-type-owner-controls",
+      "independent-http-configuration-controls",
+      "independent-http-dispatch-controls",
+      "independent-http-secret-controls",
+      "phase-operational-metadata-controls",
+      "phase-operational-binding-controls"
+    ]
+  },
+  "profile": "normal-managed-guest-default-features",
+  "guestComponentsCompiled": false,
+  "signedQualification": false,
+  "historicalReceiptRewritten": false,
+  "limitations": [
+    "Native products only; signed Java and TypeScript programmes remain separate.",
+    "Earlier failed6f5 consumer receipts remain historical and unmodified.",
+    "Native source identity records explicit inputs; hermetic compilation and implicit compiler inputs are not attested."
+  ]
+}

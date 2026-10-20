@@ -25,6 +25,29 @@
           "tools/java_guest/**",
           "tools/standard_http/**",
           "tools/tests/test_java_http_fibers.py",
+          "tools/java_http_phase_fixture.py",
+          "tools/java_http_phase_node.py",
+          "tools/java_phase_native_products.py",
+          "tools/http_phase_native_products.py",
+          "tools/http_tenant_native_products.py",
+          "tools/sdk_native_products_reader.py",
+          "tools/wait_runtime_native_products.py",
+          "tools/tests/test_sdk_native_products_reader.py",
+          "tools/java_http_tenant_node.py",
+          "tools/tests/test_http_tenant_native_products.py",
+          "tools/tests/test_java_http_tenants.py",
+          "tools/qualify_java_http_phases.py",
+          "tools/fixtures/java-http-phases/**",
+          "tools/tests/test_java_http_phase_campaign.py",
+          "tools/tests/test_java_phase_native_products.py",
+          "tools/tests/test_http_phase_native_products.py",
+          "tools/tests/test_java_http_phases.py",
+          "tools/tests/test_java_timeout_exception.py",
+          "tools/tests/test_java_teavm_failure_trace.py",
+          "tools/tests/test_java_phase_c_context.py",
+          "tools/tests/test_java_array_gc_roots.py",
+          "tools/tests/test_java_phase_surface.py",
+          "tools/tests/fixtures/java_phase_surface_0bdb.json",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -33,6 +56,11 @@
           "java_http_fibers": {
             "default": false,
             "description": "Fresh ordinary Java HTTP/fiber component with authenticated native products",
+            "type": "boolean"
+          },
+          "java_http_phases": {
+            "default": false,
+            "description": "Fresh ordinary default clients and explicit V7 phase deadlines",
             "type": "boolean"
           }
         }
@@ -43,9 +71,10 @@
     }
   },
   "requiredJobs": [
-    "http-fiber-lifecycle"
+    "http-fiber-lifecycle",
+    "http-phase-clients"
   ],
-  "reviewReason": "Add exact producer/reader trigger paths; original owning job and default execution obligations retained.",
+  "reviewReason": "Reviewed source-hashed selected HTTP0.4 nominal-owner emission: only unused legacy response omission allowed after full pinned source pair, all other graphs/default0.3 strict; four actual-pair/adversarial controls added, old commands/cases/guards/bounds retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

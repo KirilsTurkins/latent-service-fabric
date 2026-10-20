@@ -1,0 +1,308 @@
+{
+  "schemaVersion": "latent.java.http.phase-source-specific-evidence.v1",
+  "scope": "published defaults and explicit V7 phase adapter only",
+  "phaseSubprogramme": "passed",
+  "outerWorkflow": "failure",
+  "run": 39489934505,
+  "job": 118860114936,
+  "artifact": {
+    "id": 12295264122,
+    "bytes": 326546,
+    "sha256": "sha256:fbed245b0cab6f82fbd28d94e264db9a53217c98e329a2da1ff5050a4d7b1da9",
+    "allMembersCrcAndShaVerified": 295
+  },
+  "compiledFeature": "aa56bdebad8c12f20acce4ec4ecfeca73cf554be",
+  "compiledTestedSource": "370e0653078715807ae538de437a36aa6a05a68f",
+  "nodeFixture": "5211438ff692bcc1066bb1675b3f88924b3650be",
+  "nativeCompiledSource": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+  "nativeProductsCompiledByReplay": 0,
+  "guestComponentsCompiledByReplay": 0,
+  "component": {
+    "bytes": 17034179,
+    "sha256": "sha256:1cfb94306437ffc5e63ba76d981c04cba9ba98419c2b2b3c536f5d91005a6a53"
+  },
+  "selectedRevision": {
+    "publicationId": "publication:sha256:366d344b0784fe6960ae87d7a003d27e7f22165ed7789510e806c3f3f42a51e7",
+    "routeGeneration": "5",
+    "releaseDigest": "sha256:1cfb94306437ffc5e63ba76d981c04cba9ba98419c2b2b3c536f5d91005a6a53",
+    "revisionId": "revision-v1:sha256:477be7d8952eb0f07166d88a74c0f5c210c57b365a9c892f0591367693f30e9e"
+  },
+  "invocations": 16,
+  "authorityDenials": 2,
+  "httpContacts": 13,
+  "cases": [
+    {
+      "case": "published-defaults",
+      "mode": 0,
+      "decoded": [
+        "1:default-webb:200:Fixture:7"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/published-defaults-phase.json",
+        "sha256": "sha256:b71e88ae83659e787ee91fb98306e08b0e5fb222af1d330a772a9a6eece2b84a",
+        "bytes": 12853
+      }
+    },
+    {
+      "case": "explicit-nonzero-success",
+      "mode": 1,
+      "decoded": [
+        "1:explicit:200:Fixture:57:1000:1000"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/explicit-nonzero-success-phase.json",
+        "sha256": "sha256:99767da1e8fe71333f60b2bb38a407bdbec9fb5f6a2cd700bd32311d3fe8ea4c",
+        "bytes": 13729
+      }
+    },
+    {
+      "case": "headers-read-timeout",
+      "mode": 2,
+      "decoded": [
+        "1:read-timeout:headers:true"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/headers-read-timeout-phase.json",
+        "sha256": "sha256:85126d23669d1e113b95a66c98f3b8880051a3fcce90bd9bfa5a13313f1ac386",
+        "bytes": 14661
+      }
+    },
+    {
+      "case": "body-read-timeout",
+      "mode": 3,
+      "decoded": [
+        "1:read-timeout:body:false"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/body-read-timeout-phase.json",
+        "sha256": "sha256:924e6a0ec9f32089b29cdf086e81b75e44210a0db69c2619b96dd95583d95f7e",
+        "bytes": 15548
+      }
+    },
+    {
+      "case": "root-deadline-is-not-phase-timeout",
+      "mode": 4,
+      "decoded": null,
+      "platformError": "deadline-exceeded",
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/root-deadline-is-not-phase-timeout-phase.json",
+        "sha256": "sha256:852bca218c8b87a48e023d43e5b568ffcd6fc92b37897d2b29f173d02f6d2147",
+        "bytes": 16353
+      }
+    },
+    {
+      "case": "root-deadline-is-not-phase-timeout-fresh",
+      "mode": 6,
+      "decoded": [
+        "1:explicit:200:Fixture:57:1000:1000"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/root-deadline-is-not-phase-timeout-fresh-phase.json",
+        "sha256": "sha256:bfe22f51ce89f3a899b11a5b061a415724310eb2c7f4722f5bdd4cc74c3d4222",
+        "bytes": 17375
+      }
+    },
+    {
+      "case": "root-cancel-is-not-phase-timeout",
+      "mode": 5,
+      "decoded": null,
+      "platformError": "cancelled",
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/root-cancel-is-not-phase-timeout-phase.json",
+        "sha256": "sha256:41d07951a1f205a618d315feee026c51ed1d70b1ecc4d1f9380c31d2c334baf8",
+        "bytes": 18361
+      }
+    },
+    {
+      "case": "root-cancel-is-not-phase-timeout-fresh",
+      "mode": 6,
+      "decoded": [
+        "1:explicit:200:Fixture:57:1000:1000"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/root-cancel-is-not-phase-timeout-fresh-phase.json",
+        "sha256": "sha256:ddafe2855532d083d56945b84d536b3de932abb4f0d80633e90db87044a30dda",
+        "bytes": 19124
+      }
+    },
+    {
+      "case": "fresh-explicit-success",
+      "mode": 6,
+      "decoded": [
+        "1:explicit:200:Fixture:57:1000:1000"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/fresh-explicit-success-phase.json",
+        "sha256": "sha256:742f72105a005281f45338c2c87654066be58d98097adfdf180403b19cef7782",
+        "bytes": 19901
+      }
+    },
+    {
+      "case": "connect-timeout",
+      "mode": 7,
+      "decoded": [
+        "1:connect-timeout:false"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/connect-timeout-phase.json",
+        "sha256": "sha256:8b5ded3a0fb81244ad69b94d05137e081c2befdada7157b51fb203c81512b0e9",
+        "bytes": 31758
+      }
+    },
+    {
+      "case": "connect-timeout-fresh",
+      "mode": 6,
+      "decoded": [
+        "1:explicit:200:Fixture:57:1000:1000"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/connect-timeout-fresh-phase.json",
+        "sha256": "sha256:0705ed21aa98e417de8c23c07b3ecd84369668437f6892f7efe82d928cb7f2d3",
+        "bytes": 20746
+      }
+    },
+    {
+      "case": "connect-root-deadline",
+      "mode": 8,
+      "decoded": null,
+      "platformError": "deadline-exceeded",
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/connect-root-deadline-phase.json",
+        "sha256": "sha256:7f0c4bb93f676870047a387d12a302968d7442298a2cd21220ceef1c3841eee8",
+        "bytes": 32459
+      }
+    },
+    {
+      "case": "connect-root-deadline-fresh",
+      "mode": 6,
+      "decoded": [
+        "1:explicit:200:Fixture:57:1000:1000"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/connect-root-deadline-fresh-phase.json",
+        "sha256": "sha256:85f02069b008f6652a13804415a18a4837c460ca2e22973c27fe36d1c094686a",
+        "bytes": 21617
+      }
+    },
+    {
+      "case": "connect-root-cancel",
+      "mode": 9,
+      "decoded": null,
+      "platformError": "cancelled",
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/connect-root-cancel-phase.json",
+        "sha256": "sha256:bfd47a527d4bdb0e8a70bee3f9e6a87151b61a9fb81fb60becb70543f5ea4b9d",
+        "bytes": 33539
+      }
+    },
+    {
+      "case": "connect-root-cancel-fresh",
+      "mode": 6,
+      "decoded": [
+        "1:explicit:200:Fixture:57:1000:1000"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/connect-root-cancel-fresh-phase.json",
+        "sha256": "sha256:8c7802ff9f39a6a5517af83d2ee6ba41e2b8d6f18c068f46e4447305bc840d54",
+        "bytes": 22458
+      }
+    },
+    {
+      "case": "published-http-request-defaults",
+      "mode": 10,
+      "decoded": [
+        "1:default-http-request:200:7"
+      ],
+      "platformError": null,
+      "receipt": {
+        "path": "java-phase-node-replay/node/controls/published-http-request-defaults-phase.json",
+        "sha256": "sha256:5431cdb7e8969b3879569fe95f3e888798158ffb7f96936774e862998eda989f",
+        "bytes": 23314
+      }
+    }
+  ],
+  "summary": {
+    "path": "java-phase-node-replay/node/qualification.json",
+    "sha256": "sha256:4c88969f5b040b5527cf0466eaf682d9e8003f880dcbd0cac351c027a2beb951",
+    "bytes": 9790
+  },
+  "shutdown": {
+    "path": "java-phase-node-replay/node/controls/node-stopped.json",
+    "sha256": "sha256:79fb693db1b9cc8ac0fe578f6240e37a6783aafc527164595d6f92dadb3bc6be",
+    "bytes": 2568
+  },
+  "peer": {
+    "path": "java-phase-node-replay/node/controls/final-peer.json",
+    "sha256": "sha256:c3096b285fc7912ada29f93c73da046846b11b4444837de79057b813b053fd57",
+    "bytes": 11914
+  },
+  "perCasePhysicalOwnersZero": true,
+  "rawShutdownCleanReaped": true,
+  "rawStoppedPeerVerified": true,
+  "nativeProductsBeforeAfterEqual": true,
+  "nodeComponentInputProfile": {
+    "schemaVersion": "latent.java.http.node-component-input-profile.v1",
+    "maximumComponentBytes": 67108864,
+    "defaultComponentBytes": 16777216,
+    "derivedManagementRequestBytes": 71303168,
+    "guestAndProviderBudgetsChanged": false
+  },
+  "sourceComposition": {
+    "development": "689d4ea813ed978e1ffe3d721b93e1b8c5ca6b03",
+    "compiledFeature": "aa56bdebad8c12f20acce4ec4ecfeca73cf554be",
+    "compiledTested": "370e0653078715807ae538de437a36aa6a05a68f",
+    "testedNodeFixture": "5211438ff692bcc1066bb1675b3f88924b3650be",
+    "SDKFilesExact": 199,
+    "recipeFilesExact": 73,
+    "materialFilesCompared": 105,
+    "onlyDeltas": [
+      {
+        "path": "tools/java_http_phase_node.py",
+        "compiled": {
+          "sha256": "sha256:10a0f87cf52d94f4354e2fbd1e910c49e81a1dd203b247012eba37f2b4972349",
+          "bytes": 17769
+        },
+        "current": {
+          "sha256": "sha256:3842a061ebcbbb44f06ef7092dcc5650a6f3b1071da7dd9800e99110a6173044",
+          "bytes": 19679
+        }
+      },
+      {
+        "path": "tools/java_http_tenant_node.py",
+        "compiled": {
+          "sha256": "sha256:6ebe5e2d98eb54555908a13b6b45b1cddc4e3655aa272d970f82bb9301017455",
+          "bytes": 24875
+        },
+        "current": {
+          "sha256": "sha256:276bfbea12fc54471450d0142394440cc68b1838856a80bc62a3b3bf7192652c",
+          "bytes": 25043
+        }
+      }
+    ],
+    "controllerBytesExactTested521": true,
+    "nativeCurrentCompilationClaim": false
+  },
+  "tenantProgramme": {
+    "status": "failed",
+    "stage": "webb-first",
+    "cause": "rpc-failed/cancelled after120s; unknown",
+    "outcomeKnown": false,
+    "requestDispatched": true,
+    "sameNodeCrossTenantHttpQualified": false
+  },
+  "optionalPublicSpiQualified": false,
+  "full688Qualified": false,
+  "full741Qualified": false,
+  "currentDevelopmentNativeCompilationClaim": false
+}

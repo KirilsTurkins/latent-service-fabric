@@ -90,7 +90,30 @@ class Graph:
                     lowered = match[1] == "probe_subtask_status_t"
                     if lowered and (not async_imports or direction != "imports" or function["kind"] != "async-freestanding"):
                         raise ValueError("asynchronous C ABI is outside the selected Java profile")
-                    expected = len(function["params"]) + (1 if (match[1] == "void" or lowered) and result is not None else 0)
+                    aggregate = None
+                    if lowered and len(function['params']) > 1 and params and params[0]['type'] == symbol + '_args_t':
+                        # wit-bindgen 0.62 groups canonical indirect async
+                        # parameters, even with --no-sig-flattening. Accept only
+                        # its exact function-owned ordered value record.
+                        if not params[0]['pointer'] or params[0]['name'] != 'args':
+                            raise ValueError('asynchronous C argument record requires an owned pointer')
+                        records = re.findall(r'^typedef struct ' + re.escape(symbol + '_args')
+                            + r' \{([^{}]*)\} ' + re.escape(symbol + '_args_t') + r';$', header,
+                            re.MULTILINE)
+                        if len(records) != 1:
+                            raise ValueError('asynchronous C argument record must resolve exactly once')
+                        fields = []
+                        for declaration in records[0].strip().split(';')[:-1]:
+                            field = re.fullmatch(r'\s*(\w+)\s+(\w+)\s*', declaration)
+                            if field is None:
+                                raise ValueError('unsupported asynchronous C argument record field')
+                            fields.append({'type': field[1], 'name': field[2]})
+                        if (not records[0].strip().endswith(';')
+                                or [field['name'] for field in fields] !=
+                                    [cident(param['name']) for param in function['params']]):
+                            raise ValueError('asynchronous C argument record must preserve every ordered WIT parameter')
+                        aggregate = fields
+                    expected = (1 if aggregate is not None else len(function["params"])) + (1 if (match[1] == "void" or lowered) and result is not None else 0)
                     if len(params) != expected: raise ValueError("unexpected flattened or asynchronous C ABI")
                     if lowered and result is not None and not params[-1]["pointer"]:
                         raise ValueError("asynchronous C ABI requires an owned result area")
@@ -98,6 +121,7 @@ class Graph:
                     target.append({**function, "interface": interface_id, "symbol": symbol,
                                    "cReturn": match[1], "cParams": params, "operation": len(target)})
                     if lowered: target[-1]["asyncLowered"] = True
+                    if aggregate is not None: target[-1]['cAggregate'] = aggregate
         if len(self.export_ids) != 1 or not self.exports:
             raise ValueError("Java profile currently requires one nonempty exported interface")
         if len(self.imports) > 256 or len(self.exports) > 64:
