@@ -1,0 +1,78 @@
+name: Activation runtime tenant bindings
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/activation-runtime-aliases-20261020']
+permissions:
+  contents: read
+concurrency:
+  group: activation-runtime-aliases-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  bindings:
+    name: Exact alias validation and two-tenant provider startup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Execute all three new controls and require exact successful names
+        run: |
+          python3 -B - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          from tools.owned_test_process import run_owned, ProcessFailure
+          output=Path(os.environ['RUNNER_TEMP'])/'activation-aliases';output.mkdir()
+          names={
+              'config::tests::providers::scalar_aliases::activation_aliases_cannot_replace_limits_epoch_or_missing_registration',
+              'config::tests::providers::scalar_aliases::activation_aliases_keep_original_configuration_and_exact_binding_scope',
+              'standalone::start::tests::provider_startup::activation_aliases_publish_original_limits_to_two_tenants_and_reap'}
+          result=None
+          try:
+              result=run_owned(['cargo','test','--locked','-p','latentd','--lib','--all-features',
+                  'activation_aliases_','--','--nocapture','--test-threads=1'],
+                  cwd=Path.cwd(),timeout=1320,maximum=2*1024*1024)
+              (output/'cargo.log').write_bytes(result.output)
+              found=re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$',result.output,re.M)
+              summary=re.findall(rb'^test result: ok\. 3 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;',result.output,re.M)
+              if result.returncode or not result.cleaned or len(found)!=3 or {n.decode() for n in found}!=names or len(summary)!=1:
+                  raise RuntimeError('activation-aliases-exact-cases-required')
+              (output/'receipt.json').write_text(json.dumps({'status':'passed','sourceRevision':os.environ['GITHUB_SHA'],
+                  'cases':sorted(names),'processCleaned':result.cleaned,'crossTenantGuestQualification':False},indent=2)+'\n')
+          except ProcessFailure as error:
+              if error.result is not None:(output/'cargo.log').write_bytes(error.result.output)
+              raise
+          PY
+      - name: Retain actual native controls and bounded compiler failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: activation-runtime-aliases-${{ github.sha }}
+          path: ${{ runner.temp }}/activation-aliases/
+          if-no-files-found: warn
+          retention-days: 7

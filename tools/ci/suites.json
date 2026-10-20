@@ -10327,7 +10327,10 @@
         "worker_stacks::tests::linux::timed_out_shutdown_retains_live_blocking_thread_owner_until_real_stop",
         "worker_stacks::tests::two_blocking_workers_have_one_shared_checked_stack_envelope",
         "standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row",
-        "standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity"
+        "standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity",
+        "config::tests::providers::scalar_aliases::activation_aliases_cannot_replace_limits_epoch_or_missing_registration",
+        "config::tests::providers::scalar_aliases::activation_aliases_keep_original_configuration_and_exact_binding_scope",
+        "standalone::start::tests::provider_startup::activation_aliases_publish_original_limits_to_two_tenants_and_reap"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10396,7 +10399,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 456,
+      "minimumCases": 459,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

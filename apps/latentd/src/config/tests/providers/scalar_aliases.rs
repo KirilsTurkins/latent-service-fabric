@@ -145,3 +145,74 @@ fn aliases_preserve_original_fourteen_descriptor_slots_and_closed_input() {
         assert!(!accepted(&invalid));
     }
 }
+
+fn runtime_document() -> Value {
+    let mut value = document(
+        "activationRuntime",
+        latent_core::activation_runtime::CAPABILITY,
+    );
+    value["providers"]["activationRuntime"]["limits"] = json!({
+        "tasks":16,"executors":2,"queuedWork":16,"waits":8,
+        "timers":8,"results":8,"nativeOwners":64});
+    value
+}
+
+#[test]
+fn activation_aliases_keep_original_configuration_and_exact_binding_scope() {
+    let value = runtime_document();
+    assert!(accepted(&value));
+    let config = super::super::input::decode(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let providers = config.providers.unwrap();
+    let digest = providers
+        .activation_runtime
+        .as_ref()
+        .unwrap()
+        .configuration_digest()
+        .unwrap();
+    let mut original = value.clone();
+    original["providers"]["scalarAliases"] = json!([]);
+    original["providers"]["bindings"] = json!([]);
+    let config = super::super::input::decode(&serde_json::to_vec(&original).unwrap()).unwrap();
+    assert_eq!(
+        config
+            .providers
+            .unwrap()
+            .activation_runtime
+            .unwrap()
+            .configuration_digest()
+            .unwrap(),
+        digest
+    );
+    for (key, replacement) in [
+        ("tenant", "examples"),
+        ("providerService", "runtime-host"),
+        ("contract", "latent:clock/monotonic@0.1.0"),
+    ] {
+        let mut invalid = value.clone();
+        invalid["providers"]["bindings"][0][key] = replacement.into();
+        assert!(!accepted(&invalid), "{key}");
+    }
+}
+
+#[test]
+fn activation_aliases_cannot_replace_limits_epoch_or_missing_registration() {
+    let original = runtime_document();
+    for (pointer, replacement) in [
+        ("/providers/scalarAliases/0/identity/epoch", json!(8)),
+        ("/providers/scalarAliases/0/source", json!("foreign-scalar")),
+        ("/providers/scalarAliases/0/identity/id", json!("original")),
+    ] {
+        let mut invalid = original.clone();
+        *invalid.pointer_mut(pointer).unwrap() = replacement;
+        assert!(!accepted(&invalid), "{pointer}");
+    }
+    let mut override_limits = original.clone();
+    override_limits["providers"]["scalarAliases"][0]["limits"] = json!({"tasks":65535});
+    assert!(!accepted(&override_limits));
+    let mut missing = original;
+    missing["providers"]
+        .as_object_mut()
+        .unwrap()
+        .remove("activationRuntime");
+    assert!(!accepted(&missing));
+}

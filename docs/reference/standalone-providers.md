@@ -2,7 +2,7 @@
 
 An optional `scalarAliases` array gives another tenant or provider service an
 explicit logical identity for an installed `clockMonotonic`, `clockWall`,
-`random`, `context`, or `log` provider. For example, alongside a `context`
+`random`, `context`, `log`, or `activationRuntime` registration. For example, alongside a `context`
 installation with identity `context` and epoch `1`, this fragment makes that
 same registration available for a separate foreign-tenant binding:
 
@@ -19,7 +19,21 @@ configuration digest, implementation, callback, resource limits or registration.
 Installation identities and aliases together must fit the original fourteen
 provider descriptor slots. Alias identities must be unique, and each scalar
 contract has at most one identity per tenant and provider service. Alias chains,
-ambiguous sources, and aliases for stateful or network providers are rejected.
+ambiguous sources, and aliases for network or protected-secret implementations are rejected.
+
+An activation-runtime alias reuses the original node-fixed registration and its
+exact finite limits. It creates no second scheduler, callback or owner ledger:
+Task, Wait, Timer and Native ownership remains in each original activation's
+runtime context. The alias cannot select another epoch or limits, and both
+identities consume the existing fourteen descriptor slots. Configure its
+binding with `latent:runtime/activation@0.1.0`; each tenant still needs its own
+provider-binding policy, principals, publications and grant. Missing or revoked
+authority remains a concrete failure.
+
+This registration mapping enables a genuine same-node multi-tenant runtime
+programme; it does not by itself qualify guest state isolation, cancellation
+races or fresh cross-tenant reuse. HTTP and credential installations are not
+aliasable through this array.
 
 The opt-in `providers` object installs the existing bounded HTTP and immutable
 local-blob providers in the standalone node. Explicit `clockMonotonic`, `clockWall`

@@ -1,0 +1,27 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "activation-runtime-aliases-${{ github.ref }}"
+    },
+    "name": "Activation runtime tenant bindings",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/activation-runtime-aliases-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "bindings"
+  ],
+  "reviewReason": "Add separate bounded native controls for explicit activation-runtime aliases, exact tenant/service/contract binding, immutable original limits/epoch, closed inputs and repeatable clean two-tenant provider startup. Exact three nonignored Rust cases are added to the existing all-features suite without removing any prior test. Existing limits and all legacy workflows remain unchanged; SDK cross-tenant calls are not yet qualified.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/activation-runtime-aliases.yml"
+}
