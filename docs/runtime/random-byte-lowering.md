@@ -23,9 +23,17 @@ the seventeenth before entropy generation. Destination rejection, an actual
 trapping guest realloc, provider failure/cancellation and fresh reuse remain
 mandatory. No allowance is raised and no synthetic entropy is supplied.
 
-The focused native campaign runs all15 original named random cases plus two
-new cases and builds one source-attributed normal host for a separate published
-library experiment. Actual results are pending. A byte-entropy capacity denial
-was retained during Polly8.6.3 `AddRetry` diagnostics; source inspection alone
-does not establish that this fix qualifies its modern pipeline. No full #681,
-#746 or #679 completion is claimed.
+The [actual native campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39359322603/job/118421487525)
+passed all15 original named random cases plus two new cases:17 passed, zero
+failed/ignored/filtered. It built one ordinary normal host from the same frozen
+`75b408ea0184936aa1dc21df2c9dd5e6c44bbc46` source for a separate published-library
+experiment. Artifact12237197879 retains the raw test log, exact native source
+archive, Cargo product/profile record and binary. The complete3295-file source
+archive matches the frozen Git bytes; the host uses ordinary defaults, no extra
+features, and retains debug assertions and overflow checks. Implicit compiler
+inputs are not attested.
+
+A byte-entropy capacity denial was retained during Polly8.6.3 `AddRetry`
+diagnostics. The passing host controls do not establish that this fix qualifies
+its modern pipeline; that exact four-case guest replay remains separate. No full
+#681, #746 or #679 completion is claimed.
