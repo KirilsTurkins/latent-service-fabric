@@ -24,18 +24,26 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace OutsideTasks;
 public static class Library {
+    public static string Stage { get; private set; } = "entry";
     private static int calls;
     private static readonly AsyncLocal<string?> local = new();
     public static string Run(string mode) {
+        Stage = "guards";
         if (++calls != 1) throw new Exception("managed request state leaked");
         if (SynchronizationContext.Current != null) throw new Exception("custom context installed");
+        Stage = "gate-create";
         var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         Task<int> pending;
         int result;
         switch (mode) {
         case "run":
+            Stage = "run-submit";
             pending = Task.Run(async () => { await gate.Task; return 7; });
-            Incomplete(pending); gate.SetResult(true); result = pending.GetAwaiter().GetResult();
+            Stage = "run-pending";
+            Incomplete(pending); gate.SetResult(true);
+            Stage = "run-join";
+            result = pending.GetAwaiter().GetResult();
+            Stage = "run-joined";
             if (result != 7) throw new Exception("Task.Run result changed");
             break;
         case "when-all":
@@ -180,9 +188,22 @@ def prepare(output: Path, outside: Path, tools: Path):
     path = project / 'src/Main.cs'; before = path.read_text(encoding='utf-8')
     marker = '    public static Result<string, string> Greet(string name)\n    {'
     require(before.count(marker) == 1, 'dotnet-task-greeting-preimage')
-    path.write_text(before.replace(marker, marker + '\n        if (name.StartsWith("task:", '
-        'System.StringComparison.Ordinal))\n            return Result<string, string>.Ok('
-        'OutsideTasks.Library.Run(name.Substring(5)));'), encoding='utf-8', newline='\n')
+    path.write_text(before.replace(marker, marker + r'''
+        if (name.StartsWith("task:", System.StringComparison.Ordinal)) {
+            try { return Result<string, string>.Ok(OutsideTasks.Library.Run(name.Substring(5))); }
+            catch (System.Exception error) {
+                string kind = error switch {
+                    System.PlatformNotSupportedException => "unsupported",
+                    System.InvalidOperationException => "invalid-operation",
+                    System.OperationCanceledException => "cancelled",
+                    System.AggregateException => "aggregate",
+                    System.TimeoutException => "timeout",
+                    _ => "unknown"
+                };
+                return Result<string, string>.Err("ordinary-task-failure:" + OutsideTasks.Library.Stage + ":" + kind);
+            }
+        }
+'''), encoding='utf-8', newline='\n')
     authoring.edit(project, 'add', identity=PACKAGE, version='1.0.0')
     candidate = project / 'target/task-candidate.json'; candidate.parent.mkdir(exist_ok=True)
     lock = resolve(project, candidate, dotnet=compiler.dotnet, tools=tools,
