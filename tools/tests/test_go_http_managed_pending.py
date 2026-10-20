@@ -17,7 +17,7 @@ def record(event,sequence,tasks=10,waits=0,timers=1,mode='pending'):
 
 
 def accepted():
-    return record('start-accepted',1)+record('next-entered',2,waits=1)+record('start-accepted',3)+record('next-entered',4,waits=1)
+    return record('wait-pending',1)+record('start-accepted',2,tasks=9)+record('next-entered',3,tasks=9,waits=1)
 
 
 def observations():
@@ -39,6 +39,16 @@ class ManagedGoHttpPendingControls(unittest.TestCase):
         for bad in (source.replace(fixture.DEADLINE,b''),source+fixture.DEADLINE,changed):
             with self.subTest(bad=len(bad)),self.assertRaises(ValueError):fixture.managed_deadline(bad)
 
+    def test_actual_v5_wait_for_then_context_start_shape_cannot_be_replaced_by_invented_second_start(self):
+        actual=(b'LSF-GO-NODE-STOP-TIMER-V1|pending|wait-pending|1|10|0|1\n'
+                b'LSF-GO-NODE-STOP-TIMER-V1|pending|start-accepted|2|9|0|1\n'
+                b'LSF-GO-NODE-STOP-TIMER-V1|pending|next-entered|3|9|1|1\n')
+        self.assertIsNotNone(pending.positive(actual,'node-stop-pending'))
+        for changed in (actual.replace(b'wait-pending',b'start-accepted'),
+                actual.replace(b'|1|10|0|1',b'|1|8|0|1'),
+                record('start-accepted',1,tasks=9)+record('wait-pending',2)+record('next-entered',3,tasks=9,waits=1)):
+            self.assertIsNone(pending.positive(changed,'node-stop-pending'))
+
     def test_three_cases_use_both_original_client_deadlines_and_fresh_cross_tenant_state(self):
         rows=pending.cases(node.DOMAIN)
         self.assertEqual(len(rows),3)
@@ -52,13 +62,13 @@ class ManagedGoHttpPendingControls(unittest.TestCase):
     def test_successful_next_requires_second_owned_timer_and_application_beyond_eight_maintenance_tasks(self):
         observed=pending.positive(accepted(),'node-stop-pending')
         self.assertEqual(observed['maintenanceTasks'],8)
-        self.assertEqual(observed['applicationTasksAtLeast'],2)
+        self.assertEqual(observed['applicationTasksAtLeast'],1)
         self.assertEqual(observed['lastEntered']['waits'],1)
         for source in (b'',record('start-accepted',1),record('start-accepted',1)+record('next-entered',2,waits=1),
-                accepted().replace(b'|10|1|1',b'|8|1|1'),accepted().replace(b'|10|1|1',b'|10|0|1'),
-                accepted().replace(b'|10|1|1',b'|10|1|0'),accepted().replace(b'|10|1|1',b'|10|1|2')):
+                accepted().replace(b'|9|1|1',b'|8|1|1'),accepted().replace(b'|9|1|1',b'|10|0|1'),
+                accepted().replace(b'|9|1|1',b'|10|1|0'),accepted().replace(b'|9|1|1',b'|10|1|2')):
             with self.subTest(source=source):self.assertIsNone(pending.positive(source,'node-stop-pending'))
-        with self.assertRaises(WorkflowError):pending.positive(accepted()+record('root-close',5),'node-stop-pending')
+        with self.assertRaises(WorkflowError):pending.positive(accepted()+record('root-close',4),'node-stop-pending')
         with self.assertRaises(WorkflowError):pending.positive(accepted(),'arbitrary-activation')
 
     def test_unknown_private_extra_overflow_missing_duplicate_and_out_of_profile_records_refuse(self):
@@ -77,8 +87,8 @@ class ManagedGoHttpPendingControls(unittest.TestCase):
         source=accepted()
         for count in range(1,len(source.splitlines()[-1])):
             self.assertIsNone(pending.positive(source[:-count],'node-stop-pending'))
-        both=source+record('root-close',5)+record('start-accepted',6,mode='drain')
-        self.assertEqual([row['sequence'] for row in pending.observe(both)['records']],list(range(1,7)))
+        both=source+record('root-close',4)+record('start-accepted',5,mode='drain')
+        self.assertEqual([row['sequence'] for row in pending.observe(both)['records']],list(range(1,6)))
         self.assertEqual(pending.observe(b'ordinary node stderr\n'+source)['records'],pending.observe(source)['records'])
 
     def test_post_retirement_or_non_http_broker_work_cannot_replace_live_owned_http(self):
@@ -108,7 +118,12 @@ class ManagedGoHttpPendingControls(unittest.TestCase):
             if row.get('name')=='Install captured Go compiler namespace')
         self.assertEqual(next(row['run'] for row in steps if row.get('name')=='Install captured Go compiler namespace'),normal_namespace)
         run=[row['run'] for row in steps if 'tools/qualify_go_http_tenants.py' in row.get('run','')]
-        self.assertEqual(len(run),1);self.assertTrue(run[0].endswith('--managed-runtime'))
+        self.assertEqual(len(run),2)
+        self.assertEqual(sum(command.endswith('--managed-runtime') for command in run),1)
+        self.assertEqual(sum(command.endswith('--managed-runtime --reuse-reviewed-component') for command in run),1)
+        self.assertTrue(all('inputs.recompile == true' in row['if'] for row in steps
+            if row.get('name') in ('Install captured Go compiler namespace','Authenticate the maintained Go compiler and official generator')))
+        self.assertEqual(selected['on']['workflow_dispatch']['inputs']['recompile']['default'],False)
         self.assertEqual(sum('tools/wait_runtime_native_products.py --output' in row.get('run','') for row in steps),1)
         self.assertNotIn('cargo ',str(steps));self.assertNotIn('build_native_runtime',str(steps))
 

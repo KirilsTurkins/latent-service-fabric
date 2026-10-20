@@ -1,5 +1,6 @@
 {
   "cases": [
+    "ManagedGoHttpPendingControls.test_actual_v5_wait_for_then_context_start_shape_cannot_be_replaced_by_invented_second_start",
     "ManagedGoHttpPendingControls.test_exact_owning_workflow_reuses_products_and_selects_actual_managed_guest_without_native_build",
     "ManagedGoHttpPendingControls.test_live_pipe_partial_record_cannot_be_a_positive_witness_and_full_two_mode_sequence_is_retained",
     "ManagedGoHttpPendingControls.test_owned_deadline_derivation_refuses_unknown_or_repeated_preimages",
@@ -10,6 +11,18 @@
     "ManagedGoHttpPendingControls.test_unknown_private_extra_overflow_missing_duplicate_and_out_of_profile_records_refuse"
   ],
   "guards": {
+    "ManagedGoHttpPendingControls.test_actual_v5_wait_for_then_context_start_shape_cannot_be_replaced_by_invented_second_start": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "ManagedGoHttpPendingControls.test_exact_owning_workflow_reuses_products_and_selects_actual_managed_guest_without_native_build": {
       "bases": [
         "unittest.TestCase"
@@ -17,7 +30,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -29,7 +42,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -41,7 +54,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -53,7 +66,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -65,7 +78,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -77,7 +90,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -89,7 +102,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -101,7 +114,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3916f3224dfeb6c75695e63cfd6b2ca9c92e3aa2b11fe5a4c81681fc232c428e",
+        "module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -109,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_http_managed_pending.py",
-  "reviewReason": "Explicit managed-v5 HTTP programme retains8charged maintenance plus8application TASK slots, requires real pending HTTP/timer/Store ownership and two context deadlines plus fresh reuse; default v4 nineteen outcomes remain unchanged, actual new signed gate pending.",
+  "reviewReason": "Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained. Only closed actual-record fixture setup digest changes; all existing skips/decorators/classes retained.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

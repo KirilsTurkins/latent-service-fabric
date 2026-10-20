@@ -12,7 +12,15 @@
           "feat/go-http-managed-accounting-20261020"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "recompile": {
+            "default": false,
+            "description": "Compile a fresh managed fixture instead of replaying the exact reviewed build",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "actions": "read",
@@ -22,7 +30,7 @@
   "requiredJobs": [
     "tenants"
   ],
-  "reviewReason": "Explicit managed-v5 HTTP programme retains8charged maintenance plus8application TASK slots, requires real pending HTTP/timer/Store ownership and two context deadlines plus fresh reuse; default v4 nineteen outcomes remain unchanged, actual new signed gate pending.",
+  "reviewReason": "Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-http-managed-accounting.yml"
 }

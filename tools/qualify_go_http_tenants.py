@@ -172,10 +172,48 @@ def qualify(prepared: Path,output: Path, *, managed_runtime=False):
         raise
 
 
+def qualify_managed_replay(prepared: Path,output: Path):
+    from tools.go_http_managed_component import restore
+    from tools.wait_runtime_native_products import native_products as future_products
+    require(sys.platform=='linux','go-http-managed-replay-linux-required')
+    output=fresh(output)
+    require(ROOT not in output.parents and output not in ROOT.parents,'go-http-managed-replay-owned-output')
+    deadline=time.monotonic()+360
+    names=(*MATERIALS,'tools/go_http_managed_component.py')
+    before={name:file_identity(ROOT/name) for name in names}
+    record={'schemaVersion':'latent.go.managed-http-replay.v1','status':'incomplete',
+        'runtimeProfile':MANAGED_PROFILE,'sourceMaterials':before,'guestComponentsCompiled':0,
+        'fullTicketQualification':False,'normalKernelStreamEnabled':False,'httpsTransportSupported':False}
+    stage='authenticate-original-component-and-exact-current-native-products'
+    try:
+        native=future_native_compatibility(prepared);products=future_products(prepared)
+        for path in products.values():path.chmod(0o700)
+        record['native']=native
+        record['construction']=restore(output/'build')
+        build={name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}
+        record['build']=build
+        stage='same-original-v5-component-positive-pending-and-fresh-signed-gate'
+        record['node']=run(output/'build',{name:products[name] for name in ('latent','latentd','capsule_authoring')},
+            output/'node',min(deadline,time.monotonic()+300),runtime_profile=MANAGED_PROFILE)
+        require(record['node']['status']=='passed' and len(record['node']['cases'])==3
+            and before=={name:file_identity(ROOT/name) for name in names}
+            and native==future_native_compatibility(prepared)
+            and build=={name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}
+            and time.monotonic()<deadline,'go-http-managed-replay-final-identity-and-deadline')
+        record['status']='passed';write_workflow_receipt(output/'qualified.json',record);return record
+    except BaseException as error:
+        record.update(status='failed',stage=stage,errorCategory=type(error).__name__)
+        write_workflow_receipt(output/'FAILED.json',record);raise
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prepared',required=True,type=Path)
     parser.add_argument('--output',required=True,type=Path)
     parser.add_argument('--managed-runtime',action='store_true')
+    parser.add_argument('--reuse-reviewed-component',action='store_true')
     args = parser.parse_args()
-    print(qualify(args.prepared.resolve(strict=True),args.output.resolve(),managed_runtime=args.managed_runtime)['status'])
+    require(not args.reuse_reviewed_component or args.managed_runtime,'go-http-managed-replay-requires-explicit-v5')
+    if args.reuse_reviewed_component:
+        print(qualify_managed_replay(args.prepared.resolve(strict=True),args.output.resolve())['status'])
+    else:print(qualify(args.prepared.resolve(strict=True),args.output.resolve(),managed_runtime=args.managed_runtime)['status'])

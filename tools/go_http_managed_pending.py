@@ -66,12 +66,15 @@ def positive(stderr,activation):
     require(not any(row['event']=='root-close' for row in selected),'go-http-managed-root-already-closed')
     starts=[row for row in selected if row['event']=='start-accepted']
     entered=[row for row in selected if row['event']=='next-entered']
-    if value['partialRecord'] or len(starts)<2 or not entered:return None
+    waits=[row for row in selected if row['event']=='wait-pending']
+    if value['partialRecord'] or len(starts)!=1 or not entered or not waits:return None
     last=entered[-1]
-    # Private Marker used an ordinary short timer before dispatch. The second
-    # accepted timer is this invocation's context deadline. Its actual next
-    # must retain all eight v5 maintenance Tasks plus application work.
-    if last['sequence']<=starts[-1]['sequence'] or not (9<=last['tasks']<=16
+    # In v5 the private worker's ordinary Sleep uses wait-for, not timer-start.
+    # Its real Poll::Pending precedes the separately accepted context timer.
+    # That timer's actual next retains maintenance plus application Tasks.
+    if not any(row['sequence']<starts[0]['sequence'] and 9<=row['tasks']<=16
+        and row['timers']==1 for row in waits):return None
+    if last['sequence']<=starts[0]['sequence'] or not (9<=last['tasks']<=16
         and 1<=last['waits']<=16 and last['timers']==1):return None
     return {'nativeObserver':value,'activation':activation,'lastEntered':last,
         'maintenanceTasks':8,'applicationTasksAtLeast':last['tasks']-8,

@@ -24,12 +24,13 @@
         "run": "python3 -m pip install -r tools/requirements.lock"
       },
       {
+        "if": "github.event_name == 'workflow_dispatch' && inputs.recompile == true",
         "name": "Install captured Go compiler namespace",
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
       {
         "name": "Check source capture catalogue absence tenant authority and strict peer oracles",
-        "run": "python3 -B -m unittest tools.tests.test_go_http_managed tools.tests.test_go_http_managed_pending tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products tools.tests.test_sdk_native_products_reader -v"
+        "run": "python3 -B -m unittest tools.tests.test_go_http_managed tools.tests.test_go_http_managed_pending tools.tests.test_go_http_managed_component tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products tools.tests.test_sdk_native_products_reader -v"
       },
       {
         "name": "Authenticate the fixed native source revision",
@@ -43,18 +44,29 @@
         "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/go-http-tenant-native\""
       },
       {
+        "if": "github.event_name == 'workflow_dispatch' && inputs.recompile == true",
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
       },
       {
+        "if": "github.event_name == 'workflow_dispatch' && inputs.recompile == true",
         "name": "Authenticate the maintained Go compiler and official generator",
         "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-http-tenant-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/componentize-go.tar.gz\" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz\necho \"1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/componentize-go.tar.gz\" -C \"$out\" componentize-go\necho \"b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go\" | sha256sum --check --strict\nchmod 755 \"$out/componentize-go\"\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
+        "if": "github.event_name == 'workflow_dispatch' && inputs.recompile == true",
         "name": "Compile one v5 component and require three real signed pending and fresh outcomes",
         "run": "python3 -B tools/qualify_go_http_tenants.py --prepared \"$RUNNER_TEMP/go-http-tenant-native\" --output \"$RUNNER_TEMP/go-http-tenant-catalogue\" --managed-runtime"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "if": "github.event_name != 'workflow_dispatch' || inputs.recompile != true",
+        "name": "Replay exact authenticated v5 component after reader correction without recompiling",
+        "run": "python3 -B tools/qualify_go_http_tenants.py --prepared \"$RUNNER_TEMP/go-http-tenant-native\" --output \"$RUNNER_TEMP/go-http-tenant-catalogue\" --managed-runtime --reuse-reviewed-component"
       },
       {
         "if": "always()",
@@ -72,7 +84,7 @@
   },
   "jobId": "tenants",
   "kind": "job",
-  "reviewReason": "Explicit managed-v5 HTTP programme retains8charged maintenance plus8application TASK slots, requires real pending HTTP/timer/Store ownership and two context deadlines plus fresh reuse; default v4 nineteen outcomes remain unchanged, actual new signed gate pending.",
+  "reviewReason": "Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-http-managed-accounting.yml"
 }

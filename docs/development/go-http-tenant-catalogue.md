@@ -107,7 +107,7 @@ absent from this Go world; all old selector instructions remain unchanged.
 A later automatic [run 39466872357/job 118780445700](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39466872357/job/118780445700)
 passed the same 19 signed outcomes, four denials and 15 contacts on
 `f672a33f09c67d6a4913d0fa0d5fd14197fb9ba7` with the separately authenticated
-f919 native tuple. Independent review checked all 325 archive members, 26 Git
+f919 native tuple. Independent review checked all 325 archive members, 28 Git
 materials, 91 staged files, 60 captured SDK files and all 19 provider/physical
 retirement observations. This [later v4 observation](../testing/evidence/go-http-tenant-f919-signed-2026-10-20.json)
 keeps the original 1ad/6f5 record intact and gives no managed-v5 credit.
@@ -127,7 +127,7 @@ The separate profile configures 16 total tasks: those eight reservations plus
 the original eight application slots. Queue, wait, executor, timer, result and
 native-owner ceilings remain exact. This uses the existing activation ledger,
 not a refund, hidden allowance or automatic increase for the default profile.
-The separate owning workflow compiles one fresh v5 component and runs only three
+The separate owning workflow uses one normal compiled v5 component and runs only three
 signed calls: unchanged Sling and Requests deadline paths against held headers,
 then a fresh Sling/domain/private-worker call. It does not repeat the already
 qualified v4 19-case matrix. The owned fixture derives its context deadline from
@@ -135,8 +135,8 @@ qualified v4 19-case matrix. The owned fixture derives its context deadline from
 5-second grants, 120-second root budget and every provider limit are unchanged.
 
 Before either deadline result, the original f919 fixed-ID native observer must
-show the private initializer timer and context timer successfully admitted, then
-an actual timer-next with nine to sixteen charged tasks, at least one wait and
+show the private worker's actual wait-for Poll::Pending, followed by a
+successfully admitted context timer and then an actual timer-next with nine to sixteen charged tasks, at least one wait and
 one remaining timer. Eight tasks are the v5 maintenance reservation; the rest
 are accepted application work. The invocation must still be unfinished, with
 one original Store/cell and live HTTP pool connection/running-request/broker
@@ -152,5 +152,13 @@ client results must report context cancellation, followed by provider and physic
 zero before fresh reuse and a clean node stop. This proves timer/helper progress
 while HTTP was pending only if the actual hosted programme passes. Source controls
 and the earlier v4 result cannot satisfy that managed execution gate; it is still
-pending. No native producer, engine build, HTTP policy or guest accounting code
+pending. The first actual run compiled, validated and signed the component, but
+failed its reader because it incorrectly demanded two timer-start records. The
+actual v5 worker uses wait-for, then context timer-start/next; that failure remains
+retained. The corrected default replay authenticates the fixed 182-member build
+artifact, all original successful construction metadata, 91 unchanged compiler
+recipe files, 60 captured SDK inputs and five original WIT assets before signing.
+It keeps the failed original programme record and reports zero new component
+compilations. A fresh build remains available through explicit manual selection.
+No native producer, engine build, HTTP policy or guest accounting code
 changes, and no raw socket/kernel/HTTPS qualification, are part of this slice.
