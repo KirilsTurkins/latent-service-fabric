@@ -12,6 +12,29 @@ from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 
 
 class ClosedFilesystemQualification(unittest.TestCase):
+    def test_actual_c_standard_error_projection_uses_closed_attribution_tokens(self):
+        from tools import guest_compatibility as compatibility
+        from tools.qualify_sdk_scratch import execution_report
+        from tools.sdk_scratch_probe import refusal
+        from tools.rust_capsule_project import digest, write_json
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = compatibility.report('c', digest(b'source'), digest(b'component'),
+                'lsf-host-abi-phase3-v4', [], [compatibility.finding('lifecycle-unproven',
+                    'retirement', 'not-evaluated', owner_issue=736)])
+            write_json(root/'compatibility-report.json', original)
+            decoded = [{'ok': 'scratch|c|errno=notsup|fresh=1'}]
+            rows = [{'mode': mode, 'observation': refusal('c', decoded), 'invocation': {
+                'processReaped': True, 'exitCode': 0, 'response': {'outcomeKnown': True}, 'decoded': decoded}}
+                for mode in ('open', 'create', 'temp')]
+            node = {'releaseSet': {'releases': [{'name': 'my-greeting', 'componentDigest': original['componentDigest']}]},
+                    'standardScratchRefusal': {'status': 'passed', 'language': 'c', 'cases': rows}}
+            report = execution_report('c', root, node)
+            observed = report['findings'][1:4]
+            self.assertEqual([x['operation'] for x in observed], ['fopen/read', 'fopen/create', 'tmpfile'])
+            self.assertEqual([x['classification'] for x in observed], ['unsupported-reached']*3)
+            self.assertEqual(report['findings'][-1]['classification'], 'unresolved-behavior')
+
     def setUp(self):
         owned = tempfile.TemporaryDirectory(); self.addCleanup(owned.cleanup)
         self.root = Path(owned.name)

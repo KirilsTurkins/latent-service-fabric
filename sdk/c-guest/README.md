@@ -26,8 +26,11 @@ unsupported public shapes; see the [guest reference](../../docs/component-develo
 An explicit [C23 resource selection](../../docs/component-development/c-compiled-resources.md)
 enables ordinary `#embed` over captured immutable data and projects declared
 dependency resources into the shared package index. It installs no runtime
-filesystem or writable scratch. Its new signed resource campaign is pending;
-the default C11 profile and existing facility receipts keep their own scope.
+filesystem or writable scratch. The retained
+[source-bound C23 signed receipt](../../docs/testing/evidence/c23-resources-passed-2026-10-19.json)
+records the earlier resource campaign; the C11 and facility receipts retain
+their own scope. Ordinary closed `fopen`/`tmpfile` behavior is documented in
+[packaged resources](../../docs/component-development/packaged-resources.md).
 
 The reactor has a 64 KiB stack, a finite memory maximum and no thread runtime.
 Zig's bundled libc supplies allocation. Component construction rejects ambient
