@@ -1,5 +1,7 @@
 {
   "cases": [
+    "HttpOperationalAuthorityTuple.test_both_new_authority_controls_are_mandatory_not_a_ten_stage_downgrade",
+    "HttpOperationalAuthorityTuple.test_fixed_successful_origin_cannot_be_replaced_by_prior_failed_consumer_tuple",
     "HttpTenantNativeProducts.test_command_failures_missing_observer_and_nonfinite_or_aggregate_times_refuse",
     "HttpTenantNativeProducts.test_direct_cli_bootstraps_repository_without_pythonpath_or_network",
     "HttpTenantNativeProducts.test_extract_refuses_nonallowlisted_traversal_before_any_write",
@@ -9,6 +11,30 @@
     "HttpTenantNativeProducts.test_unfrozen_pins_refuse_before_network_or_output"
   ],
   "guards": {
+    "HttpOperationalAuthorityTuple.test_both_new_authority_controls_are_mandatory_not_a_ten_stage_downgrade": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70b79a7ec470d014686c9f41b45d2fdc142fdf55d38df582052d901ace455449",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpOperationalAuthorityTuple.test_fixed_successful_origin_cannot_be_replaced_by_prior_failed_consumer_tuple": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70b79a7ec470d014686c9f41b45d2fdc142fdf55d38df582052d901ace455449",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "HttpTenantNativeProducts.test_command_failures_missing_observer_and_nonfinite_or_aggregate_times_refuse": {
       "bases": [
         "unittest.TestCase"
@@ -96,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_http_tenant_native_products.py",
-  "reviewReason": "Clone the seven strict immutable native acquisition controls for an independently named candidate; all receipt/run/artifact pins remain None until actual success verification; no historical helper mutation.",
+  "reviewReason": "Version the tenant native tuple to authenticated successful8f authority producer; retain seven original cases and guards, update only exact114-material byte sum from changed producer workflow, add old-tuple and both mandatory authority-stage refusal controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
