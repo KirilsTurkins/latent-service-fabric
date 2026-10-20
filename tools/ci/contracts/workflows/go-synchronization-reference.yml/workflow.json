@@ -10,14 +10,15 @@
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
-      "LSF_GO_REFERENCE_CAMPAIGN": "${{ inputs.campaign || (github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}"
+      "LSF_GO_REFERENCE_CAMPAIGN": "${{ inputs.campaign || (github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}"
     },
     "name": "Actual Go synchronization reference",
     "on": {
       "push": {
         "branches": [
           "feat/go-runtime-retirement-20261020",
-          "feat/go-runtime-admission-20261020"
+          "feat/go-runtime-admission-20261020",
+          "feat/go-v5-standard-timers-20261020"
         ]
       },
       "workflow_dispatch": {
@@ -27,7 +28,8 @@
             "description": "Finite actual Go runtime programme",
             "options": [
               "synchronization",
-              "admission"
+              "admission",
+              "managed-timers"
             ],
             "required": true,
             "type": "choice"
@@ -42,7 +44,7 @@
   "requiredJobs": [
     "synchronization"
   ],
-  "reviewReason": "Add exact signed two-tenant one-cell admission and original-retirement controls; preserve every prior command, case and finite bound.",
+  "reviewReason": "Apply unchanged standard timer source/native17 and original43 outcome oracle to current managed v5 with original16/4/2 ownership; retain all legacy v3, synchronization, admission cases, commands, guards and limits; actual hosted qualification pending.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-synchronization-reference.yml"
 }
