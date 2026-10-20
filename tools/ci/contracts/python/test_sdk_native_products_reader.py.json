@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "FrozenNativeReader.test_changed_receipt_preimage_is_refused_before_product_use",
+    "FrozenNativeReader.test_exact_frozen_record_is_accepted_without_a_guest_claim",
+    "FrozenNativeReader.test_failed_reordered_missing_and_nonfinite_command_outcomes_are_refused",
+    "FrozenNativeReader.test_foreign_source_material_snapshot_and_product_are_refused",
+    "FrozenNativeReader.test_moving_source_duplicate_stages_and_unbounded_pins_are_refused",
+    "FrozenNativeReader.test_only_fixed_regular_members_are_materialized_and_rechecked"
+  ],
+  "guards": {
+    "FrozenNativeReader.test_changed_receipt_preimage_is_refused_before_product_use": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_exact_frozen_record_is_accepted_without_a_guest_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_failed_reordered_missing_and_nonfinite_command_outcomes_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_foreign_source_material_snapshot_and_product_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_moving_source_duplicate_stages_and_unbounded_pins_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+      ],
+      "skipSites": []
+    },
+    "FrozenNativeReader.test_only_fixed_regular_members_are_materialized_and_rechecked": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de6189343f14ba96d38291da93913dc8e995b3bc3ed6f043364ad0a9d9c26cd3",
+        "class:setup-sha256:72b9ba274b171a1d7a09a3c32927620a9b42f5a745546ac1ab5003487620bc3a"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_native_products_reader.py",
+  "reviewReason": "Freeze exact producer acquisition with source/stage/pin/member/receipt drift refusals",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
