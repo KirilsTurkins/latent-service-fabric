@@ -126,10 +126,11 @@ complete physical costs. SKB NAPI, allocator rounding, fclone layout and every
 remaining allocation path still require the full selected-kernel closure.
 
 In particular, sk_prot_alloc precedes socket initialization. It cannot read a
-valid cookie or invent one. The current constructor observation with no cookie
-cannot commit a socket record; it remains charged and poisoned in the model.
-The trusted sk_alloc/clone initialization and cookie handoff are an explicit
-remaining integration gate.
+valid cookie or invent one. The constructor-only recipe's observation with no
+cookie cannot commit a socket record; it remains charged and poisoned in that
+model. Its original recipe and controls remain unchanged. The additive
+initialization handoff below advances that uninstalled source seam; it does not
+supply a trusted live factory or a supported kernel profile.
 
 The actual uninstalled CONFIG_LSF_STREAM_LINEAGE constructor adapter therefore
 **refuses every constructor before allocation**: no trusted context, physical
@@ -147,3 +148,50 @@ reference. They establish neither Linux execution nor real locking, allocator
 costs, kernel authority, final-free proof or supported installation. All earlier
 26 supplemental C controls and 18 source controls remain unchanged; the new
 source suite adds eight controls. No production qualification flag changes.
+
+## Reserved-address to initialized-cookie handoff
+
+The next explicit recipe requires all seven complete original source preimages:
+the three networking files above plus include/net/sock.h,
+include/linux/sock_diag.h, net/core/sock_diag.c and include/linux/cookie.h at the
+same exact commit. SHA-256, lengths, Git blob identity and seven initialization/
+copy/generator function preimages are checked before derivation.
+
+    python tools/host_stream_kernel_handoff_derivation.py --source-dir exact-linux-source --output fresh-derived-source
+
+The socket allocation keeps its existing record RESERVED and attaches its
+address without reading allocator bytes or a cookie. No second table, charge
+or allocation is created. Private hooks in sk_alloc and sk_clone_lock observe
+initialization before return/publication. The clone hook follows the original
+failure branches and precedes smp_wmb and the refcount publication. Those outer
+constructor changes are insertions: every upstream statement remains ordered.
+Early destruction of a still-reserved socket remains poisoned and charged.
+
+The private adapter copies the complete original token and admission scope under
+the existing lock before reading a cookie. It releases that lock, invokes the
+unchanged upstream sock_gen_cookie chain, then reacquires the lock and rechecks
+the scope, original owner/allocation generations, address and RESERVED phase
+before moving that record to LIVE. A stale, foreign, duplicate, reused-address,
+unknown or raced handoff cannot release capacity.
+
+The authenticated sk_init_common does not reset a cookie. The authenticated
+sock_copy prefix can copy a parent's existing cookie, so a clone may legitimately
+share that value. This recipe never resets it or requires global per-object
+cookie uniqueness: original allocation generation and address remain distinct.
+It neither invents a cookie nor replaces the actual upstream generator.
+
+Fourteen supplementary C controls compile the actual private hook translation
+unit and all three unchanged upstream cookie functions with explicit atomic,
+per-CPU, preemption, spinlock and type doubles. The previous constructor callback
+reproduces the zero-cookie commit refusal (RED, exit 2); the new controls pass.
+The outer sk_alloc/sk_clone_lock insertions are source-verified, not executed by
+those controls. Eight additive Python controls preserve all twenty-six earlier
+source cases and every prior C input. These results are not Linux execution,
+real concurrency, ABI or physical allocation measurements.
+
+The actual constructor prepare gate still refuses because no trusted live
+factory or complete physical layout has been installed. There is no Kconfig/
+Makefile integration, public registrar, caller certificate or quarantine release.
+Running maintained-kernel/config/BTF authentication, complete allocation and
+descendant coverage, prepaid physical costs and sealed final-free consumption
+remain required. Normal installation and ACCOUNTING_QUALIFIED stay unchanged.
