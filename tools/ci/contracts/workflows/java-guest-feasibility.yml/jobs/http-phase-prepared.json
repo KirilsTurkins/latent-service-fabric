@@ -1,0 +1,74 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_phase_prepared }}",
+    "name": "Retained Java phase component fresh signing and node outcomes",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch only exact native and original compiled fixture source objects",
+        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b aa56bdebad8c12f20acce4ec4ecfeca73cf554be 370e0653078715807ae538de437a36aa6a05a68f"
+      },
+      {
+        "name": "Check exact operator input profile and fixed prepared-component refusal controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_replay_java_http_phases tools.tests.test_java_http_phase_campaign.JavaPhaseOperatorComponentLimit -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve exactly the authenticated native products without compilation",
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/java-phase-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate and restore only fixed original Java component and package inputs",
+        "run": "python3 -B tools/replay_java_http_phases.py --prepare --output \"$RUNNER_TEMP/java-phase-original\""
+      },
+      {
+        "name": "Fresh ordinary signing and all original default phase and tenant outcomes",
+        "run": "python3 -B tools/replay_java_http_phases.py --prepared \"$RUNNER_TEMP/java-phase-original\" --native \"$RUNNER_TEMP/java-phase-native\" --output \"$RUNNER_TEMP/java-phase-node-replay\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain exact bounded original-source and fresh node receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-http-phase-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-phase-native/retrieval.json\n${{ runner.temp }}/java-phase-native/native-products.json\n${{ runner.temp }}/java-phase-native/source-inputs.json\n${{ runner.temp }}/java-phase-original/retrieval.json\n${{ runner.temp }}/java-phase-node-replay/qualification.json\n${{ runner.temp }}/java-phase-node-replay/node/qualification.json\n${{ runner.temp }}/java-phase-node-replay/node/FAILED.json\n${{ runner.temp }}/java-phase-node-replay/node/controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/qualification.json\n${{ runner.temp }}/java-phase-node-replay/tenants/FAILED.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-case.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-retired.json\n${{ runner.temp }}/java-phase-node-replay/tenants/foreign-grants-not-inherited.json\n${{ runner.temp }}/java-phase-node-replay/tenants/final-owner.json\n${{ runner.temp }}/java-phase-node-replay/tenants/node-stopped.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-peer-stopped.json\n${{ runner.temp }}/java-phase-node-replay/tenants/final-products.json\n${{ runner.temp }}/java-phase-node-replay/tenants/examples-controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/foreign-controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/releases/release-set.json\n${{ runner.temp }}/java-phase-node-replay/tenants/releases/java-standard-http/build-observation.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "http-phase-prepared",
+  "kind": "job",
+  "reviewReason": "Exact authenticated old component +fresh signing/node30outcomes23contacts only; defaultfalse manual, no compiler/native/JDK build, failedreceipt untouched.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-guest-feasibility.yml"
+}

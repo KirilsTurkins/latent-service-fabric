@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_java_http_phases.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Diagnostic-only source-bound exactaa56 artifact67members/55buildinputs/199SDK+73recipe+105materials, freshsign/node16+2+tenant12, nativef919 strict, source/fixture identities distinct; no recompilation/oldreceipt rewrite.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "79eb083ccebd2096d234b49acdc5fea245030e0c3e02fdbb1d6a22522c6e4680"
+}

@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "JavaPhasePreparedReplay.test_compilation_recipe_drift_refuses_before_original_git_source_selection",
+    "JavaPhasePreparedReplay.test_explicit_manual_lane_restores_complete_original_workflow_and_command_guards",
+    "JavaPhasePreparedReplay.test_missing_original_layer_restores_only_after_exact_package_input_identity",
+    "JavaPhasePreparedReplay.test_only_relative_canonical_paths_and_fixed_bounded_members_are_selected",
+    "JavaPhasePreparedReplay.test_wrong_archive_refuses_before_creating_any_output"
+  ],
+  "guards": {
+    "JavaPhasePreparedReplay.test_compilation_recipe_drift_refuses_before_original_git_source_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:109e86072fdb510b1870aea418dcfa62c8bfcb7de80fabe6b751ce6694c9846b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhasePreparedReplay.test_explicit_manual_lane_restores_complete_original_workflow_and_command_guards": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:109e86072fdb510b1870aea418dcfa62c8bfcb7de80fabe6b751ce6694c9846b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhasePreparedReplay.test_missing_original_layer_restores_only_after_exact_package_input_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:109e86072fdb510b1870aea418dcfa62c8bfcb7de80fabe6b751ce6694c9846b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhasePreparedReplay.test_only_relative_canonical_paths_and_fixed_bounded_members_are_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:109e86072fdb510b1870aea418dcfa62c8bfcb7de80fabe6b751ce6694c9846b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhasePreparedReplay.test_wrong_archive_refuses_before_creating_any_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:109e86072fdb510b1870aea418dcfa62c8bfcb7de80fabe6b751ce6694c9846b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_replay_java_http_phases.py",
+  "reviewReason": "Five fixed archive/source/layer/path and entire manual workflow restoration controls; no guest/native execution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

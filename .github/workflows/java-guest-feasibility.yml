@@ -27,6 +27,10 @@ on:
         description: Run the unchanged normal Java prerequisite and separate filesystem refusal packet
         type: boolean
         default: false
+      java_http_phase_prepared:
+        description: Fresh signing and node programme on exact retained aa56 Java component
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -48,6 +52,7 @@ env:
 
 jobs:
   compiler-component:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_phase_prepared }}
     name: Actual Java sources, SDK ownership and enforced node
     runs-on: ubuntu-24.04
     timeout-minutes: 55
@@ -566,7 +571,7 @@ jobs:
           retention-days: 3
 
   dependency-ingestion:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_phase_prepared) }}
     name: Captured Java dependency native programme (${{ matrix.mode }})
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -811,5 +816,87 @@ jobs:
           ${{ runner.temp }}/java-resource-conformance/node/FAILED.json
 
           ${{ runner.temp }}/java-resource-conformance/node/controls/*.json'
+        if-no-files-found: warn
+        retention-days: 3
+
+  http-phase-prepared:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.java_http_phase_prepared }}
+    name: Retained Java phase component fresh signing and node outcomes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: 3.13.5
+    - name: Fetch only exact native and original compiled fixture source objects
+      run: git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b aa56bdebad8c12f20acce4ec4ecfeca73cf554be 370e0653078715807ae538de437a36aa6a05a68f
+    - name: Check exact operator input profile and fixed prepared-component refusal controls
+      run: 'python3 -m pip install --requirement tools/requirements.lock
+
+        python3 -B -m unittest tools.tests.test_replay_java_http_phases tools.tests.test_java_http_phase_campaign.JavaPhaseOperatorComponentLimit -v'
+    - name: Retrieve exactly the authenticated native products without compilation
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/java-phase-native"
+    - name: Authenticate and restore only fixed original Java component and package inputs
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/replay_java_http_phases.py --prepare --output "$RUNNER_TEMP/java-phase-original"
+    - name: Fresh ordinary signing and all original default phase and tenant outcomes
+      run: python3 -B tools/replay_java_http_phases.py --prepared "$RUNNER_TEMP/java-phase-original" --native "$RUNNER_TEMP/java-phase-native" --output "$RUNNER_TEMP/java-phase-node-replay"
+    - name: Retain exact bounded original-source and fresh node receipts
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: java-http-phase-prepared-${{ github.sha }}
+        path: '${{ runner.temp }}/java-phase-native/retrieval.json
+
+          ${{ runner.temp }}/java-phase-native/native-products.json
+
+          ${{ runner.temp }}/java-phase-native/source-inputs.json
+
+          ${{ runner.temp }}/java-phase-original/retrieval.json
+
+          ${{ runner.temp }}/java-phase-node-replay/qualification.json
+
+          ${{ runner.temp }}/java-phase-node-replay/node/qualification.json
+
+          ${{ runner.temp }}/java-phase-node-replay/node/FAILED.json
+
+          ${{ runner.temp }}/java-phase-node-replay/node/controls/*.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/qualification.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/FAILED.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/*-case.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/*-retired.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/foreign-grants-not-inherited.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/final-owner.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/node-stopped.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/*-peer-stopped.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/final-products.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/examples-controls/*.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/foreign-controls/*.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/releases/release-set.json
+
+          ${{ runner.temp }}/java-phase-node-replay/tenants/releases/java-standard-http/build-observation.json'
         if-no-files-found: warn
         retention-days: 3
