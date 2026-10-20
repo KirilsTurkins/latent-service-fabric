@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/typescript_resource_runtime_inputs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Source-reviewed finite resource callback experiment; exact committed LF executable controller fingerprint.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "90b67f7f45b581d26583fe7e41152adeb843271196b89f996794e1af30cf7af5"
+}
