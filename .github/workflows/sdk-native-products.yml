@@ -2,7 +2,7 @@ name: SDK current native products
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/sdk-current-native-products-20261020', 'diag/sdk-v7-native-products-20261020']
+    branches: ['feat/sdk-current-native-products-20261020', 'diag/sdk-v7-native-products-20261020', 'feat/http-phase-nominal-semantics-20261020', 'fix/http-phase-unused-nominal-type-20261020']
 permissions:
   contents: read
 concurrency:
@@ -43,6 +43,8 @@ jobs:
           save-if: false
       - name: Install the existing pinned Python recipe dependencies
         run: python3 -m pip install -r tools/requirements.lock
+      - name: Check actual emitted phase graphs and exact type omissions
+        run: python3 -B -m unittest tools.tests.test_typescript_phase_compiled_graph -v
       - name: Build the normal managed-guest host profile and freeze exact products
         run: |
           python3 -B - <<'PY'
@@ -96,6 +98,32 @@ jobs:
               '--','--test-threads=1')
           require(b'test result: ok. 5 passed; 0 failed; 0 ignored;' in observer,
               'native-products-positive-timer-five-controls')
+          nominal=commands.run('phase-nominal-type-owner-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-packaging','--lib','phase_nominal_owner_',
+              '--','--test-threads=1')
+          require(b'test result: ok. 2 passed; 0 failed; 0 ignored;' in nominal,
+              'native-products-phase-nominal-two-controls')
+          emitted=commands.run('phase-emitted-type-owner-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-packaging','--lib',
+              'phase_component_nominal_pruning_rejects_missing_or_changed_owned_types','--','--test-threads=1')
+          require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in emitted,
+              'native-products-phase-emitted-one-control')
+          tenant_config=commands.run('independent-http-configuration-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latentd','--lib','config::tests::providers::http_streaming::',
+              '--','--test-threads=1')
+          require(b'test result: ok. 8 passed; 0 failed; 0 ignored;' in tenant_config,
+              'native-products-independent-http-eight-configuration-controls')
+          tenant_dispatch=commands.run('independent-http-dispatch-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latentd','--lib','standalone::providers::runtime::http::streaming::tests::',
+              '--','--test-threads=1')
+          require(b'test result: ok. 2 passed; 0 failed; 0 ignored;' in tenant_dispatch,
+              'native-products-independent-http-two-dispatch-controls')
+          tenant_secrets=commands.run('independent-http-secret-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-http','--lib',
+              'tests::secret_references::separate_http_installation_cannot_rebind_foreign_tenant_provider_or_origin_credentials',
+              '--','--test-threads=1')
+          require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in tenant_secrets,
+              'native-products-independent-http-one-secret-control')
           require(before==source_identity(root) and materials==material_identities(),
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_http_phases.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Repair the observed canonical indirect async C ABI: accept only its exact function-owned ordered record in explicitly selected async imports and retain every input through terminal subtask cleanup. Remove exactly eight legacy operational declarations from the phase fixture dependency via the shared canonical-preimage fence; no old WIT/provider/grant/default/limit changes. Keep every existing test and workflow command; add seven targeted controls.",
+  "reviewReason": "Exact LF source for the reviewed Java28-outcome/default-plus-tenant campaign and authenticated6f5 products; historical helpers and all old phase controls preserved; no new authority or native compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d5fcafff4303aa09bbed3c4a95bc65dfb5ab38110403542c5f494b07b7f64f7f"
+  "sha256": "0bc0c2dcb87abf2fe9908b079ba581630245a6cf5961e22304a1c1c73ee3a77b"
 }

@@ -1,3 +1,7 @@
+#[path = "http/streaming.rs"]
+mod streaming;
+pub(super) use streaming::StreamingDispatcher;
+
 use std::{path::Path, sync::Arc, time::Instant};
 
 use latent_capabilities::broker::{pools::ProviderPools, secrets::CredentialScope};

@@ -89,6 +89,50 @@ it grants no legacy operations. The corrected actual component campaign remains
 pending, and the original failed run remains failure evidence.
 
 The separately observed TypeScript consumer exposed an authoring check that still
-expects the complete old callable interface. The Java phase campaign is held
+expects the complete old callable interface. At that revision the Java phase campaign was held
 until the shared exact nominal-owner packaging correction and its authenticated
-new native products are available; no old provider grant is added to bypass it.
+new native products became available; no old provider grant is added to bypass it.
+
+The shared nominal packaging correction is merged in `8e03a7cc`. Its exact
+producer source `36eaed79dbd92cac12bad2dd1f52cd5d1acd525f`, run
+`39430989809` / job `118655688632`, passed the original eleven native controls
+plus two new nominal host/normal-authoring controls. Artifact `12269226324`
+authenticates the five products and 114 compile materials. The new
+`http_phase_native_products.py` authenticator is separate from the historical77
+helper; all seven old controls remain and seven new controls are additive.
+That Java campaign revision selected the 36ea tuple and required current native and
+auxiliary source equality before compilation. The earlier failed Java run and
+old 77 provenance are retained. Signed Java phase outcomes still require the
+corrected next owning run.
+
+
+The current campaign selects the independently authenticated producer
+`6f5f180136d140ac670561695260f71514781015`, run `39443901256` / job
+`118700610031`, artifact `12275691963` (66,080,276 bytes; SHA256
+`fa6c846ffcf5f79b1153d60053aeb79f2e3495228f1c7c510159f7a2c072e399`).
+Its normal five products passed 25 selected Rust controls and four Python graph
+controls. The complete archive, native Git identity (3,312 files), all 114 compile
+materials and all five product hashes were independently verified. The new
+`http_tenant_native_products.py` helper has independent immutable pins; the old 77
+and 36ea helpers and all their controls remain unchanged. Only native product
+acquisition selects the new tuple. Current complete native and auxiliary source
+identity must still equal the producer before any Java compilation.
+
+The previous Java run `39438537720` stopped in ordinary Gradle Java compilation,
+before TeaVM, signing or HTTP invocation: the pinned transitive org.json version
+has checked JSONException signatures. The unmodified default-client success
+body now resides in a private checked helper; only JSONException is wrapped in
+an IllegalStateException with its original cause. A host JDK reference control
+reproduced the old compilation error and verifies the corrected success/cause
+and disconnect behavior. This does not constitute component execution.
+
+After the original sixteen phase cases and two pre-guest grant denials, the
+current campaign reuses that same freshly built default component for the
+[twelve-outcome same-node tenant programme](java-http-tenant-isolation.md).
+There is no second component compilation or native build, no timeout increase,
+no change to the old case bodies and no HTTP alias. The finite programme requires
+separate tenant HTTP installations and credentials, original operator isolation,
+default Webb and HttpRequest success, pending read timeout/root cancellation,
+foreign-origin zero contact and fresh state. Actual signed Java results remain
+pending the next owning run; public transport SPI and whole #688/#741 completion
+remain separate requirements.

@@ -21,7 +21,8 @@ from tools.java_guest.c_failure_context import FIXTURE_SOURCES
 from tools.java_http_client import PHASE_PROFILE_ID
 from tools.java_http_phase_fixture import project, SOURCE, WORLD
 from tools.java_http_phase_node import run as node_controls
-from tools.java_phase_native_products import native_products, verify_prepared
+from tools.http_tenant_native_products import native_products, verify_prepared
+from tools.java_http_tenant_node import run as tenant_controls
 from tools.java_standard_http_library import COORDINATE, ORIGINAL_JAR, compiler_cache
 from tools.qualify_java_published_http import PRIMARY, CHILD, PUBLISHED_CHECKSUMS, selected_jars
 from tools.phase2_operator_process import require
@@ -33,6 +34,9 @@ MAX_SECONDS = 1800
 MATERIALS = tuple(dict.fromkeys((*RECIPE, SOURCE, WORLD,
     'tools/java_http_phase_fixture.py', 'tools/java_http_phase_node.py', 'tools/http_phase_wit.py',
     'tools/qualify_java_http_phases.py', 'tools/java_phase_native_products.py',
+    'tools/http_phase_native_products.py', 'tools/http_tenant_native_products.py',
+    'tools/java_http_tenant_node.py', 'tools/qualify_resource_tenants.py',
+    'tools/resource_tenant_node.py', 'tools/java_server_tenants.py',
     'tools/java_replay_materials.py', 'tools/java_standard_http_library.py',
     'tools/qualify_java_published_http.py', 'tools/java_standard_http_project.py',
     'tools/java_http_fiber_node.py', 'tools/java_standard_http_node.py',
@@ -155,6 +159,12 @@ def execute(commands, binaries, wasi_sdk, output):
         result = node_controls(artifact, {name: binaries[name] for name in ('latent', 'latentd', 'capsule_authoring')},
             output/'node', deadline=commands.deadline)
         require(result['status'] == 'passed' and len(result['cases']) == 16, 'java-phase-incomplete-node-programme')
+        stage = 'same-node-independent-http-tenants'
+        tenants = tenant_controls(artifact,
+            {name: binaries[name] for name in ('latent', 'latentd', 'capsule_authoring')},
+            output/'tenants', deadline=commands.deadline)
+        require(tenants['status'] == 'passed' and tenants['invocations'] == len(tenants['cases']) == 12
+            and tenants['httpContacts'] == 10, 'java-phase-incomplete-tenant-programme')
         after = {name: file_identity(ROOT/name) for name in before}
         product_after = {name: file_identity(path) for name, path in binaries.items()}
         require(before == after and products == product_after and time.monotonic() < commands.deadline,
@@ -166,10 +176,13 @@ def execute(commands, binaries, wasi_sdk, output):
                 'http-client-profile.json', 'runtime-profile.json', 'java-classpath.json')},
             'nodeReceipt': file_identity(output/'node/qualification.json'),
             'invocations': 16, 'authorityDenials': 2, 'httpContacts': 13,
+            'tenantProgramme': {'receipt': file_identity(output/'tenants/qualification.json'),
+                'invocations': 12, 'authorityDenials': 1, 'httpContacts': 10, 'credentialDenials': 1},
+            'totalInvocationOutcomes': 30, 'totalHttpContacts': 23,
             'full688Qualified': False, 'full741Qualified': False,
             'limitations': ['Explicit plain-HTTP phase profile only; HTTPS still catchably unsupported.',
                 'Finite two ordinary clients and operation/root timeout-cancellation boundaries.',
-                'No cross-tenant, optional transport SPI, whole runtime or release qualification.']}
+                'Finite two-tenant default-client isolation only; optional transport SPI, whole runtime and release remain separate.']}
         write_json(output/'final-materials.json', {'materials': after, 'nativeProducts': product_after})
         write_json(output/'qualification.json', final)
         return final

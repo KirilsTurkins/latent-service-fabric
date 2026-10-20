@@ -130,6 +130,63 @@ class JavaHttpPhaseHostReference(unittest.TestCase):
             self.assertEqual((ROOT/'sdk/java-guest/client/dev/latent/guest/client/Connection.java').read_bytes(),original)
 
 
+    def test_published_fixture_handles_checked_json_errors_without_changing_success_or_disconnect(self):
+        import subprocess
+        from tools.build_observation import build_environment
+        # Model only the public checked JSON signatures; this is a host language
+        # boundary control, not a substitute for the captured published clients.
+        sources = {
+            'dev/latent/generated/Bindings.java': 'package dev.latent.generated; public final class Bindings { public interface Exports { String run(Long which, String endpoint); } }',
+            'org/json/JSONException.java': 'package org.json; public final class JSONException extends Exception { public JSONException(String message) { super(message); } }',
+            'org/json/JSONObject.java': '''package org.json; public final class JSONObject {
+                public static boolean fail; public static final JSONException FAILURE = new JSONException("checked-json-control");
+                public JSONObject() {} public JSONObject(String text) throws JSONException { if (fail) throw FAILURE; }
+                public int getInt(String key) throws JSONException { if (fail) throw FAILURE; return 42; }
+            }''',
+            'com/goebl/david/Response.java': 'package com.goebl.david; public final class Response<T> { private final T body; public Response(T body) { this.body=body; } public int getStatusCode() { return 200; } public String getResponseMessage() { return "OK"; } public T getBody() { return body; } }',
+            'com/goebl/david/Webb.java': '''package com.goebl.david; public final class Webb {
+                public static Webb create() { return new Webb(); } public Webb get(String url) { return this; }
+                public Webb followRedirects(boolean follow) { return this; }
+                public Response<org.json.JSONObject> asJsonObject() { return new Response<>(new org.json.JSONObject()); }
+            }''',
+            'com/github/kevinsawicki/http/HttpRequest.java': '''package com.github.kevinsawicki.http; public final class HttpRequest {
+                public static int disconnected; public static HttpRequest get(String url) { return new HttpRequest(); }
+                public int code() { return 200; } public String body() { return "{}"; } public void disconnect() { disconnected++; }
+            }''',
+            'JsonBoundaryReference.java': '''import dev.latent.app.Capsule; import org.json.JSONObject;
+            public final class JsonBoundaryReference { public static void main(String[] args) {
+                Capsule app = new Capsule();
+                if (!app.run(0L, "http://fixture.invalid").equals("1:default-webb:200:OK:42")) throw new AssertionError("webb-success");
+                if (!app.run(10L, "http://fixture.invalid").equals("2:default-http-request:200:42")) throw new AssertionError("request-success");
+                JSONObject.fail = true;
+                for (long mode : new long[]{0,10}) {
+                    try { app.run(mode, "http://fixture.invalid"); throw new AssertionError("checked-error-suppressed"); }
+                    catch (IllegalStateException error) {
+                        if (!"ordinary-java-phase-json-failed".equals(error.getMessage()) || error.getCause() != JSONObject.FAILURE)
+                            throw new AssertionError("checked-cause-replaced");
+                    }
+                }
+                if (com.github.kevinsawicki.http.HttpRequest.disconnected != 2) throw new AssertionError("disconnect-lost");
+                System.out.println("json-boundary-reference:4");
+            }}''',
+        }
+        sources['dev/latent/app/Capsule.java'] = (ROOT/'tools/fixtures/java-http-phases/Capsule.java').read_text()
+        sources['dev/latent/guest/client/HttpFailure.java'] = (ROOT/'sdk/java-guest/client/dev/latent/guest/client/HttpFailure.java').read_text()
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);output=root/'classes';output.mkdir();paths=[]
+            for name,text in sources.items():
+                path=root/'sources'/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(text,encoding='utf-8');paths.append(str(path))
+            environment=build_environment(root)
+            commands=([shutil.which('javac'),'-J-Xmx128m','-Xmaxerrs','8','-Xmaxwarns','8','--release','17',
+                '-encoding','UTF-8','-d',str(output),*paths],
+                [shutil.which('java'),'-Xmx64m','-XX:MaxMetaspaceSize=64m','-cp',str(output),'JsonBoundaryReference'])
+            for command in commands:
+                result=subprocess.run(command,cwd=root,env=environment,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=30)
+                self.assertLessEqual(len(result.stdout),262144)
+                self.assertEqual(result.returncode,0,result.stdout.decode('utf-8','replace'))
+            self.assertEqual(result.stdout.decode().strip(),'json-boundary-reference:4')
+
+
 class JavaHttpPhaseCampaignSource(unittest.TestCase):
     def test_normal_project_binds_published_defaults_to_explicit_phase_world_and_unchanged_sdk(self):
         from tools import java_http_phase_fixture as fixture

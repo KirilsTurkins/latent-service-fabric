@@ -1,5 +1,5 @@
-use super::{compare::Comparison, incompatible, SemanticLimits};
-use latent_core::{HostInterfaceSpec, PlatformError, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1};
+use super::{SemanticLimits, compare::Comparison, incompatible};
+use latent_core::{HostInterfaceSpec, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1, PlatformError};
 use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::{InterfaceId, Resolve};
 
@@ -95,12 +95,28 @@ pub(super) fn validate(
                 (trusted.id_of(index).as_deref() == Some(name.as_str())).then_some(index)
             })
             .ok_or_else(|| incompatible("pinned-host-interface-missing"))?;
-        comparison.host_interface(
-            *id,
-            interface,
-            specification.asynchronous,
-            specification.resource_types(),
-        )?;
+        // A phase-only world still imports its original nominal resource
+        // interface. Component emission may prune the unused legacy response;
+        // every retained type is pinned and no legacy operation is supplied.
+        // Validate it in this same comparison budget; no provider is installed.
+        if name == "latent:http/streaming@0.3.0"
+            && imports.contains_key("latent:http/phase-timing@0.4.0")
+            && resolve.interfaces[*id].functions.is_empty()
+        {
+            comparison.host_type_owner(
+                *id,
+                interface,
+                specification.resource_types(),
+                &["response"],
+            )?;
+        } else {
+            comparison.host_interface(
+                *id,
+                interface,
+                specification.asynchronous,
+                specification.resource_types(),
+            )?;
+        }
     }
     Ok(())
 }

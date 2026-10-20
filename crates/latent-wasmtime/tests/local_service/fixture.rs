@@ -382,6 +382,35 @@ impl Fixture {
         )
         .await
     }
+    /// The same original node/broker owners, with both explicitly granted
+    /// managed-runtime imports and the development-only stream provider.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[allow(
+        dead_code,
+        reason = "the dedicated Go target selects this seam; other targets retain the same shared fixture"
+    )]
+    pub async fn with_runtime_outbound_streams(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        configuration: latent_streams::StreamProviderConfig,
+    ) -> Self {
+        Self::with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            None,
+            Some((limits, 120_000, None)),
+            Some(Box::new(configuration)),
+        )
+        .await
+    }
     #[expect(
         clippy::too_many_arguments,
         reason = "one explicit real catalog, broker and node ownership composition for integration tests"
@@ -654,7 +683,11 @@ impl Fixture {
         };
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if stream_enabled {
-            consumer.grants = streams::grants();
+            if activation_runtime.is_some() {
+                consumer.grants.extend(streams::grants());
+            } else {
+                consumer.grants = streams::grants();
+            }
         }
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
         target.service = identities.callee.clone();

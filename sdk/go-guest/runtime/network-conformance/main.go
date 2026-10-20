@@ -84,6 +84,24 @@ func Run(which uint32, address string) string {
 		if connection == nil && errors.Is(err, errors.ErrUnsupported) {
 			return "unsupported-custom-default-resolver"
 		}
+	case 9:
+		connection, err := net.DialTimeout("tcp", address, time.Second)
+		if err != nil {
+			return "connect-error"
+		}
+		defer connection.Close()
+		if n, err := connection.Write([]byte("ping")); n != 4 || err != nil {
+			return "write-error"
+		}
+		writer, ok := connection.(interface{ CloseWrite() error })
+		if !ok || writer.CloseWrite() != nil {
+			return "half-close-error"
+		}
+		reply, err := io.ReadAll(connection)
+		if err != nil || string(reply) != "pong" {
+			return "eof-error"
+		}
+		return "ordinary-half-close-eof"
 	}
 	return "unexpected-result"
 }

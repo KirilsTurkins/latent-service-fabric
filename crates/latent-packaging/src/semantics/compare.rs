@@ -1,5 +1,5 @@
 mod types;
-use super::{exhausted, incompatible, limits, SemanticLimits};
+use super::{SemanticLimits, exhausted, incompatible, limits};
 use latent_core::PlatformError;
 use std::collections::BTreeMap;
 use wit_parser::{FunctionKind, InterfaceId, Resolve, WorldId, WorldItem, WorldKey};
@@ -120,6 +120,42 @@ impl<'a> Comparison<'a> {
         self.asynchronous = asynchronous;
         self.resources = resources;
         self.interface(left, right)
+    }
+
+    pub(super) fn host_type_owner(
+        &mut self,
+        left: InterfaceId,
+        right: InterfaceId,
+        resources: &'static [&'static str],
+        optional_types: &[&str],
+    ) -> Result<(), PlatformError> {
+        self.resources = resources;
+        let expected = &self.left.interfaces[left];
+        let actual = &self.right.interfaces[right];
+        let omitted = optional_types
+            .iter()
+            .filter(|name| {
+                !expected.types.contains_key(**name) && actual.types.contains_key(**name)
+            })
+            .count();
+        if !expected.functions.is_empty() || expected.types.len() + omitted != actual.types.len() {
+            return Err(incompatible("component-interface-shape-mismatch"));
+        }
+        self.node(1)?;
+        for (name, expected) in &expected.types {
+            limits::name(name, self.limits)?;
+            let actual = actual
+                .types
+                .get(name)
+                .ok_or_else(|| incompatible("component-named-type-mismatch"))?;
+            self.ty(
+                wit_parser::Type::Id(*expected),
+                wit_parser::Type::Id(*actual),
+                1,
+            )?;
+        }
+        self.resources = &[];
+        Ok(())
     }
 
     pub(super) fn interface(

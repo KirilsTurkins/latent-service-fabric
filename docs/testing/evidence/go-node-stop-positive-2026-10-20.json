@@ -1,0 +1,401 @@
+{
+  "schemaVersion": "latent.go.node-stop.positive.independent-verification.v1",
+  "source": "41e8084a573eea94f06fc4f527c4bc718fb7e2ed",
+  "tree": "1594e3c063fa18c0396531f3b1c061d8381e11e5",
+  "run": 39433165880,
+  "job": 118663188069,
+  "artifact": {
+    "id": 12268539133,
+    "bytes": 961476,
+    "sha256": "sha256:0a3dcea9ab61fb970a663a3166e05ff4a2f617251008f959501243be4094b2bc",
+    "members": 168,
+    "allCrcAndMemberHashesVerified": true
+  },
+  "nativeProducer": {
+    "schemaVersion": "latent.sdk.phase-native-products.v1",
+    "compiledSource": "77bf0e3f3b68e17342b6146abd6f2de34a3efa00",
+    "compiledTree": "54c337824b6751f5c21d768db8959852a73f9a88",
+    "producerRun": 39420914927,
+    "producerJob": 118621322461,
+    "producerReceipt": {
+      "sha256": "sha256:7dd05e38371c73ffc9e5e5bf490b2f8ffe5931686a181e508257e7118c778dca",
+      "bytes": 20590
+    },
+    "sourceSnapshot": {
+      "sha256": "sha256:c95bc1e98167eda62fb1c9327c2a1a4b95283159da49a399997fc9b2a75050cc",
+      "bytes": 18936
+    },
+    "products": {
+      "latent": {
+        "sha256": "sha256:09115a0fade44cbdb07b24e620113b4d60df024699637debf6abaf71a46c22ef",
+        "bytes": 68817496
+      },
+      "latentd": {
+        "sha256": "sha256:a3eea6329a38bcb6039aad1ad8f33f43bc5e358a28778d6b0d7093ac1b67e33c",
+        "bytes": 185124376
+      },
+      "examples/package": {
+        "sha256": "sha256:a4d61582a2afc62ffe7bda584741d8782d1986da90db5f6464c980495bdc00f7",
+        "bytes": 17739624
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:6a2e8fe3a02586092f0a59760106edc8b7613eae1e8286baa769c04a755e0152",
+        "bytes": 7239064
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:6e9bc1afdd65e41adf6a954ec8dc8045e9777017a54c287066ae533a22d410b7",
+        "bytes": 24005328
+      }
+    },
+    "signedQualification": false,
+    "guestComponentsCompiledByProducer": false,
+    "historicalNormalReceiptCreated": false,
+    "wholeArchiveRetained": false,
+    "origin": {
+      "artifact": 12265176239,
+      "archiveDigest": "sha256:f65c027e924d52767e7b05c7bdfd0220e31da04cdbf97bf8021fb2fe53c092cf",
+      "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+      "fixedMembersPreflighted": {
+        "native-products.json": {
+          "bytes": 20590,
+          "compressedBytes": 6720
+        },
+        "source-inputs.json": {
+          "bytes": 18936,
+          "compressedBytes": 6097
+        },
+        "native-binaries/latent": {
+          "bytes": 68817496,
+          "compressedBytes": 15441101
+        },
+        "native-binaries/latentd": {
+          "bytes": 185124376,
+          "compressedBytes": 38625221
+        },
+        "native-binaries/examples-package": {
+          "bytes": 17739624,
+          "compressedBytes": 4246497
+        },
+        "native-binaries/examples-capsule_contracts": {
+          "bytes": 7239064,
+          "compressedBytes": 1802879
+        },
+        "native-binaries/examples-capsule_authoring": {
+          "bytes": 24005328,
+          "compressedBytes": 5925977
+        }
+      },
+      "rangeBytes": 66056358,
+      "rangeRequests": 269
+    }
+  },
+  "gitNativeSource": {
+    "sha256": "sha256:d9594edc4d963aa0439f5253d5f83e5c2a0b91d33f4622db0047ec0d1792394f",
+    "files": 3310,
+    "bytes": 26013168,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "sdkRecipeAndHelpersGitRowsChecked": 247,
+  "producerMaterialsGitRowsChecked": 114,
+  "currentNativeCompileTreeRowsChecked": 106,
+  "fixturePureDerivationAndFullSourceInventoryMatched": true,
+  "component": {
+    "sha256": "sha256:79e808c0760de14b65fff19ae8a3f4007f439e2050f14ee6541356c4ae8470dd",
+    "bytes": 2723574
+  },
+  "actualNodeStarts": 4,
+  "actualCleanReapedNodeStops": 4,
+  "actualGoInvocations": 6,
+  "freshInvocations": 4,
+  "knownCancelledReapedInvocations": 2,
+  "observations": [
+    {
+      "mode": "pending",
+      "positiveBarrier": {
+        "mode": "pending",
+        "activation": "node-stop-pending",
+        "livePhysicalRows": {
+          "execution-cell-leases": 1,
+          "guest-invocations": 1,
+          "guest-stores": 1,
+          "guest-host-states": 1,
+          "guest-component-instances": 1
+        },
+        "acceptedTimerStarts": 3,
+        "enteredTimerWaits": 2,
+        "rootCloseObserved": false,
+        "lastEnteredTimerOwners": {
+          "mode": "pending",
+          "event": "next-entered",
+          "sequence": 5,
+          "tasks": 11,
+          "waits": 1,
+          "timers": 2
+        },
+        "readinessSource": "closed-native-success-points-and-current-original-owners",
+        "auditCompletionUsedAsTimerSuccess": false,
+        "retainedProviderUsage": {
+          "tenantSessions": 1,
+          "tenantCalls": 1,
+          "nodeCalls": 1
+        },
+        "actualNodeSignalSent": false
+      },
+      "barrierAttempts": 1,
+      "transportDisposition": {
+        "exitCode": 4,
+        "outcomeKnown": true,
+        "errorCode": "cancelled",
+        "physicalRetirementSource": "actual-node-shutdown-report",
+        "cancellationAcknowledgementInferred": false
+      },
+      "restartFloor": {
+        "status": "started",
+        "qualification": false,
+        "source": "original-stopped-node-durable-authority-floor",
+        "startupAttempts": 1,
+        "originalStartupWatchdogMillis": 30000,
+        "authorityMutated": false,
+        "authorityEpoch": 1,
+        "restartNotBeforeUnixSeconds": 1792504276,
+        "observedAtUnixSeconds": 1792504271,
+        "waitRequired": true,
+        "readyAtUnixSeconds": 1792504276
+      },
+      "shutdowns": [
+        {
+          "reaped": true,
+          "clean": true,
+          "zeroOwners": {
+            "activeConnections": 0,
+            "activeRpcs": 0,
+            "activeControlJobs": 0,
+            "activeActivations": 0,
+            "cancellationRegistrations": 0,
+            "observerCorrelations": 0,
+            "quotaReservations": 0,
+            "queuedReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "activeLeases": 0,
+            "queuedActivations": 0,
+            "quarantinedCells": 0,
+            "activeBackendInvocations": 0,
+            "instanceReservations": 0,
+            "preparingComponents": 0,
+            "preparingSourceBytes": 0,
+            "preparingMetadataBytes": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0,
+            "liveTemporaryBuffers": 0,
+            "liveCancellationProbes": 0
+          },
+          "telemetryFlushed": true,
+          "epochHelperJoined": true
+        },
+        {
+          "reaped": true,
+          "clean": true,
+          "zeroOwners": {
+            "activeConnections": 0,
+            "activeRpcs": 0,
+            "activeControlJobs": 0,
+            "activeActivations": 0,
+            "cancellationRegistrations": 0,
+            "observerCorrelations": 0,
+            "quotaReservations": 0,
+            "queuedReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "activeLeases": 0,
+            "queuedActivations": 0,
+            "quarantinedCells": 0,
+            "activeBackendInvocations": 0,
+            "instanceReservations": 0,
+            "preparingComponents": 0,
+            "preparingSourceBytes": 0,
+            "preparingMetadataBytes": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0,
+            "liveTemporaryBuffers": 0,
+            "liveCancellationProbes": 0
+          },
+          "telemetryFlushed": true,
+          "epochHelperJoined": true
+        }
+      ],
+      "freshBeforeFuel": "1111864",
+      "freshAfterFuel": "1091962"
+    },
+    {
+      "mode": "drain",
+      "positiveBarrier": {
+        "mode": "drain",
+        "activation": "node-stop-drain",
+        "livePhysicalRows": {
+          "execution-cell-leases": 1,
+          "guest-invocations": 1,
+          "guest-stores": 1,
+          "guest-host-states": 1,
+          "guest-component-instances": 1
+        },
+        "acceptedTimerStarts": 2,
+        "enteredTimerWaits": 2,
+        "rootCloseObserved": true,
+        "lastEnteredTimerOwners": {
+          "mode": "drain",
+          "event": "next-entered",
+          "sequence": 5,
+          "tasks": 10,
+          "waits": 1,
+          "timers": 1
+        },
+        "readinessSource": "closed-native-success-points-and-current-original-owners",
+        "auditCompletionUsedAsTimerSuccess": false,
+        "retainedProviderUsage": {
+          "tenantSessions": 1,
+          "tenantCalls": 1,
+          "nodeCalls": 1
+        },
+        "actualNodeSignalSent": false
+      },
+      "barrierAttempts": 1,
+      "transportDisposition": {
+        "exitCode": 4,
+        "outcomeKnown": true,
+        "errorCode": "cancelled",
+        "physicalRetirementSource": "actual-node-shutdown-report",
+        "cancellationAcknowledgementInferred": false
+      },
+      "restartFloor": {
+        "status": "started",
+        "qualification": false,
+        "source": "original-stopped-node-durable-authority-floor",
+        "startupAttempts": 1,
+        "originalStartupWatchdogMillis": 30000,
+        "authorityMutated": false,
+        "authorityEpoch": 1,
+        "restartNotBeforeUnixSeconds": 1792504292,
+        "observedAtUnixSeconds": 1792504288,
+        "waitRequired": true,
+        "readyAtUnixSeconds": 1792504292
+      },
+      "shutdowns": [
+        {
+          "reaped": true,
+          "clean": true,
+          "zeroOwners": {
+            "activeConnections": 0,
+            "activeRpcs": 0,
+            "activeControlJobs": 0,
+            "activeActivations": 0,
+            "cancellationRegistrations": 0,
+            "observerCorrelations": 0,
+            "quotaReservations": 0,
+            "queuedReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "activeLeases": 0,
+            "queuedActivations": 0,
+            "quarantinedCells": 0,
+            "activeBackendInvocations": 0,
+            "instanceReservations": 0,
+            "preparingComponents": 0,
+            "preparingSourceBytes": 0,
+            "preparingMetadataBytes": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0,
+            "liveTemporaryBuffers": 0,
+            "liveCancellationProbes": 0
+          },
+          "telemetryFlushed": true,
+          "epochHelperJoined": true
+        },
+        {
+          "reaped": true,
+          "clean": true,
+          "zeroOwners": {
+            "activeConnections": 0,
+            "activeRpcs": 0,
+            "activeControlJobs": 0,
+            "activeActivations": 0,
+            "cancellationRegistrations": 0,
+            "observerCorrelations": 0,
+            "quotaReservations": 0,
+            "queuedReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "activeLeases": 0,
+            "queuedActivations": 0,
+            "quarantinedCells": 0,
+            "activeBackendInvocations": 0,
+            "instanceReservations": 0,
+            "preparingComponents": 0,
+            "preparingSourceBytes": 0,
+            "preparingMetadataBytes": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0,
+            "liveTemporaryBuffers": 0,
+            "liveCancellationProbes": 0
+          },
+          "telemetryFlushed": true,
+          "epochHelperJoined": true
+        }
+      ],
+      "freshBeforeFuel": "1112619",
+      "freshAfterFuel": "1089761"
+    }
+  ],
+  "normal27Repeated": false,
+  "newNativeBuild": false,
+  "fullTicketQualification": false,
+  "kernelFinalFreeQualified": false,
+  "retainedMembers": {
+    "go-node-stop-positive/qualification.json": {
+      "bytes": 104173,
+      "sha256": "d6f0de48d332d60efd258cd606082e37f67b81a0a9e1f00c9c84b174ba2c0cce"
+    },
+    "go-node-stop-positive/pending/result.json": {
+      "bytes": 21401,
+      "sha256": "5ad3d78a368637969225c23536ce14f9d43a1c8f176e73b7c8fab6b477a9274f"
+    },
+    "go-node-stop-positive/drain/result.json": {
+      "bytes": 21367,
+      "sha256": "27c9ec896a27d5a427e8d41a5c8dcbbb787b1cb523629acca9d8af4203479de0"
+    },
+    "go-node-stop-positive/pending/restart-clock-floor.json": {
+      "bytes": 375,
+      "sha256": "24fc64aa016a79561d26ee9846319a241f6e0889d09869525a55422d7c32f3d6"
+    },
+    "go-node-stop-positive/drain/restart-clock-floor.json": {
+      "bytes": 375,
+      "sha256": "677611f2dfc1c411cce94f3fe26b79b49e18849ef5f63eba5bb7391762d6ce2b"
+    },
+    "go-node-stop-positive/build/component.wasm": {
+      "bytes": 2723574,
+      "sha256": "79e808c0760de14b65fff19ae8a3f4007f439e2050f14ee6541356c4ae8470dd"
+    },
+    "go-node-stop-v7-products/native-products.json": {
+      "bytes": 20590,
+      "sha256": "7dd05e38371c73ffc9e5e5bf490b2f8ffe5931686a181e508257e7118c778dca"
+    },
+    "go-node-stop-v7-products/source-inputs.json": {
+      "bytes": 18936,
+      "sha256": "c95bc1e98167eda62fb1c9327c2a1a4b95283159da49a399997fc9b2a75050cc"
+    }
+  },
+  "scope": "actual signed ordinary managed-v5 pending/drain SIGTERM retirement and fresh restart on the authenticated historical V7 native tuple",
+  "currentDevelopmentNativeQualification": false,
+  "limitations": [
+    "No normal27 replay or native rebuild.",
+    "Current consumer and V7 producer recipes are independently bound; no future native-source alias is granted.",
+    "The observer report alone remains nonqualifying; accepted timer and current owner barriers plus real shutdown/reaping are required.",
+    "No whole runtime costs, kernel final-free or complete ticket qualification."
+  ]
+}
