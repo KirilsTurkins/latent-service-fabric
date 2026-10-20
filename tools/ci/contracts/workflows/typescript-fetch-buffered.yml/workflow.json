@@ -1,0 +1,34 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-fetch-buffered-${{ github.ref }}"
+    },
+    "name": "TypeScript emitted buffered bodies",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-fetch-buffered-limits-20261020"
+        ],
+        "paths": [
+          ".github/workflows/typescript-fetch-buffered.yml",
+          "sdk/typescript-guest/probes/fetch-buffered-limits/**",
+          "tools/typescript_fetch_buffered.py",
+          "tools/qualify_typescript_fetch_conformance.py",
+          "tools/tests/test_typescript_fetch_buffered.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "fetch-conformance"
+  ],
+  "reviewReason": "Add a separately and explicitly selected actual emitted zero-contact buffered-body programme; retain the original network/lifecycle default and its existing test obligations, all original manifest/owner/authority/physical limits, strict per-case results and real empty-peer oracle. No native rebuild or repeat of31 earlier network cases.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-fetch-buffered.yml"
+}
