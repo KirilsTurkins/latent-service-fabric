@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/validate_repository.py","reviewBoundary":"committed-fingerprint","reviewReason":"Allow only the exact two independently staged Phase3 V5 and Phase4 world.wit files at their unchanged package identity; every other duplicate remains rejected.","schemaVersion":"latent.ci.contracts.v1","sha256":"cfb6a362665035dbb2eb496d17f7432a5880742638861185954d32cc4c61747c"}
+{
+  "kind": "owner",
+  "path": "tools/validate_repository.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve the owned implementation-placeholder refusal and all existing WIT/source controls; allow only the exact immutable five upstream rustls files and fifteen original occurrences after full 119-file authenticated derivation verification; reject source/token/count/new-path drift and owned/copied placeholders.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1a2cd3b2fdab1766f39eba0303ad284afcaec1cfb468228722fb14a9d8b9accf"
+}

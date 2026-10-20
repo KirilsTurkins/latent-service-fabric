@@ -515,12 +515,54 @@ def validate_kubernetes_schema_plans() -> None:
         sys.path.pop(0)
 
 
+UPSTREAM_RUSTLS_PLACEHOLDERS = {
+    "src/verify.rs": {"unimplemented!": 5},
+    "src/server/server_conn.rs": {"unimplemented!": 1},
+    "src/client/ech.rs": {"todo!": 4},
+    "src/client/test.rs": {"todo!": 4},
+    "src/server/test.rs": {"todo!": 1},
+}
+
+
+def authenticated_upstream_placeholders() -> dict[Path, dict[str, int]]:
+    """Recognize only unchanged upstream occurrences in the sealed TLS source."""
+    sys.path.insert(0, str(ROOT))
+    try:
+        from tools import host_stream_tls_provider as provider
+    finally:
+        sys.path.pop(0)
+
+    if not (ROOT / provider.PROVIDER).exists() and not (ROOT / provider.RECORD).exists():
+        return {}
+    try:
+        # This authenticates the immutable record, complete 119-file tree,
+        # selected package/lock/patch and unchanged accounting refusal gate.
+        provider.verify(ROOT)
+        record = json.loads((ROOT / provider.RECORD).read_text(encoding="utf-8"))
+        allowed = {}
+        for name, counts in UPSTREAM_RUSTLS_PLACEHOLDERS.items():
+            identity = record["files"][name]
+            if identity["beforeSha256"] != identity["afterSha256"]:
+                raise ValueError("placeholder-source-must-be-unchanged-upstream")
+            relative = Path(provider.PROVIDER) / name
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            if any(text.count(token) != count for token, count in counts.items()):
+                raise ValueError("upstream-placeholder-occurrence-drift")
+            allowed[relative] = counts
+        return allowed
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        fail(f"upstream placeholder source authentication failed: {exc}")
+        return {}
+
+
 def validate_interface_only_policy() -> None:
     forbidden = ("todo!", "unimplemented!", "panic!(\"not implemented", "TODO_IMPLEMENTATION")
+    allowed = authenticated_upstream_placeholders()
     for path in files_with_suffix(".rs"):
         text = path.read_text(encoding="utf-8")
         for token in forbidden:
-            if token in text:
+            expected = allowed.get(path.relative_to(ROOT), {}).get(token, 0)
+            if token in text and text.count(token) != expected:
                 fail(f"implementation placeholder token {token!r} found in {path.relative_to(ROOT)}")
 
 
