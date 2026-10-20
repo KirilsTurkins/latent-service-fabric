@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "latent.guest.runtime-selection.v1",
+  "language": "typescript",
+  "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+  "sourceDigest": "sha256:dd58f434a84920aea87e95b95c8f47f162946059650a642d37bdf8c48f9cb185",
+  "componentDigest": "sha256:088aae35eb11fed0e7e70f1618776d67e24b376678f4ec8255c026d98d65b416",
+  "graphDigest": "sha256:0bf28ad62414420ecda18f9f25358f05aa0e85f294ed1fd3d43d7b4bcd939e7b",
+  "graphState": "captured",
+  "originalRuntimeInputsDigest": "sha256:3d094ea062ce52f52343e3ccfc0c3f33774b34ca0ebda3236f405fff75edb541",
+  "originalRuntimeInputCount": 55,
+  "originalRuntimeInputsScope": "captured-sdk-inputs",
+  "bindingInputsDigest": "sha256:1a9d291634a4d983f51878e500e8edfb680880da38e092c36e100d4752f368ed",
+  "toolAndCompilerInputs": [
+    {
+      "name": "application-dependencies",
+      "digest": "sha256:8cfbb8930a8cb86e79019dc53ec61192a7cae71d1034e92bd2af335fe2ffca0b"
+    },
+    {
+      "name": "application.mjs.map",
+      "digest": "sha256:00367e5d0f779cb2e4e97fc3a4e89dd499119606dd17d922a044f0439141a311"
+    },
+    {
+      "name": "build-recipe",
+      "digest": "sha256:b2a834088ee4becafcf698e48186545ff05c6c8620e50e7814dea8a84f40db73"
+    },
+    {
+      "name": "bundle-selected-inputs",
+      "digest": "sha256:fc34bf37b070e3473d88c27da1e2a10fe2ade2a4633134f2b2ac57b67bfa972c"
+    },
+    {
+      "name": "compiler-containment",
+      "digest": "sha256:f7f56cf014456fb0d804eb502da0f27c9428ffc57e9f982ece344ddfe9ded94e"
+    },
+    {
+      "name": "compiler-inputs",
+      "digest": "sha256:2e988b7621258e5c9c6fbf71a4d204c8141f83f7bc742d05ac11ff9c00535b71"
+    },
+    {
+      "name": "contracts-tool",
+      "digest": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1"
+    },
+    {
+      "name": "dependency-lock",
+      "digest": "sha256:50a1682d4a691d992095748ee7c2f88a5f3470ab6ed5999b1750e4147a406159"
+    },
+    {
+      "name": "node",
+      "digest": "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+    },
+    {
+      "name": "npm-inputs",
+      "digest": "sha256:433acc52f7d520af4eff0c86d4816170a6ed006a3228dbb0081ddb0968a7de37"
+    },
+    {
+      "name": "package-inputs",
+      "digest": "sha256:a2b6894eb2e000a85e7d21156b2dae74468532a010424d5a020e7fd5beca7b07"
+    },
+    {
+      "name": "packager",
+      "digest": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0"
+    },
+    {
+      "name": "source-snapshot",
+      "digest": "sha256:dd58f434a84920aea87e95b95c8f47f162946059650a642d37bdf8c48f9cb185"
+    },
+    {
+      "name": "toolchain-config",
+      "digest": "sha256:83574cfd769a6c26613e3e3f5be36f302d34270a7d61aaa4a80ccbea9a4df19d"
+    },
+    {
+      "name": "typescript-native-engine",
+      "digest": "sha256:9bf6966e64b260d5789c936cd3aaaa26f05b35a61f6c073a5262fead4547ae5c"
+    },
+    {
+      "name": "typescript-native-engine-input",
+      "digest": "sha256:8c4be5e4edf1a2317a25947e4c1b5946d29fe08d368a46c8af69b5116f8fc840"
+    },
+    {
+      "name": "typescript-runtime-selection",
+      "digest": "sha256:91e5977e0472c3c94490671034a80ec6694c43a1ca09c2d3efdbbef48a5d4cf8"
+    },
+    {
+      "name": "typescript-source-splicer-files",
+      "digest": "sha256:9bbe2bed6e9b91d44cfed26fed44881b8b11f7746abb5fa1acb22cd2ea1a7766"
+    },
+    {
+      "name": "typescript-source-splicer-input",
+      "digest": "sha256:cf10e9a266280c874bd4440b72d792355bd96349fe64aae36aec9961ffc9a9f1"
+    },
+    {
+      "name": "typescript-standard-entropy",
+      "digest": "sha256:deb10212752f9929e6888bdf057a4e4a931fff84d442b40dba93102ee9752e91"
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6"
+    }
+  ],
+  "transformations": [
+    {
+      "name": "maintained-sdk-binding-generation",
+      "inputScope": "captured-wit-inventory",
+      "originalDigest": "sha256:1a9d291634a4d983f51878e500e8edfb680880da38e092c36e100d4752f368ed",
+      "resultDigest": "sha256:2247793b6cef08bf1dfbd3392d87e35f735b98d88a9378c98229684915f70fe1",
+      "transformerDigest": "sha256:b2a834088ee4becafcf698e48186545ff05c6c8620e50e7814dea8a84f40db73",
+      "configurationDigest": "sha256:a5a00124ecf0b8940826058b0958d200ff43f0e93150137a8f818c8a04bae264"
+    }
+  ],
+  "ownerIssue": 745,
+  "qualification": "unknown",
+  "apiSupport": "not-evaluated",
+  "authority": "none",
+  "identity": "sha256:80c75f0d444e9f07fbd669db324e8d8025a15522d8bf10928a7335b22a1be329"
+}
