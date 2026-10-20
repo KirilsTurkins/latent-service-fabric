@@ -28,10 +28,12 @@
           "tools/java_http_phase_fixture.py",
           "tools/java_http_phase_node.py",
           "tools/java_phase_native_products.py",
+          "tools/http_phase_native_products.py",
           "tools/qualify_java_http_phases.py",
           "tools/fixtures/java-http-phases/**",
           "tools/tests/test_java_http_phase_campaign.py",
           "tools/tests/test_java_phase_native_products.py",
+          "tools/tests/test_http_phase_native_products.py",
           "tools/tests/test_java_http_phases.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
@@ -59,7 +61,7 @@
     "http-fiber-lifecycle",
     "http-phase-clients"
   ],
-  "reviewReason": "Add one default-false explicit V7 Java phase qualification; preserve the complete original fiber job, every step/command/field/limit/default. Fetch exact producer source before controls, capture three public runtime JARs normally and require one fresh phase component with two ordinary clients plus operation/root/retirement boundaries. No native rebuild, oracle weakening or full-ticket claim.",
+  "reviewReason": "Add only the independent nominal HTTP authenticator and seven-control module to existing pull request path coverage; unchanged workflow defaults, authority, concurrency and required jobs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

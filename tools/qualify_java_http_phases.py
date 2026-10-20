@@ -21,7 +21,7 @@ from tools.java_guest.c_failure_context import FIXTURE_SOURCES
 from tools.java_http_client import PHASE_PROFILE_ID
 from tools.java_http_phase_fixture import project, SOURCE, WORLD
 from tools.java_http_phase_node import run as node_controls
-from tools.java_phase_native_products import native_products, verify_prepared
+from tools.http_phase_native_products import native_products, verify_prepared
 from tools.java_standard_http_library import COORDINATE, ORIGINAL_JAR, compiler_cache
 from tools.qualify_java_published_http import PRIMARY, CHILD, PUBLISHED_CHECKSUMS, selected_jars
 from tools.phase2_operator_process import require
@@ -33,6 +33,7 @@ MAX_SECONDS = 1800
 MATERIALS = tuple(dict.fromkeys((*RECIPE, SOURCE, WORLD,
     'tools/java_http_phase_fixture.py', 'tools/java_http_phase_node.py', 'tools/http_phase_wit.py',
     'tools/qualify_java_http_phases.py', 'tools/java_phase_native_products.py',
+    'tools/http_phase_native_products.py',
     'tools/java_replay_materials.py', 'tools/java_standard_http_library.py',
     'tools/qualify_java_published_http.py', 'tools/java_standard_http_project.py',
     'tools/java_http_fiber_node.py', 'tools/java_standard_http_node.py',

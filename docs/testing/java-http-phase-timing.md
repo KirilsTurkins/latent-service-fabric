@@ -92,3 +92,15 @@ The separately observed TypeScript consumer exposed an authoring check that stil
 expects the complete old callable interface. The Java phase campaign is held
 until the shared exact nominal-owner packaging correction and its authenticated
 new native products are available; no old provider grant is added to bypass it.
+
+The shared nominal packaging correction is merged in `8e03a7cc`. Its exact
+producer source `36eaed79dbd92cac12bad2dd1f52cd5d1acd525f`, run
+`39430989809` / job `118655688632`, passed the original eleven native controls
+plus two new nominal host/normal-authoring controls. Artifact `12269226324`
+authenticates the five products and 114 compile materials. The new
+`http_phase_native_products.py` authenticator is separate from the historical77
+helper; all seven old controls remain and seven new controls are additive.
+This Java campaign now selects the new tuple and requires current native and
+auxiliary source equality before compilation. The earlier failed Java run and
+old77 provenance are retained. Signed Java phase outcomes still require the
+corrected next owning run.

@@ -7,7 +7,7 @@ for [#742](https://github.com/KirilsTurkins/latent-service-fabric/issues/742)
 criteria 7/8 and the accepted
 [outbound design](../../adr/0061-bound-standard-outbound-streams.md).
 It installs no provider, grants no endpoint authority and does not qualify
-TCP, DNS, kernel accounting, guest TLS, host TLS or an unchanged protocol client.
+general TCP, DNS, kernel accounting, guest TLS, host TLS or an unchanged protocol client.
 The normal provider remains refused while physical accounting is unqualified.
 
 An undeclared stream import retains the ordinary compiler/SDK path. A declared
@@ -48,7 +48,7 @@ or changing its public `PreferGo`, `StrictErrors` or `Dial` settings returns
 `errors.ErrUnsupported` before host dispatch; those custom paths are never
 silently replaced by the host resolver. The ordinary fixture includes all four
 negative cases. The earlier construction receipt below predates this additive
-refusal guard and those cases; their actual guest execution remains pending.
+refusal guard and those cases; the later signed execution below includes them.
 
 The focused construction lane builds one ordinary-source component and runs
 six standalone Go controls against the exact private owner: independent
@@ -74,3 +74,43 @@ Both independent formatted binding outputs match. No local Go compiler or
 guest was executed. The full upstream preimages and derivation/refusal controls
 are source evidence; they cannot satisfy the remaining signed workload matrix
 or the maintained-kernel allocation/final-free artifact requirement.
+
+
+The dedicated runtime lane compiles the current guarded ordinary fixture
+once, then builds only the `go_outbound_streams` native integration target. It
+uses the existing signed catalog, node admission, broker, runtime grants and
+explicit development logical-stream installation. The synthetic callee is
+attributed to its actual handwritten fixture builder; the Go caller additionally
+binds its real source, WIT and compiler observation. This in-process test package
+construction is distinct from released standalone authoring/packager and native
+five-product qualification.
+
+Twelve required observations cover the original unsupported/pre-cancelled/expired
+modes, all four custom global resolvers, ordinary ping/pong, send half-close with
+partial reads through EOF, cancellation of a real pending second read and a
+fresh connection afterward. The cancellation barrier requires one delivered byte,
+a live pending operation and the original I/O call before cancellation. Its
+acknowledgement must retain the original activation, Store and socket owner.
+Each completed observation requires zero original user-space owners; peer close
+and those counters never attest final kernel free. The original managed Task16,
+Executor2, Queue2, Wait4, Timer2, Result2 and Native2 limits remain fixed.
+
+The [authenticated runtime observation](../testing/evidence/go-network-runtime-2026-10-20.json)
+records actual source `bc638ac30bd28bbff492b8cd8ea0e91f5317c845`,
+[run 39425642133/job 118637383474](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39425642133/job/118637383474).
+All twelve ordered guest cases passed with exactly four peer contacts, twelve
+zero-user-owner rows and a clean logical-provider stop. The exact selected Rust
+test passed with zero ignored or filtered cases. All 50 archive members passed
+CRC and SHA-256 checks; all 5,415 source-input rows (44,996,795 bytes) match the
+exercised Git source. The newly compiled managed-v5 component is 3,351,500 bytes,
+SHA-256 `4ec00509c122ff283c4216d057ac9035b304873d955e488a05e55f65ff8cc00c`.
+The producer performed full in-memory compiler/source checks before and after;
+full compiler manifests and the native executable were not retained. An earlier
+attempt built the same component but failed to compile its native test harness;
+that failure supplies no guest-execution credit.
+
+The strict reader rejects missing or reordered cases, private/unknown/duplicate
+fields, numeric type substitutions, retained owners, incomplete stop and any
+claimed normal/kernel qualification. This proves the finite declared-TCP guest
+surface under the explicit development provider. The normal provider and full
+networking/TLS/accounting gates remain closed.

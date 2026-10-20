@@ -20,10 +20,12 @@ on:
       - 'tools/java_http_phase_fixture.py'
       - 'tools/java_http_phase_node.py'
       - 'tools/java_phase_native_products.py'
+      - 'tools/http_phase_native_products.py'
       - 'tools/qualify_java_http_phases.py'
       - 'tools/fixtures/java-http-phases/**'
       - 'tools/tests/test_java_http_phase_campaign.py'
       - 'tools/tests/test_java_phase_native_products.py'
+      - 'tools/tests/test_http_phase_native_products.py'
       - 'tools/tests/test_java_http_phases.py'
       - '.github/workflows/java-http-fiber-lifecycle.yml'
   workflow_dispatch:
@@ -154,6 +156,8 @@ jobs:
           python-version: 3.13.5
       - name: Fetch the one exact V7 native producer source before any helper verification
         run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+      - name: Fetch the exact nominal HTTP native producer source before new helper controls
+        run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
         with:
           distribution: temurin
@@ -164,10 +168,12 @@ jobs:
           python3 -B -m unittest tools.tests.test_java_http_phases tools.tests.test_java_phase_native_products tools.tests.test_java_http_phase_campaign -v
       - name: Check canonical indirect async records and nominal-only phase resources
         run: python3 -B -m unittest tools.tests.test_java_async_indirect -v
+      - name: Check the independent nominal native authenticator
+        run: python3 -B -m unittest tools.tests.test_http_phase_native_products -v
       - name: Retrieve exactly the five authenticated V7 products without a native rebuild
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/java_phase_native_products.py --output "$RUNNER_TEMP/java-http-phase-prepared"
+        run: python3 -B tools/http_phase_native_products.py --output "$RUNNER_TEMP/java-http-phase-prepared"
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
