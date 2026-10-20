@@ -1,0 +1,54 @@
+{
+  "cases": [
+    "ResourceRuntimeFixture.test_project_keeps_sdk_and_explicit_runtime_log_authority_with_transitive_data",
+    "ResourceRuntimeFixture.test_reject_foreign_outside_source_before_creating_project",
+    "ResourceRuntimeFixture.test_unchanged_library_reference_has_real_callbacks_independent_copies_and_stale_state_refusal"
+  ],
+  "guards": {
+    "ResourceRuntimeFixture.test_project_keeps_sdk_and_explicit_runtime_log_authority_with_transitive_data": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e47a27f4c9d2956c052280d2c7bb4491c8885c9ddd6bc8c3f2345e6e2c659b9c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceRuntimeFixture.test_reject_foreign_outside_source_before_creating_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e47a27f4c9d2956c052280d2c7bb4491c8885c9ddd6bc8c3f2345e6e2c659b9c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceRuntimeFixture.test_unchanged_library_reference_has_real_callbacks_independent_copies_and_stale_state_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'native Node reference is unavailable')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:e47a27f4c9d2956c052280d2c7bb4491c8885c9ddd6bc8c3f2345e6e2c659b9c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:6c1673345ebc664ab81308d00e0a5878e83ec0d067996280bb2e82903db7a155",
+        "unittest.skipUnless(shutil.which('node'), 'native Node reference is unavailable')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_resource_runtime_fixture.py",
+  "reviewReason": "Exact existing import-enabled runtime with ordinary transitive resources across timer/console callbacks; native reference controls only, signed coupled lifecycle remains pending.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
