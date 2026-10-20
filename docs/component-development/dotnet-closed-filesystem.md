@@ -39,7 +39,9 @@ The [first actual focused run](https://github.com/KirilsTurkins/latent-service-f
 compiled both components with NativeAOT. The pure component passed all39
 outcomes, including three caught `PlatformNotSupportedException` results, six
 original argument errors,18 zero-active-owner samples,36 physical samples and
-clean shutdown. The joined component was rejected before entry with
+clean shutdown. The [bounded observation](../testing/evidence/dotnet-closed-filesystem-pure-signed-2026-10-20.json)
+binds both component/build identities and the unchanged current application
+inventories to that artifact. The joined component was rejected before entry with
 `incompatible-contract`: the test configured CLOCK but omitted the declared
 ACTIVATION provider. That failed run remains a failure, not a joined pass.
 
