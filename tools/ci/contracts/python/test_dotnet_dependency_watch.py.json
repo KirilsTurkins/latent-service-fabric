@@ -1,5 +1,11 @@
 {
   "cases": [
+    "BoundCompilerReasonProjection.test_actual_static_producer_error_is_projected_after_owned_recipe_binding",
+    "BoundCompilerReasonProjection.test_every_allowed_reason_is_an_exact_static_raise_in_its_bound_helper",
+    "BoundCompilerReasonProjection.test_hardlinked_evidence_or_selection_mutation_refuses_complete_observation",
+    "BoundCompilerReasonProjection.test_missing_unpinned_malformed_and_oversize_evidence_never_claim_reason",
+    "BoundCompilerReasonProjection.test_private_prefix_suffix_unknown_and_nonliteral_reasons_remain_omitted",
+    "BoundCompilerReasonProjection.test_projection_failure_preserves_original_exception_identity",
     "CapturedCompilerIdentity.test_changed_original_or_captured_compiler_is_rejected",
     "CapturedCompilerIdentity.test_relocated_exact_compiler_copy_is_accepted",
     "DeliveredCompilerHostPath.test_absent_or_invalid_commands_path_never_inherits_parent_path",
@@ -28,6 +34,78 @@
     "PublicBuildFailureMetadata.test_running_complete_or_wrong_producer_never_claim_a_failure_cause"
   ],
   "guards": {
+    "BoundCompilerReasonProjection.test_actual_static_producer_error_is_projected_after_owned_recipe_binding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:1a107628dc72025f53d6799984112f2cee5eec6dda286fe02f809c508683ed86"
+      ],
+      "skipSites": []
+    },
+    "BoundCompilerReasonProjection.test_every_allowed_reason_is_an_exact_static_raise_in_its_bound_helper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:1a107628dc72025f53d6799984112f2cee5eec6dda286fe02f809c508683ed86"
+      ],
+      "skipSites": []
+    },
+    "BoundCompilerReasonProjection.test_hardlinked_evidence_or_selection_mutation_refuses_complete_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:1a107628dc72025f53d6799984112f2cee5eec6dda286fe02f809c508683ed86"
+      ],
+      "skipSites": []
+    },
+    "BoundCompilerReasonProjection.test_missing_unpinned_malformed_and_oversize_evidence_never_claim_reason": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:1a107628dc72025f53d6799984112f2cee5eec6dda286fe02f809c508683ed86"
+      ],
+      "skipSites": []
+    },
+    "BoundCompilerReasonProjection.test_private_prefix_suffix_unknown_and_nonliteral_reasons_remain_omitted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:1a107628dc72025f53d6799984112f2cee5eec6dda286fe02f809c508683ed86"
+      ],
+      "skipSites": []
+    },
+    "BoundCompilerReasonProjection.test_projection_failure_preserves_original_exception_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:1a107628dc72025f53d6799984112f2cee5eec6dda286fe02f809c508683ed86"
+      ],
+      "skipSites": []
+    },
     "CapturedCompilerIdentity.test_changed_original_or_captured_compiler_is_rejected": {
       "bases": [
         "unittest.TestCase"
@@ -343,6 +421,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_dependency_watch.py",
-  "reviewReason": "Preserve authenticated failed-stage metadata when optional adapter result is invalid; retain all existing cases and guards",
+  "reviewReason": "Bind closed static compiler setup errors to the owned attempt and exact captured helper identities",
   "schemaVersion": "latent.ci.contracts.v1"
 }

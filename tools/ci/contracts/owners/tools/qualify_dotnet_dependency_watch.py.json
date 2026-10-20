@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind exact LF qualifier source with bounded optional adapter refusal isolation",
+  "reviewReason": "Expose only exact source-bound static compiler setup error codes while retaining uncertain cleanup and all reader privacy gates",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d8e2130b8fcf345414b7588dbaa4386d7edd293c3992174335e1970a01e6e8c1"
+  "sha256": "ad0f3f1fe9f033764f398991c2a0a29da751c3e22b01c933f21d004400670ddf"
 }

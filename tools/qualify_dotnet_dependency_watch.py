@@ -52,6 +52,88 @@ _CONTROL_REASONS = frozenset({'guest-build-failed-last-deployment-retained',
     'build-interrupted', 'build-complete', 'guest-restarted-build-interrupted'})
 
 
+# Exact static raises from the inspected compile setup helpers. Dynamic messages,
+# prefixes and other stages are deliberately excluded. A code is usable only
+# after the retained tool inventory and build recipe bind its actual helper.
+_COMPILE_REASON_PRODUCERS = {
+    'tools/dotnet_guest/sdk.py': {'helper': 'dotnet-sdk-facades', 'codes': {
+        'ambiguous generated C# world namespace': 'dotnet-generated-world-namespace-ambiguous',
+        'intent staging requires the canonical imported state owner': 'dotnet-intent-canonical-state-owner-required',
+    }},
+    'tools/dotnet_guest/compiler.py': {'helper': 'dotnet-compiler-resources', 'codes': {
+        'nuget-compiler-resource-preimage-mismatch': 'nuget-compiler-resource-preimage-mismatch',
+    }},
+    'tools/dotnet_application_dependencies.py': {'helper': 'dotnet-application-dependencies', 'codes': {
+        'dotnet-executable-resource-not-selected-original': 'dotnet-executable-resource-not-selected-original',
+        'dotnet-executable-resource-preimage-mismatch': 'dotnet-executable-resource-preimage-mismatch',
+        'dotnet-package-asset-policy-invalid': 'dotnet-package-asset-policy-invalid',
+        'dotnet-package-reference-ambiguous': 'dotnet-package-reference-ambiguous',
+        'dotnet-package-reference-not-reviewed': 'dotnet-package-reference-not-reviewed',
+        'dotnet-package-version-not-native-literal': 'dotnet-package-version-not-native-literal',
+        'dotnet-project-build-target-not-reviewed': 'dotnet-project-build-target-not-reviewed',
+        'dotnet-project-declaration-limit': 'dotnet-project-declaration-limit',
+        'dotnet-project-input-outside-reviewed-recipe': 'dotnet-project-input-outside-reviewed-recipe',
+        'dotnet-project-item-metadata-invalid': 'dotnet-project-item-metadata-invalid',
+        'dotnet-project-sdk-compiler-input-mutated': 'dotnet-project-sdk-compiler-input-mutated',
+        'dotnet-project-sdk-not-reviewed': 'dotnet-project-sdk-not-reviewed',
+        'dotnet-resource-input-not-captured': 'dotnet-resource-input-not-captured',
+        'dotnet-resource-item-not-reviewed': 'dotnet-resource-item-not-reviewed',
+        'dotnet-resource-logical-name-invalid': 'dotnet-resource-logical-name-invalid',
+        'nuget-captured-package-closure-not-native-selection': 'nuget-captured-package-closure-not-native-selection',
+        'nuget-captured-package-not-native-original': 'nuget-captured-package-not-native-original',
+        'nuget-feed-trust-identity-invalid': 'nuget-feed-trust-identity-invalid',
+        'nuget-native-asset-file-limit': 'nuget-native-asset-file-limit',
+        'nuget-native-asset-metadata-invalid': 'nuget-native-asset-metadata-invalid',
+        'nuget-native-asset-package-identity-mismatch': 'nuget-native-asset-package-identity-mismatch',
+        'nuget-native-assets-invalid': 'nuget-native-assets-invalid',
+        'nuget-native-assets-or-resource-selection-drift': 'nuget-native-assets-or-resource-selection-drift',
+        'nuget-native-content-hash-conflict': 'nuget-native-content-hash-conflict',
+        'nuget-native-content-hash-invalid': 'nuget-native-content-hash-invalid',
+        'nuget-native-dependency-unresolved': 'nuget-native-dependency-unresolved',
+        'nuget-native-framework-runtime-selection-invalid': 'nuget-native-framework-runtime-selection-invalid',
+        'nuget-native-json-duplicate-field': 'nuget-native-json-duplicate-field',
+        'nuget-native-json-invalid': 'nuget-native-json-invalid',
+        'nuget-native-json-limit': 'nuget-native-json-limit',
+        'nuget-native-lock-assets-version-invalid': 'nuget-native-lock-assets-version-invalid',
+        'nuget-native-package-identity-ambiguous': 'nuget-native-package-identity-ambiguous',
+        'nuget-native-selected-graph-not-closed': 'nuget-native-selected-graph-not-closed',
+        'nuget-native-selection-or-sdk-baseline-drift': 'nuget-native-selection-or-sdk-baseline-drift',
+        'nuget-offline-cache-package-collision': 'nuget-offline-cache-package-collision',
+        'nuget-offline-native-layout-collision': 'nuget-offline-native-layout-collision',
+        'nuget-original-manifest-name-not-native-package': 'nuget-original-manifest-name-not-native-package',
+        'nuget-sdk-compiler-runtime-closure-missing': 'nuget-sdk-compiler-runtime-closure-missing',
+        'nuget-sdk-compiler-runtime-lock-mutated': 'nuget-sdk-compiler-runtime-lock-mutated',
+        'nuget-selected-assembly-missing-managed-cli-header': 'nuget-selected-assembly-missing-managed-cli-header',
+        'nuget-selected-asset-missing-from-original-package': 'nuget-selected-asset-missing-from-original-package',
+        'nuget-selected-native-asset-runtime-abi-unavailable': 'nuget-selected-native-asset-runtime-abi-unavailable',
+    }},
+    'tools/captured_compiler_isolation.py': {'helper': 'captured-compiler-isolation', 'codes': {
+        'compiler-read-only-inputs-outside-owned-workspace': 'compiler-read-only-inputs-outside-owned-workspace',
+    }},
+    'tools/dotnet_guest/resources.py': {'helper': 'dotnet-resources', 'codes': {
+        'embedded resource compiler template differs from its closed profile': 'dotnet-resource-compiler-template-drift',
+    }},
+    'tools/dotnet_guest/task_wait.py': {'helper': 'dotnet-task-wait', 'codes': {
+        'task-wait-authenticated-async-root-required': 'task-wait-authenticated-async-root-required',
+        'task-wait-rewrite-output-drift': 'task-wait-rewrite-output-drift',
+    }},
+    'tools/dotnet_guest/http_errors.py': {'helper': 'dotnet-http-errors', 'codes': {
+        'http-error-port-rewrite-output-drift': 'http-error-port-rewrite-output-drift',
+        'http-error-port-rewrite-receipt': 'http-error-port-rewrite-receipt',
+        'http-sync-read-authenticated-task-wait-required': 'http-sync-read-authenticated-task-wait-required',
+        'http-sync-read-task-wait-source-drift': 'http-sync-read-task-wait-source-drift',
+    }},
+    'tools/dotnet_guest/entropy.py': {'helper': 'dotnet-entropy', 'codes': {
+        'noncrypto-entropy-unreviewed-upstream': 'noncrypto-entropy-unreviewed-upstream',
+        'noncrypto-entropy-unsupported-member-preimage': 'noncrypto-entropy-unsupported-member-preimage',
+    }},
+    'tools/dotnet_guest/managed_entropy.py': {'helper': 'dotnet-managed-entropy', 'codes': {
+        'managed-entropy-rewrite-receipt': 'managed-entropy-rewrite-receipt',
+        'managed-entropy-staged-source-drift': 'managed-entropy-staged-source-drift',
+    }},
+}
+
+
 def _failure_file(root, relative, maximum):
     """Read only one fixed, anchored regular file; missing files are optional."""
     from tools.dev_workflow import paths
@@ -73,6 +155,62 @@ def _failure_file(root, relative, maximum):
                 paths.regular(metadata)
             parent = path
         return paths.read(root, relative, maximum)
+
+
+def _bound_compile_reason(builds, entry_name, output, selected, failure):
+    """Bind an exact static producer code; never interpret arbitrary failure text."""
+    from tools.dev_workflow import paths, tool_inventory
+    from tools.dev_workflow.common import decode, digest, sha
+    if (type(failure) is not dict or type(failure.get('formatVersion')) is not int
+            or failure['formatVersion'] != 1 or failure.get('stage') != 'compile'
+            or type(failure.get('reason')) is not str):
+        return {}, []
+    matched = [(name, producer) for name, producer in _COMPILE_REASON_PRODUCERS.items()
+               if failure['reason'] in producer['codes']]
+    if len(matched) != 1:
+        return {}, []
+    name, producer = matched[0]
+    descriptor = selected['descriptor']
+    recorded = descriptor['build'].get('inventory')
+    if recorded is None:
+        return {}, []
+    inventory_path = entry_name + '/tool-inventory.json'
+    recipe_path = entry_name + '/source/' + output + '/recipe-inputs.json'
+    inventory_raw = _failure_file(builds, inventory_path, tool_inventory.MAX_DOCUMENT)
+    recipe_raw = _failure_file(builds, recipe_path, tool_inventory.MAX_DOCUMENT)
+    if inventory_raw is None or recipe_raw is None:
+        return {}, []
+    require(digest(inventory_raw) == recorded['sha256'], 'failure-projection-producer-identity')
+    inventory = tool_inventory.validate(decode(inventory_raw, tool_inventory.MAX_DOCUMENT),
+        'dotnet', 549, 'linux-x86_64', host_abi=descriptor['hostAbi'])
+    require(descriptor['language'] == 'dotnet' and descriptor['template']['ownerIssue'] == 549
+        and type(descriptor['template']['ownerIssue']) is int
+        and inventory['sourceCommit'] == descriptor['template']['revision'],
+        'failure-projection-producer-identity')
+    recipe = decode(recipe_raw, tool_inventory.MAX_DOCUMENT)
+    require(type(recipe) is dict and 0 < len(recipe) <= tool_inventory.MAX_FILES,
+        'failure-projection-producer-schema')
+    for path, row in recipe.items():
+        paths.relative(path)
+        require(type(row) is dict and set(row) == {'digest', 'size'}
+            and type(row['size']) is int and 0 <= row['size'] <= 4 * 1024 * 1024,
+            'failure-projection-producer-schema')
+        sha(row['digest'])
+    files = {row['path']: row for row in inventory['files']}
+    source_root = Path(__file__).resolve().parents[1]
+    evidence = [(builds, inventory_path, tool_inventory.MAX_DOCUMENT, inventory_raw),
+                (builds, recipe_path, tool_inventory.MAX_DOCUMENT, recipe_raw)]
+    # The serializer, call path and code's own helper must all be this version.
+    for helper in dict.fromkeys(('tools/dotnet_guest/build.py', 'tools/dotnet_guest/compiler.py', name)):
+        data = _failure_file(source_root, helper, 4 * 1024 * 1024)
+        require(data is not None, 'failure-projection-producer-identity')
+        identity = {'digest': digest(data), 'size': len(data)}
+        require(recipe.get(helper) == identity and files.get('recipe/' + helper) ==
+            {'path': 'recipe/' + helper, 'sha256': identity['digest'], 'size': identity['size']},
+            'failure-projection-producer-identity')
+        evidence.append((source_root, helper, 4 * 1024 * 1024, data))
+    return {'reasonCode': producer['codes'][failure['reason']],
+        'reasonProducer': {'helper': producer['helper'], 'digest': recipe[name]['digest']}}, evidence
 
 
 def _public_build_failure(value):
@@ -101,7 +239,7 @@ def _public_build_failure(value):
 
 
 _PROJECTION_PHASES = frozenset({'workspace-owner', 'control-lock', 'control-state', 'project-selection',
-    'attempt-inventory', 'attempt-owner', 'failure-document', 'adapter-result', 'final-state'})
+    'attempt-inventory', 'attempt-owner', 'failure-document', 'failure-producer', 'adapter-result', 'final-state'})
 _PROJECTION_REFUSALS = frozenset({'bound', 'owner', 'schema', 'changed', 'missing-or-unsafe',
     'missing', 'access', 'busy', 'unavailable'})
 
@@ -119,13 +257,13 @@ def _projection_refusal(error):
         return 'bound'
     if code in {'workspace-owner-mismatch', 'private-state-directory-required',
                 'single-link-regular-file-required', 'reparse-point-rejected',
-                'unowned-build-attempt', 'failure-projection-workspace-owner',
+                'unowned-build-attempt', 'failure-projection-producer-identity', 'failure-projection-workspace-owner',
                 'failure-projection-owned-attempt', 'failure-projection-unsafe-parent',
                 'reparse-or-file-type-rejected'}:
         return 'owner'
     if code in {'invalid-json', 'duplicate-field', 'nonfinite-number', 'active-build-state',
                 'build-attempt-state', 'build-request-identity', 'invalid-sha256',
-                'document-object-required', 'unknown-or-missing-field'}:
+                'document-object-required', 'unknown-or-missing-field', 'failure-projection-producer-schema'}:
         return 'schema'
     if code in {'source-changed-during-read', 'failure-projection-state-changed'}:
         return 'changed'
@@ -190,6 +328,7 @@ def _collect_build_failure_metadata(workspace, observed):
                         prefix = entry.name + '/source/'
                         observed['phase'] = 'failure-document'
                         raw = _failure_file(builds, prefix + output + '/BUILD-FAILED.json', 65536)
+                        evidence = []
                         row['failureDocument'] = 'missing'
                         if raw is not None:
                             failure = decode(raw, 65536)
@@ -197,6 +336,11 @@ def _collect_build_failure_metadata(workspace, observed):
                             row['failureDocument'] = ('observed' if type(failure) is dict
                                 and type(failure.get('formatVersion')) is int and failure['formatVersion'] == 1 else 'invalid')
                             row.update(projected)
+                            observed['phase'] = 'failure-producer'
+                            reason, evidence = _bound_compile_reason(builds, entry.name, output, selected, failure)
+                            row.update(reason)
+                            if reason:
+                                evidence.append((builds, prefix + output + '/BUILD-FAILED.json', 65536, raw))
                         observed['phase'] = 'adapter-result'
                         row['adapterResult'] = 'missing'
                         try:
@@ -226,9 +370,12 @@ def _collect_build_failure_metadata(workspace, observed):
                                 row['adapterCode'], row['adapterCleanup'] = adapter['code'], adapter['cleanup']
                                 row['adapterResult'] = 'observed'
                         observed['phase'] = 'final-state'
+                        for root, relative, maximum, data in evidence:
+                            require(_failure_file(root, relative, maximum) == data, 'failure-projection-state-changed')
                         require(build_cache.owner(entry) == owner, 'failure-projection-state-changed')
                         result['attempts'].append(row)
             observed['phase'] = 'final-state'
+            require(state.load(workspace, 'project.json') == selected, 'failure-projection-state-changed')
             require(build_control.status(workspace) == active, 'failure-projection-state-changed')
             return result
 

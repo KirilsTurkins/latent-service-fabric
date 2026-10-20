@@ -614,3 +614,160 @@ class OptionalAdapterFailureIsolation(unittest.TestCase):
                 self.assertNotIn('attempts', public['buildFailureMetadata'])
                 self.assertIs(public['uncertain'], True)
                 self.assertEqual(public['failure'], 'initial-build-failed')
+
+
+class BoundCompilerReasonProjection(unittest.TestCase):
+    def owned(self, parent):
+        from tools.dev_workflow import state
+        from tools.dev_workflow.common import HOST_ABI, digest, encode
+        from tools.rust_capsule_project import ROOT
+        workspace, attempt, failure, adapter = PublicBuildFailureMetadata().owned(parent)
+        names = ('tools/dotnet_guest/build.py', 'tools/dotnet_guest/compiler.py', 'tools/dotnet_guest/sdk.py')
+        recipe = {name: {'digest': digest((ROOT / name).read_bytes()), 'size': (ROOT / name).stat().st_size}
+                  for name in names}
+        value = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': 'dotnet', 'ownerIssue': 549,
+            'sourceCommit': 'b' * 40, 'hostAbi': HOST_ABI, 'host': 'linux-x86_64',
+            'files': [{'path': 'recipe/' + name, 'sha256': row['digest'], 'size': row['size']}
+                      for name, row in sorted(recipe.items())]}
+        value['identity'] = digest(encode(value))
+        inventory = attempt / 'tool-inventory.json'; inventory.write_bytes(encode(value))
+        selected = state.load(workspace, 'project.json')
+        selected['descriptor'].update(language='dotnet', hostAbi=HOST_ABI,
+            template={'ownerIssue': 549, 'revision': 'b' * 40})
+        selected['descriptor']['build']['inventory'] = {'path': 'guest-tools.json', 'sha256': digest(inventory.read_bytes())}
+        state.atomic(workspace, 'project.json', selected)
+        recipe_path = failure.parent / 'recipe-inputs.json'; recipe_path.write_bytes(encode(recipe))
+        generated = parent / 'generated'; generated.mkdir()
+        from tools.dotnet_guest.sdk import install
+        with self.assertRaises(ValueError) as raised:
+            install(parent / 'unused-sdk', generated, parent / 'unused-output')
+        failure.write_bytes(encode({'formatVersion': 1, 'stage': 'compile', 'reason': str(raised.exception),
+            'commands': [{'stage': 'canonical-wit', 'exitCode': 0}]}))
+        adapter.write_bytes(b'')
+        return workspace, attempt, failure, adapter, inventory, recipe_path
+
+    def test_actual_static_producer_error_is_projected_after_owned_recipe_binding(self):
+        from tools.qualify_dotnet_dependency_watch import collect_build_failure_metadata
+        from tools.dev_workflow.common import digest
+        from tools.rust_capsule_project import ROOT
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter, inventory, recipe = self.owned(Path(temporary).resolve())
+            result = collect_build_failure_metadata(workspace)
+            row = result['attempts'][0]
+            self.assertEqual(row['reasonCode'], 'dotnet-generated-world-namespace-ambiguous')
+            self.assertEqual(row['reasonProducer'], {'helper': 'dotnet-sdk-facades',
+                'digest': digest((ROOT / 'tools/dotnet_guest/sdk.py').read_bytes())})
+            self.assertEqual(row['commands'], [{'stage': 'canonical-wit', 'exitCode': 0}])
+            self.assertEqual(row['adapterResult'], 'invalid')
+            self.assertEqual(result['state'], 'uncertain')
+            self.assertIs(result['qualification'], False)
+            self.assertNotIn(str(workspace), json.dumps(result))
+            self.assertNotIn('ambiguous generated C# world namespace', json.dumps(result))
+
+    def test_every_allowed_reason_is_an_exact_static_raise_in_its_bound_helper(self):
+        import ast
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.rust_capsule_project import ROOT
+        seen = set()
+        for name, producer in programme._COMPILE_REASON_PRODUCERS.items():
+            tree = ast.parse((ROOT / name).read_bytes())
+            actual = {node.exc.args[0].value for node in ast.walk(tree)
+                if isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call)
+                and isinstance(node.exc.func, ast.Name) and node.exc.func.id in {'ValueError', 'DependencyError'}
+                and node.exc.args and isinstance(node.exc.args[0], ast.Constant)
+                and isinstance(node.exc.args[0].value, str)}
+            self.assertLessEqual(set(producer['codes']), actual)
+            self.assertTrue(producer['codes'])
+            for raw, code in producer['codes'].items():
+                self.assertRegex(code, r'^[a-z][a-z0-9-]{0,127}$')
+                self.assertNotIn(raw, seen); seen.add(raw)
+        self.assertEqual(len(seen), 57)
+
+    def test_private_prefix_suffix_unknown_and_nonliteral_reasons_remain_omitted(self):
+        from tools import qualify_dotnet_dependency_watch as programme
+        for reason in ('ambiguous generated C# world namespace:private',
+                'private ambiguous generated C# world namespace', 'private/token/path',
+                'x' * 65537, True, ['ambiguous generated C# world namespace']):
+            with self.subTest(kind=type(reason).__name__), tempfile.TemporaryDirectory() as temporary:
+                workspace, attempt, failure, adapter, inventory, recipe = self.owned(Path(temporary).resolve())
+                value = json.loads(failure.read_bytes()); value['reason'] = reason
+                failure.write_text(json.dumps(value))
+                public = {'passed': False, 'uncertain': True, 'failure': 'initial-build-failed'}
+                programme.add_public_build_failure(public, workspace)
+                self.assertNotIn('reasonProducer', json.dumps(public))
+                if 'attempts' in public['buildFailureMetadata']:
+                    self.assertNotIn('reasonCode', public['buildFailureMetadata']['attempts'][0])
+                self.assertEqual(public['failure'], 'initial-build-failed')
+                self.assertIs(public['uncertain'], True)
+
+    def test_missing_unpinned_malformed_and_oversize_evidence_never_claim_reason(self):
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.dev_workflow import state
+        for kind in ('missing', 'unpinned', 'duplicate', 'oversize', 'wrong-helper', 'wrong-stage', 'wrong-format'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                workspace, attempt, failure, adapter, inventory, recipe = self.owned(Path(temporary).resolve())
+                if kind == 'missing':
+                    recipe.unlink()
+                elif kind == 'unpinned':
+                    selected = state.load(workspace, 'project.json')
+                    selected['descriptor']['build']['inventory']['sha256'] = 'sha256:' + '9' * 64
+                    state.atomic(workspace, 'project.json', selected)
+                elif kind == 'duplicate':
+                    recipe.write_bytes(b'{"x":1,"x":2}')
+                elif kind == 'oversize':
+                    recipe.write_bytes(b' ' * (2 * 1024 * 1024 + 1))
+                elif kind == 'wrong-helper':
+                    value = json.loads(recipe.read_bytes()); value['tools/dotnet_guest/sdk.py']['digest'] = 'sha256:' + '8' * 64
+                    recipe.write_text(json.dumps(value))
+                else:
+                    value = json.loads(failure.read_bytes())
+                    value.update({'stage': 'package'} if kind == 'wrong-stage' else {'formatVersion': True})
+                    failure.write_text(json.dumps(value))
+                public = {'passed': False, 'uncertain': True, 'failure': 'initial-build-failed'}
+                programme.add_public_build_failure(public, workspace)
+                self.assertNotIn('reasonProducer', json.dumps(public))
+                if 'attempts' in public['buildFailureMetadata']:
+                    self.assertNotIn('reasonCode', public['buildFailureMetadata']['attempts'][0])
+                self.assertEqual(public['failure'], 'initial-build-failed')
+                self.assertIs(public['uncertain'], True)
+
+    def test_hardlinked_evidence_or_selection_mutation_refuses_complete_observation(self):
+        import os
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.dev_workflow import state
+        for kind in ('hardlink', 'selection', 'recipe'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                workspace, attempt, failure, adapter, inventory, recipe = self.owned(Path(temporary).resolve())
+                if kind == 'hardlink':
+                    os.link(recipe, recipe.parent / 'recipe-alias')
+                actual = programme._failure_file
+                def mutate(root, relative, maximum):
+                    raw = actual(root, relative, maximum)
+                    if relative.endswith('compiler-stdout.log'):
+                        if kind == 'selection':
+                            selected = state.load(workspace, 'project.json'); selected['trust'] = 'sha256:' + '7' * 64
+                            state.atomic(workspace, 'project.json', selected)
+                        elif kind == 'recipe':
+                            recipe.write_bytes(recipe.read_bytes() + b' ')
+                    return raw
+                with patch.object(programme, '_failure_file', side_effect=mutate):
+                    public = {'passed': False}; programme.add_public_build_failure(public, workspace)
+                self.assertEqual(public['buildFailureMetadata']['status'], 'unavailable')
+                self.assertNotIn('attempts', public['buildFailureMetadata'])
+
+    def test_projection_failure_preserves_original_exception_identity(self):
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter, inventory, recipe = self.owned(Path(temporary).resolve())
+            original = RuntimeError('original uncertain error')
+            with patch.object(programme, '_bound_compile_reason', side_effect=RuntimeError('private input')):
+                with self.assertRaises(RuntimeError) as caught:
+                    try:
+                        raise original
+                    finally:
+                        public = {'passed': False, 'uncertain': True}; programme.add_public_build_failure(public, workspace)
+            self.assertIs(caught.exception, original)
+            self.assertNotIn('private input', json.dumps(public))
+            self.assertIs(public['uncertain'], True)
