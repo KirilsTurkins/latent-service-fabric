@@ -24,9 +24,9 @@ from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
 SOURCE = '77bf0e3f3b68e17342b6146abd6f2de34a3efa00'
 RUN = 39420914927
 JOB = 118621322461
-# Remain fail-closed until the completed producer's exact public pins are frozen.
-ARTIFACT = None
-RECEIPTS = None
+# Exact completed public producer; these pins never select a moving branch.
+ARTIFACT = {'id': 12265176239, 'size_in_bytes': 66066109, 'digest': 'sha256:f65c027e924d52767e7b05c7bdfd0220e31da04cdbf97bf8021fb2fe53c092cf'}
+RECEIPTS = {'native-products.json': {'sha256': 'sha256:7dd05e38371c73ffc9e5e5bf490b2f8ffe5931686a181e508257e7118c778dca', 'bytes': 20590}, 'source-inputs.json': {'sha256': 'sha256:c95bc1e98167eda62fb1c9327c2a1a4b95283159da49a399997fc9b2a75050cc', 'bytes': 18936}}
 BRANCH = 'diag/sdk-v7-native-products-20261020'
 WORKFLOW = '.github/workflows/sdk-native-products.yml'
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
