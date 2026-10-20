@@ -17,6 +17,26 @@ from tools.standard_http.peer import Peer
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_named_client_profile_preserves_native_request_and_all_other_settings(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'config.json'
+            original={'providers':{'activationRuntime':{'limits':dict(qualify.base.OWNER_LIMITS)}},
+                'budgetProfile':{'maximumOutboundRequests':1},'execution':{'maximumWallTimeMillis':120000}}
+            path.write_text(json.dumps(original))
+            selected=qualify.client_owner_configuration(path)
+            self.assertEqual(selected,{'name':'typescript-published-client-owners-v1',
+                'limits':{**qualify.base.OWNER_LIMITS,'tasks':64,'queuedWork':64}})
+            actual=json.loads(path.read_bytes())
+            self.assertEqual(actual['providers']['activationRuntime']['limits']['nativeOwners'],64)
+            actual['providers']['activationRuntime']['limits']=dict(qualify.base.OWNER_LIMITS)
+            self.assertEqual(actual,original)
+            before=path.read_bytes()
+            with self.assertRaisesRegex(WorkflowError,'client-original-limits'):
+                qualify.client_owner_configuration(path)
+            self.assertEqual(path.read_bytes(),before)
+        self.assertEqual(qualify.base.OWNER_LIMITS['tasks'],16)
+        self.assertEqual(qualify.base.OWNER_LIMITS['queuedWork'],16)
+
     def test_owner_dimension_probes_change_only_their_named_original_ceiling(self):
         with tempfile.TemporaryDirectory() as temporary:
             for probe,key,value in [('task-only','tasks',64),('queue-only','queuedWork',64),('native-only','nativeOwners',256)]:

@@ -45,8 +45,13 @@ Ky's explicit404 Unsupported result, Wretch's ordinary404 error and a fresh Ky a
 runtime and HTTP grants must refuse with zero fuel/outbound work. Each real
 request uses the existing provider fixture; post-call physical owners must
 retire, exactly six peer requests must complete, and node/peer shutdown must
-be clean. Existing Task16, queue16, native-owner64 and one-outbound-per-call
-limits are unchanged.
+be clean. The explicitly selected `typescript-published-client-owners-v1`
+operator profile allows Task64/Queue64 while retaining Native64, Executor2,
+Wait8/Timer8/Result8 and one outbound request per call. It applies identically
+to every client and outside identity. The smaller ordinary Fetch profile stays
+Task16/Queue16/Native64; its historical client failures remain failures. This
+selection changes finite operator capacity, not engine ownership, admission,
+physical cleanup, application source or the shared default profile.
 
 The original source-owned import engine and splicer are reused only when
 their unchanged40 SDK inputs validate normally. Five ordinary host/tool
@@ -106,3 +111,13 @@ both outcomes (SHA2565dceaab832ae2f53931bcb2d4e3691e0e905385f97021f14f4c989e1352
 The next diagnostic varies only one owner ceiling per separate node: Task64,
 Queue64 or Native256. The original failed profile remains mandatory and no
 single-dimension result is inferred from the all-three passing comparison.
+
+Run39376443876 at d6cd949 retained all three single-dimension failures in
+artifact12243628634 (727 members, SHA256
+5b2410d8fe75d0a3336ff164dbdaa572d7f78e54ea1fae713cf18d408f3a7421).
+Increasing only Task, Queue or Native capacity did not qualify the clients.
+Both Task and Queue reservations precede each owned reaction allocation; the
+next normal two-identity run explicitly selects64/64 while retaining Native64.
+That pair has not yet passed and is not inferred from the larger diagnostic.
+All eight outcomes, both grant denials, all six real contacts and physical
+retirement remain mandatory. Failure under this profile remains failure.

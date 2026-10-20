@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Signed unchanged Ky Wretch and outside consumers with original finite limits",
+    "name": "Signed unchanged clients with explicit bounded owner profile",
     "permissions": {
       "actions": "read",
       "contents": "read"
@@ -80,7 +80,7 @@
   },
   "jobId": "published-fetch",
   "kind": "job",
-  "reviewReason": "Preserve original failed qualification and the unchanged required command; distinguish each owner ceiling in three fixed separate-node diagnostics after all-three bounded profile passes, without inferring a cause or lifting the original result.",
+  "reviewReason": "Select one explicit finite operator profile uniformly for all unchanged clients after retained original and individual-ceiling failures; preserve shared small defaults, original Native64 and every real outcome/authority/physical cleanup gate. Pair64/64/64 actual normal two-identity execution remains required.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-published-fetch.yml"
 }

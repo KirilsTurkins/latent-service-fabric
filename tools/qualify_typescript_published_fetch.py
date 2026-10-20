@@ -31,6 +31,8 @@ from tools.typescript_fetch_replay_inputs import native_inputs
 from tools.typescript_guest.build import build
 
 IDENTITIES = (('outside-fetch-alpha', '1.0.0'), ('outside-fetch-delta', '2.4.0'))
+CLIENT_OWNER_PROFILE = 'typescript-published-client-owners-v1'
+CLIENT_OWNER_LIMITS = {**base.OWNER_LIMITS, 'tasks': 64, 'queuedWork': 64}
 VECTORS = (
     ('ky-json', 0, '/conformance/json', 'ky:'),
     ('wretch-json', 1, '/conformance/json', 'wretch:'),
@@ -86,6 +88,16 @@ def owner_probe_configuration(path, probe="all"):
     return changed
 
 
+def client_owner_configuration(path):
+    """One explicit operator profile, independent of package or request identity."""
+    value=json.loads(read_file(path))
+    require(value['providers']['activationRuntime']['limits']==base.OWNER_LIMITS,
+            'published-fetch-client-original-limits')
+    value['providers']['activationRuntime']['limits']=dict(CLIENT_OWNER_LIMITS)
+    path.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
+    return {'name':CLIENT_OWNER_PROFILE,'limits':dict(CLIENT_OWNER_LIMITS)}
+
+
 def execute(artifact, native, output, *, diagnostic_owner_profile=False, owner_probe="all"):
     output = fresh(output)
     record = {'schemaVersion': 'latent.typescript.published-fetch-execution.v1', 'status': 'in-progress',
@@ -116,6 +128,8 @@ def execute(artifact, native, output, *, diagnostic_owner_profile=False, owner_p
             if diagnostic_owner_profile:
                 record['diagnosticLimits']=owner_probe_configuration(config,owner_probe)
                 record['diagnosticOwnerProbe']=owner_probe
+            else:
+                record['ownerProfile']=client_owner_configuration(config)
             record['configurationIdentity'] = file_identity(config)
             stage = 'node'
             node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
@@ -198,7 +212,9 @@ def qualify(acquired, tools, output, *, diagnose_owner_profile=False):
     record = {'schemaVersion': 'latent.typescript.published-fetch-qualification.v1', 'status': 'incomplete',
               'fullTicketQualification': False, 'historicalNative': identity, 'variants': [],
               'defaultClientHttpErrorQualified': False, 'statusText': 'unsupported-by-original-typed-response',
-              'limits': dict(base.OWNER_LIMITS), 'applicationFetchInjection': False, 'packageSourceChanges': False}
+              'ownerProfile':CLIENT_OWNER_PROFILE, 'limits':dict(CLIENT_OWNER_LIMITS),
+              'originalOwnerLimits':dict(base.OWNER_LIMITS),
+              'applicationFetchInjection': False, 'packageSourceChanges': False}
     stage = 'capture'
     try:
         for index, (name, version) in enumerate(IDENTITIES, 1):

@@ -5,6 +5,7 @@
     "PublishedFetchTests.test_default_error_helper_unsupported_is_never_claimed_as_http_error_qualification",
     "PublishedFetchTests.test_failed_client_is_recorded_as_failure_and_never_relabelled_success",
     "PublishedFetchTests.test_fixed_archive_members_reject_duplicate_unsafe_and_missing_inputs",
+    "PublishedFetchTests.test_named_client_profile_preserves_native_request_and_all_other_settings",
     "PublishedFetchTests.test_native_inputs_reject_fabricated_current_receipts_before_using_binaries",
     "PublishedFetchTests.test_outside_identity_cannot_escape_its_owned_directory",
     "PublishedFetchTests.test_owner_dimension_probes_change_only_their_named_original_ceiling",
@@ -63,6 +64,18 @@
       "skipSites": []
     },
     "PublishedFetchTests.test_fixed_archive_members_reject_duplicate_unsafe_and_missing_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedFetchTests.test_named_client_profile_preserves_native_request_and_all_other_settings": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -161,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_published_fetch.py",
-  "reviewReason": "Preserve original failed qualification and the unchanged required command; distinguish each owner ceiling in three fixed separate-node diagnostics after all-three bounded profile passes, without inferring a cause or lifting the original result.",
+  "reviewReason": "Select one explicit finite operator profile uniformly for all unchanged clients after retained original and individual-ceiling failures; preserve shared small defaults, original Native64 and every real outcome/authority/physical cleanup gate. Pair64/64/64 actual normal two-identity execution remains required.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

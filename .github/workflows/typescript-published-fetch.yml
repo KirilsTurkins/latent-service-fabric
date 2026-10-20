@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   published-fetch:
-    name: Signed unchanged Ky Wretch and outside consumers with original finite limits
+    name: Signed unchanged clients with explicit bounded owner profile
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
