@@ -219,6 +219,7 @@ class Compiler:
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
                 activation_profile: bool = False, server_profile: bool = False, fiber_io_profile: bool = False,
                 server_bridge: bytes | None = None, http_client_profile: bool = False,
+                http_client_phase_profile: bool = False,
                 processor_stage=None) -> tuple[Path, dict]:
         if type(activation_profile) is not bool:
             raise ValueError("Java activation profile requires an explicit boolean selection")
@@ -228,6 +229,9 @@ class Compiler:
             raise ValueError("automatic server bridge requires an explicitly selected profile")
         if type(http_client_profile) is not bool:
             raise ValueError("Java standard HTTP requires an explicitly selected profile")
+        if (type(http_client_phase_profile) is not bool
+                or http_client_phase_profile and not (http_client_profile and fiber_io_profile)):
+            raise ValueError("Java HTTP phase adapter requires an explicit fiber I/O profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -238,6 +242,8 @@ class Compiler:
             required_imports = {"latent:runtime/activation@0.1.0", "latent:clock/monotonic@0.1.0"}
             if not required_imports <= set(declared["imports"]):
                 raise ValueError("Java activation profile requires explicit runtime and monotonic clock WIT imports")
+            if http_client_phase_profile and "latent:http/phase-timing@0.4.0" not in declared['imports']:
+                raise ValueError('Java HTTP phase profile requires explicit phase-timing@0.4.0 WIT')
         binding_selection = {"activation_profile": True} if activation_profile else {}
         if fiber_io_profile: binding_selection['fiber_io_profile'] = True
         bindings = generate(self.run, staged, world, destination / "bindings", **binding_selection)
@@ -315,6 +321,7 @@ class Compiler:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 if activation_profile:
                     build.write("dependencies { compileOnly 'org.teavm:teavm-platform:0.15.0' }\n")
+        http_phase_record = None
         if http_client_profile:
             for folder in ("client/dev", "client/compiler/dev"):
                 for relative, data in snapshot(self.sdk / folder).items():
@@ -327,6 +334,10 @@ class Compiler:
             # either service list or accepting an application-owned plugin.
             for relative, data in snapshot(self.sdk / "client/services").items():
                 stage_sdk_service(project / "src/main/resources" / relative, relative, data)
+            if http_client_phase_profile:
+                from tools.java_http_client import stage_phase
+                http_phase_record = stage_phase(self.sdk, java_root)
+                write_json(destination / 'http-phase-source-profile.json', http_phase_record)
         application_source_names = set()
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
@@ -414,6 +425,8 @@ class Compiler:
         if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
         details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
                    "semanticSurfaceDigest": digest(canonical(actual))}
+        if http_phase_record is not None:
+            details['httpPhaseAdapter'] = http_phase_record
         if resource_profile is not None:
             resources.recheck(application_resources, resource_profile)
             details["immutableResources"] = resource_profile

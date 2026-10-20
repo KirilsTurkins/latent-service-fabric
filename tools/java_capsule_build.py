@@ -90,6 +90,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         observed = guest_dependency_inputs.capture_source(project_path, 'java')
         files = observed.files
         project, _lock, pins = validate(files)
+        http_phase_selected = project.get('httpClient', {}).get('profile') == java_http_client.PHASE_PROFILE_ID
+        if http_phase_selected and runtime_profile != FIBER_IO_PROFILE:
+            raise ValueError('Java HTTP phase profile requires explicit fiber I/O runtime selection')
         source_inputs = inventory(files)
         recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
         recipe_inputs = inventory(recipe_files)
@@ -176,6 +179,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     profile_selection["application_resources"] = application_resources
                 if "httpClient" in project:
                     profile_selection["http_client_profile"] = True
+                    if http_phase_selected: profile_selection['http_client_phase_profile'] = True
                 if processor_stage is not None:
                     profile_selection["processor_stage"] = processor_stage
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
@@ -219,8 +223,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     host_abi_profile=guest_compatibility_build.declared_host_abi(surface), files=files)
                 additional_assets = []
                 if "httpClient" in project:
+                    selected_http = {'phase_timing': True} if http_phase_selected else {}
                     (output / "http-client-profile.json").write_bytes(java_http_client.profile(
-                        compiler.sdk, recipe_inputs, source_inputs, component))
+                        compiler.sdk, recipe_inputs, source_inputs, component, **selected_http))
                     additional_assets.append(("http-client-profile.json", "asset", "application/vnd.latent.java.http.profile.v1+json"))
                 if server_plan is not None:
                     actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path,

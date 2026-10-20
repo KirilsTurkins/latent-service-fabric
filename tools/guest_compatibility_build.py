@@ -16,6 +16,7 @@ DEFAULT_PROFILE = "lsf-host-abi-phase3-v4"
 HOST_MANIFESTS = {
     DEFAULT_PROFILE: "wit/host-abi-phase3-v4.json",
     "lsf-host-abi-phase3-v5": "wit/host-abi-phase3-v5.json",
+    "lsf-host-abi-phase3-v7": "wit/host-abi-phase3-v7.json",
     "lsf-host-abi-phase4-v1": "wit/host-abi-phase4-v1.json",
 }
 V5_INTERFACES = frozenset({
@@ -64,6 +65,9 @@ def declared_host_abi(surface: dict) -> str:
     for name in imports:
         compatibility.token(name)
     require(len(set(imports)) == len(imports), "compatibility-declared-import-limit")
+    if "latent:http/phase-timing@0.4.0" in imports:
+        require(not TRANSACTION_INTERFACES.intersection(imports), "compatibility-http-phase-transaction-profile-unsupported")
+        return "lsf-host-abi-phase3-v7"
     if TRANSACTION_INTERFACES.intersection(imports):
         return "lsf-host-abi-phase4-v1"
     return "lsf-host-abi-phase3-v5" if V5_INTERFACES.intersection(imports) else DEFAULT_PROFILE

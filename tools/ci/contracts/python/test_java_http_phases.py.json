@@ -1,0 +1,103 @@
+{
+  "cases": [
+    "JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile",
+    "JavaHttpPhases.test_changed_sdk_or_staged_class_refuses_without_replacing_any_bytes",
+    "JavaHttpPhases.test_declared_phase_import_selects_only_v7_and_cannot_mix_transaction_authority",
+    "JavaHttpPhases.test_derived_adapter_is_bound_to_captured_preimage_and_existing_owner_limits",
+    "JavaHttpPhases.test_new_profile_is_explicit_and_original_selection_remains_exact",
+    "JavaHttpPhases.test_phase_compiler_selection_requires_explicit_fiber_io_before_creating_outputs",
+    "JavaHttpPhases.test_profile_receipt_binds_selected_transformation_and_preserves_old_boundary"
+  ],
+  "guards": {
+    "JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for host-only adapter reference')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhases.test_changed_sdk_or_staged_class_refuses_without_replacing_any_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhases.test_declared_phase_import_selects_only_v7_and_cannot_mix_transaction_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhases.test_derived_adapter_is_bound_to_captured_preimage_and_existing_owner_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhases.test_new_profile_is_explicit_and_original_selection_remains_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhases.test_phase_compiler_selection_requires_explicit_fiber_io_before_creating_outputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhases.test_profile_receipt_binds_selected_transformation_and_preserves_old_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_http_phases.py",
+  "reviewReason": "Explicit V7 Java phase adapter source gates and host JDK modeled-port reference; no native or signed qualification claim",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
