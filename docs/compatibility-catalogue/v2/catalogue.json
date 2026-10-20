@@ -194,6 +194,90 @@
         "artifact": 12282212612,
         "member": "phase-fetch/build/wit-lock.json"
       }
+    },
+    "go-qualification": {
+      "path": "evidence/go-qualification.json",
+      "sha256": "sha256:156ae0944f033fdc69c97dc05ebeebddb10f36e37e86fd9905610ef05bd78835",
+      "bytes": 119335,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/qualified.json"
+      }
+    },
+    "go-node": {
+      "path": "evidence/go-node.json",
+      "sha256": "sha256:3d1334194db654088a141edbc515bdea1a2771ad6138ca9238b5ed2060819860",
+      "bytes": 80613,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/node/qualified.json"
+      }
+    },
+    "go-observation": {
+      "path": "evidence/go-observation.json",
+      "sha256": "sha256:1b50ddc9843396f1bd72cb876b8b7e85a1a93ce74553f59fee54c67f53b012db",
+      "bytes": 3510,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/build-observation.json"
+      }
+    },
+    "go-dependencies": {
+      "path": "evidence/go-dependencies.json",
+      "sha256": "sha256:44cc050b055c371eb4b21eefe3ceb517e901d79f8c0cf490613fd2e86fcffda5",
+      "bytes": 344563,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/application-dependencies.json"
+      }
+    },
+    "go-runtime": {
+      "path": "evidence/go-runtime.json",
+      "sha256": "sha256:209518b0bbff545c4e1d617a5ec18db56cc9bd0036a0a81372dd377a07032c32",
+      "bytes": 3538,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/standard-runtime-selection.json"
+      }
+    },
+    "go-transformations": {
+      "path": "evidence/go-transformations.json",
+      "sha256": "sha256:97b1a857001d2c365d803ec1aa507c1a7fe3a50b5f80fcf165511b4b72c3a5d7",
+      "bytes": 80071,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/go-runtime-transformations.json"
+      }
+    },
+    "go-wit": {
+      "path": "evidence/go-wit.json",
+      "sha256": "sha256:7ad33125d6596fcc41f6de945abfccfef16469d573e19f4377628357cbf840a2",
+      "bytes": 1132,
+      "origin": {
+        "source": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "run": 39461611124,
+        "job": 118762220036,
+        "artifact": 12284315082,
+        "member": "go-http-tenant-catalogue/build/wit-lock.json"
+      }
     }
   },
   "entries": [
@@ -307,8 +391,8 @@
         "The compiler profile receipt retains qualification=pending; the separate signed receipt supplies only the thirteen listed outcomes.",
         "The native node binary identifies the tested engine closure; this catalogue does not infer a standalone engine hash or allocator bound."
       ],
-      "identity": "sha256:6617be408b7efedea36b26d849569b2a76805957534e0937d302a490736e29fb",
-      "documentsIdentity": "sha256:29d41d24cc14b514f69b2abe627524149bb1272207c41b2b145c1ab74579dee6"
+      "identity": "sha256:123893c2c82e106f6b8f8c16b978f100746b9687b0acea91ecf999314c6ec827",
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23"
     },
     {
       "language": "typescript",
@@ -420,8 +504,8 @@
         "The runtime selection still records qualification=unknown/apiSupport=not-evaluated; the separate signed receipt supplies finite passing evidence.",
         "No allocator/kernel upper bound, clean-host distribution, full six-language gate or catalogue-absence result is inferred from this programme."
       ],
-      "documentsIdentity": "sha256:29d41d24cc14b514f69b2abe627524149bb1272207c41b2b145c1ab74579dee6",
-      "identity": "sha256:082fd66786c3446370ffd0baff163198ba5debaf3a3eca59ea6891a3bc291348"
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:866e6c0c8358c0c4f4e43ec1cd22ad4a0a6480256b820cc7a11afb8cd91cafa7"
     },
     {
       "language": "typescript",
@@ -533,8 +617,8 @@
         "The runtime selection still records qualification=unknown/apiSupport=not-evaluated; the separate signed receipt supplies finite passing evidence.",
         "No allocator/kernel upper bound, clean-host distribution, full six-language gate or catalogue-absence result is inferred from this programme."
       ],
-      "documentsIdentity": "sha256:29d41d24cc14b514f69b2abe627524149bb1272207c41b2b145c1ab74579dee6",
-      "identity": "sha256:4d4a40ead6a5770280e2f8f4210757bfeaf15a706281daa2a7da5ab49d4e4996"
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:e21e2c37825a3823dba46de5ee755421d0ef92557e8178383d41e29e49b5fcff"
     },
     {
       "language": "typescript",
@@ -646,8 +730,234 @@
         "The runtime selection still records qualification=unknown/apiSupport=not-evaluated; the separate signed receipt supplies finite passing evidence.",
         "No allocator/kernel upper bound, clean-host distribution, full six-language gate or catalogue-absence result is inferred from this programme."
       ],
-      "documentsIdentity": "sha256:29d41d24cc14b514f69b2abe627524149bb1272207c41b2b145c1ab74579dee6",
-      "identity": "sha256:4057e8207977b2e7726123cc7813a3bf5712524f5588a664debc69b9a2378cf7"
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:462b3d45c5fb77d0bca89ff00a46e1e918ba222879b2e1dd17747a5016c378b4"
+    },
+    {
+      "language": "go",
+      "package": {
+        "coordinate": "github.com/dghubble/sling",
+        "version": "v1.4.0",
+        "artifactDigest": "sha256:4be5cd6d457945267c0baeb989fc8618439a7f9d1d0cd7d9ae6241092aa36e97"
+      },
+      "status": "tested-default-path",
+      "surface": "Ordinary default net/http client, parsed domain JSON and finite two-tenant lifecycle",
+      "construction": "ordinary-default",
+      "packageBindings": {
+        "coordinate": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/1/metadata/module",
+          "valueDigest": "sha256:dd4fc1fe8d7577ea84c9e6c6bdb018ab6da636cb144ae0d5129a0bb8f084516e"
+        },
+        "version": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/1/metadata/version",
+          "valueDigest": "sha256:341108a26955174147269504d65e86b479f40916a14296d8ab7c2f840c6205ef"
+        },
+        "artifactDigest": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/1/original/digest",
+          "valueDigest": "sha256:cd260f7ed934a55a7749c1124fb16a6a3fb07a9dfefe89a387ee4b9a26e4b756"
+        }
+      },
+      "bindings": {
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "graph": {
+          "document": "go-dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:44cc050b055c371eb4b21eefe3ceb517e901d79f8c0cf490613fd2e86fcffda5"
+        },
+        "configuration": {
+          "document": "go-node",
+          "pointer": "/runtimeLimits",
+          "valueDigest": "sha256:2e6d41ff1d074ecfff3079c760effec2c8aeb6b8092270067d7178a67179aa7e"
+        },
+        "compiler": {
+          "document": "go-observation",
+          "pointer": "/materials",
+          "valueDigest": "sha256:a33e34355f223310ec75fcd06affe2e62eae499974045b89879807b40bb8e86c"
+        },
+        "engine": {
+          "document": "go-qualification",
+          "pointer": "/native/producer/products/latentd",
+          "valueDigest": "sha256:ff96570288df4fa7ad6b38ccabc5096224ee1d8aace8e99dbee841e2f68487f0"
+        },
+        "runtime": {
+          "document": "go-runtime",
+          "pointer": "",
+          "valueDigest": "sha256:7ce76e1991d8e84414e9bae385b0076ed381911b5f051b64873c18a74e94d53f"
+        },
+        "backend": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "automaticPatches": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "wit": {
+          "document": "go-wit",
+          "pointer": "",
+          "valueDigest": "sha256:4e791ca520b837036865c7343d9f9e43d36af279c8a05bec3df243381f53da9d"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "go-qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "claims": [
+          "Unchanged published client code uses its ordinary default http.Client and affects actual domain parsing, without an injected application transport.",
+          "One fresh captured catalogue-free component passed the shared nineteen-case and four-pre-entry-refusal programme across two tenants.",
+          "Exactly fifteen authorized peer contacts and nineteen post-guest physical-owner/provider zero observations are retained with clean node shutdown.",
+          "The captured private dependency supplies ordinary goroutine/WaitGroup/time.Sleep/embed behavior; its source is not published in this catalogue."
+        ]
+      },
+      "limitations": [
+        "Each client is qualified only for its respective recorded cases; shared programme counts do not assign every case to every library.",
+        "Historical go-component-activation-v4 uses8tasks/2executors/8queue/16waits/8timers/8results/8native; no managed-v5 maintenance-accounting result is inferred.",
+        "The executed native producer is6f5, with its exact source/product evidence. Future f919 reader configuration is not a new nineteen-case execution.",
+        "The engine binding identifies the actual native node binary; no independent engine hash, allocator/kernel bound, HTTPS or production stream qualification is claimed.",
+        "The runtime-selection receipt retains its original unknown/not-evaluated scope; the separate signed receipt supplies the finite passing result."
+      ],
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:72d128affbd1df4b4dca218f1cf3426d8db094b04df0b44b09793599d432b2fa"
+    },
+    {
+      "language": "go",
+      "package": {
+        "coordinate": "github.com/carlmjohnson/requests",
+        "version": "v0.24.3",
+        "artifactDigest": "sha256:b238ca2a884502748c351dee01f3f831b2b2de173e1d6e501ce1bdd1e3f4bd60"
+      },
+      "status": "tested-default-path",
+      "surface": "Ordinary default net/http client, parsed domain JSON and finite two-tenant lifecycle",
+      "construction": "ordinary-default",
+      "packageBindings": {
+        "coordinate": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/0/metadata/module",
+          "valueDigest": "sha256:b8cfe0b0804b534f7773a85eece061f5908ec8eecd8fc6073780d03711869495"
+        },
+        "version": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/0/metadata/version",
+          "valueDigest": "sha256:133a17fb9e57bbba4c26bc584e6361b7d7f0a3e822d599025778aef5156e3874"
+        },
+        "artifactDigest": {
+          "document": "go-dependencies",
+          "pointer": "/artifacts/0/original/digest",
+          "valueDigest": "sha256:e4e4d8c99eb5abd99257446e03f5497acefff14375dff6c074cf37d5d73ccc34"
+        }
+      },
+      "bindings": {
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "graph": {
+          "document": "go-dependencies",
+          "pointer": "",
+          "valueDigest": "sha256:44cc050b055c371eb4b21eefe3ceb517e901d79f8c0cf490613fd2e86fcffda5"
+        },
+        "configuration": {
+          "document": "go-node",
+          "pointer": "/runtimeLimits",
+          "valueDigest": "sha256:2e6d41ff1d074ecfff3079c760effec2c8aeb6b8092270067d7178a67179aa7e"
+        },
+        "compiler": {
+          "document": "go-observation",
+          "pointer": "/materials",
+          "valueDigest": "sha256:a33e34355f223310ec75fcd06affe2e62eae499974045b89879807b40bb8e86c"
+        },
+        "engine": {
+          "document": "go-qualification",
+          "pointer": "/native/producer/products/latentd",
+          "valueDigest": "sha256:ff96570288df4fa7ad6b38ccabc5096224ee1d8aace8e99dbee841e2f68487f0"
+        },
+        "runtime": {
+          "document": "go-runtime",
+          "pointer": "",
+          "valueDigest": "sha256:7ce76e1991d8e84414e9bae385b0076ed381911b5f051b64873c18a74e94d53f"
+        },
+        "backend": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "automaticPatches": {
+          "document": "go-transformations",
+          "pointer": "",
+          "valueDigest": "sha256:d8b974c4ca1ff5ec8be2318e6dceaa768d944c6c5c03e6c77d1202f72b682308"
+        },
+        "wit": {
+          "document": "go-wit",
+          "pointer": "",
+          "valueDigest": "sha256:4e791ca520b837036865c7343d9f9e43d36af279c8a05bec3df243381f53da9d"
+        }
+      },
+      "evidence": {
+        "kind": "actual-component",
+        "result": {
+          "document": "go-qualification",
+          "pointer": "/status",
+          "valueDigest": "sha256:94a5fc07ee2e130610140f0ca8bc72b14def780332b1b3c4d3ec6c7855e432e8"
+        },
+        "source": {
+          "document": "go-observation",
+          "pointer": "/source/snapshotDigest",
+          "valueDigest": "sha256:6d96fa21b3d022b6fc262c46670949022ccfb9ca62f39857c9183984ae42f8bb"
+        },
+        "component": {
+          "document": "go-observation",
+          "pointer": "/componentDigest",
+          "valueDigest": "sha256:222efb736f33b770c81f86cc3ca7a7259676c51a71337ccb50ea87c027374676"
+        },
+        "claims": [
+          "Unchanged published client code uses its ordinary default http.Client and affects actual domain parsing, without an injected application transport.",
+          "One fresh captured catalogue-free component passed the shared nineteen-case and four-pre-entry-refusal programme across two tenants.",
+          "Exactly fifteen authorized peer contacts and nineteen post-guest physical-owner/provider zero observations are retained with clean node shutdown.",
+          "The captured private dependency supplies ordinary goroutine/WaitGroup/time.Sleep/embed behavior; its source is not published in this catalogue."
+        ]
+      },
+      "limitations": [
+        "Each client is qualified only for its respective recorded cases; shared programme counts do not assign every case to every library.",
+        "Historical go-component-activation-v4 uses8tasks/2executors/8queue/16waits/8timers/8results/8native; no managed-v5 maintenance-accounting result is inferred.",
+        "The executed native producer is6f5, with its exact source/product evidence. Future f919 reader configuration is not a new nineteen-case execution.",
+        "The engine binding identifies the actual native node binary; no independent engine hash, allocator/kernel bound, HTTPS or production stream qualification is claimed.",
+        "The runtime-selection receipt retains its original unknown/not-evaluated scope; the separate signed receipt supplies the finite passing result."
+      ],
+      "documentsIdentity": "sha256:71c63611f7a0c06240d6713aff815ced576dc5a690780916a7430c3267419e23",
+      "identity": "sha256:dd38a3396539e3eaef1be21a7186b9e0df77d3c3f52f9cea8589f77a8b3e48bc"
     }
   ]
 }

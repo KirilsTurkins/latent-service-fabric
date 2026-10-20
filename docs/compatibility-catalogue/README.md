@@ -67,8 +67,8 @@ Version 2 adds the exact Ky 2.2.0, Wretch 3.0.9 and outside private consumer
 from the signed TypeScript phase programme at source
 `01d913aae212bd3f5dd14550d5b78187c39008bd`,
 [run 39459627034/job 118755383589](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39459627034/job/118755383589),
-artifact 12282212612. Its sixteen public documents are byte-exact original
-artifact members, including the six historical Java documents. The npm entries
+artifact 12282212612. The ten TypeScript documents and six historical Java
+documents are byte-exact original artifact members. The npm entries
 use the original captured `node_modules/ky` and `node_modules/wretch` locations
 as their bound coordinates; the adjacent version and original archive digest
 identify the packages. The private entry binds its original name, version and
@@ -82,6 +82,18 @@ selection receipts retain their original unknown/not-evaluated qualification;
 the separate signed receipt supplies the actual finite result. The catalogue
 does not infer a catalogue-absence result, new TLS qualification, native-memory
 bound or complete ticket closure from this evidence.
+
+The same edition also adds unchanged Sling v1.4.0 and Requests v0.24.3 from
+[Go run 39461611124/job 118762220036](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39461611124/job/118762220036),
+source `1ad058275522672ccd566d78ab718c5c6485a176`, artifact 12284315082.
+Seven additional byte-exact documents bind the package coordinates, original
+artifacts, captured graph, compiler/runtime transformations, WIT and signed
+nineteen-case/four-pre-entry-refusal programme. Its single component crosses
+two tenants with fifteen real peer contacts and physical/provider retirement.
+This is the original v4/6f5 execution; the maintained workflow's later f919
+acquisition configuration supplies no new guest execution. Managed-v5 accounting,
+HTTPS and production stream/kernel qualification remain separate. Version 2 now
+contains six entries backed by twenty-three original public documents.
 
 Reusable API/runtime contracts remain separate from sample package entries:
 
