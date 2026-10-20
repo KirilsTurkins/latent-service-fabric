@@ -2,7 +2,7 @@
 //! Shared with the runtime's generated-linker compatibility tests.
 #![allow(dead_code)]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use wasm_encoder::{
     Alias, ComponentOuterAliasKind, ComponentTypeRef, ComponentValType as Value, InstanceType,
     PrimitiveValType as P, TypeBounds,
@@ -71,6 +71,9 @@ fn encode_with_resources(
         host: InstanceType::new(),
         types: BTreeMap::new(),
         names: BTreeMap::new(),
+        // Only the explicit shared-owner path restricts named exports. Foreign
+        // nested definitions still encode, but are not new interface members.
+        exports: (!resources.is_empty()).then(|| interface.types.values().copied().collect()),
     };
     for (owner, name, outer) in resources {
         let (_, owner) = resolve
@@ -121,6 +124,7 @@ struct Encoder<'a> {
     host: InstanceType,
     types: BTreeMap<TypeId, Value>,
     names: BTreeMap<String, Value>,
+    exports: Option<BTreeSet<TypeId>>,
 }
 
 impl Encoder<'_> {
@@ -170,6 +174,10 @@ impl Encoder<'_> {
         // parser, arena and comparison budgets are independently exercised.
         let def = &self.resolve.types[id];
         if matches!(def.kind, TypeDefKind::Resource) {
+            assert!(
+                self.exports.as_ref().is_none_or(|ids| ids.contains(&id)),
+                "foreign fixture resources require their outer owner aliases"
+            );
             let index = self.host.type_count();
             self.host.export(
                 def.name.as_deref().expect("named fixture resource"),
@@ -250,7 +258,8 @@ impl Encoder<'_> {
             }
             _ => panic!("unsupported fixture shape"),
         };
-        let value = if let Some(name) = &def.name {
+        let visible = self.exports.as_ref().is_none_or(|ids| ids.contains(&id));
+        let value = if let Some(name) = def.name.as_ref().filter(|_| visible) {
             if let Some(existing) = self.names.get(name) {
                 // WIT `use` aliases can reuse the original exported spelling.
                 // Preserve that one type identity, not a second resource.
