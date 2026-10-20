@@ -63,3 +63,15 @@ The source correction supplies a canonical abstract HTTPS type with explicit
 unsupported construction/mutators, retaining plain HTTP identity and the
 original HTTPS factory refusal. Host type/refusal controls are source evidence;
 the corrected two-component signed gate remains required.
+
+
+The corrected `fb8209c` attempt (`39349722856` / `118390793119`) compiled
+the real Webb component, establishing the selected HTTPS type closure without
+qualifying TLS. Seven Webb cases passed before the redirect assertion: the
+published library legitimately returned `302` with a null error body, yielding
+`1:302:null`; the retained invocation records one outbound request. The fixture
+now uses Webb's ordinary `Response.ensureSuccess()` on 3xx responses to request
+the redirect refusal expected by the unchanged shared programme. It continues to
+inspect HTTP404/500 as responses and keeps `followRedirects(false)`. No library,
+provider, oracle, grant or retry behavior changed; the corrected full 26-case
+result is pending.

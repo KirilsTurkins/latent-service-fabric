@@ -47,6 +47,7 @@ public final class Capsule implements Bindings.Exports {
             }
             Response<String> response = request.asString();
             checkMessage(response);
+            if (response.getStatusCode() / 100 == 3) response.ensureSuccess();
             Object body = response.isSuccess() ? response.getBody() : response.getErrorBody();
             return invocation + ":" + response.getStatusCode() + ":" + body;
         } catch (Exception failure) {
