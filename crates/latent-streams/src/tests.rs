@@ -10,6 +10,8 @@ mod currentness;
 mod dns;
 #[cfg(unix)]
 mod fixture;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod kernel;
 #[cfg(unix)]
 mod lifecycle;
 #[cfg(unix)]

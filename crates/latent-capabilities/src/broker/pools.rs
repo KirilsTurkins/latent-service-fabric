@@ -76,6 +76,7 @@ struct Epoch {
     registration: ProviderRegistration,
     credentials: Zeroizing<Vec<u8>>,
     retired: AtomicBool,
+    quarantined: AtomicUsize,
     usage: Arc<ProviderUse>,
     _metadata: Charge,
     _slot: Charge,
@@ -106,6 +107,12 @@ impl InstalledProvider {
     #[must_use]
     pub fn is_retired(&self) -> bool {
         self.epoch.retired.load(Ordering::Acquire)
+    }
+    /// Unproved physical retirement, including original failed dial capacity.
+    /// This is not a socket-state or readiness inference.
+    #[must_use]
+    pub fn quarantined_connections(&self) -> usize {
+        self.epoch.quarantined.load(Ordering::Acquire)
     }
     #[must_use]
     pub fn logical_id(&self) -> &str {
@@ -234,6 +241,7 @@ impl ProviderPools {
             registration,
             credentials: Zeroizing::new(input.credentials.to_vec()),
             retired: AtomicBool::new(false),
+            quarantined: AtomicUsize::new(0),
             usage,
             _metadata: metadata,
             _slot: slot,

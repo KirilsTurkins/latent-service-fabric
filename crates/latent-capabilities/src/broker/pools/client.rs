@@ -40,7 +40,18 @@ impl Drop for ClientCore {
 /// provider worker lease. Dropping a socket facade is not driver termination.
 pub struct ProviderClient<T: Send + 'static> {
     pub(super) core: Arc<ClientCore>,
-    idle: Mutex<VecDeque<Idle<T>>>,
+    idle: Mutex<VecDeque<Retained<T>>>,
+}
+// One existing prepaid physical-owner table, not another admission queue.
+// Quarantine entries retain their original client Arc intentionally: losing an
+// external provider handle cannot certify unknown physical retirement.
+enum Retained<T: Send + 'static> {
+    Idle(Idle<T>),
+    Connection(PooledConnection<T>),
+    Dial {
+        reservation: ConnectionReservation<T>,
+        _value: T,
+    },
 }
 struct Idle<T> {
     physical: Physical<T>,
@@ -99,7 +110,7 @@ impl ProviderPools {
         }
         let limits = self.inner.quotas.limits()?;
         let slot = self.inner.quotas.acquire(Kind::Client, 1)?;
-        let bytes = std::mem::size_of::<Idle<T>>()
+        let bytes = std::mem::size_of::<Retained<T>>()
             .checked_mul(limits.maximum_connections_per_client)
             .and_then(|v| v.checked_add(4096))
             .ok_or_else(capacity)?;
@@ -139,9 +150,18 @@ impl<T: Send + 'static> ProviderClient<T> {
     /// Actual idle resources are destroyed outside the ownership lock. Active
     /// requests retain their separate owners until their caller drives cleanup.
     pub fn close_idle(&self) -> Result<(), PlatformError> {
-        let idle = std::mem::take(&mut *self.idle.try_lock().map_err(|_| busy())?);
-        drop(idle);
-        Ok(())
+        loop {
+            let mut idle = self.idle.try_lock().map_err(|_| busy())?;
+            let Some(index) = idle
+                .iter()
+                .position(|entry| matches!(entry, Retained::Idle(_)))
+            else {
+                return Ok(());
+            };
+            let old = idle.remove(index);
+            drop(idle);
+            drop(old);
+        }
     }
     pub fn checkout(
         self: &Arc<Self>,
@@ -165,9 +185,12 @@ impl<T: Send + 'static> ProviderClient<T> {
         ingress: Option<IngressRequest>,
     ) -> Result<Option<PooledConnection<T>>, ClientAccessError> {
         let mut idle = bookkeeping(&self.idle)?;
-        let value = idle.pop_front();
+        let value = idle
+            .iter()
+            .position(|entry| matches!(entry, Retained::Idle(_)))
+            .and_then(|index| idle.remove(index));
         drop(idle);
-        let Some(value) = value else {
+        let Some(Retained::Idle(value)) = value else {
             return Ok(None);
         };
         let owner = self.core.owner.upgrade().ok_or_else(denied)?;
@@ -258,6 +281,7 @@ impl<T: Send + 'static> ProviderClient<T> {
                 _slot: slot,
             }),
             success: false,
+            finished: false,
         })
     }
     /// Finite failure state only. Readiness never invents a background retry.
@@ -287,12 +311,22 @@ impl<T: Send + 'static> ErasedClient for ProviderClient<T> {
             let Ok(mut idle) = self.idle.try_lock() else {
                 return;
             };
-            if !idle.front().is_some_and(|entry| {
-                retired || now.saturating_duration_since(entry.since) >= maximum
-            }) {
+            let Some(index) = idle.iter().position(|entry| match entry {
+                Retained::Idle(value) => {
+                    retired || now.saturating_duration_since(value.since) >= maximum
+                }
+                Retained::Connection(owner) => {
+                    debug_assert!(owner.physical.is_some());
+                    false
+                }
+                Retained::Dial { reservation, .. } => {
+                    debug_assert!(reservation.lifetime.is_some());
+                    false
+                }
+            }) else {
                 return;
-            }
-            let old = idle.pop_front();
+            };
+            let old = idle.remove(index);
             drop(idle);
             drop(old);
         }
@@ -305,18 +339,39 @@ pub struct ConnectionReservation<T: Send + 'static> {
     maintenance: Option<MaintenanceRequest>,
     ingress: Option<IngressRequest>,
     success: bool,
+    finished: bool,
 }
 impl<T: Send + 'static> ConnectionReservation<T> {
-    pub fn connected(mut self, value: T) -> Result<PooledConnection<T>, PlatformError> {
-        if let Some(activation) = &self.activation {
-            activation.checkpoint()?;
+    pub fn connected(self, value: T) -> Result<PooledConnection<T>, PlatformError> {
+        self.connected_retaining_on_error(value)
+            .map_err(|(error, reservation, value)| {
+                drop(value);
+                drop(reservation);
+                error
+            })
+    }
+    /// A kernel adapter must retain both the original dial and actual resource
+    /// when the final currentness check fails after physical allocation.
+    #[expect(
+        clippy::type_complexity,
+        reason = "return the exact original affine owners with the failure"
+    )]
+    pub fn connected_retaining_on_error(
+        mut self,
+        value: T,
+    ) -> Result<PooledConnection<T>, (PlatformError, Self, T)> {
+        let result = if let Some(activation) = &self.activation {
+            activation.checkpoint()
         } else if let Some(ingress) = &self.ingress {
-            ingress.checkpoint()?;
+            ingress.checkpoint()
         } else {
             self.maintenance
                 .as_ref()
                 .expect("operator dial owner")
-                .checkpoint()?;
+                .checkpoint()
+        };
+        if let Err(error) = result {
+            return Err((error, self, value));
         }
         self.success = true;
         Ok(PooledConnection {
@@ -330,9 +385,23 @@ impl<T: Send + 'static> ConnectionReservation<T> {
             ingress: self.ingress.take(),
         })
     }
-}
-impl<T: Send + 'static> Drop for ConnectionReservation<T> {
-    fn drop(&mut self) {
+    /// Keep a failed/cancelled dial's original leases when its kernel object
+    /// has no final-retirement certificate. This entry can never be checked out.
+    pub fn quarantine(mut self, value: T) {
+        let lifetime = self.lifetime.as_mut().expect("dial capacity");
+        mark_failed(lifetime);
+        self.finish_dial();
+        let client = Arc::clone(&self.client);
+        client.retain_quarantine(Retained::Dial {
+            reservation: self,
+            _value: value,
+        });
+    }
+    fn finish_dial(&mut self) {
+        if self.finished {
+            return;
+        }
+        self.finished = true;
         let limits = self
             .client
             .core
@@ -358,6 +427,33 @@ impl<T: Send + 'static> Drop for ConnectionReservation<T> {
                 .min(limits.maximum_backoff);
             backoff.next = Instant::now().checked_add(duration);
         }
+    }
+}
+impl<T: Send + 'static> Drop for ConnectionReservation<T> {
+    fn drop(&mut self) {
+        self.finish_dial();
+    }
+}
+fn mark_failed(lifetime: &mut ConnectionLifetime) {
+    if !lifetime.failed {
+        lifetime.failed = true;
+        if let Some(owner) = lifetime.client.owner.upgrade() {
+            owner.failed_cleanup.fetch_add(1, Ordering::AcqRel);
+            owner.changed.notify_waiters();
+        }
+    }
+}
+impl<T: Send + 'static> ProviderClient<T> {
+    fn retain_quarantine(&self, value: Retained<T>) {
+        // Every entry already holds exactly one live connection quota. Their
+        // total is bounded before any dial, and this table was prepaid for that
+        // maximum. No user callback, allocation, retirement guess or await here.
+        let mut retained = self
+            .idle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        self.core.epoch.quarantined.fetch_add(1, Ordering::AcqRel);
+        retained.push_back(value);
     }
 }
 /// Actual connection ownership plus its original activation lease. Neither a
@@ -409,20 +505,22 @@ impl<T: Send + 'static> PooledConnection<T> {
         }
         let charge = owner.quotas.acquire(Kind::Idle, 1)?;
         let mut idle = self.client.idle.try_lock().map_err(|_| busy())?;
-        idle.push_back(Idle {
+        idle.push_back(Retained::Idle(Idle {
             physical: self.physical.take().expect("connection owner"),
             since: Instant::now(),
             capacity_guard: charge,
-        });
+        }));
         Ok(())
     }
+    /// Permanently retain unproved physical retirement in the original bounded
+    /// client table. Only a future source-authenticated platform profile may add
+    /// a sealed final-free path; ordinary close/timeout/snapshot cannot release it.
+    pub fn quarantine(mut self) {
+        self.cleanup_failed();
+        let client = Arc::clone(&self.client);
+        client.retain_quarantine(Retained::Connection(self));
+    }
     pub(super) fn cleanup_failed(&mut self) {
-        let lifetime = &mut self.physical.as_mut().expect("connection owner").lifetime;
-        if !lifetime.failed {
-            lifetime.failed = true;
-            if let Some(owner) = self.client.core.owner.upgrade() {
-                owner.failed_cleanup.fetch_add(1, Ordering::AcqRel);
-            }
-        }
+        mark_failed(&mut self.physical.as_mut().expect("connection owner").lifetime);
     }
 }
