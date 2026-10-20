@@ -51,9 +51,21 @@ TaskWait port; original C# rewrites and both filesystem method preimages remain
 unchanged. All 67 focused controls pass. The failed archive remains failed and
 provides no AOT or signed credit.
 
-The corrected programme is pending. No guest qualification is claimed from the managed
-controls. The existing sixteen-case task programme retains its cases, order,
-commands and limits; its exact port assertion now recognizes the selected finite
-mode, without claiming a new pass for historical receipts. CPU preemption,
+The corrected [owning run39507327996](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39507327996/job/118919421395)
+passed all eighteen signed outcomes and seven zero-work grant denials. Its
+[source-bound observation](evidence/dotnet-finite-task-waits-signed-2026-10-20.json)
+authenticates all 434 archive members, 98 source materials, 63 compiler recipe
+inputs and the sole final CoreLib reference. Both root-terminal cases retained
+an actual native wait-for Poll::Pending record, five live physical owners and
+provider charges before cancellation/deadline. Nineteen idle and twenty-two
+physical samples, fresh infinite-join recoveries and clean node/peer shutdown
+passed. One fresh guest was built; all native products remain attributed to the
+original fc9b44a6 Wasmtime48.0.7 producer, with exact current native-source equality.
+Four original public WIT layers omitted by the artifact glob were recovered from
+the same authenticated package blobs and checked against package-inputs.json.
+
+The existing sixteen-case task programme retains its cases, order, commands and
+limits; its exact port assertion now recognizes the selected finite mode. Its
+historical passes keep their original source attribution. CPU preemption,
 logical threads/Monitor.Wait, full queue/stack/GC accounting and background/late
 work lifecycle remain separate #746 requirements.
