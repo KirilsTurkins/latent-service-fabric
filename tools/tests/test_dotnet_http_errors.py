@@ -295,12 +295,14 @@ class RawCompilerRetentionTests(unittest.TestCase):
             "exports": {}}], "interfaces": interfaces, "types": [], "packages": packages}
 
     def compile(self, root, evidence, raw_wit):
+        from tools.tests.dotnet_filesystem_fixture import prepare as filesystem_fixture
         work = create(root / "application", "greeting")
         output = root / "compiled"
         compiler = Compiler.__new__(Compiler)
         compiler.sdk = work / "vendor/lsf/sdk/dotnet-guest"
         compiler.tools, compiler.dotnet, compiler.wasm, compiler.wac = [root / name for name in
             ("tools", "dotnet", "wasm-tools", "wac")]
+        compiler.http_error_tools = compiler.tools
         compiler.offline, compiler.wasi_sdk, compiler.generated_materials = False, root / "wasi-sdk", []
         compiler.isolation = compiler.application_closure = compiler.executable_approval = None
         compiler.python, compiler.package_cache = Path(sys.executable), compiler.tools / "packages"
@@ -330,7 +332,8 @@ class RawCompilerRetentionTests(unittest.TestCase):
         compiler.commands = SimpleNamespace(run=run, output=evidence)
         compiler.run = run
         actual_temporary = tempfile.TemporaryDirectory
-        with patch("tools.dotnet_guest.compiler.install_sdk", return_value={}), patch(
+        with patch("tools.dotnet_guest.closed_filesystem.prepare", side_effect=filesystem_fixture), patch(
+                "tools.dotnet_guest.compiler.install_sdk", return_value={}), patch(
                 "tools.dotnet_guest.compiler.tempfile.TemporaryDirectory",
                 side_effect=lambda **kwargs: actual_temporary(prefix=kwargs["prefix"], dir=root)):
             compiler.compile(work, "examples:greeting/service@1.0.0", output)

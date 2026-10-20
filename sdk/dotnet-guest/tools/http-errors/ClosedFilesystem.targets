@@ -1,0 +1,22 @@
+<Project>
+  <Target Name="LsfBindClosedFilesystem"
+          DependsOnTargets="$(LsfClosedFilesystemDependencies)"
+          AfterTargets="ComputeIlcCompileInputs;LsfBindActualTaskWait"
+          BeforeTargets="WriteIlcRspFileForCompilation"
+          Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <ItemGroup>
+      <_LsfClosedFilesystemCandidates Include="@(IlcReference)"
+          Condition="'%(IlcReference.Filename)' == 'System.Private.CoreLib' And '%(IlcReference.Extension)' == '.dll'" />
+      <_LsfClosedFilesystemUnknown Include="@(_LsfClosedFilesystemCandidates)" Exclude="$(LsfClosedFilesystemBase)" />
+    </ItemGroup>
+    <Error Condition="'@(_LsfClosedFilesystemCandidates->Count())' != '1'" Text="closed-filesystem-framework-reference-count" />
+    <Error Condition="'@(_LsfClosedFilesystemUnknown)' != ''" Text="closed-filesystem-unknown-framework-reference" />
+    <Error Condition="!Exists('$(LsfClosedFilesystemAssembly)')" Text="closed-filesystem-missing-derived-assembly" />
+    <ItemGroup>
+      <IlcReference Remove="@(_LsfClosedFilesystemCandidates)" />
+      <IlcReference Include="$(LsfClosedFilesystemAssembly)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(LsfClosedFilesystemReferenceReceipt)"
+        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+  </Target>
+</Project>

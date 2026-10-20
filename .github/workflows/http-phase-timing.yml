@@ -64,6 +64,7 @@ jobs:
         run: |
           cargo test --locked -p latent-core --lib host_profile::phase_timing_tests:: -- --nocapture
           cargo test --locked -p latent-http --lib tests::phase_timing:: -- --nocapture
+          cargo test --locked -p latent-http --lib reason_ -- --nocapture
       - name: Check exact semantic and prepared component contracts
         run: |
           cargo test --locked -p latent-packaging --lib phase_semantics_bind_original_resource_owners_and_exact_versioned_extension -- --nocapture

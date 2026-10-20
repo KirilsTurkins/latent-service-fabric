@@ -267,7 +267,8 @@ class SeparateEntropySelection(unittest.TestCase):
         self.assertEqual(source.count('"wasi:random/insecure@0.2.6": runtime1'), 1)
         self.assertNotIn('"wasi:random/insecure@0.2.0":', source)
         materials = {row["name"] for row in compiler.generated_materials}
-        self.assertEqual(materials, {"runtime-composition", "runtime-composition-source", "dotnet-closed-io-port"})
+        self.assertEqual(materials, {"runtime-composition", "runtime-composition-source", "dotnet-closed-io-port",
+            "closed-filesystem-derived-corelib", "dotnet-closed-filesystem-port"})
         self.assertEqual(result["runtimeProfile"]["profile"], "closed")
         self.assertEqual(result["runtimeProfile"]["additionalAdapters"][0]["name"], "noncrypto-entropy")
         receipt = json.loads((fixture.evidence / "closed-runtime-coverage.json").read_bytes())

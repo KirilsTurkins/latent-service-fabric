@@ -1,0 +1,65 @@
+{
+  "allKnownAndReaped": true,
+  "archiveBytes": 8968022,
+  "archiveDigest": "sha256:3deec64827602b3c5892757a16c9f98cdd2b05de0356db0d212c2490b50b237b",
+  "archiveMembers": 716,
+  "argumentCategories": {
+    "argument-access": "argument-out-of-range",
+    "argument-combination": "argument",
+    "argument-empty": "argument",
+    "argument-mode": "argument-out-of-range",
+    "argument-nul": "argument",
+    "argument-null": "argument-null"
+  },
+  "artifact": 12242646393,
+  "builds": {
+    "joined": {
+      "buildObservationDigest": "sha256:9aa455741513f7c1f2494d2d965ca309738859ed5c451b9c9599797181981987",
+      "component": {
+        "bytes": 2098426,
+        "path": "dotnet-closed-filesystem-replay/joined/build/component.wasm",
+        "sha256": "sha256:2764a1b36bf109d14d521a69cbb4fa212266b1811dd5e5acf71b45ccb4f905b2"
+      },
+      "coreLibDigest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb",
+      "currentApplicationInputsEqual": true,
+      "originalBuildMarkerPreserved": true,
+      "sourceDigest": "sha256:425887961fb3709e9e4f877e744e726a20349b8a39f83d150b60c4e2ffc4c537",
+      "sourceRows": 134
+    },
+    "pure": {
+      "buildObservationDigest": "sha256:508d84fda07ccadf9d17f649e029760284cf25d6fb0d3a3db344ba95f1db0f76",
+      "component": {
+        "bytes": 2018541,
+        "path": "dotnet-closed-filesystem-replay/pure/build/component.wasm",
+        "sha256": "sha256:d436d3b9a47636a15b39115c34171d3401a1ecab643da8a82a2f6ac1058812e3"
+      },
+      "coreLibDigest": "sha256:953314dee4f7c25f202b2d44536c6c84439aa3042cb7a2ccc95ee7a74227d43b",
+      "currentApplicationInputsEqual": true,
+      "originalBuildMarkerPreserved": true,
+      "sourceDigest": "sha256:ae5e78907fa796fad6df7889714b19e26b41bd68ee3637db06ff5a9a0200fa98",
+      "sourceRows": 133
+    }
+  },
+  "caughtUnsupported": [
+    "open",
+    "create",
+    "temp"
+  ],
+  "fullTicketQualification": false,
+  "job": 118461535088,
+  "jobConclusion": "failure",
+  "joined40CorrectedReplay": "pending",
+  "joinedError": "incompatible-contract",
+  "joinedPhase": "failed-before-entry",
+  "nodeCleanAndReaped": true,
+  "physicalSamples": 36,
+  "pureInvocations": 39,
+  "purePhase": "passed",
+  "pureWorkflowDigest": "sha256:f6a12f9200dcb3769909a24d2966d372b49d5d2abc2733a1afefbe439d01aa0f",
+  "run": 39371941107,
+  "schemaVersion": "latent.dotnet.closed-filesystem.pure-observation.v1",
+  "source": "cd6e9ac279f14efe39370f3ece5a338a56d4e617",
+  "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39371941107/job/118461535088",
+  "writableScratchImplemented": false,
+  "zeroActiveOwnerSamples": 18
+}

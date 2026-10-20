@@ -45,7 +45,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, dotnet_task_runtime=False, standard_typescript_clocks=False, standard_scratch_refusal=False, dotnet_published_tasks=False):
+        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, dotnet_task_runtime=False, standard_typescript_clocks=False, standard_scratch_refusal=False, dotnet_published_tasks=False, dotnet_scratch_task_runtime=False):
+    require(type(dotnet_scratch_task_runtime) is bool and (not dotnet_scratch_task_runtime or
+            (language == 'dotnet' and standard_scratch_refusal is True)), 'authoring-dotnet-scratch-task-runtime-selection')
     require(type(dotnet_published_tasks) is bool and (not dotnet_published_tasks or (
         language == 'dotnet' and not (standard_scratch_refusal or dotnet_task_runtime or noncrypto_entropy or dotnet_standard_entropy
             or dotnet_standard_logging or dotnet_reflection or dotnet_reflection_boundaries
@@ -198,6 +200,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     from tools.dotnet_task_runtime_probe import configure as configure_managed_tasks
                     configure_managed_tasks(settings)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if dotnet_scratch_task_runtime:
+                    from tools.dotnet_filesystem_runtime import configure as configure_filesystem_tasks
+                    configure_filesystem_tasks(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 if standard_typescript_clocks:
                     from tools.typescript_standard_clock_probe import configure as configure_clocks
                     configure_clocks(settings)
@@ -246,6 +252,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if dotnet_task_runtime or dotnet_published_tasks:
                         from tools.dotnet_task_runtime_probe import grant as grant_managed_tasks
                         grant_managed_tasks(client, node, fixture, targets, publications, result)
+                    if dotnet_scratch_task_runtime:
+                        from tools.dotnet_filesystem_runtime import grant as grant_filesystem_tasks
+                        grant_filesystem_tasks(client, node, fixture, targets, publications, result)
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import admission as entropy_admission
                         entropy_admission(client, fixture, targets, publications, result)

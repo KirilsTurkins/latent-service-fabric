@@ -77,6 +77,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     started, start = int(time.time()), time.monotonic()
     try:
         files, dependency_root = build_inputs(project_path)
+        guest_resources.select(files)
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe_files = {path: read_file(ROOT / path) for path in RECIPE}

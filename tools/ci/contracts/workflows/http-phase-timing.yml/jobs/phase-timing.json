@@ -31,7 +31,7 @@
       },
       {
         "name": "Check frozen profiles and real TCP TLS phase retirement",
-        "run": "cargo test --locked -p latent-core --lib host_profile::phase_timing_tests:: -- --nocapture\ncargo test --locked -p latent-http --lib tests::phase_timing:: -- --nocapture\n"
+        "run": "cargo test --locked -p latent-core --lib host_profile::phase_timing_tests:: -- --nocapture\ncargo test --locked -p latent-http --lib tests::phase_timing:: -- --nocapture\ncargo test --locked -p latent-http --lib reason_ -- --nocapture\n"
       },
       {
         "name": "Check exact semantic and prepared component contracts",
@@ -50,7 +50,7 @@
   },
   "jobId": "phase-timing",
   "kind": "job",
-  "reviewReason": "Run fifteen additive exact HTTP phase controls over real sockets and fresh component Stores without changing any prior command or deadline.",
+  "reviewReason": "Retain all phase controls and add the four actual HTTP reason parser/prepaid lifetime cases from the reviewed carrier leaf.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/http-phase-timing.yml"
 }
