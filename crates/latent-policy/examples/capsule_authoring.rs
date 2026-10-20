@@ -14,6 +14,12 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args_os().skip(1).collect::<Vec<_>>();
+    if args.len() == 3 && args[0] == "demo-sign-neutral-resources" {
+        return authoring::sign_neutral_resources(
+            std::path::Path::new(&args[1]),
+            std::path::Path::new(&args[2]),
+        );
+    }
     if args.len() == 3 && args[0] == "fixture-sign-shared-java-server" {
         return authoring::sign_shared_server(
             std::path::Path::new(&args[1]),

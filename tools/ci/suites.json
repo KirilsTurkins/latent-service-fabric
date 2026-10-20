@@ -1372,6 +1372,9 @@
         "broker::clock::window::tests::one_checked_window_never_extends_the_original_deadline",
         "broker::clock::window::tests::only_the_exact_busy_constructor_can_wait",
         "broker::currentness::tests::only_exact_authority_bookkeeping_contention_is_waitable",
+        "broker::http::refusal::tests::disabled_unrelated_and_overbound_observations_cannot_leak_or_expand_capture",
+        "broker::http::refusal::tests::exact_busy_capacity_and_active_dial_are_closed_static_witnesses",
+        "broker::http::refusal::tests::writer_failure_preserves_the_original_typed_error_and_borrowed_source",
         "broker::io::tests::all_limit_dimensions_have_finite_hard_ceilings",
         "broker::io::tests::an_unbounded_store_deadline_cannot_admit_host_io",
         "broker::io::tests::bounded_ring_backpressures_without_spawning_and_preserves_order",
@@ -1548,7 +1551,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 173,
+      "minimumCases": 176,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -4434,14 +4437,17 @@
         "authoring::current_java::refreshed::tests::refreshed_current_mode_refuses_relative_input_before_read_or_output",
         "authoring::current_java::refreshed::tests::refreshed_current_mode_keeps_forbidden_capture_unsigned_before_output",
         "authoring::current_java::refreshed::tests::refreshed_current_mode_refuses_existing_or_relative_output_before_inputs",
-        "authoring::inputs::tests::shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle"
+        "authoring::inputs::tests::shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle",
+        "authoring::resource_neutral::tests::neutral_resource_scope_preserves_component_world_exports_and_original_documents",
+        "authoring::resource_neutral::tests::neutral_resource_scope_refuses_foreign_scoped_names_and_new_grants",
+        "authoring::resource_neutral::tests::neutral_resource_derivation_refuses_changed_original_inventory_and_reserved_assets"
       ],
       "expectedIgnored": [],
       "id": "latent-policy.example.capsule-authoring",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 38,
+      "minimumCases": 41,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [

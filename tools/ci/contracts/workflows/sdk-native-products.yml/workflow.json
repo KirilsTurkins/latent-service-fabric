@@ -1,0 +1,27 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "sdk-native-products-${{ github.ref }}"
+    },
+    "name": "SDK current native products",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/sdk-current-native-products-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "products"
+  ],
+  "reviewReason": "Build only the five normal managed-guest native products after the separately native-tested activation-runtime alias change, using the original locked Cargo package/example selection and assertions/overflow policy. Bound original owned commands, preserve source/material identities before/after, copy/hash every actual product, and label product-build-only with no guest compilation or signed/release qualification. Required for current-node cross-tenant SDK calls; preserve all existing normal programmes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/sdk-native-products.yml"
+}
