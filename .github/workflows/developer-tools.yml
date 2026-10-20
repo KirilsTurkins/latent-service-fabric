@@ -334,6 +334,8 @@ jobs:
           path: |
             ${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json
             ${{ runner.temp }}/dotnet-dependency-watch/ci-account.json
+            ${{ runner.temp }}/dotnet-dependency-watch/initial-build.stdout
+            ${{ runner.temp }}/dotnet-dependency-watch/initial-build.stderr
             ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stdout
             ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stderr
           if-no-files-found: warn
