@@ -99,6 +99,80 @@ class WitPackageProfileTests(unittest.TestCase):
             self.assertIn("neither interface nor world", validator.ERRORS[0])
 
 
+class AuthenticatedUpstreamPlaceholderTests(unittest.TestCase):
+    def setUp(self) -> None:
+        validator.ERRORS.clear()
+
+    def tearDown(self) -> None:
+        validator.ERRORS.clear()
+
+    @staticmethod
+    def fixture(root: Path) -> None:
+        import shutil
+        from tools import host_stream_tls_provider as provider
+
+        for name in ("Cargo.toml", "Cargo.lock", provider.RECORD,
+                     "crates/latent-streams/Cargo.toml", "crates/latent-streams/src/tls.rs",
+                     "sdk/host-stream-tls/rustls-0.23.46-bounds/PATCH.json"):
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((provider.ROOT / name).read_bytes())
+        shutil.copytree(provider.ROOT / provider.PROVIDER, root / provider.PROVIDER)
+
+    def test_exact_current_upstream_five_paths_and_fifteen_occurrences_are_authenticated(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            with patch.object(validator, "ROOT", root):
+                allowed = validator.authenticated_upstream_placeholders()
+                self.assertEqual(len(allowed), 5)
+                self.assertEqual(sum(sum(counts.values()) for counts in allowed.values()), 15)
+                files = [path for path in validator.iter_source_files(root) if path.suffix == ".rs"]
+                with patch.object(validator, "files_with_suffix", return_value=files):
+                    validator.validate_interface_only_policy()
+            self.assertEqual(validator.ERRORS, [])
+
+    def test_source_token_count_or_new_vendor_path_drift_cannot_receive_an_allowance(self) -> None:
+        for kind in ("source", "token", "count", "new-path"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                self.fixture(root)
+                path = root / "crates/vendor/rustls-outbound/src/verify.rs"
+                raw = path.read_bytes()
+                if kind == "source":
+                    path.write_bytes(raw + b"\n// unauthenticated source change\n")
+                elif kind == "token":
+                    path.write_bytes(raw.replace(b"unimplemented!", b"todo!", 1))
+                elif kind == "count":
+                    path.write_bytes(raw + b"\nfn added() { unimplemented!(); }\n")
+                else:
+                    (path.parent / "unreviewed.rs").write_bytes(b"fn added() { todo!(); }\n")
+                validator.ERRORS.clear()
+                files = [path for path in validator.iter_source_files(root) if path.suffix == ".rs"]
+                with patch.object(validator, "ROOT", root), \
+                        patch.object(validator, "files_with_suffix", return_value=files):
+                    self.assertEqual(validator.authenticated_upstream_placeholders(), {})
+                    validator.validate_interface_only_policy()
+                self.assertTrue(any("source authentication failed" in error for error in validator.ERRORS))
+                self.assertTrue(any("implementation placeholder token" in error for error in validator.ERRORS))
+
+    def test_owned_placeholder_and_copied_upstream_path_remain_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            owned = root / "crates/owned/src"
+            owned.mkdir(parents=True)
+            (owned / "lib.rs").write_bytes(b"fn incomplete() { todo!(); }\n")
+            (owned / "verify.rs").write_bytes(
+                (root / "crates/vendor/rustls-outbound/src/verify.rs").read_bytes())
+            files = [path for path in validator.iter_source_files(root) if path.suffix == ".rs"]
+            with patch.object(validator, "ROOT", root), \
+                    patch.object(validator, "files_with_suffix", return_value=files):
+                validator.validate_interface_only_policy()
+            self.assertEqual(len(validator.ERRORS), 2)
+            self.assertTrue(all("crates" in error and "owned" in error for error in validator.ERRORS))
+
+
 class SourceTraversalTests(unittest.TestCase):
     def setUp(self) -> None:
         validator.ERRORS.clear()
