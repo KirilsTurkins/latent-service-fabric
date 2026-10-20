@@ -158,6 +158,10 @@ on:
         description: Re-sign unchanged02f components and qualify the explicit zero-input policy ceiling
         type: boolean
         default: false
+      qualify-scratch-refusals:
+        description: Require reachable node:fs refusal using existing authenticated native tools
+        type: boolean
+        default: false
       qualify-standard-clocks:
         description: Build two ordinary clock probes using original engine and native products
         type: boolean
@@ -183,7 +187,7 @@ env:
 
 jobs:
   source-splicer:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks && !inputs.qualify-scratch-refusals }}
     name: Source-owned asynchronous import compiler
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -381,7 +385,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   boundary:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks && !inputs.qualify-scratch-refusals }}
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -913,3 +917,61 @@ jobs:
             ${{ runner.temp }}/typescript-standard-clocks/node/controls/*.json
           if-no-files-found: warn
           retention-days: 7
+  scratch-refusals:
+    name: Captured outside node:fs open create and temp refusal
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-scratch-refusals }}
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install original compiler namespace prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install -r tools/requirements.lock
+      - name: Check reachable bundle refusal and historical tool guards
+        run: python3 -B -m unittest tools.tests.test_typescript_scratch_refusals tools.tests.test_typescript_scratch_replay
+      - name: Install normal pinned public compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-scratch-tools"
+      - name: Acquire only existing authenticated public products
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs "$RUNNER_TEMP/typescript-scratch-original-inputs"
+      - name: Compile three actual reachable outside filesystem calls and require refusal
+        run: >-
+          python3 -B tools/run_typescript_scratch_refusals.py
+          --acquired "$RUNNER_TEMP/typescript-scratch-original-inputs"
+          --tools "$RUNNER_TEMP/typescript-scratch-tools"
+          --output "$RUNNER_TEMP/typescript-scratch-refusals"
+      - name: Retain bounded public refusal and source identity receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-scratch-refusals-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-scratch-original-inputs/acquisition.json
+            ${{ runner.temp }}/typescript-scratch-refusals/qualification.json
+            ${{ runner.temp }}/typescript-scratch-refusals/FAILED.json
+            ${{ runner.temp }}/typescript-scratch-refusals/historical-inputs.json
+            ${{ runner.temp }}/typescript-scratch-refusals/*/build/BUILD-FAILED.json
+            ${{ runner.temp }}/typescript-scratch-refusals/*/build/recipe-inputs.json
+            ${{ runner.temp }}/typescript-scratch-refusals/*/build/compiler-inputs.json
+            ${{ runner.temp }}/typescript-scratch-refusals/*/build/source-inputs.json
+          if-no-files-found: warn
+          retention-days: 3
