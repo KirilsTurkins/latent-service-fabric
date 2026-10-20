@@ -1,0 +1,70 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Standalone fixed topology capacity and exact byte precharge",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Execute full fixed topology and exact selected Vec precharge",
+        "run": "set -o pipefail\ncargo test --locked -p latentd --lib standalone::observations::topology::tests:: -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test result: ok. 5 passed; 0 failed; 0 ignored;' \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row ... ok' \"$RUNNER_TEMP/standalone-topology.log\"\ngrep -F 'test standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity ... ok' \"$RUNNER_TEMP/standalone-topology.log\"\n"
+      },
+      {
+        "name": "Verify standalone derivation retains generic and snapshot byte limits",
+        "run": "set -o pipefail\ncargo test --locked -p latentd --lib config::tests::defaults_derive_compatible_node_limits_without_creating_storage -- --exact --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/standalone-topology-config.log\"\ngrep -F 'test result: ok. 1 passed; 0 failed; 0 ignored;' \"$RUNNER_TEMP/standalone-topology-config.log\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain exact reporter and capacity results",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "standalone-topology-capacity-${{ github.sha }}",
+          "path": "${{ runner.temp }}/standalone-topology.log\n${{ runner.temp }}/standalone-topology-config.log\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "topology",
+  "kind": "job",
+  "reviewReason": "Require all five exact topology tests and one config test, including both new cases; no zero-test or ignored success. Original reference job and its limits remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/node-worker-stacks.yml"
+}

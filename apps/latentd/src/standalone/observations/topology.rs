@@ -7,10 +7,11 @@ use latent_scheduler::{CellClass, LocalScheduler};
 use latent_wasmtime::{RuntimeResourceSnapshot, WasmtimeBackend};
 use latent_wire::invocation::ActivationCleanupHandle;
 
-use crate::config::NodeSettings;
+use crate::config::{topology as capacity, NodeSettings};
 use crate::standalone::transport::{TransportHandle, TransportSnapshot};
 
 mod catalog;
+mod optional;
 
 pub(in crate::standalone) struct TopologySource {
     limits: Limits,
@@ -101,22 +102,12 @@ impl TopologySource {
         if let Some(handle) = &self.policies {
             if !write_rows(
                 writer,
-                [
-                    row(
-                        "capability-policy-control-jobs",
-                        "command",
-                        ResourceOwnership::NodeFixed,
-                        count(handle.maximum_jobs()),
-                        Some(count(handle.active_jobs())),
-                    ),
-                    row(
-                        "capability-policy-read-owners",
-                        "response-or-snapshot",
-                        ResourceOwnership::NodeFixed,
-                        count(handle.store().limits().maximum_read_owners + 4),
-                        Some(count(handle.store().retained_read_owners())),
-                    ),
-                ],
+                optional::policy_rows(
+                    handle.maximum_jobs(),
+                    handle.active_jobs(),
+                    handle.store().limits().maximum_read_owners,
+                    handle.store().retained_read_owners(),
+                ),
             )? {
                 return Ok(false);
             }
@@ -128,8 +119,11 @@ impl TopologySource {
 impl NodeTopologySource for TopologySource {
     fn snapshot(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
         if let Some(catalog) = &self.catalog {
-            if !writer.push(&catalog::entry(catalog))? {
-                return Ok(false);
+            let entries: [NodeTopologyEntry; capacity::CATALOG_ROWS] = [catalog::entry(catalog)];
+            for entry in entries {
+                if !writer.push(&entry)? {
+                    return Ok(false);
+                }
             }
         }
         if !self.http_rows(writer)? {
@@ -170,60 +164,13 @@ impl NodeTopologySource for TopologySource {
             let snapshot = handle.snapshot();
             if !write_rows(
                 writer,
-                [
-                    row(
-                        "rollout-coordinator",
-                        "blocking-task",
-                        ResourceOwnership::NodeFixed,
-                        1,
-                        Some(u64::from(snapshot.worker_live)),
-                    ),
-                    row(
-                        "rollout-control-commands",
-                        "command",
-                        ResourceOwnership::NodeFixed,
-                        count(handle.limits().maximum_queued_commands.saturating_add(1)),
-                        Some(count(snapshot.queued_commands + snapshot.active_commands)),
-                    ),
-                ],
+                optional::rollout_rows(handle.limits().maximum_queued_commands, snapshot),
             )? {
                 return Ok(false);
             }
             if let (Some(limits), Some(snapshot)) = (self.limits.canary, handle.canary_snapshot()?)
             {
-                return write_rows(
-                    writer,
-                    [
-                        row(
-                            "canary-observation-windows",
-                            "window",
-                            ResourceOwnership::NodeFixed,
-                            count(limits.maximum_series),
-                            Some(count(snapshot.tracked_series)),
-                        ),
-                        row(
-                            "canary-retained-samples",
-                            "sample",
-                            ResourceOwnership::NodeFixed,
-                            count(limits.maximum_total_samples),
-                            Some(count(snapshot.total_samples)),
-                        ),
-                        row(
-                            "canary-live-samples",
-                            "sample",
-                            ResourceOwnership::NodeFixed,
-                            count(limits.maximum_live_samples),
-                            Some(count(snapshot.live_samples)),
-                        ),
-                        row(
-                            "canary-snapshot-owners",
-                            "snapshot",
-                            ResourceOwnership::NodeFixed,
-                            count(limits.maximum_snapshot_owners),
-                            Some(count(snapshot.snapshot_owners)),
-                        ),
-                    ],
-                );
+                return write_rows(writer, optional::canary_rows(limits, snapshot));
             }
         }
         Ok(true)
@@ -294,7 +241,7 @@ fn rows(limits: Limits, observed: Observed) -> impl Iterator<Item = Row> {
         .chain(service_rows())
 }
 
-fn node_rows(limits: Limits, observed: Observed) -> [Row; 13] {
+fn node_rows(limits: Limits, observed: Observed) -> [Row; capacity::NODE_ROWS] {
     use ResourceOwnership::NodeFixed;
     [
         row("standalone-node", "process", NodeFixed, 1, Some(1)),
@@ -385,7 +332,7 @@ fn node_rows(limits: Limits, observed: Observed) -> [Row; 13] {
     ]
 }
 
-fn activation_rows(limits: Limits, observed: Observed) -> [Row; 8] {
+fn activation_rows(limits: Limits, observed: Observed) -> [Row; capacity::ACTIVATION_ROWS] {
     use ResourceOwnership::ActivationScoped;
     let resources = observed.resources;
     [
@@ -448,7 +395,7 @@ fn activation_rows(limits: Limits, observed: Observed) -> [Row; 8] {
     ]
 }
 
-fn service_rows() -> [Row; 3] {
+fn service_rows() -> [Row; capacity::SERVICE_ROWS] {
     use ResourceOwnership::ServiceResident;
     [
         // These are architectural zeros for this standalone composition, not a
@@ -508,46 +455,7 @@ impl TopologySource {
     fn http_rows(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
         if let Some(http) = &self.http {
             let s = http.snapshot();
-            if !write_rows(
-                writer,
-                [
-                    row(
-                        "http-listener",
-                        "listener",
-                        ResourceOwnership::NodeFixed,
-                        1,
-                        Some(u64::from(s.listener_alive)),
-                    ),
-                    row(
-                        "http-owner",
-                        "task",
-                        ResourceOwnership::NodeFixed,
-                        1,
-                        Some(u64::from(s.owner_alive)),
-                    ),
-                    row(
-                        "http-connections",
-                        "connection",
-                        ResourceOwnership::NodeFixed,
-                        count(s.maximum_connections),
-                        Some(count(s.connections)),
-                    ),
-                    row(
-                        "http-exchanges",
-                        "exchange",
-                        ResourceOwnership::NodeFixed,
-                        count(s.maximum_exchanges),
-                        Some(count(s.exchanges)),
-                    ),
-                    row(
-                        "http-buffer-reservations",
-                        "byte",
-                        ResourceOwnership::NodeFixed,
-                        count(s.maximum_buffer_bytes),
-                        Some(count(s.reserved_buffer_bytes)),
-                    ),
-                ],
-            )? {
+            if !write_rows(writer, optional::http_rows(s))? {
                 return Ok(false);
             }
         }
