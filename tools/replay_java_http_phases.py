@@ -35,7 +35,7 @@ PINS = 'tools/fixtures/java-http-phase-prepared-aa56.json'
 PREFIX = 'java-http-phases/campaign/build/'
 CHANGES = {
     'tools/java_http_phase_node.py': 'sha256:3842a061ebcbbb44f06ef7092dcc5650a6f3b1071da7dd9800e99110a6173044',
-    'tools/java_http_tenant_node.py': 'sha256:276bfbea12fc54471450d0142394440cc68b1838856a80bc62a3b3bf7192652c'}
+    'tools/java_http_tenant_node.py': 'sha256:f59aa9f438418cab374e4d62f6670307c52bc42b12df438540f91cda09d4fcc1'}
 
 
 def pins():
@@ -127,7 +127,7 @@ def source_proof(build):
         if current['sha256'] != digest(data):
             require(CHANGES.get(name) == current['sha256'], 'java-phase-replay-unreviewed-source-change')
             changed[name] = {'compiled': {'sha256': digest(data), 'bytes': size}, 'fixture': current,
-                'scope': 'explicit-operator-and-node-component-input-ceilings-only'}
+                'scope': 'reviewed-input-profiles-and-opt-in-closed-tenant-observer'}
     require(position == len(raw) and set(changed) == set(CHANGES), 'java-phase-replay-source-change-scope')
     return {'compiledFeature': SOURCE, 'compiledTestedSource': TESTED, 'recipeFilesExact': len(recipe), 'capturedSdkFilesExact': len(vendor),
         'fixtureAndCompilerMaterialsCompared': len(names), 'reviewedControllerChanges': changed,
@@ -217,10 +217,36 @@ def run(output, prepared, native):
     write_json(output/'qualification.json', result);return result
 
 
+def run_tenants(output, prepared, native):
+    """Explicit diagnostic subset; the default full programme above is unchanged."""
+    output = fresh(output);history = read_json(prepared/'retrieval.json')
+    before = validate_build(prepared/'build');native_before = verify_native(native);identity = native_source(native)
+    current = {name: file_identity(ROOT/name) for name in (*MATERIALS, PINS, 'tools/replay_java_http_phases.py')}
+    require(history['artifact'] == ARTIFACT and history['build'] == before, 'java-phase-replay-prepared-drift')
+    deadline = time.monotonic()+900;binaries = native_products(native)
+    tenants = tenant_controls(prepared/'build', {n:binaries[n] for n in ('latent','latentd','capsule_authoring')},
+        output/'tenants', deadline=deadline, diagnostic=True)
+    require(tenants['status'] == 'passed' and len(tenants['cases']) == tenants['invocations'] == 12
+        and tenants['httpContacts'] == 10, 'java-phase-replay-original-tenant-cases')
+    require(before == validate_build(prepared/'build') and native_before == verify_native(native)
+        and identity == native_source(native) and current == {n:file_identity(ROOT/n) for n in current}
+        and time.monotonic() < deadline, 'java-phase-replay-final-material-drift')
+    result = {'schemaVersion': 'latent.java.http.tenant-prepared-replay.v1', 'status': 'passed',
+        'originalBuild': history, 'native': native_before, 'nativeProductionSourceProof': identity,
+        'fixtureSource': subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+        'guestComponentsCompiledByReplay': 0, 'nativeProductsCompiledByReplay': 0,
+        'defaultPhaseProgrammeExecuted': False, 'freshOrdinarySigning': True,
+        'historicalReceiptRewritten': False, 'outcomes': 12, 'httpContacts': 10,
+        'tenants': file_identity(output/'tenants/qualification.json'), 'materials': current,
+        'full688Qualified': False}
+    write_json(output/'qualification.json', result);return result
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__);parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--prepare', action='store_true');parser.add_argument('--prepared', type=Path)
-    parser.add_argument('--native', type=Path);args = parser.parse_args()
+    parser.add_argument('--native', type=Path);parser.add_argument('--tenant-only', action='store_true');args = parser.parse_args()
     require(sys.platform == 'linux' and ROOT not in args.output.absolute().parents, 'java-phase-replay-owned-linux-output')
     if args.prepare: prepare(args.output)
+    elif args.tenant_only: run_tenants(args.output, args.prepared, args.native)
     else: run(args.output, args.prepared, args.native)

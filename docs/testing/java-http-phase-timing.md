@@ -255,3 +255,26 @@ profiles without private configuration. Execution, provider, cache and cell
 budgets and all ordinary defaults remain unchanged. A fresh owned node and
 fresh ordinary signing can reuse the authenticated component and package;
 signed Java outcomes remain pending.
+
+
+Prepared replay source `5211438ff692bcc1066bb1675b3f88924b3650be` passed
+**16 signed default/phase cases and two zero-work grant denials**, with thirteen
+real peer contacts. Artifact `12295264122` (run `39489934505`, job `118860114936`)
+retains every per-case identity/physical snapshot plus raw clean/reaped shutdown,
+stopped peer and unchanged products. All 295 ZIP members were independently
+CRC/hash checked. The outer job remains **failed**: its later tenant programme's
+first authorized Webb call ended after 120 seconds with a dispatched,
+outcome-unknown gRPC cancellation. Only its earlier foreign-grant denial passed.
+The cause is unproven; neither a successful tenant matrix nor a retry is claimed.
+
+The explicit default-false tenant-only diagnostic selector reuses that same
+original component/package on another fresh owned node, without repeating the
+passed default/phase programme or compiling anything. All twelve tenant outcomes
+and their original budgets remain mandatory. While an invocation is still
+pending it can retain at most three observations, scheduled at 15/45/75 seconds:
+read-only activation/capability/node queries (1.5-second RPC and 2-second process
+limits), numeric peer/process ownership snapshots and the existing closed native
+refusal markers. Unknown or unavailable observations remain non-witnesses;
+metadata, payloads, credentials, arguments and private paths are not projected.
+The normal full programme remains the default, with its original command and
+all identity/final-cleanup gates intact.

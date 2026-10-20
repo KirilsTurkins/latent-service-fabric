@@ -7,7 +7,10 @@
     "JavaHttpTenantTests.test_neutral_deployment_never_inherits_tenant_or_grants_and_keeps_original_immutable",
     "JavaHttpTenantTests.test_neutral_signing_keeps_actual_component_and_all_original_compiler_materials",
     "JavaHttpTenantTests.test_result_guard_distinguishes_root_cancellation_phase_timeout_and_uncaught_origin_refusal",
-    "JavaHttpTenantTests.test_startup_failure_preserves_primary_cause_and_writes_closed_failed_stage_despite_cleanup_error"
+    "JavaHttpTenantTests.test_startup_failure_preserves_primary_cause_and_writes_closed_failed_stage_despite_cleanup_error",
+    "JavaTenantPendingObservations.test_exact_three_pending_slots_use_only_bounded_read_commands_and_never_replay",
+    "JavaTenantPendingObservations.test_projection_rejects_unknown_states_boolean_counters_and_private_metadata",
+    "JavaTenantPendingObservations.test_refused_observation_and_read_failure_never_become_progress_or_original_error"
   ],
   "guards": {
     "JavaHttpTenantTests.test_changed_single_cell_or_preexisting_additional_installation_is_refused": {
@@ -105,10 +108,46 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "JavaTenantPendingObservations.test_exact_three_pending_slots_use_only_bounded_read_commands_and_never_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6a6539121e067b60113988329bc2976238da18a86cc5450b59e18b30d79ca4c3",
+        "class:setup-sha256:a1016d868e5d42793c02a34c399d4fc6411b3d5de50b425982c91d03d652eeea"
+      ],
+      "skipSites": []
+    },
+    "JavaTenantPendingObservations.test_projection_rejects_unknown_states_boolean_counters_and_private_metadata": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6a6539121e067b60113988329bc2976238da18a86cc5450b59e18b30d79ca4c3",
+        "class:setup-sha256:a1016d868e5d42793c02a34c399d4fc6411b3d5de50b425982c91d03d652eeea"
+      ],
+      "skipSites": []
+    },
+    "JavaTenantPendingObservations.test_refused_observation_and_read_failure_never_become_progress_or_original_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6a6539121e067b60113988329bc2976238da18a86cc5450b59e18b30d79ca4c3",
+        "class:setup-sha256:a1016d868e5d42793c02a34c399d4fc6411b3d5de50b425982c91d03d652eeea"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_tenants.py",
-  "reviewReason": "Add eight finite Java same-node HTTP controller controls; original client, capacity, signing and cleanup gates retained; no native execution credit.",
+  "reviewReason": "Explicitly reviewed default-false tenant-only diagnostic: retain the entire defaultFULL command/900s bound, select only12 strict tenant cases when requested, and add exactly3 closed15/45/75s observations with no mutations or budget changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

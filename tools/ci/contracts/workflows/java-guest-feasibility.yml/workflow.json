@@ -47,6 +47,11 @@
             "description": "Fresh signing and node programme on exact retained aa56 Java component",
             "type": "boolean"
           },
+          "java_http_tenant_only": {
+            "default": false,
+            "description": "Run only strict tenant outcomes with three closed pending observations",
+            "type": "boolean"
+          },
           "qualify-scratch-refusals": {
             "default": false,
             "description": "Run the unchanged normal Java prerequisite and separate filesystem refusal packet",
@@ -66,7 +71,7 @@
     "resource-conformance",
     "scratch-refusals"
   ],
-  "reviewReason": "Add default-false manual-only aa56 prepared-node lane on dispatchable existing workflow; original default/PR workflow exactly restored after removing new lane/input/two manual exclusions.",
+  "reviewReason": "Explicitly reviewed default-false tenant-only diagnostic: retain the entire defaultFULL command/900s bound, select only12 strict tenant cases when requested, and add exactly3 closed15/45/75s observations with no mutations or budget changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

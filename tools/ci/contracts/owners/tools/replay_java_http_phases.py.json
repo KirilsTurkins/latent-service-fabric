@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_java_http_phases.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve every existing replay command and guard; add two closed node-input profile controls for the source-proven16MiB package-layer refusal and authenticate the reviewed64MiB fixture-only input selection.",
+  "reviewReason": "Explicitly reviewed default-false tenant-only diagnostic: retain the entire defaultFULL command/900s bound, select only12 strict tenant cases when requested, and add exactly3 closed15/45/75s observations with no mutations or budget changes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9ccc3c8cc4cd53336bc32f5e7e82bbcb1438a994ac7334bc8b7cd0be3b97d36a"
+  "sha256": "71c694f08ca18a307d4357d3d60f778320db5d321c0763208d1076e88796e118"
 }

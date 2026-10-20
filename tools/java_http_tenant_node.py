@@ -6,6 +6,7 @@ from contextlib import ExitStack
 import json
 from pathlib import Path
 import secrets
+import re
 import tempfile
 import time
 
@@ -14,8 +15,8 @@ from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
 from tools.guest_runtime_profiles import profiles
 from tools import java_http_phase_node as phase
-from tools.phase2_operator_process import read_json, require, stopped_record, write_json
-from tools.phase2_operator_scenario import connect, stop
+from tools.phase2_operator_process import read_json, require, stopped_record, write_json, failed_call_record
+from tools.phase2_operator_scenario import connect, stop, NODE_ID
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_os import Probe
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
@@ -32,6 +33,86 @@ SERVICE = 'java-standard-http'
 ORIGINALS = ('component.wasm', 'BUILD-COMPLETE.json', 'source-inputs.json', 'recipe-inputs.json',
              'compiler-inputs.json', 'build-observation.json', 'capsule.json',
              'http-client-profile.json', 'runtime-profile.json', 'java-classpath.json')
+
+
+class PendingObservations:
+    """Three diagnostic reads only; no invocation retry or qualification witness."""
+    SCHEDULE = (15, 45, 75)
+
+    def __init__(self):
+        self.next = 0
+
+    def poll(self, client, node, target, peers, probe, process, label, output, elapsed):
+        if self.next == len(self.SCHEDULE) or elapsed < self.SCHEDULE[self.next]:
+            return
+        slot = self.next;self.next += 1
+        path = None
+        try:
+            require(re.fullmatch(r'java-tenant-[a-z-]{1,64}', label) is not None, 'java-tenant-diagnostic-label')
+            path = output/(label+'-pending-'+str(slot+1)+'.json')
+            require(set(peers) == set(TENANTS), 'java-tenant-diagnostic-peer-bound')
+            record = {'schemaVersion': 'latent.java.http-tenant-pending.v1', 'qualification': False,
+                'scheduledSeconds': self.SCHEDULE[slot], 'elapsedMillis': int(elapsed*1000),
+                'ownedCli': {'exited': process.owner.exited(), 'reaped': process.owner.finished},
+                'ownedNode': {'exited': node.owner.exited(), 'reaped': node.owner.finished}}
+            for kind, command in (('activation', ('activation','get',label)),
+                    ('usage', ('capability','list','--deployment',target['name'],'--include-node-usage')),
+                    ('node', ('node','get',NODE_ID))):
+                try:
+                    value = client._control_call('--rpc-timeout-ms','1500',*command,
+                        codes=(0,2,3,4,5,6,130),timeout=2)
+                    public = failed_call_record(value, client.calls, client.last_exit_status)
+                    if value['category'] == 'success':
+                        public['observation'] = diagnostic_data(kind, value['data'])
+                    record[kind] = public
+                except Exception:
+                    record[kind] = {'status': 'unavailable'}
+            record['peers'] = [{key: diagnostic_number(peer.observation()[key]) for key in
+                ('acceptedConnections','startedRequests','openConnections','completedResponseWrites',
+                 'rejectedRequests','committedMutations')} for peer in peers.values()]
+            try:
+                physical = probe.sample()
+                record['nodeProcess'] = {'treeComplete': physical['treeComplete'],
+                    'metrics': {key: diagnostic_number(physical['metrics'][key]) for key in
+                        ('processes','threads','tasks','handles','sockets','tcpConnections','rssBytes')}}
+            except Exception:
+                record['nodeProcess'] = {'status': 'unavailable'}
+            require(all(type(record[owner][key]) is bool for owner in ('ownedCli','ownedNode')
+                for key in ('exited','reaped')), 'java-tenant-diagnostic-owned-process-shape')
+            write_json(path, record)
+        except Exception:
+            # Optional observation must never replace the original result/cleanup.
+            if path is not None:
+                try:write_json(path, {'schemaVersion':'latent.java.http-tenant-pending.v1',
+                    'qualification':False,'scheduledSeconds':self.SCHEDULE[slot],'status':'unavailable'})
+                except Exception:pass
+
+
+def diagnostic_number(value):
+    require(type(value) is int or type(value) is str and re.fullmatch(r'0|[1-9][0-9]{0,19}',value),
+        'java-tenant-diagnostic-counter')
+    number = int(value);require(0 <= number < 2**64, 'java-tenant-diagnostic-counter')
+    return number
+
+
+def diagnostic_data(kind, data):
+    if kind == 'usage':
+        from tools.java_http_fiber_node import closed_usage
+        return closed_usage(data)
+    if kind == 'activation':
+        phases = {'received','resolved','admitted','queued','materializing','running','suspended',
+            'preparing_commit','committed','effects_pending'}
+        terminals = {None,'completed','rejected','cancelled','deadline_exceeded','resource_exhausted',
+            'guest_trap','state_conflict','dependency_failed','platform_failed'}
+        require(data.get('phase') in phases and data.get('terminalState') in terminals,
+            'java-tenant-diagnostic-activation-state')
+        return {'phase': data['phase'], 'terminalState': data['terminalState']}
+    require(kind == 'node', 'java-tenant-diagnostic-kind')
+    inventory = data['inventory'];cells = inventory['cellCapacity']
+    require(type(cells) is list and len(cells) <= 64, 'java-tenant-diagnostic-cell-bound')
+    return {'queueDepth': diagnostic_number(inventory['queueDepth']), 'cells': [
+        {key: diagnostic_number(cell[key]) for key in ('active','quarantined','queueDepth','available')}
+        for cell in cells]}
 
 
 def cleanup_owner(stack, owner, record, kind):
@@ -208,18 +289,22 @@ def retire(client, probe, target, output, label):
     return {'path': path.name, **file_identity(path, 262144)}
 
 
-def invoke(client, node, target, peer, peers, probe, mode, label, output, *, denied_origin=False):
+def invoke(client, node, target, peer, peers, probe, mode, label, output, *, denied_origin=False, diagnostic=False):
     selected = selected_revision(client, target)
     offsets = {name: value.observation()['startedRequests'] for name, value in peers.items()}
     peer_name, = [name for name, value in peers.items() if value is peer]
     origin = peer.origin();endpoint = f"http://{origin['host']}:{origin['port']}"
     process = start_call(client, target, SERVICE, 'run', [mode, endpoint], label)
     pending = cancelled = None
+    observations = PendingObservations() if diagnostic else None
+    started = time.monotonic() if diagnostic else None
     try:
         expires = min(client.deadline, time.monotonic()+125)
         while not process.owner.exited():
             require(time.monotonic() < expires, 'java-tenants-original-invocation-deadline')
             process.drain();node.drain()
+            if observations is not None:
+                observations.poll(client,node,target,peers,probe,process,label,output,time.monotonic()-started)
             for value in peers.values():
                 value.poll(.005)
                 require(value.observation()['failure'] is None, 'java-tenants-peer-failed')
@@ -257,7 +342,8 @@ def invoke(client, node, target, peer, peers, probe, mode, label, output, *, den
     return {'label': label, 'mode': mode, 'receipt': {'path': path.name, **file_identity(path, 262144)}}
 
 
-def run(artifact, native, output, *, deadline):
+def run(artifact, native, output, *, deadline, diagnostic=False):
+    require(type(diagnostic) is bool, 'java-tenant-diagnostic-selection')
     output = fresh(output)
     original = {name: file_identity(artifact/name) for name in ORIGINALS}
     products = {name: file_identity(path) for name, path in native.items()}
@@ -294,7 +380,8 @@ def run(artifact, native, output, *, deadline):
                 min(deadline, time.monotonic()+300), evidence=output/'examples-controls',
                 invocation_timeout_millis=120000, control_timeout_millis=15000)
             stage = 'same-node-startup'
-            node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
+            node = connect(client, native['latentd'], work/'node', config, 'examples', 1,
+                control_refusal_diagnostic=diagnostic, http_refusal_diagnostic=diagnostic)
             cleanup_owner(cleanup, node, result, 'node')
             clients = {'examples': client, 'foreign': client_for_foreign(client, node, work/'foreign', output/'foreign-controls')}
             for selected in clients.values(): phase.component_operator(selected)
@@ -339,7 +426,7 @@ def run(artifact, native, output, *, deadline):
                 stage = label
                 result['cases'].append({'tenant': tenant, **invoke(clients[tenant], node, targets[tenant],
                     peers['examples' if denied else tenant], peers, probe, mode, 'java-tenant-'+label,
-                    output, denied_origin=denied)})
+                    output, denied_origin=denied, diagnostic=diagnostic)})
             require(len(result['cases']) == 12, 'java-tenants-twelve-invocation-outcomes')
             for tenant in TENANTS:delete_all(clients[tenant], [targets[tenant]['name']])
             final = sample(client, probe, 'after-both-tenant-deletes', 0)
@@ -373,6 +460,11 @@ def run(artifact, native, output, *, deadline):
         write_json(output/'qualification.json', result)
         return result
     except BaseException:
+        if diagnostic and 'node' in locals():
+            try:
+                from tools.java_http_refusal_diagnostic import retain
+                retain(node, output)
+            except Exception:pass
         try:write_json(output/'FAILED.json', {**result, 'status': 'failed', 'stage': stage})
         except Exception:pass
         raise

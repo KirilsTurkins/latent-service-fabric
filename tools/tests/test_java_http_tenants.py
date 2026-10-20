@@ -190,7 +190,7 @@ class JavaHttpTenantTests(unittest.TestCase):
                 signed=Path(argv[2]);signed.mkdir();(signed/'release-set.json').write_text('{}')
                 return SimpleNamespace(returncode=0)
             def configure(directory,*arguments):
-                path=directory/'node.json';path.write_text('{}');return path
+                path=directory/'node.json';path.write_text(json.dumps({'limits':{'maximumComponentBytes':64*1024*1024}}));return path
             class BrokenPeer:
                 def __init__(self,*args,**kwargs):pass
                 def close(self):raise RuntimeError('cleanup-only')
@@ -208,3 +208,59 @@ class JavaHttpTenantTests(unittest.TestCase):
             self.assertEqual(failed['cleanupRefusals'],['peer','peer'])
             self.assertFalse(failed['componentCompilationPerformed'])
             self.assertNotIn('original-startup',json.dumps(failed))
+
+
+class JavaTenantPendingObservations(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        public={'acceptedConnections':1,'startedRequests':1,'openConnections':1,
+            'completedResponseWrites':0,'rejectedRequests':0,'committedMutations':0,
+            'authorization':'private-value-must-not-leak'}
+        peers={name:SimpleNamespace(observation=lambda:dict(public)) for name in tenants.TENANTS}
+        process=SimpleNamespace(owner=SimpleNamespace(exited=lambda:False,finished=False))
+        probe=SimpleNamespace(sample=lambda:{'treeComplete':True,'metrics':{name:1 for name in
+            ('processes','threads','tasks','handles','sockets','tcpConnections','rssBytes')}})
+        value={'schemaVersion':'latent.cli.result.v1','command':'activation get','category':'success',
+            'error':None,'outcomeKnown':True,'requestDispatched':True,
+            'data':{'phase':'suspended','terminalState':None,'metadata':{'token':'private-value-must-not-leak'}}}
+        client=SimpleNamespace(_control_call=Mock(return_value=value),calls=1,last_exit_status=0)
+        return client,process,peers,probe
+
+    def test_exact_three_pending_slots_use_only_bounded_read_commands_and_never_replay(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);client,process,peers,probe=self.fixture(root)
+            observer=tenants.PendingObservations()
+            for seconds in (0,14.99,15,16,44.99,45,46,74.99,75,100,1000):
+                observer.poll(client,process,{'name':'fixed-public-route'},peers,probe,process,
+                    'java-tenant-webb-first',root,seconds)
+            self.assertEqual(observer.next,3);self.assertEqual(client._control_call.call_count,9)
+            files=sorted(root.glob('*.json'));self.assertEqual(len(files),3)
+            self.assertEqual([json.loads(p.read_bytes())['scheduledSeconds'] for p in files],[15,45,75])
+            for call in client._control_call.call_args_list:
+                self.assertEqual(call.args[:2],('--rpc-timeout-ms','1500'))
+                self.assertIn(call.args[2:4],(('activation','get'),('capability','list'),('node','get')))
+                self.assertEqual(call.kwargs,{'codes':(0,2,3,4,5,6,130),'timeout':2})
+            for p in files:
+                value=json.loads(p.read_bytes());self.assertFalse(value['qualification'])
+                self.assertNotIn('private-value',p.read_text());self.assertNotIn('token',p.read_text())
+                self.assertEqual(value['activation']['observation'],{'phase':'suspended','terminalState':None})
+
+    def test_refused_observation_and_read_failure_never_become_progress_or_original_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);client,process,peers,probe=self.fixture(root)
+            client._control_call.side_effect=RuntimeError('private-error-must-not-leak')
+            probe.sample=lambda: (_ for _ in ()).throw(RuntimeError('private-process-message'))
+            observer=tenants.PendingObservations()
+            observer.poll(client,process,{'name':'route'},peers,probe,process,'java-tenant-webb-first',root,15)
+            value=json.loads(next(root.glob('*.json')).read_bytes())
+            for name in ('activation','usage','node','nodeProcess'):self.assertEqual(value[name],{'status':'unavailable'})
+            self.assertFalse(value['qualification']);self.assertNotIn('private-',str(value))
+
+    def test_projection_rejects_unknown_states_boolean_counters_and_private_metadata(self):
+        value={'phase':'running','terminalState':None,'metadata':{'credential':'never-published'},
+            'terminalOutcome':{'privatePayload':'never-published'}}
+        self.assertEqual(tenants.diagnostic_data('activation',value),{'phase':'running','terminalState':None})
+        for changed in ({**value,'phase':'private-path'},{**value,'terminalState':'unknown-new-state'}):
+            with self.assertRaises(WorkflowError):tenants.diagnostic_data('activation',changed)
+        for count in (True,-1,2**64,'01','private-path',None):
+            with self.subTest(count=count),self.assertRaises(WorkflowError):tenants.diagnostic_number(count)

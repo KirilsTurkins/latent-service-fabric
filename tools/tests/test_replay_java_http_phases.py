@@ -68,6 +68,8 @@ class JavaPhasePreparedReplay(unittest.TestCase):
             cwd=replay.ROOT, text=True))
         selected = yaml.safe_load((replay.ROOT/name).read_text())
         flag = selected[True]['workflow_dispatch']['inputs'].pop('java_http_phase_prepared')
+        tenant_flag=selected[True]['workflow_dispatch']['inputs'].pop('java_http_tenant_only')
+        self.assertEqual(tenant_flag['type'],'boolean');self.assertIs(tenant_flag['default'],False)
         self.assertEqual(flag['type'], 'boolean');self.assertIs(flag['default'], False)
         job = selected['jobs'].pop('http-phase-prepared')
         self.assertEqual(job['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_phase_prepared }}")
@@ -80,3 +82,42 @@ class JavaPhasePreparedReplay(unittest.TestCase):
         commands = '\n'.join(step.get('run', '') for step in job['steps'])
         for forbidden in ('cargo ', 'gradle ', 'setup-java', 'java_capsule.py', 'qualify_java_http_phases.py'):
             self.assertNotIn(forbidden, commands)
+
+
+class JavaPhaseTenantReplaySource(unittest.TestCase):
+    def test_full_run_body_and_all_old_guards_remain_exact_and_new_route_is_explicit(self):
+        import ast,subprocess,yaml
+        old=ast.parse(subprocess.check_output(['git','show','5211438ff692bcc1066bb1675b3f88924b3650be:tools/replay_java_http_phases.py'],text=True,cwd=replay.ROOT))
+        new=ast.parse((replay.ROOT/'tools/replay_java_http_phases.py').read_text())
+        def run(tree):return ast.dump(next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='run'))
+        self.assertEqual(run(old),run(new))
+        name='.github/workflows/java-guest-feasibility.yml'
+        baseline=yaml.safe_load(subprocess.check_output(['git','show','5211438ff692bcc1066bb1675b3f88924b3650be:'+name],cwd=replay.ROOT,text=True))
+        model=yaml.safe_load((replay.ROOT/name).read_text())
+        job=model['jobs']['http-phase-prepared'];steps=job['steps']
+        full=next(s for s in steps if s.get('name')=='Fresh ordinary signing and all original default phase and tenant outcomes')
+        self.assertEqual(full['if'],'${{ !inputs.java_http_tenant_only }}')
+        self.assertNotIn('--tenant-only',full['run'])
+        only=next(s for s in steps if s.get('name')=='Fresh ordinary signing and strict tenant-only diagnostic outcomes')
+        self.assertEqual(only['if'],'${{ inputs.java_http_tenant_only }}');self.assertTrue(only['run'].endswith('--tenant-only'))
+        flag=model[True]['workflow_dispatch']['inputs'].pop('java_http_tenant_only')
+        self.assertEqual(flag['type'],'boolean');self.assertIs(flag['default'],False)
+        steps.remove(only);self.assertEqual(full.pop('if'),'${{ !inputs.java_http_tenant_only }}')
+        controls=next(step for step in steps if step.get('name')=='Check three bounded pending observations and unchanged tenant authority guards')
+        self.assertEqual(controls['run'],'python3 -B -m unittest tools.tests.test_java_http_tenants -v');steps.remove(controls)
+        fetch=next(step for step in steps if step.get('name')=='Fetch exact reviewed full replay baseline before tenant selector controls')
+        self.assertEqual(fetch['run'],'git fetch --no-tags --depth=1 origin 5211438ff692bcc1066bb1675b3f88924b3650be');steps.remove(fetch)
+        upload=next(step for step in steps if step.get('name')=='Retain exact bounded original-source and fresh node receipts')
+        old_upload=next(step for step in baseline['jobs']['http-phase-prepared']['steps'] if step.get('name')==upload['name'])
+        additions=['${{ runner.temp }}/java-phase-node-replay/tenants/*-pending-*.json',
+            '${{ runner.temp }}/java-phase-node-replay/tenants/http-refusals.json']
+        lines=upload['with']['path'].splitlines()
+        for path in additions:self.assertEqual(lines.count(path),1);lines.remove(path)
+        self.assertEqual(lines,old_upload['with']['path'].splitlines())
+        upload['with']['path']=old_upload['with']['path']
+        self.assertEqual(model,baseline)
+        body=next(n for n in new.body if isinstance(n,ast.FunctionDef) and n.name=='run_tenants')
+        calls=[n for n in ast.walk(body) if isinstance(n,ast.Call) and isinstance(n.func,ast.Name)]
+        self.assertNotIn('phase_controls',[n.func.id for n in calls])
+        selected=[n for n in calls if n.func.id=='tenant_controls'];self.assertEqual(len(selected),1)
+        self.assertIn('diagnostic=True',ast.unparse(selected[0]))

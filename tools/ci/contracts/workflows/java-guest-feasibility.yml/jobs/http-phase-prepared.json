@@ -31,6 +31,10 @@
         "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b aa56bdebad8c12f20acce4ec4ecfeca73cf554be 370e0653078715807ae538de437a36aa6a05a68f"
       },
       {
+        "name": "Fetch exact reviewed full replay baseline before tenant selector controls",
+        "run": "git fetch --no-tags --depth=1 origin 5211438ff692bcc1066bb1675b3f88924b3650be"
+      },
+      {
         "name": "Check exact operator input profile and fixed prepared-component refusal controls",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_replay_java_http_phases tools.tests.test_java_http_phase_campaign.JavaPhaseOperatorComponentLimit -v"
       },
@@ -53,8 +57,18 @@
         "run": "python3 -B tools/replay_java_http_phases.py --prepare --output \"$RUNNER_TEMP/java-phase-original\""
       },
       {
+        "name": "Check three bounded pending observations and unchanged tenant authority guards",
+        "run": "python3 -B -m unittest tools.tests.test_java_http_tenants -v"
+      },
+      {
+        "if": "${{ !inputs.java_http_tenant_only }}",
         "name": "Fresh ordinary signing and all original default phase and tenant outcomes",
         "run": "python3 -B tools/replay_java_http_phases.py --prepared \"$RUNNER_TEMP/java-phase-original\" --native \"$RUNNER_TEMP/java-phase-native\" --output \"$RUNNER_TEMP/java-phase-node-replay\""
+      },
+      {
+        "if": "${{ inputs.java_http_tenant_only }}",
+        "name": "Fresh ordinary signing and strict tenant-only diagnostic outcomes",
+        "run": "python3 -B tools/replay_java_http_phases.py --prepared \"$RUNNER_TEMP/java-phase-original\" --native \"$RUNNER_TEMP/java-phase-native\" --output \"$RUNNER_TEMP/java-phase-node-replay\" --tenant-only"
       },
       {
         "if": "always()",
@@ -63,7 +77,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-http-phase-prepared-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-phase-native/retrieval.json\n${{ runner.temp }}/java-phase-native/native-products.json\n${{ runner.temp }}/java-phase-native/source-inputs.json\n${{ runner.temp }}/java-phase-original/retrieval.json\n${{ runner.temp }}/java-phase-node-replay/qualification.json\n${{ runner.temp }}/java-phase-node-replay/node/qualification.json\n${{ runner.temp }}/java-phase-node-replay/node/FAILED.json\n${{ runner.temp }}/java-phase-node-replay/node/controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/qualification.json\n${{ runner.temp }}/java-phase-node-replay/tenants/FAILED.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-case.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-retired.json\n${{ runner.temp }}/java-phase-node-replay/tenants/foreign-grants-not-inherited.json\n${{ runner.temp }}/java-phase-node-replay/tenants/final-owner.json\n${{ runner.temp }}/java-phase-node-replay/tenants/node-stopped.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-peer-stopped.json\n${{ runner.temp }}/java-phase-node-replay/tenants/final-products.json\n${{ runner.temp }}/java-phase-node-replay/tenants/examples-controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/foreign-controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/releases/release-set.json\n${{ runner.temp }}/java-phase-node-replay/tenants/releases/java-standard-http/build-observation.json",
+          "path": "${{ runner.temp }}/java-phase-native/retrieval.json\n${{ runner.temp }}/java-phase-native/native-products.json\n${{ runner.temp }}/java-phase-native/source-inputs.json\n${{ runner.temp }}/java-phase-original/retrieval.json\n${{ runner.temp }}/java-phase-node-replay/qualification.json\n${{ runner.temp }}/java-phase-node-replay/node/qualification.json\n${{ runner.temp }}/java-phase-node-replay/node/FAILED.json\n${{ runner.temp }}/java-phase-node-replay/node/controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/qualification.json\n${{ runner.temp }}/java-phase-node-replay/tenants/FAILED.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-case.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-pending-*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/http-refusals.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-retired.json\n${{ runner.temp }}/java-phase-node-replay/tenants/foreign-grants-not-inherited.json\n${{ runner.temp }}/java-phase-node-replay/tenants/final-owner.json\n${{ runner.temp }}/java-phase-node-replay/tenants/node-stopped.json\n${{ runner.temp }}/java-phase-node-replay/tenants/*-peer-stopped.json\n${{ runner.temp }}/java-phase-node-replay/tenants/final-products.json\n${{ runner.temp }}/java-phase-node-replay/tenants/examples-controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/foreign-controls/*.json\n${{ runner.temp }}/java-phase-node-replay/tenants/releases/release-set.json\n${{ runner.temp }}/java-phase-node-replay/tenants/releases/java-standard-http/build-observation.json",
           "retention-days": 3
         }
       }
@@ -72,7 +86,7 @@
   },
   "jobId": "http-phase-prepared",
   "kind": "job",
-  "reviewReason": "Preserve every existing replay command and guard; add two closed node-input profile controls for the source-proven16MiB package-layer refusal and authenticate the reviewed64MiB fixture-only input selection.",
+  "reviewReason": "Retain the reviewed defaultfull/tenant-only guards and add one exact521 Git data fetch before new preservation controls, preventing the shallow-checkout failure observed separately in SPI.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
