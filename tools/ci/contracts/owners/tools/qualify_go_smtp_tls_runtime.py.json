@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_smtp_tls_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Own the finite ordinary SMTP and explicit guest STARTTLS qualification, preserving original TCP/runtime bounds and refusing any host-TLS/kernel promotion.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "4ffb0b2aa07af541b97d3f13581ebc2fae3066ce4843ccfad9373d9402464f9b"
+}
