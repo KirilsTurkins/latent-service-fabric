@@ -103,3 +103,22 @@ node/controller oracles and all limits remain unchanged. Of the 91 actual normal
 recipe inputs, 90 are byte-exact in final composition. The one reviewed
 `guest_compatibility_build.py` delta adds an explicit phase-timing 0.4/v7 branch,
 absent from this Go world; all old selector instructions remain unchanged.
+
+## Separate managed worker selection
+
+`qualify_go_http_tenants.py --managed-runtime` is an explicit **source-only
+candidate**, with no signed result yet. Its fresh project selects
+`go-component-activation-v5`; both the captured module selection and actual build
+observation must name that profile before node execution. A v4 component cannot
+be relabelled as managed. The default command, client sources, private worker,
+SDK, WIT and application budgets remain unchanged.
+
+The maintained v5 overlay reserves eight maintenance TASK slots before package
+initialization and keeps even unused slots charged until real dispatcher idle.
+The separate profile configures 16 total tasks: those eight reservations plus
+the original eight application slots. Queue, wait, executor, timer, result and
+native-owner ceilings remain exact. This uses the existing activation ledger,
+not a refund, hidden allowance or automatic increase for the default profile.
+It still requires the same fresh-component 19-case programme and original
+physical retirement fences. Source tests and the earlier v4 result cannot
+satisfy that managed execution gate or whole #692 runtime accounting.

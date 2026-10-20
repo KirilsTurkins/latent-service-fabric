@@ -15,6 +15,7 @@ from tools.build_process_signals import owned_cancellation
 from tools import go_standard_http_node as original
 from tools.go_http_adversarial import CEILING, OPERATIONS, outcome
 from tools.guest_runtime_profiles import RUNTIME
+from tools.go_guest.activation import INITIALIZER_PROFILE, MANAGED_PROFILE
 from tools.phase2_operator_process import Process, read_json, require, stopped_record, write_json
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity
@@ -32,7 +33,16 @@ DOMAIN = '200:domain:7:caf\u00e9:first|\u03bb'
 RUNTIME_LIMITS = {'tasks':8,'executors':2,'queuedWork':8,'waits':16,'timers':8,'results':8,'nativeOwners':8}
 
 
-def settings(original_settings, startups, credentials):
+def limits(runtime_profile):
+    require(type(runtime_profile) is str and runtime_profile in {INITIALIZER_PROFILE,MANAGED_PROFILE},
+        'go-http-tenant-closed-runtime-profile')
+    # The eight v5 maintenance TASK slots stay charged before initialization.
+    # Preserve the v4 application's eight slots and every other original ceiling.
+    return {**RUNTIME_LIMITS,'tasks':16} if runtime_profile == MANAGED_PROFILE else dict(RUNTIME_LIMITS)
+
+
+def settings(original_settings, startups, credentials, *, runtime_profile=INITIALIZER_PROFILE):
+    selected_limits = limits(runtime_profile)
     value = copy.deepcopy(original_settings)
     providers = value['providers']
     require(value['workers'] == {'runtime':1,'control':1} and len(value['cells']) == 1
@@ -43,6 +53,7 @@ def settings(original_settings, startups, credentials):
         'go-http-tenant-original-single-cell-and-runtime-limits')
     value['credentials'].append({'token':FOREIGN_TOKEN,'subject':SUBJECTS['foreign'],
         'tenant':'foreign','role':'operator'})
+    providers['activationRuntime']['limits'] = selected_limits
     providers['additionalHttpStreaming'] = []
     providers['scalarAliases'] = []
     for tenant in TENANTS:
@@ -168,11 +179,16 @@ def peer_outcome(value, tenant):
         'go-http-tenant-pending-body-not-replayed-or-released')
 
 
-def run(artifact, native, output, deadline):
+def run(artifact, native, output, deadline, *, runtime_profile=INITIALIZER_PROFILE):
+    selected_limits = limits(runtime_profile)
+    require(read_json(artifact/'build-observation.json')['parameters']['runtime'] == runtime_profile,
+        'go-http-tenant-actual-compiled-runtime-profile-required')
     output.mkdir(mode=0o700)
     result = {'schemaVersion':'latent.go.http-tenant-node.v1','status':'incomplete','cases':[],
         'sameComponent':file_identity(artifact/'component.wasm',64*1024**2),'sameNode':True,
-        'singleCellCapacity':1,'runtimeLimits':RUNTIME_LIMITS,'productionKernelQualification':False,
+        'singleCellCapacity':1,'runtimeLimits':selected_limits,'runtimeProfile':runtime_profile,
+        'maintenanceTaskReservation':8 if runtime_profile == MANAGED_PROFILE else 0,
+        'productionKernelQualification':False,
         'lateRemoteCompletionQualified':False,'httpsTransportSupported':False}
     stage = 'checked-neutral-packaging-and-ephemeral-signature'
     node = None;peers = {};clients = {}
@@ -211,7 +227,7 @@ def run(artifact, native, output, deadline):
                     credentials[tenant].parent,build_environment(work),cancellation,maximum=65536)
                 startups[tenant] = peers[tenant].line(min(deadline,time.monotonic()+10))
             config = original.configuration(work/'node',signed,startups['examples'],credentials['examples'])
-            value = settings(read_json(config),startups,credentials)
+            value = settings(read_json(config),startups,credentials,runtime_profile=runtime_profile)
             config.write_bytes((json.dumps(value,indent=2)+'\n').encode())
             # Credentials here are references to private files, never their bytes.
             write_json(output/'node-configuration.json',value)
