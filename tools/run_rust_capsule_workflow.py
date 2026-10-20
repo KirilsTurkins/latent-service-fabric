@@ -45,7 +45,11 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False):
+        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, standard_typescript_clocks=False):
+    require(type(standard_typescript_clocks) is bool and (not standard_typescript_clocks or language == 'typescript')
+            and not (standard_typescript_clocks and (standard_typescript_entropy or standard_typescript_console
+                or captured_npm_private or approved_typescript_generator or captured_dependency_recovery)),
+            'typescript-standard-clocks-language-and-exclusive-selector')
     require(type(standard_typescript_entropy) is bool and (not standard_typescript_entropy or language == 'typescript')
             and not (standard_typescript_entropy and (standard_typescript_console or captured_dependency_recovery
                 or captured_npm_private or approved_typescript_generator)), 'authoring-typescript-standard-entropy-language')
@@ -173,6 +177,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     from tools.rust_standard_logging_probe import configure as configure_rust_stdio
                     configure_rust_stdio(settings, fixture)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if standard_typescript_clocks:
+                    from tools.typescript_standard_clock_probe import configure as configure_clocks
+                    configure_clocks(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 if rust_standard_entropy:
                     from tools.rust_standard_entropy_probe import configure as configure_rust_entropy
                     configure_rust_entropy(settings)
@@ -231,6 +239,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if standard_typescript_entropy:
                         from tools.typescript_entropy_probe import grant as grant_typescript_entropy
                         grant_typescript_entropy(client, node, fixture, targets, publications, result)
+                    if standard_typescript_clocks:
+                        from tools.typescript_standard_clock_probe import grant as grant_typescript_clocks
+                        grant_typescript_clocks(client, node, fixture, targets, publications, result)
                     if standard_typescript_console:
                         from tools.typescript_console_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
@@ -281,6 +292,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if standard_typescript_entropy:
                         from tools.typescript_entropy_probe import probe as probe_typescript_entropy
                         probe_typescript_entropy(client, targets, probe, result, len(names), fixture, publications)
+                    if standard_typescript_clocks:
+                        from tools.typescript_standard_clock_probe import probe as probe_typescript_clocks
+                        probe_typescript_clocks(client, targets, probe, result, len(names))
                     if approved_typescript_generator:
                         from tools.typescript_generator_fixture import probe as generator_probe
                         generator_probe(client, targets['greeting'], probe, result, len(names),

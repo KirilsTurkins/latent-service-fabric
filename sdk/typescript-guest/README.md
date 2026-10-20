@@ -127,3 +127,5 @@ they are neither exported by the SDK nor captured in application projects.
 Their unit tests are supplementary, not provider or node qualification.
 Newcomer review #345 and release publication
 approval remain separate requirements.
+
+Ordinary Date/performance compatibility uses the explicitly selected [standard clock boundary](../../docs/component-development/typescript-standard-clocks.md). Undeclared current-time reads fail concretely; deterministic Date arguments/parsing remain available. Its finite signed campaign is pending.

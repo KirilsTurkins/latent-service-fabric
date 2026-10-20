@@ -412,5 +412,71 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         self.assertFalse(receipt['signedLSFComponentQualified'])
 
 
+class TypeScriptClockCompiledGraphTests(unittest.TestCase):
+    def observed(self):
+        path = ROOT/'tools/tests/fixtures/typescript_clock_profile/clock-component-e611.json'
+        value = json.loads(path.read_bytes())
+        self.assertEqual(value['parser'], 'wasm-tools1.254.0')
+        self.assertEqual(value['source'], 'e61134ed5e075b898e1385abe785663884787f72')
+        for row in value['engineInput']['sdkInputs']:
+            self.assertEqual(runtime.digest((ROOT/row['path']).read_bytes()), row['digest'])
+        return value
+
+    def matches(self, value, **options):
+        arguments = {'profile': runtime.CLOCK_PROFILE, 'engine_input': value['engineInput']}
+        arguments.update(options)
+        return runtime.compiled_world_matches(value['selected'], value['component'],
+                                              value['selectedWorld'], **arguments)
+
+    def test_actual_clock_component_accepts_only_exact_reviewed_envelope_and_readiness_pruning(self):
+        value = self.observed(); original = copy.deepcopy(value)
+        self.assertNotEqual(runtime.public_graph(value['selected'], value['selectedWorld']),
+                            runtime.public_component_graph(value['component']))
+        self.assertTrue(self.matches(value))
+        self.assertEqual(value, original)
+        for options in ({'profile': runtime.ASYNC_PROFILE}, {'profile': runtime.IMPORT_PROFILE},
+                        {'engine_input': None}, {'source_splicer_digest': runtime.digest(b'other source')}):
+            with self.subTest(options=options): self.assertFalse(self.matches(value, **options))
+
+    def test_clock_pruning_refuses_any_engine_receipt_change_including_core_source_and_version(self):
+        value = self.observed()
+        for field, replacement in (('coreDigest', runtime.digest(b'different core')), ('coreBytes', 10146324),
+                ('schemaVersion', runtime.IMPORT_ENGINE_SCHEMA), ('profile', runtime.IMPORT_PROFILE),
+                ('upstream', {}), ('sdkInputs', []), ('qualification', 'passed'),
+                ('sourceDerivationDigest', runtime.digest(b'different source')),
+                ('runtimeWitDigest', runtime.digest(b'different WIT'))):
+            with self.subTest(field=field):
+                self.assertFalse(self.matches(value, engine_input=dict(value['engineInput'], **{field: replacement})))
+
+    def test_clock_pruning_preserves_all_eight_functions_three_types_clocks_exports_and_omitted_ABI(self):
+        value = self.observed()
+        item = next(item for item in value['component']['interfaces'] if item['name'] == 'activation')
+        self.assertEqual(set(item['functions']), {'register', 'park', 'wake', 'settle', 'close',
+                                                'timer-start', 'timer-next', 'timer-stop'})
+        self.assertEqual(set(item['types']), {'owner-kind', 'token', 'error'})
+        for group in ('functions', 'types'):
+            for name in item[group]:
+                changed = copy.deepcopy(value)
+                activation = next(row for row in changed['component']['interfaces'] if row['name'] == 'activation')
+                del activation[group][name]
+                with self.subTest(group=group, name=name): self.assertFalse(self.matches(changed))
+        for change in ('async-kind', 'clock', 'export', 'omitted-legacy-method', 'extra-import'):
+            changed = copy.deepcopy(value)
+            graph = changed['component']
+            if change == 'async-kind':
+                next(row for row in graph['interfaces'] if row['name'] == 'activation')['functions']['timer-next']['kind'] = 'freestanding'
+            elif change == 'clock':
+                next(row for row in graph['interfaces'] if row['name'] == 'wall')['functions']['now-unix-millis']['result'] = 'u32'
+            elif change == 'export':
+                next(row for row in graph['interfaces'] if row['name'] == 'api')['functions']['greet']['result'] = 'u32'
+            elif change == 'omitted-legacy-method':
+                next(row for row in changed['selected']['interfaces'] if row['name'] == 'activation')['functions']['observe']['result'] = 'u32'
+            else:
+                package = next(row['package'] for row in graph['interfaces'] if row['name'] == 'wall')
+                graph['interfaces'].append({'name': 'extra', 'package': package, 'types': {}, 'functions': {}})
+                graph['worlds'][0]['imports']['extra'] = {'interface': {'id': len(graph['interfaces'])-1}}
+            with self.subTest(change=change): self.assertFalse(self.matches(changed))
+
+
 if __name__ == '__main__':
     unittest.main()
