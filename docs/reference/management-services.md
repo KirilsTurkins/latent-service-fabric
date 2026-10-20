@@ -627,6 +627,16 @@ original 120-second wall/control timeout, fuel, memory and provider ceilings.
 Preparing is not a workaround for those guest limits, an automatic retry, or a
 way to recover an uncertain previous invocation by executing it again.
 
-This new operation's focused Rust and current-native qualification are pending.
+The source-bound native producer at `21b2c84c74881701149115dd8511063c85800b47`
+passed [run 39509107706](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39509107706):
+all five normal native products, 49 Rust controls and 15 Python controls, with no
+ignored or skipped tests. Its complete artifact `12305592299` was independently
+verified against the original Git native tree and 134 auxiliary files, including
+all 20 authoritative protocol files. This is native/API evidence; the producer
+did not compile or execute guest components. See the
+[fixed evidence record](../testing/evidence/release-preparation-native-2026-10-21.json).
+
 The earlier Java tenant campaigns' uncertain cold-preparation failures remain
-failed. They provide no successful HTTP or cross-tenant execution evidence.
+failed. The unchanged twelve-case tenant programme still needs actual execution
+with explicit preparation; the native controls provide no successful HTTP or
+cross-tenant guest execution evidence.
