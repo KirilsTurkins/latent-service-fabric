@@ -10,14 +10,15 @@
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
-      "LSF_GO_REFERENCE_CAMPAIGN": "${{ inputs.campaign || (github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}"
+      "LSF_GO_REFERENCE_CAMPAIGN": "${{ inputs.campaign || (github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || (github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization')) }}"
     },
     "name": "Actual Go synchronization reference",
     "on": {
       "push": {
         "branches": [
           "feat/go-runtime-retirement-20261020",
-          "feat/go-runtime-admission-20261020"
+          "feat/go-runtime-admission-20261020",
+          "feat/go-runtime-queued-ownership-20261020"
         ]
       },
       "workflow_dispatch": {
@@ -27,7 +28,8 @@
             "description": "Finite actual Go runtime programme",
             "options": [
               "synchronization",
-              "admission"
+              "admission",
+              "queued"
             ],
             "required": true,
             "type": "choice"
@@ -42,7 +44,7 @@
   "requiredJobs": [
     "synchronization"
   ],
-  "reviewReason": "Add exact signed two-tenant one-cell admission and original-retirement controls; preserve every prior command, case and finite bound.",
+  "reviewReason": "Add one actual signed ordinary node8/queue8 programme: retain original aggregate CPU/memory grants through seven queued roots, foreign cancellation, owned queued cancellation/deadline and original physical retirement; preserve every previous command, case, ignore guard, cap and default campaign.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-synchronization-reference.yml"
 }

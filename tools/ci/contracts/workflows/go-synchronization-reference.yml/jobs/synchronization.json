@@ -45,6 +45,10 @@
         "run": "python3 -m unittest tools.tests.test_go_admission -v"
       },
       {
+        "name": "Check exact queued-root reservation and original-deadline evidence controls",
+        "run": "python3 -m unittest tools.tests.test_go_queued -v"
+      },
+      {
         "name": "Install captured compiler namespace",
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
@@ -74,7 +78,7 @@
         "run": "python3 tools/qualify_go_synchronization.py --source-commit \"${{ github.sha }}\" --fixture \"$RUNNER_TEMP/go-synchronization\" --no-checkpoints \"$RUNNER_TEMP/go-synchronization-negative\" --output \"$RUNNER_TEMP/go-synchronization-result\""
       },
       {
-        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'admission'",
+        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'admission' || env.LSF_GO_REFERENCE_CAMPAIGN == 'queued'",
         "name": "Compile the unchanged managed Go fixture for shared-cell admission",
         "run": "python3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-admission\" --runtime-profile go-component-activation-v5 --fixture managed-idle"
       },
@@ -84,13 +88,18 @@
         "run": "python3 tools/qualify_go_synchronization.py --campaign admission --source-commit \"${{ github.sha }}\" --fixture \"$RUNNER_TEMP/go-admission\" --output \"$RUNNER_TEMP/go-admission-result\""
       },
       {
+        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'queued'",
+        "name": "Run actual signed ordinary queue ownership and original ingress deadlines",
+        "run": "python3 tools/qualify_go_synchronization.py --campaign queued --source-commit \"${{ github.sha }}\" --fixture \"$RUNNER_TEMP/go-admission\" --output \"$RUNNER_TEMP/go-queued-result\""
+      },
+      {
         "if": "always()",
         "name": "Retain bounded actual results and compiler source identities",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "go-synchronization-reference-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-synchronization-result/receipt.json\n${{ runner.temp }}/go-synchronization-result/signed.stdout.log\n${{ runner.temp }}/go-synchronization-result/signed.stderr.log\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization/logs/\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization-negative/logs/\n${{ runner.temp }}/go-admission/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-admission/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-admission/logs/\n${{ runner.temp }}/go-admission-result/receipt.json\n${{ runner.temp }}/go-admission-result/signed.stdout.log\n${{ runner.temp }}/go-admission-result/signed.stderr.log\n",
+          "path": "${{ runner.temp }}/go-synchronization-result/receipt.json\n${{ runner.temp }}/go-synchronization-result/signed.stdout.log\n${{ runner.temp }}/go-synchronization-result/signed.stderr.log\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization/logs/\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization-negative/logs/\n${{ runner.temp }}/go-admission/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-admission/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-admission/logs/\n${{ runner.temp }}/go-admission-result/receipt.json\n${{ runner.temp }}/go-admission-result/signed.stdout.log\n${{ runner.temp }}/go-admission-result/signed.stderr.log\n${{ runner.temp }}/go-queued-result/receipt.json\n${{ runner.temp }}/go-queued-result/signed.stdout.log\n${{ runner.temp }}/go-queued-result/signed.stderr.log\n",
           "retention-days": 7
         }
       }
@@ -99,7 +108,7 @@
   },
   "jobId": "synchronization",
   "kind": "job",
-  "reviewReason": "Add exact signed two-tenant one-cell admission and original-retirement controls; preserve every prior command, case and finite bound.",
+  "reviewReason": "Add one actual signed ordinary node8/queue8 programme: retain original aggregate CPU/memory grants through seven queued roots, foreign cancellation, owned queued cancellation/deadline and original physical retirement; preserve every previous command, case, ignore guard, cap and default campaign.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-synchronization-reference.yml"
 }

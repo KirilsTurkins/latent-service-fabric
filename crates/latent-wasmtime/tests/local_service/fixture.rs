@@ -131,6 +131,11 @@ pub struct RuntimeIdentities {
     pub callee: ServiceId,
 }
 
+enum TwoTenantAdmission {
+    RefuseAtOne,
+    OrdinaryEight,
+}
+
 impl Default for RuntimeIdentities {
     fn default() -> Self {
         Self {
@@ -274,6 +279,41 @@ impl Fixture {
         limits: latent_core::activation_runtime::RuntimeLimits,
         call_wall_millis: u64,
     ) -> Self {
+        Self::with_two_tenant_admission(
+            provided,
+            limits,
+            call_wall_millis,
+            TwoTenantAdmission::RefuseAtOne,
+        )
+        .await
+    }
+    pub async fn with_two_tenant_queued_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+    ) -> Self {
+        Self::with_two_tenant_admission(
+            provided,
+            limits,
+            call_wall_millis,
+            TwoTenantAdmission::OrdinaryEight,
+        )
+        .await
+    }
+    async fn with_two_tenant_admission(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        admission: TwoTenantAdmission,
+    ) -> Self {
         Self::try_with_packages_and_load(
             1,
             false,
@@ -287,6 +327,7 @@ impl Fixture {
             }),
             Some((limits, call_wall_millis, None)),
             Some(TenantId("tenant-a".into())),
+            Some(admission),
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
         )
@@ -312,6 +353,7 @@ impl Fixture {
             Arc::new(SyntheticFixtureLoad),
             None,
             Some((limits, 5000, Some(grant_native))),
+            None,
             None,
             None,
         )
@@ -375,6 +417,7 @@ impl Fixture {
             identities,
             activation_runtime,
             None,
+            None,
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             outbound_streams,
         )
@@ -404,6 +447,7 @@ impl Fixture {
             Option<bool>,
         )>,
         additional_runtime_tenant: Option<TenantId>,
+        two_tenant_admission: Option<TwoTenantAdmission>,
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
             Box<latent_streams::StreamProviderConfig>,
         >,
@@ -414,6 +458,10 @@ impl Fixture {
         let stream_enabled = false;
         let root = tempfile::tempdir().unwrap();
         let identities = identities.unwrap_or_default();
+        assert_eq!(
+            additional_runtime_tenant.is_some(),
+            two_tenant_admission.is_some()
+        );
         if let Some(other) = &additional_runtime_tenant {
             assert!(activation_runtime.is_some());
             assert_eq!(identities.tenant.0, "tenant-b");
@@ -845,11 +893,24 @@ impl Fixture {
         .unwrap();
         let backend = Arc::new(factory.create_backend_instance());
         let mut admission_policy = node_policy(cells, stream_enabled);
-        if additional_runtime_tenant.is_some() {
-            // A narrower selected test profile, not a product default: one
-            // admitted original activation for the one physical cell. The
-            // normal explicit queue8/admission8 policy is unchanged.
-            admission_policy.limits.maximum_concurrent_activations = 1;
+        match two_tenant_admission {
+            Some(TwoTenantAdmission::RefuseAtOne) => {
+                admission_policy.limits.maximum_concurrent_activations = 1;
+            }
+            Some(TwoTenantAdmission::OrdinaryEight) => {
+                // Assert the original policy instead of expanding any capacity.
+                assert_eq!(admission_policy.limits.maximum_concurrent_activations, 8);
+                assert_eq!(admission_policy.limits.maximum_queued_activations, 8);
+                assert_eq!(
+                    admission_policy.limits.maximum_reserved_cpu_fuel,
+                    packages::budget().cpu_fuel * 8
+                );
+                assert_eq!(
+                    admission_policy.limits.maximum_reserved_memory_bytes,
+                    packages::budget().memory_bytes * 8
+                );
+            }
+            None => {}
         }
         if tenant != "tenant-a" {
             let mut tenant_policy = admission_policy
@@ -958,6 +1019,29 @@ impl Fixture {
         let scheduler = self.scheduler.observations(CellClass::Tiny);
         assert_eq!(scheduler.active_leases, 1);
         assert_eq!(scheduler.queue_depth, 0);
+        assert_eq!(self.backend.active_instance_reservations(), 1);
+        assert_eq!(self.backend.resource_snapshot().live_stores, 1);
+        assert!(self.read_wait.active.load(Ordering::Acquire) > 0);
+    }
+    pub fn queued_cell_requests(&self) -> u32 {
+        self.scheduler.observations(CellClass::Tiny).queue_depth
+    }
+    pub fn assert_one_occupied_cell_with_queued(&self, queued: u32) {
+        assert!(queued <= 7);
+        let quota = self.quotas.usage().unwrap();
+        assert_eq!(quota.active_activations, queued + 1);
+        assert_eq!(quota.queued_activations, queued);
+        assert_eq!(
+            quota.reserved_cpu_fuel,
+            packages::budget().cpu_fuel * u64::from(queued + 1)
+        );
+        assert_eq!(
+            quota.reserved_memory_bytes,
+            packages::budget().memory_bytes * u64::from(queued + 1)
+        );
+        let scheduler = self.scheduler.observations(CellClass::Tiny);
+        assert_eq!(scheduler.active_leases, 1);
+        assert_eq!(scheduler.queue_depth, queued);
         assert_eq!(self.backend.active_instance_reservations(), 1);
         assert_eq!(self.backend.resource_snapshot().live_stores, 1);
         assert!(self.read_wait.active.load(Ordering::Acquire) > 0);
