@@ -1,0 +1,44 @@
+name: Focused canonical HTTP phase fixture
+'on':
+  push:
+    branches:
+    - diag/http-phase-canonical-only-20261020
+permissions:
+  contents: read
+concurrency:
+  group: http-phase-canonical-only-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+jobs:
+  canonical:
+    name: Exact three canonical HTTP phase cases; unchanged transport proofs retained separately
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+    - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+      with:
+        prefix-key: lsf-ci-dependencies-v2
+        shared-key: host-correctness
+        key: ubuntu-24.04
+        cache-targets: true
+        cache-bin: false
+        cache-workspace-crates: false
+        cache-all-crates: false
+        cache-on-failure: false
+        save-if: false
+    - name: Execute the new canonical ABI with actual sockets and fresh Stores
+      run: 'cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture
+
+        '

@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "http-phase-canonical-only-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Focused canonical HTTP phase fixture",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/http-phase-canonical-only-20261020"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "canonical"
+  ],
+  "reviewReason": "Explicit branch-only canonical replay, preserving the default-all production workflow and all original profile/setup/canonical command fields.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/http-phase-canonical-only.yml"
+}
