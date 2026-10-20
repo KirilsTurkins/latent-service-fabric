@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_finite_waits.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Final exact qualifier includes authenticated SDK rewriter source and selected host manifest in materials; no command/case/budget change.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7d5845a5dcd5adab9b340ecc21de7d963900cf48d05829cd35631308f78d2799"
+}

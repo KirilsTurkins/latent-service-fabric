@@ -1,0 +1,110 @@
+name: Finite and cancellable managed Task waits
+
+on:
+  push:
+    branches: ['feat/dotnet-cancellable-task-waits-20261020']
+    paths: ['.github/workflows/dotnet-finite-task-waits.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dotnet-finite-task-waits-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finite-waits:
+    name: Signed finite Task.Wait cancellation and physical retirement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Fetch only the immutable producer source before its verification
+        run: git fetch --no-tags --depth=1 origin fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12
+      - name: Check exact finite wait selection results and original lifecycle boundaries
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_dotnet_finite_task_wait tools.tests.test_dotnet_finite_wait_programme tools.tests.test_dotnet_task_wait tools.tests.test_dotnet_resource_timer_observer -v
+      - name: Install the normal captured compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Prepare the pinned compiler and small current closed-runtime adapters
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-finite-wait-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-finite-wait-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-finite-wait-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-finite-wait-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Authenticate the exact Wasmtime 48.0.7 products without a native host rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wasmtime_48_0_7_native_products.py --output "$RUNNER_TEMP/dotnet-finite-wait-native"
+      - name: Capture one fresh offline NativeAOT component and run eighteen strict wait outcomes
+        run: |
+          python3 -B tools/qualify_dotnet_finite_waits.py \
+            --native "$RUNNER_TEMP/dotnet-finite-wait-native" --tools "$RUNNER_TEMP/dotnet-finite-wait-tools" \
+            --output "$RUNNER_TEMP/dotnet-finite-task-waits"
+      - name: Retain bounded public build identities and raw lifecycle outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-finite-task-waits-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/dotnet-finite-wait-native/*.json
+            ${{ runner.temp }}/dotnet-finite-wait-tools/INSTALL-COMPLETE.json
+            ${{ runner.temp }}/dotnet-finite-wait-tools/runtime-inputs.json
+            ${{ runner.temp }}/dotnet-finite-wait-tools/wasi-sdk.json
+            ${{ runner.temp }}/dotnet-finite-wait-tools/logs/**
+            ${{ runner.temp }}/dotnet-finite-task-waits/*.json
+            ${{ runner.temp }}/dotnet-finite-task-waits/build/*.json
+            ${{ runner.temp }}/dotnet-finite-task-waits/build/component.wasm
+            ${{ runner.temp }}/dotnet-finite-task-waits/build/native-aot-original.wasm
+            ${{ runner.temp }}/dotnet-finite-task-waits/build/derived-*.dll
+            ${{ runner.temp }}/dotnet-finite-task-waits/build/package/**
+            ${{ runner.temp }}/dotnet-finite-task-waits/build/logs/**
+            ${{ runner.temp }}/dotnet-finite-task-waits/node/*.json
+            ${{ runner.temp }}/dotnet-finite-task-waits/node/node-stderr.txt
+            ${{ runner.temp }}/dotnet-finite-task-waits/node/commands/logs/**
+            ${{ runner.temp }}/dotnet-finite-task-waits/node/controls/*.json
+            ${{ runner.temp }}/dotnet-finite-task-waits/node/signed/my-greeting/build-observation.json
+            ${{ runner.temp }}/dotnet-finite-task-waits/node/signed/release-set.json

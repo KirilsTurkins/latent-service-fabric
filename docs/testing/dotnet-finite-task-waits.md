@@ -30,7 +30,21 @@ queue-pump call is mapped to a host awaiter. This checks finite results, excepti
 and token precedence and cleanup control flow; it does not execute WASI scheduling.
 Five authority/receipt controls and sixteen existing TaskWait controls pass.
 
-One fresh hosted NativeAOT component and signed/admitted programme are still
-required. No guest, native-host or engine qualification is claimed from these
-managed controls. CPU preemption, logical threads/Monitor.Wait, full queue/stack/GC
-accounting and background/late-work lifecycle remain separate #746 requirements.
+The separate [owning lane](../../.github/workflows/dotnet-finite-task-waits.yml)
+builds one fresh offline NativeAOT greeting with a normally captured outside
+library. Fourteen ordinary Task.Wait cases cover the reference cases and the
+unchanged infinite join. Root cancellation and deadline each require a fresh
+positive native `wait-for` Pending observation, all five physical owners and
+provider charges before the terminal, followed by an infinite-join recovery.
+All eighteen cases require exact results, known/reaped calls, original fuel and
+memory budgets, zero effects, physical/provider retirement and clean shutdown.
+The original grant-omission controls run before the guest programme. The native
+products are authenticated Wasmtime48.0.7 products; the lane performs no native
+host, engine or five-template rebuild.
+
+This programme is pending. No guest qualification is claimed from the managed
+controls. The existing sixteen-case task programme retains its cases, order,
+commands and limits; its exact port assertion now recognizes the selected finite
+mode, without claiming a new pass for historical receipts. CPU preemption,
+logical threads/Monitor.Wait, full queue/stack/GC accounting and background/late
+work lifecycle remain separate #746 requirements.
