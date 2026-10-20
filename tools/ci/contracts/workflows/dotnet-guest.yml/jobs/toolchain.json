@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.install_tools_diagnostic }}",
     "name": "NativeAOT component qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -257,7 +258,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Retain only existing bounded public installer stdout/stderr at all three existing unconditional upload sites; restore original definition exactly after removing two added paths. No compiler/recipe/limit/guard change.",
+  "reviewReason": "Reviewed explicit default-false manual installer-only diagnostic. The seven scratch setup/install steps are exact copies; all original workflow fields restore after removing only the input, new job and exact normal-toolchain manual exclusion. No guest/native host/AOT programme, target setup, compiler arguments, original commands, budgets or upload paths change. Retain bounded existing public installer streams to determine the original unknown closed-runtime-compile failure.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

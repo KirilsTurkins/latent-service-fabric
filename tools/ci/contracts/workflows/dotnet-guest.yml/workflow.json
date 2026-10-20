@@ -93,7 +93,15 @@
           ".github/workflows/dotnet-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "install_tools_diagnostic": {
+            "default": false,
+            "description": "Run only the unchanged failed scratch tool installer and retain its bounded diagnostics",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -102,9 +110,10 @@
   "requiredJobs": [
     "published-tasks",
     "scratch-refusals",
+    "tool-install-diagnostic",
     "toolchain"
   ],
-  "reviewReason": "Compose the unchanged normal parent and both separately budgeted published and scratch children without removing commands",
+  "reviewReason": "Reviewed explicit default-false manual installer-only diagnostic. The seven scratch setup/install steps are exact copies; all original workflow fields restore after removing only the input, new job and exact normal-toolchain manual exclusion. No guest/native host/AOT programme, target setup, compiler arguments, original commands, budgets or upload paths change. Retain bounded existing public installer streams to determine the original unknown closed-runtime-compile failure.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

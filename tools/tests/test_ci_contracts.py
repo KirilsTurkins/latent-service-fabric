@@ -823,6 +823,39 @@ class ContractTests(unittest.TestCase):
 
 
 class RepositoryMigrationTests(unittest.TestCase):
+    def test_installer_diagnostic_copies_only_original_scratch_setup(self):
+        model = contracts.observed_workflows(ROOT)[".github/workflows/dotnet-guest.yml"]
+        selector = model["on"]["workflow_dispatch"]["inputs"]["install_tools_diagnostic"]
+        self.assertEqual(selector["type"], "boolean")
+        self.assertIs(selector["default"], False)
+        jobs = model["jobs"]
+        self.assertEqual(jobs["toolchain"]["if"],
+                         "${{ github.event_name != 'workflow_dispatch' || !inputs.install_tools_diagnostic }}")
+        original = jobs["scratch-refusals"]
+        diagnostic = jobs["tool-install-diagnostic"]
+        self.assertEqual(diagnostic["if"],
+                         "${{ github.event_name == 'workflow_dispatch' && inputs.install_tools_diagnostic }}")
+        for field in ("runs-on", "timeout-minutes", "env"):
+            self.assertEqual(diagnostic[field], original[field])
+        names = {"Check ordinary source, original budgets and exact outcome controls",
+                 "Install captured NativeAOT namespace and loader inputs",
+                 "Install the pinned native compiler and closed runtime"}
+        setup = [step for step in original["steps"]
+                 if step.get("uses", "").split("@")[0] in
+                 {"actions/checkout", "actions/setup-python", "actions/setup-dotnet",
+                  "bytecodealliance/actions/wasm-tools/setup"} or step.get("name") in names]
+        self.assertEqual(len(setup), 7)
+        self.assertEqual(diagnostic["steps"][:-1], setup)
+        upload = diagnostic["steps"][-1]
+        self.assertEqual(upload["if"], "always()")
+        self.assertEqual(upload["uses"], "actions/upload-artifact")
+        self.assertEqual(upload["with"]["path"].splitlines(), [
+            "${{ runner.temp }}/dotnet-authoring-tools/logs/*.stdout.txt",
+            "${{ runner.temp }}/dotnet-authoring-tools/logs/*.stderr.txt",
+            "${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json",
+            "${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json",
+            "${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json"])
+
     def test_every_historical_obligation_and_current_expectation_is_accounted_for(self):
         legacy = contracts.read_json(ROOT / "tools/ci/history/commands-v1.json")
         data = contracts.load(ROOT)
@@ -882,6 +915,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         java_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['java_http_spi']
         self.assertEqual(java_selector['type'], 'boolean')
         self.assertIs(java_selector['default'], False)
+        dotnet_selector = data['workflowContracts']['.github/workflows/dotnet-guest.yml']['on']['workflow_dispatch']['inputs']['install_tools_diagnostic']
+        self.assertEqual(dotnet_selector['type'], 'boolean')
+        self.assertIs(dotnet_selector['default'], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
@@ -902,6 +938,9 @@ class RepositoryMigrationTests(unittest.TestCase):
             if value['workflow'] == '.github/workflows/java-guest-feasibility.yml' and value['job'] == 'compiler-component':
                 self.assertEqual(value['jobIf'], 'success()', key)
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+            if value['workflow'] == '.github/workflows/dotnet-guest.yml' and value['job'] == 'toolchain':
+                self.assertEqual(value['jobIf'], 'success()', key)
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.install_tools_diagnostic }}"
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.
