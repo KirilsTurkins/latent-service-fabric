@@ -52,6 +52,10 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
     try:
         binaries, companions, baseline = inherited(native_qualification)
         record['inherited'] = baseline
+        # Downloaded artifacts lose executable modes; only the five binaries
+        # already authenticated by the original normal receipt are enabled.
+        for binary in binaries.values():
+            binary.chmod(0o700)
         stage = 'published-library-and-normal-capture'
         application, captured = prepare(output / 'project', output / 'outside', tools)
         record['captured'] = captured

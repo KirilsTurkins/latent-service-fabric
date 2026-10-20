@@ -57,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_published_tasks.py",
-  "reviewReason": "Add four published factory/graph/authority/budget and retirement controls; preserve existing task programme and all old cases.",
+  "reviewReason": "Add explicit combined published/scratch refusal before material access; preserve existing four cases and all guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

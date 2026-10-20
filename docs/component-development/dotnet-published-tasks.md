@@ -23,10 +23,19 @@ limits, zero outbound/log/effect assertions and clean/reaped shutdown remain.
 
 All four cases passed a separate SDK10.0.303 reference CLR programme. Four
 source/graph/authority/oracle controls pass. **No signed guest result is claimed.**
-The strict normal-native qualifier is prepared for the existing public normal
-qualification bundle; maintained owning-job wiring and actual guest execution
-must finish before delivery. This is a branch milestone while #1152's actual
-task fix is executing, not a complete #746 qualification.
+The strict normal-native qualifier consumes this run's identity-checked public
+normal qualification bundle. A separate 20-minute `published-tasks` job depends
+on the existing normal .NET job; its original 75-minute parent commands and
+bounds remain unchanged. Only the five binaries authenticated by the original
+receipt have executable modes restored after artifact download. The source
+controls preserve SDK inputs, the exact two-package graph, original budgets,
+physical retirement and refusal of combined qualification selectors.
+
+The first focused attempt stopped before package capture because its command
+log directory had not been created; no component result is inferred. That setup
+is corrected and a fresh signed campaign is running. The ordinary twelve-case
+task programme is separately qualified in #1152; it does not establish these
+published library cases or complete #746.
 
 Polly identities and APIs: https://www.nuget.org/packages/Polly/8.6.3 and
 https://github.com/App-vNext/Polly/tree/8.6.3 . The selected reference graph contains

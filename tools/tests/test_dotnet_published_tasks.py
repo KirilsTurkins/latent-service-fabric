@@ -53,6 +53,7 @@ class PublishedManagedTasks(unittest.TestCase):
     def test_invalid_or_combined_selector_fails_before_materials_or_execution(self):
         for keywords in ({'language': 'rust'}, {'language': 'dotnet', 'dotnet_task_runtime': True},
                          {'language': 'dotnet', 'noncrypto_entropy': True},
+                         {'language': 'dotnet', 'standard_scratch_refusal': True},
                          {'language': 'dotnet', 'dotnet_published_tasks': 1}):
             selected = {'dotnet_published_tasks': True, **keywords}
             with self.subTest(selected=selected), self.assertRaisesRegex(RuntimeError, 'published-tasks-language'):
