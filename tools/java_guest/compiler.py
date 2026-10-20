@@ -404,7 +404,7 @@ class Compiler:
                 "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
             })
             coroutine_profile = coroutine_patch.stage(self, project, destination)
-        self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
+        c_failure_context.teavm(self, project, failure_contexts)
         if coroutine_profile is not None:
             coroutine_profile = coroutine_patch.loaded(project, coroutine_profile, compiler=self)
             write_json(destination / 'coroutine-compiler-profile.json', coroutine_profile)
