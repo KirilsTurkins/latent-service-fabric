@@ -84,8 +84,8 @@ returns `EDEADLK`. A cyclic destructor leaves its pending value owned and return
 owner rather than treat the hook as physical retirement or refund resources.
 Ordinary pthread key functions return their error codes without changing errno.
 Both direct WASI-musl errno and `__errno_location` address the selected context.
-No C11 `tss_*`, thread creation/join, cancellation unwinding, destructor suspension
-or native owner accounting is supplied by this slice.
+The original pthread-only slice did not supply C11 `tss_*`, thread creation/join,
+cancellation unwinding, destructor suspension or native owner accounting.
 
 The focused compiler controller retains all original controls and adds a real
 compiled-core key/errno control: callback reentry into a second context, stale
@@ -107,3 +107,22 @@ producer tool binaries were not independently retained.
 These actual controls establish the finite compiled-core mechanism only. No
 canonical child, signed component, production node or libc thread lifecycle
 executed. This does not qualify the complete pthread profile or close #744.
+
+The additive C11 source slice supplies ordinary `tss_create`, `tss_delete`,
+`tss_get` and `tss_set` using that same key registry, context values and closing
+hook. It requires the pinned WASI-musl key ABI and `TSS_DTOR_ITERATIONS == 4`.
+Creation/set return `thrd_success` or `thrd_error`; deletion returns void and
+runs no destructor. C11 and pthread calls share the128-slot ceiling and retain
+generation/stale-value protection. Error returns preserve context errno.
+There is no second registry, value array or destructor budget.
+
+The new fixed C11 fixture uses the ordinary public headers and entry points.
+Pinned Clang rejects the original PAL for four unresolved `tss_*` symbols and
+links the new PAL with the same4MiB maximum memory and64KiB stack. The owning
+compiled-core run is pending: its required cases cover root/child context
+isolation, deletion without callbacks, shared pthread/C11 exhaustion, error
+returns, stale handles, bounded/reentrant/cyclic destructors and context errno.
+All original26 Rust/parser, C isolation/refusal and pthread controls remain.
+This C11 source addition does not select a production thread profile or supply
+thread creation/join, canonical children, charged bootstrap, synchronization,
+checkpoints or signed/native physical retirement. #744 remains open.
