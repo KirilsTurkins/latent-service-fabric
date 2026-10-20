@@ -13,6 +13,8 @@ normal products, the original managed build profile and six actual filtered
 native controls. Its 65,925,279-byte archive passed CRC/hash checks for all15
 members. This producer is not a signed SDK or guest qualification. Every
 consumer rechecks its pinned receipt, source material and five product bytes.
+The consumer checkout has its own before/after native-source identity; it does
+not relabel these historical compiled products as a current native build.
 
 The original Go35 and TypeScript33 component, compiler observation, source
 inventory, package-input inventory and node receipt retain their own exact
@@ -52,8 +54,50 @@ this service receives no HTTP grant and makes no HTTP request.
 Focused controls cover producer identity drift, five product substitutions,
 closed import/alias shape, unchanged cell limits, independent tenant grants,
 foreign credentials, original public-input restoration, exact seven-call order
-and unavailable/live owner refusals. The feature-branch push/manual Go/TypeScript signed cross-tenant
-programme is **pending**. This is a partial #681 AC8/mandatory lifecycle slice
-and supporting #679 evidence; neither whole ticket is complete. Concurrent
-readers/callbacks, pending flush, cancellation, late completion and a public
-guest request-identity API are not qualified by these sequential calls.
+and unavailable/live owner refusals. A separate control requires the unused
+observation peer's five exact integer counters to be zero and its process to
+have actually retired. The original HTTP comparator incorrectly required three
+held requests; this programme has no HTTP contacts. The indexed workflow is now
+manual-only, retaining its original jobs, commands and twenty-minute limits.
+
+The [observed seven-call packet](../testing/evidence/resource-tenants-observed-seven-2026-10-20.json)
+binds frozen source `87c2a87d835476ae647a5c32efd0c634800b0c7e` and
+[run39407417718](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39407417718).
+Both Go and TypeScript completed all seven exact calls, including both traps
+and fresh resources in the other tenant, physical retirement and all eighteen
+owner counters at zero. Both independent credential checks and node shutdown
+passed. Go additionally recorded the foreign missing-grant refusal before
+guest work. All 127 Go and 98 TypeScript archive members were authenticated,
+and the 24 recorded helper materials matched the frozen Git source.
+
+Both outer jobs remain **failed** at the incorrect HTTP peer comparator. The
+peer was closed and reaped with exit zero, but its raw five counters were not
+retained, and the final source/product identity block did not execute. These
+missing observations are not inferred from the passing seven calls. The source
+correction will be exercised by the next language extension; these two
+programmes are not repeated merely to change their report conclusion.
+
+This is a finite #681 AC8/mandatory lifecycle slice and supporting #679
+evidence; neither whole ticket is complete. Concurrent readers/callbacks,
+pending flush, cancellation, late completion and a public guest request-identity
+API are not qualified by these sequential calls.
+
+## C, Java and Rust extension
+
+The separate bounded C/Java/Rust reference keeps the first Go/TypeScript source
+frozen. Java reuses its exact qualified39 component and original compile
+records; only known WIT/data bytes matching both original inventories are
+restored. It uses no JDK, Java compiler or host build.
+
+The C23 ancestor archive has all812 members authenticated but omits its raw
+compiler observation and other normal signer metadata. That absent record is
+not invented. The C extension builds exactly one fresh greeting through the
+normal captured C23 compiler from the maintained outside library/data fixture,
+after removing the original outside paths. It preserves the actual new build
+observation and independently records the old C23 finite ancestry. It does
+not repeat the original C35 baseline or build native/engine tools. The same
+seven-call two-tenant controller then consumes this new observed component.
+Rust reuses its exact authenticated33-call component, with its single missing
+public WIT restored only after matching both original inventories. It invokes
+no Cargo, Rust compiler or host build. All three new extension programmes are
+pending; none supplies six-language closure.

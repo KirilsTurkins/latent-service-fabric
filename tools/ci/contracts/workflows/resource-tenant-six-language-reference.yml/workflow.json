@@ -1,0 +1,28 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "resource-tenants-extension-${{ github.ref }}"
+    },
+    "name": "C Rust and Java resource tenant reference",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/sdk-resource-six-tenant-extension-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "tenants"
+  ],
+  "reviewReason": "Separate explicit manual/owned-branch C Java Rust extension with immutable a4 native products; one fresh C guest only, or unchanged qualified Java39/Rust33 originals; no Go/TypeScript replay or host build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/resource-tenant-six-language-reference.yml"
+}

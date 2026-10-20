@@ -1,0 +1,142 @@
+name: C Rust and Java resource tenant reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/sdk-resource-six-tenant-extension-20261020]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: resource-tenants-extension-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tenants:
+    name: Retained ${{ matrix.language }} resources across two tenants
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [c, java, rust]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install controller requirements and check closed producer scope
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_resource_tenant_isolation tools.tests.test_resource_tenant_fresh_c -v
+      - name: Authenticate fixed normal native products before executable restore
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12255531553 > "$RUNNER_TEMP/resource-native-producer.json"
+          python3 -B tools/qualify_resource_tenants.py --verify-native-producer "$RUNNER_TEMP/resource-native-producer.json"
+      - name: Restore the fixed historical a4 normal native products
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdk-native-products-a4f05f3f243889cc7ba7a0404bdc76afec32d3c2
+          run-id: 39400186766
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/resource-native
+      - name: Authenticate original Java39 public component producer
+        if: matrix.language == 'java'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12247220241 > "$RUNNER_TEMP/resource-original-producer.json"
+          python3 -B tools/qualify_resource_tenants.py --language java --verify-original-producer "$RUNNER_TEMP/resource-original-producer.json"
+      - name: Restore original Java39 public component and unchanged compile records
+        if: matrix.language == 'java'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: java-resource-replay-7b5119c5448405b20771e8a020b5e823cc72a0d6
+          run-id: 39383037165
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/resource-original
+      - name: Authenticate original Rust33 public component producer
+        if: matrix.language == 'rust'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12257859357 > "$RUNNER_TEMP/resource-original-producer.json"
+          python3 -B tools/qualify_resource_tenants.py --language rust --verify-original-producer "$RUNNER_TEMP/resource-original-producer.json"
+      - name: Restore original Rust33 public component and unchanged compile records
+        if: matrix.language == 'rust'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: embedded-resource-rust-706880aff3e70b46be97bb2119c8c32dda30e74b
+          run-id: 39407973986
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/resource-original
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v1
+        if: matrix.language == 'c'
+        with:
+          version: 0.16.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        if: matrix.language == 'c'
+        with:
+          version: 1.254.0
+      - name: Install only the pinned C guest binding tool and compiler containment
+        if: matrix.language == 'c'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/resource-tools"
+          echo "$RUNNER_TEMP/resource-tools" >> "$GITHUB_PATH"
+      - name: Repackage retained Java39 then require both tenant lifecycles
+        if: matrix.language == 'java'
+        run: |
+          python3 -B tools/qualify_resource_tenants.py --language "${{ matrix.language }}" \
+            --original "$RUNNER_TEMP/resource-original" --original-producer "$RUNNER_TEMP/resource-original-producer.json" \
+            --native "$RUNNER_TEMP/resource-native" --native-producer "$RUNNER_TEMP/resource-native-producer.json" \
+            --output "$RUNNER_TEMP/resource-tenants"
+      - name: Repackage retained Rust33 then require both tenant lifecycles
+        if: matrix.language == 'rust'
+        run: |
+          python3 -B tools/qualify_resource_tenants.py --language "${{ matrix.language }}" \
+            --original "$RUNNER_TEMP/resource-original" --original-producer "$RUNNER_TEMP/resource-original-producer.json" \
+            --native "$RUNNER_TEMP/resource-native" --native-producer "$RUNNER_TEMP/resource-native-producer.json" \
+            --output "$RUNNER_TEMP/resource-tenants"
+      - name: One fresh normal captured C23 greeting then require both tenant lifecycles
+        if: matrix.language == 'c'
+        run: |
+          python3 -B tools/resource_tenant_fresh_c.py --native "$RUNNER_TEMP/resource-native" \
+            --native-producer "$RUNNER_TEMP/resource-native-producer.json" --output "$RUNNER_TEMP/resource-C"
+      - name: Retain bounded public results and explicit original compile ancestry
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: resource-tenants-extension-${{ matrix.language }}-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/resource-native-producer.json
+            ${{ runner.temp }}/resource-original-producer.json
+            ${{ runner.temp }}/resource-tenants-original/resource-original-acquisition.json
+            ${{ runner.temp }}/resource-tenants/qualified.json
+            ${{ runner.temp }}/resource-tenants/FAILED.json
+            ${{ runner.temp }}/resource-tenants/logs/**
+            ${{ runner.temp }}/resource-tenants/examples-controls/*.json
+            ${{ runner.temp }}/resource-tenants/foreign-controls/*.json
+            ${{ runner.temp }}/resource-tenants/signed/my-greeting/build-observation.json
+            ${{ runner.temp }}/resource-C/qualified.json
+            ${{ runner.temp }}/resource-C/fresh-C/fresh-build.json
+            ${{ runner.temp }}/resource-C/fresh-C/build/*.json
+            ${{ runner.temp }}/resource-C/fresh-C/build/component.wasm
+            ${{ runner.temp }}/resource-C/fresh-C/build/wit/**/*.wit
+            ${{ runner.temp }}/resource-C/fresh-C/build/resources/**
+            ${{ runner.temp }}/resource-C/fresh-C/build/logs/**
+            ${{ runner.temp }}/resource-C/coupled/*.json
+            ${{ runner.temp }}/resource-C/coupled/logs/**
+            ${{ runner.temp }}/resource-C/coupled/examples-controls/*.json
+            ${{ runner.temp }}/resource-C/coupled/foreign-controls/*.json
+            ${{ runner.temp }}/resource-C/coupled/signed/my-greeting/build-observation.json
