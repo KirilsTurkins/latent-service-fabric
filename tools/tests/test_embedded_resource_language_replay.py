@@ -108,16 +108,58 @@ class EmbeddedLanguageReplay(unittest.TestCase):
                         self.assertRaisesRegex(RuntimeError,'embedded-replay-original-'):
                     replay.historical('typescript',directory)
 
+    def projection_fixture(self):
+        names = [*replay.ORDINARY_ACTIVATIONS[:12],*replay.REPLACED_GREETING,*replay.ORDINARY_ACTIVATIONS[12:]]
+        proof = {'normalActivations':names,'physicalSamples':27,'idleSamples':9,'unchangedOriginal':'source02f'}
+        node = {'invocations':[{'activation':name} for name in names],
+            'samples':[{'phase':str(index)} for index in range(27)],
+            'providerIdle':[{'unavailable':[],'counters':{key:'0' for key in replay.ACTIVE_COUNTERS}} for _ in range(9)],
+            'approvedTypeScriptGenerator':{'status':'passed','cases':[
+                {'ordinal':index,'actualSignedTarget':True} for index in range(3)]}}
+        for index,name in enumerate(replay.REPLACED_GREETING,10):node['samples'][index]['phase'] = name
+        return proof,node
+
+    def test_only_the_three_exact_old_greeting_calls_are_projected_with_untouched_ancestry(self):
+        proof,node = self.projection_fixture(); before = copy.deepcopy((proof,node))
+        observed = replay.resource_ancestry('typescript',proof,node)
+        self.assertEqual((proof,node),before)
+        self.assertEqual(observed['normalActivations'],list(replay.ORDINARY_ACTIVATIONS))
+        self.assertEqual(observed['historicalNormalActivations'],proof['normalActivations'])
+        self.assertEqual(observed['historicalPhysicalSamples'],27)
+        self.assertEqual(observed['historicalIdleSamples'],9)
+        self.assertEqual((observed['physicalSamples'],observed['idleSamples']),(24,6))
+        self.assertEqual(observed['normalProgrammeProjection']['originalActivationPositions'],[12,13,14])
+        self.assertEqual(replay.resource_ancestry('rust',proof,node),proof)
+
+    def test_projection_rejects_unknown_missing_reordered_common_or_foreign_extra_calls(self):
+        for mode in ('unknown','missing','order','extra','generator','physical','idle','idle-owner','signed'):
+            proof,node = self.projection_fixture()
+            if mode == 'unknown':node['invocations'][0]['activation'] = 'unknown-common-case'
+            elif mode == 'missing':node['invocations'].pop(3)
+            elif mode == 'order':node['invocations'][0:2] = reversed(node['invocations'][0:2])
+            elif mode == 'extra':node['invocations'].append({'activation':'foreign-extra'})
+            elif mode == 'generator':proof['normalActivations'][12] = 'TypeScript-generator-99'
+            elif mode == 'physical':node['samples'][10]['phase'] = 'ordinary-not-generator'
+            elif mode == 'idle':node['providerIdle'].pop()
+            elif mode == 'idle-owner':node['providerIdle'][1]['counters'][replay.ACTIVE_COUNTERS[0]] = '1'
+            else:node['approvedTypeScriptGenerator']['cases'][1]['actualSignedTarget'] = False
+            with self.subTest(mode=mode),self.assertRaisesRegex(RuntimeError,'exact-replaced-greeting-projection'):
+                replay.resource_ancestry('typescript',proof,node)
+
     def test_separate_twenty_minute_manual_matrix_keeps_all_existing_jobs_untouched(self):
         workflow = yaml.safe_load((ROOT/'.github/workflows/embedded-resource-languages-reference.yml').read_bytes())
         events = workflow.get('on',workflow.get(True))
-        self.assertIsNone(events['workflow_dispatch'])
+        self.assertEqual(events['workflow_dispatch'],{'inputs':{'language':{
+            'description':'Select one corrected resource reference or both','type':'choice',
+            'required':False,'default':'both','options':['both','rust','typescript']}}})
         self.assertEqual(events['push']['branches'],['diagnostic/rust-typescript-embedded-resources-20261020'])
         self.assertEqual(set(events),{'push','workflow_dispatch'})
         self.assertEqual(workflow['permissions'],{'contents':'read','actions':'read'})
         self.assertEqual(set(workflow['jobs']),{'resources'})
         job = workflow['jobs']['resources']; self.assertEqual(job['timeout-minutes'],20)
-        self.assertEqual(job['strategy'],{'fail-fast':False,'matrix':{'language':['rust','typescript']}})
+        self.assertFalse(job['strategy']['fail-fast'])
+        self.assertEqual(job['strategy']['matrix'],{'language':
+            "${{ fromJSON(inputs.language == 'rust' && '[\"rust\"]' || inputs.language == 'typescript' && '[\"typescript\"]' || '[\"rust\",\"typescript\"]') }}"})
         steps = job['steps']; commands = '\n'.join(row.get('run','') for row in steps)
         self.assertNotIn('-p latentd',commands)
         self.assertNotIn('qualify_rust_capsules.py',commands)

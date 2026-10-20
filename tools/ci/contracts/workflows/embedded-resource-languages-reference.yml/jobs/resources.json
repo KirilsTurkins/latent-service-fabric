@@ -106,17 +106,14 @@
     "strategy": {
       "fail-fast": false,
       "matrix": {
-        "language": [
-          "rust",
-          "typescript"
-        ]
+        "language": "${{ fromJSON(inputs.language == 'rust' && '[\"rust\"]' || inputs.language == 'typescript' && '[\"typescript\"]' || '[\"rust\",\"typescript\"]') }}"
       }
     },
     "timeout-minutes": 20
   },
   "jobId": "resources",
   "kind": "job",
-  "reviewReason": "Add two bounded historical-component resource references with exact separate native/component ancestry; preserve every original workflow and runner path.",
+  "reviewReason": "Retain native regular-file policy by selecting the existing captured Rust toolchain resolver after actual PATH-shim refusal; add default-both manual single-language replay without changing any existing command or deadline.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/embedded-resource-languages-reference.yml"
 }

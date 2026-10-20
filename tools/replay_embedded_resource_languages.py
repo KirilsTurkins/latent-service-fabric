@@ -19,7 +19,7 @@ if __package__ in {None,''}:
 from tools.go_entropy_replay_inputs import NoRedirect, Remote
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
-from tools.qualify_embedded_resources import HELPERS, campaign
+from tools.qualify_embedded_resources import ACTIVE_COUNTERS, HELPERS, campaign
 from tools.qualify_sdk_scratch import package_identity
 from tools import replay_go_embedded_resources as native
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, read_file, read_json, write_json
@@ -186,6 +186,50 @@ def historical(language, directory):
         'historicalReceiptRewritten':False,'currentNormalReceiptFabricated':False}
 
 
+# Exact default programme observed in the pinned 02f historical receipt. Its
+# three generator calls belong solely to the old greeting that this fixture
+# replaces, not to any of the four retained companion components.
+ORDINARY_ACTIVATIONS = tuple(
+    [f'authoring-{name}-{suffix}' for name in ('greeting','word-count','shipping')
+        for suffix in ('0','1','2','warm')]
+    + [f'authoring-fault-{index}' for index in range(7)]
+    + [f'authoring-http-{index}' for index in range(3)]
+    + ['authoring-deadline','authoring-after-deadline','authoring-cancel',
+       'authoring-after-cancel','authoring-after-disconnect'])
+REPLACED_GREETING = tuple(f'TypeScript-generator-{index}' for index in range(3))
+
+
+def resource_ancestry(language, proof, node):
+    if language != 'typescript':
+        return dict(proof)
+    historical = proof['normalActivations']
+    expected = [*ORDINARY_ACTIVATIONS[:12], *REPLACED_GREETING, *ORDINARY_ACTIVATIONS[12:]]
+    phases = [row['phase'] for row in node['samples']]
+    generator = node.get('approvedTypeScriptGenerator',{})
+    require(historical == expected
+        and [row['activation'] for row in node['invocations']] == expected
+        and len(node['samples']) == proof['physicalSamples'] == 27
+        and len(node['providerIdle']) == proof['idleSamples'] == 9
+        and all(not row.get('unavailable') and all(int(row['counters'][key]) == 0
+            for key in ACTIVE_COUNTERS) for row in node['providerIdle'])
+        and phases[10:13] == list(REPLACED_GREETING)
+        and [phase for phase in phases if phase.startswith('TypeScript-generator-')] == list(REPLACED_GREETING)
+        and generator.get('status') == 'passed'
+        and [row.get('ordinal') for row in generator.get('cases',[])] == [0,1,2]
+        and all(row.get('actualSignedTarget') is True for row in generator['cases']),
+        'embedded-replay-exact-replaced-greeting-projection')
+    return {**proof,'historicalNormalActivations':historical,
+        'historicalPhysicalSamples':proof['physicalSamples'],'historicalIdleSamples':proof['idleSamples'],
+        'normalActivations':list(ORDINARY_ACTIVATIONS),'physicalSamples':24,'idleSamples':6,
+        'normalProgrammeProjection':{'schemaVersion':'latent.embedded-resource.normal-projection.v1',
+            'historicalCalls':30,'retainedOrdinaryCalls':27,'omittedReplacedGreetingCalls':list(REPLACED_GREETING),
+            'originalActivationPositions':[12,13,14],'originalPhysicalPositions':[10,11,12],
+            'originalIdlePositions':[0,1,2],
+            'physicalContribution':3,'idleContribution':3,
+            'reason':'Historical generator calls use the replaced greeting; all four companion programmes remain exact.',
+            'historicalReceiptRewritten':False,'historicalGeneratorRerunClaimed':False}}
+
+
 def replay(language, original, normal, metadata, output, *, tools=None):
     origin = native.producer.validate_producer(read_json(metadata,1024**2))
     materials = {name:file_identity(ROOT/name) for name in dict.fromkeys(MATERIALS)}
@@ -200,7 +244,8 @@ def replay(language, original, normal, metadata, output, *, tools=None):
         and acquisition.get('credentialsRetained') is False, 'embedded-replay-acquisition-proof')
     acquisition_identity = file_identity(original/'acquisition.json')
     for path in binaries.values(): path.chmod(0o700)
-    ancestry = {**component_proof,'nativeProducer':origin,'nativeNormal':native_proof,
+    projected = resource_ancestry(language,component_proof,read_json(original/'node/workflow.json',1024**2))
+    ancestry = {**projected,'nativeProducer':origin,'nativeNormal':native_proof,
         'componentAcquisition':acquisition_identity,'nativeAndCompanionProducerDiffer':True,
         'currentNativeCompilationClaimed':False}
     result = campaign(language,output,binaries,companions,ancestry,tools=tools)
