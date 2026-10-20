@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "FiniteWaitProgramme.test_current_native_source_requires_full_identity_of_the_authenticated_producer",
+    "FiniteWaitProgramme.test_outside_library_calls_ordinary_task_wait_without_candidate_or_application_pump",
+    "FiniteWaitProgramme.test_pending_observer_is_fresh_and_uses_one_actual_deployment_population",
+    "FiniteWaitProgramme.test_rehashed_old_infinite_receipt_and_changed_final_corelib_still_refuse",
+    "FiniteWaitProgramme.test_root_cancellation_and_deadline_can_never_count_as_successful_task_completion",
+    "FiniteWaitProgramme.test_standard_values_reject_changed_task_results_effects_unknown_outcomes_and_unreaped_calls"
+  ],
+  "guards": {
+    "FiniteWaitProgramme.test_current_native_source_requires_full_identity_of_the_authenticated_producer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b110ba164f278a5369f12b98a8ce63b557836dfaf1b5f8e52e8086f5f46fa814",
+        "class:setup-sha256:0dbf2362d3f27f819fe817c61d1fec752506b016dd8ab562539902efa465e1b0"
+      ],
+      "skipSites": []
+    },
+    "FiniteWaitProgramme.test_outside_library_calls_ordinary_task_wait_without_candidate_or_application_pump": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b110ba164f278a5369f12b98a8ce63b557836dfaf1b5f8e52e8086f5f46fa814",
+        "class:setup-sha256:0dbf2362d3f27f819fe817c61d1fec752506b016dd8ab562539902efa465e1b0"
+      ],
+      "skipSites": []
+    },
+    "FiniteWaitProgramme.test_pending_observer_is_fresh_and_uses_one_actual_deployment_population": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b110ba164f278a5369f12b98a8ce63b557836dfaf1b5f8e52e8086f5f46fa814",
+        "class:setup-sha256:0dbf2362d3f27f819fe817c61d1fec752506b016dd8ab562539902efa465e1b0"
+      ],
+      "skipSites": []
+    },
+    "FiniteWaitProgramme.test_rehashed_old_infinite_receipt_and_changed_final_corelib_still_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b110ba164f278a5369f12b98a8ce63b557836dfaf1b5f8e52e8086f5f46fa814",
+        "class:setup-sha256:0dbf2362d3f27f819fe817c61d1fec752506b016dd8ab562539902efa465e1b0"
+      ],
+      "skipSites": []
+    },
+    "FiniteWaitProgramme.test_root_cancellation_and_deadline_can_never_count_as_successful_task_completion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b110ba164f278a5369f12b98a8ce63b557836dfaf1b5f8e52e8086f5f46fa814",
+        "class:setup-sha256:0dbf2362d3f27f819fe817c61d1fec752506b016dd8ab562539902efa465e1b0"
+      ],
+      "skipSites": []
+    },
+    "FiniteWaitProgramme.test_standard_values_reject_changed_task_results_effects_unknown_outcomes_and_unreaped_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b110ba164f278a5369f12b98a8ce63b557836dfaf1b5f8e52e8086f5f46fa814",
+        "class:setup-sha256:0dbf2362d3f27f819fe817c61d1fec752506b016dd8ab562539902efa465e1b0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_finite_wait_programme.py",
+  "reviewReason": "Actual cb9 pre-ILC composition failure: derive exact unchanged method count from authenticated validated9/10 TaskWait helpers, keep44744 unjoined/44753 infinite exact; add source-equality barrier and four controls. Original18 outcomes/allexisting workflow steps/budgets remain.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
