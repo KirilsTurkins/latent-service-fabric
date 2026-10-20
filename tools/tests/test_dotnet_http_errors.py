@@ -296,6 +296,17 @@ class HttpErrorPortTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "bounded regular file"):
             port.finish(self.project, self.evidence)
 
+    def test_real_targets_emit_selected_reference_receipts_without_copying_full_framework_list(self):
+        for target, property_name in (("HttpErrors.targets", "LsfHttpErrorAssembly"),
+                ("TaskWait.targets", "LsfTaskWaitAssembly"),
+                ("ClosedFilesystem.targets", "LsfClosedFilesystemAssembly")):
+            with self.subTest(target=target):
+                document = http_errors.XML.fromstring(read_file(self.sdk / "tools/http-errors" / target))
+                writers = document.findall(".//WriteLinesToFile")
+                self.assertEqual(len(writers), 1)
+                self.assertEqual(writers[0].attrib["Lines"], "$(" + property_name + ")")
+                self.assertEqual(writers[0].attrib["Overwrite"], "false")
+
     def test_narrow_receipt_never_authorizes_unknown_missing_or_duplicate_native_http_edges(self):
         port = self.prepare()
         response = self.reference_files(port, references=[str(port.assembly)])
