@@ -30,7 +30,7 @@
   "requiredJobs": [
     "canonical"
   ],
-  "reviewReason": "Explicit branch-only canonical replay, preserving the default-all production workflow and all original profile/setup/canonical command fields.",
+  "reviewReason": "Preserve every original focused canonical step/command/bound; add only the named type-only provider availability libtest before the unchanged three actual canonical cases.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/http-phase-canonical-only.yml"
 }

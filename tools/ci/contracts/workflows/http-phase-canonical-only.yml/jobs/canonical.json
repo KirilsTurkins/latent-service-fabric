@@ -30,6 +30,10 @@
         }
       },
       {
+        "name": "Check exact type-only phase provider admission boundary",
+        "run": "cargo test --locked -p latent-wasmtime --lib surface::tests::phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_calls -- --exact --nocapture"
+      },
+      {
         "name": "Execute the new canonical ABI with actual sockets and fresh Stores",
         "run": "cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture\n"
       }
@@ -38,7 +42,7 @@
   },
   "jobId": "canonical",
   "kind": "job",
-  "reviewReason": "Execute exactly the three failing canonical cases with original pinned setup/environment/timebound; prior unchanged transport and semantic proofs stay separately source-bound, never recounted.",
+  "reviewReason": "Preserve every original focused canonical step/command/bound; add only the named type-only provider availability libtest before the unchanged three actual canonical cases.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/http-phase-canonical-only.yml"
 }
