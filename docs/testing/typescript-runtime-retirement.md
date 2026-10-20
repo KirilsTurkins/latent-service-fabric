@@ -1,6 +1,6 @@
 # Ordinary pending Promise retirement
 
-This branch prepares a current compiler and signed-node gate for the root
+The maintained compiler and signed-node gate covers the root
 cancellation and retirement portions of issues #736 and #745. It does not
 qualify the whole TypeScript runtime or change the runtime implementation.
 
@@ -58,13 +58,29 @@ physical-idle bound remain unchanged.
 Focused source controls include actual native JavaScript execution of
 the outside library with controlled timers. A bounded local normal npm
 capture also passed with originals removed and the reviewed closure still
-verifiable. Neither result proves emitted-component execution. Compiler and
-signed native execution are pending. The CLOCK build also needs the verified
-native-world/application-import separation repaired by #1148; no historical
-build observation may be relabelled as a current one. The qualification record
-keeps historical compiler ancestry separate from the current native test
-target source. Synthetic receipt controls are validation of the reader,
-not signed runtime evidence.
+verifiable. These source controls are separate from the actual signed result.
+
+[Run 39358519866, job 118418918078](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39358519866/job/118418918078)
+passed at source `f25f3c455d5a713b2e087fdf27212b87cc36c00a`. The
+[authenticated observation](evidence/typescript-runtime-retirement-signed-2026-10-20.json)
+records both fresh component builds and all ten outcomes. Each of the three
+pending witnesses observed one Store, one read wait and one broker call; all
+fifteen counters were zero at every idle boundary. The original timer resolved
+to 42, cancellation returned `Cancelled`, the original root deadline returned
+`DeadlineExceeded`, and fresh invocations returned 42 after each terminal path.
+
+The full recorded native source identity was recomputed from the exact Git
+source: 3,293 files and 25,783,702 bytes. All eight named material rows and both
+component/source/observation/package identities match the artifact. The later
+strict reader independently accepted exactly one named libtest case with
+47 filtered cases against the authenticated frozen registry. Current
+development adds an unrelated Go synchronization test, so a future fresh
+selection has 48 filtered cases; the historical result retains its original
+registry. The final composition preserves all exercised TypeScript and native
+production inputs; only the independent Go test files differ in the native
+source scope. Historical compiler ancestry remains 02f/2cd, and the CLOCK
+engine envelope remains unchanged. No historical receipt is rebound to the
+composition. Synthetic reader controls remain separate from signed evidence.
 
 An accepted callback error has a distinct source/reference mode, but the
 native case does not use a generic trap to infer that callback's origin.
