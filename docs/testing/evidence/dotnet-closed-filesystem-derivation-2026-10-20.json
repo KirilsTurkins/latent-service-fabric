@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "latent.dotnet.closed-filesystem-derivation.v1",
+  "kind": "actual-pinned-CoreLib-metadata-derivation",
+  "sourceFiles": {
+    "sdk/dotnet-guest/tools/http-errors/Program.cs": {
+      "sha256": "sha256:8afb7be2facfc8b70ece8d24194c3d814de8efbb77112f4c4dcb35e68d3b6459",
+      "bytes": 52760
+    },
+    "sdk/dotnet-guest/tools/http-errors/TaskWait.cs": {
+      "sha256": "sha256:c9b5baaffaee03e86dd9d50e81d0d2db6beb8aa58b4010984d3d7cce5aabdfe4",
+      "bytes": 20718
+    },
+    "sdk/dotnet-guest/tools/http-errors/IdleTimerDriver.cs": {
+      "sha256": "sha256:c445e787920430ce4df0e336f619c267971a06f3c040b0ac70c892deceacc786",
+      "bytes": 27065
+    },
+    "sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.cs": {
+      "sha256": "sha256:9bd6caab33bc94359c0fb14abcc785242b36ecddf69674751932385940d0a081",
+      "bytes": 6113
+    },
+    "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj": {
+      "sha256": "sha256:37fcd5568bf7f56ac4f3d1a02c03d2d24c8e3efd329c2d6e0803c1aa08cf51c4",
+      "bytes": 654
+    }
+  },
+  "original": {
+    "sha256": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "bytes": 5694976,
+    "publicPackage": "runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm/10.0.0-rc.1.26306.1",
+    "member": "runtimes/wasi-wasm/native-hidden/System.Private.CoreLib.dll",
+    "memberPreimageVerified": true,
+    "wholePackageContentHashVerified": false
+  },
+  "cecil": {
+    "sha256": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7"
+  },
+  "pureClosed": {
+    "patch": "latent.dotnet.closed-filesystem.v1",
+    "originalDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "baseDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "outputDigest": "sha256:953314dee4f7c25f202b2d44536c6c84439aa3042cb7a2ccc95ee7a74227d43b",
+    "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+    "originalMethodBodies": {
+      "Microsoft.Win32.SafeHandles.SafeFileHandle Interop/Sys::Open(System.String,Interop/Sys/OpenFlags,System.Int32)": "45c08142a966e0bf75b1199633662f29f40bb13b5e6c731685c18c18d673e947",
+      "System.IntPtr Interop/Sys::MksTemps(System.Byte*,System.Int32)": "706bc70525fa1dc2baec392c7ddb1febd377a584567dd6565fa9f65b87a31ccc"
+    },
+    "modifiedOriginalMethods": 2,
+    "unchangedBaseMethods": 44744,
+    "otherBaseBodiesUnchanged": true,
+    "publicWrappersUnchanged": true,
+    "newHostImports": 0,
+    "filesystemAuthority": false
+  },
+  "taskWaitIntermediate": {
+    "sha256": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+    "immutableAndRechecked": true
+  },
+  "joinedClosed": {
+    "patch": "latent.dotnet.closed-filesystem.v1",
+    "originalDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "baseDigest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+    "outputDigest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb",
+    "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+    "originalMethodBodies": {
+      "Microsoft.Win32.SafeHandles.SafeFileHandle Interop/Sys::Open(System.String,Interop/Sys/OpenFlags,System.Int32)": "45c08142a966e0bf75b1199633662f29f40bb13b5e6c731685c18c18d673e947",
+      "System.IntPtr Interop/Sys::MksTemps(System.Byte*,System.Int32)": "706bc70525fa1dc2baec392c7ddb1febd377a584567dd6565fa9f65b87a31ccc"
+    },
+    "modifiedOriginalMethods": 2,
+    "unchangedBaseMethods": 44753,
+    "otherBaseBodiesUnchanged": true,
+    "publicWrappersUnchanged": true,
+    "newHostImports": 0,
+    "filesystemAuthority": false
+  },
+  "preservedValidationCallChain": [
+    "File.OpenRead/Open -> FileStream constructor",
+    "FileStreamHelpers.ValidateArguments -> original enum/buffer/preallocation validation",
+    "OSFileStreamStrategy -> Path.GetFullPath -> SafeFileHandle.Open -> Interop.Sys.Open"
+  ],
+  "publicMethodBodiesUnchanged": true,
+  "onlyNamedManagedWrappersModified": true,
+  "nativeAotExecuted": false,
+  "guestExecuted": false,
+  "unsupportedFilesystemRuntimeQualified": false,
+  "allFilesystemApisClaimed": false
+}

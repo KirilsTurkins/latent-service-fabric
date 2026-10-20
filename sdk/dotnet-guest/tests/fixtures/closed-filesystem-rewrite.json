@@ -1,0 +1,17 @@
+{
+  "patch": "latent.dotnet.closed-filesystem.v1",
+  "originalDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+  "baseDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+  "outputDigest": "sha256:953314dee4f7c25f202b2d44536c6c84439aa3042cb7a2ccc95ee7a74227d43b",
+  "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+  "originalMethodBodies": {
+    "Microsoft.Win32.SafeHandles.SafeFileHandle Interop/Sys::Open(System.String,Interop/Sys/OpenFlags,System.Int32)": "45c08142a966e0bf75b1199633662f29f40bb13b5e6c731685c18c18d673e947",
+    "System.IntPtr Interop/Sys::MksTemps(System.Byte*,System.Int32)": "706bc70525fa1dc2baec392c7ddb1febd377a584567dd6565fa9f65b87a31ccc"
+  },
+  "modifiedOriginalMethods": 2,
+  "unchangedBaseMethods": 44744,
+  "otherBaseBodiesUnchanged": true,
+  "publicWrappersUnchanged": true,
+  "newHostImports": 0,
+  "filesystemAuthority": false
+}
