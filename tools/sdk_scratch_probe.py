@@ -14,7 +14,7 @@ LABELS = {
 # WASI's closed numeric errno set, not arbitrary guest-provided text or codes.
 GO_ERRNOS = (8, 28, 44, 52, 58, 63, 76)
 UNSUPPORTED = frozenset(('io-error|kind=unsupported', 'errno=notsup', 'errno=nosys',
-    'path-error|errno=52', 'path-error|errno=58', 'platform-not-supported', 'unsupported-operation'))
+    'path-error|errno=52', 'platform-not-supported', 'unsupported-operation'))
 
 
 def refusal(language, decoded):
