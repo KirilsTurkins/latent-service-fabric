@@ -26,8 +26,10 @@ existing maintained builder, normally signs/admit it with four authenticated
 companions, and retains every original named normal-programme activation.
 The default-false `embedded_resource_conformance` runner selector adds one
 post-tutorial probe without changing old paths or limits. Original grants and
-provider bindings stay intact. Rust's locked data-only fetch precedes the
-offline build; Go's compiler network must be denied. TypeScript consumes the
+provider bindings stay intact. Rust's reviewed CAS and complete native-vendor
+graph are projected by the normal offline compiler into a fresh Cargo home;
+there is no fetch against removed original path dependencies. Go's compiler
+network must be denied. TypeScript consumes the
 existing authenticated ordinary compiler tools and public engine, with no
 native engine rebuild or new runtime selection.
 
@@ -125,6 +127,16 @@ The reference workflow now permits a manual `language=rust` retry; its default
 and push selections still include both languages. This source correction is not
 signed Rust execution evidence.
 
+The next Rust reference at source `85db2200` passed native capture and removed
+both original outside trees, then failed in the qualifier's extra data-only
+`cargo fetch`: it reopened the original declaration's now-absent path. The
+[failure artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39400521205/artifacts/12256023093)
+retains that exact refusal before compilation. The correction requires the
+reviewed closure and uses only the normal compiler's CAS/selected-manifest/
+vendor projection with a fresh offline Cargo home. It checks the resulting
+input identity and network-denied receipt; it does not restore old paths or
+relax native dependency policy. Actual signed Rust execution remains pending.
+
 The TypeScript node at source `192c7b92` completed all33 known/reaped calls,
 30 physical samples and12 zero-active-owner samples with clean shutdown in
 [job 118533626060](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39394464486/job/118533626060).
@@ -134,7 +146,7 @@ The [source-bound observation](../testing/evidence/typescript-embedded-resources
 records a separate exact report reprojection after authenticating the published
 archive digest and all350 members. Exact UTF-8/NUL, binary, empty data, independent
 copies, guest trap and fresh binary recovery passed with zero network/log/effects.
-All14 exercised helper bytes match the original tested source; the fresh
+All10 exercised helper bytes match the original tested source; the fresh
 component and61-row source inventory match their actual build observation.
 The node's own source/binary before-after checks passed. The outer comparator
 failed before its final integrity block, so this record claims neither that block
