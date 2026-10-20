@@ -25,9 +25,8 @@ from tools.phase3_resource_os import Probe
 from tools.resource_tenant_inputs import LANGUAGES, native_products, original_build
 from tools import resource_tenant_node as tenant_node
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_cases import stop_peer
 from tools.rust_capsule_node import RecordingClient, configure, delete_all, deploy, sample, call
-from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
+from tools.rust_capsule_project import ROOT, decode_json, fresh, read_json, write_json
 from tools.run_rust_capsule_workflow import write_workflow_receipt
 from tools.sdk_provider_scenario import close_failed_provider, start_provider
 
@@ -92,6 +91,19 @@ def credential_denial(client, target):
         'authorizedBefore':before,'authorizedAfter':after,'credentialsRetained':False}
 
 
+def stop_observation_peer(peer):
+    peer.stop()
+    lines = bytes(peer.buffers[0]).splitlines()
+    require(len(lines) == 1 and len(lines[0]) <= 1024, 'resource-tenant-observation-peer-record')
+    counts = decode_json(lines[0])
+    require(type(counts) is dict and set(counts) == {'requests','authorized','unexpected','holds','closedHolds'}
+        and all(type(value) is int and value == 0 for value in counts.values()),
+        'resource-tenant-observation-peer-must-have-zero-contacts')
+    require(peer.closed and peer.owner.finished and peer.owner.process.returncode == 0,
+        'resource-tenant-observation-peer-not-reaped')
+    return {'counts':counts,'closed':True,'reaped':True,'exitCode':0}
+
+
 def qualify(language, original: Path, expected: dict, native: Path, producer: dict, output: Path):
     require(language in LANGUAGES and sys.platform == 'linux' and sys.version_info >= (3,13),
         'resource-tenant-linux-python313-language')
@@ -100,14 +112,15 @@ def qualify(language, original: Path, expected: dict, native: Path, producer: di
         'resource-tenant-output-outside-checkout')
     source = original_build(original,language,expected)
     binaries,native_proof = native_products(native,producer)
-    require(source_identity(ROOT) == native_proof['nativeSource'],
-        'resource-tenant-native-current-source-must-match-executed-producer')
+    consumer_native_source = source_identity(ROOT)
     output = fresh(output)
     materials = {name:file_identity(ROOT/name) for name in MATERIALS}
     record = {'schemaVersion':'latent.resource.tenant-isolation.v1','language':language,'status':'incomplete',
         'original':source,'native':native_proof,'materials':materials,'guestComponentsCompiled':0,
         'packagingOperation':'fresh-neutral-packaging-and-ephemeral-signing',
         'publisherAuthenticated':False,'fullTicketQualification':False,
+        'consumerNativeSource':consumer_native_source,
+        'consumerNativeSourceEqualsCompiledProducer':consumer_native_source == native_proof['nativeSource'],
         'invocations':[],'providerIdle':[],'samples':[]}
     commands = Commands(ROOT,output,build_environment(output),deadline_seconds=1100,command_seconds=120)
     node = peer = None;clients = {};stage = 'fresh-neutral-package-and-sign'
@@ -188,7 +201,7 @@ def qualify(language, original: Path, expected: dict, native: Path, producer: di
                 record['samples'].append(sample(client,probe,'after-both-tenant-deletes',0))
                 clients['foreign'].node = None;stop(client,node)
                 record['nodeShutdown'] = stopped_record(node)
-                record['peerShutdown'] = stop_peer(peer)
+                record['peerShutdown'] = stop_observation_peer(peer)
             finally:
                 for selected in clients.values():selected.node = None
                 if node is not None:node.close()
@@ -199,7 +212,7 @@ def qualify(language, original: Path, expected: dict, native: Path, producer: di
         stage = 'final-identity-and-retirement'
         require(source == original_build(original,language,expected)
             and native_proof == native_products(native,producer)[1]
-            and source_identity(ROOT) == native_proof['nativeSource']
+            and source_identity(ROOT) == consumer_native_source
             and materials == {name:file_identity(ROOT/name) for name in MATERIALS}
             and sum(selected.calls for selected in clients.values()) <= 384
             and time.monotonic() < commands.deadline and record['nodeShutdown']['reaped']

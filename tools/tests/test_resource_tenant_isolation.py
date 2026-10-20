@@ -227,6 +227,28 @@ class ResourceTenantIsolation(unittest.TestCase):
             self.assertEqual(observed['authorizedBefore'],observed['authorizedAfter'])
             self.assertFalse(observed['credentialsRetained'])
 
+    def test_unused_observation_peer_requires_exact_zero_counts_and_actual_reap(self):
+        counts={name:0 for name in ('requests','authorized','unexpected','holds','closedHolds')}
+        for mode in ('valid','contact','boolean','missing','duplicate','extra-line','unreaped','exit'):
+            value=copy.deepcopy(counts)
+            if mode=='contact':value['requests']=1
+            elif mode=='boolean':value['holds']=False
+            elif mode=='missing':value.pop('closedHolds')
+            raw=json.dumps(value).encode()+b'\n'
+            if mode=='duplicate':raw=raw.replace(b'{',b'{"requests":0,',1)
+            if mode=='extra-line':raw+=b'{}\n'
+            calls=[]
+            peer=SimpleNamespace(buffers=[bytearray(raw),bytearray()],closed=True,
+                owner=SimpleNamespace(finished=mode!='unreaped',
+                    process=SimpleNamespace(returncode=1 if mode=='exit' else 0)),stop=lambda:calls.append('stop'))
+            if mode=='valid':
+                observed=programme.stop_observation_peer(peer)
+                self.assertEqual(observed,{'counts':counts,'closed':True,'reaped':True,'exitCode':0})
+            else:
+                with self.subTest(mode=mode),self.assertRaises((RuntimeError,ValueError)):
+                    programme.stop_observation_peer(peer)
+            self.assertEqual(calls,['stop'])
+
     def test_seven_call_order_traps_one_scope_then_checks_fresh_resources_in_both_scopes(self):
         for language in inputs.LANGUAGES:
             argument,expected,trapped=node.sequence(language);calls=[]

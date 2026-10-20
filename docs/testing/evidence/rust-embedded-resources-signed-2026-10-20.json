@@ -1,0 +1,254 @@
+{
+  "schemaVersion": "latent.embedded-resources.rust.observation.v1",
+  "source": "706880aff3e70b46be97bb2119c8c32dda30e74b",
+  "run": 39407973986,
+  "job": 118578463764,
+  "artifact": 12257859357,
+  "artifactDigest": "sha256:99aea7c8c5be63bc36c39f1c2d919f624a197a43183770a2d87e135560de73c9",
+  "allMembersCRCAndHashChecked": 328,
+  "exercisedHelpers": {
+    "examples/embedded-resource-conformance/go/library.go": {
+      "sha256": "sha256:ee8eba69b864d58cd12013cc7f150382f3b5276909c0eb5fd5623ab26372f25d",
+      "bytes": 256
+    },
+    "examples/embedded-resource-conformance/go/data.go": {
+      "sha256": "sha256:6996965421e0e7520340291de1464d6ce2dc677ec8aa9e4a309db3e4621c50f9",
+      "bytes": 2600
+    },
+    "examples/embedded-resource-conformance/rust/library.rs": {
+      "sha256": "sha256:f931d893e8369d895f33f3d64bbef10dcfdd7b2f8c8bc2cede6b5312bf6b2747",
+      "bytes": 304
+    },
+    "examples/embedded-resource-conformance/rust/data.rs": {
+      "sha256": "sha256:808551b64b36dad3e39e51bfd50ec5d340fd0f70fd5e966c8e4e91cb2f199718",
+      "bytes": 1459
+    },
+    "examples/embedded-resource-conformance/typescript/library.mjs": {
+      "sha256": "sha256:0cd49d6940aea994d79a132f0b483a221bef7bda3808e97b1db851b7a1e4f96e",
+      "bytes": 219
+    },
+    "examples/embedded-resource-conformance/typescript/data.mjs": {
+      "sha256": "sha256:877209275afd02767e3eeaeb1cb2c1bdef9a1be4f8b1a0965e94db0bc636f9a7",
+      "bytes": 1171
+    },
+    "tools/embedded_resource_fixture.py": {
+      "sha256": "sha256:a1c7d2f9534c7b32ab1ebf92ff4303a582ff3575f91b88401e49eb2f55cec5af",
+      "bytes": 9712
+    },
+    "tools/embedded_resource_probe.py": {
+      "sha256": "sha256:42d32ec70791d4ac5d74c3f189c912887d34537b057dac5386473cb4a1756ed3",
+      "bytes": 2336
+    },
+    "tools/qualify_embedded_resources.py": {
+      "sha256": "sha256:084822965cb1b0903228f9babebfe27717d8d95bfa805f204b3db91895323a7a",
+      "bytes": 12897
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "sha256": "sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7",
+      "bytes": 34233
+    }
+  },
+  "observation": {
+    "originalInvocations": 27,
+    "newInvocations": 6,
+    "totalInvocations": 33,
+    "physicalSamples": 30,
+    "zeroActiveOwnerSamples": 12,
+    "allKnownReaped": true,
+    "cleanShutdown": true,
+    "crossTenantQualification": false
+  },
+  "capture": {
+    "language": "rust",
+    "sourceFile": "src/lib.rs",
+    "originalSource": "sha256:c1649b27484ef80cc2f51eca819af450bbb23672b1624f2439c8eff4cb62e2c9",
+    "selectedSource": "sha256:609d5234bafc960fea8be775faccce5ad87fad2349b15ec86263a7eed699c206",
+    "sdkLock": "sha256:49455129f96d6f33a3d4e5a65f61dc193db26c9da4b720da6f34557488d48291",
+    "packages": [
+      "outside-embedded-resource-library",
+      "outside-embedded-resource-data"
+    ],
+    "data": {
+      "binary.bin": {
+        "digest": "sha256:1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b",
+        "size": 6
+      },
+      "empty.bin": {
+        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      },
+      "empty.txt": {
+        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      },
+      "text.txt": {
+        "digest": "sha256:bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd",
+        "size": 12
+      }
+    },
+    "outsideSource": {
+      "data/Cargo.toml": {
+        "digest": "sha256:20bf3ecb623251ab60e300f580a5890b4b42062b23e73e588d1105880116d42f",
+        "size": 100
+      },
+      "data/src/binary.bin": {
+        "digest": "sha256:1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b",
+        "size": 6
+      },
+      "data/src/empty.bin": {
+        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      },
+      "data/src/empty.txt": {
+        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      },
+      "data/src/lib.rs": {
+        "digest": "sha256:808551b64b36dad3e39e51bfd50ec5d340fd0f70fd5e966c8e4e91cb2f199718",
+        "size": 1459
+      },
+      "data/src/text.txt": {
+        "digest": "sha256:bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd",
+        "size": 12
+      },
+      "library/Cargo.toml": {
+        "digest": "sha256:a17d5c847bfd9dafe2642a0460b5c00a8312913e833da15f358e96e9a1baee86",
+        "size": 166
+      },
+      "library/src/lib.rs": {
+        "digest": "sha256:f931d893e8369d895f33f3d64bbef10dcfdd7b2f8c8bc2cede6b5312bf6b2747",
+        "size": 304
+      }
+    },
+    "capturedInputIdentity": "sha256:9fbd8115c009a63170d3185f381c3701fc547b2bd199badf86a8c57462a87be1",
+    "candidateDigest": "sha256:f79f7ab49e426081e689d487c552fef9f3f32367bd4022a7025edf9c9ed31ffa",
+    "originalsRemoved": true,
+    "catalogueRegistration": false,
+    "applicationResourceBridge": false,
+    "applicationCompiledDuringCapture": false
+  },
+  "capturedRustOffline": {
+    "inputIdentity": "sha256:9fbd8115c009a63170d3185f381c3701fc547b2bd199badf86a8c57462a87be1",
+    "networkResolution": false,
+    "originalManifestFetchPerformed": false,
+    "subsequentBuildOffline": true
+  },
+  "build": {
+    "formatVersion": 1,
+    "observationDigest": "sha256:8f75b274a57e75ca2559582ddcade0c5ac2e491898de54e871bd8b00a30ecb56",
+    "packageAssembled": true,
+    "sourceDigest": "sha256:0e12fc74f201bd7744b694431731170d9e52a0689edfd1cf83013572b23f2eba",
+    "componentDigest": "sha256:4af8ffb63f5d5d54c1b22be581f174aa2d54462588d9079c5dcb59075c982472",
+    "sdkBindingDigest": "sha256:2198a5c6afe4491d3fccb75648afaa7cbdc0ec6cd53f231c6d1167ccab973592",
+    "buildSeconds": 80.386679,
+    "commands": [
+      {
+        "stage": "rust-sysroot",
+        "exitCode": 0,
+        "seconds": 0.015762
+      },
+      {
+        "stage": "zig-version",
+        "exitCode": 0,
+        "seconds": 0.01536
+      },
+      {
+        "stage": "bindgen-version",
+        "exitCode": 0,
+        "seconds": 0.01603
+      },
+      {
+        "stage": "sdk-bindings",
+        "exitCode": 0,
+        "seconds": 0.015298
+      },
+      {
+        "stage": "compile",
+        "exitCode": 0,
+        "seconds": 22.955651
+      },
+      {
+        "stage": "component",
+        "exitCode": 0,
+        "seconds": 0.015491
+      },
+      {
+        "stage": "validate",
+        "exitCode": 0,
+        "seconds": 0.015511
+      },
+      {
+        "stage": "contracts",
+        "exitCode": 0,
+        "seconds": 0.015478
+      },
+      {
+        "stage": "compatibility-final-wit",
+        "exitCode": 0,
+        "seconds": 0.015444
+      },
+      {
+        "stage": "package",
+        "exitCode": 0,
+        "seconds": 0.035964
+      },
+      {
+        "stage": "inspect",
+        "exitCode": 0,
+        "seconds": 0.015425
+      }
+    ]
+  },
+  "sourceRows": 62,
+  "nativeProducer": {
+    "run": 39373374237,
+    "job": 118465965449,
+    "head": "94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+    "artifact": 12242839929,
+    "artifactDigest": "sha256:d748d316bec91a06f3856b5f64e18e16ab71dd824d7a16d1fd8f6ec8c39ec4ea",
+    "originalNormalSignedInvocations": 27,
+    "newNativeBuild": false
+  },
+  "dataCases": [
+    {
+      "mode": "text",
+      "decoded": [
+        {
+          "ok": "resource|text=Grüße\u0000雪\n|fresh=1"
+        }
+      ]
+    },
+    {
+      "mode": "binary",
+      "decoded": [
+        {
+          "ok": "resource|binary=00ff80410d0a|fresh=1"
+        }
+      ]
+    },
+    {
+      "mode": "empty",
+      "decoded": [
+        {
+          "ok": "resource|empty=0+0|eof=1|fresh=1"
+        }
+      ]
+    },
+    {
+      "mode": "independent",
+      "decoded": [
+        {
+          "ok": "resource|independent=2,2|drop=other-readable|fresh=1"
+        }
+      ]
+    }
+  ],
+  "component": {
+    "sha256": "sha256:4af8ffb63f5d5d54c1b22be581f174aa2d54462588d9079c5dcb59075c982472",
+    "bytes": 26481
+  },
+  "outerQualifierPassed": true,
+  "finalIntegrityBlockPassed": true,
+  "crossTenantQualification": false,
+  "fullTicketQualification": false
+}
