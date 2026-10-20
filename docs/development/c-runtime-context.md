@@ -66,3 +66,32 @@ native engine or application build. C ABI creation/join/identity, errno and key
 TLS destructors, mutex/condition/timed waits, CPU checkpoints, ordinary sockets,
 root draining, cancellation and cross-tenant physical reuse still require their
 own implementation and signed qualification before any #744 criterion closes.
+
+The next explicit source-only PAL, `sdk/c-guest/runtime/tls-keys.c`, supplies
+ordinary WASI-musl `pthread_key_create/delete`, `pthread_get/setspecific` and
+`errno` entry points beneath the selected compiler context mechanism. It has
+128 per-Store key slots, generation-encoded handles and per-context values.
+Deleting a key never invokes its destructor; reusing a slot cannot expose an
+old context's stale value. Generations never wrap: exhausted slots retire.
+The registry's fixed operations must remain non-suspending SDK critical code;
+there is no lock protecting it against arbitrary scheduling instrumentation.
+No maintained builder links this PAL, and no OS-thread safety is advertised.
+
+The internal closing hook clears each value before invoking its destructor,
+allows values to be reinstalled and runs at most four passes. Recursive closing
+returns `EDEADLK`. A cyclic destructor leaves its pending value owned and returns
+`EBUSY` after the fourth pass; the future runtime must retain/quarantine that
+owner rather than treat the hook as physical retirement or refund resources.
+Ordinary pthread key functions return their error codes without changing errno.
+Both direct WASI-musl errno and `__errno_location` address the selected context.
+No C11 `tss_*`, thread creation/join, cancellation unwinding, destructor suspension
+or native owner accounting is supplied by this slice.
+
+The focused compiler controller retains all original controls and adds a real
+compiled-core key/errno control: callback reentry into a second context, stale
+key deletion/reuse, the 128-key ceiling, independent destructor state, clearing
+before callbacks, bounded reinstall passes and retained cyclic pending state.
+It uses the pinned Zig WASI-musl headers with an explicit aggregate identity;
+no libc thread stubs or ambient runtime are linked. This is a pending compiler
+control until its source-bound actual result is recorded, not signed component
+or complete pthread-profile qualification.

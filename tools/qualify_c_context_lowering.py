@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -16,18 +17,40 @@ from tools.dev_workflow.common import require
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = 'sdk/c-guest/runtime-fixtures/context-lowering/'
 SOURCES = ('tools/qualify_c_context_lowering.py', FIXTURE+'probe.c', FIXTURE+'control.cjs',
+    FIXTURE+'tls-keys.c', FIXTURE+'tls-keys.cjs', 'sdk/c-guest/runtime/tls-keys.c',
     'crates/latent-component-threading/src/c_context.rs',
     'crates/latent-component-threading/src/bin/c-context.rs',
     'crates/latent-component-threading/src/lib.rs',
     'crates/latent-component-threading/Cargo.toml', 'Cargo.toml', 'Cargo.lock')
 
 
-def identity(path, maximum=256*1024*1024):
-    require(path.is_file() and not path.is_symlink() and 0 < path.stat().st_size <= maximum,
+def identity(path, maximum=256*1024*1024, allow_empty=False):
+    require(path.is_file() and not path.is_symlink() and (0 if allow_empty else 1) <= path.stat().st_size <= maximum,
             'c-context-ordinary-input-bound')
     with path.open('rb') as stream:
         value = hashlib.file_digest(stream, 'sha256').hexdigest()
     return {'sha256':value, 'bytes':path.stat().st_size}
+
+
+def header_identity(roots):
+    rows = {}
+    total = 0
+    for root in roots:
+        require(root.is_dir() and not root.is_symlink(), 'c-context-wasi-header-directory')
+        for path in sorted(root.rglob('*')):
+            require(not path.is_symlink(), 'c-context-wasi-header-alias')
+            if not path.is_file():
+                continue
+            require(len(rows) < 4096, 'c-context-wasi-header-count')
+            selected = identity(path,1024*1024,allow_empty=True)
+            total += selected['bytes']
+            require(total <= 16*1024*1024, 'c-context-wasi-header-bytes')
+            rows[root.name+'/'+path.relative_to(root).as_posix()] = selected
+    require(bool(rows), 'c-context-wasi-headers-empty')
+    raw = json.dumps(rows,sort_keys=True,separators=(',',':')).encode()
+    return {'sha256':hashlib.sha256(raw).hexdigest(),'files':len(rows),'bytes':total,
+            'scope':'explicit-wasm-wasi-musl-and-generic-musl-headers',
+            'compilerImplicitInputsAttested':False}
 
 
 def run(output, zig, transformer, node):
@@ -90,12 +113,40 @@ def run(output, zig, transformer, node):
             and actual['pthreadProfileQualified'] is False, 'c-context-control-result')
         report['actualCompiledCoreExecuted'] = True
         report['control'] = actual
+        # Explicitly selected WASI-musl headers only; no libc implementation or
+        # thread stubs are linked. These pinned headers are material inputs.
+        zig_environment = command([zig,'env']).decode('utf8')
+        directories = re.findall(r'^\s*\.lib_dir = ("(?:[^"\\]|\\.)*"),$',zig_environment,re.MULTILINE)
+        require(len(directories)==1, 'c-context-pinned-zig-lib-directory')
+        zig_lib = Path(json.loads(directories[0]))
+        header_roots = [zig_lib/'libc/include/wasm-wasi-musl',
+                        zig_lib/'libc/include/generic-musl']
+        require(all(path.is_dir() and not path.is_symlink() for path in header_roots),
+                'c-context-pinned-wasi-header-directories')
+        headers = header_identity(header_roots)
+        report['wasiHeaders'] = headers
+        header_flags = [flag for path in header_roots for flag in ('-isystem',str(path))]
+        key_sources = [ROOT/(FIXTURE+'tls-keys.c'), ROOT/'sdk/c-guest/runtime/tls-keys.c']
+        command([zig,*options,*selected,*header_flags,*key_sources,*link,
+                 '-o',output/'tls-keys.wasm'])
+        preimage = identity(output/'tls-keys.wasm')
+        command([transformer,output/'tls-keys.wasm','sha256:'+preimage['sha256'],output/'tls-keys'])
+        tls_keys = json.loads(command([node,'--max-old-space-size=128',ROOT/(FIXTURE+'tls-keys.cjs'),
+            output/'tls-keys/core.wasm',output/'tls-keys/receipt.json']))
+        require(tls_keys == {'schemaVersion':'latent.c.tls-key-control.v1','status':'passed',
+            'actualCompiledCoreExecuted':True,'contextErrnoIsolation':True,'staleKeyRefusal':True,
+            'keyLimit':128,'destructorPassLimit':4,'cyclicPendingRetained':True,
+            'clearBeforeDestructor':True,'reentryRefused':True,'canonicalChildCreated':False,
+            'nativeRuntimeExecuted':False,'pthreadProfileQualified':False}, 'c-context-tls-key-control-result')
+        report['tlsKeys'] = tls_keys
+        require(header_identity(header_roots)==headers, 'c-context-wasi-headers-changed')
         require({name:identity(ROOT/name,16*1024*1024) for name in SOURCES}==original,
                 'c-context-source-changed')
         require({name:identity(path) for name,path in [('zig',zig),('transformer',transformer),('node',node)]}==tools,
                 'c-context-tool-changed')
         report['products'] = {name:identity(output/name) for name in
-            ('selected.wasm','ordinary-static.wasm','selected.ll','selected/core.wasm','selected/receipt.json')}
+            ('selected.wasm','ordinary-static.wasm','selected.ll','selected/core.wasm','selected/receipt.json',
+             'tls-keys.wasm','tls-keys/core.wasm','tls-keys/receipt.json')}
         report['status']='passed'
         return report
     finally:
