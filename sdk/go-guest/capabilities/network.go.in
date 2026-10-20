@@ -1,0 +1,134 @@
+package network
+
+import (
+	"context"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+	raw "wit_component/@raw@"
+	"wit_component/lsf/ownership"
+)
+
+const MaximumChunkBytes uint32 = 16384
+
+type Connection struct {
+	owner *connectionOwner[*raw.Connection]
+}
+type Chunk struct{ owner ownership.Owner[*raw.Chunk] }
+
+func ConnectContext(ctx context.Context, request ConnectRequest) wit.Result[*Connection, StreamError] {
+	if ctx == nil {
+		return wit.Err[*Connection, StreamError](StreamError{Code: ErrorCodeInvalidInput})
+	}
+	r := raw.ConnectContext(ctx, request)
+	if r.IsErr() {
+		return wit.Err[*Connection, StreamError](r.Err())
+	}
+	return wit.Ok[*Connection, StreamError](&Connection{newConnectionOwner(r.Ok())})
+}
+
+func (c *Connection) ReadContext(ctx context.Context, maximum uint32, timeout wit.Option[uint32]) wit.Result[wit.Option[*Chunk], StreamError] {
+	if maximum == 0 || maximum > MaximumChunkBytes {
+		return wit.Err[wit.Option[*Chunk], StreamError](StreamError{Code: ErrorCodeInvalidInput})
+	}
+	value, child, release, ok := c.owner.borrow(ctx, streamRead)
+	if !ok {
+		return wit.Err[wit.Option[*Chunk], StreamError](StreamError{Code: ErrorCodeInvalidState})
+	}
+	defer release()
+	r := raw.ReadContext(child, value, maximum, timeout)
+	if r.IsErr() {
+		return wit.Err[wit.Option[*Chunk], StreamError](r.Err())
+	}
+	if r.Ok().IsNone() {
+		return wit.Ok[wit.Option[*Chunk], StreamError](wit.None[*Chunk]())
+	}
+	return wit.Ok[wit.Option[*Chunk], StreamError](wit.Some(&Chunk{ownership.New(r.Ok().Some())}))
+}
+
+func (c *Connection) WriteContext(ctx context.Context, bytes []byte, timeout wit.Option[uint32]) wit.Result[uint32, StreamError] {
+	if len(bytes) == 0 || len(bytes) > int(MaximumChunkBytes) {
+		return wit.Err[uint32, StreamError](StreamError{Code: ErrorCodeInvalidInput})
+	}
+	value, child, release, ok := c.owner.borrow(ctx, streamWrite)
+	if !ok {
+		return wit.Err[uint32, StreamError](StreamError{Code: ErrorCodeInvalidState})
+	}
+	defer release()
+	return raw.WriteContext(child, value, bytes, timeout)
+}
+
+func (c *Connection) ReadyContext(ctx context.Context, interest Interest, timeout wit.Option[uint32]) wit.Result[Readiness, StreamError] {
+	value, child, release, ok := c.owner.borrow(ctx, streamReady)
+	if !ok {
+		return wit.Err[Readiness, StreamError](StreamError{Code: ErrorCodeInvalidState})
+	}
+	defer release()
+	return raw.ReadyContext(child, value, interest, timeout)
+}
+
+func (c *Connection) Inspect() wit.Result[Observation, StreamError] {
+	value, _, release, ok := c.owner.borrow(context.Background(), streamInspect)
+	if !ok {
+		return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeInvalidState})
+	}
+	defer release()
+	return wit.Ok[Observation, StreamError](raw.Inspect(value))
+}
+
+func (c *Connection) ShutdownContext(ctx context.Context, how ShutdownMode) wit.Result[Observation, StreamError] {
+	if how != ShutdownModeSend {
+		return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeUnsupported})
+	}
+	// Send shutdown owns the write direction. A pending read keeps its own
+	// original borrow; half-close must not cancel or pretend to retire it.
+	value, child, release, ok := c.owner.borrow(ctx, streamWrite)
+	if !ok {
+		return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeInvalidState})
+	}
+	defer release()
+	return raw.ShutdownContext(child, value, how)
+}
+
+func (c *Connection) CloseContext(ctx context.Context) wit.Result[Observation, StreamError] {
+	if ctx == nil {
+		return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeInvalidInput})
+	}
+	if ctx.Err() != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeTimeout})
+		}
+		return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeCancelled})
+	}
+	value, first := c.owner.beginClose()
+	if !first {
+		return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeInvalidState})
+	}
+	defer c.owner.finishClose()
+	defer value.Drop()
+	r := raw.CloseContext(ctx, value)
+	if r.IsErr() && (r.Err().Code == ErrorCodeCancelled || r.Err().Code == ErrorCodeTimeout) {
+		// The canonical call may not have acquired the own handle, but our
+		// explicit final Drop still closes it. Never label that no effect.
+		return wit.Err[Observation, StreamError](StreamError{Code: ErrorCodeUncertain, MayHaveApplied: true})
+	}
+	return r
+}
+
+// Each chunk is consumed once. The copied bytes stay in the bounded guest heap;
+// the host chunk is dropped only after the canonical borrow really terminates.
+func (c *Chunk) BytesContext(ctx context.Context) wit.Result[[]byte, StreamError] {
+	if ctx == nil {
+		return wit.Err[[]byte, StreamError](StreamError{Code: ErrorCodeInvalidInput})
+	}
+	value := c.owner.Take()
+	defer value.Drop()
+	r := raw.ChunkBytesContext(ctx, value)
+	if r.IsErr() {
+		return r
+	}
+	if len(r.Ok()) == 0 || len(r.Ok()) > int(MaximumChunkBytes) {
+		panic("lsf: invalid stream chunk")
+	}
+	return wit.Ok[[]byte, StreamError](append([]byte(nil), r.Ok()...))
+}
+
+func (c *Chunk) Close() { c.owner.Close(func(value *raw.Chunk) { value.Drop() }) }

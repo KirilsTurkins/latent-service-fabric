@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_network_compile.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Source-bound six-case private owner native reference and compile-only actual component; strict no signed/provider/kernel readiness projection.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7c797d8a5aece6a97b02f280f92a573c39da21e062002bf9c1e46b740525e2c9"
+}
