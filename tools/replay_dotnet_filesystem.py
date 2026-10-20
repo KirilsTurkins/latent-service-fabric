@@ -14,7 +14,7 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, read_json
 
-PRODUCTION = '3e3eac58cac0604fcf7f8baf8afc4adc3e3be6f4'
+PRODUCTION = '82328e9c5f6ca1fd22fd3970cee8ded0a1e01abc'
 
 
 def production_inputs():

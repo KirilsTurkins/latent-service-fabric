@@ -1,0 +1,23 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "dotnet-filesystem-components-${{ github.ref }}"
+    },
+    "name": "Retained .NET filesystem component replay",
+    "on": {
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "replay"
+  ],
+  "reviewReason": "Private manual-only same-component replay within20min; no compiler or host rebuild, existing production jobs unchanged",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-filesystem-component-replay.yml"
+}

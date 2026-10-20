@@ -695,7 +695,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        git fetch --no-tags --depth=1 origin 75b408ea0184936aa1dc21df2c9dd5e6c44bbc46 3e3eac58cac0604fcf7f8baf8afc4adc3e3be6f4
+        git fetch --no-tags --depth=1 origin 75b408ea0184936aa1dc21df2c9dd5e6c44bbc46 82328e9c5f6ca1fd22fd3970cee8ded0a1e01abc
         python3 tools/replay_dotnet_filesystem.py --prepare --output "$RUNNER_TEMP/filesystem-prepared"
     - name: Install captured NativeAOT namespace and loader inputs
       run: |

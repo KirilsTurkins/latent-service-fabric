@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "FilesystemComponentReplay.test_archive_origin_and_original_failure_are_required_before_download",
+    "FilesystemComponentReplay.test_manual_lane_keeps_original20_minute_bound_and_needs_no_compiler_or_host_build",
+    "FilesystemComponentReplay.test_missing_non_wit_payload_cannot_be_invented_from_current_project",
+    "FilesystemComponentReplay.test_restored_wit_and_component_equal_the_original_observed_signer_bytes",
+    "FilesystemComponentReplay.test_source_component_package_layer_or_build_observation_drift_fails_before_signing"
+  ],
+  "guards": {
+    "FilesystemComponentReplay.test_archive_origin_and_original_failure_are_required_before_download": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1902c6b5ce496219807936e91ec402ee9684b7bac8fbacc3f9314f56b14f9b9d",
+        "class:setup-sha256:14654720524c2b74e47f38449afbff5710121a9d7d045685e1fe08bc37847251"
+      ],
+      "skipSites": []
+    },
+    "FilesystemComponentReplay.test_manual_lane_keeps_original20_minute_bound_and_needs_no_compiler_or_host_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1902c6b5ce496219807936e91ec402ee9684b7bac8fbacc3f9314f56b14f9b9d",
+        "class:setup-sha256:14654720524c2b74e47f38449afbff5710121a9d7d045685e1fe08bc37847251"
+      ],
+      "skipSites": []
+    },
+    "FilesystemComponentReplay.test_missing_non_wit_payload_cannot_be_invented_from_current_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1902c6b5ce496219807936e91ec402ee9684b7bac8fbacc3f9314f56b14f9b9d",
+        "class:setup-sha256:14654720524c2b74e47f38449afbff5710121a9d7d045685e1fe08bc37847251"
+      ],
+      "skipSites": []
+    },
+    "FilesystemComponentReplay.test_restored_wit_and_component_equal_the_original_observed_signer_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1902c6b5ce496219807936e91ec402ee9684b7bac8fbacc3f9314f56b14f9b9d",
+        "class:setup-sha256:14654720524c2b74e47f38449afbff5710121a9d7d045685e1fe08bc37847251"
+      ],
+      "skipSites": []
+    },
+    "FilesystemComponentReplay.test_source_component_package_layer_or_build_observation_drift_fails_before_signing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1902c6b5ce496219807936e91ec402ee9684b7bac8fbacc3f9314f56b14f9b9d",
+        "class:setup-sha256:14654720524c2b74e47f38449afbff5710121a9d7d045685e1fe08bc37847251"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_filesystem_components.py",
+  "reviewReason": "Five controls for exact original source/signer inventory, unavailable layers, origin failure and manual noncompiling lane",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

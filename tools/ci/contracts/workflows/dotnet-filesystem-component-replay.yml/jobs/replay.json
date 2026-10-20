@@ -1,0 +1,69 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Same two NativeAOT components and explicit joined authority",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Retrieve source preimages before shallow-checkout source controls",
+        "run": "git fetch --no-tags --depth=1 origin 75b408ea0184936aa1dc21df2c9dd5e6c44bbc46 82328e9c5f6ca1fd22fd3970cee8ded0a1e01abc"
+      },
+      {
+        "name": "Check unchanged production and package reconstruction boundaries",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_filesystem_replay tools.tests.test_dotnet_filesystem_components tools.tests.test_dotnet_filesystem_runtime tools.tests.test_dotnet_filesystem_qualification -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve authenticated historical native products only",
+        "run": "python3 tools/replay_dotnet_filesystem.py --prepare --output \"$RUNNER_TEMP/filesystem-prepared\""
+      },
+      {
+        "name": "Install original node namespace prerequisite",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Reconstruct exact original packages fresh sign admit and require79 outcomes",
+        "run": "python3 tools/replay_dotnet_filesystem_components.py --prepared \"$RUNNER_TEMP/filesystem-prepared\" --host \"$RUNNER_TEMP/filesystem-prepared/selected-host\" --output \"$RUNNER_TEMP/dotnet-filesystem-components\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public ancestry original observations and actual node outcomes",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-filesystem-components-${{ github.sha }}",
+          "path": "${{ runner.temp }}/filesystem-prepared/retrieval.json\n${{ runner.temp }}/filesystem-prepared/selected-host/host-retrieval.json\n${{ runner.temp }}/dotnet-filesystem-components/qualified.json\n${{ runner.temp }}/dotnet-filesystem-components/FAILED.json\n${{ runner.temp }}/dotnet-filesystem-components/logs/**\n${{ runner.temp }}/dotnet-filesystem-components/pure/build/*.json\n${{ runner.temp }}/dotnet-filesystem-components/pure/build/component.wasm\n${{ runner.temp }}/dotnet-filesystem-components/pure/node/workflow.json\n${{ runner.temp }}/dotnet-filesystem-components/pure/node/FAILED.json\n${{ runner.temp }}/dotnet-filesystem-components/pure/node/controls/*.json\n${{ runner.temp }}/dotnet-filesystem-components/joined/build/*.json\n${{ runner.temp }}/dotnet-filesystem-components/joined/build/component.wasm\n${{ runner.temp }}/dotnet-filesystem-components/joined/node/workflow.json\n${{ runner.temp }}/dotnet-filesystem-components/joined/node/FAILED.json\n${{ runner.temp }}/dotnet-filesystem-components/joined/node/controls/*.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "replay",
+  "kind": "job",
+  "reviewReason": "Authenticate exact failed original AOT artifact, restore every original signer byte, fresh contracts/package/sign and require pure39 joined40",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-filesystem-component-replay.yml"
+}

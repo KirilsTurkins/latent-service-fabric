@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_filesystem_components.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Manual-only exact authenticated original components, original observations and every signer byte retained; fresh package/contracts/sign and current authority controls, no compiler/native rebuild",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b8c838de4c602963c5b9e15a909e1a19584b5b1301bc4e145c83143ed69ea330"
+}

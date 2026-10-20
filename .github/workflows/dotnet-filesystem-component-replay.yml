@@ -1,0 +1,76 @@
+name: Retained .NET filesystem component replay
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dotnet-filesystem-components-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    name: Same two NativeAOT components and explicit joined authority
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Retrieve source preimages before shallow-checkout source controls
+        run: >-
+          git fetch --no-tags --depth=1 origin
+          75b408ea0184936aa1dc21df2c9dd5e6c44bbc46
+          82328e9c5f6ca1fd22fd3970cee8ded0a1e01abc
+      - name: Check unchanged production and package reconstruction boundaries
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_dotnet_filesystem_replay tools.tests.test_dotnet_filesystem_components tools.tests.test_dotnet_filesystem_runtime tools.tests.test_dotnet_filesystem_qualification -v
+      - name: Retrieve authenticated historical native products only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/replay_dotnet_filesystem.py --prepare --output "$RUNNER_TEMP/filesystem-prepared"
+      - name: Install original node namespace prerequisite
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Reconstruct exact original packages fresh sign admit and require79 outcomes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 tools/replay_dotnet_filesystem_components.py
+          --prepared "$RUNNER_TEMP/filesystem-prepared"
+          --host "$RUNNER_TEMP/filesystem-prepared/selected-host"
+          --output "$RUNNER_TEMP/dotnet-filesystem-components"
+      - name: Retain bounded public ancestry original observations and actual node outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-filesystem-components-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/filesystem-prepared/retrieval.json
+            ${{ runner.temp }}/filesystem-prepared/selected-host/host-retrieval.json
+            ${{ runner.temp }}/dotnet-filesystem-components/qualified.json
+            ${{ runner.temp }}/dotnet-filesystem-components/FAILED.json
+            ${{ runner.temp }}/dotnet-filesystem-components/logs/**
+            ${{ runner.temp }}/dotnet-filesystem-components/pure/build/*.json
+            ${{ runner.temp }}/dotnet-filesystem-components/pure/build/component.wasm
+            ${{ runner.temp }}/dotnet-filesystem-components/pure/node/workflow.json
+            ${{ runner.temp }}/dotnet-filesystem-components/pure/node/FAILED.json
+            ${{ runner.temp }}/dotnet-filesystem-components/pure/node/controls/*.json
+            ${{ runner.temp }}/dotnet-filesystem-components/joined/build/*.json
+            ${{ runner.temp }}/dotnet-filesystem-components/joined/build/component.wasm
+            ${{ runner.temp }}/dotnet-filesystem-components/joined/node/workflow.json
+            ${{ runner.temp }}/dotnet-filesystem-components/joined/node/FAILED.json
+            ${{ runner.temp }}/dotnet-filesystem-components/joined/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 3
