@@ -1,0 +1,49 @@
+{
+  "run": 39388036371,
+  "job": 118512548819,
+  "artifact": 12248369946,
+  "head": "ee93cf81d45b6809d9dfdcede8245d810d545022",
+  "knownReapedInvocations": 15,
+  "physicalRetirements": 15,
+  "zeroOwnerControls": 15,
+  "cleanNodes": 5,
+  "realPeerContacts": 0,
+  "boundaries": [
+    {
+      "kind": "task",
+      "label": "activation-runtime-task-register-denied:2",
+      "admitted": 12
+    },
+    {
+      "kind": "queue",
+      "label": "activation-runtime-queue-register-denied:2",
+      "admitted": 14
+    },
+    {
+      "kind": "native",
+      "label": "activation-runtime-promise-native-register-denied:2",
+      "admitted": 53
+    },
+    {
+      "kind": "timer",
+      "label": "activation-runtime-timer-start-denied:2",
+      "admitted": 8
+    },
+    {
+      "kind": "memory",
+      "terminal": "resource-exhausted",
+      "memoryBudget": 67108864,
+      "bootstrapPeak": 9519600,
+      "negativePeak": 64045552
+    }
+  ],
+  "component": {
+    "sha256": "sha256:ec8a7dbd53f5539bc626e3ab300dcabeaec3887c4a81941165f343f37ec667d5",
+    "bytes": 12407812
+  },
+  "historicalNative": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "fullTicketQualification": false,
+  "archiveDigest": "sha256:6fc239da10e3bee73c441af7b811598e211418fa18b68202500ed5af34d3fc42",
+  "archiveBytes": 8780469,
+  "merge": "c35b8609e2ac6a5582d1b49a0f38fed7630a4bd8"
+}

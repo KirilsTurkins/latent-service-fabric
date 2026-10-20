@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "FetchLateTests.test_compiler_failure_cannot_become_signed_runtime_evidence",
+    "FetchLateTests.test_completed_provider_responses_and_real_gate_release_are_required",
+    "FetchLateTests.test_original_manifest_limits_and_exact_probe_source_remain_bound"
+  ],
+  "guards": {
+    "FetchLateTests.test_compiler_failure_cannot_become_signed_runtime_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c475bf3f1b90188cf69ae51ac09ec010cfefbbe893fa20f96f95f9b9d86d536",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FetchLateTests.test_completed_provider_responses_and_real_gate_release_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c475bf3f1b90188cf69ae51ac09ec010cfefbbe893fa20f96f95f9b9d86d536",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FetchLateTests.test_original_manifest_limits_and_exact_probe_source_remain_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c475bf3f1b90188cf69ae51ac09ec010cfefbbe893fa20f96f95f9b9d86d536",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_fetch_late.py",
+  "reviewReason": "Add separate signed ordinary Fetch late-completion programme with exact caller abort reason, one public rejection and no resolution while actual peer completes held headers/body, original budgets and physical retirement, plus fresh module state. Preserve every existing programme. Three source controls use real authenticated loopback peer and reject incomplete/abandoned/miscounted responses, bind original manifest/source, and forbid build failures from reaching signing/execution. Actual execution remains pending; no cross-tenant or intermediate-refund qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_fetch_late.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add separate signed ordinary Fetch late-completion programme with exact caller abort reason, one public rejection and no resolution while actual peer completes held headers/body, original budgets and physical retirement, plus fresh module state. Preserve every existing programme. Three source controls use real authenticated loopback peer and reject incomplete/abandoned/miscounted responses, bind original manifest/source, and forbid build failures from reaching signing/execution. Actual execution remains pending; no cross-tenant or intermediate-refund qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6e20330f29e90be1fc9b26b2d7491fcf59850e8cf261ebc28ffa28cdb69ced63"
+}
