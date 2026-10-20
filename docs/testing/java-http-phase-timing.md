@@ -168,3 +168,20 @@ failure-context selection now adds exactly `c/j/u/TimeZone.c`, retaining its
 bounded declarations and uses before temporary build cleanup. The original
 two-file fixture selection, all byte/line bounds and clang acceptance remain
 unchanged. No cast or compiler suppression is applied without that evidence.
+
+Run `39471125675`, job `118795138952`, retained that exact context in artifact
+`12286564077`. The integer array index is declared `int32_t`, loaded from an
+integer array and then incorrectly registered as a GC root. Pinned TeaVM 0.15.0
+`TypeInferer` starts its worklist only for ordinary graph edges, although array
+element propagation uses a second graph. An array with only element-use edges
+therefore leaves its primitive element classified as an unknown object.
+
+The private compiler repair adds that second graph to the initial worklist
+condition, leaving propagation and GC-root selection unchanged. Before any C
+generation, the existing original/private JVM controls now also run real array
+IR through type inference and `GCShadowStackContributor`. They must observe the
+old primitive-root defect and then preserve the actual object and nested-array
+roots while classifying both integer elements as integers. The original pinned
+source, private JAR, all eight replaced class identities and every unrelated JAR
+entry remain checked. These hosted controls and the signed Java programme are
+pending; local Python source/closure controls do not establish a component pass.

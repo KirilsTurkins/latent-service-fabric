@@ -25,11 +25,22 @@ LIVENESS_REPLACEMENTS = (
      'private Map<Instruction, BitSet> collectSplitInstructions(BasicBlock block, int originalIndex) {'),
     ('livenessAnalysis.liveOut(block.getIndex());', 'livenessAnalysis.liveOut(originalIndex);'),
 )
+TYPE_INFERER_SHA256 = 'a1139fea2ab16d6b520e6c975f5fb04f9a54077269c811ee9853bf301db8489d'
+TYPE_SEED_BEFORE = 'if (types[i] != null && graph.outgoingEdgesCount(i) > 0) {'
+TYPE_SEED_AFTER = ('if (types[i] != null && (graph.outgoingEdgesCount(i) > 0\n'
+                   '                    || arrayElemGraph.outgoingEdgesCount(i) > 0)) {')
 CLASS_ROOT = 'org/teavm/backend/lowlevel/transform/'
-PATCH_CLASSES = frozenset(CLASS_ROOT + name for name in (
+COROUTINE_CLASSES = frozenset(CLASS_ROOT + name for name in (
     'CoroutineTransformation.class', 'CoroutineTransformation$1.class',
     'CoroutineTransformation$SplittingBackend.class'))
+TYPE_ROOT = 'org/teavm/model/util/'
+TYPE_CLASSES = frozenset(TYPE_ROOT + name for name in (
+    'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
+    'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class'))
+PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES
 CONTROL = CLASS_ROOT + 'Check.class'
+ARRAY_CONTROL = TYPE_ROOT + 'ArrayTypeCheck.class'
+CONTROLS = frozenset((CONTROL, ARRAY_CONTROL))
 MAX_JAR_BYTES = 64 * 1024 * 1024
 RELOCATED_IMPORTS = ('IntHashSet', 'IntIntHashMap', 'IntSet')
 
@@ -54,6 +65,15 @@ def corrected_source(raw: bytes) -> bytes:
             raise ValueError('unreviewed-teavm-coroutine-relocation')
         source = source.replace(before, 'import org.teavm.hppc.' + name + ';')
     return source.encode('utf-8')
+
+
+def corrected_type_source(raw: bytes) -> bytes:
+    if hashlib.sha256(raw).hexdigest() != TYPE_INFERER_SHA256:
+        raise ValueError('unreviewed-teavm-type-source')
+    source = raw.decode('utf-8')
+    if source.count(TYPE_SEED_BEFORE) != 1:
+        raise ValueError('unreviewed-teavm-type-seed')
+    return source.replace(TYPE_SEED_BEFORE, TYPE_SEED_AFTER).encode('utf-8')
 
 
 def checked_jars(compiler, project: Path) -> list[Path]:
@@ -116,8 +136,10 @@ def jar_entries(path: Path) -> dict[str, bytes]:
             if total > 128 * 1024 * 1024:
                 raise ValueError('coroutine-patch-jar-bound')
             result[member.filename] = jar.read(member)
-    if {name for name in result if name.startswith(CLASS_ROOT + 'CoroutineTransformation')
-            and name.endswith('.class')} != PATCH_CLASSES:
+    if ({name for name in result if name.startswith(CLASS_ROOT + 'CoroutineTransformation')
+            and name.endswith('.class')} != COROUTINE_CLASSES
+            or {name for name in result if name.startswith(TYPE_ROOT + 'TypeInferer')
+                and name.endswith('.class')} != TYPE_CLASSES):
         raise ValueError('coroutine-patch-class-closure')
     return result
 
@@ -125,7 +147,7 @@ def jar_entries(path: Path) -> dict[str, bytes]:
 def replace_jar(original: Path, classes: Path, target: Path) -> dict:
     entries = jar_entries(original)
     actual = {path.relative_to(classes).as_posix() for path in classes.rglob('*') if path.is_file()}
-    if actual != PATCH_CLASSES | {CONTROL} or target.exists():
+    if actual != PATCH_CLASSES | CONTROLS or target.exists():
         raise ValueError('coroutine-patch-compiled-closure')
     identities = {}
     with zipfile.ZipFile(target, 'x', compression=zipfile.ZIP_DEFLATED) as output:
@@ -230,11 +252,16 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     raw = read_file(sdk / 'CoroutineTransformation.java')
     corrected = corrected_source(raw); source.write_bytes(corrected)
     control = folder / 'Check.java'; control.write_bytes(read_file(sdk / 'Check.java'))
+    type_raw = read_file(sdk / 'TypeInferer.java')
+    type_source = folder / 'TypeInferer.java'
+    corrected_types = corrected_type_source(type_raw); type_source.write_bytes(corrected_types)
+    array_control = folder / 'ArrayTypeCheck.java'
+    array_control.write_bytes(read_file(sdk / 'ArrayTypeCheck.java'))
     # Compiler.run provides the original process, output and remaining-time bounds.
     classes = folder / 'classes'
     read_file(sdk / 'Compile.java')
     compiler.run('java-coroutine-patch', 'java', sdk / 'Compile.java', source, control, classes,
-                 os.pathsep.join(map(str, jars)))
+                 os.pathsep.join(map(str, jars)), type_source, array_control)
     replacement = folder / 'teavm-core-patched.jar'
     receipt = replace_jar(original[0], classes, replacement)
     for mode, selected in (('original', original[0]), ('corrected', replacement)):
@@ -314,6 +341,10 @@ tasks.named('generateC') {
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),
         realOriginalIrDefectObserved=True, realCorrectedIrInputsPreserved=True,
         realOriginalEntryLivenessDefectObserved=True, realCorrectedEntryLiveValuePreserved=True,
+        upstreamTypeSourceSha256=TYPE_INFERER_SHA256,
+        correctedTypeSourceSha256=hashlib.sha256(corrected_types).hexdigest(),
+        realOriginalPrimitiveArrayRootDefectObserved=True,
+        realCorrectedArrayTypesAndReferenceRootsPreserved=True,
         originalInputsUnchanged=True, checkedCompilerJars=identities,
         publishedHppcRelocation='org.teavm.hppc',
         originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]

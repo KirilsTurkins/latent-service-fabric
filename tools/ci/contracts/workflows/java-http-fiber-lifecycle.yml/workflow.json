@@ -45,6 +45,7 @@
           "tools/tests/test_java_timeout_exception.py",
           "tools/tests/test_java_teavm_failure_trace.py",
           "tools/tests/test_java_phase_c_context.py",
+          "tools/tests/test_java_array_gc_roots.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -71,7 +72,7 @@
     "http-fiber-lifecycle",
     "http-phase-clients"
   ],
-  "reviewReason": "Retain exact clang TimeZone integer-to-pointer failure and unchanged acceptance: add phase-only fixed public TimeZone context tuple, preserve original Capsule/GZIP tuple, defaults, anchored reads,128KiB context/4MiB file/16MiB total and original failure. Add only3 scoped reader controls and one workflow command; no cast or guest runtime change.",
+  "reviewReason": "Reviewed exact TeaVM0.15.0 array-element worklist seed repair; retain all prior case IDs/guards/commands and add three pinned-source/closure controls plus mandatory real original/private IR checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
