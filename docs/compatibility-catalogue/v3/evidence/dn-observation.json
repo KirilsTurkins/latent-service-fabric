@@ -1,0 +1,254 @@
+{
+  "formatVersion": 1,
+  "buildType": "https://latent.dev/build/dotnet-capsule/v1",
+  "source": {
+    "repository": "https://github.com/KirilsTurkins/latent-service-fabric",
+    "revision": "2a6e9a00232fcb1c90c8de14d290f1e8163117b47a348d806a3d66bc57884ead",
+    "snapshotDigest": "sha256:2a6e9a00232fcb1c90c8de14d290f1e8163117b47a348d806a3d66bc57884ead",
+    "repositoryTrust": "operator-asserted",
+    "capture": "explicit-input-files"
+  },
+  "componentDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+  "componentSize": 10579214,
+  "materials": [
+    {
+      "name": "activation-logging-runtime",
+      "digest": "sha256:d15d66c3943b7c6f7c2a2730c9e2c8366388b01617a7d041d5a433bb50d622ec",
+      "size": 180130
+    },
+    {
+      "name": "activation-runtime",
+      "digest": "sha256:f15c7e2ffbc109ee620e28b80d8672a4de3b6149988d87389c231893ebd731d0",
+      "size": 171374
+    },
+    {
+      "name": "application-dependencies",
+      "digest": "sha256:3033a0b6f2e5517199f6cd0a1a272cb3333568d1d1429dcc4b3adce09e73327c",
+      "size": 44599
+    },
+    {
+      "name": "automatic-compiler-patches",
+      "digest": "sha256:1d4df57de2a0571d5aa37af3adc4ca387dc639bf461f3338e6ae8b77492d65a0",
+      "size": 20406
+    },
+    {
+      "name": "build-recipe",
+      "digest": "sha256:4cdd75c6121caa7c56c9fc406013d04b243ce10d0183bab34415a2a6b3e79be8",
+      "size": 8304
+    },
+    {
+      "name": "closed-filesystem-derived-corelib",
+      "digest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb",
+      "size": 5605888
+    },
+    {
+      "name": "closed-logging-runtime",
+      "digest": "sha256:07e5a5aa3435a4b8a0b17300c82559cde1e577a1cb42ed975142e1d54e6d77d0",
+      "size": 109832
+    },
+    {
+      "name": "closed-runtime",
+      "digest": "sha256:92e67cac9975bf40045b4f449113c26f96bcf59c91b46d535140df3427d3e26e",
+      "size": 93557
+    },
+    {
+      "name": "closed-runtime-coverage",
+      "digest": "sha256:15011be04f67543a0388dec96ba77245b64818e0bbb8492a8dd6c79d92ce4d0f",
+      "size": 2849
+    },
+    {
+      "name": "compiler-containment",
+      "digest": "sha256:aa76acc51bccf34d279adca620ef549faadfaca5797b966c6127a61be755d18c",
+      "size": 5411021
+    },
+    {
+      "name": "compiler-inputs",
+      "digest": "sha256:c9387ce53faf26baf65e914225cf7704a81e7525e7a0537bc142affd33b8ef36",
+      "size": 3554215
+    },
+    {
+      "name": "compiler-namespace-arguments",
+      "digest": "sha256:1e2bcc5340658bca2da3fe77d87a9764fbc1b4b309d5825b3ffe1c63cf9faf5b",
+      "size": 5312
+    },
+    {
+      "name": "compiler-patch-preparation",
+      "digest": "sha256:3ed2a65bc3cf1888a16974396f2dad2868ee1e67d7d86a99f8e146aace28d58c",
+      "size": 982
+    },
+    {
+      "name": "component-composer",
+      "digest": "sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406",
+      "size": 21726840
+    },
+    {
+      "name": "contracts-tool",
+      "digest": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "size": 7245472
+    },
+    {
+      "name": "dependency-lock",
+      "digest": "sha256:c52f3ff2af8396c543f93063caf0a36ff41fed9e47f20383ae51fd432f74ad82",
+      "size": 2475
+    },
+    {
+      "name": "dotnet",
+      "digest": "sha256:59249cdece2b3eb8586bf991346b80f8c8ecde3e9569e00605c1eaecc11764ad",
+      "size": 68360
+    },
+    {
+      "name": "dotnet-closed-filesystem-port",
+      "digest": "sha256:c589daf4021bfc51d645cdcbc24a12790e7c776116ed9f8819f1d36887059045",
+      "size": 2553
+    },
+    {
+      "name": "dotnet-http-error-port",
+      "digest": "sha256:7a4bfcb5e881629984dcb393034417baa7f36b74e4843ba42a7c288fcad127ec",
+      "size": 7593
+    },
+    {
+      "name": "dotnet-http-errors-derived",
+      "digest": "sha256:192d99f1396e7c5207115812ab4b527e9bf210f6da007e0963d1295d048d08f9",
+      "size": 312320
+    },
+    {
+      "name": "dotnet-http-errors-tool",
+      "digest": "sha256:0ff1f65173a637fffaf49926c58503f4afc677541e161160c3d93c484cf53694",
+      "size": 145408
+    },
+    {
+      "name": "dotnet-internal-io-port",
+      "digest": "sha256:00b3a9e856f0100e377f33026ec44e2f44966c003bfb0f438d8e7c1d6569ff6c",
+      "size": 1084
+    },
+    {
+      "name": "dotnet-retirement-port",
+      "digest": "sha256:45a6bda11348b684374a8bd363b702ee7b7a45b122b2ed4803cb25786877a268",
+      "size": 412
+    },
+    {
+      "name": "dotnet-task-wait-port",
+      "digest": "sha256:664384481dcb10cf0cb15fe8208643777b7e57a2f783ab99c30f03f220b03917",
+      "size": 4605
+    },
+    {
+      "name": "executable-input-outputs",
+      "digest": "sha256:23b72ceb3c702353fec294c59bb70d869d572311e7ae4d2d5db21f6273110f5a",
+      "size": 2207
+    },
+    {
+      "name": "http-logging-runtime",
+      "digest": "sha256:32beeb182758c71a2bc5c3a004b554291e8dc6858e3d7bc455e27191f9156565",
+      "size": 260076
+    },
+    {
+      "name": "http-runtime",
+      "digest": "sha256:362dc958af5a9afd98c165aa6c93946986c8921f9b63e94a14382684f7ff597a",
+      "size": 253090
+    },
+    {
+      "name": "noncrypto-entropy",
+      "digest": "sha256:2dbf0dacbc5c95439609a6ed8db7ecb935e4a5ce3581d688cfb6c9478fefc7c0",
+      "size": 28716
+    },
+    {
+      "name": "noncrypto-entropy-object",
+      "digest": "sha256:4a4fce477244a0ae45cf73e67324fb3ce924f593686bcc290a3682db7839f4f6",
+      "size": 974
+    },
+    {
+      "name": "noncrypto-entropy-port",
+      "digest": "sha256:e1ea3d29a197e23213cc212cb4aa097b38731357408f8c8c2d362cb385d3a645",
+      "size": 2570
+    },
+    {
+      "name": "nuget-build-inputs",
+      "digest": "sha256:26f8fb98ea65899d4fcef83cc8513e100e678032d6d09c394ed6ef42dab8ced3",
+      "size": 11726
+    },
+    {
+      "name": "package-inputs",
+      "digest": "sha256:f078a5afee43790b0d35501b1804f8a72de1f233e0d572d1cc51cd277e96e9de",
+      "size": 1331
+    },
+    {
+      "name": "packager",
+      "digest": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+      "size": 17750192
+    },
+    {
+      "name": "runtime-composition",
+      "digest": "sha256:96bdf3d8db25ba4403eff052ec70654dd16aca6039d2422f564ab79de4dfed18",
+      "size": 3230
+    },
+    {
+      "name": "runtime-composition-source",
+      "digest": "sha256:4d4a52cdc6ac97bba54ee0b7017bd6edf8052ea1fcf3302e4d4d042dcfa95c3b",
+      "size": 1783
+    },
+    {
+      "name": "runtime-profile",
+      "digest": "sha256:8ee49f1f89d9f1af4e7d1e7a76041cecd2657ae3519d01974e78a1d3cac54cf0",
+      "size": 3309
+    },
+    {
+      "name": "source-snapshot",
+      "digest": "sha256:2a6e9a00232fcb1c90c8de14d290f1e8163117b47a348d806a3d66bc57884ead",
+      "size": 21352
+    },
+    {
+      "name": "standard-rng-derived-framework",
+      "digest": "sha256:0e876616590dcce7d78456c55414768e0514f8fbab561608ff8b975117cf00f7",
+      "size": 249344
+    },
+    {
+      "name": "standard-rng-helper",
+      "digest": "sha256:1ead40eccfdd14061ca2f4cff8bf3b9f351bab262f479ad858845112234186ce",
+      "size": 14848
+    },
+    {
+      "name": "standard-rng-managed-port",
+      "digest": "sha256:53f73dfac51c4efe6e01347cad657972c2f9a462246e9bab75f79cf96526fbab",
+      "size": 3629
+    },
+    {
+      "name": "task-wait-derived-corelib",
+      "digest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+      "size": 5605888
+    },
+    {
+      "name": "toolchain-config",
+      "digest": "sha256:0aa4b85ae248d59bbc4138f346d952b7fae4fe18cc701d921fa1c003211be777",
+      "size": 105
+    },
+    {
+      "name": "wall-clock-runtime",
+      "digest": "sha256:387ce4a0195f1eed12721a0303448e5cf9a19d6322de64647afd61a4628d874a",
+      "size": 21215
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    },
+    {
+      "name": "wit-bindgen",
+      "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+      "size": 19856344
+    }
+  ],
+  "parameters": {
+    "compiler": "native-aot-llvm",
+    "bindings": "wit-bindgen-csharp",
+    "language": "csharp",
+    "target": "wasi-wasm",
+    "runtime": "native-aot",
+    "locked": true,
+    "ambientWasi": false
+  },
+  "startedAt": 1792521389,
+  "finishedAt": 1792521463,
+  "reproducibility": "not-checked",
+  "hermetic": false,
+  "dependencyCompleteness": "declared-inputs-incomplete"
+}

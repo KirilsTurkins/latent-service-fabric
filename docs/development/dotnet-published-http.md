@@ -39,10 +39,23 @@ The replay gate authenticates that original archive and component, checks all
 captured SDK/build inputs and generator approval, and restores only the five
 original WIT files from their authenticated package layers. Its sole original
 node change gives each progress record a distinct filename. All twenty signed
-cases and two pre-entry refusals remain mandatory; their complete outcome is
-pending. The original full compiler job remains available through the explicit
+cases and two pre-entry refusals remain mandatory. The [owning replay](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39482018386/job/118833387604)
+passed all twenty signed cases and both refusals on source
+`7ee022fe5305cb86b47d6e08eefaf65aac93e4ae`. Independent review checked the
+complete 272-member archive, both source-material sets, all 154 raw CLI records,
+22 physical/provider retirement observations, exactly fifteen contacts, eleven
+completed writes and one uncertain mutation without replay. Node shutdown is
+clean and both node and peer are reaped. The [original raw programme and node
+receipts](../testing/evidence/dotnet-published-http-signed-2026-10-20.json) retain
+the successful replay separately from the original failed evidence writer.
+The original full compiler job remains available through the explicit
 `fresh_component` dispatch input. Replay builds neither the guest nor the host.
 Existing direct HttpClient results retain their historical scope and source;
 they do not give these new libraries passing credit. #693 remains open for the
-new actual gate and its remaining literal lifecycle, authority and isolation
+remaining literal lifecycle, authority, HTTPS and isolation
 requirements. No complete ticket or production accounting claim is made here.
+
+The optional [versioned compatibility observations](../compatibility-catalogue/v3/README.md)
+bind these two NuGet packages to their original graph, component, configuration,
+compiler, runtime and node binary. Dependency resolution and admission remain
+independent of the catalogue.

@@ -1,0 +1,1404 @@
+{
+  "schemaVersion": "latent.dotnet.published-http.node.v1",
+  "status": "passed",
+  "cases": [
+    {
+      "case": "flurl-json",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-flurl-json",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53780658",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "66128"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "34",
+              "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "refit-json",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-refit-json",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "54527143",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "63213"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "34",
+              "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "outside-alpha",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-outside-alpha",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "52690167",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58002168",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "53339"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "34",
+              "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "outside-delta",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-outside-delta",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "52690647",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58002168",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "55589"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "34",
+              "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "flurl-404",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-flurl-404",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53794183",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "60107"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "28",
+              "data": "WyIxOjQwNDplcnJvcjpkb21haW4tZXJyb3IiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:404:error:domain-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "refit-404",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-refit-404",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53295952",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "54591"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "28",
+              "data": "WyIxOjQwNDplcnJvcjpkb21haW4tZXJyb3IiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:404:error:domain-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "flurl-500",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-flurl-500",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53793917",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "60436"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "28",
+              "data": "WyIxOjUwMDplcnJvcjpkb21haW4tZXJyb3IiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:500:error:domain-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "refit-500",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-refit-500",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53296820",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "56182"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "28",
+              "data": "WyIxOjUwMDplcnJvcjpkb21haW4tZXJyb3IiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:500:error:domain-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "flurl-pending-cancel",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-flurl-pending-cancel",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53634716",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "157842"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "15",
+              "data": "WyIxOmNhbmNlbGxlZCJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:cancelled"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "refit-pending-cancel",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-refit-pending-cancel",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53080002",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "156960"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "15",
+              "data": "WyIxOmNhbmNlbGxlZCJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:cancelled"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "reserved-header",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-reserved-header",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53567270",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "49789"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "21",
+              "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:transport-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "foreign-target",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-foreign-target",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53572506",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "51781"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "21",
+              "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:transport-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "flurl-post",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-flurl-post",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53832055",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "66394"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "23",
+              "data": "WyIxOjIwMDplY2hvOkFBRUNBdz09Il0=",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:200:echo:AAECAw=="
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "uncertain-post",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-uncertain-post",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53681105",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "60386"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "21",
+              "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:transport-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "flurl-pre-cancelled",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-flurl-pre-cancelled",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53472315",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "58064896",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "47888"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "15",
+              "data": "WyIxOmNhbmNlbGxlZCJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:cancelled"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "refit-pre-cancelled",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-refit-pre-cancelled",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "52908793",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "58064896",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "41442"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "15",
+              "data": "WyIxOmNhbmNlbGxlZCJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:cancelled"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "early-body-dispose",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-early-body-dispose",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53598380",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "56846"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "13",
+              "data": "WyIxOmVhcmx5OjQiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:early:4"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "guest-extension",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-guest-extension",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "52690113",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58002168",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "52440"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "34",
+              "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "guest-extension-denied",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-guest-extension-denied",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "52408815",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "58002168",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "46621"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "21",
+              "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:transport-error"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    },
+    {
+      "case": "fresh-default",
+      "invocation": {
+        "exitCode": 0,
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-fresh-default",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "53780638",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 1,
+              "peakMemoryBytes": "58067704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "56179"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "34",
+              "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:b37568eabb3d29bb8739d51cee7e136541864daa82d981e731cb798c24d9e8be",
+              "routeGeneration": "4"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true
+    }
+  ],
+  "preEntryRefusals": [
+    {
+      "case": "runtime-missing",
+      "invocation": {
+        "exitCode": 4,
+        "response": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-runtime-missing",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "0",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "0",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "22913916"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:4721bd7d3ae8636010f45c7b9f6fb58d6313bd3b851bcc941fef03107d263c64",
+              "routeGeneration": "2"
+            },
+            "terminalState": "rejected"
+          },
+          "error": {
+            "code": "permission-denied",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": null,
+        "processReaped": true
+      }
+    },
+    {
+      "case": "http-missing",
+      "invocation": {
+        "exitCode": 4,
+        "response": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "published-http-missing",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "0",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "0",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "1024"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:1e9bbdd705318fa55b92f23a0b1ebd7f9efc515e0fb3d98c3d341ac7cbf59c4f",
+              "releaseDigest": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+              "revisionId": "revision-v1:sha256:84fe3d4afc8bb694e86ff52def0878d042f12b4554cf61e651f4138dfd3fac7d",
+              "routeGeneration": "3"
+            },
+            "terminalState": "rejected"
+          },
+          "error": {
+            "code": "permission-denied",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "decoded": null,
+        "processReaped": true
+      }
+    }
+  ],
+  "sources": {
+    "tools/dotnet_published_http_node.py": {
+      "sha256": "sha256:91d5c602c37b57da0be0b4fa1048db8589a34a85adbc06f47f23d6ff44fa75b2",
+      "bytes": 11779
+    },
+    "tools/dotnet_standard_http_node.py": {
+      "sha256": "sha256:64d2f9ffa90cd2e44466d96d5639bd74a13c8c9f510f8ef6953e5882633496f8",
+      "bytes": 34573
+    },
+    "tools/fixtures/dotnet-published-http/Main.cs": {
+      "sha256": "sha256:83f67ddf3affc53928997e18ab40da1cbbb6276bda3364f943798780f5a028fb",
+      "bytes": 6490
+    },
+    "tools/standard_http/process_peer.py": {
+      "sha256": "sha256:079f6a00bc59546e861fde7666e974b9cb5026c6edcc472f128203dd726cca1e",
+      "bytes": 1576
+    },
+    "tools/standard_http/peer.py": {
+      "sha256": "sha256:8fa65529659ef2e53166e821da4a86c1622bec1bcec080b050d7e4e4bd04db1f",
+      "bytes": 18941
+    },
+    "tools/standard_http/protocol.py": {
+      "sha256": "sha256:495fb9756c377ba086627f51a69f5e1721fe21b83a5c16b4b97344f3d049b5c7",
+      "bytes": 6517
+    },
+    "tools/standard_http/vectors.py": {
+      "sha256": "sha256:00dc2c620e29f01e54e0c1c23ed3e5f845c1251b62ad0af9bf819be3063683a9",
+      "bytes": 5636
+    },
+    "tools/standard_http/observations.py": {
+      "sha256": "sha256:701478e4b994453e95dd9d9e92dee685493fd3ddec9eb347d939298b13543c20",
+      "bytes": 8185
+    },
+    "tools/rust_capsule_node.py": {
+      "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+      "bytes": 18922
+    }
+  },
+  "native": {
+    "latent": {
+      "sha256": "sha256:91fde4e00730a4fd87d401974261fbd0e4d3d10376227faf2c137ace89edd14f",
+      "bytes": 68829688
+    },
+    "latentd": {
+      "sha256": "sha256:68a1c75d777ee43dff59a2be6a9d820b7d49ad8e29153881cefdef3c20521a76",
+      "bytes": 185284824
+    },
+    "package": {
+      "sha256": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+      "bytes": 17750192
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:1118e6a628e40d9c7b228756f767cf7ebf18b02acdfdf4d9c7d749d87410a56b",
+      "bytes": 24017528
+    }
+  },
+  "component": {
+    "sha256": "sha256:38dc48243000189bf4e8afd6d28577a0755b48a630d4b339dc935d55b6e269dd",
+    "bytes": 10579214
+  },
+  "defaultFactories": [
+    "FlurlClient()",
+    "RestService.CreateHttpClient(endpoint, settings)",
+    "RestService.ForGenerated<IDomainApi>(client, settings)"
+  ],
+  "optionalGuestExtensionCases": [
+    "guest-extension",
+    "guest-extension-denied"
+  ],
+  "fullTicketQualification": false,
+  "configurationIdentity": {
+    "sha256": "sha256:83e5a5d7c1afc4d926472aba5b5b69fee91c8bae92477f1180a5025d8d5d2598",
+    "bytes": 6705
+  },
+  "shutdown": {
+    "processId": 2652,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 775,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "peer": {
+    "contacts": 15,
+    "completedWrites": 11,
+    "mutations": 1,
+    "heldGatesReleased": 0,
+    "allClosed": true,
+    "exactVectors": [
+      "domain-json",
+      "domain-json",
+      "domain-json",
+      "domain-json",
+      "http-404",
+      "http-404",
+      "http-500",
+      "http-500",
+      "pending-headers",
+      "pending-headers",
+      "method-bytes",
+      "commit-close",
+      "partial-body",
+      "domain-json",
+      "domain-json"
+    ]
+  },
+  "guestExecutions": 20,
+  "preIoRefusals": 2
+}
