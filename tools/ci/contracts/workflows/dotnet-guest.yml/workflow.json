@@ -100,9 +100,10 @@
     }
   },
   "requiredJobs": [
+    "scratch-refusals",
     "toolchain"
   ],
-  "reviewReason": "Add ordinary default Task/ThreadPool/timer campaign with explicit clock/activation authority, original limits and owner cleanup; retain all existing qualification commands and case guards.",
+  "reviewReason": "Preserve every original75-minute parent step and workflow property; add public normal-bundle export and separate20-minute ordinary.NET scratch child without native host rebuild, filesystem or entropy grants.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
