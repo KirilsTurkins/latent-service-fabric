@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Semantic union of existing logging selection and incoming v5 managed ownership, both default-off guards and source hooks retained.",
+  "reviewReason": "Unconditional exact-pinned fake socket refusal before optional runtime selection; existing bridge authority and scheduler paths retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5f101670ec9c415de6d1e2f1a6bc00e44a84ddb3608bbb5fc1ab2440a606ed35"
+  "sha256": "3e85abf523b436e97ad5cc1cbf1b458a196dd673d61ba2ec5171cf8ea0575978"
 }

@@ -39,6 +39,25 @@ def replace_once(text: str, old: str, new: str) -> str:
 
 
 GO_PACKAGE_RUNTIME_SHA256 = "abff1455a417b51e77e83e01da34fe1048330a9fe0e7d607bb5265f2162eb9b5"
+FAKE_NETWORK_SHA256 = "784b369c57be52fa87ace5f10e07e3c24b45d549639e1487734b793024188df3"
+
+
+def closed_network_source(text: str) -> str:
+    """No upstream test-only socket network in a maintained LSF component.
+
+    The shared source pin is independent of runtime profile selection. Future
+    declared-stream ports bypass this socket entry through their owned backend;
+    native/fake socket constructors remain concretely unsupported.
+    """
+    if hashlib.sha256(text.encode('utf-8')).hexdigest() != FAKE_NETWORK_SHA256:
+        raise ValueError('go-runtime-source-drift:net/net_fake.go')
+    signature = ('func socket(ctx context.Context, net string, family, sotype, proto int, ipv6only bool, '
+                 'laddr, raddr sockaddr, ctrlCtxFn func(context.Context, string, string, syscall.RawConn) error) (*netFD, error) {\n')
+    if text.count(signature) != 1:
+        raise ValueError('go-runtime-fake-socket-declaration-drift')
+    start = text.index(signature)
+    end = text.index('\n}\n', start) + 2
+    return text[:start] + signature + '\treturn nil, errors.ErrUnsupported\n}' + text[end:]
 
 
 def checked_roots(goroot: Path, destination: Path) -> tuple[Path, Path]:
@@ -130,6 +149,8 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
         raise ValueError('Go-standard-log-selection-must-be-boolean')
     if type(managed_idle) is not bool or managed_idle and not (activation and checkpoints and timers and initializers):
         raise ValueError('Go-managed-idle-requires-complete-activation-profile')
+    sources['net/net_fake.go'] = closed_network_source(
+        checked_sources(goroot, {'net/net_fake.go': FAKE_NETWORK_SHA256})['net/net_fake.go'])
     if standard_log:
         from tools.go_guest.standard_log import syscall_source
         sources['syscall/fs_wasip1.go'] = syscall_source(sources['syscall/fs_wasip1.go'])
