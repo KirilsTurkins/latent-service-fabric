@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import MiniSearch from 'minisearch';
 import {pageRecords, buildSearch, validateSearch} from '../lib/search-build.mjs';
-import {channelFromPath, searchDocuments, searchOptions, searchState} from '../lib/search.mjs';
+import {channelFromPath, searchDocuments, searchOptions, searchState, SEARCH_LIMITS} from '../lib/search.mjs';
 
 const html = (code, extra = '') => `<html><head>${extra}</head><body><nav>PRIVATE_NAV_SENTINEL</nav><article><div class="theme-doc-markdown"><h1>Client guide</h1><p>Invoke a capsule.</p><h2 id="invoke">Invoke</h2><pre><code>${code}</code></pre><div hidden>Go: invokeLegacy()</div><script>PRIVATE_SCRIPT_SENTINEL</script></div></article></body></html>`;
 const page = (version = 'development') => ({source: 'docs/client.md', route: `/docs/${version}/client/`, title: 'Client guide', channel: version});
@@ -52,4 +52,24 @@ test('stale built content or a changed index fails the publication check', t => 
   const index = path.join(output, 'search-index.json');
   fs.writeFileSync(index, fs.readFileSync(index, 'utf8').replace('development', 'wrong-version'));
   assert.throws(() => validateSearch(output, manifest), /differs from the actual built/);
+});
+
+test('the growing corpus preserves section anchors beyond the previous record ceiling within the byte bound', t => {
+  const output = fs.mkdtempSync(path.join(os.tmpdir(), 'lsf-search-budget-'));
+  t.after(() => fs.rmSync(output, {recursive: true, force: true}));
+  const input = page();
+  const filename = path.join(output, input.route, 'index.html');
+  fs.mkdirSync(path.dirname(filename), {recursive: true});
+  const content = count => `<div class="theme-doc-markdown"><p>Guide.</p>${Array.from({length: count}, (_, i) =>
+    `<h2 id="section-${i}">Section ${i}</h2><p>recordtoken${i}</p>`).join('')}</div>`;
+  const manifest = {revision: 'b'.repeat(40), baseUrl: '/project/', pages: [input], versions: []};
+  fs.writeFileSync(filename, content(6000));
+  const receipt = buildSearch(output, manifest);
+  assert.equal(receipt.records, 6001);
+  assert.ok(receipt.bytes < 16 * 1024 * 1024);
+  const document = JSON.parse(fs.readFileSync(path.join(output, 'search-index.json'), 'utf8'));
+  const index = MiniSearch.loadJSON(document.index, searchOptions);
+  assert.ok(searchDocuments(index, 'recordtoken5999', 'development').some(result => result.route.endsWith('#section-5999')));
+  fs.writeFileSync(filename, content(SEARCH_LIMITS.records));
+  assert.throws(() => buildSearch(output, manifest), /Search record budget exceeded: 8001 > 8000/);
 });
