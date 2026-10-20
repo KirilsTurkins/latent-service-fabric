@@ -7,11 +7,9 @@ const STREAMING: &str = "latent:http/streaming@0.3.0";
 #[test]
 fn native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation() {
     let name = "latent:runtime-native/threads@0.1.0";
-    assert!(
-        latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(name)
-            .is_none()
-    );
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(name)
+        .is_none());
     assert_eq!(
         latent_core::PHASE3_HOST_ABI_V6
             .interface(name)
@@ -242,11 +240,9 @@ fn phase_semantics_bind_original_resource_owners_and_exact_versioned_extension()
         );
     }
     assert!(specification("latent:http/phase-timing@0.3.0").is_none());
-    assert!(
-        latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(cap)
-            .is_none()
-    );
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(cap)
+        .is_none());
 }
 
 #[test]
@@ -310,11 +306,9 @@ fn phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase(
     let mut exhausted = SemanticLimits::default();
     exhausted.max_type_nodes = 1;
     assert!(!check(&nominal, Some(selected), exhausted));
-    assert!(
-        latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(phase)
-            .is_none()
-    );
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(phase)
+        .is_none());
 }
 
 #[test]
