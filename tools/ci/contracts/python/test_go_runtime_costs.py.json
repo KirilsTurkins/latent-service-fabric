@@ -1,0 +1,218 @@
+{
+  "cases": [
+    "GoRuntimeCosts.test_actual_stats_parser_keeps_source_data_separate_from_physical_qualification",
+    "GoRuntimeCosts.test_compiler_reference_requires_actual_function_local_stack_address_and_bounded_frame",
+    "GoRuntimeCosts.test_consumption_cannot_accept_boolean_negative_private_or_unbounded_integer_fields",
+    "GoRuntimeCosts.test_failed_tuple_cannot_build_or_run_and_failed_build_cannot_write_success",
+    "GoRuntimeCosts.test_fixture_has_no_initializer_workers_explicit_yield_or_new_application_runtime_facade",
+    "GoRuntimeCosts.test_idle_requires_actual_complete_rows_cells_and_original_quota_retirement",
+    "GoRuntimeCosts.test_invalid_finite_counters_and_stale_or_fabricated_growth_are_not_cost_evidence",
+    "GoRuntimeCosts.test_live_stack_and_heap_bytes_survive_real_gc_and_suspension_before_checksum_and_release",
+    "GoRuntimeCosts.test_original_profile_programmes_keep_real_baselines_and_fresh_calls_after_each_live_gc_case",
+    "GoRuntimeCosts.test_private_unknown_duplicate_reordered_or_foreign_mode_observations_are_rejected",
+    "GoRuntimeCosts.test_recursive_reference_uses_the_identical_complete_owned_function_without_execution",
+    "GoRuntimeCosts.test_reference_module_is_beneath_the_go_temporary_root_that_ignores_root_go_mod",
+    "GoRuntimeCosts.test_same_ordinary_source_has_explicit_default_and_v5_profiles_with_original_sdk_and_budgets",
+    "GoRuntimeCosts.test_small_generic_stack_growth_cannot_be_mistaken_for_two_recursive_live_stacks",
+    "GoRuntimeCosts.test_success_requires_real_reaped_known_result_revision_original_budget_and_zero_effects",
+    "GoRuntimeCosts.test_unknown_profile_refuses_before_creating_an_application"
+  ],
+  "guards": {
+    "GoRuntimeCosts.test_actual_stats_parser_keeps_source_data_separate_from_physical_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_compiler_reference_requires_actual_function_local_stack_address_and_bounded_frame": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_consumption_cannot_accept_boolean_negative_private_or_unbounded_integer_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_failed_tuple_cannot_build_or_run_and_failed_build_cannot_write_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_fixture_has_no_initializer_workers_explicit_yield_or_new_application_runtime_facade": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_idle_requires_actual_complete_rows_cells_and_original_quota_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_invalid_finite_counters_and_stale_or_fabricated_growth_are_not_cost_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_live_stack_and_heap_bytes_survive_real_gc_and_suspension_before_checksum_and_release": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_original_profile_programmes_keep_real_baselines_and_fresh_calls_after_each_live_gc_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_private_unknown_duplicate_reordered_or_foreign_mode_observations_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_recursive_reference_uses_the_identical_complete_owned_function_without_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_reference_module_is_beneath_the_go_temporary_root_that_ignores_root_go_mod": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_same_ordinary_source_has_explicit_default_and_v5_profiles_with_original_sdk_and_budgets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_small_generic_stack_growth_cannot_be_mistaken_for_two_recursive_live_stacks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_success_requires_real_reaped_known_result_revision_original_budget_and_zero_effects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeCosts.test_unknown_profile_refuses_before_creating_an_application": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_runtime_costs.py",
+  "reviewReason": "Actual38f65/run39390120215 compiler-only reference failed before components: Go ignores go.mod directly in TMPDIR. Put the identical exact function/module under owned project child, retain parent temporary/output/deadline bounds and exact pinned compiler/stack diagnostics. Actual-source old RED/new GREEN environment-root control; all47 focused PASS. No guest or compiler-placement qualification from the failed run, no native rebuild or limit change.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
