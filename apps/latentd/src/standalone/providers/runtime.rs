@@ -51,7 +51,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     pools: Arc<ProviderPools>,
     io: Arc<IoRuntime>,
     secrets: Option<latent_secrets::LocalSecretStore>,
-    streaming_secrets: Option<latent_secrets::LocalSecretStore>,
+    streaming_secrets: Vec<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
     http: Option<latent_http::HttpProvider>,
@@ -109,7 +109,7 @@ impl ProviderRuntime {
             pools,
             io,
             secrets: None,
-            streaming_secrets: None,
+            streaming_secrets: Vec::with_capacity(config.http_streaming_installations().count()),
             guest_secrets: None,
             event_secrets: None,
             http: None,
@@ -206,7 +206,9 @@ impl ProviderRuntime {
                 owner.streams = Some(provider.clone());
                 owner.stream_driver = Some(streams::Driver::start(&provider, &stream_control)?);
             }
-            if let Some(http) = &config.http_streaming {
+            let mut streaming = Vec::with_capacity(config.http_streaming_installations().count());
+            let mut phase = Vec::with_capacity(config.http_streaming_installations().count());
+            for http in config.http_streaming_installations() {
                 let (references, secrets) = http::credential_references(
                     &owner.pools,
                     &http.identity,
@@ -218,7 +220,9 @@ impl ProviderRuntime {
                 .await?;
                 // Retain the actual store before any later installation/binding
                 // can fail. Startup rollback uses the same retirement/join path.
-                owner.streaming_secrets = secrets;
+                if let Some(secrets) = secrets {
+                    owner.streaming_secrets.push(secrets);
+                }
                 let install = if http.phase_timing {
                     latent_http::StreamingHttpProvider::install_phase_timing_with_secret_references
                 } else {
@@ -235,11 +239,18 @@ impl ProviderRuntime {
                 )
                 .map_err(|_| unavailable())?;
                 providers.push(owner.record(&http.identity, provider.reference()));
+                let selected = (TenantId(http.identity.tenant.clone()), provider);
                 if http.phase_timing {
-                    owner.runtime.install_phase_http(Arc::new(provider))?;
+                    phase.push(selected);
                 } else {
-                    owner.runtime.install_streaming_http(Arc::new(provider))?;
+                    streaming.push(selected);
                 }
+            }
+            if let Some(provider) = http::StreamingDispatcher::compose(streaming)? {
+                owner.runtime.install_streaming_http(provider)?;
+            }
+            if let Some(provider) = http::StreamingDispatcher::compose(phase)? {
+                owner.runtime.install_phase_http(provider)?;
             }
             if let Some(blob) = &config.blob {
                 let root = settings
@@ -434,7 +445,7 @@ impl ProviderRuntime {
         if let Some(secrets) = &self.secrets {
             secrets.close();
         }
-        if let Some(secrets) = &self.streaming_secrets {
+        for secrets in &self.streaming_secrets {
             secrets.close();
         }
         if let Some(secrets) = &self.guest_secrets {
@@ -464,14 +475,10 @@ impl ProviderRuntime {
         let mut secret_generations = 0;
         let mut secret_references = 0;
         let mut secrets_closed = true;
-        for store in [
-            &self.secrets,
-            &self.streaming_secrets,
-            &self.guest_secrets,
-            &self.event_secrets,
-        ]
-        .into_iter()
-        .flatten()
+        for store in [&self.secrets, &self.guest_secrets, &self.event_secrets]
+            .into_iter()
+            .flatten()
+            .chain(self.streaming_secrets.iter())
         {
             store.close();
             let snapshot = store.snapshot().map_err(|_| unavailable())?;
