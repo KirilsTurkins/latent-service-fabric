@@ -13,8 +13,10 @@ from tools.rust_capsule_project import digest
 
 PACKAGE = 'Polly'
 VERSION = '8.6.3'
-CASES = ('legacy', 'modern', 'error', 'cancel')
+CHECKPOINTS = ('builder', 'options', 'predicate', 'add', 'build')
+CASES = tuple('diagnostic-' + name for name in CHECKPOINTS) + ('legacy', 'modern', 'error', 'cancel')
 VALUES = {'legacy': (3, 2, 41), 'modern': (3, 2, 43), 'error': (2, 1, 47), 'cancel': (1, 1, 53)}
+VALUES.update({ 'diagnostic-' + name: (0, 0, 0) for name in CHECKPOINTS })
 SOURCE = r'''using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,14 +44,29 @@ public static class PublishedTasks {
             if (value != 41 || attempts != 3 || callbacks != 2) throw new Exception("legacy retry changed");
             break;
         }
+        case "diagnostic-builder":
+        case "diagnostic-options":
+        case "diagnostic-predicate":
+        case "diagnostic-add":
+        case "diagnostic-build":
         case "modern": {
             Stage = "modern-create";
-            var pipeline = new ResiliencePipelineBuilder<int>().AddRetry(new RetryStrategyOptions<int> {
+            var builder = new ResiliencePipelineBuilder<int>();
+            if (mode == "diagnostic-builder") return Checkpoint(mode);
+            var options = new RetryStrategyOptions<int>();
+            if (mode == "diagnostic-options") return Checkpoint(mode);
+            var predicate = new PredicateBuilder<int>().Handle<InvalidOperationException>();
+            if (mode == "diagnostic-predicate") return Checkpoint(mode);
+            options = new RetryStrategyOptions<int> {
                 MaxRetryAttempts = 2, Delay = TimeSpan.FromMilliseconds(1),
                 BackoffType = DelayBackoffType.Constant, UseJitter = false,
-                ShouldHandle = new PredicateBuilder<int>().Handle<InvalidOperationException>(),
+                ShouldHandle = predicate,
                 OnRetry = _ => { ++callbacks; return ValueTask.CompletedTask; }
-            }).Build();
+            };
+            builder.AddRetry(options);
+            if (mode == "diagnostic-add") return Checkpoint(mode);
+            var pipeline = builder.Build();
+            if (mode == "diagnostic-build") return Checkpoint(mode);
             Stage = "modern-execute";
             var pending = pipeline.ExecuteAsync(_ => ++attempts < 3
                 ? ValueTask.FromException<int>(original) : new ValueTask<int>(gate.Task));
@@ -85,6 +102,7 @@ public static class PublishedTasks {
         }
         return "published-tasks:" + mode + "|attempts=" + attempts + "|callbacks=" + callbacks + "|value=" + value;
     }
+    private static string Checkpoint(string mode) => "published-tasks:" + mode + "|attempts=0|callbacks=0|value=0";
     private static void Incomplete(Task pending) {
         if (pending.IsCompleted) throw new Exception("pending work skipped");
     }
