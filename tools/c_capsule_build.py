@@ -33,7 +33,7 @@ RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_b
           "tools/dev_workflow/state.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
           "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/windows.py",
           "tools/captured_compiler_isolation.py",
-          "tools/c_guest/compiler.py", "tools/c_guest/bindings.py", "tools/rust_capsule_project.py",
+          "tools/c_guest/compiler.py", "tools/c_guest/bindings.py", "tools/c_guest/closed_filesystem.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",

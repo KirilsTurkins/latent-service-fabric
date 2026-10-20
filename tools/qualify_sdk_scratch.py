@@ -160,7 +160,7 @@ def execution_report(language, artifact, node):
             and [row['mode'] for row in observed['cases']] == list(CASES[language]),
             'scratch-report-actual-cases-required')
     operations = {'rust': ('std::fs::File::open', 'std::fs::OpenOptions::open', 'std::fs::create_dir'),
-        'c': ('fopen(read)', 'fopen(create)', 'tmpfile'), 'go': ('os.Open', 'os.OpenFile', 'os.CreateTemp'),
+        'c': ('fopen/read', 'fopen/create', 'tmpfile'), 'go': ('os.Open', 'os.OpenFile', 'os.CreateTemp'),
         'java': ('java.io.FileInputStream', 'java.io.FileOutputStream', 'java.io.File.createTempFile'),
         'dotnet': ('System.IO.File.OpenRead', 'System.IO.File.Open', 'System.IO.Path.GetTempFileName')}
     findings = list(original['findings'])

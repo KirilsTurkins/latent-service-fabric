@@ -157,8 +157,8 @@ must still satisfy the maintained closed profile: a componentization failure is
 retained as failure and cannot be counted as a caught runtime Unsupported error.
 `NotFound`, access denial and general I/O categories remain distinct from concrete
 Unsupported; neither a generic trap nor a successful compiler build proves API
-support or refusal. Source controls currently pass; signed five-language results
-are pending and no whole criterion is complete. The Rust workflow has a separate
+support or refusal. Source controls pass; the language-specific actual results
+below retain their distinct boundaries and no whole criterion is complete. The Rust workflow has a separate
 20-minute child consuming an exact normal public bundle; the original 35-minute
 parent and all its commands remain mandatory. The C workflow also has a separate
 20-minute child using only its exact normal public products and pinned
@@ -171,12 +171,51 @@ wiring retains its own pending boundary. The .NET workflow adds a separate
 20-minute child of its unchanged75-minute normal parent. It authenticates only
 the public normal products, builds one fresh NativeAOT component and runs the
 six filesystem/refusal/trap/fresh-state calls without adding entropy or file
-authority. Its runtime results remain pending; the prior entropy-specific
-harness failure is not filesystem evidence. Neither the C nor Rust scratch child
-has a passing guest receipt yet. Actual results also project into the existing
+authority. The corrected .NET
+[run39355824576/job118410242354](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39355824576/job/118410242354)
+passed33 invocations at source488b264e9b with clean retirement, but its open and
+create calls caught `DirectoryNotFoundException` and its temporary-file call
+caught `IOException`. Those results remain unresolved behavior for criterion5,
+not concrete Unsupported. The earlier entropy-specific harness failure remains
+separate. Rust scratch is still pending. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.
+
+The first C scratch child failed during actual compilation, before signing or
+invocation: [job118415549455](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39354843145/job/118415549455)
+retained Zig0.16's deprecated `tmpfile` diagnostic under the unchanged `-Werror`.
+That failure is not a caught Unsupported result. The compiler-owned
+`c-closed-filesystem-stdio-v1` overlay now keeps the original libc declarations
+via `include_next`, then maps ordinary WASI `fopen` and `tmpfile` to null with
+`ENOTSUP`. The original `fopen` initial-mode `EINVAL` check remains ahead of
+the closed refusal. Other stdio operations and non-WASI includes are unchanged;
+no file descriptor, filesystem import or writable storage is supplied.
+
+Compiler admission authenticates the exact Zig0.16 selected stdio header and
+WASI libc `fopen` source, plus the captured overlay, and rechecks all three
+materials after compilation. The two upstream preimages come from the
+[pinned Zig source](https://codeberg.org/ziglang/zig/src/tag/0.16.0/lib/libc/wasi/libc-top-half/musl/src/stdio/fopen.c).
+The overlay is part of normal SDK capture and recipe identity; no application
+call is rewritten and no warning is disabled. Six new focused controls pass,
+including source drift refusal and normal compiler admission; the previous
+compiler fails the new required-material control.
+
+The [actual signed replay](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39362851384/job/118432795119)
+at source6578570a34 compiled the fresh component and passed all33 known/reaped
+invocations, including three caught `errno=notsup` results, explicit fixture
+trap and fresh state. All12 provider-idle samples had zero active owners,
+30 physical samples were retained, and node shutdown was clean. The job then
+failed solely while projecting the C operation labels into the compatibility
+report: parentheses were outside its existing closed token grammar. The labels
+now use `fopen/read` and `fopen/create`; the grammar is unchanged. An independent
+[authenticated artifact reprojection](../testing/evidence/c-closed-filesystem-signed-2026-10-20.json)
+verifies the component, source, three port materials and all33 outcomes. It
+records the original job's failure separately from the passing runtime programme
+and corrected report projection. No compilation or signed invocation was
+repeated for this label correction. The original passed27-call parent/native
+products remain historical29b, separate from the changed compiler and fresh
+component; the normal prepared verifier is unchanged.
 
 ECMAScript has no standard filesystem API. The corresponding TypeScript packet
 (`tools/qualify_typescript_scratch_refusals.py`) captures an outside npm module,
