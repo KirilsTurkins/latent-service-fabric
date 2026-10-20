@@ -873,6 +873,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         for name in ("observe-failed-fetch", "observe-fetch-boundaries", "replay-entropy-policy", "qualify-standard-clocks", "qualify-scratch-refusals", "qualify-runtime-retirement"):
             self.assertEqual(inputs[name]["type"], "boolean")
             self.assertIs(inputs[name]["default"], False)
+        rust_selector = data['workflowContracts']['.github/workflows/rust-capsule-authoring.yml']['on']['workflow_dispatch']['inputs']['replay-scratch-refusals']
+        self.assertEqual(rust_selector['type'], 'boolean')
+        self.assertIs(rust_selector['default'], False)
         c_selector = data['workflowContracts']['.github/workflows/c-guest-authoring.yml']['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
         self.assertEqual(c_selector['type'], 'boolean')
         self.assertIs(c_selector['default'], False)
@@ -882,6 +885,11 @@ class RepositoryMigrationTests(unittest.TestCase):
             if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
                 self.assertEqual(value["jobIf"], "success()", key)
                 value["jobIf"] = reviewed_typescript_observer_guard
+            if value['workflow'] == '.github/workflows/rust-capsule-authoring.yml':
+                # The exact explicit replay uses historical compiled products;
+                # default, PR and push retain every original job and command.
+                self.assertEqual(value['jobIf'], 'success()', key)
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}"
             if value['workflow'] == '.github/workflows/c-guest-authoring.yml' and value['job'] == 'runtime':
                 # Only the explicit historical-products replay skips this old
                 # complete job. Its normal/default commands and all other

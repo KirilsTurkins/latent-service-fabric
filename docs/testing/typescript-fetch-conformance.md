@@ -1,5 +1,17 @@
 # Standard Fetch conformance campaign
 
+The [actual signed programme](evidence/typescript-fetch-conformance-signed-2026-10-20.json)
+passed all31 cases in
+[run39379220185/job118484212978](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39379220185/job/118484212978)
+at sourcee7e665e6ff. Artifact12244982734 binds the component, all31 known/reaped
+invocation rows,33 physical-retirement observations,28 exact peer contacts,
+one uncertain mutation without replay and clean node/peer shutdown. The normal
+Task16/Queue16/Native64 limits remain. Engine/native products retain their
+historical0754391a attribution; current source composition is recorded separately.
+This finite result does not close #691 or qualify network streaming, every
+runtime limit, provider absence or cross-tenant reuse. Earlier failures below
+remain failures, including the unexplained6b DELETE result.
+
 This signed component campaign extends the default Fetch profile's real HTTP
 coverage for [#691](https://github.com/KirilsTurkins/latent-service-fabric/issues/691).
 It builds one new ordinary application through the normal maintained compiler,
@@ -32,7 +44,7 @@ fork, automatic replay, networking from snapshots or implicit grant.
 The source-owned import engine/compiler and five historical native tools retain
 their original authenticated acquisition identities. Fresh normal source/build
 documents bind this application. Six focused source and pending-owner controls
-and the pinned Jco/TypeScript typecheck pass; actual signed results are pending.
+and the pinned Jco/TypeScript typecheck passed before the actual signed run above.
 The initial1898 run failed the supervisor's new15-second wait before its first
 grant-denied admission completed. Artifact12242035617 retains that failure;
 no guest case passed. The supervisor now uses the existing client's120-second
@@ -48,7 +60,7 @@ now reads the existing policy, verifies its tenant, identity, publication and
 original resource scope, and passes its observed generation into the existing
 policy writer. No conflict retry or precondition is bypassed. The regression
 requires generation9 and refuses a foreign publication before any mutation.
-Eight focused controls pass; no actual guest case has passed this lane yet.
+At that setup stage, eight focused controls passed and no guest case had passed.
 This does not qualify network streaming/backpressure, every runtime resource
 limit, provider absence or cross-tenant reuse. Those literal whole-ticket
 requirements remain open rather than being inferred from these narrower rows.
@@ -78,3 +90,10 @@ new mutation, conflict retry, audit-cap increase or false cleanup acknowledgemen
 is introduced. This change still requires actual clean shutdown under the full
 programme's audit pressure; a clean low-pressure standalone node is insufficient.
 Component/package bytes are retained on subsequent attempts for exact reuse.
+
+Attempt6b08586f at the same original bounds failed its DELETE result check
+after eight passed cases. Artifact12244473211 retains the built component and
+failed stage (SHA25654bdd9de156918e879acefda730503e37dd85feb6fcf45bef2c791634bef48ff).
+The controller had omitted the failed invocation row, so its cause remains
+unknown. Every returned ordinary/gated/root/fresh invocation is now persisted
+before validation; no result, contact, budget or cleanup assertion changes.

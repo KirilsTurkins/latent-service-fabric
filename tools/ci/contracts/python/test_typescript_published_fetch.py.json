@@ -3,11 +3,16 @@
     "PublishedFetchTests.test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge",
     "PublishedFetchTests.test_caller_uses_original_global_clients_and_original_world_limits",
     "PublishedFetchTests.test_default_error_helper_unsupported_is_never_claimed_as_http_error_qualification",
+    "PublishedFetchTests.test_failed_client_is_recorded_as_failure_and_never_relabelled_success",
     "PublishedFetchTests.test_fixed_archive_members_reject_duplicate_unsafe_and_missing_inputs",
+    "PublishedFetchTests.test_named_client_profile_preserves_native_request_and_all_other_settings",
     "PublishedFetchTests.test_native_inputs_reject_fabricated_current_receipts_before_using_binaries",
     "PublishedFetchTests.test_outside_identity_cannot_escape_its_owned_directory",
+    "PublishedFetchTests.test_owner_dimension_probes_change_only_their_named_original_ceiling",
+    "PublishedFetchTests.test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting",
     "PublishedFetchTests.test_peer_requires_all_six_exact_authorized_contacts",
-    "PublishedFetchTests.test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ"
+    "PublishedFetchTests.test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ",
+    "PublishedFetchTests.test_reader_probes_and_closed_diagnostics_cannot_replace_client_success"
   ],
   "guards": {
     "PublishedFetchTests.test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge": {
@@ -46,7 +51,31 @@
       ],
       "skipSites": []
     },
+    "PublishedFetchTests.test_failed_client_is_recorded_as_failure_and_never_relabelled_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PublishedFetchTests.test_fixed_archive_members_reject_duplicate_unsafe_and_missing_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedFetchTests.test_named_client_profile_preserves_native_request_and_all_other_settings": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -82,6 +111,30 @@
       ],
       "skipSites": []
     },
+    "PublishedFetchTests.test_owner_dimension_probes_change_only_their_named_original_ceiling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublishedFetchTests.test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PublishedFetchTests.test_peer_requires_all_six_exact_authorized_contacts": {
       "bases": [
         "unittest.TestCase"
@@ -105,10 +158,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "PublishedFetchTests.test_reader_probes_and_closed_diagnostics_cannot_replace_client_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_published_fetch.py",
-  "reviewReason": "Review the actual ofetch declaration failure and replace only the new unmerged Fetch fixture with unchanged browser Wretch; retain all existing Fetch, archive and authority controls.",
+  "reviewReason": "Retain actual64/64/64 failure (Wretch passes; Ky traps), then select the uniformly applied bounded64/64/256 profile already observed on the same real clients. Original smaller defaults/failed receipts remain unchanged; full normal both-identity outcomes and original physical/authority checks still required.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

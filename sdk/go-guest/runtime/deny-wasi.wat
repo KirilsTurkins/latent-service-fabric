@@ -47,7 +47,7 @@
   (func (export "path_filestat_get") (param i32 i32 i32 i32 i32) (result i32) i32.const 76)
   (func (export "path_filestat_set_times") (param i32 i32 i32 i32 i64 i64 i32) (result i32) i32.const 76)
   (func (export "path_link") (param i32 i32 i32 i32 i32 i32 i32) (result i32) i32.const 76)
-  (func (export "path_open") (param i32 i32 i32 i32 i32 i64 i64 i32 i32) (result i32) i32.const 76)
+  (func (export "path_open") (param i32 i32 i32 i32 i32 i64 i64 i32 i32) (result i32) i32.const 52)
   (func (export "path_readlink") (param i32 i32 i32 i32 i32 i32) (result i32) i32.const 76)
   (func (export "path_remove_directory") (param i32 i32 i32) (result i32) i32.const 76)
   (func (export "path_rename") (param i32 i32 i32 i32 i32 i32) (result i32) i32.const 76)

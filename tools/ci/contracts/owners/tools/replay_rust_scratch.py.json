@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_rust_scratch.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review exact real normal inventory sha256/bytes identity fields for the frozen original/current runner pair; preserve all prior controls and add current inventory regression.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ff2c79a322dc5db5c8b632cfcbc2fb21ba68036e75143a4bfeeb865be83a85f7"
+}

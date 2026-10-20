@@ -1,7 +1,12 @@
 name: Rust capsule authoring
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      replay-scratch-refusals:
+        description: "Fresh offline Rust scratch component with authenticated passed38 normal products"
+        type: boolean
+        default: false
   pull_request:
     branches: [development]
     paths:
@@ -57,6 +62,7 @@ env:
 
 jobs:
   standard-clocks:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Rebuilt Rust standard clocks and signed grants
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -147,6 +153,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   git-components:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Captured Cargo Git offline components and signed execution
     needs: authoring
     runs-on: ubuntu-24.04
@@ -211,6 +218,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   standard-stdio:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Rebuilt Rust standard stdio and signed ordinary libraries
     needs: authoring
     runs-on: ubuntu-24.04
@@ -276,6 +284,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   standard-entropy:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Rebuilt Rust standard entropy and signed ordinary libraries
     needs: authoring
     runs-on: ubuntu-24.04
@@ -339,6 +348,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   compatibility:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Signed Rust unsupported operation diagnostics
     needs: authoring
     runs-on: ubuntu-24.04
@@ -399,6 +409,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   scratch-refusals:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Signed ordinary Rust scratch refusal and fresh-state packet
     needs: authoring
     runs-on: ubuntu-24.04
@@ -460,6 +471,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   dependency-matrix:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Varied captured Cargo graphs without optional catalogues
     needs: authoring
     runs-on: ubuntu-24.04
@@ -519,6 +531,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   git-closure:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Native Cargo Git capture and offline metadata
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -549,6 +562,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   authoring:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Standalone Rust capsule authoring
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -747,3 +761,66 @@ jobs:
           path: ${{ runner.temp }}/rust-scratch-prepared/
           if-no-files-found: error
           retention-days: 3
+  scratch-replay:
+    name: Fresh offline signed Rust scratch with historical normal products
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-scratch-refusals }}
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Install original compiler namespace and binding tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Check locked fixture download and exact historical-product guards
+        run: python3 -B -m unittest tools.tests.test_sdk_scratch_qualification tools.tests.test_rust_scratch_replay
+      - name: Read only the original passed38 normal public bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: '12236803645'
+          run-id: 39358494292
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/rust-scratch-original
+      - name: Download owned locked fixture dependencies then build offline sign and require all33
+        run: >-
+          python3 -B tools/replay_rust_scratch.py
+          --native "$RUNNER_TEMP/rust-scratch-original"
+          --output "$RUNNER_TEMP/rust-scratch-replay"
+      - name: Retain bounded public provenance and actual API results including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-scratch-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-scratch-replay/*.json
+            ${{ runner.temp }}/rust-scratch-replay/logs/**
+            ${{ runner.temp }}/rust-scratch-replay/build/*.json
+            ${{ runner.temp }}/rust-scratch-replay/build/logs/**
+            ${{ runner.temp }}/rust-scratch-replay/build/component.wasm
+            ${{ runner.temp }}/rust-scratch-replay/node/workflow.json
+            ${{ runner.temp }}/rust-scratch-replay/node/FAILED.json
+            ${{ runner.temp }}/rust-scratch-replay/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7

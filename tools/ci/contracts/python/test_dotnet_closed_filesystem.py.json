@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "ClosedFilesystemPortTests.test_final_port_cannot_hide_changed_task_wait_intermediate",
+    "ClosedFilesystemPortTests.test_foreign_final_port_or_wrong_task_wait_chain_is_refused",
+    "ClosedFilesystemPortTests.test_http_and_task_wait_bind_the_same_authenticated_final_corelib",
+    "ClosedFilesystemPortTests.test_missing_or_duplicate_final_native_binding_cannot_issue_completed_receipt",
+    "ClosedFilesystemPortTests.test_original_or_intermediate_reference_is_rejected_after_final_derivation",
+    "ClosedFilesystemPortTests.test_original_tool_target_and_both_final_copies_are_rechecked",
+    "ClosedFilesystemPortTests.test_pure_closed_profile_has_no_runtime_authority_or_task_wait_requirement",
+    "ClosedFilesystemPortTests.test_receipt_accepts_only_exact_two_methods_counts_types_and_base",
+    "ClosedFilesystemPortTests.test_targets_depend_on_original_task_binding_and_refuse_foreign_corelib",
+    "ClosedFilesystemPortTests.test_task_wait_intermediate_stays_immutable_and_final_ilc_reference_is_explicit"
+  ],
+  "guards": {
+    "ClosedFilesystemPortTests.test_final_port_cannot_hide_changed_task_wait_intermediate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_foreign_final_port_or_wrong_task_wait_chain_is_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_http_and_task_wait_bind_the_same_authenticated_final_corelib": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_missing_or_duplicate_final_native_binding_cannot_issue_completed_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_original_or_intermediate_reference_is_rejected_after_final_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_original_tool_target_and_both_final_copies_are_rechecked": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_pure_closed_profile_has_no_runtime_authority_or_task_wait_requirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_receipt_accepts_only_exact_two_methods_counts_types_and_base": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_targets_depend_on_original_task_binding_and_refuse_foreign_corelib": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemPortTests.test_task_wait_intermediate_stays_immutable_and_final_ilc_reference_is_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:36c2889282d20a3d1ccf44f64af90e083276936ed0e25718b93d1b1f272cfaf4",
+        "class:setup-sha256:7de15c5ff5f7626f5fa702d1392d57d8442f5f8c8681f38422c559e68d4dd6f0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_closed_filesystem.py",
+  "reviewReason": "Reviewed closed-filesystem CoreLib source boundary: retain all existing authority/resource/entropy/HTTP assertions and cases; explicitly mock the new port only in synthetic NativeAOT compiler seams; new exact intermediate/final ILC chain controls are source-level, not guest qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

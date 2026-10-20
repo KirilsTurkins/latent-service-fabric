@@ -1,13 +1,11 @@
 {
-  "schemaVersion": "latent.ci.contracts.v1",
-  "kind": "job",
-  "reviewReason": "Run real public exact-revision Cargo authoring/capture/review and fresh-home offline metadata; no compilation or signed-node claim. Existing jobs unchanged.",
-  "workflow": ".github/workflows/rust-capsule-authoring.yml",
-  "jobId": "git-closure",
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}",
     "name": "Native Cargo Git capture and offline metadata",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -37,19 +35,22 @@
         "run": "python3 tools/qualify_rust_git_dependencies.py --cargo \"$(rustup which --toolchain 1.97.1 cargo)\" --output \"$RUNNER_TEMP/rust-git-closure\"\n"
       },
       {
-        "name": "Retain source and offline Git observations including failures",
         "if": "always()",
+        "name": "Retain source and offline Git observations including failures",
         "uses": "actions/upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-git-closure-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-git-closure/qualification.json\n${{ runner.temp }}/rust-git-closure/FAILED.json\n${{ runner.temp }}/rust-git-closure/phase-*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
-  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
-  "before": {},
-  "coverage": {}
+  "jobId": "git-closure",
+  "kind": "job",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

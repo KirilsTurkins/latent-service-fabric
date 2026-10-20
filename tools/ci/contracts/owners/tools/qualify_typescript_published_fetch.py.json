@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_published_fetch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review the actual ofetch declaration failure and replace only the new unmerged Fetch fixture with unchanged browser Wretch; retain all existing Fetch, archive and authority controls.",
+  "reviewReason": "Retain actual64/64/64 failure (Wretch passes; Ky traps), then select the uniformly applied bounded64/64/256 profile already observed on the same real clients. Original smaller defaults/failed receipts remain unchanged; full normal both-identity outcomes and original physical/authority checks still required.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ef38d75a9f1553eb3a16bf9f38bca6e09925a2cc65ef147bd912ab8bb30fee52"
+  "sha256": "d253cd71dee3bc1042d6c518d5d9735586e3d2d116329fd32b8a7d97c7175e72"
 }
