@@ -398,6 +398,67 @@ jobs:
             ${{ runner.temp }}/rust-compatibility/node/FAILED.json
           if-no-files-found: warn
           retention-days: 3
+  scratch-refusals:
+    name: Signed ordinary Rust scratch refusal and fresh-state packet
+    needs: authoring
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Install the existing bounded compiler namespace and pinned bindings
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          cargo fetch --locked --target wasm32-unknown-unknown
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Read only this run's identity-checked existing native products
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rust-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-scratch-prepared
+      - name: Check captured-source and exact-outcome refusal controls
+        run: python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification
+      - name: Execute original signed programme and six ordinary filesystem refusal calls
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --language rust
+          --native-qualification "$RUNNER_TEMP/rust-scratch-prepared"
+          --output "$RUNNER_TEMP/rust-scratch-refusals"
+      - name: Retain bounded diagnostic evidence including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-scratch-refusals-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-scratch-refusals/qualification.json
+            ${{ runner.temp }}/rust-scratch-refusals/FAILED.json
+            ${{ runner.temp }}/rust-scratch-refusals/compatibility-execution-report.json
+            ${{ runner.temp }}/rust-scratch-refusals/logs/**
+            ${{ runner.temp }}/rust-scratch-refusals/build/*.json
+            ${{ runner.temp }}/rust-scratch-refusals/build/logs/**
+            ${{ runner.temp }}/rust-scratch-refusals/build/component.wasm
+            ${{ runner.temp }}/rust-scratch-refusals/build/component.wit
+            ${{ runner.temp }}/rust-scratch-refusals/node/workflow.json
+            ${{ runner.temp }}/rust-scratch-refusals/node/FAILED.json
+            ${{ runner.temp }}/rust-scratch-refusals/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 3
   dependency-matrix:
     name: Varied captured Cargo graphs without optional catalogues
     needs: authoring
@@ -672,5 +733,17 @@ jobs:
         with:
           name: rust-git-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/rust-git-prepared/
+          if-no-files-found: error
+          retention-days: 3
+      - name: Export exact normal public prerequisites for the separate scratch packet
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --export-bundle --language rust
+          --native-qualification "$RUNNER_TEMP/rust-capsule-authoring"
+          --output "$RUNNER_TEMP/rust-scratch-prepared"
+      - name: Retain identity-checked normal scratch prerequisites
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-scratch-prepared/
           if-no-files-found: error
           retention-days: 3
