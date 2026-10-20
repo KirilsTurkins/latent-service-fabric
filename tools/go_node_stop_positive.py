@@ -47,9 +47,12 @@ def barrier(inventory, stderr, activation, mode, *, provider_usage):
     closed = [row for row in records if row['event'] == 'root-close']
     minimum = 3 if mode == 'pending' else 2
     # The immutable ordinary fixture has one short initializer timer, followed
-    # by two pending body timers or one draining body timer. A current successful
-    # begin_wait must observe those original timer owners still charged.
-    if len(starts) < minimum or len(entered) < minimum:
+    # by two pending body timers or one draining body timer. The Go dispatcher
+    # waits on its earliest timer; an initializer can expire without timer-next.
+    # Require an actual successful begin_wait after every body admission, with
+    # all original remaining timer owners still charged, rather than inventing
+    # one host wait per timer-start or requiring the elapsed initializer to wait.
+    if len(starts) < minimum or not entered:
         return None
     current = entered[-1]
     if (current['sequence'] <= starts[-1]['sequence'] or current['tasks'] < 2

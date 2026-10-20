@@ -2,6 +2,7 @@
   "cases": [
     "GoNodeStopPositive.test_absent_events_exhaust_only_original_sixteen_attempts_and_restore_original_deadline",
     "GoNodeStopPositive.test_actual_next_entered_and_current_timer_owners_replace_audit_completion_inference",
+    "GoNodeStopPositive.test_actual_single_earliest_body_wait_requires_admission_order_and_live_timer_owners",
     "GoNodeStopPositive.test_completed_cli_and_expired_original_deadline_cannot_authorize_signal",
     "GoNodeStopPositive.test_invalid_overflow_private_foreign_and_closed_pending_evidence_fail_closed",
     "GoNodeStopPositive.test_live_pipe_fragment_waits_for_the_same_complete_record_but_missing_sequences_fail_closed",
@@ -25,6 +26,18 @@
       "skipSites": []
     },
     "GoNodeStopPositive.test_actual_next_entered_and_current_timer_owners_replace_audit_completion_inference": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e2a9ea534a1a24c37a78b58fc9c9af8f24806e27cf25fc3f67a4e8bab534579d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStopPositive.test_actual_single_earliest_body_wait_requires_admission_order_and_live_timer_owners": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -135,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_node_stop_positive.py",
-  "reviewReason": "Add ten finite controls for real accepted timer waits, root drain, physical/provider ownership, missing/private/overflow records, live pipe fragmentation, missing sequences, unchanged poll envelope and explicit default-off observer selection. All historical node-stop controls remain unchanged.",
+  "reviewReason": "Preserve ten original bodies and guards; add exact retained four-event earliest-timer regression with missing/old/noncharged wait negatives. No native/fixture/poll/deadline change.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -34,6 +34,29 @@ def barrier(raw=None, mode='pending', owners=None, usage=None):
 
 
 class GoNodeStopPositive(unittest.TestCase):
+    def test_actual_single_earliest_body_wait_requires_admission_order_and_live_timer_owners(self):
+        # Retained51190: the initializer retired without entering timer-next;
+        # the pinned Go dispatcher waits on its earliest remaining timer.
+        rows = [('start-accepted', 10, 0, 1), ('start-accepted', 11, 0, 1),
+                ('start-accepted', 11, 0, 2), ('next-entered', 11, 1, 2)]
+        raw = b''.join(observer.PREFIX + ('|pending|%s|%d|%d|%d|%d\n' %
+            (event, index, tasks, waits, timers)).encode()
+            for index, (event, tasks, waits, timers) in enumerate(rows, 1))
+        value = barrier(raw)
+        self.assertIsNotNone(value)
+        self.assertEqual((value['acceptedTimerStarts'], value['enteredTimerWaits']), (3, 1))
+        self.assertEqual(value['lastEnteredTimerOwners']['sequence'], 4)
+        for invalid in (b'\n'.join(raw.splitlines()[:3])+b'\n',
+                        raw.replace(b'next-entered|4|11|1|2', b'next-entered|4|11|0|2'),
+                        raw.replace(b'next-entered|4|11|1|2', b'next-entered|4|11|1|1')):
+            with self.subTest(invalid=invalid):
+                self.assertIsNone(barrier(invalid))
+        initializer_only_wait = records().splitlines()[:2]
+        for index, (_event, tasks, waits, timers) in enumerate(rows[1:3], 3):
+            initializer_only_wait.append(observer.PREFIX + ('|pending|start-accepted|%d|%d|%d|%d' %
+                (index, tasks, waits, timers)).encode())
+        self.assertIsNone(barrier(b'\n'.join(initializer_only_wait)+b'\n'))
+
     def test_actual_next_entered_and_current_timer_owners_replace_audit_completion_inference(self):
         value = barrier()
         self.assertEqual((value['acceptedTimerStarts'], value['enteredTimerWaits']), (3, 3))

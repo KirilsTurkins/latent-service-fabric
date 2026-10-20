@@ -159,8 +159,11 @@ the authenticated real authoring product. Only its explicit positive-timer
 programme option enables the merged observer. The historical audit reader and
 old failed067 receipt remain intact; the new path does not query optional audit
 as an admission oracle. Pending work requires successful starts for the short
-initializer and both body timers, actual entry into their timer waits, and a
-latest entered wait retaining two timer owners. Draining work additionally
+initializer and both body timers, actual entry into a body timer wait after all
+three admissions, and a latest entered wait retaining two timer owners. The Go
+dispatcher selects the earliest timer; an initializer may expire without a
+timer-next call. Requiring one host wait for every start would invent a bridge
+protocol. Draining work additionally
 requires the actual root-close hook and a live accepted child timer wait. In
 both modes the native record must show actual charged Task/Wait/Timer owners;
 current topology, provider-session/call ownership and the original pending CLI
@@ -179,3 +182,12 @@ Focused controls validate this source selection and failure handling only.
 The new V7 programme has not executed until its own authenticated receipt says
 otherwise. No successful live node stop, complete runtime-cost bound, kernel
 retirement or whole #742/#736 qualification is claimed by this consumer.
+
+The first V7 attempt at `51190a89242b00b634798c366ac32c20dbd82ee0`, run
+`39424278960`/job `118632749476`, remains failed. It compiled and signed the
+component and passed the fresh invocation, then exhausted the unchanged barrier
+attempts. Its actual observer retained three accepted starts and one subsequent
+entered wait with eleven tasks, one wait and two charged timers. The reader had
+incorrectly required three entered waits. The corrected regression preserves
+the original live-owner, ordering, deadline, attempt and signal requirements;
+the live-stop and restart outcomes still require their own actual execution.
