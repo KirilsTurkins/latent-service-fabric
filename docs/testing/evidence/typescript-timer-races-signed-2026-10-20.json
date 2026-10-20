@@ -1,4 +1,5 @@
 {
+  "schemaVersion": "latent.typescript.timer-races-signed.v1",
   "status": "passed",
   "source": "b57dc18c7d78c27c3beeab5290c89a280e116bf0",
   "run": 39416012080,
