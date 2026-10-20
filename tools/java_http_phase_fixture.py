@@ -6,6 +6,7 @@ from pathlib import Path
 import socket
 
 from tools.java_http_client import PHASE_PROFILE_ID
+from tools.http_phase_wit import nominal_type_owner
 from tools.qualify_java_published_http import project as published_project
 from tools.rust_capsule_project import ROOT, digest, read_file, read_json
 
@@ -81,7 +82,8 @@ def project(directory: Path) -> Path:
         relative = 'wit/platform/' + package + '/package.wit'
         target = app/'wit/deps'/package/'package.wit'
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(read_file(app/'vendor/lsf'/relative))
+        data = read_file(app/'vendor/lsf'/relative)
+        target.write_bytes(nominal_type_owner(data) if package == 'http-v3' else data)
     lock = read_json(app/'sdk-lock.json')
     lock['template'] = {'name': 'java-http-phase-controls', 'sourceDigest': digest(source),
         'witDigest': digest(wit)}

@@ -42,6 +42,10 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_phases tools.tests.test_java_phase_native_products tools.tests.test_java_http_phase_campaign -v\n"
       },
       {
+        "name": "Check canonical indirect async records and nominal-only phase resources",
+        "run": "python3 -B -m unittest tools.tests.test_java_async_indirect -v"
+      },
+      {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
@@ -79,7 +83,7 @@
   },
   "jobId": "http-phase-clients",
   "kind": "job",
-  "reviewReason": "Add one default-false explicit V7 Java phase qualification; preserve the complete original fiber job, every step/command/field/limit/default. Fetch exact producer source before controls, capture three public runtime JARs normally and require one fresh phase component with two ordinary clients plus operation/root/retirement boundaries. No native rebuild, oracle weakening or full-ticket claim.",
+  "reviewReason": "Repair the observed canonical indirect async C ABI: accept only its exact function-owned ordered record in explicitly selected async imports and retain every input through terminal subtask cleanup. Remove exactly eight legacy operational declarations from the phase fixture dependency via the shared canonical-preimage fence; no old WIT/provider/grant/default/limit changes. Keep every existing test and workflow command; add seven targeted controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

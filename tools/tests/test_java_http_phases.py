@@ -144,9 +144,11 @@ class JavaHttpPhaseCampaignSource(unittest.TestCase):
             self.assertEqual((project/'wit/world.wit').read_bytes(), wit)
             self.assertEqual(lock['template']['sourceDigest'], digest(source))
             self.assertEqual(lock['template']['witDigest'], digest(wit))
+            from tools.http_phase_wit import nominal_type_owner
             for package in ('http-v3', 'http-phases', 'activation-runtime'):
+                original = (project/'vendor/lsf/wit/platform'/package/'package.wit').read_bytes()
                 self.assertEqual((project/'wit/deps'/package/'package.wit').read_bytes(),
-                    (project/'vendor/lsf/wit/platform'/package/'package.wit').read_bytes())
+                    nominal_type_owner(original) if package == 'http-v3' else original)
             for name, identity in lock['sdk'].items():
                 self.assertEqual(digest((project/'vendor/lsf'/name).read_bytes()), identity['digest'])
             declaration = json.loads((project/'java-dependencies.json').read_bytes())

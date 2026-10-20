@@ -162,6 +162,8 @@ jobs:
         run: |
           python3 -m pip install --requirement tools/requirements.lock
           python3 -B -m unittest tools.tests.test_java_http_phases tools.tests.test_java_phase_native_products tools.tests.test_java_http_phase_campaign -v
+      - name: Check canonical indirect async records and nominal-only phase resources
+        run: python3 -B -m unittest tools.tests.test_java_async_indirect -v
       - name: Retrieve exactly the five authenticated V7 products without a native rebuild
         env:
           GH_TOKEN: ${{ github.token }}

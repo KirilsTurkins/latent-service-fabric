@@ -31,7 +31,7 @@ from tools.rust_capsule_project import ROOT, digest, fresh, read_file, read_json
 
 MAX_SECONDS = 1800
 MATERIALS = tuple(dict.fromkeys((*RECIPE, SOURCE, WORLD,
-    'tools/java_http_phase_fixture.py', 'tools/java_http_phase_node.py',
+    'tools/java_http_phase_fixture.py', 'tools/java_http_phase_node.py', 'tools/http_phase_wit.py',
     'tools/qualify_java_http_phases.py', 'tools/java_phase_native_products.py',
     'tools/java_replay_materials.py', 'tools/java_standard_http_library.py',
     'tools/qualify_java_published_http.py', 'tools/java_standard_http_project.py',

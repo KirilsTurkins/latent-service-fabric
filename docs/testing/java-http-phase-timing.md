@@ -69,3 +69,26 @@ consumer refuses a different native source or any extra/changed WIT, schema or
 echo compile input; it does not rebuild native binaries or relabel the old a4
 products. Actual TeaVM compilation and these signed Java outcomes remain pending.
 The programme is a partial #688/#741 qualification, not whole-issue closure.
+
+The first owning Java run `39426677454`, job `118640895893`, stopped before
+TeaVM or signing: the existing binding reader rejected the canonical indirect
+asynchronous C argument record. The pinned wit-bindgen 0.62 generator emits one
+function-owned `*_args_t` record for multiple indirect arguments even with
+`--no-sig-flattening`. The selected Java bridge now accepts only that exact
+ordered value record and retains it in the existing pending-call heap until the
+terminal subtask is taken; every input is decoded and released through its WIT
+codec. Direct, synchronous and exported layouts keep their prior checks. Two
+positive controls failed on the original reader; the targeted layout/lifetime
+and malformed-input controls pass after the correction.
+
+The fixture also uses the shared canonical-preimage projection for its old
+HTTP dependency: only the eight legacy function declarations are removed.
+Every nominal resource/type byte and the complete new phase interface remain
+unchanged. This avoids implicitly requesting a second operational provider;
+it grants no legacy operations. The corrected actual component campaign remains
+pending, and the original failed run remains failure evidence.
+
+The separately observed TypeScript consumer exposed an authoring check that still
+expects the complete old callable interface. The Java phase campaign is held
+until the shared exact nominal-owner packaging correction and its authenticated
+new native products are available; no old provider grant is added to bypass it.
