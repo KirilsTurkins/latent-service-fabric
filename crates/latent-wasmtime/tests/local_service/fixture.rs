@@ -519,7 +519,7 @@ impl Fixture {
             additional_runtime_tenant.as_ref().map(|_| {
                 latent_artifacts::PublicationRef::package(
                     latent_artifacts::LifecycleScope::Tenant(identities.tenant.clone()),
-                    bundle.layout().package(),
+                    bundle.layout().digest(),
                 )
                 .unwrap()
                 .id
@@ -643,7 +643,7 @@ impl Fixture {
             other_consumer.publication = Some(
                 latent_artifacts::PublicationRef::package(
                     latent_artifacts::LifecycleScope::Tenant(other.clone()),
-                    caller.layout().package(),
+                    caller.layout().digest(),
                 )
                 .unwrap()
                 .id,
@@ -760,7 +760,7 @@ impl Fixture {
         if let Some(other) = &additional_runtime_tenant {
             let publication = latent_artifacts::PublicationRef::package(
                 latent_artifacts::LifecycleScope::Tenant(other.clone()),
-                caller.layout().package(),
+                caller.layout().digest(),
             )
             .unwrap();
             guest_runtime.authorize_additional_tenant(

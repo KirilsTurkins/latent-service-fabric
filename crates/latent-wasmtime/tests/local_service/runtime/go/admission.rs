@@ -40,7 +40,7 @@ async fn fixture(root: &std::path::Path) -> Fixture {
             let mut bound = b"synthetic-local-service-callee:packages::callee(42)\n".to_vec();
             bound.extend_from_slice(include_bytes!("../../packages.rs"));
             bound.extend_from_slice(include_bytes!("../../component.rs"));
-            bound.extend_from_slice(component::CALLEE_WIT.as_bytes());
+            bound.extend_from_slice(crate::component::CALLEE_WIT.as_bytes());
             bound
         };
         observation.source.snapshot_digest =
@@ -66,7 +66,7 @@ async fn fixture(root: &std::path::Path) -> Fixture {
             .unwrap();
     }
     let release = packages::release(&caller);
-    let package_digest = caller.layout().package().clone();
+    let package_digest = caller.layout().digest().clone();
     let f = Fixture::with_two_tenant_activation_runtime(
         (catalog, caller, callee),
         RuntimeLimits {
