@@ -76,7 +76,12 @@ does not upgrade it to a supported distribution.
 The [compiler-owned buffered fetch candidate](typescript-fetch-candidate.md)
 adds automatic global HTTP APIs when this runtime and the exact streaming HTTP
 import are selected. Its native semantic controls are separate from the signed
-matrix above; actual fetch/library/provider qualification remains pending.
+matrix above. The finite [Fetch conformance](../testing/evidence/typescript-fetch-conformance-signed-2026-10-20.json),
+[unchanged published clients](../testing/evidence/typescript-published-fetch-signed-2026-10-20.json)
+and [buffered bodies](../testing/evidence/typescript-fetch-buffered-signed-2026-10-20.json)
+now have actual signed observations, retaining each historical source/native
+identity and their explicit limitations. They do not promote a complete HTTP,
+runtime or installed-distribution qualification.
 
 Broader exhaustion/cancellation/late-wake behavior, complete default fetch/body ownership,
 complete private/update/watch workflows, automatic runtime selection and clean

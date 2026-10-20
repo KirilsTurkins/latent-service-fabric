@@ -1,7 +1,7 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Authenticate the closed TeaVM filesystem owner; retain existing services and add exact Java argument/refusal controls without authority changes.",
+  "reviewReason":"Preserve all thirteen ownership controls; additionally bind the exact compiler-owned bulk-read stream in the staged SDK/resource profile and select it in generated sources.",
   "module":"tools/tests/test_java_resource_runtime.py",
   "cases":["JavaResourceRuntime.test_empty_selection_and_no_manifest_have_distinct_valid_ownership","JavaResourceRuntime.test_every_raw_name_survives_without_project_snapshot_exclusions","JavaResourceRuntime.test_immutable_sdk_or_generated_source_collision_fails_before_compiler","JavaResourceRuntime.test_literal_java_chunks_and_method_sizes_are_bounded_without_discarding_bytes","JavaResourceRuntime.test_logical_aliases_and_fixed_count_and_byte_bounds_remain_closed","JavaResourceRuntime.test_materialization_uses_actual_common_manifest_bytes_and_binds_selection","JavaResourceRuntime.test_missing_dependency_owner_or_changed_bytes_cannot_enter_compiler_directory","JavaResourceRuntime.test_resource_port_is_part_of_each_new_project_sdk_source_identity","JavaResourceRuntime.test_resource_recheck_denies_changed_added_removed_or_aliased_bytes","JavaResourceRuntime.test_sdk_service_merge_preserves_profiles_and_denies_duplicates_and_unowned_services","JavaResourceRuntime.test_server_and_resource_profiles_preserve_both_trusted_services_before_compilation","JavaResourceRuntime.test_service_merge_count_and_byte_limits_preserve_the_existing_profile","JavaResourceRuntime.test_stage_binds_literal_generated_sources_resources_and_exact_original_classlib"],
   "guards":{

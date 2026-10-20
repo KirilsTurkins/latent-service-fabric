@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_resource_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d880ec14444336dd2eb4ab5f922e8296100593af379e7e03e9d6ad860c801400"
+}
