@@ -30,6 +30,30 @@ test("compiled descriptors match normalized authoritative source identities", ()
   }
 });
 
+test("release preparation descriptors retain exact field numbers and lossless public selectors", () => {
+  const service = registry.getService("latent.control.v1.ReleaseService");
+  const prepare = service?.methods.find((candidate) => candidate.name === "PrepareRelease");
+  assert.ok(prepare);
+  assert.equal(prepare.methodKind, "unary");
+  assert.equal(prepare.input.typeName, "latent.control.v1.PrepareReleaseRequest");
+  assert.equal(prepare.output.typeName, "latent.control.v1.PrepareReleaseResponse");
+  assert.deepEqual(prepare.input.fields.map((field) => [field.name, field.number]), [
+    ["publication", 1], ["lifecycle_generation", 2], ["maximum_wait_millis", 3],
+  ]);
+  assert.deepEqual(prepare.output.fields.map((field) => [field.name, field.number]), [
+    ["publication", 1], ["lifecycle_generation", 2], ["component_digest", 3], ["prepared", 4],
+  ]);
+  const publication = { id: `publication:sha256:${"a".repeat(64)}`, tenant: "examples" };
+  const selected = { publication, lifecycleGeneration: 18446744073709551615n, maximumWaitMillis: 300000n };
+  assert.deepEqual(decode(prepare.input, encode(prepare.input, selected, 4096), 4096), selected);
+  const ready = { publication, lifecycleGeneration: selected.lifecycleGeneration,
+    componentDigest: `sha256:${"b".repeat(64)}`, prepared: true };
+  assert.deepEqual(decode(prepare.output, encode(prepare.output, ready, 4096), 4096), ready);
+  for (const invalid of [1, "1", -1n, 18446744073709551616n]) {
+    assert.throws(() => encode(prepare.input, { ...selected, lifecycleGeneration: invalid }, 4096));
+  }
+});
+
 test("wire codec preserves empty versus absent IDs, all u64 bits and unknown enum numbers", () => {
   const schema = method("invoke").input;
   for (const activationId of [undefined, "", "known"]) {

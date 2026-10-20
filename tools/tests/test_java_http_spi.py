@@ -180,4 +180,13 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         self.assertEqual(selected['jobs']['dependency-ingestion']['if'],
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
         selected['jobs']['dependency-ingestion']['if'] = old['jobs']['dependency-ingestion']['if']
+        steps = selected['jobs']['compiler-component']['steps']
+        index = next(i for i, step in enumerate(steps) if step.get('name') ==
+            'Export only exact normal public prerequisites for the separate Java scratch packet')
+        qualified = next(i for i, step in enumerate(steps) if step.get('name') ==
+            'Qualify standalone Java projects, nine SDK components, signed node and printed guide')
+        self.assertEqual(index, qualified + 1)
+        moved = steps[index:index + 2]
+        self.assertEqual(moved, old['jobs']['compiler-component']['steps'][-2:])
+        del steps[index:index + 2]; steps.extend(moved)
         self.assertEqual(selected, old)

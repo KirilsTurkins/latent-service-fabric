@@ -141,11 +141,17 @@ class JavaHttpPhaseCampaign(unittest.TestCase):
             with self.assertRaises(WorkflowError): campaign.selected_clients(value)
 
     def test_full_native_and_auxiliary_source_fence_rejects_extra_wit_before_build(self):
-        from tools import wait_runtime_native_products as native
-        from tools.java_replay_materials import git_source_identity
-        record = {'source': git_source_identity(native.SOURCE), 'materials': native.READER._git_materials()}
+        materials = {'.cargo/managed-guest.toml': campaign.file_identity(campaign.ROOT/'.cargo/managed-guest.toml')}
+        for directory in ('wit', 'schemas', 'examples/echo-contract/wit'):
+            observed = campaign.inventory(campaign.ROOT/directory)
+            materials.update({directory+'/'+row['path']: {key: row[key] for key in ('sha256', 'bytes')}
+                for row in observed['files']})
+        record = {'source': campaign.source_identity(campaign.ROOT), 'materials': materials}
         with patch.object(campaign, 'read_json', return_value=record):
             self.assertTrue(campaign.native_source(Path('prepared'))['equalToCompiledProducer'])
+            with patch.object(campaign, 'source_identity', return_value={'unreviewed': 'native-source'}), \
+                    self.assertRaisesRegex(WorkflowError, 'native-production-source-drift'):
+                campaign.native_source(Path('prepared'))
             original = campaign.inventory
             def changed(path, **kwargs):
                 value = original(path, **kwargs)

@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "latent.dotnet.finite-task-wait.reference.v1",
+  "status": "passed",
+  "sdk": "10.0.303",
+  "runtime": ".NET 10.0.11",
+  "originalCoreLib": {
+    "sha256": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "bytes": 5694976
+  },
+  "pinnedCecilSha256": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+  "infiniteOnlyOriginalAndNewAssemblyByteIdentical": true,
+  "infiniteOnlyOriginalAndNewReceiptsEqual": true,
+  "infiniteOnlyDerivedSha256": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+  "finiteDerivedSha256": "sha256:a4319cf5f26e186ffedefa623e81f0636cd2f6131ec980e3e723768277405872",
+  "oldSourceFiniteSelectionRedCases": 1,
+  "currentFocusedPythonControls": 21,
+  "generatedHelperControl": {
+    "derivedCorelib": "a4319cf5f26e186ffedefa623e81f0636cd2f6131ec980e3e723768277405872",
+    "originalProbe": "8e321f919eb5cc9ba0b96102dc4f3470cc2b861e54e3f0202235ece6f461a21b",
+    "controlledProbe": "b7c28ce908d52dcd4614a1671ae9a450b53d89c40d9870de35dcd567b4c90ad3",
+    "method": "System.Boolean System.Threading.WasiEventLoop::LsfWaitForActualTaskOrTimeout(System.Threading.Tasks.Task,System.Int32,System.Threading.CancellationToken)",
+    "instructions": 42,
+    "finallyHandlers": 2,
+    "sourceOpcodesPreserved": true,
+    "sourceBranchesAndLocalsAndHandlersPreserved": true,
+    "exactlyOnePrivatePumpCallMappedToHostAwaiter": 1,
+    "wasmRuntimeQualified": false
+  },
+  "reference": {
+    "framework": ".NET 10.0.11",
+    "cases": [
+      {
+        "name": "completed-success-precancel",
+        "original": "true",
+        "derived": "true",
+        "passed": true
+      },
+      {
+        "name": "zero-incomplete-precancel",
+        "original": "false-incomplete",
+        "derived": "false-incomplete",
+        "passed": true
+      },
+      {
+        "name": "invalid-timeout-before-complete",
+        "original": "ArgumentOutOfRangeException:millisecondsTimeout",
+        "derived": "ArgumentOutOfRangeException:millisecondsTimeout",
+        "passed": true
+      },
+      {
+        "name": "finite-success",
+        "original": "true-original-task",
+        "derived": "true-original-task",
+        "passed": true
+      },
+      {
+        "name": "finite-cancellable-success",
+        "original": "true-original-task",
+        "derived": "true-original-task",
+        "passed": true
+      },
+      {
+        "name": "timeout-false-then-fresh",
+        "original": "false-then-true-original-token-live",
+        "derived": "false-then-true-original-token-live",
+        "passed": true
+      },
+      {
+        "name": "infinite-cancel",
+        "original": "OperationCanceledException:original-token;task-preserved",
+        "derived": "OperationCanceledException:original-token;task-preserved",
+        "passed": true
+      },
+      {
+        "name": "finite-cancel",
+        "original": "OperationCanceledException:original-token;task-preserved",
+        "derived": "OperationCanceledException:original-token;task-preserved",
+        "passed": true
+      },
+      {
+        "name": "incomplete-precancel",
+        "original": "OperationCanceledException:original-token",
+        "derived": "OperationCanceledException:original-token",
+        "passed": true
+      },
+      {
+        "name": "completed-fault-over-precancel",
+        "original": "AggregateException:original-fault",
+        "derived": "AggregateException:original-fault",
+        "passed": true
+      },
+      {
+        "name": "pending-fault",
+        "original": "AggregateException:original-fault",
+        "derived": "AggregateException:original-fault",
+        "passed": true
+      },
+      {
+        "name": "own-cancel-aggregate",
+        "original": "AggregateException:original-task-token",
+        "derived": "AggregateException:original-task-token",
+        "passed": true
+      },
+      {
+        "name": "own-cancel-wait-token-precedence",
+        "original": "OperationCanceledException:original-wait-token",
+        "derived": "OperationCanceledException:original-wait-token",
+        "passed": true
+      }
+    ],
+    "wasmExecution": false,
+    "originalQueuePumpExecuted": false,
+    "helperIlExecuted": true
+  },
+  "signedGuestQualification": false,
+  "nativeAotCompilation": false,
+  "nativeHostBuilt": false,
+  "originalWasiQueuePumpExecuted": false,
+  "whole746Complete": false,
+  "affectedPortCompositionPythonControls": 49,
+  "closedFilesystemComposition": {
+    "originalCoreLibDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "pinnedCecilSha256": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+    "originalCSharpDerivationUnchanged": true,
+    "cases": [
+      {
+        "mode": "unjoined",
+        "baseDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+        "outputDigest": "sha256:953314dee4f7c25f202b2d44536c6c84439aa3042cb7a2ccc95ee7a74227d43b",
+        "unchangedBaseMethods": 44744,
+        "oldValidatorAccepted": true,
+        "newValidatorAccepted": true
+      },
+      {
+        "mode": "infinite",
+        "baseDigest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+        "outputDigest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb",
+        "unchangedBaseMethods": 44753,
+        "oldValidatorAccepted": true,
+        "newValidatorAccepted": true
+      },
+      {
+        "mode": "finite",
+        "baseDigest": "sha256:a4319cf5f26e186ffedefa623e81f0636cd2f6131ec980e3e723768277405872",
+        "outputDigest": "sha256:3666963ae0cf0a9f3718a2571af4b4b7be279abfac372ab64c8d982bafe80335",
+        "unchangedBaseMethods": 44754,
+        "oldValidatorAccepted": false,
+        "newValidatorAccepted": true
+      }
+    ],
+    "receiptModeFromAuthenticatedTaskWaitPort": true,
+    "nativeAotQualified": false,
+    "signedQualification": false
+  },
+  "initialHostedAttempt": {
+    "source": "cb9d97801bc278201567369d9e7278c322d01590",
+    "run": 39503801919,
+    "job": 118907566115,
+    "status": "failure",
+    "stage": "closed-filesystem-rewrite-receipt-before-ILC",
+    "artifact": {
+      "id": 12304175126,
+      "bytes": 3836433,
+      "sha256": "sha256:d6e25b5e13d6f585a06b699142da6a42d76133b3de4965bf06c929dd34fc3f6c"
+    },
+    "archiveMembersAuthenticated": 126,
+    "closedFilesystemRawRewriteReceiptRetained": false,
+    "exactRetainedFiniteAssemblyUsedForManagedReproduction": true,
+    "guestComponentsCompiled": 0,
+    "signedOutcomes": 0
+  },
+  "focusedPythonControlsAfterCompositionFix": 67
+}

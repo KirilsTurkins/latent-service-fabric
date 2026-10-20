@@ -87,6 +87,15 @@ is uninstalled; incomplete SKB/page coverage, missing trusted admission and
 running-kernel/BTF authentication still prevent a supported profile. Neither its
 supplemental C controls nor an empty mechanism can release original quarantine.
 
+Its additive constructor prerequisite reserves an entire checked allocation
+bundle before the first socket, TIME_WAIT or SKB allocator; SKB header/fclone and
+data need two distinct prepaid records. Failed/uncertain constructors retain the
+original charge. This is still an uninstalled source derivation: the actual
+selected adapter refuses unknown trusted context/layout before allocation.
+Complete physical costs, all allocation/clone/page paths, socket-cookie handoff,
+running-kernel/BTF binding and final-free consumption remain required. Neither
+synthetic C layout costs nor this deliberate refusal qualifies a usable profile.
+
 The finite ss vocabulary is checked against the [primary iproute2 format source](https://github.com/iproute2/iproute2/blob/v6.17.0/misc/ss.c).
 The actual installed tool digest is retained independently; that format reference
 is not an authenticated source binding for the runner kernel or tool binary.

@@ -70,7 +70,10 @@ class HttpPhaseContract(unittest.TestCase):
             {entry['interface'] for entry in matrix['interfaces']})
 
     def test_v7_never_changes_the_frozen_default_or_old_manifest(self):
-        self.assertEqual(hashlib.sha256((ROOT/'wit/host-abi-phase3-v6.json').read_bytes()).hexdigest(),
+        raw = (ROOT/'wit/host-abi-phase3-v6.json').read_bytes()
+        self.assertEqual(json.loads(raw)['wasmtimeVersion'], '48.0.7')
+        self.assertEqual(raw.count(b'48.0.7'), 1)
+        self.assertEqual(hashlib.sha256(raw.replace(b'48.0.7', b'48.0.6')).hexdigest(),
             '64464b6e67fc84d6fa18495bfe8a8c00b08135aa7f8fe49bcb00039809275632')
         core=(ROOT/'crates/latent-core/src/host_profile.rs').read_text()
         self.assertIn('pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V5;',core)

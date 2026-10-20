@@ -1,0 +1,1122 @@
+{
+  "schemaVersion": "latent.dotnet.finite-task-waits.signed-observation.v1",
+  "status": "passed",
+  "compiledGuestSource": "4a16c2495e51616e1dfb5deda1c58fe4b72d2569",
+  "run": 39507327996,
+  "job": 118919421395,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39507327996/job/118919421395",
+  "event": "push",
+  "artifact": {
+    "id": 12304692305,
+    "name": "dotnet-finite-task-waits-4a16c2495e51616e1dfb5deda1c58fe4b72d2569",
+    "size_in_bytes": 8111723,
+    "digest": "sha256:93c744905e42dc303a12fd4fc3d4f765ac29520020f248f69574412bc6e6ce48"
+  },
+  "wholeArchiveMembersAuthenticated": 434,
+  "rawQualification": {
+    "sha256": "sha256:e830d14a42b1560bc3b6faef30c4cbbd1b6ac4aa36add269717400e4a42572bd",
+    "bytes": 30541
+  },
+  "rawNodeReceipt": {
+    "sha256": "sha256:18c6903d813fe1e9ccf579f3aa011038a613eb94af7ccabb79873f34e237ec6a",
+    "bytes": 641367
+  },
+  "component": {
+    "sha256": "sha256:219b06e24cfa366530677b44a9054ebafa27243987681f6c03076131ec280518",
+    "bytes": 2313574
+  },
+  "freshBuildDocuments": {
+    "BUILD-COMPLETE.json": {
+      "sha256": "sha256:6c40e88ba593e4968af61d4feee98e880f6b99954264be9fad19f836c16c770b",
+      "bytes": 5805
+    },
+    "build-observation.json": {
+      "sha256": "sha256:cc8b1fc91d2e869c2fbd6b8746e56b590e09cd2ce89b99a60353e196738158bb",
+      "bytes": 7774
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:05a3f72b9fe728893d50fe3eed32667998a89858c66a84e99271619f9b852a3b",
+      "bytes": 21222
+    },
+    "recipe-inputs.json": {
+      "sha256": "sha256:1017bdf7aa65ef040ddb4f8921a5b33066bea6b3a982be69bd2c09a992f5efd5",
+      "bytes": 8304
+    },
+    "package-inputs.json": {
+      "sha256": "sha256:f56da04e407278f485ffa4ef6c5e4b023631ffe07599e046f0812dac3e7c3038",
+      "bytes": 1201
+    },
+    "runtime-profile.json": {
+      "sha256": "sha256:d23235b9eaa33d0742ad5c4db8e60e6712b042bb6790811f2a56b6412ae4987c",
+      "bytes": 3132
+    },
+    "compiler-patches.json": {
+      "sha256": "sha256:5d9bfe0f2d6f6b9884d130a06c6eb149f415c2663594bfaf3a3619e7affe80fc",
+      "bytes": 12846
+    },
+    "task-wait-port.json": {
+      "sha256": "sha256:bdeed6e455fe04c00a7a04447b981c54e1950e740b791a4d66bb8a5f04a16bdf",
+      "bytes": 4901
+    },
+    "closed-filesystem-port.json": {
+      "sha256": "sha256:9363e0df28e4cd8f7996d0a582e0d6e73f72c99614459a86a3f0e38bb7edca8f",
+      "bytes": 2553
+    },
+    "noncrypto-entropy-port.json": {
+      "sha256": "sha256:e37c7fd10cfd4ca09adcd4f1c3f418265a3dac3f3d6fbf0bda2c585881144a27",
+      "bytes": 2570
+    },
+    "managed-entropy-port.json": {
+      "sha256": "sha256:4f0a63af2b05959c965e069e0c293207a7b300bd07579c19c709efe7b0d9555a",
+      "bytes": 3629
+    }
+  },
+  "sourceMaterialRows": 98,
+  "compilerRecipeRows": 63,
+  "materials": {
+    ".github/workflows/dotnet-finite-task-waits.yml": {
+      "sha256": "sha256:f47c2701fa155a04c158cad3cce3c5e614678bae4076c74fcbbb6e49177b6d67",
+      "bytes": 5811
+    },
+    "examples/echo-contract/capsule.json": {
+      "sha256": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d",
+      "bytes": 1294
+    },
+    "examples/echo-contract/deployment.json": {
+      "sha256": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a",
+      "bytes": 1104
+    },
+    "sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.cs": {
+      "sha256": "sha256:9bd6caab33bc94359c0fb14abcc785242b36ecddf69674751932385940d0a081",
+      "bytes": 6113
+    },
+    "sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.targets": {
+      "sha256": "sha256:6a44c6bae0f66a4ecb7b9dcbd27dc3f3c26ddbb9d9fb4492b3bb8d77dbf5407e",
+      "bytes": 1345
+    },
+    "sdk/dotnet-guest/tools/http-errors/IdleTimerDriver.cs": {
+      "sha256": "sha256:c445e787920430ce4df0e336f619c267971a06f3c040b0ac70c892deceacc786",
+      "bytes": 27065
+    },
+    "sdk/dotnet-guest/tools/http-errors/Program.cs": {
+      "sha256": "sha256:751c5f603e1c536aed052123b6a0f5617f4ee9e0a8c3e2c7e72a4badaacb1c3b",
+      "bytes": 52891
+    },
+    "sdk/dotnet-guest/tools/http-errors/TaskWait.cs": {
+      "sha256": "sha256:d785a3749d6acd8d105edfbb1bdf8636a195a56201ca152058b64729d1267555",
+      "bytes": 27448
+    },
+    "sdk/dotnet-guest/tools/http-errors/TaskWait.targets": {
+      "sha256": "sha256:e69abf0d87991adf46797bb68c48d06ebd1f1231755b91264639e6bf64c9649a",
+      "bytes": 1172
+    },
+    "sdk/profile/transaction-requirements-v1.json": {
+      "sha256": "sha256:9bb389824b6a2d3015727b5c17de25a51505339d0a4f6cf46199ffe520881cd5",
+      "bytes": 9418
+    },
+    "tools/application_dependencies.py": {
+      "sha256": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+      "bytes": 28732
+    },
+    "tools/application_dependency_approval.py": {
+      "sha256": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+      "bytes": 1996
+    },
+    "tools/application_dependency_store.py": {
+      "sha256": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+      "bytes": 12139
+    },
+    "tools/application_dependency_tools.py": {
+      "sha256": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+      "bytes": 5192
+    },
+    "tools/build_observation.py": {
+      "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+      "bytes": 7868
+    },
+    "tools/build_process.py": {
+      "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+      "bytes": 9063
+    },
+    "tools/build_process_linux.py": {
+      "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+      "bytes": 3853
+    },
+    "tools/build_process_signals.py": {
+      "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+      "bytes": 3012
+    },
+    "tools/build_process_windows.py": {
+      "sha256": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+      "bytes": 7409
+    },
+    "tools/build_snapshot.py": {
+      "sha256": "sha256:172c556c2d8918d09f97d6163b64c3ffe1dda79d2f0fe72675fd223b533f5284",
+      "bytes": 12918
+    },
+    "tools/captured_compiler_isolation.py": {
+      "sha256": "sha256:061f3e31f567871e7f3b0d8e8a402077d036b3327ccd2d7455294ec7bf28af15",
+      "bytes": 14529
+    },
+    "tools/dev_workflow/__init__.py": {
+      "sha256": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+      "bytes": 98
+    },
+    "tools/dev_workflow/common.py": {
+      "sha256": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+      "bytes": 3129
+    },
+    "tools/dev_workflow/dependencies.py": {
+      "sha256": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+      "bytes": 6022
+    },
+    "tools/dev_workflow/paths.py": {
+      "sha256": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+      "bytes": 6758
+    },
+    "tools/dev_workflow/project.py": {
+      "sha256": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+      "bytes": 7395
+    },
+    "tools/dev_workflow/resource_inputs.py": {
+      "sha256": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+      "bytes": 2645
+    },
+    "tools/dev_workflow/snapshot.py": {
+      "sha256": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+      "bytes": 7519
+    },
+    "tools/dev_workflow/state.py": {
+      "sha256": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+      "bytes": 3683
+    },
+    "tools/dev_workflow/transaction_binding.py": {
+      "sha256": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+      "bytes": 3588
+    },
+    "tools/dev_workflow/windows.py": {
+      "sha256": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+      "bytes": 6584
+    },
+    "tools/dotnet_application_dependencies.py": {
+      "sha256": "sha256:017be73e15c7b99bab591a1920f090cbdbe558953cbb56f3b5d0168ddcc4d769",
+      "bytes": 38027
+    },
+    "tools/dotnet_capsule.py": {
+      "sha256": "sha256:1d27d6535fbabcaf7b6fc5cfd2f80b1ad8602d251c5eae77456b19aef36453b6",
+      "bytes": 12534
+    },
+    "tools/dotnet_compiler_isolation.py": {
+      "sha256": "sha256:6069fc6201924b7f201af124b8c946b6ed25f25223f9a93c88f584b751ac49c1",
+      "bytes": 18333
+    },
+    "tools/dotnet_dependency_authoring.py": {
+      "sha256": "sha256:8317cfc48315e11ee4e02829461fad8ceb528990389ce54a886d3c89ddf033d8",
+      "bytes": 15392
+    },
+    "tools/dotnet_finite_wait_fixture.py": {
+      "sha256": "sha256:e8a39e3cf7658065e584c5f6870ce7eff7ce814a7594ed54f14a4cfe34a66077",
+      "bytes": 6877
+    },
+    "tools/dotnet_finite_wait_node.py": {
+      "sha256": "sha256:ae9950fc94b8db9e6d5192f4e26511cc8e09b607b84970222f491076d084e00f",
+      "bytes": 11114
+    },
+    "tools/dotnet_guest/async_exports.py": {
+      "sha256": "sha256:30dee63b944c832b981048c8677c3a7134aa478b02adaad1a7a4cac2eccf2f10",
+      "bytes": 16972
+    },
+    "tools/dotnet_guest/build.py": {
+      "sha256": "sha256:56a4a728e4093f20c9d87434f3320d308c109e075b5bd39df3066bbc3aeeae1d",
+      "bytes": 14941
+    },
+    "tools/dotnet_guest/closed_filesystem.py": {
+      "sha256": "sha256:d765b9e101c0f013f1ee6e881fe2f9f4a6768d7dd30849194cd067d9b317325b",
+      "bytes": 9296
+    },
+    "tools/dotnet_guest/closed_io.py": {
+      "sha256": "sha256:9c20870094bca55db53f334d56c00722268b756a6de6605737550dfa55c3d7ab",
+      "bytes": 10194
+    },
+    "tools/dotnet_guest/compatibility.py": {
+      "sha256": "sha256:7d3ea4691f0e6bac2b075ab0465c9e2a01b6e82d3e21c80ec37c3fbcafa93e90",
+      "bytes": 10562
+    },
+    "tools/dotnet_guest/compiler.py": {
+      "sha256": "sha256:15dfcc3ebd270dec5389681beec682b78fd6ecd74f84b5db01dc1b9c0cd39f88",
+      "bytes": 34957
+    },
+    "tools/dotnet_guest/composer.py": {
+      "sha256": "sha256:24e70af828520adc48293edc9339c4073354658aa1fb2bbd5dbc88fe5819a88e",
+      "bytes": 9061
+    },
+    "tools/dotnet_guest/entropy.py": {
+      "sha256": "sha256:a5bde4d50a9e750bcda580b1ca8d8d3838e0f9371b6fa5679c01ba48d8c9dbef",
+      "bytes": 7728
+    },
+    "tools/dotnet_guest/entropy_grants.py": {
+      "sha256": "sha256:3bbe872763642fbb514c3f19978996ba9332404ea1a1aefe1b9c60fd887ebaf9",
+      "bytes": 5068
+    },
+    "tools/dotnet_guest/http_errors.py": {
+      "sha256": "sha256:7d9eae7b4c470e0811a90a5d48126965ec377bb9a4557b1e61771bd80d97e89e",
+      "bytes": 21129
+    },
+    "tools/dotnet_guest/internal_io.py": {
+      "sha256": "sha256:e59192c316a2a7be67dedba27ab29845a08225910f070d05c7746377a68048fd",
+      "bytes": 17531
+    },
+    "tools/dotnet_guest/managed_entropy.py": {
+      "sha256": "sha256:76eadea1ef0655fa176be963d0254c4c7faada7d4ef0bda6fca739ac2d5ceadc",
+      "bytes": 10773
+    },
+    "tools/dotnet_guest/outputs.py": {
+      "sha256": "sha256:2c634aa6a0de9b0e369140fc8a443fb9f4cac39a96bec9e85fbd4df9ea8ecd0e",
+      "bytes": 4470
+    },
+    "tools/dotnet_guest/project.py": {
+      "sha256": "sha256:5249389b6c9ec4d0023d36caaed43e60444a1c90c8637555c7e79f22ca39f2ad",
+      "bytes": 9418
+    },
+    "tools/dotnet_guest/resources.py": {
+      "sha256": "sha256:125c45834048a622121c6058f219042133cf643397d7790f3150b0de02db5950",
+      "bytes": 3732
+    },
+    "tools/dotnet_guest/retirement.py": {
+      "sha256": "sha256:6e19830fdf46e75250ae8eac083b81db92158d4b52900ea8e40d0666ce68c91a",
+      "bytes": 6621
+    },
+    "tools/dotnet_guest/runtime.py": {
+      "sha256": "sha256:f9798f66e8c0e611cc300b2a4c41ea7aa40b22ad2308cf1b87228d5cc8c0cd65",
+      "bytes": 6014
+    },
+    "tools/dotnet_guest/sdk.py": {
+      "sha256": "sha256:3e27c7c83f457aa9024520e11815dfb8a01e95daba690fce15c0f4f98d218200",
+      "bytes": 2679
+    },
+    "tools/dotnet_guest/task_wait.py": {
+      "sha256": "sha256:415665165c2676a4e80e84f8fecca48fc858035f2b26bc5a28cdef20349d8f64",
+      "bytes": 12525
+    },
+    "tools/dotnet_guest_bindings.py": {
+      "sha256": "sha256:187139280e06ad37e556405cb7db786dcafcaedce0c596e4226219fb5b714087",
+      "bytes": 18515
+    },
+    "tools/dotnet_registry_tls.py": {
+      "sha256": "sha256:238b4247b589b2fa042056f5e513abe5ec55ac04b988c0c1358f32584283cac9",
+      "bytes": 5216
+    },
+    "tools/dotnet_resource_runtime_fixture.py": {
+      "sha256": "sha256:661d6a0251d4834dc4efd268c72cdb36d51b371dde0c5dbbf43d9dbf194e6f58",
+      "bytes": 15984
+    },
+    "tools/dotnet_resource_runtime_node.py": {
+      "sha256": "sha256:52cf18945a11898b32aa89c161b0708fc92e7943a8af0512e9389bcb639ee7d9",
+      "bytes": 18226
+    },
+    "tools/dotnet_resource_timer_observer.py": {
+      "sha256": "sha256:698fe15c5cbbac9f6646f3a6be22926fd6ab6c03d28a19a9b703cb541b7e3fff",
+      "bytes": 2446
+    },
+    "tools/dotnet_task_runtime_fixture.py": {
+      "sha256": "sha256:159a51da898125e29a645506bce99588d49d9f207fb02bff948d4bc9761eed46",
+      "bytes": 17448
+    },
+    "tools/dotnet_task_runtime_probe.py": {
+      "sha256": "sha256:fb4e1e0bba09d1c73d8f3753c235be416583b2c9d3716912d1b74b4860fa90b2",
+      "bytes": 9557
+    },
+    "tools/fixtures/dotnet-finite-task-waits/Library.cs": {
+      "sha256": "sha256:0350cea9354fa6f900d28ce95d213bda234c1e58b59cbeba959e725f6b6ac984",
+      "bytes": 6051
+    },
+    "tools/go_node_stop_probe.py": {
+      "sha256": "sha256:ee5a917887fbe6a05ccf0f3524dc763a5a263fee87d88bbfce4561b2d9a5ec26",
+      "bytes": 9076
+    },
+    "tools/go_node_stop_timer_observer.py": {
+      "sha256": "sha256:573d9b30a4338625379de8a0727b21efffcdff4194ded956ad1d2134b062c39c",
+      "bytes": 2463
+    },
+    "tools/guest_compatibility.py": {
+      "sha256": "sha256:e861984bb3c4697204151bc2c165cc3100d5fa00a1e884090a442ca57f8884cd",
+      "bytes": 13718
+    },
+    "tools/guest_compatibility_build.py": {
+      "sha256": "sha256:67339aedb2de99b7de7675ac51e69aa6d7de4c5f1f26e0d773ca315cfca24840",
+      "bytes": 18286
+    },
+    "tools/guest_compatibility_context.py": {
+      "sha256": "sha256:4e0563408f8f9283c8b831b8a74b73b3fe6ce5456a39ca1dc689671aa316c657",
+      "bytes": 6687
+    },
+    "tools/guest_compatibility_context_build.py": {
+      "sha256": "sha256:62a413a13f575b489ca1473da25e55b8a24f699b4ac400107a4363bf1b7e1e02",
+      "bytes": 6930
+    },
+    "tools/guest_dependency_inputs.py": {
+      "sha256": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+      "bytes": 10044
+    },
+    "tools/guest_emitted_code.py": {
+      "sha256": "sha256:211c7ef2b359b2ec2e2227cae1e4212b57c020dc4f02649302c976e0eb85dbbd",
+      "bytes": 20181
+    },
+    "tools/guest_resources.py": {
+      "sha256": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+      "bytes": 18098
+    },
+    "tools/guest_runtime_grants.py": {
+      "sha256": "sha256:fe45d57a1dbcf89f06154c6aab6e4bf81e6305602e34a6e2650f41a42760f9d9",
+      "bytes": 3443
+    },
+    "tools/guest_runtime_profiles.py": {
+      "sha256": "sha256:97fd5b5d1b6b3f9edff10f276ec3453364e6d2642d9497a320538584a8c8080a",
+      "bytes": 822
+    },
+    "tools/guest_runtime_receipts.py": {
+      "sha256": "sha256:3ff4a3dc509dd0287972c48e9df1898a6909b314cb3b76b7e5d22d37bfca5a91",
+      "bytes": 12480
+    },
+    "tools/java_replay_materials.py": {
+      "sha256": "sha256:155092d73c3f847d2250076bed86f6694c738d011fab30d7269fb27c5a1e63e3",
+      "bytes": 15714
+    },
+    "tools/phase2_operator_process.py": {
+      "sha256": "sha256:ea7951f5005a39c98991070b9a62e3debba05855b95a7845af9977293849b857",
+      "bytes": 15212
+    },
+    "tools/phase2_operator_scenario.py": {
+      "sha256": "sha256:eb024da258700494ebee27fa84de2a17ae2d5f84354641ca126222d677ec6a35",
+      "bytes": 21456
+    },
+    "tools/phase3_resource_identity.py": {
+      "sha256": "sha256:ca979a245b623bd588fe6ce32aec1de3a45a00e8bb0d6e49c6554417051327b0",
+      "bytes": 3354
+    },
+    "tools/phase3_resource_os.py": {
+      "sha256": "sha256:2d3a7b610bb2ceece7116d0a6ad824dcefbb9113042bb019a9c3407e73858140",
+      "bytes": 8840
+    },
+    "tools/phase3_resource_profile.py": {
+      "sha256": "sha256:633a3eb3e639014ef221cf5180a533ea595cca32a761d53fe2d4e305d658a818",
+      "bytes": 9743
+    },
+    "tools/qualify_dotnet_finite_waits.py": {
+      "sha256": "sha256:fbc7885ec9d27133580e2962b77bf09e50ac5d0f6d00d71b4843704e5c615d6d",
+      "bytes": 11047
+    },
+    "tools/qualify_resource_tenants.py": {
+      "sha256": "sha256:805c5f634ae5a3197b4de5f434eca78a88b01e354d63ee9d2c55288e4a539fc2",
+      "bytes": 16957
+    },
+    "tools/qualify_sdk_scratch.py": {
+      "sha256": "sha256:037b59b85d186442f7bafca7ee6292cf00cb1154cd4f8d5774822e2708aed98d",
+      "bytes": 16948
+    },
+    "tools/resource_runtime_node.py": {
+      "sha256": "sha256:bc8104b6204061a43239c7977957ee4da998edb131adb20d9da87894858cb376",
+      "bytes": 18036
+    },
+    "tools/resource_tenant_node.py": {
+      "sha256": "sha256:32cb8d1c9feac256fc51568eba390c79cebdd47f7dd4fe365f8ff08613633926",
+      "bytes": 12424
+    },
+    "tools/rust_capsule_build.py": {
+      "sha256": "sha256:a00cb2afce425556cc0a9a776c5a23f757c3012f3440eda6c0e1cc709e0a2948",
+      "bytes": 45923
+    },
+    "tools/rust_capsule_node.py": {
+      "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+      "bytes": 18922
+    },
+    "tools/rust_capsule_project.py": {
+      "sha256": "sha256:216da6ad5b821381bde28e42e13b8b6ef47ff3faf93b539e0166c880d6fc2360",
+      "bytes": 14549
+    },
+    "tools/sdk_native_products_reader.py": {
+      "sha256": "sha256:3273c1932b7196cf49a343ae4a3f8a9f02ea07539f700b39d4c96d57aafced22",
+      "bytes": 16979
+    },
+    "tools/sdk_provider_scenario.py": {
+      "sha256": "sha256:54c213bb7e3261e10adbf83434cf47852217fc0249df3f011decf69db781c3eb",
+      "bytes": 10998
+    },
+    "tools/stage_runtime_wit.py": {
+      "sha256": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+      "bytes": 4194
+    },
+    "tools/transaction_guest_project.py": {
+      "sha256": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+      "bytes": 10287
+    },
+    "tools/wasmtime_48_0_7_native_products.py": {
+      "sha256": "sha256:72e97a38c1aa837963fba896f3b613c08f0fc4d57305d2e2902bc7e88e00f9c0",
+      "bytes": 1731
+    },
+    "wit/host-abi-phase3-v4.json": {
+      "sha256": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+      "bytes": 4523
+    },
+    "wit/host-abi-phase3-v5.json": {
+      "sha256": "sha256:3a8bf03ff4a688c049a16c08eb9e9649a022a82dc90d4c4187d15567934c3be8",
+      "bytes": 5197
+    },
+    "wit/host-abi-phase4-v1.json": {
+      "sha256": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+      "bytes": 2559
+    }
+  },
+  "compiledNative": {
+    "schemaVersion": "latent.sdk.phase-native-products.v1",
+    "compiledSource": "fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12",
+    "compiledTree": "fa46e2be3c3fa74e2f0f8b26e27f09d0376fde26",
+    "producerRun": 39495029026,
+    "producerJob": 118877777415,
+    "producerReceipt": {
+      "sha256": "sha256:d3d7b97d078d73291cf6f0c0950e99c92ec9378c0032806c6074fb943b5441b1",
+      "bytes": 21390
+    },
+    "sourceSnapshot": {
+      "sha256": "sha256:fbf3f0f5c678cbbcfc583af714dce7e8388ba8d3f49cfe8a25ef8298f09c503f",
+      "bytes": 18937
+    },
+    "products": {
+      "latent": {
+        "sha256": "sha256:8bec92fc5f8860d1bc38cff1b53aed16944488c065a86460a8142cf75208d132",
+        "bytes": 68831256
+      },
+      "latentd": {
+        "sha256": "sha256:fa2f0d74fc8ef15b2c810f0891b70b6f6808e77c2a8d54ce83c7cfdba417f9c0",
+        "bytes": 185318448
+      },
+      "examples/package": {
+        "sha256": "sha256:5d1c60df2cab630e4bb19e06cc699b6cf0c930eef418822f025ab416220e2314",
+        "bytes": 17750192
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+        "bytes": 7245472
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:5c661ba4e2c67e43e3a7ed07f9d24e8348c4e6d8dbd06e157fd2a46f062880b8",
+        "bytes": 24017536
+      }
+    },
+    "signedQualification": false,
+    "guestComponentsCompiledByProducer": false,
+    "historicalNormalReceiptCreated": false,
+    "wholeArchiveRetained": false,
+    "origin": {
+      "artifact": 12298206858,
+      "archiveDigest": "sha256:c29154ac4c9e44f6c29bf7524104832589152f03cfabfdb9a3f42e01eddb4486",
+      "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+      "fixedMembersPreflighted": {
+        "native-products.json": {
+          "bytes": 21390,
+          "compressedBytes": 6876
+        },
+        "source-inputs.json": {
+          "bytes": 18937,
+          "compressedBytes": 6098
+        },
+        "native-binaries/latent": {
+          "bytes": 68831256,
+          "compressedBytes": 15446896
+        },
+        "native-binaries/latentd": {
+          "bytes": 185318448,
+          "compressedBytes": 38695100
+        },
+        "native-binaries/examples-package": {
+          "bytes": 17750192,
+          "compressedBytes": 4244018
+        },
+        "native-binaries/examples-capsule_contracts": {
+          "bytes": 7245472,
+          "compressedBytes": 1804186
+        },
+        "native-binaries/examples-capsule_authoring": {
+          "bytes": 24017536,
+          "compressedBytes": 5930857
+        }
+      },
+      "rangeBytes": 66137287,
+      "rangeRequests": 269
+    }
+  },
+  "consumerNativeSource": {
+    "sha256": "sha256:ed5a9de2b967ca9d432e638f3aaab91b79dd7c44cc1875b31aa261d9018b9cb5",
+    "files": 3315,
+    "bytes": 26086384,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "nativeProductsBuilt": 0,
+  "engineRebuilt": false,
+  "guestComponentsCompiled": 1,
+  "nativeAotCompilationSucceeded": true,
+  "signedAndAdmitted": true,
+  "historicalGuestQualificationRelabelled": false,
+  "taskWaitDerivation": {
+    "profile": "dotnet-stackful-task-wait-v1",
+    "frameworkInput": {
+      "name": "task-wait-original-corelib",
+      "digest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+      "size": 5694976
+    },
+    "derived": {
+      "name": "task-wait-derived-corelib",
+      "digest": "sha256:a4319cf5f26e186ffedefa623e81f0636cd2f6131ec980e3e723768277405872",
+      "size": 5606400
+    },
+    "finiteAndCancellableWaits": "original-Task-WhenAny-Delay",
+    "generatedHelperCount": 10,
+    "nativeAotReferenceBinding": {
+      "referenceListDigest": "sha256:7fe2257b25b74f55fda022c4a480919fb1983ba2abb5c6f2869c8926cf8c4c70",
+      "responseFiles": [
+        {
+          "digest": "sha256:16288f1e88e2bfc7fd72bafff3745305e902d2aaf66447d6e5b06d7c515a6a8a",
+          "size": 66816
+        }
+      ],
+      "finalCoreLibDerivation": {
+        "profile": "dotnet-closed-filesystem-v1",
+        "intermediateDigest": "sha256:a4319cf5f26e186ffedefa623e81f0636cd2f6131ec980e3e723768277405872",
+        "selectedDigest": "sha256:3666963ae0cf0a9f3718a2571af4b4b7be279abfac372ab64c8d982bafe80335"
+      }
+    },
+    "selection": {
+      "requiredDeclarations": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:random/random@0.1.0",
+        "latent:runtime/activation@0.1.0"
+      ],
+      "asyncExportBridge": {
+        "exports": 1,
+        "managedTaskSchedulingQualified": false,
+        "profile": "dotnet-native-aot-stackful-async-exports-v1"
+      }
+    }
+  },
+  "capturedOutsideLibrary": {
+    "schemaVersion": "latent.dotnet.finite-task-waits.fixture.v1",
+    "originalFiles": {
+      "Library.cs": "sha256:0350cea9354fa6f900d28ce95d213bda234c1e58b59cbeba959e725f6b6ac984",
+      "Library.csproj": "sha256:9c9a2938d1fcca900b29e717b17f9c69f09c3d98201d66ff826ab003fedfc9c6",
+      "global.json": "sha256:0aa4b85ae248d59bbc4138f346d952b7fae4fe18cc701d921fa1c003211be777",
+      "nuget.config": "sha256:e497501960554d323eef45860c14474958accd1ae7f3ae6f95b10e4c1d340401"
+    },
+    "assemblyDigest": "sha256:9d7b069bb786415b1f64a09da17f64f30489f0d09cfebba3218073b6ca04fc10",
+    "packageDigest": "sha256:3e719ada5d665a05bc1a1bf108374a0fbb76f94ca6aaffe6a758e2df1b208ec1",
+    "dependencyLock": "sha256:ed45982773ab80707d5f4b486c9a5fb092b20cbbb35da326cc96e0957407306e",
+    "originalLibraryAndFeedRemoved": true,
+    "applicationSchedulerReplacement": false,
+    "httpDeclaration": false,
+    "entropyDeclaration": "explicit-threadpool-selector-seed",
+    "cases": [
+      "completed-success-precancel",
+      "zero-incomplete-precancel",
+      "invalid-timeout-before-complete",
+      "finite-success",
+      "finite-cancellable-success",
+      "timeout-false-then-fresh",
+      "infinite-cancel",
+      "finite-cancel",
+      "incomplete-precancel",
+      "completed-fault-over-precancel",
+      "pending-fault",
+      "own-cancel-aggregate",
+      "own-cancel-wait-token-precedence",
+      "infinite-join-regression"
+    ],
+    "librarySourceDigest": "sha256:0350cea9354fa6f900d28ce95d213bda234c1e58b59cbeba959e725f6b6ac984"
+  },
+  "cases": [
+    {
+      "mode": "completed-success-precancel",
+      "activation": "finite-wait-0",
+      "result": [
+        {
+          "ok": "finite-task-wait:completed-success-precancel|true"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "zero-incomplete-precancel",
+      "activation": "finite-wait-1",
+      "result": [
+        {
+          "ok": "finite-task-wait:zero-incomplete-precancel|false-incomplete"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "invalid-timeout-before-complete",
+      "activation": "finite-wait-2",
+      "result": [
+        {
+          "ok": "finite-task-wait:invalid-timeout-before-complete|ArgumentOutOfRangeException:millisecondsTimeout"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "finite-success",
+      "activation": "finite-wait-3",
+      "result": [
+        {
+          "ok": "finite-task-wait:finite-success|true-original-task"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "finite-cancellable-success",
+      "activation": "finite-wait-4",
+      "result": [
+        {
+          "ok": "finite-task-wait:finite-cancellable-success|true-original-task"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "timeout-false-then-fresh",
+      "activation": "finite-wait-5",
+      "result": [
+        {
+          "ok": "finite-task-wait:timeout-false-then-fresh|false-then-true-original-token-live"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "infinite-cancel",
+      "activation": "finite-wait-6",
+      "result": [
+        {
+          "ok": "finite-task-wait:infinite-cancel|OperationCanceledException:original-token;task-preserved"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "finite-cancel",
+      "activation": "finite-wait-7",
+      "result": [
+        {
+          "ok": "finite-task-wait:finite-cancel|OperationCanceledException:original-token;task-preserved"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "incomplete-precancel",
+      "activation": "finite-wait-8",
+      "result": [
+        {
+          "ok": "finite-task-wait:incomplete-precancel|OperationCanceledException:original-token"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "completed-fault-over-precancel",
+      "activation": "finite-wait-9",
+      "result": [
+        {
+          "ok": "finite-task-wait:completed-fault-over-precancel|AggregateException:original-fault"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "pending-fault",
+      "activation": "finite-wait-10",
+      "result": [
+        {
+          "ok": "finite-task-wait:pending-fault|AggregateException:original-fault"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "own-cancel-aggregate",
+      "activation": "finite-wait-11",
+      "result": [
+        {
+          "ok": "finite-task-wait:own-cancel-aggregate|AggregateException:original-task-token"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "own-cancel-wait-token-precedence",
+      "activation": "finite-wait-12",
+      "result": [
+        {
+          "ok": "finite-task-wait:own-cancel-wait-token-precedence|OperationCanceledException:original-wait-token"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "infinite-join-regression",
+      "activation": "finite-wait-13",
+      "result": [
+        {
+          "ok": "finite-task-wait:infinite-join-regression|true-original-infinite-join"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "root-cancel",
+      "activation": "node-stop-pending",
+      "result": {
+        "terminal": "cancelled"
+      },
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "infinite-join-regression",
+      "activation": "finite-wait-fresh-after-root-cancel",
+      "result": [
+        {
+          "ok": "finite-task-wait:infinite-join-regression|true-original-infinite-join"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "root-deadline",
+      "activation": "node-stop-drain",
+      "result": {
+        "terminal": "deadline-exceeded"
+      },
+      "known": true,
+      "processReaped": true
+    },
+    {
+      "mode": "infinite-join-regression",
+      "activation": "finite-wait-fresh-after-root-deadline",
+      "result": [
+        {
+          "ok": "finite-task-wait:infinite-join-regression|true-original-infinite-join"
+        }
+      ],
+      "known": true,
+      "processReaped": true
+    }
+  ],
+  "grantDenials": 7,
+  "singleMissingGrantDenials": [
+    "CLOCK",
+    "ACTIVATION",
+    "WALL",
+    "RANDOM"
+  ],
+  "positivePendingWitnesses": [
+    {
+      "mode": "root-cancel",
+      "physicalOwners": {
+        "execution-cell-leases": 1,
+        "guest-invocations": 1,
+        "guest-stores": 1,
+        "guest-host-states": 1,
+        "guest-component-instances": 1
+      },
+      "providerCallRetained": true,
+      "positiveTimer": {
+        "activation": "node-stop-pending",
+        "records": [
+          {
+            "mode": "pending",
+            "event": "wait-pending",
+            "sequence": 1,
+            "tasks": 0,
+            "waits": 1,
+            "timers": 1
+          }
+        ],
+        "nativeObserver": {
+          "formatVersion": 1,
+          "qualification": false,
+          "records": [
+            {
+              "mode": "pending",
+              "event": "wait-pending",
+              "sequence": 1,
+              "tasks": 0,
+              "waits": 1,
+              "timers": 1
+            }
+          ],
+          "status": "observed",
+          "invalidMarkerCount": 0,
+          "overflow": false,
+          "scope": "two-public-node-stop-fixture-activations-only",
+          "managedProfileLimits": {
+            "tasks": 8,
+            "waits": 16,
+            "timers": 8
+          },
+          "goProgrammeExecutionClaimed": false
+        },
+        "positivePoint": "original runtime wait-for read-wait future returned Poll::Pending"
+      }
+    },
+    {
+      "mode": "root-deadline",
+      "physicalOwners": {
+        "execution-cell-leases": 1,
+        "guest-invocations": 1,
+        "guest-stores": 1,
+        "guest-host-states": 1,
+        "guest-component-instances": 1
+      },
+      "providerCallRetained": true,
+      "positiveTimer": {
+        "activation": "node-stop-drain",
+        "records": [
+          {
+            "mode": "drain",
+            "event": "wait-pending",
+            "sequence": 2,
+            "tasks": 0,
+            "waits": 1,
+            "timers": 1
+          }
+        ],
+        "nativeObserver": {
+          "formatVersion": 1,
+          "qualification": false,
+          "records": [
+            {
+              "mode": "drain",
+              "event": "wait-pending",
+              "sequence": 2,
+              "tasks": 0,
+              "waits": 1,
+              "timers": 1
+            }
+          ],
+          "status": "observed",
+          "invalidMarkerCount": 0,
+          "overflow": false,
+          "scope": "two-public-node-stop-fixture-activations-only",
+          "managedProfileLimits": {
+            "tasks": 8,
+            "waits": 16,
+            "timers": 8
+          },
+          "goProgrammeExecutionClaimed": false
+        },
+        "positivePoint": "original runtime wait-for read-wait future returned Poll::Pending"
+      }
+    }
+  ],
+  "idleSamples": 19,
+  "physicalSamples": 22,
+  "allActiveCountersZeroAfterRetirement": true,
+  "allKnownAndReaped": true,
+  "nodeShutdown": {
+    "processId": 9716,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 845,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "peerShutdown": {
+    "counts": {
+      "requests": 0,
+      "authorized": 0,
+      "unexpected": 0,
+      "holds": 0,
+      "closedHolds": 0
+    },
+    "closed": true,
+    "reaped": true,
+    "exitCode": 0
+  },
+  "originalPublicPackageLayersRestoredFromAuthenticatedPackageBlobs": [
+    "wit/deps/activation-runtime/package.wit",
+    "wit/deps/clock/package.wit",
+    "wit/deps/random/package.wit",
+    "wit/world.wit"
+  ],
+  "focusedPythonControls": 67,
+  "managedReferenceOnly": "dotnet-finite-task-wait-reference-2026-10-20.json",
+  "initialFailedAttempt": {
+    "source": "cb9d97801bc278201567369d9e7278c322d01590",
+    "run": 39503801919,
+    "job": 118907566115,
+    "artifact": 12304175126,
+    "stage": "closed-filesystem-method-count-validation-before-ILC",
+    "guestComponentsCompiled": 0,
+    "signedOutcomes": 0
+  },
+  "fullTicketQualification": false,
+  "cpuPreemptionQualified": false,
+  "logicalThreadsOrMonitorWaitQualified": false,
+  "fullQueueStackGcAccountingQualified": false,
+  "backgroundOrLateWorkLifecycleQualified": false
+}
