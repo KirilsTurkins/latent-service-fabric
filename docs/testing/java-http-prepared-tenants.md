@@ -27,3 +27,20 @@ failure results and explicit selection. They run alongside the eight existing
 tenant controls. No current native preparation or signed tenant pass is claimed
 until a source-authenticated preparation producer and the actual twelve-case
 programme succeed.
+
+The retained-component reader separately authenticates the fixed 2,970,741-byte
+archive from source `aa56bdebad8c12f20acce4ec4ecfeca73cf554be`, run
+`39481897196`, job `118832292958`, artifact `12290889682`. That original run
+failed before publication. Its completed 17,034,179-byte component and 55 fixed
+build files remain immutable; 19 original package inputs are restored from
+their authenticated layers. All 199 captured SDK files, 73 compiler recipe
+files and the two application inputs bind 271 distinct original Git objects.
+
+The reader refuses every current difference outside seven exact reviewed hashes:
+the Wasmtime .6 to .7 version/manifest inputs and resource control/compiler
+changes that were not executed by the original HTTP component. It records both
+sides and explicitly reports that the old recipe differs from the current one.
+It does not synthesize a current compiler observation or change the old package.
+Six additional controls test archive/path/member refusal, original Git object
+hashes and that closed difference set. A local read-only archive preflight passed;
+fresh native preparation, signing and all twelve tenant outcomes remain pending.
