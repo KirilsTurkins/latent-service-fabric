@@ -22,11 +22,11 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
 
 SOURCE = '6f5f180136d140ac670561695260f71514781015'
-RUN = None
-JOB = None
-# Candidate only: freeze every receipt/artifact/run pin after actual success verification.
-ARTIFACT = None
-RECEIPTS = None
+RUN = 39443901256
+JOB = 118700610031
+# Exact successful public producer; these pins never select a moving branch.
+ARTIFACT = {'id': 12275691963, 'size_in_bytes': 66080276, 'digest': 'sha256:fa6c846ffcf5f79b1153d60053aeb79f2e3495228f1c7c510159f7a2c072e399'}
+RECEIPTS = {'native-products.json': {'sha256': 'sha256:e90056e7b967ad859ac8311ffd5b27d6513473673006f79be15a47636ff1ba0b', 'bytes': 21159}, 'source-inputs.json': {'sha256': 'sha256:8f10be2d3d773b288df3a76c0bcc4e8b799e6fbbc931c767f82028d9094f7ce1', 'bytes': 18936}}
 BRANCH = 'fix/http-phase-unused-nominal-type-20261020'
 WORKFLOW = '.github/workflows/sdk-native-products.yml'
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
