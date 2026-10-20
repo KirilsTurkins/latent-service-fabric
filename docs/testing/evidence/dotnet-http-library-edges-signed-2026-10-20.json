@@ -1,0 +1,3839 @@
+{
+  "schemaVersion": "latent.dotnet.http-library-edges.signed-evidence.v1",
+  "status": "passed",
+  "originalProgramme": {
+    "schemaVersion": "latent.dotnet.http-library-edges.qualification.v1",
+    "status": "passed",
+    "qualificationSources": {
+      ".github/workflows/dotnet-http-library-edges.yml": {
+        "sha256": "sha256:c05607b7b7f6c0a387a161924cfd0de1b324b1d3fe765fb25f723ba856bf37d2",
+        "bytes": 5757
+      },
+      "tools/dotnet_catalogue_free_build.py": {
+        "sha256": "sha256:52d73967c02de10929adbb7243e6dfe64e47ae96d80bc391514d9282ef11e8cf",
+        "bytes": 8760
+      },
+      "tools/dotnet_http_library_edges_fixture.py": {
+        "sha256": "sha256:792e7128c522532b99112c6ab284318df9e20d06845e1a7fb5b5f9d2049fb41e",
+        "bytes": 1244
+      },
+      "tools/dotnet_http_library_edges_node.py": {
+        "sha256": "sha256:53d7352bebbb1702eda88cb1f716239092c1d89763e663112166a73d9b070be0",
+        "bytes": 10929
+      },
+      "tools/dotnet_published_http_fixture.py": {
+        "sha256": "sha256:f9fa4b614ebebcdfdb8d9921670de8637cde639633f08f38931d7bbaaca97936",
+        "bytes": 7216
+      },
+      "tools/dotnet_published_http_node.py": {
+        "sha256": "sha256:91d5c602c37b57da0be0b4fa1048db8589a34a85adbc06f47f23d6ff44fa75b2",
+        "bytes": 11779
+      },
+      "tools/dotnet_standard_http_node.py": {
+        "sha256": "sha256:64d2f9ffa90cd2e44466d96d5639bd74a13c8c9f510f8ef6953e5882633496f8",
+        "bytes": 34573
+      },
+      "tools/fixtures/dotnet-published-http/Main.cs": {
+        "sha256": "sha256:83f67ddf3affc53928997e18ab40da1cbbb6276bda3364f943798780f5a028fb",
+        "bytes": 6490
+      },
+      "tools/fixtures/dotnet-published-http/Private.cs.in": {
+        "sha256": "sha256:adcd7212f01ee2352a4b91373a5bef77520c490f9c0c7abde201700ca88732ed",
+        "bytes": 1322
+      },
+      "tools/qualify_dotnet_http_library_edges.py": {
+        "sha256": "sha256:2f4ad207dfe77a724507be10a3e362e4e8dfaa2b7281695aa8b158a11792db14",
+        "bytes": 7488
+      },
+      "tools/rust_capsule_node.py": {
+        "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+        "bytes": 18922
+      },
+      "tools/sdk_native_products_reader.py": {
+        "sha256": "sha256:1f8124a251fe3db2adce7d04ef8c0d59eb32924b55869328796fcd4d20cbde39",
+        "bytes": 16864
+      },
+      "tools/standard_http/observations.py": {
+        "sha256": "sha256:701478e4b994453e95dd9d9e92dee685493fd3ddec9eb347d939298b13543c20",
+        "bytes": 8185
+      },
+      "tools/standard_http/peer.py": {
+        "sha256": "sha256:8fa65529659ef2e53166e821da4a86c1622bec1bcec080b050d7e4e4bd04db1f",
+        "bytes": 18941
+      },
+      "tools/standard_http/process_peer.py": {
+        "sha256": "sha256:fd6352284b8ac5c38e5f4e64a2aa122852a0913a26cb807bddf8e7945d42d3cf",
+        "bytes": 2427
+      },
+      "tools/standard_http/protocol.py": {
+        "sha256": "sha256:495fb9756c377ba086627f51a69f5e1721fe21b83a5c16b4b97344f3d049b5c7",
+        "bytes": 6517
+      },
+      "tools/standard_http/vectors.py": {
+        "sha256": "sha256:00dc2c620e29f01e54e0c1c23ed3e5f845c1251b62ad0af9bf819be3063683a9",
+        "bytes": 5636
+      },
+      "tools/wait_runtime_native_products.py": {
+        "sha256": "sha256:2c44e1bfbb75cb3507bd4408c867828da91ccdae66b052eed109e55b5a63502c",
+        "bytes": 1651
+      }
+    },
+    "nativeProducer": {
+      "schemaVersion": "latent.sdk.phase-native-products.v1",
+      "compiledSource": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+      "compiledTree": "950afab76c3202847d1fbbe04d045b40bcae1503",
+      "producerRun": 39458247294,
+      "producerJob": 118750640204,
+      "producerReceipt": {
+        "sha256": "sha256:05254405868cb99025cd1f59a0ae13b406fb201371aa1c7c4a6938ee34a1f719",
+        "bytes": 21390
+      },
+      "sourceSnapshot": {
+        "sha256": "sha256:aeba42c6b06725317f75726e8f60bdc4da1f6d6120c121fd5ee8039f2f28a8ca",
+        "bytes": 18937
+      },
+      "products": {
+        "latent": {
+          "sha256": "sha256:91fde4e00730a4fd87d401974261fbd0e4d3d10376227faf2c137ace89edd14f",
+          "bytes": 68829688
+        },
+        "latentd": {
+          "sha256": "sha256:68a1c75d777ee43dff59a2be6a9d820b7d49ad8e29153881cefdef3c20521a76",
+          "bytes": 185284824
+        },
+        "examples/package": {
+          "sha256": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+          "bytes": 17750192
+        },
+        "examples/capsule_contracts": {
+          "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+          "bytes": 7245472
+        },
+        "examples/capsule_authoring": {
+          "sha256": "sha256:1118e6a628e40d9c7b228756f767cf7ebf18b02acdfdf4d9c7d749d87410a56b",
+          "bytes": 24017528
+        }
+      },
+      "signedQualification": false,
+      "guestComponentsCompiledByProducer": false,
+      "historicalNormalReceiptCreated": false,
+      "wholeArchiveRetained": false,
+      "origin": {
+        "artifact": 12282362053,
+        "archiveDigest": "sha256:d3942fea19d78c27aac37811fc7f9be32cc26fc76b95a92f98498c3d44162945",
+        "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+        "fixedMembersPreflighted": {
+          "native-products.json": {
+            "bytes": 21390,
+            "compressedBytes": 6877
+          },
+          "source-inputs.json": {
+            "bytes": 18937,
+            "compressedBytes": 6100
+          },
+          "native-binaries/latent": {
+            "bytes": 68829688,
+            "compressedBytes": 15444935
+          },
+          "native-binaries/latentd": {
+            "bytes": 185284824,
+            "compressedBytes": 38652509
+          },
+          "native-binaries/examples-package": {
+            "bytes": 17750192,
+            "compressedBytes": 4244017
+          },
+          "native-binaries/examples-capsule_contracts": {
+            "bytes": 7245472,
+            "compressedBytes": 1804186
+          },
+          "native-binaries/examples-capsule_authoring": {
+            "bytes": 24017528,
+            "compressedBytes": 5930852
+          }
+        },
+        "rangeBytes": 66092732,
+        "rangeRequests": 269
+      }
+    },
+    "fullTicketQualification": false,
+    "capture": {
+      "schemaVersion": "latent.dotnet.published-http.capture.v1",
+      "packages": {
+        "Flurl.Http": "4.0.2",
+        "Refit": "16.4.0"
+      },
+      "privateConsumers": [
+        {
+          "identity": "Outside.Http.a8d02378a1d1433457b8.Alpha",
+          "version": "1.0.0",
+          "namespace": "PrivateFirst",
+          "source": "sha256:8e3300e0b2ec569f30910e0b0ffa6c977993b3e80738b9a375c46bf41e749831",
+          "assembly": "sha256:f8752f902649d15623a31694980a5fa9d0a5941c0472be4b0dbc432cfb229731",
+          "archive": "sha256:eeb4efc3b6980e369a76aab6a8a7e4f930cc083ad66e4ab31806b2e536e127f4",
+          "preparationCommands": [
+            {
+              "stage": "dotnet-version",
+              "exitCode": 0,
+              "seconds": 0.127238
+            },
+            {
+              "stage": "wasm-tools-version",
+              "exitCode": 0,
+              "seconds": 0.015467
+            },
+            {
+              "stage": "wit-bindgen-version",
+              "exitCode": 0,
+              "seconds": 0.015325
+            },
+            {
+              "stage": "dotnet-sdks",
+              "exitCode": 0,
+              "seconds": 0.025781
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.308733
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.349155
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.096969
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.137138
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.117139
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.086887
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.137658
+            },
+            {
+              "stage": "component-composer-version",
+              "exitCode": 0,
+              "seconds": 0.016002
+            },
+            {
+              "stage": "outside-http-library",
+              "exitCode": 0,
+              "seconds": 3.64824
+            }
+          ]
+        },
+        {
+          "identity": "Outside.Http.a8d02378a1d1433457b8.Delta",
+          "version": "1.0.0",
+          "namespace": "PrivateSecond",
+          "source": "sha256:8e22fa2acbc2504a0be17e9b13279aef6f4da64fa5077304d278de488c5897e6",
+          "assembly": "sha256:128dcf75c0a58351ec4444951f82dd3e1f6cfbb228311b2b1da5c2bc1d49d434",
+          "archive": "sha256:20d8941a7b3b5db33708036e2898da23a770db7aac2f125b703654576f043a2f",
+          "preparationCommands": [
+            {
+              "stage": "dotnet-version",
+              "exitCode": 0,
+              "seconds": 0.127067
+            },
+            {
+              "stage": "wasm-tools-version",
+              "exitCode": 0,
+              "seconds": 0.015446
+            },
+            {
+              "stage": "wit-bindgen-version",
+              "exitCode": 0,
+              "seconds": 0.01535
+            },
+            {
+              "stage": "dotnet-sdks",
+              "exitCode": 0,
+              "seconds": 0.015377
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.308554
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.349271
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.086578
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.127346
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.116908
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.096858
+            },
+            {
+              "stage": "nuget-content-hash",
+              "exitCode": 0,
+              "seconds": 0.137525
+            },
+            {
+              "stage": "component-composer-version",
+              "exitCode": 0,
+              "seconds": 0.015848
+            },
+            {
+              "stage": "outside-http-library",
+              "exitCode": 0,
+              "seconds": 3.674476
+            }
+          ]
+        }
+      ],
+      "originalSourcesRemoved": true,
+      "catalogueLookupRequired": false,
+      "normalConstructors": [
+        "FlurlClient()",
+        "RestService.CreateHttpClient(endpoint, settings)",
+        "RestService.ForGenerated<IDomainApi>(client, settings)",
+        "HttpClient()"
+      ],
+      "applicationHandlerInjection": false,
+      "sourceInventory": "sha256:a5fac48b2dcd9b0ed61e695c753a155e8ae0b273476f2e3cad02c47cfda8dd37",
+      "acceptedLock": "sha256:e32b09ece653cd90e09ec482c8e098382e2b78492483748d3bb522647feebfeb",
+      "generatorExecution": "pending-exact-isolated-build",
+      "signedExecution": "pending"
+    },
+    "generatorApproval": {
+      "identity": "sha256:fa3e77e858a663ffd5e49786a0125985c1cad184002a32946c52b0b882c67058",
+      "specification": {
+        "formatVersion": 1,
+        "inputIdentity": "sha256:c19e5ff11292a88fbdb4243d1db8fc77dcd7a92c2530ea5210eba51073fa7a30",
+        "executableInputs": [
+          {
+            "dependencies": [
+              "reactiveui.primitives/9.0.0"
+            ],
+            "files": [
+              {
+                "digest": "sha256:4f591f50fc42f75ec58c5ce14545eab9d0054516424e1c8111c5df55b9855f4c",
+                "path": ".signature.p7s",
+                "size": 23644
+              },
+              {
+                "digest": "sha256:36c8a0b3cc328ffbb65a0bc3e88da80e5e0663097ccf067178e4562afe5de507",
+                "path": "LICENSE/LICENSE",
+                "size": 2687
+              },
+              {
+                "digest": "sha256:510282f9d5b856354841a2056f01e237324a8bdb808d820f4b29f7a10f57195b",
+                "path": "README.md",
+                "size": 13535
+              },
+              {
+                "digest": "sha256:558d726217c43155d5b64fc89453ae729e3bc82dd6e27da27bb2d22ef2882055",
+                "path": "Refit.nuspec",
+                "size": 6808
+              },
+              {
+                "digest": "sha256:08e72c2d23874fb43ac853fce9425920ab055584346a5d166b9a8d9985e5efca",
+                "path": "[Content_Types].xml",
+                "size": 794
+              },
+              {
+                "digest": "sha256:13d789b65e0c3dbf4a66d52317d60a8afc1c4f2770f337be4fce222f4c1a9a14",
+                "path": "_rels/.rels",
+                "size": 472
+              },
+              {
+                "digest": "sha256:f4f3b9b7200b56164ebfb9d0f53c122170926ea39e38edd8dc308daa8b4a2833",
+                "path": "analyzers/dotnet/roslyn4.8/cs/InterfaceStubGeneratorV2.dll",
+                "size": 420352
+              },
+              {
+                "digest": "sha256:462394b50ced657d58cbe65fb03aba69039b88ae8264dc3dd68ad8239cb0455a",
+                "path": "analyzers/dotnet/roslyn4.8/cs/Refit.Analyzers.dll",
+                "size": 241152
+              },
+              {
+                "digest": "sha256:49ec9d74e3f750d7dcff114ba3c0953858441a8d6e29b9604da87f98373e8c57",
+                "path": "analyzers/dotnet/roslyn4.8/cs/Refit.CodeFixes.dll",
+                "size": 20992
+              },
+              {
+                "digest": "sha256:54219466645308c15df86eef4a1a838f834ecc958fa4d3dcc660a3d4f82d0cfa",
+                "path": "buildTransitive/netstandard2.0/refit.props",
+                "size": 3743
+              },
+              {
+                "digest": "sha256:d64aaca975ebe65413f72e291e3a04397732a2bb3311346ebcbef5a85c4f0ff9",
+                "path": "lib/net10.0/Refit.dll",
+                "size": 307712
+              },
+              {
+                "digest": "sha256:e580f5b4596ff5eaa700cd17f7be6552845ae1cae758524b0a11489307e0e189",
+                "path": "lib/net10.0/Refit.xml",
+                "size": 527412
+              },
+              {
+                "digest": "sha256:693c01bcc0e731ec01b042049afae99163995efbcace69b3e722275a6486b642",
+                "path": "lib/net11.0/Refit.dll",
+                "size": 308736
+              },
+              {
+                "digest": "sha256:1e97b910d152a8c239b810a4a8746b5f86c37d982b6a23048a0b44d66f12294d",
+                "path": "lib/net11.0/Refit.xml",
+                "size": 527628
+              },
+              {
+                "digest": "sha256:4ec5787758143087d3edcf79cdc781dd93e8b7c7e9374281dbbe28f6935f0389",
+                "path": "lib/net462/Refit.dll",
+                "size": 304128
+              },
+              {
+                "digest": "sha256:f7804c6bf4c32ae3bd62c1545c5adb2fee7cb912c3eacbe4ea22f86ceb978567",
+                "path": "lib/net462/Refit.xml",
+                "size": 531618
+              },
+              {
+                "digest": "sha256:d5b60e3907b05232fa5b150cdbc98fd31a53f8324713618009f5dfeb93e9f6af",
+                "path": "lib/net47/Refit.dll",
+                "size": 304128
+              },
+              {
+                "digest": "sha256:f7804c6bf4c32ae3bd62c1545c5adb2fee7cb912c3eacbe4ea22f86ceb978567",
+                "path": "lib/net47/Refit.xml",
+                "size": 531618
+              },
+              {
+                "digest": "sha256:e127ebc223338cfac379a60a44e6a2e16d8e80e974346832a1c195bac6df898e",
+                "path": "lib/net471/Refit.dll",
+                "size": 305152
+              },
+              {
+                "digest": "sha256:f7804c6bf4c32ae3bd62c1545c5adb2fee7cb912c3eacbe4ea22f86ceb978567",
+                "path": "lib/net471/Refit.xml",
+                "size": 531618
+              },
+              {
+                "digest": "sha256:1dd85b2751ed3101d1cc8cb6d4388f4b1486245ee1e3478d52272fecee2b321f",
+                "path": "lib/net472/Refit.dll",
+                "size": 305152
+              },
+              {
+                "digest": "sha256:f7804c6bf4c32ae3bd62c1545c5adb2fee7cb912c3eacbe4ea22f86ceb978567",
+                "path": "lib/net472/Refit.xml",
+                "size": 531618
+              },
+              {
+                "digest": "sha256:c6bc0343cd0cb9b0d3153bcb0d4a64174f21ba52a10d2cb82d0c2b659a7cbb87",
+                "path": "lib/net48/Refit.dll",
+                "size": 305152
+              },
+              {
+                "digest": "sha256:f7804c6bf4c32ae3bd62c1545c5adb2fee7cb912c3eacbe4ea22f86ceb978567",
+                "path": "lib/net48/Refit.xml",
+                "size": 531618
+              },
+              {
+                "digest": "sha256:96993d8a30620c0a7a44e0db188ef69e0c541b4598423b1d9b31c4e1a64ddfce",
+                "path": "lib/net481/Refit.dll",
+                "size": 305152
+              },
+              {
+                "digest": "sha256:f7804c6bf4c32ae3bd62c1545c5adb2fee7cb912c3eacbe4ea22f86ceb978567",
+                "path": "lib/net481/Refit.xml",
+                "size": 531618
+              },
+              {
+                "digest": "sha256:3cdabaafe578df587736ff9e327374896f439602cbdc661b28ba89f1287141d5",
+                "path": "lib/net8.0/Refit.dll",
+                "size": 308224
+              },
+              {
+                "digest": "sha256:b2c4df332709c748a37fa7370949e212461689d8da786f8174e72002074c7c76",
+                "path": "lib/net8.0/Refit.xml",
+                "size": 531305
+              },
+              {
+                "digest": "sha256:0f96768499930a71ce4f091801da68972c3ab95b27f6e3d8a6a845f69168abb4",
+                "path": "lib/net9.0/Refit.dll",
+                "size": 307712
+              },
+              {
+                "digest": "sha256:e580f5b4596ff5eaa700cd17f7be6552845ae1cae758524b0a11489307e0e189",
+                "path": "lib/net9.0/Refit.xml",
+                "size": 527412
+              },
+              {
+                "digest": "sha256:04a09460881a04cc15ec24a697230a96a26537cc5bf5ce7b9b9ec9059e071e3b",
+                "path": "logo.png",
+                "size": 14199
+              },
+              {
+                "digest": "sha256:8b986dc7dce28ff6ef36c9ede2cf4f4934a54664edf01053ffdecc9f4de9527c",
+                "path": "package/services/metadata/core-properties/nuget.psmdcp",
+                "size": 917
+              }
+            ],
+            "format": "zip",
+            "id": "refit/16.4.0",
+            "metadata": {
+              "contentHash": "6GWfcHeVBioiNQHodPXOUw+2ahEY1GqtTqzLbu7yU4l2q5AkblYCMlpO/ypSJX6fkMlBDZ8qf0UYc7fsMeCgWg==",
+              "dependencies": [
+                {
+                  "id": "reactiveui.primitives/9.0.0",
+                  "requested": "9.0.0",
+                  "target": "net10.0"
+                },
+                {
+                  "id": "reactiveui.primitives/9.0.0",
+                  "requested": "9.0.0",
+                  "target": "net10.0/wasi-wasm"
+                }
+              ],
+              "ecosystem": "nuget",
+              "executableAssets": [
+                "analyzers/dotnet/roslyn4.8/cs/InterfaceStubGeneratorV2.dll",
+                "analyzers/dotnet/roslyn4.8/cs/Refit.Analyzers.dll",
+                "analyzers/dotnet/roslyn4.8/cs/Refit.CodeFixes.dll",
+                "buildTransitive/netstandard2.0/refit.props"
+              ],
+              "files": [
+                ".nupkg.metadata",
+                ".signature.p7s",
+                "LICENSE/LICENSE",
+                "README.md",
+                "analyzers/dotnet/roslyn4.8/cs/InterfaceStubGeneratorV2.dll",
+                "analyzers/dotnet/roslyn4.8/cs/Refit.Analyzers.dll",
+                "analyzers/dotnet/roslyn4.8/cs/Refit.CodeFixes.dll",
+                "buildTransitive/netstandard2.0/refit.props",
+                "lib/net10.0/Refit.dll",
+                "lib/net10.0/Refit.xml",
+                "lib/net11.0/Refit.dll",
+                "lib/net11.0/Refit.xml",
+                "lib/net462/Refit.dll",
+                "lib/net462/Refit.xml",
+                "lib/net47/Refit.dll",
+                "lib/net47/Refit.xml",
+                "lib/net471/Refit.dll",
+                "lib/net471/Refit.xml",
+                "lib/net472/Refit.dll",
+                "lib/net472/Refit.xml",
+                "lib/net48/Refit.dll",
+                "lib/net48/Refit.xml",
+                "lib/net481/Refit.dll",
+                "lib/net481/Refit.xml",
+                "lib/net8.0/Refit.dll",
+                "lib/net8.0/Refit.xml",
+                "lib/net9.0/Refit.dll",
+                "lib/net9.0/Refit.xml",
+                "logo.png",
+                "refit.16.4.0.nupkg.sha512",
+                "refit.nuspec"
+              ],
+              "originalDigest": "sha256:bf55c8bda5999fa6d8559d2b3a374e5b282f54ecc9e198669c3a40eb211ccb7c",
+              "originalSize": 2764443,
+              "package": "refit",
+              "sdk": false,
+              "targets": {
+                "net10.0": {
+                  "build": {
+                    "buildTransitive/netstandard2.0/refit.props": {}
+                  },
+                  "compile": {
+                    "lib/net10.0/Refit.dll": {
+                      "related": ".xml"
+                    }
+                  },
+                  "runtime": {
+                    "lib/net10.0/Refit.dll": {
+                      "related": ".xml"
+                    }
+                  }
+                },
+                "net10.0/wasi-wasm": {
+                  "build": {
+                    "buildTransitive/netstandard2.0/refit.props": {}
+                  },
+                  "compile": {
+                    "lib/net10.0/Refit.dll": {
+                      "related": ".xml"
+                    }
+                  },
+                  "runtime": {
+                    "lib/net10.0/Refit.dll": {
+                      "related": ".xml"
+                    }
+                  }
+                }
+              },
+              "version": "16.4.0"
+            },
+            "mount": "dependencies/nuget/refit/16.4.0",
+            "original": {
+              "digest": "sha256:bf55c8bda5999fa6d8559d2b3a374e5b282f54ecc9e198669c3a40eb211ccb7c",
+              "size": 2764443
+            },
+            "role": "build-tool",
+            "source": {
+              "type": "captured-local"
+            },
+            "treeDigest": "sha256:c4549ad6f82e5bdbd06661759228816b700190dcaa791ad4a76181eaa9c4f59d"
+          }
+        ],
+        "selection": {
+          "framework": "net10.0",
+          "runtimeIdentifier": "wasi-wasm",
+          "runtimeProfile": "dotnet-native-aot-component-v1"
+        },
+        "recipeDigest": "sha256:9b4eda7b1b9fad05bd76de07158ccb0f8764db810657082de10f5076eb45e77d",
+        "isolationProfile": "linux-captured-compiler-namespaces-v1",
+        "compilerInputsDigest": "sha256:c710023224f8166e8d834502680640348074dc4e661f9de896cb2c81e1dd5e28",
+        "network": "denied",
+        "ambientHome": "absent",
+        "credentials": "not-inherited",
+        "boundary": "trusted-single-user-build-host-not-hardened-multitenant-vm",
+        "hermetic": false
+      },
+      "unapprovedBuildRefusedBeforeCompile": true
+    },
+    "generatorOutputs": {
+      "sha256": "sha256:c16d33b1ec8f48429dec11d031520f6da2a0d71a84495f86b67a0684f76025ad",
+      "bytes": 2207
+    },
+    "build": {
+      "formatVersion": 1,
+      "packageAssembled": true,
+      "observationDigest": "sha256:08ce922bad2426235484d28832ebf8c73fb37771dd30c6bd92703ad6bbc8d49a",
+      "sourceDigest": "sha256:a5fac48b2dcd9b0ed61e695c753a155e8ae0b273476f2e3cad02c47cfda8dd37",
+      "componentDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+      "sdkBindingDigest": "sha256:f69e2ac56e79d6f8bd6434a47592cfa382120f2505c0cebe6da0de12f85aff7f",
+      "buildSeconds": 113.478052,
+      "commands": [
+        {
+          "stage": "contracts",
+          "exitCode": 0,
+          "seconds": 0.015874
+        },
+        {
+          "stage": "dotnet-version",
+          "exitCode": 0,
+          "seconds": 0.137571
+        },
+        {
+          "stage": "wasm-tools-version",
+          "exitCode": 0,
+          "seconds": 0.015631
+        },
+        {
+          "stage": "wit-bindgen-version",
+          "exitCode": 0,
+          "seconds": 0.015363
+        },
+        {
+          "stage": "dotnet-sdks",
+          "exitCode": 0,
+          "seconds": 0.015359
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.308551
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.348848
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.086606
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.127246
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.117036
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.086777
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.137067
+        },
+        {
+          "stage": "component-composer-version",
+          "exitCode": 0,
+          "seconds": 0.01592
+        },
+        {
+          "stage": "declared-runtime-wit",
+          "exitCode": 0,
+          "seconds": 0.036438
+        },
+        {
+          "stage": "retirement-public-wit",
+          "exitCode": 0,
+          "seconds": 0.036305
+        },
+        {
+          "stage": "retirement-public-graph",
+          "exitCode": 0,
+          "seconds": 0.036158
+        },
+        {
+          "stage": "retirement-private-canonical",
+          "exitCode": 0,
+          "seconds": 0.036385
+        },
+        {
+          "stage": "retirement-public-embed",
+          "exitCode": 0,
+          "seconds": 0.03603
+        },
+        {
+          "stage": "retirement-public-graph",
+          "exitCode": 0,
+          "seconds": 0.036268
+        },
+        {
+          "stage": "retirement-restored-embed",
+          "exitCode": 0,
+          "seconds": 0.036176
+        },
+        {
+          "stage": "retirement-restored-graph",
+          "exitCode": 0,
+          "seconds": 0.036383
+        },
+        {
+          "stage": "retirement-private-embed",
+          "exitCode": 0,
+          "seconds": 0.036358
+        },
+        {
+          "stage": "retirement-private-graph",
+          "exitCode": 0,
+          "seconds": 0.036397
+        },
+        {
+          "stage": "retirement-public-recheck",
+          "exitCode": 0,
+          "seconds": 0.036273
+        },
+        {
+          "stage": "bindings",
+          "exitCode": 0,
+          "seconds": 0.308878
+        },
+        {
+          "stage": "bindings-drift",
+          "exitCode": 0,
+          "seconds": 0.308721
+        },
+        {
+          "stage": "canonical-wit",
+          "exitCode": 0,
+          "seconds": 0.036101
+        },
+        {
+          "stage": "noncrypto-native-preimage",
+          "exitCode": 0,
+          "seconds": 0.035969
+        },
+        {
+          "stage": "noncrypto-entropy-compile",
+          "exitCode": 0,
+          "seconds": 0.07679
+        },
+        {
+          "stage": "managed-entropy-build-managedentropy",
+          "exitCode": 0,
+          "seconds": 3.773907
+        },
+        {
+          "stage": "managed-entropy-build-rewrite",
+          "exitCode": 0,
+          "seconds": 4.024708
+        },
+        {
+          "stage": "managed-entropy-rewrite",
+          "exitCode": 0,
+          "seconds": 7.567688
+        },
+        {
+          "stage": "task-wait-rewrite",
+          "exitCode": 0,
+          "seconds": 5.341872
+        },
+        {
+          "stage": "closed-filesystem-rewrite",
+          "exitCode": 0,
+          "seconds": 5.414995
+        },
+        {
+          "stage": "http-errors-rewrite",
+          "exitCode": 0,
+          "seconds": 1.360013
+        },
+        {
+          "stage": "locked-restore",
+          "exitCode": 0,
+          "seconds": 1.229188
+        },
+        {
+          "stage": "native-aot",
+          "exitCode": 0,
+          "seconds": 40.473151
+        },
+        {
+          "stage": "native-runtime-wit",
+          "exitCode": 0,
+          "seconds": 0.066235
+        },
+        {
+          "stage": "internal-io-adapter-wit",
+          "exitCode": 0,
+          "seconds": 0.057564
+        },
+        {
+          "stage": "internal-io-unbundle",
+          "exitCode": 0,
+          "seconds": 0.06603
+        },
+        {
+          "stage": "internal-io-print",
+          "exitCode": 0,
+          "seconds": 0.046061
+        },
+        {
+          "stage": "internal-io-encode",
+          "exitCode": 0,
+          "seconds": 0.045996
+        },
+        {
+          "stage": "internal-io-validate",
+          "exitCode": 0,
+          "seconds": 0.076779
+        },
+        {
+          "stage": "internal-io-selected-wit",
+          "exitCode": 0,
+          "seconds": 0.066227
+        },
+        {
+          "stage": "native-aot-raw-wit",
+          "exitCode": 0,
+          "seconds": 0.066385
+        },
+        {
+          "stage": "closed-runtime-adapter-wit",
+          "exitCode": 0,
+          "seconds": 0.056166
+        },
+        {
+          "stage": "additional-runtime-entropy-wit",
+          "exitCode": 0,
+          "seconds": 0.046026
+        },
+        {
+          "stage": "additional-runtime-wall-wit",
+          "exitCode": 0,
+          "seconds": 0.046002
+        },
+        {
+          "stage": "closed-runtime-composition",
+          "exitCode": 0,
+          "seconds": 0.116647
+        },
+        {
+          "stage": "validate",
+          "exitCode": 0,
+          "seconds": 0.077443
+        },
+        {
+          "stage": "runtime-final-wit",
+          "exitCode": 0,
+          "seconds": 0.066988
+        },
+        {
+          "stage": "surface",
+          "exitCode": 0,
+          "seconds": 0.06621
+        },
+        {
+          "stage": "compatibility-final-wit",
+          "exitCode": 0,
+          "seconds": 0.035558
+        },
+        {
+          "stage": "package",
+          "exitCode": 0,
+          "seconds": 1.825365
+        },
+        {
+          "stage": "inspect",
+          "exitCode": 0,
+          "seconds": 0.964115
+        }
+      ]
+    },
+    "component": {
+      "sha256": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+      "bytes": 10579504
+    },
+    "node": {
+      "sha256": "sha256:88f4714b72f41ce87b5627ba5447e75e270e3d646089eaecaa63a25ef3b49e16",
+      "bytes": 33829
+    },
+    "guestExecutions": 12,
+    "preIoRefusals": 2,
+    "catalogueDataPresent": false,
+    "applicationHandlerInjection": false,
+    "publisherAuthenticated": false,
+    "hermetic": false
+  },
+  "originalNode": {
+    "schemaVersion": "latent.dotnet.http-library-edges.node.v1",
+    "status": "passed",
+    "cases": [
+      {
+        "case": "flurl-malformed-json",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-flurl-malformed-json",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53780222",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "65729"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "18",
+                "data": "WyIxOmludmFsaWQtanNvbiJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:invalid-json"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-malformed-json",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-refit-malformed-json",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "54583994",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "62457"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "18",
+                "data": "WyIxOmludmFsaWQtanNvbiJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:invalid-json"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-oversized",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-flurl-oversized",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53618060",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "59341"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "21",
+                "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:transport-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-oversized",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-refit-oversized",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53038374",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "53630"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "21",
+                "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:transport-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-malformed-framing",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-flurl-malformed-framing",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53617894",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "54855"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "21",
+                "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:transport-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-malformed-framing",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-refit-malformed-framing",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53038616",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "54667"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "21",
+                "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:transport-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-truncated",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-flurl-truncated",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "73290764",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "83727"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "21",
+                "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:transport-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-truncated",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-refit-truncated",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "73507421",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "88719"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "21",
+                "data": "WyIxOnRyYW5zcG9ydC1lcnJvciJd",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:transport-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-404-unchanged",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-refit-404-unchanged",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53295196",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "56870"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "28",
+                "data": "WyIxOjQwNDplcnJvcjpkb21haW4tZXJyb3IiXQ==",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:404:error:domain-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-500-unchanged",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-refit-500-unchanged",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53295469",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "59452"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "28",
+                "data": "WyIxOjUwMDplcnJvcjpkb21haW4tZXJyb3IiXQ==",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:500:error:domain-error"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-fresh-after-errors",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-flurl-fresh-after-errors",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "53780765",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "60404"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "34",
+                "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:200:domain:7:caf\u00e9:first|\u03bb:"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-fresh-after-errors",
+        "invocation": {
+          "exitCode": 0,
+          "response": {
+            "category": "success",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-refit-fresh-after-errors",
+              "committedStateVersion": null,
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "54528281",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 1,
+                "peakMemoryBytes": "58067704",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "59889"
+              },
+              "effectIds": [],
+              "metadata": {
+                "cell-disposition": "released",
+                "cell-id": "operator-workflow-test:phase0:standard:00000000"
+              },
+              "payload": {
+                "byteLength": "34",
+                "data": "WyIxOjIwMDpkb21haW46NzpjYWbDqTpmaXJzdHzOuzoiXQ==",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:d0cfc5c16de8d4a680dd6dbcbdd2dd7192eb2e008608ba51712d45fdbee9f871",
+                "routeGeneration": "4"
+              }
+            },
+            "error": null,
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": [
+            "1:200:domain:7:caf\u00e9:first|\u03bb:"
+          ],
+          "processReaped": true
+        },
+        "physicalRetirementVerified": true
+      }
+    ],
+    "preEntryRefusals": [
+      {
+        "case": "runtime-missing",
+        "invocation": {
+          "exitCode": 4,
+          "response": {
+            "category": "platform-failure",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-runtime-missing",
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "0",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 0,
+                "peakMemoryBytes": "0",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "23186990"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:c81c502aefec9e4f19b434e4b319e1304c01f260aceb21ff31c01152bfa5b231",
+                "routeGeneration": "2"
+              },
+              "terminalState": "rejected"
+            },
+            "error": {
+              "code": "permission-denied",
+              "details": [],
+              "message": "The platform reported a failure.",
+              "retryable": false
+            },
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": null,
+          "processReaped": true
+        }
+      },
+      {
+        "case": "http-missing",
+        "invocation": {
+          "exitCode": 4,
+          "response": {
+            "category": "platform-failure",
+            "command": "invoke",
+            "data": {
+              "activationId": "library-edges-http-missing",
+              "consumption": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "0",
+                "effectCount": 0,
+                "logBytes": "0",
+                "outboundRequests": 0,
+                "peakMemoryBytes": "0",
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeMicros": "1081"
+              },
+              "resolvedRevision": {
+                "publicationId": "publication:sha256:1308141867e1f398f22bb6ab68893af0c29d0839421afd433a846cc6381c8b06",
+                "releaseDigest": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+                "revisionId": "revision-v1:sha256:5db041dd800d50f5506d5d92cd8a6fe58ec3c340001564e0bee0419df07cd228",
+                "routeGeneration": "3"
+              },
+              "terminalState": "rejected"
+            },
+            "error": {
+              "code": "permission-denied",
+              "details": [],
+              "message": "The platform reported a failure.",
+              "retryable": false
+            },
+            "outcomeKnown": true,
+            "requestDispatched": true,
+            "schemaVersion": "latent.cli.result.v1"
+          },
+          "decoded": null,
+          "processReaped": true
+        }
+      }
+    ],
+    "sources": {
+      "tools/dotnet_http_library_edges_node.py": {
+        "sha256": "sha256:53d7352bebbb1702eda88cb1f716239092c1d89763e663112166a73d9b070be0",
+        "bytes": 10929
+      },
+      "tools/dotnet_published_http_node.py": {
+        "sha256": "sha256:91d5c602c37b57da0be0b4fa1048db8589a34a85adbc06f47f23d6ff44fa75b2",
+        "bytes": 11779
+      },
+      "tools/dotnet_standard_http_node.py": {
+        "sha256": "sha256:64d2f9ffa90cd2e44466d96d5639bd74a13c8c9f510f8ef6953e5882633496f8",
+        "bytes": 34573
+      },
+      "tools/fixtures/dotnet-published-http/Main.cs": {
+        "sha256": "sha256:83f67ddf3affc53928997e18ab40da1cbbb6276bda3364f943798780f5a028fb",
+        "bytes": 6490
+      },
+      "tools/standard_http/process_peer.py": {
+        "sha256": "sha256:fd6352284b8ac5c38e5f4e64a2aa122852a0913a26cb807bddf8e7945d42d3cf",
+        "bytes": 2427
+      },
+      "tools/standard_http/peer.py": {
+        "sha256": "sha256:8fa65529659ef2e53166e821da4a86c1622bec1bcec080b050d7e4e4bd04db1f",
+        "bytes": 18941
+      },
+      "tools/standard_http/protocol.py": {
+        "sha256": "sha256:495fb9756c377ba086627f51a69f5e1721fe21b83a5c16b4b97344f3d049b5c7",
+        "bytes": 6517
+      },
+      "tools/standard_http/vectors.py": {
+        "sha256": "sha256:00dc2c620e29f01e54e0c1c23ed3e5f845c1251b62ad0af9bf819be3063683a9",
+        "bytes": 5636
+      },
+      "tools/standard_http/observations.py": {
+        "sha256": "sha256:701478e4b994453e95dd9d9e92dee685493fd3ddec9eb347d939298b13543c20",
+        "bytes": 8185
+      },
+      "tools/rust_capsule_node.py": {
+        "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+        "bytes": 18922
+      }
+    },
+    "native": {
+      "latent": {
+        "sha256": "sha256:91fde4e00730a4fd87d401974261fbd0e4d3d10376227faf2c137ace89edd14f",
+        "bytes": 68829688
+      },
+      "latentd": {
+        "sha256": "sha256:68a1c75d777ee43dff59a2be6a9d820b7d49ad8e29153881cefdef3c20521a76",
+        "bytes": 185284824
+      },
+      "package": {
+        "sha256": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+        "bytes": 17750192
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+        "bytes": 7245472
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:1118e6a628e40d9c7b228756f767cf7ebf18b02acdfdf4d9c7d749d87410a56b",
+        "bytes": 24017528
+      }
+    },
+    "component": {
+      "sha256": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+      "bytes": 10579504
+    },
+    "defaultFactories": [
+      "FlurlClient()",
+      "RestService.CreateHttpClient(endpoint, settings)",
+      "RestService.ForGenerated<IDomainApi>(client, settings)"
+    ],
+    "optionalGuestExtensionCases": [],
+    "fullTicketQualification": false,
+    "configurationIdentity": {
+      "sha256": "sha256:f008141f7b79f6954fa50a33a32450c4ba7b201682ced0ef8d498afa3ec43051",
+      "bytes": 6709
+    },
+    "shutdown": {
+      "processId": 14382,
+      "reaped": true,
+      "record": {
+        "schemaVersion": "latent.standalone.status.v1",
+        "event": "stopped",
+        "clean": true,
+        "report": {
+          "audit": {
+            "workerJoined": true,
+            "queuedOperations": 0,
+            "queryOwners": 0,
+            "queryBytes": 0,
+            "pendingAttempts": 0,
+            "reservedRecords": 0,
+            "stageBytes": 0,
+            "recoveryPending": false,
+            "unknownOutcomes": 0,
+            "previousSessionLossUnknown": false
+          },
+          "rollouts": {
+            "workerJoined": true,
+            "workerLive": false,
+            "queuedCommands": 0,
+            "activeCommands": 0,
+            "retainedRequestBytes": 0,
+            "responseOwners": 0,
+            "responseBytes": 0,
+            "failed": false,
+            "canary": {
+              "retainedWindows": 0,
+              "retainedSamples": 0,
+              "liveSamples": 0,
+              "snapshotOwners": 0
+            }
+          },
+          "policies": {
+            "workCompleted": true,
+            "activeJobs": 0,
+            "retainedReadOwners": 0
+          },
+          "providers": {
+            "clean": true,
+            "controlOwners": 0,
+            "connections": 0,
+            "pendingRequests": 0,
+            "runningRequests": 0,
+            "workers": 0,
+            "cleanupJobs": 0,
+            "failedCleanup": 0,
+            "sessions": 0,
+            "handles": 0,
+            "calls": 0,
+            "results": 0,
+            "ioCalls": 0,
+            "ioRetainedBytes": 0,
+            "blobStages": 0,
+            "blobHandles": 0,
+            "blobWork": 0,
+            "secretGenerations": 0,
+            "secretReferences": 0,
+            "streamOwners": 0,
+            "streamConnections": 0,
+            "streamPendingOperations": 0,
+            "streamRetainedChunks": 0,
+            "streamMaintenanceOwners": 0
+          },
+          "clean": true,
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0,
+          "telemetryRetainedEntries": 495,
+          "telemetryFlushed": true,
+          "epochHelperJoined": true,
+          "compiler": {
+            "maximum_jobs": 1,
+            "maximum_workers": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_waiters": 3,
+            "maximum_waiters_per_job": 3,
+            "maximum_ready_preparations": 3,
+            "maximum_document_bytes": 5308416,
+            "assigned_jobs": 0,
+            "running_jobs": 0,
+            "queued_jobs": 0,
+            "waiting_callers": 0,
+            "ready_preparations": 0,
+            "ready_metadata_bytes": 0,
+            "ready_compiled_image_bytes": 0,
+            "reserved_document_bytes": 0,
+            "workers_live": 0,
+            "workers_quiescent": 1,
+            "workers_joined": 1,
+            "accepting": false,
+            "failed": false,
+            "jobs_started": 1,
+            "jobs_completed": 1,
+            "jobs_failed": 0,
+            "jobs_abandoned": 0,
+            "coalesced_waiters": 0,
+            "queue_rejected": 0,
+            "waiter_rejected": 0,
+            "ready_rejected": 0,
+            "cancelled_waiters": 0,
+            "discarded_results": 0
+          },
+          "cleanup": {
+            "capacity": 4,
+            "accepting": false,
+            "driverAlive": false,
+            "driverJoined": true,
+            "reserved": 0,
+            "queued": 0,
+            "running": 0,
+            "handoffs": 0,
+            "completed": 0,
+            "timedOut": 0,
+            "panicked": 0,
+            "fallbacks": 0,
+            "failed": false
+          }
+        }
+      }
+    },
+    "peer": {
+      "contacts": 12,
+      "completedWrites": 10,
+      "mutations": 0,
+      "allClosed": true,
+      "exactVectors": [
+        "malformed-json",
+        "malformed-json",
+        "oversized-body",
+        "oversized-body",
+        "malformed-framing",
+        "malformed-framing",
+        "truncated-body",
+        "truncated-body",
+        "http-404",
+        "http-500",
+        "domain-json",
+        "domain-json"
+      ]
+    },
+    "guestExecutions": 12,
+    "preIoRefusals": 2
+  },
+  "independentReview": {
+    "source": "2260ef6b92da3af4ed383c0287d7029bf6622d24",
+    "run": 39497145967,
+    "job": 118885025728,
+    "artifact": 12297239672,
+    "artifactSha256": "07768dc78261bbb5d40bab0256c0f060fc001fccfe9d3555428558ef83586d67",
+    "archiveMembers": 444,
+    "component": {
+      "sha256": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+      "bytes": 10579504
+    },
+    "applicationSourceSha256": "sha256:ae4c9d8fb201ba552f087881edfd82dee6f14f0f91f3aeb07cb328788a608d01",
+    "signedCases": 12,
+    "preEntryDenials": 2,
+    "physicalRetirements": 14,
+    "zeroProviderSamples": 14,
+    "activeProviderCounters": 18,
+    "rawCliRecords": 114,
+    "peer": {
+      "contacts": 12,
+      "completedWrites": 10,
+      "mutations": 0,
+      "allClosed": true,
+      "exactVectors": [
+        "malformed-json",
+        "malformed-json",
+        "oversized-body",
+        "oversized-body",
+        "malformed-framing",
+        "malformed-framing",
+        "truncated-body",
+        "truncated-body",
+        "http-404",
+        "http-500",
+        "domain-json",
+        "domain-json"
+      ]
+    },
+    "normalGuestBuilds": 1,
+    "nativeBuilds": 0,
+    "historicalNative": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+    "buildSeconds": 113.478052,
+    "qualificationGitSources": 18,
+    "runtimeGitSources": 40,
+    "full693": false
+  },
+  "artifactMembers": {
+    "edges-native/native-products.json": {
+      "sha256": "sha256:05254405868cb99025cd1f59a0ae13b406fb201371aa1c7c4a6938ee34a1f719",
+      "bytes": 21390
+    },
+    "edges-native/source-inputs.json": {
+      "sha256": "sha256:aeba42c6b06725317f75726e8f60bdc4da1f6d6120c121fd5ee8039f2f28a8ca",
+      "bytes": 18937
+    },
+    "edges-native/retrieval.json": {
+      "sha256": "sha256:4e25ec33977ac68f231b09128824a28ee2d2241dbaf8c468f157166b2cc1192b",
+      "bytes": 2530
+    },
+    "edges-tools/INSTALL-COMPLETE.json": {
+      "sha256": "sha256:9731262c33a0022596d0908f8fab067cb27e5095e0eccf5194f1214605eae07b",
+      "bytes": 1653
+    },
+    "edges-tools/runtime-inputs.json": {
+      "sha256": "sha256:6dbbf4da36e957633e37a80ddbafb52a7e78036e751769a484ef0f379d4894ab",
+      "bytes": 5767
+    },
+    "edges-tools/wasi-sdk.json": {
+      "sha256": "sha256:cae6aeda56f57056df36ee44d8e5de199647723b4c6b22cc1418c5356017fd6b",
+      "bytes": 67
+    },
+    "edges-tools/logs/00-dotnet-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/00-dotnet-version.stdout.txt": {
+      "sha256": "sha256:a807ca80c392730f0b9a4114bcd64d2c7258ea2f97fbeab0b9c5b3f88194ce94",
+      "bytes": 9
+    },
+    "edges-tools/logs/01-wasm-tools-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/01-wasm-tools-version.stdout.txt": {
+      "sha256": "sha256:f85fc42a5a4fd6614999a2f41e14fd84eae869d81f0b344672b6d3874400375e",
+      "bytes": 42
+    },
+    "edges-tools/logs/02-runtime-compiler-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/02-runtime-compiler-version.stdout.txt": {
+      "sha256": "sha256:4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06",
+      "bytes": 36
+    },
+    "edges-tools/logs/03-locked-restore.stderr.txt": {
+      "sha256": "sha256:f3263f9e2d7b42d3a73db1d5eb0abfa1ee5eb6019432d3c9a254ad3eca128991",
+      "bytes": 670
+    },
+    "edges-tools/logs/03-locked-restore.stdout.txt": {
+      "sha256": "sha256:454cb32d3b9c7567e307efc02c71ba4ab860106f96aaa4130d5ea0e7801f1f54",
+      "bytes": 112
+    },
+    "edges-tools/logs/04-package-hash-build.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/04-package-hash-build.stdout.txt": {
+      "sha256": "sha256:6f4faeb32d935110df43500aa822a07389ecfa9b831f0d2109580811d69e142e",
+      "bytes": 293
+    },
+    "edges-tools/logs/05-http-errors-build.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/05-http-errors-build.stdout.txt": {
+      "sha256": "sha256:1b97ead7d53bc8871005c06d0b7d61d03fec38f521313d76ed944ba6a5c1e021",
+      "bytes": 288
+    },
+    "edges-tools/logs/06-closed-runtime-compile.stderr.txt": {
+      "sha256": "sha256:16b779ee56b7767f204211787580f8fdb9f3bb7c18dcd20e1d0666c3d6c39226",
+      "bytes": 375
+    },
+    "edges-tools/logs/06-closed-runtime-compile.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/07-closed-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/07-closed-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/08-runtime-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/08-runtime-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/09-http-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/09-http-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/10-entropy-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/11-wall-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/10-entropy-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/11-wall-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/12-closed-logging-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/12-closed-logging-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/13-runtime-logging-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/13-runtime-logging-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/14-http-logging-runtime-component.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/14-http-logging-runtime-component.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/15-component-composer-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "edges-tools/logs/15-component-composer-version.stdout.txt": {
+      "sha256": "sha256:c5b4413abfe141181aaf3c5ef4fefe630692fab19af04c6ed2da4d5a1ff29762",
+      "bytes": 15
+    },
+    "http-library-edges/build/BUILD-COMPLETE.json": {
+      "sha256": "sha256:b0d2c6442c64d14cca4856ffa9e1398c42a0a66b4bfd9d0cb7fe1b5b183118ed",
+      "bytes": 5906
+    },
+    "http-library-edges/build/additional-runtime-entropy.wit.json": {
+      "sha256": "sha256:22b3c4c3b9c4a06181047b153a65433b5ce8c8493fab67c55eeadbfd3f13cabb",
+      "bytes": 3628
+    },
+    "http-library-edges/build/additional-runtime-wall.wit.json": {
+      "sha256": "sha256:333520b63f24e0474152a2d1c94ef8c3fdd3870043ed0d22a7b2ed32a13579a1",
+      "bytes": 1617
+    },
+    "http-library-edges/build/application-dependencies.json": {
+      "sha256": "sha256:83776aab7578aea01d007a2da2009c3dd227e4f8b96293f0ab153a15d3189b1f",
+      "bytes": 44599
+    },
+    "http-library-edges/build/bindings.json": {
+      "sha256": "sha256:343f8794e07ff8d0d258676c548ba8a6f781821fc9d3b2128d88e9e24bbb5f90",
+      "bytes": 14518
+    },
+    "http-library-edges/build/build-observation.json": {
+      "sha256": "sha256:08ce922bad2426235484d28832ebf8c73fb37771dd30c6bd92703ad6bbc8d49a",
+      "bytes": 8274
+    },
+    "http-library-edges/build/capsule.json": {
+      "sha256": "sha256:08624872e776350c54a89c0e1cd74d6a3f222180a9dd89d4b3781ec91a279cd2",
+      "bytes": 1506
+    },
+    "http-library-edges/build/closed-filesystem-port-preparation.json": {
+      "sha256": "sha256:e323fcb8500c6c0f586263796cee15db3d2b74f8cbe9a126d0773ee0e7154734",
+      "bytes": 2186
+    },
+    "http-library-edges/build/closed-filesystem-port.json": {
+      "sha256": "sha256:7992c7141addf5792451df01f36473aad16c8cd7f778d5b1a8b5c5d485728dca",
+      "bytes": 2553
+    },
+    "http-library-edges/build/closed-runtime-adapter.wit.json": {
+      "sha256": "sha256:ccd02726fb2639c5361528a51c1ab60697c92ddb6fd9d95d606045be24f87548",
+      "bytes": 70861
+    },
+    "http-library-edges/build/closed-runtime-coverage.json": {
+      "sha256": "sha256:08b2d9133da34a52836d9761f02a4d118abc185e51dfae8b6b5848c5e1e8be95",
+      "bytes": 2849
+    },
+    "http-library-edges/build/compatibility-context.json": {
+      "sha256": "sha256:2d0a105d0a5f41bc9b97cfeae07e5b0c633f12457a190c78170ebc75ff057308",
+      "bytes": 11775
+    },
+    "http-library-edges/build/compatibility-inspection.json": {
+      "sha256": "sha256:c63bc6ec04fb3d0e6d5a6c1604d7273d63671ca0e78751be5b59674294c2d4f2",
+      "bytes": 576
+    },
+    "http-library-edges/build/compatibility-reachability.json": {
+      "sha256": "sha256:4e29c36e8557c7e2bd5588f26e92d60931b6a6b9f0e654159a657f5892f03e59",
+      "bytes": 1051
+    },
+    "http-library-edges/build/compatibility-report.json": {
+      "sha256": "sha256:b42c523f358477c3e8236e4db96471180b59b873ef8e1e4e9762e488c24891f3",
+      "bytes": 1254
+    },
+    "http-library-edges/build/compiler-command.json": {
+      "sha256": "sha256:a5c459f85035b0a60591fb88f868c0d04dcfeef99e48fa1ffc02d66d5b31d5ff",
+      "bytes": 979
+    },
+    "http-library-edges/build/compiler-containment.json": {
+      "sha256": "sha256:f2179722cac277bd670a02157dd6632df3505409ba85ad6f4a7eef64be9fbc7e",
+      "bytes": 5411021
+    },
+    "http-library-edges/build/compiler-inputs.json": {
+      "sha256": "sha256:ae7ad58a92a5b8225d5ac48a65f1b030dbc78cd77ac8a6c94051f27133685a08",
+      "bytes": 3554215
+    },
+    "http-library-edges/build/compiler-namespace-arguments.json": {
+      "sha256": "sha256:902f03ee16b055c0a06d23fa78c51c1009b62159013b389cebb7b7bcdc42ba63",
+      "bytes": 5312
+    },
+    "http-library-edges/build/compiler-patches-preparation.json": {
+      "sha256": "sha256:3ed2a65bc3cf1888a16974396f2dad2868ee1e67d7d86a99f8e146aace28d58c",
+      "bytes": 982
+    },
+    "http-library-edges/build/compiler-patches.json": {
+      "sha256": "sha256:d6c75ea76857ba7d6309cc1ae78615155a058aa9b79471e56ec0ec046ff2ee95",
+      "bytes": 20406
+    },
+    "http-library-edges/build/compiler.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/compiler.stdout.txt": {
+      "sha256": "sha256:c19c4428dc8d3a5554a985470d652a1337f5ef88e09e394dc680b50d0e9f5734",
+      "bytes": 218
+    },
+    "http-library-edges/build/component.wasm": {
+      "sha256": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+      "bytes": 10579504
+    },
+    "http-library-edges/build/contracts.json": {
+      "sha256": "sha256:a3b9c9fbccd2451ca1aa22ef3492239632d62f13cd12376d0a55131f6c558192",
+      "bytes": 731
+    },
+    "http-library-edges/build/deployment.json": {
+      "sha256": "sha256:cb09491d0e79534556c471fa3098f1e32c2593f14990a5c0cf244608f4efb27f",
+      "bytes": 904
+    },
+    "http-library-edges/build/derived-System.Net.Http.dll": {
+      "sha256": "sha256:192d99f1396e7c5207115812ab4b527e9bf210f6da007e0963d1295d048d08f9",
+      "bytes": 312320
+    },
+    "http-library-edges/build/derived-closed-filesystem-System.Private.CoreLib.dll": {
+      "sha256": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb",
+      "bytes": 5605888
+    },
+    "http-library-edges/build/derived-task-wait-System.Private.CoreLib.dll": {
+      "sha256": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+      "bytes": 5605888
+    },
+    "http-library-edges/build/diagnostic-source.json": {
+      "sha256": "sha256:d6ebd2cd271c33c28acd1dad826ece47529cea3e768208d678d6a9d4387f25d1",
+      "bytes": 201
+    },
+    "http-library-edges/build/executable-input-approval-request.json": {
+      "sha256": "sha256:511bdf86dc3af698ebaa6e1108e9cdbf0e340e9758426c65f5431964015aa629",
+      "bytes": 10917
+    },
+    "http-library-edges/build/executable-input-outputs/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs": {
+      "sha256": "sha256:8c2f9d30c3e17f577da41c9d9362cb21bd690876cdf361f5a0cf28404298cb12",
+      "bytes": 2192
+    },
+    "http-library-edges/build/executable-input-outputs/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/IDomainApi.g.cs": {
+      "sha256": "sha256:e011310991e839563ac1d1fb6335e9ce3e055e9d9c4d73ce036b7b5054bb0cb5",
+      "bytes": 4652
+    },
+    "http-library-edges/build/executable-input-outputs/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/PreserveAttribute.g.cs": {
+      "sha256": "sha256:e30279113aad4120ba28365b9958e630379ebf30d44be36a9ec7ccede9f0666f",
+      "bytes": 1364
+    },
+    "http-library-edges/build/executable-input-outputs/System.Text.Json.SourceGeneration/System.Text.Json.SourceGeneration.JsonSourceGenerator/DomainJson.GetJsonTypeInfo.g.cs": {
+      "sha256": "sha256:692d23735eebecfbc756a3e55ff4ba0f7bb2bad1323a6e1201ecec0a4cbcfc76",
+      "bytes": 1128
+    },
+    "http-library-edges/build/executable-input-outputs/System.Text.Json.SourceGeneration/System.Text.Json.SourceGeneration.JsonSourceGenerator/DomainJson.JsonElement.g.cs": {
+      "sha256": "sha256:f1b15e373186e6fb6160cb11c931037dc66b2bb5e83742baaae4ae7af283812b",
+      "bytes": 1884
+    },
+    "http-library-edges/build/executable-input-outputs/System.Text.Json.SourceGeneration/System.Text.Json.SourceGeneration.JsonSourceGenerator/DomainJson.PropertyNames.g.cs": {
+      "sha256": "sha256:1dcb7e663bac55cb8505e03c7ec2b1bc5763234fa8a20ff41144b4a22848f9be",
+      "bytes": 309
+    },
+    "http-library-edges/build/executable-input-outputs/System.Text.Json.SourceGeneration/System.Text.Json.SourceGeneration.JsonSourceGenerator/DomainJson.g.cs": {
+      "sha256": "sha256:f28ef3fd733bb253dc1abaf5803c3a2b10dd04b3c3ffe92edd1696028ded2e48",
+      "bytes": 4324
+    },
+    "http-library-edges/build/executable-input-outputs.json": {
+      "sha256": "sha256:c16d33b1ec8f48429dec11d031520f6da2a0d71a84495f86b67a0684f76025ad",
+      "bytes": 2207
+    },
+    "http-library-edges/build/http-error-port-preparation.json": {
+      "sha256": "sha256:b5b6e3bc205472c23a0f8d478f59bb976a6d9b732105953780c5d2f0b16ea130",
+      "bytes": 7330
+    },
+    "http-library-edges/build/http-error-port.json": {
+      "sha256": "sha256:c28005c799506b4f9a268a7ca4b41eaac7007cda99084d0ffac45abab61825f3",
+      "bytes": 7593
+    },
+    "http-library-edges/build/internal-io-port.json": {
+      "sha256": "sha256:45248d751898f2d74aa9e104576668525a13aa6d8afae9655345007953b10fcc",
+      "bytes": 1084
+    },
+    "http-library-edges/build/logs/00-contracts.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/00-contracts.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/01-dotnet-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/01-dotnet-version.stdout.txt": {
+      "sha256": "sha256:a807ca80c392730f0b9a4114bcd64d2c7258ea2f97fbeab0b9c5b3f88194ce94",
+      "bytes": 9
+    },
+    "http-library-edges/build/logs/02-wasm-tools-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/02-wasm-tools-version.stdout.txt": {
+      "sha256": "sha256:f85fc42a5a4fd6614999a2f41e14fd84eae869d81f0b344672b6d3874400375e",
+      "bytes": 42
+    },
+    "http-library-edges/build/logs/03-wit-bindgen-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/03-wit-bindgen-version.stdout.txt": {
+      "sha256": "sha256:10f3a9e5d1a5332ea2094b43c9e350da2823067d71a0ffe4b2ca4ad883849310",
+      "bytes": 23
+    },
+    "http-library-edges/build/logs/04-dotnet-sdks.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/04-dotnet-sdks.stdout.txt": {
+      "sha256": "sha256:ad9811ff662150edb75339e691a48eac4f561d941180a63b86766e3a92a6970d",
+      "bytes": 389
+    },
+    "http-library-edges/build/logs/05-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/05-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:15225f303668c03ab1f3e6b5eacfc0bfd61810e720ee7eb6bad9882507000be6",
+      "bytes": 89
+    },
+    "http-library-edges/build/logs/06-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/06-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:0ccbea9a78a159d9163c9b887f089206e2ef3c56a502e90423c5cd92cfd814f4",
+      "bytes": 89
+    },
+    "http-library-edges/build/logs/07-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/07-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a5fc7be70b3197381e0d51abe801dacdbfa233438dd8507e7202a34583adf3a8",
+      "bytes": 89
+    },
+    "http-library-edges/build/logs/08-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/08-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a2bc935034a3231e4e583793102ab101905fc8a31129552b3d3829d78f9a64b8",
+      "bytes": 89
+    },
+    "http-library-edges/build/logs/09-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/09-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:b07b62e4e5e0b8db0688983a477ba40e658c3cd001886de9a3c80d65dfb94f8c",
+      "bytes": 89
+    },
+    "http-library-edges/build/logs/10-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/10-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a5fc7be70b3197381e0d51abe801dacdbfa233438dd8507e7202a34583adf3a8",
+      "bytes": 89
+    },
+    "http-library-edges/build/logs/11-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/11-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:233faef4d7f63967884053b54972ab564efe3c755f7bd8737bba7f7ac436c2ff",
+      "bytes": 89
+    },
+    "http-library-edges/build/logs/12-component-composer-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/12-component-composer-version.stdout.txt": {
+      "sha256": "sha256:c5b4413abfe141181aaf3c5ef4fefe630692fab19af04c6ed2da4d5a1ff29762",
+      "bytes": 15
+    },
+    "http-library-edges/build/logs/13-declared-runtime-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/13-declared-runtime-wit.stdout.txt": {
+      "sha256": "sha256:c9769b883fc2be2ae3f1ac8390b5908e531431d3273c79150beeed5e6535ed13",
+      "bytes": 23148
+    },
+    "http-library-edges/build/logs/14-retirement-public-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/14-retirement-public-wit.stdout.txt": {
+      "sha256": "sha256:885b4083f58df8f4cdf5fea917cf7e961242a65fd8052e4d6f68ce85811c0fb1",
+      "bytes": 4167
+    },
+    "http-library-edges/build/logs/15-retirement-public-graph.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/15-retirement-public-graph.stdout.txt": {
+      "sha256": "sha256:c9769b883fc2be2ae3f1ac8390b5908e531431d3273c79150beeed5e6535ed13",
+      "bytes": 23148
+    },
+    "http-library-edges/build/logs/16-retirement-private-canonical.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/16-retirement-private-canonical.stdout.txt": {
+      "sha256": "sha256:3b1d5882bc10ae9959c5518395f099f64cd1a552ea8937b3c1a0cb657fc838ac",
+      "bytes": 4308
+    },
+    "http-library-edges/build/logs/17-retirement-public-embed.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/17-retirement-public-embed.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/18-retirement-public-graph.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/18-retirement-public-graph.stdout.txt": {
+      "sha256": "sha256:b42788b550f2e421c590426c964e3a756f85a6f01ec3eaaf45b80c652be58dec",
+      "bytes": 20970
+    },
+    "http-library-edges/build/logs/19-retirement-restored-embed.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/19-retirement-restored-embed.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/20-retirement-restored-graph.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/20-retirement-restored-graph.stdout.txt": {
+      "sha256": "sha256:b42788b550f2e421c590426c964e3a756f85a6f01ec3eaaf45b80c652be58dec",
+      "bytes": 20970
+    },
+    "http-library-edges/build/logs/21-retirement-private-embed.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/21-retirement-private-embed.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/22-retirement-private-graph.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/22-retirement-private-graph.stdout.txt": {
+      "sha256": "sha256:fe77abd6a8aa46f0a4071e7a57e5ea7d1a0f5c6002c8f62c405d8e87083379b6",
+      "bytes": 21509
+    },
+    "http-library-edges/build/logs/23-retirement-public-recheck.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/23-retirement-public-recheck.stdout.txt": {
+      "sha256": "sha256:885b4083f58df8f4cdf5fea917cf7e961242a65fd8052e4d6f68ce85811c0fb1",
+      "bytes": 4167
+    },
+    "http-library-edges/build/logs/24-bindings.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/24-bindings.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/25-bindings-drift.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/25-bindings-drift.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/26-canonical-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/26-canonical-wit.stdout.txt": {
+      "sha256": "sha256:3b1d5882bc10ae9959c5518395f099f64cd1a552ea8937b3c1a0cb657fc838ac",
+      "bytes": 4308
+    },
+    "http-library-edges/build/logs/27-noncrypto-native-preimage.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/27-noncrypto-native-preimage.stdout.txt": {
+      "sha256": "sha256:5012866cd28f6e0e7eb173cf764d77b7fdefc4b4198eeb7fd26a9db716fa0093",
+      "bytes": 2325
+    },
+    "http-library-edges/build/logs/28-noncrypto-entropy-compile.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/28-noncrypto-entropy-compile.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/29-managed-entropy-build-managedentropy.stderr.txt": {
+      "sha256": "sha256:53f56b124f0a5a2cbb626d4a9571d733b4d9c9919fb2481ae410535641a04b9b",
+      "bytes": 98
+    },
+    "http-library-edges/build/logs/29-managed-entropy-build-managedentropy.stdout.txt": {
+      "sha256": "sha256:7620ed43cd219433441ee9e2e93e9db338dc59e939cda26f7830401473a013d3",
+      "bytes": 418
+    },
+    "http-library-edges/build/logs/30-managed-entropy-build-rewrite.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/30-managed-entropy-build-rewrite.stdout.txt": {
+      "sha256": "sha256:f9a8ba5b0d41fef8c77cfa0760fceb55945d3e2066e4792927d91beca2d16f3c",
+      "bytes": 393
+    },
+    "http-library-edges/build/logs/31-managed-entropy-rewrite.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/31-managed-entropy-rewrite.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/32-task-wait-rewrite.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/32-task-wait-rewrite.stdout.txt": {
+      "sha256": "sha256:8ef88745993679b17a00e960d419b83faadf0a7482e3f122c087094ef4135449",
+      "bytes": 2783
+    },
+    "http-library-edges/build/logs/33-closed-filesystem-rewrite.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/33-closed-filesystem-rewrite.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/34-http-errors-rewrite.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/34-http-errors-rewrite.stdout.txt": {
+      "sha256": "sha256:eb766d15b1d9e3aafb4dc598affaede6735c6ea0e88398ef4cc5a0d0f50267f1",
+      "bytes": 5643
+    },
+    "http-library-edges/build/logs/35-locked-restore.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/35-locked-restore.stdout.txt": {
+      "sha256": "sha256:86fa12e392abd95fb501ea12d7e00536f40cd03c7d2da4945f9d126175f7612a",
+      "bytes": 164
+    },
+    "http-library-edges/build/logs/36-native-aot.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/36-native-aot.stdout.txt": {
+      "sha256": "sha256:f6eae3ee594d37503a7051d8347ba6150d9cebea2c137402613d229c6058c47c",
+      "bytes": 2614
+    },
+    "http-library-edges/build/logs/37-native-runtime-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/37-native-runtime-wit.stdout.txt": {
+      "sha256": "sha256:b6711875bee7a01c6a9371b39810b9c3e644e677c58eeb6b8e859015400d74c8",
+      "bytes": 57927
+    },
+    "http-library-edges/build/logs/38-internal-io-adapter-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/38-internal-io-adapter-wit.stdout.txt": {
+      "sha256": "sha256:ccd02726fb2639c5361528a51c1ab60697c92ddb6fd9d95d606045be24f87548",
+      "bytes": 70861
+    },
+    "http-library-edges/build/logs/39-internal-io-unbundle.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/39-internal-io-unbundle.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/40-internal-io-print.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/40-internal-io-print.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/41-internal-io-encode.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/41-internal-io-encode.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/42-internal-io-validate.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/42-internal-io-validate.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/43-internal-io-selected-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/43-internal-io-selected-wit.stdout.txt": {
+      "sha256": "sha256:03af76b0e21c37619a851fd1e2a282d933dac6eca956b820e2a30f253a7dbe19",
+      "bytes": 57951
+    },
+    "http-library-edges/build/logs/44-native-aot-raw-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/44-native-aot-raw-wit.stdout.txt": {
+      "sha256": "sha256:03af76b0e21c37619a851fd1e2a282d933dac6eca956b820e2a30f253a7dbe19",
+      "bytes": 57951
+    },
+    "http-library-edges/build/logs/45-closed-runtime-adapter-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/46-additional-runtime-entropy-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/45-closed-runtime-adapter-wit.stdout.txt": {
+      "sha256": "sha256:ccd02726fb2639c5361528a51c1ab60697c92ddb6fd9d95d606045be24f87548",
+      "bytes": 70861
+    },
+    "http-library-edges/build/logs/46-additional-runtime-entropy-wit.stdout.txt": {
+      "sha256": "sha256:22b3c4c3b9c4a06181047b153a65433b5ce8c8493fab67c55eeadbfd3f13cabb",
+      "bytes": 3628
+    },
+    "http-library-edges/build/logs/47-additional-runtime-wall-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/47-additional-runtime-wall-wit.stdout.txt": {
+      "sha256": "sha256:333520b63f24e0474152a2d1c94ef8c3fdd3870043ed0d22a7b2ed32a13579a1",
+      "bytes": 1617
+    },
+    "http-library-edges/build/logs/48-closed-runtime-composition.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/48-closed-runtime-composition.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/49-validate.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/49-validate.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/50-runtime-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/50-runtime-final-wit.stdout.txt": {
+      "sha256": "sha256:50041fb9434b99ff196cddc867e3ab951238e871cf727e25233525169b845168",
+      "bytes": 14975
+    },
+    "http-library-edges/build/logs/51-surface.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/51-surface.stdout.txt": {
+      "sha256": "sha256:2bb803b0d86af10eff8a412b0745e4e1c1597ee6a0ab052f45ee1fce526ad15e",
+      "bytes": 3007
+    },
+    "http-library-edges/build/logs/52-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/52-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:50041fb9434b99ff196cddc867e3ab951238e871cf727e25233525169b845168",
+      "bytes": 14975
+    },
+    "http-library-edges/build/logs/53-package.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/53-package.stdout.txt": {
+      "sha256": "sha256:907df4482d588932ff3b0b0a59a2a812dc389086f0338d63fa640bcbd5fcea70",
+      "bytes": 298
+    },
+    "http-library-edges/build/logs/54-inspect.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/build/logs/54-inspect.stdout.txt": {
+      "sha256": "sha256:907df4482d588932ff3b0b0a59a2a812dc389086f0338d63fa640bcbd5fcea70",
+      "bytes": 298
+    },
+    "http-library-edges/build/managed-entropy-preparation.json": {
+      "sha256": "sha256:fa24b2af92fb7eda37c8b0804ecca408acaff303518ab72074615140431005a4",
+      "bytes": 3405
+    },
+    "http-library-edges/build/managed-entropy-port.json": {
+      "sha256": "sha256:628a9ae3bfd90b104aa016c124dd7cb420a00465d13f6cfa4c78e5dbfb46b00b",
+      "bytes": 3629
+    },
+    "http-library-edges/build/native-aot-original.wit.json": {
+      "sha256": "sha256:b6711875bee7a01c6a9371b39810b9c3e644e677c58eeb6b8e859015400d74c8",
+      "bytes": 57927
+    },
+    "http-library-edges/build/native-aot-raw.wit.json": {
+      "sha256": "sha256:03af76b0e21c37619a851fd1e2a282d933dac6eca956b820e2a30f253a7dbe19",
+      "bytes": 57951
+    },
+    "http-library-edges/build/noncrypto-entropy-port.json": {
+      "sha256": "sha256:1db983be35dabef6796024d3d81875401929f48a09432e64293ecfaac32c55fa",
+      "bytes": 2570
+    },
+    "http-library-edges/build/noncrypto-entropy-preparation.json": {
+      "sha256": "sha256:7856e559d3523fd28f880204530e749c247f870ca9287e517588df7049a039fa",
+      "bytes": 2361
+    },
+    "http-library-edges/build/nuget-build-inputs.json": {
+      "sha256": "sha256:29f717f1f679c979898c30e35169cd6dc3ea9380cf75fe8f0d84c799504920ea",
+      "bytes": 11726
+    },
+    "http-library-edges/build/package/config.json": {
+      "sha256": "sha256:615b528e75854427a11e020e3f18d7a8cfab9555b88362d404f661a30c610856",
+      "bytes": 2257
+    },
+    "http-library-edges/build/package/layers/capsule.json": {
+      "sha256": "sha256:a99105e20933da740491591270cb2255083fd3f1344a49cd833478ecd464f41a",
+      "bytes": 1142
+    },
+    "http-library-edges/build/package/layers/compatibility-report.json": {
+      "sha256": "sha256:b42c523f358477c3e8236e4db96471180b59b873ef8e1e4e9762e488c24891f3",
+      "bytes": 1254
+    },
+    "http-library-edges/build/package/layers/component.wasm": {
+      "sha256": "sha256:f58923994a2e365b620b0b328735277cf72dc62da45412314c7c185c352ce7e9",
+      "bytes": 10579504
+    },
+    "http-library-edges/build/package/layers/contracts.json": {
+      "sha256": "sha256:a3b9c9fbccd2451ca1aa22ef3492239632d62f13cd12376d0a55131f6c558192",
+      "bytes": 731
+    },
+    "http-library-edges/build/package/layers/package/build-inputs.json": {
+      "sha256": "sha256:f47ed0b9fdafdcf5f7ae5e8659da0a72e5d31dedff8c592d93306413e97982ea",
+      "bytes": 2758
+    },
+    "http-library-edges/build/package/layers/wit/deps/activation-runtime/package.wit": {
+      "sha256": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+      "bytes": 2539
+    },
+    "http-library-edges/build/package/layers/wit/deps/clock/package.wit": {
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "bytes": 139
+    },
+    "http-library-edges/build/package/layers/wit/deps/http-v3/package.wit": {
+      "sha256": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+      "bytes": 2915
+    },
+    "http-library-edges/build/package/layers/wit/deps/random/package.wit": {
+      "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+      "bytes": 272
+    },
+    "http-library-edges/build/package/layers/wit/world.wit": {
+      "sha256": "sha256:ead41d6ec92179650f567d330de7174eb1f4454f94923f0e833a75d8287ad6b5",
+      "bytes": 360
+    },
+    "http-library-edges/build/package/layers/wit-lock.json": {
+      "sha256": "sha256:d0a5b33eb43ea12b79444f81080b7e7f3c8baf3b1e6919d5190e62c754adba83",
+      "bytes": 1140
+    },
+    "http-library-edges/build/package/manifest.json": {
+      "sha256": "sha256:5e42be87691e3ff79d625cb227ec33cab70b2479c973b5831fbdbe73b86cb128",
+      "bytes": 2993
+    },
+    "http-library-edges/build/package-inputs.json": {
+      "sha256": "sha256:9c75327913ca55c7dfb9271afb388d7b3f53af6c6a2680459cf8bbf3c1395a06",
+      "bytes": 1331
+    },
+    "http-library-edges/build/package-source.json": {
+      "sha256": "sha256:2af70135b15937355f1cb6be4d89135d149d54d2a6451bd49201765a33e9edb0",
+      "bytes": 1821
+    },
+    "http-library-edges/build/recipe-inputs.json": {
+      "sha256": "sha256:4cdd75c6121caa7c56c9fc406013d04b243ce10d0183bab34415a2a6b3e79be8",
+      "bytes": 8304
+    },
+    "http-library-edges/build/retirement-port.json": {
+      "sha256": "sha256:45a6bda11348b684374a8bd363b702ee7b7a45b122b2ed4803cb25786877a268",
+      "bytes": 412
+    },
+    "http-library-edges/build/runtime-composition.json": {
+      "sha256": "sha256:153cc3fb8a43aa1d365659af2c95b0a7ba472890b857b5815083be2425b0112b",
+      "bytes": 3230
+    },
+    "http-library-edges/build/runtime-profile.json": {
+      "sha256": "sha256:06a43928e503c17ab368fe3a6ab5396173e3ac30dd1f13b251652396ab9e2c45",
+      "bytes": 3309
+    },
+    "http-library-edges/build/source-inputs.json": {
+      "sha256": "sha256:a5fac48b2dcd9b0ed61e695c753a155e8ae0b273476f2e3cad02c47cfda8dd37",
+      "bytes": 21352
+    },
+    "http-library-edges/build/surface.json": {
+      "sha256": "sha256:561e9e7c693c3d471f6e8abd5a9f9c175832d9f1cd794b110f6b22df23b82aec",
+      "bytes": 320
+    },
+    "http-library-edges/build/task-wait-port.json": {
+      "sha256": "sha256:42b6b9b990723b40ad67893fd3291e6cc747ed4ea6b90c2f9be16257fd3fd10b",
+      "bytes": 4605
+    },
+    "http-library-edges/build/task-wait-port-preparation.json": {
+      "sha256": "sha256:6d48754bb01e4ada847b419971843044f1d2a05a07740bd887e35e0a935e4f24",
+      "bytes": 4054
+    },
+    "http-library-edges/build/wit-lock.json": {
+      "sha256": "sha256:d0a5b33eb43ea12b79444f81080b7e7f3c8baf3b1e6919d5190e62c754adba83",
+      "bytes": 1140
+    },
+    "http-library-edges/capture.json": {
+      "sha256": "sha256:dfa10cf503080a4e2d1006e4140841aa5168efcd746a818ff7905fb4d0d46df3",
+      "bytes": 4678
+    },
+    "http-library-edges/catalogue-free-source.json": {
+      "sha256": "sha256:04f9d084485806db30c904d9664ec9386838da0b639b940fdab2056203a99370",
+      "bytes": 15250
+    },
+    "http-library-edges/generator-approval-required/BUILD-FAILED.json": {
+      "sha256": "sha256:47cae6f3f3ba1719db001b11513d31d3de1c6a7f304799674b22e1e34ecf1412",
+      "bytes": 1442
+    },
+    "http-library-edges/generator-approval-required/compatibility-report.json": {
+      "sha256": "sha256:ece19c7ea0d7d76fdcd2f86490f9cc6da9f53279d53114f690bc0d0e2aa5e19e",
+      "bytes": 611
+    },
+    "http-library-edges/generator-approval-required/compiler-command.json": {
+      "sha256": "sha256:3ba5cb315bba20e0dc0ab1f3c3d8a3dcb8f1d537281667e35ca4872271e171a8",
+      "bytes": 893
+    },
+    "http-library-edges/generator-approval-required/compiler-containment.json": {
+      "sha256": "sha256:f2179722cac277bd670a02157dd6632df3505409ba85ad6f4a7eef64be9fbc7e",
+      "bytes": 5411021
+    },
+    "http-library-edges/generator-approval-required/compiler-inputs.json": {
+      "sha256": "sha256:ae7ad58a92a5b8225d5ac48a65f1b030dbc78cd77ac8a6c94051f27133685a08",
+      "bytes": 3554215
+    },
+    "http-library-edges/generator-approval-required/compiler-patches-preparation.json": {
+      "sha256": "sha256:3ed2a65bc3cf1888a16974396f2dad2868ee1e67d7d86a99f8e146aace28d58c",
+      "bytes": 982
+    },
+    "http-library-edges/generator-approval-required/compiler.stderr.txt": {
+      "sha256": "sha256:a799b6bc7b81d29f50e50184140c343655919b483b0b53347a1d52f36957cbf6",
+      "bytes": 916
+    },
+    "http-library-edges/generator-approval-required/compiler.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/generator-approval-required/contracts.json": {
+      "sha256": "sha256:a3b9c9fbccd2451ca1aa22ef3492239632d62f13cd12376d0a55131f6c558192",
+      "bytes": 731
+    },
+    "http-library-edges/generator-approval-required/executable-input-approval-request.json": {
+      "sha256": "sha256:511bdf86dc3af698ebaa6e1108e9cdbf0e340e9758426c65f5431964015aa629",
+      "bytes": 10917
+    },
+    "http-library-edges/generator-approval-required/source-inputs.json": {
+      "sha256": "sha256:a5fac48b2dcd9b0ed61e695c753a155e8ae0b273476f2e3cad02c47cfda8dd37",
+      "bytes": 21352
+    },
+    "http-library-edges/generator-approval-required/recipe-inputs.json": {
+      "sha256": "sha256:4cdd75c6121caa7c56c9fc406013d04b243ce10d0183bab34415a2a6b3e79be8",
+      "bytes": 8304
+    },
+    "http-library-edges/generator-approval-required/wit-lock.json": {
+      "sha256": "sha256:d0a5b33eb43ea12b79444f81080b7e7f3c8baf3b1e6919d5190e62c754adba83",
+      "bytes": 1140
+    },
+    "http-library-edges/generator-approval-required/surface.json": {
+      "sha256": "sha256:561e9e7c693c3d471f6e8abd5a9f9c175832d9f1cd794b110f6b22df23b82aec",
+      "bytes": 320
+    },
+    "http-library-edges/node/after-flurl-fresh-after-errors.json": {
+      "sha256": "sha256:c58b08e8335c29eb1104f7c22f2a832a34c4377ec5e5550411980356c252497b",
+      "bytes": 8189
+    },
+    "http-library-edges/node/after-flurl-malformed-framing.json": {
+      "sha256": "sha256:22dd5d8d470f8e07f633379c15b29cd2b083da4154694decbe5a36aa00441324",
+      "bytes": 8185
+    },
+    "http-library-edges/node/after-flurl-malformed-json.json": {
+      "sha256": "sha256:c4c423864b389974d86bb064f072b1e6b0b836438d2b69a09fd226bce9d7699c",
+      "bytes": 8180
+    },
+    "http-library-edges/node/after-flurl-oversized.json": {
+      "sha256": "sha256:f81666878ff24cb4489959daec09011f1d9089864a277f4cf5196bcc5c03444e",
+      "bytes": 8176
+    },
+    "http-library-edges/node/after-flurl-truncated.json": {
+      "sha256": "sha256:3e26c631046490e88249fdb7a2b717458cb24d21c4bd71e4aad12fcf9a43b649",
+      "bytes": 8177
+    },
+    "http-library-edges/node/after-http-missing.json": {
+      "sha256": "sha256:87953d828c7846b86125b862274e8b8aed18ff439f7779aa151764cb331424e1",
+      "bytes": 8171
+    },
+    "http-library-edges/node/after-refit-404-unchanged.json": {
+      "sha256": "sha256:e887d15c2b7b82641e2ff2bb70f54f11f1320db197642797482675e910752a68",
+      "bytes": 8183
+    },
+    "http-library-edges/node/after-refit-500-unchanged.json": {
+      "sha256": "sha256:e3c77c932c1a4e1682e113a2d71433b272ba1dbefebcee42e31d1a903c0ffb10",
+      "bytes": 8183
+    },
+    "http-library-edges/node/after-refit-fresh-after-errors.json": {
+      "sha256": "sha256:62f2d2b16964ac5871f9180edbad5ee8c720b7037e5fb18d18476d58739dee94",
+      "bytes": 8188
+    },
+    "http-library-edges/node/after-refit-malformed-framing.json": {
+      "sha256": "sha256:42a476c5c094f0ca23fa8c021f4b6badee86bf8f785a3652772deec6238617be",
+      "bytes": 8185
+    },
+    "http-library-edges/node/after-refit-malformed-json.json": {
+      "sha256": "sha256:823278aee86abdeb38c317e6c8ef88b8f61a981179e0cb68053f29200b5ddec9",
+      "bytes": 8182
+    },
+    "http-library-edges/node/after-refit-oversized.json": {
+      "sha256": "sha256:1d0297f99e627291f85dda25da5a73e8718abc2a1595aa214f528bda64b4a8a5",
+      "bytes": 8177
+    },
+    "http-library-edges/node/after-refit-truncated.json": {
+      "sha256": "sha256:442115b37ded96a249d76f2234a933b6959e9684d1527e1bb74037d43ae3420c",
+      "bytes": 8178
+    },
+    "http-library-edges/node/after-runtime-missing.json": {
+      "sha256": "sha256:fd82ba35e29996ab83c1457cac4017e288511bc022693de23bb41930af5e0c63",
+      "bytes": 8176
+    },
+    "http-library-edges/node/controls/001.json": {
+      "sha256": "sha256:b0235f928d952f866d38f274e25484c990583439ce29adc180e3b3315b63731a",
+      "bytes": 7243
+    },
+    "http-library-edges/node/controls/002.json": {
+      "sha256": "sha256:800cd408a7436c5835b9a332ab9de4771178ec80b1957549d88005bf633e1f46",
+      "bytes": 2741
+    },
+    "http-library-edges/node/controls/003.json": {
+      "sha256": "sha256:8fc6f763c0b5c35a9d2c0466ad2eac2691826af5261fef98b29dfa9d6d98e80f",
+      "bytes": 241
+    },
+    "http-library-edges/node/controls/004.json": {
+      "sha256": "sha256:7ac8574ecae18de3d4f1ced17021bf809de1c1ac2f9a3b160a6bf7ea111f3951",
+      "bytes": 2292
+    },
+    "http-library-edges/node/controls/005.json": {
+      "sha256": "sha256:2d03e289a110b47706bf84e62bdfca7775f7846a2a8df1fff942cf2c43c39e6a",
+      "bytes": 7294
+    },
+    "http-library-edges/node/controls/006.json": {
+      "sha256": "sha256:afc6524f75a07bf6dcb3852887ddd713ed40029e6f0ed61aa9d65d995cc6f523",
+      "bytes": 2147
+    },
+    "http-library-edges/node/controls/007.json": {
+      "sha256": "sha256:24befbb3d493e9660f3373f207027ed6ea85cddc40bef3d454070b600b9aeb64",
+      "bytes": 1128
+    },
+    "http-library-edges/node/controls/008.json": {
+      "sha256": "sha256:34d4bada72094fedb441797deab132dad907493df0305f9fdc60e1b95c9603c1",
+      "bytes": 1288
+    },
+    "http-library-edges/node/controls/009.json": {
+      "sha256": "sha256:14b3ba5338203d1fbea6d6a12f1f092a0faab9f7f7f0711c7715e7538b2a21be",
+      "bytes": 1099
+    },
+    "http-library-edges/node/controls/010.json": {
+      "sha256": "sha256:0e9392fee09d9d4f4fc9899c30ffd058f5b4da57f4c2ec69c29a7b7105120d61",
+      "bytes": 1264
+    },
+    "http-library-edges/node/controls/011.json": {
+      "sha256": "sha256:569c9a0bd77882728b808d579f8e4e1a1a5f865b5f44c31baee2616cca24e434",
+      "bytes": 1213
+    },
+    "http-library-edges/node/controls/012.json": {
+      "sha256": "sha256:2aa61f9a07f53baf522373fc8e507a673d5b9c4577c45f332ecb80c13486faf0",
+      "bytes": 1377
+    },
+    "http-library-edges/node/controls/013.json": {
+      "sha256": "sha256:b71aff3d303e99b862297258fa756fc043106312a8db0caae4af379626134e70",
+      "bytes": 1127
+    },
+    "http-library-edges/node/controls/014.json": {
+      "sha256": "sha256:e78a3e05fc95f820bd01f5c9c01730d0342d9c911f94d2149119e418ef72a19d",
+      "bytes": 1292
+    },
+    "http-library-edges/node/controls/015.json": {
+      "sha256": "sha256:7838271eb83baeef957ab922e202e4d61545d6b4e33960be2d4d35d2da02a0c5",
+      "bytes": 1081
+    },
+    "http-library-edges/node/controls/016.json": {
+      "sha256": "sha256:a2b37fe2c7f0d1d00e6db1c442cc6b117d0207171f24c04a5542758d405cf02d",
+      "bytes": 1452
+    },
+    "http-library-edges/node/controls/017.json": {
+      "sha256": "sha256:14377b89cd4ca5bfd6d85fa9605d984834412e316eeeedecc5062998e751352e",
+      "bytes": 1133
+    },
+    "http-library-edges/node/controls/018.json": {
+      "sha256": "sha256:e49572a839c5a4a9f2664b8ec933c4ebe58d346be19bb02ba53641a88f35f895",
+      "bytes": 2604
+    },
+    "http-library-edges/node/controls/019.json": {
+      "sha256": "sha256:66adf726e8ad98656fce13c0c0a8f0a4c092357aba5cd659701a169c0e98b313",
+      "bytes": 7292
+    },
+    "http-library-edges/node/controls/020.json": {
+      "sha256": "sha256:c8abdab7e6a854b43aa06e9f22b4d19da7d21aa465008d11241c47768ebc8170",
+      "bytes": 2147
+    },
+    "http-library-edges/node/controls/021.json": {
+      "sha256": "sha256:99413c920901741347b904ab0f7087c525e3a17bdefb1be5fd5035e9ed9fbf21",
+      "bytes": 1445
+    },
+    "http-library-edges/node/controls/022.json": {
+      "sha256": "sha256:8b416342d88fed853f32288597c1b2ac2db5bff95823b270150d87cc381a7bf3",
+      "bytes": 2671
+    },
+    "http-library-edges/node/controls/023.json": {
+      "sha256": "sha256:a0c0c27a171f9a1c7039eaad573a78b174cf2551b4b8e5cf65481ed5ec36f9ca",
+      "bytes": 4106
+    },
+    "http-library-edges/node/controls/024.json": {
+      "sha256": "sha256:53496ab39eaac2e0ad4c4401f09c4637b4e64c3fbba434e28cb4b76290f80737",
+      "bytes": 7293
+    },
+    "http-library-edges/node/controls/025.json": {
+      "sha256": "sha256:8e5a1caba70a1699f08bb386a6ad7902cfdd3309ab8b779a5e9d88fee78759ba",
+      "bytes": 6039
+    },
+    "http-library-edges/node/controls/026.json": {
+      "sha256": "sha256:b8dbeb41340970ccd6eb1228e6d584b5041ea19ebdda7dcda50ef23ac6bf8f53",
+      "bytes": 7294
+    },
+    "http-library-edges/node/controls/027.json": {
+      "sha256": "sha256:d9a23506673b1e37cdd73a00bd00d8efd44affe147a15c2368f743cff8b1eb77",
+      "bytes": 6039
+    },
+    "http-library-edges/node/controls/028.json": {
+      "sha256": "sha256:60f93440f4a7453d7652c02837d2c7d800a5f9b1f076fc0fb18e741c4282bd20",
+      "bytes": 7293
+    },
+    "http-library-edges/node/controls/029.json": {
+      "sha256": "sha256:b754f5a31a94056f82c30b209ba2e6e7029cfef9ea0c047967d2756476b0e35f",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/030.json": {
+      "sha256": "sha256:6943f75627375ed546856c80295f370e830bdf9feb8bc614e8365d0962702ecb",
+      "bytes": 7294
+    },
+    "http-library-edges/node/controls/031.json": {
+      "sha256": "sha256:eab08e43a2ff7274145df071a8111ea2142602160ecf9666ad3f6ca5bc456606",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/032.json": {
+      "sha256": "sha256:e1b4575d4f5b7382d56eb2f20047091b79c0add2c2d9c5b14c0c6a56518fe1dd",
+      "bytes": 7294
+    },
+    "http-library-edges/node/controls/033.json": {
+      "sha256": "sha256:023f6dbaf874ab255846486e97247e253c373f98ffaf7d6f6c57aaaa14842572",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/034.json": {
+      "sha256": "sha256:10df86ab2bb05d3b0b5ea273f69c7866c30bab81894e0a81f405dfc954dc2aeb",
+      "bytes": 7294
+    },
+    "http-library-edges/node/controls/035.json": {
+      "sha256": "sha256:3de8ddff45de9027317020730db3eaa9c4d42285153cf1811e8a071d1bb3979e",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/036.json": {
+      "sha256": "sha256:9729783e43e41d38e9b618f283f59e74efa1640606832839b1d1074446d627b4",
+      "bytes": 7294
+    },
+    "http-library-edges/node/controls/037.json": {
+      "sha256": "sha256:96099653638489ceddd2023fa0b47c6f73f68f4ad0e1fae0e50d4481d2fd70a2",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/038.json": {
+      "sha256": "sha256:85f4e4797cb9053b4ba9af9035eee8f5f151246796c279389469349c98dcff75",
+      "bytes": 7295
+    },
+    "http-library-edges/node/controls/039.json": {
+      "sha256": "sha256:8cc191f6c326727aafa9afd12cba7ee815f59583a2a68ee34e4ad462607605da",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/041.json": {
+      "sha256": "sha256:6ae7eb580d6bccb20ed864ea298f060a26419f424b29c94361e51710d0429939",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/040.json": {
+      "sha256": "sha256:933b2b1f540c47ba58f2ca6eeaa76ecd373912bd54c77b4add2a45b40960d71d",
+      "bytes": 7296
+    },
+    "http-library-edges/node/controls/042.json": {
+      "sha256": "sha256:6541243829cd918fdb5a99f75a5f96e85b46ab6bcc44bd61a5018ec56ec95500",
+      "bytes": 7296
+    },
+    "http-library-edges/node/controls/043.json": {
+      "sha256": "sha256:29ee0a89abbf01e66bb051434d35be4d4075e8ee829bb6de47a1ae0c43805f2d",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/044.json": {
+      "sha256": "sha256:ed72be8c1544be67c23adedb42c0d6152f9f7acb02b831a50e99c1c451dc1cf4",
+      "bytes": 7297
+    },
+    "http-library-edges/node/controls/045.json": {
+      "sha256": "sha256:c93715dd03fa54b6ccd6d4c170383d4c32257279405c4400ce1f99d0817896f0",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/046.json": {
+      "sha256": "sha256:893f2c9cdffa1a55dc939eb9b672eb6cc1bdc672286fa9857adff964eb4d4762",
+      "bytes": 7296
+    },
+    "http-library-edges/node/controls/047.json": {
+      "sha256": "sha256:286daf9c6fc2c588c921521c0b0109a500c319d3c7a6e50741841745db8c385a",
+      "bytes": 6040
+    },
+    "http-library-edges/node/controls/048.json": {
+      "sha256": "sha256:54f6688b864b6e29a931631d44e3d87d4d1e272823eba7a3e385e48476ffa9b0",
+      "bytes": 1512
+    },
+    "http-library-edges/node/controls/049.json": {
+      "sha256": "sha256:0d3eb3f0828728b2f78a9d438c8cd655c5dd70dbe0826a6f9e2959e5174228de",
+      "bytes": 683
+    },
+    "http-library-edges/node/controls/050.json": {
+      "sha256": "sha256:2a9f5db308a35e6dfa31a68ba1e786ebf54bf0ebd08bef227aca719d04149946",
+      "bytes": 194
+    },
+    "http-library-edges/node/controls/library-edges-flurl-fresh-after-errors.json": {
+      "sha256": "sha256:53429fb020e8fd9cbb5661dc830f8adf5352ac3724f3f16d02dc147b36be1d87",
+      "bytes": 1190
+    },
+    "http-library-edges/node/controls/library-edges-flurl-malformed-framing.json": {
+      "sha256": "sha256:19ce9760d515ab328c666ac480f14b1f5417ff3f55b6fa4fade5af9894111456",
+      "bytes": 1148
+    },
+    "http-library-edges/node/controls/library-edges-flurl-malformed-json.json": {
+      "sha256": "sha256:704c632d8eca8aea6493562bae9c33c91b407997222edf70191c600cf1b0282b",
+      "bytes": 1138
+    },
+    "http-library-edges/node/controls/library-edges-flurl-oversized.json": {
+      "sha256": "sha256:00a8bde786be0d87cf94cd55df558050857c7e9611523905b5304b1c9ccd890b",
+      "bytes": 1140
+    },
+    "http-library-edges/node/controls/library-edges-flurl-truncated.json": {
+      "sha256": "sha256:83fd55e4d2540130a114787ab6a11d22574cf4c9f3b3cf654bf4d2c3c11a4ee6",
+      "bytes": 1140
+    },
+    "http-library-edges/node/controls/library-edges-http-missing.json": {
+      "sha256": "sha256:b1aa9dbc475b3dfc832daed38d510ca2c877d0418f063830a5ff23abf823b119",
+      "bytes": 950
+    },
+    "http-library-edges/node/controls/library-edges-refit-404-unchanged.json": {
+      "sha256": "sha256:4a9f8f7dd9d360b170c4e80d258e018bdadf1bc14a1a2b401f8a06801e02a184",
+      "bytes": 1163
+    },
+    "http-library-edges/node/controls/library-edges-refit-500-unchanged.json": {
+      "sha256": "sha256:2d0d574c2e8a7a99ff1f28a7c21eddaad0a7ee85793812d281aaf8dcb2ad8789",
+      "bytes": 1163
+    },
+    "http-library-edges/node/controls/library-edges-refit-fresh-after-errors.json": {
+      "sha256": "sha256:707a189c58fc1ff93ba2c0df8ee3181014579473dcc99fd49395248f55e9337f",
+      "bytes": 1190
+    },
+    "http-library-edges/node/controls/library-edges-refit-malformed-framing.json": {
+      "sha256": "sha256:9cdf9f323bb2d1612ddaf05bcb0a827872f15cac6e3ba16c0ebb61ff6914de0f",
+      "bytes": 1148
+    },
+    "http-library-edges/node/controls/library-edges-refit-malformed-json.json": {
+      "sha256": "sha256:3ff5118c01f0bd772c4e1134074c68022e94f950c53b2e154ca42272730990e2",
+      "bytes": 1138
+    },
+    "http-library-edges/node/controls/library-edges-refit-oversized.json": {
+      "sha256": "sha256:2a851b5295b96bd22148f7a1b0946645480d2dd21eabf9b3fd0d02d5e87f785a",
+      "bytes": 1140
+    },
+    "http-library-edges/node/controls/library-edges-refit-truncated.json": {
+      "sha256": "sha256:9b8609f366dfab3a351294c5a11dd52fd67219d125bf260006808238dffd6073",
+      "bytes": 1140
+    },
+    "http-library-edges/node/controls/library-edges-runtime-missing.json": {
+      "sha256": "sha256:7615251774ac30697b5558df3c9a85a1c46ef03ff288a54dcd95c3633c8c9ca7",
+      "bytes": 957
+    },
+    "http-library-edges/node/controls/timing-001.json": {
+      "sha256": "sha256:4752f800cebb3918bb832adeeb10d7e991b8d9864d5cf85ea46a674978360a62",
+      "bytes": 146
+    },
+    "http-library-edges/node/controls/timing-002.json": {
+      "sha256": "sha256:f0248845890770a78c4b4cc720b356420c04e92c79ec1b5a20ad8ec7184d37b1",
+      "bytes": 148
+    },
+    "http-library-edges/node/controls/timing-003.json": {
+      "sha256": "sha256:9dca7856c996704d6c6a0f0bdef95bef017334c7f5b0a1395c52b5eb7f8a6c29",
+      "bytes": 146
+    },
+    "http-library-edges/node/controls/timing-004.json": {
+      "sha256": "sha256:e27b5114d895412957493509b9b0b8b9aee8d8b7c79b4ba1908ea359d5347d01",
+      "bytes": 148
+    },
+    "http-library-edges/node/controls/timing-005.json": {
+      "sha256": "sha256:d940ff0262cc343746a43ad58769d2bd5ba749e2fd7a946df78388199f04819f",
+      "bytes": 146
+    },
+    "http-library-edges/node/controls/timing-006.json": {
+      "sha256": "sha256:222d3b56c8f8d3e619a8e018f7ba7f8cbb68944ece06348eeb988853d6d0efd4",
+      "bytes": 146
+    },
+    "http-library-edges/node/controls/timing-007.json": {
+      "sha256": "sha256:7b0aa9ef887099e0ca51206d889586f5780efcb1f0fc3e299d00bd75d0a27a03",
+      "bytes": 146
+    },
+    "http-library-edges/node/controls/timing-008.json": {
+      "sha256": "sha256:5b964b9e6bd54d47128a867aee729d34a4a37542fcd20f6332a19766b22631ed",
+      "bytes": 146
+    },
+    "http-library-edges/node/controls/timing-009.json": {
+      "sha256": "sha256:5435b2b3b352b9d6b12a1bdf8bb9512afb23f97e8207dcc5afb02b2b5a1b64af",
+      "bytes": 146
+    },
+    "http-library-edges/node/controls/timing-010.json": {
+      "sha256": "sha256:0a010c1695b5ae54764d5dce4e33c22b461f152760418d5814cdabcd9240c3c1",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-011.json": {
+      "sha256": "sha256:88dd7aff1df3ad33c492b031852bc658a211c77a9c49a1e92cf1f7b9080e9f86",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-012.json": {
+      "sha256": "sha256:ded931a2e462917e2407be10cb5a54d8b76241d25b97c53730d39acbdb2b3776",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-013.json": {
+      "sha256": "sha256:9ff55bc418aceec2699190684140bd1a247fa13cac1eaa18e615ebb77cadc986",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-014.json": {
+      "sha256": "sha256:b48c0f97f5984806fbda5b98aeb44c6c967baf5383c0673bc9eadf668c5e107e",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-015.json": {
+      "sha256": "sha256:5730b1ab08bb980bf16e37cedfd74ad4e78339007507c117289cee3b69abaa6e",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-016.json": {
+      "sha256": "sha256:da225a691bd25b48cbdfb6e075a62de94fcd9792a5b75d12f7ff8d547505adf3",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-017.json": {
+      "sha256": "sha256:9ec62fb3bff2b80ea2c8b94bcf3de9017ad9da3fc845fc1c07e3ff2058e48d2d",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-018.json": {
+      "sha256": "sha256:38527a6412e8f012d57cbde4f1d9f70bd20396039c3a2e32f13bd9b70be0eff2",
+      "bytes": 149
+    },
+    "http-library-edges/node/controls/timing-019.json": {
+      "sha256": "sha256:19681f0a94a4becf2f3e9b62f3dd8122fb216867f5b4df8c1cf1c7eee6dcd969",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-020.json": {
+      "sha256": "sha256:f17790f12536860e0118694dd4a1d43894e2e9d817f0a3d75bd3edea38e15a11",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-021.json": {
+      "sha256": "sha256:6375fc211180442ec35c18d288c765d63edeb74e73701d67de39801fcf6778ae",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-022.json": {
+      "sha256": "sha256:26917e0fe957e0dceb47066677bc0b0ec3bfe37946bf1f9da860d4f68c5f6571",
+      "bytes": 149
+    },
+    "http-library-edges/node/controls/timing-023.json": {
+      "sha256": "sha256:8f089248a0e1d67a108414c408dfbdf12fd6a4fe09b16fed00a7973e817caaa3",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-024.json": {
+      "sha256": "sha256:011af779f4bba0d71f37313370b955fd496431e21790809bfdc90c1de04a0c7c",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-025.json": {
+      "sha256": "sha256:fbcafc50ed4b3acde603431ec1495ffd542a377204a0bc76f57f66d9fc67e32c",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-026.json": {
+      "sha256": "sha256:b8fe93836b49f3fbd51ae9305f76ee5e59bfad16524f06d69e09deae88f5b973",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-027.json": {
+      "sha256": "sha256:eace43089dda802b4c751c508f7716a9459585329110c96fb351d2a88d2636f5",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-028.json": {
+      "sha256": "sha256:958cd0de201b77117b680e525b6894191d29365d0f481bf708fb2b0c5f88d7bc",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-029.json": {
+      "sha256": "sha256:5bc0ae962b6ebff8bf8e345882e1c086133094697a62b42440b10b78998cb8ec",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-030.json": {
+      "sha256": "sha256:08a60547cbdde993160e90977bbc6e96807ed5254b1c134ab926d8d7789dd720",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-031.json": {
+      "sha256": "sha256:c837309e7fd4abf646e70d48b880743c584e8e96ad706ce4853fb66f87d6a64b",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-032.json": {
+      "sha256": "sha256:d39b27acfaf78e1807da13b25228780a4e45ab8b68408235e6bb5d2e9bd7bcdf",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-033.json": {
+      "sha256": "sha256:5f13c298365a00763e5d05dfc7b00f52290c500bba06902e522f4b65e2240e3b",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-034.json": {
+      "sha256": "sha256:866869dd8019b97a38b0f03ad3dde89dd4ef8d775205b6f233228cad52f097ed",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-035.json": {
+      "sha256": "sha256:ba62aa992743e5aa8d2dea1d0dda06b84dddd265254559093eb51482fe8a905c",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-037.json": {
+      "sha256": "sha256:23992848c74e19191d89182dc9212e3e0a881b01a5a2dbe8b46b5e17485aaf34",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-036.json": {
+      "sha256": "sha256:bc9d4dcc502f5b8b7f1f423ce49889f9b41af78cfe7b7218b10788f91977324a",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-038.json": {
+      "sha256": "sha256:c7f0473a75d11b35b0d02f3dfbdef1e5e6bd35780173548b7ce2e4757699b2c4",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-039.json": {
+      "sha256": "sha256:a7d9ff40faea4aeb0939226ed5ac7c02a42d76cdcaaacd94a5e8fef7e3414917",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-040.json": {
+      "sha256": "sha256:f97a476b69da198867babb25f5deaf09e3ea831624a08ca17c63764a8947c050",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-041.json": {
+      "sha256": "sha256:273d1aa1e45c5166d7ed6b7d6f990cf5805f74ab2a1611f8c448f5d9a5314095",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-042.json": {
+      "sha256": "sha256:a542ad5d0169b30ae217582d9ee7a874af2b1a689f0bed4f7508800ca61f40a5",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-043.json": {
+      "sha256": "sha256:da1f3d04f18f6aaa550178c2cc00f7036bfb3d4c8be3b737e375043c7e824cc9",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-044.json": {
+      "sha256": "sha256:a462901e0e78e3a9cffb7543e4198bf09132c91bb8fef69b66cf330cfdedb953",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-045.json": {
+      "sha256": "sha256:60198e78f0c6f7bc76c64e912a7929b45072aee0612b254a28df35a0f53a35f4",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-046.json": {
+      "sha256": "sha256:1641287c05b85d318e94707b33bf3e475254929a1b523bd6ef606241c8345d25",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-047.json": {
+      "sha256": "sha256:720cf527e11a4a0fede7bf93251f8af40c17a39240ea0fa9e33191b5ee285db1",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-048.json": {
+      "sha256": "sha256:db2c17865efbb5e6f1d1651788bbcde43c0c93f40243fb22ea4d1db05224458b",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-049.json": {
+      "sha256": "sha256:56567fd6418b6521b90117959e1950477c93bd0aa68e23d84f922b11d469f09e",
+      "bytes": 147
+    },
+    "http-library-edges/node/controls/timing-050.json": {
+      "sha256": "sha256:32b8d47fc7f6bcfa750028fd7f4d969897ebdaa0ca4502f0d624fe17adf2e4f1",
+      "bytes": 147
+    },
+    "http-library-edges/node/invocation-flurl-fresh-after-errors.json": {
+      "sha256": "sha256:82112b97e569639f31771023c5d4b75c8dfaf5b05b94ad3f11e291bad36f17c5",
+      "bytes": 1552
+    },
+    "http-library-edges/node/invocation-flurl-malformed-framing.json": {
+      "sha256": "sha256:c11841d9ddbb82f2dbc6574db9ab9ac1fc19634be35752dd7e0f240fda39a93f",
+      "bytes": 1518
+    },
+    "http-library-edges/node/invocation-flurl-malformed-json.json": {
+      "sha256": "sha256:7fd11ebe9628ea49d0e83bcc743ba6c50fc7c4f2e7d6a440f1a25993c162d91b",
+      "bytes": 1508
+    },
+    "http-library-edges/node/invocation-flurl-truncated.json": {
+      "sha256": "sha256:de89c9c0e146497bbcc53d6931b994102b74e049800262798af45c5b6529bd13",
+      "bytes": 1510
+    },
+    "http-library-edges/node/invocation-flurl-oversized.json": {
+      "sha256": "sha256:e535b8e67fde505c4028c008ecab4d31e42e53d73ede4367081483d571815055",
+      "bytes": 1510
+    },
+    "http-library-edges/node/invocation-refit-404-unchanged.json": {
+      "sha256": "sha256:31f35fcf9fc1a65d3262499349b732abb5d12570e23cbbf703405ec1bac3fd9b",
+      "bytes": 1533
+    },
+    "http-library-edges/node/invocation-refit-500-unchanged.json": {
+      "sha256": "sha256:bf5dc209b6e2b4b8aab3026ab6c60a29547bcada600f336a6defd1eb040f53fb",
+      "bytes": 1533
+    },
+    "http-library-edges/node/invocation-refit-fresh-after-errors.json": {
+      "sha256": "sha256:b3e41e507ff85d4596ff809ace863b507e3e8be18e47a4e0cc273059426d56cb",
+      "bytes": 1552
+    },
+    "http-library-edges/node/invocation-refit-malformed-framing.json": {
+      "sha256": "sha256:171e980e16b7e73fd107b5d2906fc6cbb7213a621d889931b6a2578812cd7f10",
+      "bytes": 1518
+    },
+    "http-library-edges/node/invocation-refit-malformed-json.json": {
+      "sha256": "sha256:7e43bbc52de6d376f0ddb6748d385281dd004487d5baeebbeb7b99629f6230b9",
+      "bytes": 1508
+    },
+    "http-library-edges/node/invocation-refit-oversized.json": {
+      "sha256": "sha256:a8912cfe55736e516087d28912ff60153cfbb9a3a1dabb71b87c66bbb57e50e5",
+      "bytes": 1510
+    },
+    "http-library-edges/node/invocation-refit-truncated.json": {
+      "sha256": "sha256:3321bfda89207c8df59ad20a4c0f8631c52bdabcc020f4f8ab8e823386d89a8f",
+      "bytes": 1510
+    },
+    "http-library-edges/node/peer-observation.json": {
+      "sha256": "sha256:8e7e1e267538f89fc7a4e7106d0821187d296757512982f073e6d4fe752caef1",
+      "bytes": 15495
+    },
+    "http-library-edges/node/progress-flurl-fresh-after-errors.json": {
+      "sha256": "sha256:17491bc04bf23319ef4064d4b81c5da1308f4a5fe0358d08736db58dfc9bef32",
+      "bytes": 27250
+    },
+    "http-library-edges/node/progress-flurl-malformed-framing.json": {
+      "sha256": "sha256:1febf8d6b2840edb46766178fa755c79db892773944f1339c497a322fec8e647",
+      "bytes": 15693
+    },
+    "http-library-edges/node/progress-flurl-malformed-json.json": {
+      "sha256": "sha256:6b089105a4391c5c2b22f3951865ea1ce890fecccc1be23861510f8f7fd67869",
+      "bytes": 8050
+    },
+    "http-library-edges/node/progress-flurl-oversized.json": {
+      "sha256": "sha256:4cca293372c7e33dce2307a0d6df8b06d5969b8e5eb50c202343fca84546f09b",
+      "bytes": 11865
+    },
+    "http-library-edges/node/progress-flurl-truncated.json": {
+      "sha256": "sha256:006cfa869e0aa06906a946ea366e9b01ba24790ca2de8b69869fb2562cfcadc2",
+      "bytes": 19521
+    },
+    "http-library-edges/node/progress-refit-404-unchanged.json": {
+      "sha256": "sha256:5de76f4757ff08ce333233a4f0c67866d4e401b08c5119fcd4f81500ac4e6de7",
+      "bytes": 23360
+    },
+    "http-library-edges/node/progress-refit-500-unchanged.json": {
+      "sha256": "sha256:7f63eda009e3b399101d3348d0b27727b61fb2d1ddcc272308fec548ab5144d7",
+      "bytes": 25293
+    },
+    "http-library-edges/node/progress-refit-fresh-after-errors.json": {
+      "sha256": "sha256:716256029282501fecb223c58fe40e5d769c6a9c5ac438906bc44501ada8aedb",
+      "bytes": 29207
+    },
+    "http-library-edges/node/progress-refit-malformed-framing.json": {
+      "sha256": "sha256:2c5b9bf17dfc62dddae05ea1fad269dd8a2d15a4f4ee904b2e1ded33e89f72cf",
+      "bytes": 17615
+    },
+    "http-library-edges/node/progress-refit-malformed-json.json": {
+      "sha256": "sha256:5e50e5e6c1ef0d986b40859889066204a6c7907ed1077e1950a168c313047537",
+      "bytes": 9959
+    },
+    "http-library-edges/node/progress-refit-oversized.json": {
+      "sha256": "sha256:aafea05587082b3996c85181670c168a279531e18f428fc59e6ea5edbddd5069",
+      "bytes": 13771
+    },
+    "http-library-edges/node/progress-refit-truncated.json": {
+      "sha256": "sha256:9d33a41c3e3bed9ecae0e90c41414c1f06e2e68b06f64d20d019cf235b9bab09",
+      "bytes": 21427
+    },
+    "http-library-edges/node/qualification.json": {
+      "sha256": "sha256:88f4714b72f41ce87b5627ba5447e75e270e3d646089eaecaa63a25ef3b49e16",
+      "bytes": 33829
+    },
+    "http-library-edges/outside/compiler-0/logs/00-dotnet-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/00-dotnet-version.stdout.txt": {
+      "sha256": "sha256:a807ca80c392730f0b9a4114bcd64d2c7258ea2f97fbeab0b9c5b3f88194ce94",
+      "bytes": 9
+    },
+    "http-library-edges/outside/compiler-0/logs/01-wasm-tools-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/01-wasm-tools-version.stdout.txt": {
+      "sha256": "sha256:f85fc42a5a4fd6614999a2f41e14fd84eae869d81f0b344672b6d3874400375e",
+      "bytes": 42
+    },
+    "http-library-edges/outside/compiler-0/logs/02-wit-bindgen-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/02-wit-bindgen-version.stdout.txt": {
+      "sha256": "sha256:10f3a9e5d1a5332ea2094b43c9e350da2823067d71a0ffe4b2ca4ad883849310",
+      "bytes": 23
+    },
+    "http-library-edges/outside/compiler-0/logs/03-dotnet-sdks.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/03-dotnet-sdks.stdout.txt": {
+      "sha256": "sha256:ad9811ff662150edb75339e691a48eac4f561d941180a63b86766e3a92a6970d",
+      "bytes": 389
+    },
+    "http-library-edges/outside/compiler-0/logs/04-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/04-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:15225f303668c03ab1f3e6b5eacfc0bfd61810e720ee7eb6bad9882507000be6",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-0/logs/05-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/05-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:0ccbea9a78a159d9163c9b887f089206e2ef3c56a502e90423c5cd92cfd814f4",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-0/logs/06-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/06-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a5fc7be70b3197381e0d51abe801dacdbfa233438dd8507e7202a34583adf3a8",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-0/logs/07-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/07-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a2bc935034a3231e4e583793102ab101905fc8a31129552b3d3829d78f9a64b8",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-0/logs/08-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/08-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:b07b62e4e5e0b8db0688983a477ba40e658c3cd001886de9a3c80d65dfb94f8c",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-0/logs/09-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/09-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a5fc7be70b3197381e0d51abe801dacdbfa233438dd8507e7202a34583adf3a8",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-0/logs/10-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/10-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:233faef4d7f63967884053b54972ab564efe3c755f7bd8737bba7f7ac436c2ff",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-0/logs/11-component-composer-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-0/logs/11-component-composer-version.stdout.txt": {
+      "sha256": "sha256:c5b4413abfe141181aaf3c5ef4fefe630692fab19af04c6ed2da4d5a1ff29762",
+      "bytes": 15
+    },
+    "http-library-edges/outside/compiler-0/logs/12-outside-http-library.stderr.txt": {
+      "sha256": "sha256:53f56b124f0a5a2cbb626d4a9571d733b4d9c9919fb2481ae410535641a04b9b",
+      "bytes": 98
+    },
+    "http-library-edges/outside/compiler-0/logs/12-outside-http-library.stdout.txt": {
+      "sha256": "sha256:b328d8fd4458db84e11817de3e120984f3992138a5135debb486e64319321908",
+      "bytes": 364
+    },
+    "http-library-edges/outside/compiler-1/logs/00-dotnet-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/00-dotnet-version.stdout.txt": {
+      "sha256": "sha256:a807ca80c392730f0b9a4114bcd64d2c7258ea2f97fbeab0b9c5b3f88194ce94",
+      "bytes": 9
+    },
+    "http-library-edges/outside/compiler-1/logs/01-wasm-tools-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/01-wasm-tools-version.stdout.txt": {
+      "sha256": "sha256:f85fc42a5a4fd6614999a2f41e14fd84eae869d81f0b344672b6d3874400375e",
+      "bytes": 42
+    },
+    "http-library-edges/outside/compiler-1/logs/02-wit-bindgen-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/02-wit-bindgen-version.stdout.txt": {
+      "sha256": "sha256:10f3a9e5d1a5332ea2094b43c9e350da2823067d71a0ffe4b2ca4ad883849310",
+      "bytes": 23
+    },
+    "http-library-edges/outside/compiler-1/logs/03-dotnet-sdks.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/03-dotnet-sdks.stdout.txt": {
+      "sha256": "sha256:ad9811ff662150edb75339e691a48eac4f561d941180a63b86766e3a92a6970d",
+      "bytes": 389
+    },
+    "http-library-edges/outside/compiler-1/logs/04-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/04-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:15225f303668c03ab1f3e6b5eacfc0bfd61810e720ee7eb6bad9882507000be6",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-1/logs/05-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/05-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:0ccbea9a78a159d9163c9b887f089206e2ef3c56a502e90423c5cd92cfd814f4",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-1/logs/06-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/06-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a5fc7be70b3197381e0d51abe801dacdbfa233438dd8507e7202a34583adf3a8",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-1/logs/07-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/07-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a2bc935034a3231e4e583793102ab101905fc8a31129552b3d3829d78f9a64b8",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-1/logs/08-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/08-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:b07b62e4e5e0b8db0688983a477ba40e658c3cd001886de9a3c80d65dfb94f8c",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-1/logs/09-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/09-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:a5fc7be70b3197381e0d51abe801dacdbfa233438dd8507e7202a34583adf3a8",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-1/logs/10-nuget-content-hash.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/10-nuget-content-hash.stdout.txt": {
+      "sha256": "sha256:233faef4d7f63967884053b54972ab564efe3c755f7bd8737bba7f7ac436c2ff",
+      "bytes": 89
+    },
+    "http-library-edges/outside/compiler-1/logs/11-component-composer-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "http-library-edges/outside/compiler-1/logs/11-component-composer-version.stdout.txt": {
+      "sha256": "sha256:c5b4413abfe141181aaf3c5ef4fefe630692fab19af04c6ed2da4d5a1ff29762",
+      "bytes": 15
+    },
+    "http-library-edges/outside/compiler-1/logs/12-outside-http-library.stderr.txt": {
+      "sha256": "sha256:53f56b124f0a5a2cbb626d4a9571d733b4d9c9919fb2481ae410535641a04b9b",
+      "bytes": 98
+    },
+    "http-library-edges/outside/compiler-1/logs/12-outside-http-library.stdout.txt": {
+      "sha256": "sha256:baf1e744db3103750ca287926aafa9a9114da43e6ede93035dd978aa48e66420",
+      "bytes": 364
+    },
+    "http-library-edges/qualification.json": {
+      "sha256": "sha256:d5a40b4e1a7ff61f3971f5f490ee9d78ca6912cbd1a7420ade860b474d5b7678",
+      "bytes": 29487
+    }
+  },
+  "currentComposition": {
+    "base": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+    "materials": {
+      ".github/workflows/dotnet-http-library-edges.yml": {
+        "sha256": "sha256:c05607b7b7f6c0a387a161924cfd0de1b324b1d3fe765fb25f723ba856bf37d2",
+        "bytes": 5757
+      },
+      "tools/dotnet_catalogue_free_build.py": {
+        "sha256": "sha256:52d73967c02de10929adbb7243e6dfe64e47ae96d80bc391514d9282ef11e8cf",
+        "bytes": 8760
+      },
+      "tools/dotnet_http_library_edges_fixture.py": {
+        "sha256": "sha256:792e7128c522532b99112c6ab284318df9e20d06845e1a7fb5b5f9d2049fb41e",
+        "bytes": 1244
+      },
+      "tools/dotnet_http_library_edges_node.py": {
+        "sha256": "sha256:53d7352bebbb1702eda88cb1f716239092c1d89763e663112166a73d9b070be0",
+        "bytes": 10929
+      },
+      "tools/dotnet_published_http_fixture.py": {
+        "sha256": "sha256:f9fa4b614ebebcdfdb8d9921670de8637cde639633f08f38931d7bbaaca97936",
+        "bytes": 7216
+      },
+      "tools/dotnet_published_http_node.py": {
+        "sha256": "sha256:91d5c602c37b57da0be0b4fa1048db8589a34a85adbc06f47f23d6ff44fa75b2",
+        "bytes": 11779
+      },
+      "tools/dotnet_standard_http_node.py": {
+        "sha256": "sha256:64d2f9ffa90cd2e44466d96d5639bd74a13c8c9f510f8ef6953e5882633496f8",
+        "bytes": 34573
+      },
+      "tools/fixtures/dotnet-published-http/Main.cs": {
+        "sha256": "sha256:83f67ddf3affc53928997e18ab40da1cbbb6276bda3364f943798780f5a028fb",
+        "bytes": 6490
+      },
+      "tools/fixtures/dotnet-published-http/Private.cs.in": {
+        "sha256": "sha256:adcd7212f01ee2352a4b91373a5bef77520c490f9c0c7abde201700ca88732ed",
+        "bytes": 1322
+      },
+      "tools/qualify_dotnet_http_library_edges.py": {
+        "sha256": "sha256:2f4ad207dfe77a724507be10a3e362e4e8dfaa2b7281695aa8b158a11792db14",
+        "bytes": 7488
+      },
+      "tools/rust_capsule_node.py": {
+        "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+        "bytes": 18922
+      },
+      "tools/sdk_native_products_reader.py": {
+        "sha256": "sha256:1f8124a251fe3db2adce7d04ef8c0d59eb32924b55869328796fcd4d20cbde39",
+        "bytes": 16864
+      },
+      "tools/standard_http/observations.py": {
+        "sha256": "sha256:701478e4b994453e95dd9d9e92dee685493fd3ddec9eb347d939298b13543c20",
+        "bytes": 8185
+      },
+      "tools/standard_http/peer.py": {
+        "sha256": "sha256:8fa65529659ef2e53166e821da4a86c1622bec1bcec080b050d7e4e4bd04db1f",
+        "bytes": 18941
+      },
+      "tools/standard_http/process_peer.py": {
+        "sha256": "sha256:fd6352284b8ac5c38e5f4e64a2aa122852a0913a26cb807bddf8e7945d42d3cf",
+        "bytes": 2427
+      },
+      "tools/standard_http/protocol.py": {
+        "sha256": "sha256:495fb9756c377ba086627f51a69f5e1721fe21b83a5c16b4b97344f3d049b5c7",
+        "bytes": 6517
+      },
+      "tools/standard_http/vectors.py": {
+        "sha256": "sha256:00dc2c620e29f01e54e0c1c23ed3e5f845c1251b62ad0af9bf819be3063683a9",
+        "bytes": 5636
+      },
+      "tools/wait_runtime_native_products.py": {
+        "sha256": "sha256:2c44e1bfbb75cb3507bd4408c867828da91ccdae66b052eed109e55b5a63502c",
+        "bytes": 1651
+      }
+    },
+    "capturedSdkFiles": 126,
+    "allCapturedSdkBytesEqual": true,
+    "executionRepeated": false
+  },
+  "previousFailure": {
+    "source": "a45673ef31927e0c48ad862df0d0ec09f53d1a35",
+    "run": 39493091267,
+    "job": 118871049742,
+    "artifact": 12296713505,
+    "status": "failed",
+    "stage": "refit-truncated",
+    "passedSignedCases": 7,
+    "preEntryDenials": 2
+  },
+  "referenceRuntimeControl": {
+    "sdk": "10.0.303",
+    "runtime": "10.0.11",
+    "originalSourceSha256": "sha256:83f67ddf3affc53928997e18ab40da1cbbb6276bda3364f943798780f5a028fb",
+    "correctedSourceSha256": "sha256:ae4c9d8fb201ba552f087881edfd82dee6f14f0f91f3aeb07cb328788a608d01",
+    "originalTruncation": "System.IO.InvalidDataException",
+    "originalNestedErrorTypes": [
+      "Refit.ApiException",
+      "System.Net.Http.HttpRequestException",
+      "System.Net.Http.HttpIOException"
+    ],
+    "correctedTruncation": "1:transport-error",
+    "unchanged404": "1:404:error:domain-error",
+    "unchanged500": "1:500:error:domain-error",
+    "guestQualification": false
+  },
+  "fullTicketQualification": false
+}
