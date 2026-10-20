@@ -201,7 +201,9 @@ passed33 invocations at source488b264e9b with clean retirement, but its open and
 create calls caught `DirectoryNotFoundException` and its temporary-file call
 caught `IOException`. Those results remain unresolved behavior for criterion5,
 not concrete Unsupported. The earlier entropy-specific harness failure remains
-separate. Rust results are recorded below. Actual results also project into the existing
+separate. The compiler-owned [closed CoreLib filesystem boundary](dotnet-closed-filesystem.md)
+now has exact-source derivation and reference-chain controls; its fresh pure/joined
+NativeAOT and signed argument/Unsupported gates remain pending. Rust results are recorded below. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.

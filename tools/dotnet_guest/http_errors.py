@@ -268,7 +268,7 @@ class HttpErrorPort:
         if read_file(self.targets, MAX_RECEIPT) != self.target_identity:
             raise ValueError("http-error-port-target-changed")
 
-    def finish(self, project: Path, evidence: Path) -> dict:
+    def finish(self, project: Path, evidence: Path, *, corelib_port=None) -> dict:
         self.recheck()
         references = read_file(self.reference_receipt, MAX_RECEIPT).decode("utf-8-sig").splitlines()
         if not 1 <= len(references) <= 512 or references.count(str(self.assembly)) != 1:
@@ -293,7 +293,13 @@ class HttpErrorPort:
                 if self.task_wait_port is not None:
                     core_references = [line[3:] for line in lines if line.startswith("-r:") and
                         Path(line[3:].strip('"')).name == "System.Private.CoreLib.dll"]
-                    if core_references != [str(self.task_wait_port.assembly)]:
+                    selected = self.task_wait_port.assembly
+                    if corelib_port is not None:
+                        from tools.dotnet_guest.closed_filesystem import Port as ClosedFilesystemPort
+                        if type(corelib_port) is not ClosedFilesystemPort:
+                            raise ValueError('http-sync-read-authenticated-final-corelib-required')
+                        selected = corelib_port.final_for(self.task_wait_port)
+                    if core_references != [str(selected)]:
                         raise ValueError("http-sync-read-joined-CoreLib-reference-drift")
                 matched.append({"digest": digest(body), "size": len(body)})
         if len(matched) != 1:
