@@ -15,6 +15,9 @@ mod packages;
 #[path = "../../latent-signing/tests/build_provenance/support.rs"]
 #[allow(dead_code)]
 mod provenance;
+#[path = "generic_backend/support.rs"]
+#[allow(dead_code)]
+mod support;
 
 use fixture::Fixture;
 use latent_activation::{ActivationOutcome, ActivationRequest};
@@ -152,7 +155,7 @@ fn request(f: &Fixture, id: &str, mode: u32, port: u16) -> ActivationRequest {
     request
 }
 
-fn returned(receipt: latent_node::ActivationReceipt, expected: &str, contacts: u64) {
+fn returned(receipt: latent_node::ActivationReceipt, expected: &str, contacts: u32) {
     let ActivationOutcome::Succeeded(success) = receipt.outcome else {
         panic!("{:?}", receipt.outcome);
     };
