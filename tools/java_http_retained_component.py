@@ -7,9 +7,14 @@ import os
 from pathlib import PurePosixPath
 import stat
 import subprocess
+import sys
 import urllib.error
 import urllib.request
 import zipfile
+
+if __package__ in {None, ''}:
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.java_http_phase_fixture import SOURCE as APP_SOURCE, WORLD as APP_WORLD
 from tools.java_replay_materials import api, NoRedirect, Ranges, REPOSITORY
@@ -179,3 +184,11 @@ def prepare(output):
     write_json(output/'retrieval.json', {'schemaVersion': 'latent.java.http.retained-component.v1',
         'artifact': ARTIFACT, 'run': RUN, 'job': JOB, 'originalOutcome': 'failed-before-publication',
         'build': proof, 'wholeArchiveSha256Verified': True, 'historicalReceiptRewritten': False})
+
+
+if __name__ == '__main__':
+    import argparse
+    from pathlib import Path
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, required=True)
+    prepare(parser.parse_args().output)

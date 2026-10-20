@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_http_prepared_tenants.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one default-false node-only prepared tenant campaign; all original workflow jobs, inputs, conditions, commands and timeouts deep-equal after removing only this input/job. Reuse authenticated native and component products without compiling.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "bc18535f9f9a477b0b435dab66abcf92d264787ad261c8884567b5e0d4075bcb"
+}

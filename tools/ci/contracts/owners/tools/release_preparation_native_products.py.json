@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/release_preparation_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one default-false node-only prepared tenant campaign; all original workflow jobs, inputs, conditions, commands and timeouts deep-equal after removing only this input/job. Reuse authenticated native and component products without compiling.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0c5369a1c01c3ce2a43586e15e5ffd1dc27b7e97aeafe7e0a844d4be1c45b4d4"
+}

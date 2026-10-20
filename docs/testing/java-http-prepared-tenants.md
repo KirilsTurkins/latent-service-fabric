@@ -44,3 +44,21 @@ It does not synthesize a current compiler observation or change the old package.
 Six additional controls test archive/path/member refusal, original Git object
 hashes and that closed difference set. A local read-only archive preflight passed;
 fresh native preparation, signing and all twelve tenant outcomes remain pending.
+
+The separate `release_preparation_native_products.py` configuration now freezes
+successful source `21b2c84c74881701149115dd8511063c85800b47`, run `39509107706`,
+job `118925373342`, artifact `12305592299`. Its five native products, 49 Rust and
+15 Python controls were independently verified. It explicitly opts into the
+134-material envelope, including all 20 protocol files; the historical
+114-material readers and receipts are unchanged. The tenant driver checks the
+entire current native tree and all 134 physical material identities before and
+after execution.
+
+The existing Java fiber workflow adds only the default-false manual
+`java_http_prepared_tenants` selector and an independent node-only job. Removing
+that selector/job restores every original workflow definition exactly. Retrieval
+steps alone receive the artifact token; the actual node programme receives no
+GitHub credential and creates fresh private peer credentials in its owned
+temporary directory. Uploads select bounded public receipts and original source
+identities, never signing keys, raw private credentials or repeated binaries.
+No native, Java or guest compiler is installed or executed by this replay.
