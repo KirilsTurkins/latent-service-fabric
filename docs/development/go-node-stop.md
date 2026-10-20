@@ -132,6 +132,93 @@ missing, extra, malformed, duplicate or overflowed observations never qualify a
 stop. The small per-Table observer field remains covered by the existing
 `size_of<Table>` original host-memory reservation. No owner/authority/grace/wall
 limit or original error/retirement path changes. The reader always reports
-`qualification: false`; it does not replace the strict stop barrier. This source
-requires a new authenticated native producer and actual execution before it can
-supply positive diagnostic evidence. Historical 94d has no such observer.
+`qualification: false`; it does not replace the strict stop barrier. The authenticated V7 producer and actual consumer below supply its first positive
+diagnostic execution. Historical 94d has no such observer.
+
+## Positive timer consumer with distinct V7 products
+
+The dedicated `go-node-stop-positive.yml` branch/manual lane uses the separate V7 producer
+`77bf0e3f3b68e17342b6146abd6f2de34a3efa00`, run39420914927/job118621322461.
+The producer completed successfully; its fixed artifact12265176239 is bound by
+exact archive metadata, both receipt preimages and all five product hashes.
+Its native products are not a normal27 guest qualification. The shared verifier
+requires the exact completed producer, archive/receipt preimages, five binaries,
+whole native source and every producer recipe/WIT/schema/auxiliary input. Missing
+or substituted completed artifact pins refuse before executing any product. The
+consumer separately compares the native source and complete WIT/schema/echo
+compile trees against its current physical source, binds its current Go
+SDK/compiler/helper recipe, and repeats all
+product/source checks after execution. An unrelated test-only native-source
+change is not silently aliased to the old build.
+The producer's diagnostic workflow remains authenticated as its distinct recipe;
+it need not equal the consumer's older workflow or current Go compiler recipe.
+
+This lane compiles the same ordinary managed-v5 fixture once and signs it with
+the authenticated real authoring product. Only its explicit positive-timer
+programme option enables the merged observer. The historical audit reader and
+old failed067 receipt remain intact; the new path does not query optional audit
+as an admission oracle. Pending work requires successful starts for the short
+initializer and both body timers, actual entry into a body timer wait after all
+three admissions, and a latest entered wait retaining two timer owners. The Go
+dispatcher selects the earliest timer; an initializer may expire without a
+timer-next call. Requiring one host wait for every start would invent a bridge
+protocol. Draining work additionally
+requires the actual root-close hook and a live accepted child timer wait. In
+both modes the native record must show actual charged Task/Wait/Timer owners;
+current topology, provider-session/call ownership and the original pending CLI
+must also remain live before SIGTERM. A hook or live Store alone is insufficient.
+
+Only complete fixed records are consumed. A live pipe fragment waits for its
+own trailing newline; an absent sequence, foreign mode, malformed/private field,
+overflow marker or missing positive cannot authorize stop. At most the original
+16 attempts and ten seconds are available, with the original0.01-second pause.
+Every attempt retains its closed observer projection. No request, owner, query,
+cell or shutdown-grace allowance is increased. The real SIGTERM/reap, every
+zero-owner shutdown field, uncertain invocation outcome and fresh-state call
+after the same signed product restarts remain mandatory.
+
+Focused controls validate source selection and failure handling. The later actual
+V7 observation below additionally proves this finite live-stop programme. Full
+runtime-cost bounds, kernel retirement and whole #742/#736 qualification remain
+open.
+
+The first V7 attempt at `51190a89242b00b634798c366ac32c20dbd82ee0`, run
+`39424278960`/job `118632749476`, remains failed. It compiled and signed the
+component and passed the fresh invocation, then exhausted the unchanged barrier
+attempts. Its actual observer retained three accepted starts and one subsequent
+entered wait with eleven tasks, one wait and two charged timers. The reader had
+incorrectly required three entered waits. The corrected regression preserves
+the original live-owner, ordering, deadline, attempt and signal requirements;
+the live-stop and restart outcomes still require their own actual execution.
+
+
+The corrected barrier then reached actual clean pending-work SIGTERM and a known
+cancelled/reaped invocation, but immediate restart failed. The closed native
+startup report at source `9838c53939222f7cf1e7bc0d4e3d67d8342abf8c`
+identified `supplyChainCatalog` / `platform` / `unavailable`. The authority
+intentionally persists a future anti-rollback floor even after clean retirement.
+The driver now reads that original stopped authority's bounded floor, waits for
+its exact not-before instant within the original 30-second startup watchdog and
+client deadline, then starts once. It never deletes or mutates the floor,
+renews a lease, retries failed startup or changes the native guard. Unknown,
+regressed, changed or malformed floor data fails closed.
+
+[Actual source-bound observation](../testing/evidence/go-node-stop-positive-2026-10-20.json):
+consumer `41e8084a573eea94f06fc4f527c4bc718fb7e2ed`,
+[run 39433165880/job 118663188069](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39433165880/job/118663188069)
+completed successfully. Both `pending` and `drain` barriers retained successful
+native timer admission, entered waits and current original owners before real
+SIGTERM. Four node processes were cleanly stopped and reaped; six actual Go
+invocations comprised four fresh-state results and two known cancelled/reaped
+in-flight results. Each shutdown had all 23 original owner counters zero,
+telemetry flushed and its epoch helper joined. The two measured durable floors
+were five and four seconds ahead when read; each replacement started exactly
+once at that floor under the unchanged watchdog.
+
+All 168 archive members passed CRC/SHA-256 checks. All 3,310 frozen native Git
+files, 247 SDK/recipe/helper/compile-input rows and 114 producer material rows
+were authenticated. Pure fixture derivation matched its complete retained source
+manifest. The signed 2,723,574-byte component is SHA-256
+`79e808c0760de14b65fff19ae8a3f4007f439e2050f14ee6541356c4ae8470dd`.
+The actual native products remain V7 source `77bf`; this is not qualification of
+later native changes, a repeated normal27 programme or complete #742/#736.

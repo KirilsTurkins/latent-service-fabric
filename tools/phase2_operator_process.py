@@ -241,7 +241,10 @@ class Process:
             require(len(buffer) <= 16384, "node-startup-size")
             if self.owner.exited():
                 self.drain()
-                raise WorkflowError("node-startup-exit-" + startup_diagnostic(bytes(self.buffers[1])))
+                from tools.node_startup_observation import observe
+                error = WorkflowError("node-startup-exit-" + startup_diagnostic(bytes(self.buffers[1])))
+                error.startup_failure = observe(bytes(self.buffers[1]))
+                raise error
             time.sleep(0.01)
         raise WorkflowError("node-startup-deadline")
 
