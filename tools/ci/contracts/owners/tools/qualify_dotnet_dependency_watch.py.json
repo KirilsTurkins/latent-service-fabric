@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain only fixed reader step and exact closed exception category when the source-bound failure observer itself refuses; preserve original failure and all identity/state gates.",
+  "reviewReason": "Bind closed failure projection to explicit installed recipe identities in delivered flat helper realm, no compiler import or execution and no change to original uncertain failure",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e3237fdb0c1e680e9a5ae46ce8532016a7f0f5e9f45e919d05ae5fe6b6f94bbd"
+  "sha256": "c28e178e3d28ecf9739e70a0946b3ba75bdd4c8e1304de043dc821c66936f020"
 }

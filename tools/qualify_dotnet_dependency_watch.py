@@ -134,6 +134,19 @@ _COMPILE_REASON_PRODUCERS = {
 }
 
 
+# This observer runs from a flat source fixture beside helper.pyz, not from
+# the compiler recipe package. These closed enums are checked against the real
+# producer in source controls; compiler code is never imported or executed here.
+_COMPILE_SETUP_PHASES = frozenset({'source-projection', 'project-inputs', 'sdk-facades',
+    'entropy-selection', 'managed-entropy-selection', 'dependency-configuration',
+    'protected-inputs', 'offline-configuration', 'task-wait-selection',
+    'http-error-selection', 'resource-installation', 'resource-protection', 'resource-verification'})
+_COMPILE_EXCEPTION_KINDS = frozenset({'FileExistsError', 'FileNotFoundError', 'PermissionError',
+    'IsADirectoryError', 'NotADirectoryError', 'OSError', 'ValueError', 'TypeError', 'KeyError',
+    'IndexError', 'AttributeError', 'NameError', 'RuntimeError', 'AssertionError', 'ImportError',
+    'JSONDecodeError', 'DependencyError', 'BuildProcessError', 'other'})
+
+
 def _failure_file(root, relative, maximum):
     """Read only one fixed, anchored regular file; missing files are optional."""
     from tools.dev_workflow import paths
@@ -157,7 +170,7 @@ def _failure_file(root, relative, maximum):
         return paths.read(root, relative, maximum)
 
 
-def _bound_compile_reason(builds, entry_name, output, selected, failure, *, observed=None):
+def _bound_compile_reason(builds, entry_name, output, selected, failure, *, observed=None, producer_root=None):
     """Bind an exact static producer code; never interpret arbitrary failure text."""
     from tools.dev_workflow import paths, tool_inventory
     from tools.dev_workflow.common import decode, digest, sha
@@ -167,12 +180,11 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure, *, obse
         return {}, []
     matched = [(name, producer) for name, producer in _COMPILE_REASON_PRODUCERS.items()
                if failure['reason'] in producer['codes']]
-    from tools.dotnet_guest.compiler import COMPILE_SETUP_PHASES, COMPILE_EXCEPTION_KINDS
     setup = failure.get('compileSetup')
     valid_setup = (type(setup) is dict and set(setup) == {'schemaVersion', 'phase', 'exceptionKind', 'exceptionBoundary'}
         and setup.get('schemaVersion') == 'latent.dotnet.compile-setup-failure.v1'
-        and type(setup.get('phase')) is str and setup['phase'] in COMPILE_SETUP_PHASES
-        and type(setup.get('exceptionKind')) is str and setup['exceptionKind'] in COMPILE_EXCEPTION_KINDS
+        and type(setup.get('phase')) is str and setup['phase'] in _COMPILE_SETUP_PHASES
+        and type(setup.get('exceptionKind')) is str and setup['exceptionKind'] in _COMPILE_EXCEPTION_KINDS
         and type(setup.get('exceptionBoundary')) is str
         and setup['exceptionBoundary'] in {'setup-call', 'build-handler'})
     if len(matched) == 1:
@@ -211,7 +223,7 @@ def _bound_compile_reason(builds, entry_name, output, selected, failure, *, obse
         sha(row['digest'])
     if observed is not None: observed['producerStep'] = 'source-binding'
     files = {row['path']: row for row in inventory['files']}
-    source_root = Path(__file__).resolve().parents[1]
+    source_root = Path(__file__).resolve().parents[1] if producer_root is None else producer_root
     evidence = [(builds, inventory_path, tool_inventory.MAX_DOCUMENT, inventory_raw),
                 (builds, recipe_path, tool_inventory.MAX_DOCUMENT, recipe_raw)]
     # The serializer, call path and code's own helper must all be this version.
@@ -306,10 +318,10 @@ def _projection_refusal(error):
     return 'unavailable'
 
 
-def collect_build_failure_metadata(workspace):
+def collect_build_failure_metadata(workspace, *, producer_root=None):
     observed = {'phase': 'workspace-owner'}
     try:
-        return _collect_build_failure_metadata(workspace, observed)
+        return _collect_build_failure_metadata(workspace, observed, producer_root=producer_root)
     except Exception as error:
         from tools.dev_workflow.common import DevError
         kind = type(error).__name__ if type(error) in (*_READER_EXCEPTION_TYPES, DevError) else 'other'
@@ -317,7 +329,7 @@ def collect_build_failure_metadata(workspace):
             producer_step=observed.get('producerStep'), exception_kind=kind) from None
 
 
-def _collect_build_failure_metadata(workspace, observed):
+def _collect_build_failure_metadata(workspace, observed, *, producer_root=None):
     """Inspect only this owned workspace/current selection, without executing a recipe."""
     from tools.dev_workflow import build_cache, paths, state
     from tools.dev_workflow.common import DevError, decode, sha
@@ -368,7 +380,7 @@ def _collect_build_failure_metadata(workspace, observed):
                             observed['phase'] = 'failure-producer'
                             observed['producerStep'] = 'imports'
                             reason, evidence = _bound_compile_reason(builds, entry.name, output, selected, failure,
-                                observed=observed)
+                                observed=observed, producer_root=producer_root)
                             row.update(reason)
                             if reason:
                                 evidence.append((builds, prefix + output + '/BUILD-FAILED.json', 65536, raw))
@@ -411,12 +423,13 @@ def _collect_build_failure_metadata(workspace, observed):
             return result
 
 
-def add_public_build_failure(public, workspace):
+def add_public_build_failure(public, workspace, *, producer_root=None):
     """A failed observation must never replace the original failure or uncertainty."""
     if public.get('passed') is not False or workspace is None:
         return
     try:
-        public['buildFailureMetadata'] = collect_build_failure_metadata(workspace)
+        public['buildFailureMetadata'] = (collect_build_failure_metadata(workspace) if producer_root is None
+            else collect_build_failure_metadata(workspace, producer_root=producer_root))
     except Exception as error:
         value = {'qualification': False, 'status': 'unavailable'}
         if (type(error) is _ProjectionRefusal and type(error.phase) is str and error.phase in _PROJECTION_PHASES
@@ -714,7 +727,7 @@ def main() -> int:
         report.update(passed=True, phase='complete', deploymentCount=3, cleanup='confirmed-normal-down')
         return 0
     except BaseException as error:
-        add_public_build_failure(report, node_root)
+        add_public_build_failure(report, node_root, producer_root=installed / 'recipe')
         report['failure'] = str(error) if isinstance(error, ValueError) else type(error).__name__
         raise
     finally:

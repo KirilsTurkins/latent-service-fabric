@@ -913,3 +913,81 @@ class FailureProducerReaderRefusal(unittest.TestCase):
             self.assertNotIn('PrivateReaderError',json.dumps(public))
             self.assertNotIn('private/token',json.dumps(public))
             self.assertNotIn('attempts',public['buildFailureMetadata'])
+
+
+class DeliveredFailureProducerBinding(unittest.TestCase):
+    def test_closed_enums_match_real_producer_and_delivered_helper_omits_compiler(self):
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.dotnet_guest import compiler
+        from tools.build_dev_frontend import helper
+        self.assertEqual(programme._COMPILE_SETUP_PHASES, compiler.COMPILE_SETUP_PHASES)
+        self.assertEqual(programme._COMPILE_EXCEPTION_KINDS, compiler.COMPILE_EXCEPTION_KINDS)
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'helper.pyz';helper(path,resource_snapshot=())
+            with zipfile.ZipFile(path) as archive:
+                names=archive.namelist()
+            self.assertIn('tools/dev_workflow/tool_inventory.py',names)
+            self.assertFalse(any(name.startswith('tools/dotnet_guest/') for name in names))
+
+    def test_flat_delivered_fixture_reads_explicit_pinned_recipe_without_compiler_import(self):
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.rust_capsule_project import ROOT
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve()
+            workspace,attempt,failure,adapter,inventory,recipe=BoundCompilerReasonProjection().owned(root)
+            selected=root/'payload/recipe'
+            for name in ('build.py','compiler.py','sdk.py'):
+                target=selected/'tools/dotnet_guest'/name;target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes((ROOT/'tools/dotnet_guest'/name).read_bytes())
+            # The real wrapper copies this script flat and supplies only helper.pyz.
+            # The compiler package is deliberately unavailable in that Python realm.
+            with patch.object(programme,'__file__',str(root/'flat/qualifier.py')), \
+                    patch.dict('sys.modules',{'tools.dotnet_guest':None,'tools.dotnet_guest.compiler':None}):
+                public={'passed':False,'uncertain':True,'failure':'initial-build-failed'}
+                programme.add_public_build_failure(public,workspace,producer_root=selected)
+            value=public['buildFailureMetadata']
+            self.assertEqual(value['attempts'][0]['reasonCode'],'dotnet-generated-world-namespace-ambiguous')
+            self.assertEqual(value['attempts'][0]['reasonProducer']['helper'],'dotnet-sdk-facades')
+            self.assertEqual(value['state'],'uncertain')
+            self.assertIs(value['qualification'],False)
+            self.assertIs(public['uncertain'],True)
+            self.assertEqual(public['failure'],'initial-build-failed')
+            self.assertNotIn(str(root),json.dumps(public))
+
+    def test_selected_recipe_missing_changed_linked_or_mutated_never_falls_back_to_checkout(self):
+        import os
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.rust_capsule_project import ROOT
+        for kind in ('missing','changed','hardlink','mutation'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary).resolve()
+                workspace,attempt,failure,adapter,inventory,recipe=BoundCompilerReasonProjection().owned(root)
+                selected=root/'payload/recipe'
+                for name in ('build.py','compiler.py','sdk.py'):
+                    target=selected/'tools/dotnet_guest'/name;target.parent.mkdir(parents=True,exist_ok=True)
+                    target.write_bytes((ROOT/'tools/dotnet_guest'/name).read_bytes())
+                sdk=selected/'tools/dotnet_guest/sdk.py'
+                if kind=='missing':sdk.unlink()
+                if kind=='changed':sdk.write_bytes(sdk.read_bytes()+b'\n')
+                if kind=='hardlink':os.link(sdk,sdk.parent/'sdk-alias.py')
+                actual=programme._failure_file
+                def read(owner,relative,maximum):
+                    data=actual(owner,relative,maximum)
+                    if kind=='mutation' and relative.endswith('compiler-stdout.log'):
+                        sdk.write_bytes(sdk.read_bytes()+b'\n')
+                    return data
+                original=RuntimeError('original uncertain cleanup')
+                with patch.object(programme,'_failure_file',side_effect=read):
+                    with self.assertRaises(RuntimeError) as caught:
+                        try:raise original
+                        finally:
+                            public={'passed':False,'uncertain':True,'failure':'initial-build-failed'}
+                            programme.add_public_build_failure(public,workspace,producer_root=selected)
+                self.assertIs(caught.exception,original)
+                self.assertEqual(public['buildFailureMetadata']['status'],'unavailable')
+                self.assertNotIn('attempts',public['buildFailureMetadata'])
+                self.assertNotIn('reasonProducer',json.dumps(public))
+                self.assertNotIn(str(root),json.dumps(public))
+                self.assertIs(public['uncertain'],True)
