@@ -22,6 +22,9 @@ on:
       - 'tools/java_phase_native_products.py'
       - 'tools/http_phase_native_products.py'
       - 'tools/http_tenant_native_products.py'
+      - 'tools/sdk_native_products_reader.py'
+      - 'tools/wait_runtime_native_products.py'
+      - 'tools/tests/test_sdk_native_products_reader.py'
       - 'tools/java_http_tenant_node.py'
       - 'tools/tests/test_http_tenant_native_products.py'
       - 'tools/tests/test_java_http_tenants.py'
@@ -172,6 +175,10 @@ jobs:
           java-version: 25.0.4+101.0.LTS
       - name: Fetch the exact operational-authority native producer before updated helper controls
         run: git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c
+      - name: Fetch the exact current native producer with bounded pending-wait observation
+        run: git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
+      - name: Check the shared strict frozen-tuple native authenticator
+        run: python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v
       - name: Check bounded public compiler traces and original default command identity
         run: python3 -B -m unittest tools.tests.test_java_teavm_failure_trace -v
       - name: Check pinned coroutine repairs and mandatory original-entry liveness regression
@@ -191,7 +198,7 @@ jobs:
       - name: Retrieve exactly the five authenticated V7 products without a native rebuild
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/http_tenant_native_products.py --output "$RUNNER_TEMP/java-http-phase-prepared"
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/java-http-phase-prepared"
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0

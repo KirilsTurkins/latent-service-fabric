@@ -106,7 +106,7 @@ old 77 provenance are retained. Signed Java phase outcomes still require the
 corrected next owning run.
 
 
-The current campaign selects the independently authenticated producer
+An earlier campaign revision selected the independently authenticated producer
 `6f5f180136d140ac670561695260f71514781015`, run `39443901256` / job
 `118700610031`, artifact `12275691963` (66,080,276 bytes; SHA256
 `fa6c846ffcf5f79b1153d60053aeb79f2e3495228f1c7c510159f7a2c072e399`).
@@ -136,3 +136,23 @@ default Webb and HttpRequest success, pending read timeout/root cancellation,
 foreign-origin zero contact and fresh state. Actual signed Java results remain
 pending the next owning run; public transport SPI and whole #688/#741 completion
 remain separate requirements.
+
+The operational-authority correction subsequently selected producer
+`8f7780dd0a35e3375524d72e7dfaddf847deaa5c` and preserved that authenticator as
+an immutable historical tuple. Java run `39461289033` loaded its exact private
+compiler JAR, then failed before a component existed in TeaVM's original-entry
+liveness lookup. Corrected source `7bb87351a7c05cdf915c5a160f788803977be9ae`
+is being qualified separately in run `39463938701`; neither failure nor a queued
+run establishes signed Java behavior.
+
+After the independent pending-wait observer merged into development, the
+maintained campaign selects successful producer
+`f9192fb5785ca7bed8b33dbb869b3d775b72ab4b` through the shared strict frozen-tuple
+reader and `wait_runtime_native_products.py`. Run `39458247294`, job
+`118750640204`, artifact `12282362053` built five products and passed 30 native
+controls plus four Python controls. Its archive digest is
+`d3942fea19d78c27aac37811fc7f9be32cc26fc76b95a92f98498c3d44162945`.
+All current native source and 107 auxiliary inputs must still equal this exact
+producer before and after Java compilation. The reader itself is a captured
+campaign material. The old 77, 36ea and 8f helper files and controls remain
+unchanged; no historical guest result is relabelled as current qualification.
