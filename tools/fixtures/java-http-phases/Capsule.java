@@ -16,6 +16,14 @@ public final class Capsule implements Bindings.Exports {
     private static int calls;
 
     public String run(Long which, String endpoint) {
+        try {
+            return runChecked(which, endpoint);
+        } catch (org.json.JSONException error) {
+            throw new IllegalStateException("ordinary-java-phase-json-failed", error);
+        }
+    }
+
+    private String runChecked(Long which, String endpoint) throws org.json.JSONException {
         if (which == null || which < 0 || which > 10) throw new IllegalArgumentException("unknown-phase-case");
         int invocation = ++calls;
         if (which == 0) {
