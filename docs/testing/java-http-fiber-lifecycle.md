@@ -72,3 +72,15 @@ timeouts or Webb's default phase-timeout behavior, all scheduler fairness/races,
 late callbacks after acknowledged cancellation, cross-tenant isolation, physical
 allocation upper bounds or whole-ticket closure. All original profiles, grants,
 limits and qualifications remain required in their existing lanes.
+
+
+The corrected IR controls passed on head `87c7565d`, but Gradle's loaded
+code-source path differed from the owned replacement path. Its observed JAR
+SHA-256 was `2cf7cf02569ad8db77f403595c6283d95e44d924567e5d04e2c622af624667f3`;
+the strict path fence refused before component generation. Gradle 9.1.0's
+`TransformedClassPath` explicitly permits an original JAR copy. The compiler
+therefore requires exact selected/loaded JAR byte identity, plus all three
+loaded class-resource identities and their same-JAR/classloader ownership,
+instead of identical filesystem paths. A different JAR or transformed class
+still refuses. Expected preparation identities are retained before `generateC`;
+this correction does not claim a passed component or lifecycle programme.

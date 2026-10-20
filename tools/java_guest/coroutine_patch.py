@@ -246,23 +246,53 @@ tasks.named('generateC') {
         def actual = Class.forName('org.teavm.backend.lowlevel.transform.CoroutineTransformation',
             false, org.teavm.backend.c.CTarget.class.classLoader)
         def selected = file('compiler-patch/teavm-core-patched.jar').canonicalFile
-        def observed = new File(actual.protectionDomain.codeSource.location.toURI()).canonicalFile
-        if (!observed.isFile() || observed.length() > 67108864) throw new GradleException('coroutine-patch-loaded-source-bound')
-        println('latent.java.coroutine-loader.v1 ' + groovy.json.JsonOutput.toJson([
-            sourceKind: observed == selected ? 'owned-replacement' : observed == file('__ORIGINAL_CORE__').canonicalFile ? 'original-pinned' : 'other',
-            sourceSha256: java.security.MessageDigest.getInstance('SHA-256').digest(observed.bytes).encodeHex().toString()]))
-        if (observed != selected) {
-            throw new GradleException('coroutine-patch-loaded-class-mismatch')
+        def source = new File(actual.protectionDomain.codeSource.location.toURI())
+        if (!java.nio.file.Files.isRegularFile(source.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+            throw new GradleException('coroutine-patch-loaded-source-bound')
         }
+        def observed = source.canonicalFile
+        if (observed.length() > 67108864) throw new GradleException('coroutine-patch-loaded-source-bound')
         def hash = java.security.MessageDigest.getInstance('SHA-256').digest(selected.bytes).encodeHex().toString()
         if (hash != '__PATCH_SHA256__') throw new GradleException('coroutine-patch-loaded-jar-mutated')
+        def actualHash = java.security.MessageDigest.getInstance('SHA-256').digest(observed.bytes).encodeHex().toString()
+        def kind = observed == selected ? 'owned-replacement' : actualHash == hash ? 'byte-identical-copy' : 'other'
+        println('latent.java.coroutine-loader.v1 ' + groovy.json.JsonOutput.toJson([
+            sourceKind: kind, sourceSha256: actualHash, expectedSha256: hash]))
+        // Gradle 9.1 agent transforms may expose a byte-identical original copy.
+        // Identity, rather than its cache pathname, is the compiler boundary.
+        if (actualHash != hash) {
+            throw new GradleException('coroutine-patch-loaded-class-mismatch')
+        }
+        def expectedClasses = new groovy.json.JsonSlurper().parseText('__EXPECTED_CLASSES__')
+        def loadedClasses = [:]
+        expectedClasses.each { name, expected ->
+            def loadedClass = Class.forName(name.substring(0, name.length() - 6).replace('/', '.'), false, actual.classLoader)
+            if (loadedClass.classLoader != actual.classLoader ||
+                    new File(loadedClass.protectionDomain.codeSource.location.toURI()).canonicalFile != observed) {
+                throw new GradleException('coroutine-patch-loaded-class-source')
+            }
+            def resource = actual.classLoader.getResource(name)
+            def connection = resource?.openConnection()
+            if (!(connection instanceof java.net.JarURLConnection) ||
+                    new File(connection.jarFileURL.toURI()).canonicalFile != observed) {
+                throw new GradleException('coroutine-patch-loaded-class-resource')
+            }
+            connection.useCaches = false
+            def bytes = connection.inputStream.withCloseable { it.readNBytes(1048577) }
+            if (bytes.length > 1048576) throw new GradleException('coroutine-patch-loaded-class-bound')
+            def classHash = java.security.MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString()
+            if (classHash != expected) throw new GradleException('coroutine-patch-loaded-class-bytes')
+            loadedClasses[name] = classHash
+        }
         file('compiler-patch/loaded.json').text = groovy.json.JsonOutput.toJson([
             schemaVersion: 'latent.java.coroutine-compiler-load.v1',
-            selectedOwnedReplacement: true, replacementJarSha256: hash])
+            selectedOwnedReplacement: true, replacementJarSha256: hash,
+            loadedJarSha256: actualHash, codeSourceKind: kind, loadedClasses: loadedClasses])
     }
 }
-'''.replace('__PATCH_SHA256__', receipt['replacementJarSha256']).replace('__ORIGINAL_CORE__',
-        original[0].as_posix().replace('\\', '\\\\').replace("'", "\\'"))
+'''.replace('__PATCH_SHA256__', receipt['replacementJarSha256']).replace('__EXPECTED_CLASSES__',
+        json.dumps({name: row['replacementSha256'] for name, row in receipt['replacedClasses'].items()},
+                   sort_keys=True, separators=(',', ':')))
     build.write_bytes(script.encode('utf-8'))
     receipt.update(schemaVersion='latent.java.coroutine-compiler-patch.v1',
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),
@@ -271,6 +301,10 @@ tasks.named('generateC') {
         publishedHppcRelocation='org.teavm.hppc',
         originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]
             for path in captured_classpath])
+    preparation = json.dumps(receipt, sort_keys=True, separators=(',', ':')).encode('utf-8')
+    if len(preparation) > 262144:
+        raise ValueError('coroutine-patch-preparation-bound')
+    (destination / 'coroutine-compiler-preparation.json').write_bytes(preparation)
     return receipt
 
 
@@ -280,8 +314,12 @@ def loaded(project: Path, receipt: dict, *, compiler=None) -> dict:
         raise ValueError('coroutine-patch-original-input-mutated')
     actual = json.loads(read_file(project / 'compiler-patch/loaded.json', 4096))
     if (type(actual) is not dict or actual.get('selectedOwnedReplacement') is not True
+            or type(actual.get('codeSourceKind')) is not str
+            or actual.get('codeSourceKind') not in {'owned-replacement', 'byte-identical-copy'}
             or actual != {'schemaVersion': 'latent.java.coroutine-compiler-load.v1',
-            'selectedOwnedReplacement': True, 'replacementJarSha256': receipt['replacementJarSha256']}):
+            'selectedOwnedReplacement': True, 'replacementJarSha256': receipt['replacementJarSha256'],
+            'loadedJarSha256': receipt['replacementJarSha256'], 'codeSourceKind': actual.get('codeSourceKind'),
+            'loadedClasses': {name: row['replacementSha256'] for name, row in receipt['replacedClasses'].items()}}):
         raise ValueError('coroutine-patch-loaded-receipt-mismatch')
     if hashlib.sha256(read_file(project / 'compiler-patch/teavm-core-patched.jar', MAX_JAR_BYTES)).hexdigest() != receipt['replacementJarSha256']:
         raise ValueError('coroutine-patch-used-jar-mutated')

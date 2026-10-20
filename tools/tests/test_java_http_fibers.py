@@ -524,9 +524,12 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             root=Path(temporary);folder=root/'compiler-patch';folder.mkdir()
             jar=folder/'teavm-core-patched.jar';jar.write_bytes(b'owned bytes')
             sha=hashlib.sha256(jar.read_bytes()).hexdigest()
-            receipt={'replacementJarSha256':sha}
+            receipt={'replacementJarSha256':sha,'replacedClasses':{
+                name:{'replacementSha256':sha} for name in patch.PATCH_CLASSES}}
             actual={'schemaVersion':'latent.java.coroutine-compiler-load.v1',
-                'selectedOwnedReplacement':True,'replacementJarSha256':sha}
+                'selectedOwnedReplacement':True,'replacementJarSha256':sha,
+                'loadedJarSha256':sha,'codeSourceKind':'owned-replacement',
+                'loadedClasses':{name:sha for name in patch.PATCH_CLASSES}}
             marker=folder/'loaded.json';marker.write_text(json.dumps(actual))
             self.assertEqual(patch.loaded(root,receipt)['loadedCompiler'],actual)
             for changed in ({'selectedOwnedReplacement':False},{'selectedOwnedReplacement':1},
@@ -617,13 +620,16 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar','sha256':sha,'bytes':len(raw)},
                 {'coordinate':'org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar',
                 'sha256':hppc_sha,'bytes':len(hppc_raw)}])
+            self.assertEqual(json.loads((root/'coroutine-compiler-preparation.json').read_bytes()),receipt)
             script=(project/'build.gradle').read_text()
             for guard in ('org.teavm.backend.c.CTarget.class.classLoader','actual.protectionDomain.codeSource',
                     'coroutine-patch-loaded-class-mismatch','coroutine-patch-loaded-jar-mutated'):
                 self.assertIn(guard,script)
             marker=project/'compiler-patch/loaded.json'
             marker.write_text(json.dumps({'schemaVersion':'latent.java.coroutine-compiler-load.v1',
-                'selectedOwnedReplacement':True,'replacementJarSha256':receipt['replacementJarSha256']}))
+                'selectedOwnedReplacement':True,'replacementJarSha256':receipt['replacementJarSha256'],
+                'loadedJarSha256':receipt['replacementJarSha256'],'codeSourceKind':'owned-replacement',
+                'loadedClasses':{name:row['replacementSha256'] for name,row in receipt['replacedClasses'].items()}}))
             patch.loaded(project,receipt,compiler=compiler)
             core.write_bytes(raw+b'changed')
             with self.assertRaises(ValueError):patch.loaded(project,receipt,compiler=compiler)
@@ -696,3 +702,44 @@ class ExactCoroutineCompilerClasspath(unittest.TestCase):
                     else: value['outOfProcess'] = True
                     record.write_text(json.dumps(value))
                     with self.assertRaises(ValueError): patch.original_classpath(compiler, project, [core, library, app])
+
+
+class CoroutineLoadedCopyTests(unittest.TestCase):
+    def test_byte_equal_copy_requires_all_three_actual_class_identities(self):
+        import hashlib, json
+        from tools.java_guest import coroutine_patch as patch
+        with tempfile.TemporaryDirectory() as temporary:
+            project=Path(temporary); folder=project/'compiler-patch'; folder.mkdir()
+            jar=folder/'teavm-core-patched.jar'; jar.write_bytes(b'owned selected jar')
+            sha=hashlib.sha256(jar.read_bytes()).hexdigest()
+            classes={name:hashlib.sha256(name.encode()).hexdigest() for name in patch.PATCH_CLASSES}
+            receipt={'replacementJarSha256':sha,'replacedClasses':{
+                name:{'replacementSha256':value} for name,value in classes.items()}}
+            actual={'schemaVersion':'latent.java.coroutine-compiler-load.v1',
+                'selectedOwnedReplacement':True,'replacementJarSha256':sha,
+                'loadedJarSha256':sha,'codeSourceKind':'byte-identical-copy','loadedClasses':classes}
+            marker=folder/'loaded.json'; marker.write_text(json.dumps(actual))
+            self.assertEqual(patch.loaded(project,receipt)['loadedCompiler'],actual)
+            for changes in ({'loadedJarSha256':'0'*64},{'codeSourceKind':'other'},{'codeSourceKind':[]},
+                    {'loadedClasses':{}},{'loadedClasses':{**classes,'unknown.class':sha}},
+                    {'loadedClasses':{**classes,next(iter(classes)):'0'*64}},
+                    {'selectedOwnedReplacement':1},{'extra':'private path'}):
+                with self.subTest(changes=tuple(changes)):
+                    marker.write_text(json.dumps({**actual,**changes}))
+                    with self.assertRaisesRegex(ValueError,'loaded-receipt-mismatch'):
+                        patch.loaded(project,receipt)
+            marker.write_text(json.dumps({**actual,'codeSourceKind':'owned-replacement'}))
+            self.assertEqual(patch.loaded(project,receipt)['loadedCompiler']['codeSourceKind'],
+                'owned-replacement')
+
+    def test_gradle_load_fence_keeps_source_and_three_resource_identities(self):
+        import inspect
+        from tools.java_guest import coroutine_patch as patch
+        source=inspect.getsource(patch.stage)
+        for required in ('actualHash != hash', 'hash !=', 'expectedClasses.each',
+                'java.nio.file.LinkOption.NOFOLLOW_LINKS', 'java.net.JarURLConnection',
+                'loadedClass.classLoader != actual.classLoader', 'canonicalFile != observed',
+                'classHash != expected', 'it.readNBytes(1048577)',
+                'coroutine-compiler-preparation.json'):
+            self.assertIn(required,source)
+        self.assertNotIn('if (observed != selected)',source)
