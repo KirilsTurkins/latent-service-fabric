@@ -129,6 +129,9 @@ int32_t lsf_java_async_state(void *address) {
 
 void lsf_java_async_poll(void) {
     if (!lsf_async_set_exists) return;
+    // Poll alone never suspends: a runnable Java yield loop must also give
+    // the host executor a turn to complete the retained import's socket work.
+    probe_thread_yield();
     probe_event_t event = {0};
     probe_waitable_set_poll(lsf_async_set, &event); lsf_async_event(&event);
 }

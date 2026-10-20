@@ -93,12 +93,15 @@ def configure_node(directory, fixture, tenant):
 
 
 def connect(client, binary, directory, config, tenant, ordinal, startup_timeout=30, *,
-            control_refusal_diagnostic=False):
+            control_refusal_diagnostic=False, http_refusal_diagnostic=False):
     require(type(startup_timeout) is int and 1 <= startup_timeout <= 120, "node-startup-watchdog")
     environment = dict(client.environment, HOME=str(directory))
     environment.pop("LSF_JAVA_CONTROL_REFUSAL_DIAGNOSTIC", None)
     if control_refusal_diagnostic is True:
         environment["LSF_JAVA_CONTROL_REFUSAL_DIAGNOSTIC"] = "1"
+    environment.pop("LSF_JAVA_HTTP_REFUSAL_DIAGNOSTIC", None)
+    if http_refusal_diagnostic is True:
+        environment["LSF_JAVA_HTTP_REFUSAL_DIAGNOSTIC"] = "1"
     node = Process([str(binary), "serve", "--config", str(config)], directory,
                    environment, client.cancellation, maximum=262144)
     try:

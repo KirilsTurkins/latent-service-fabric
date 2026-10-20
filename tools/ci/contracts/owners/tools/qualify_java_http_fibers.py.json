@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_http_fibers.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain the existing final source/five-product equality guard and publish its bounded public identities after it succeeds.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ce7e5ac821f02b559b1ec5fa0bd7c13729dbb300ab8c4abf5550943eb5bcbc9e"
+}
