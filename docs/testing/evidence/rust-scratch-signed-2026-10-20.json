@@ -1,0 +1,333 @@
+{
+  "schemaVersion": "latent.rust-scratch-observation.v1",
+  "actualSource": "669fbc56f1bfd3bf14df410497c949dfe8ba09a2",
+  "run": 39366052154,
+  "job": 118443039897,
+  "jobConclusion": "success",
+  "artifact": {
+    "id": 12239796441,
+    "bytes": 249378,
+    "sha256": "sha256:58ff384b1cad55a2b45c80cc5d5b55c1c7eb2232acd5fdea85770c98cd89abae"
+  },
+  "members": 321,
+  "qualification": {
+    "sha256": "sha256:0289a9f2b5da0764ee1b7ce936ec2f211105f20dc20e4dc2a43389009a4914a3",
+    "bytes": 23408
+  },
+  "node": {
+    "sha256": "sha256:0710ea9b83814aa8794d40183b6a2dd53db04a499f227c49974354202f04c241",
+    "bytes": 328605
+  },
+  "component": {
+    "sha256": "sha256:fd88bd45bde84e60606f4053351c233ad68e93ed41a5d76e6185c2a3fc77149c",
+    "bytes": 26147
+  },
+  "source": {
+    "sha256": "sha256:b8a9175566cb45934684316a9d89a58d265b65b71fcaa73406cf4d2b4eda8cd3",
+    "bytes": 8116
+  },
+  "materials": {
+    "tools/qualify_sdk_scratch.py": {
+      "sha256": "sha256:ab0f2974484262005d86516e5a0784284090ec8d852095ccc782670183c70bd5",
+      "bytes": 16472
+    },
+    "tools/sdk_scratch_fixture.py": {
+      "sha256": "sha256:0c742f4be74b251c8f7525fa4d4e8b5b39b81b95e4c86ed2f254587c6e76cd5f",
+      "bytes": 15221
+    },
+    "tools/sdk_scratch_probe.py": {
+      "sha256": "sha256:7a2175491040de77f4468b74afd8f5de9091db09de14d9967d8c49e7f37c3fca",
+      "bytes": 4562
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "sha256": "sha256:e90d89cc4cdf24ebbf24f1f2cf54daba59ccd70ea20eace563d737b1ec05c994",
+      "bytes": 31615
+    },
+    "tools/rust_capsule_node.py": {
+      "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+      "bytes": 18922
+    },
+    "tools/replay_rust_scratch.py": {
+      "sha256": "sha256:7aae75b1f05c9ed888c323fca8c6a44dd8ca22e17f3ed4421ba69a3a8e1d7dd3",
+      "bytes": 7864
+    }
+  },
+  "historicalNormal": {
+    "originalCompiledSource": "38fedd53bb8fc366a9078a3182d88cc03cf0835b",
+    "originalRun": 39358494292,
+    "originalArtifact": 12236803645,
+    "qualification": {
+      "sha256": "sha256:87b5664bcca6db0622e2407bf047f3ed30c1f406008370a4ac2cf7a0655fdb9d",
+      "bytes": 16592
+    },
+    "sourceInputs": {
+      "sha256": "sha256:3677ec116d9e47ca3b96542f274b995dd202ba5ff959e7d642afc510d52fbab6",
+      "bytes": 25398
+    },
+    "node": {
+      "sha256": "sha256:7727e47ee556712a6cc111aca7dc5ad750060294839c42a2dfe4d3890bcd59d9",
+      "bytes": 255677
+    },
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:c547504d11549718e3978a4b5c4f06d122dd4ba5bc9ecfa340a680d85c44eaf1",
+        "bytes": 71460080
+      },
+      "latentd": {
+        "sha256": "sha256:76a6120e29c0c4a81b4eaa2e738ad779be25da1bfb6e2f89360696262734f895",
+        "bytes": 186436136
+      },
+      "examples/package": {
+        "sha256": "sha256:04fb6b4c782cfb289610ba118d70b4f27497069b95190a022d0e1690c23e5fc1",
+        "bytes": 20465792
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:ec6c9e629da7ae6f1503bec81ec4889e1cfb745c93e0db68fe7dcb5e7044bcaf",
+        "bytes": 8030384
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:aeb214164266515dff39cb8879b3f5ec7479305b5bb08841253be78a12ce7b68",
+        "bytes": 26401312
+      }
+    },
+    "companions": {
+      "word-count": {
+        "package-source.json": {
+          "sha256": "sha256:961644338dc24c318c0b22c6caed843e429fb393f5df3eeaacaa3e194eba5c19",
+          "bytes": 1150
+        },
+        "component.wasm": {
+          "sha256": "sha256:d6007ee3a926baf9aa86bc782546cac8662bbeefbd5fa19b07bee5c6011533b9",
+          "bytes": 19708
+        },
+        "capsule.json": {
+          "sha256": "sha256:06b04aba30b52fba1ccb0d23db1e5b8cb33f6b0ff09a0796dc3d14875b3e9ee7",
+          "bytes": 1042
+        },
+        "contracts.json": {
+          "sha256": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92",
+          "bytes": 677
+        },
+        "wit-lock.json": {
+          "sha256": "sha256:169a2946c576db16498dcdbeb91de927762799baf4c392b81897ca3ea99e235f",
+          "bytes": 333
+        },
+        "compatibility-report.json": {
+          "sha256": "sha256:276155e54c1aabd9f6056d26124b8c67db1e7d267405de5954a6fe894d9398db",
+          "bytes": 1252
+        },
+        "wit/world.wit": {
+          "sha256": "sha256:ea8953add5e0ee7e9e229fb53c1f7efdcd03c2c485c03139ea961537b9156e0d",
+          "bytes": 143
+        }
+      },
+      "shipping": {
+        "package-source.json": {
+          "sha256": "sha256:954c10549736321906238e4d808dfc51bd92183a026496815425ca2b556183c9",
+          "bytes": 1148
+        },
+        "component.wasm": {
+          "sha256": "sha256:52d727cdca49053a92807f0cad7a7be8eed35b7f2dc206889e89ba6d5677925c",
+          "bytes": 18902
+        },
+        "capsule.json": {
+          "sha256": "sha256:10499c98e7c159628e7704ad334b15e50ca65f26e190bcd8131b250b4926fc56",
+          "bytes": 1036
+        },
+        "contracts.json": {
+          "sha256": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1",
+          "bytes": 729
+        },
+        "wit-lock.json": {
+          "sha256": "sha256:b624503588c670e00ee63989bbb2d2db2126f9e65ef8b032366565561ade6a8c",
+          "bytes": 329
+        },
+        "compatibility-report.json": {
+          "sha256": "sha256:cb9b1593d4620cde49ff270e25e0da8f6fc400d8615ed1541005d784fc468949",
+          "bytes": 1252
+        },
+        "wit/world.wit": {
+          "sha256": "sha256:e652cddfcd16462954a99acbd0edbc3a2d5f98107d3b31a665edcd5eb8deb713",
+          "bytes": 154
+        }
+      },
+      "http-status": {
+        "package-source.json": {
+          "sha256": "sha256:634ff55e0300234cff43ff2477c8bb2ea6bd6d659d09eddbbff6f54b85f12f96",
+          "bytes": 1307
+        },
+        "component.wasm": {
+          "sha256": "sha256:49eb9025d43d140d199a812896ad1150285712d4fb173438cf09016671541671",
+          "bytes": 54395
+        },
+        "capsule.json": {
+          "sha256": "sha256:395365b24dde8f1541eb98d4e2154c39e8fffcbf06b16ddcb7ad2783863e8f52",
+          "bytes": 1132
+        },
+        "contracts.json": {
+          "sha256": "sha256:9d9294032020f60eae15fe7d936d5c788e20cbd55f5e1eae83929247165cebc1",
+          "bytes": 720
+        },
+        "wit-lock.json": {
+          "sha256": "sha256:81827b95d85c5e31c238e374d0d86c32425a45980c74ead330d7c5a0b018565e",
+          "bytes": 523
+        },
+        "compatibility-report.json": {
+          "sha256": "sha256:418c15d2e45ae9b851da21e6c1de8d753f323a5672c04b56b8fa7911b30df7ce",
+          "bytes": 1252
+        },
+        "wit/deps/http/package.wit": {
+          "sha256": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d",
+          "bytes": 1296
+        },
+        "wit/world.wit": {
+          "sha256": "sha256:7b0197a583c3e4f93c1ccb949a35a7ccb025acb468b60befedf83c7e06328415",
+          "bytes": 237
+        }
+      },
+      "recovery": {
+        "package-source.json": {
+          "sha256": "sha256:61622a52f49730ecd350f8b82efa6a50651108562fa7cba858a04ff8f1a93db7",
+          "bytes": 1148
+        },
+        "component.wasm": {
+          "sha256": "sha256:268c5c210b31e3afe5d4fb5cd63dceb629f8e4bbbbf43fe83115c76b8b48163d",
+          "bytes": 18734
+        },
+        "capsule.json": {
+          "sha256": "sha256:3b138dec64ec911357f199c4e9bcc725ef3425cafe3ba024c45467efbbc7baa3",
+          "bytes": 1036
+        },
+        "contracts.json": {
+          "sha256": "sha256:51d382453dcf0aafe3a820bd4ecc8c3a1e4058fce3de901112c873006db7a98e",
+          "bytes": 630
+        },
+        "wit-lock.json": {
+          "sha256": "sha256:62cebc29bc2f8f3d3dcaa3f9fd37314bf07c1ada130c2a61165c5e77c5882535",
+          "bytes": 329
+        },
+        "compatibility-report.json": {
+          "sha256": "sha256:602a2e9bb1747fa314a76e25f26a212c5f008497c5f0393b2976f7b630010dbf",
+          "bytes": 1252
+        },
+        "wit/world.wit": {
+          "sha256": "sha256:75fd885f54c82d15fb76a54e93096143cc7b27d91dccbadba57ca5c49d24ca57",
+          "bytes": 111
+        }
+      }
+    },
+    "nativeProductsRebuilt": false,
+    "normalReceiptRewritten": false,
+    "currentNormalReceiptFabricated": false,
+    "currentNonNativeNormalInputsEqual": true
+  },
+  "dependencyPreparation": {
+    "lock": {
+      "sha256": "sha256:e6d7aa1f4053764c305ba50657672b2cb1e852fb005a0177906c1ff0f223fa2e",
+      "bytes": 33207
+    },
+    "compilerExecution": false,
+    "subsequentBuildOffline": true,
+    "sourceUnchanged": true
+  },
+  "actualInvocations": 33,
+  "allKnownAndReaped": true,
+  "physicalSamples": 30,
+  "zeroActiveOwnerIdleSamples": 12,
+  "cleanShutdown": true,
+  "operations": [
+    {
+      "mode": "open",
+      "decoded": [
+        {
+          "ok": "scratch|rust|io-error|kind=unsupported|fresh=1"
+        }
+      ],
+      "observation": {
+        "category": "io-error|kind=unsupported",
+        "unsupported": true,
+        "source": "caught-standard-api-result",
+        "genericTrapCauseInferred": false
+      }
+    },
+    {
+      "mode": "create",
+      "decoded": [
+        {
+          "ok": "scratch|rust|io-error|kind=unsupported|fresh=1"
+        }
+      ],
+      "observation": {
+        "category": "io-error|kind=unsupported",
+        "unsupported": true,
+        "source": "caught-standard-api-result",
+        "genericTrapCauseInferred": false
+      }
+    },
+    {
+      "mode": "temp-directory",
+      "decoded": [
+        {
+          "ok": "scratch|rust|io-error|kind=unsupported|fresh=1"
+        }
+      ],
+      "observation": {
+        "category": "io-error|kind=unsupported",
+        "unsupported": true,
+        "source": "caught-standard-api-result",
+        "genericTrapCauseInferred": false
+      }
+    }
+  ],
+  "freshAfterTrap": [
+    {
+      "ok": "scratch|rust|entry|fresh=1"
+    }
+  ],
+  "filesystemGrantsAdded": false,
+  "nativeProductsRebuilt": false,
+  "fullTicketQualification": false,
+  "sixLanguageQualification": false,
+  "priorFailures": [
+    {
+      "source": "38fedd53bb8fc366a9078a3182d88cc03cf0835b",
+      "run": 39358494292,
+      "job": 118427701196,
+      "stage": "offline compile",
+      "missingLockedCrate": "cpufeatures0.2.17",
+      "guestExecuted": false
+    },
+    {
+      "source": "de9eb70c305c1f5462cc7b4044dfd5692c27858f",
+      "run": 39364487307,
+      "job": 118438053133,
+      "stage": "offline compile",
+      "missingLockedCrate": "addr2line0.26.1",
+      "guestExecuted": false
+    }
+  ],
+  "deliveryComposition": {
+    "developmentBase": "a982d64986d16c16f35602582205ad9156240df7",
+    "normalRunner": {
+      "original": {
+        "sha256": "sha256:e90d89cc4cdf24ebbf24f1f2cf54daba59ccd70ea20eace563d737b1ec05c994",
+        "bytes": 31615
+      },
+      "current": {
+        "sha256": "sha256:c0e042d4c7c354246121125950ad96e430f26052fae59fad533c5dec4f0059cd",
+        "bytes": 32387
+      },
+      "reviewedDelta": "default-false-dotnet-published-tasks-only",
+      "selectedForRust": false
+    },
+    "originalRunnerAstDigest": "sha256:965e490bb15d6277244c5c78b7f3a7d44895b0fa085ed8763ffe3873f5845146",
+    "projectedComposedRunnerAstEqual": true,
+    "sdkWitSchemaGuideAndOtherNormalHelpersEqual": true,
+    "otherReviewedDeltas": [
+      "C-only compatibility operation tokens",
+      "exact historical-reader runner composition guard",
+      "documentation and controls"
+    ],
+    "nativeProgrammeRepeated": false
+  }
+}
