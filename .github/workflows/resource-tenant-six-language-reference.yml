@@ -97,15 +97,19 @@ jobs:
           echo "$RUNNER_TEMP/resource-tools" >> "$GITHUB_PATH"
       - name: Repackage retained Java39 then require both tenant lifecycles
         if: matrix.language == 'java'
+        env:
+          RESOURCE_LANGUAGE: ${{ matrix.language }}
         run: |
-          python3 -B tools/qualify_resource_tenants.py --language "${{ matrix.language }}" \
+          python3 -B tools/qualify_resource_tenants.py --language "$RESOURCE_LANGUAGE" \
             --original "$RUNNER_TEMP/resource-original" --original-producer "$RUNNER_TEMP/resource-original-producer.json" \
             --native "$RUNNER_TEMP/resource-native" --native-producer "$RUNNER_TEMP/resource-native-producer.json" \
             --output "$RUNNER_TEMP/resource-tenants"
       - name: Repackage retained Rust33 then require both tenant lifecycles
         if: matrix.language == 'rust'
+        env:
+          RESOURCE_LANGUAGE: ${{ matrix.language }}
         run: |
-          python3 -B tools/qualify_resource_tenants.py --language "${{ matrix.language }}" \
+          python3 -B tools/qualify_resource_tenants.py --language "$RESOURCE_LANGUAGE" \
             --original "$RUNNER_TEMP/resource-original" --original-producer "$RUNNER_TEMP/resource-original-producer.json" \
             --native "$RUNNER_TEMP/resource-native" --native-producer "$RUNNER_TEMP/resource-native-producer.json" \
             --output "$RUNNER_TEMP/resource-tenants"

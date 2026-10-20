@@ -157,9 +157,23 @@ No schema allowance, BCL recompilation, core rewrite or runtime/HTTP async
 profile change is introduced. The normal packager and existing two-tenant
 signer/admission/controller remain authoritative.
 
-The proposed seven calls use the existing outside library's ordinary
-EmbeddedResource/StreamReader initializer and explicit trap, with original
-CLOCK/RANDOM/LOG declarations and independently scoped grants. No .NET SDK,
-NativeAOT, native host or original full baseline is rebuilt. Source controls
-are not signed execution; this .NET coupled programme is pending. Full
-concurrent/flush/cancellation/late-work requirements remain open.
+The existing outside library's ordinary EmbeddedResource/StreamReader
+initializer and explicit trap now passed the fresh seven-call programme in
+[run39420425077/job118619700956](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39420425077/job/118619700956)
+at source `2159d9e8871421d14298af3f1f9d0e4618a465ce`, with original
+CLOCK/RANDOM/LOG declarations and independently scoped grants. The
+[authenticated observation](../testing/evidence/dotnet-resource-tenants-signed-2026-10-20.json)
+checks all230 archive members,31 Git-bound helpers, ten unchanged core modules,
+the complete public graph and four private I/O type changes. The selected
+3,002,308-byte component reproduces the earlier `f6fdeac776f931cadafa997668cb7802747bb3dcecb7ebb7e326617e6de0f418`
+component exactly; this result comes from fresh metadata derivation, packaging,
+signing and admitted execution, rather than borrowing its earlier Console pass.
+
+All seven calls plus the independent missing-grant denial were known and reaped;
+nine physical samples, eight zero-owner samples, exact zero peer contacts,
+clean shutdown and final source/product identities passed. The first fd7 setup
+failure remains failed: a real-runner red/green control covers creation of the
+owned command directory before codec selection. No .NET SDK, NativeAOT, native
+host or original full baseline was rebuilt. The maintained twenty-minute lane
+is explicit manual-only after its initial branch indexing. Full concurrent,
+pending-flush, root-cancellation and late-work requirements remain open.

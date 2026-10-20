@@ -2,8 +2,6 @@ name: Retained CLR resource tenant reference
 
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/dotnet-resource-tenant-derivation-20261020]
 
 permissions:
   contents: read
