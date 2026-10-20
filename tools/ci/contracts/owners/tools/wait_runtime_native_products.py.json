@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/wait_runtime_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Explicit reviewed native tuple update after current pending-wait observer merge: replace only acquisition module8f with shared strict f919 wrapper; identical output/env/bounds, original8f/36/77 receipts and all old controls retained, exact new source fetch and factory controls additive. All current native/107 auxiliary source bytes equal authenticated f919; no historical qualification transfer.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "2c44e1bfbb75cb3507bd4408c867828da91ccdae66b052eed109e55b5a63502c"
+}

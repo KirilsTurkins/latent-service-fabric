@@ -25,6 +25,14 @@ def selection(selected: tuple[str, ...]) -> None:
         raise ValueError('java-c-failure-context-selection-invalid')
 
 
+def teavm(compiler, project: Path, selected: tuple[str, ...]) -> str:
+    """Keep default commands exact; the explicit public fixture gets a stack."""
+    selection(selected)
+    return compiler.run('java-to-c', 'gradle', '--no-daemon',
+        *(['--offline'] if compiler.offline else []),
+        *(['--stacktrace'] if selected else []), 'generateC', cwd=project)
+
+
 def collect(generated: Path, log: bytes, selected: tuple[str, ...]) -> dict:
     """Read only fixed generated public sources through anchored regular readers."""
     selection(selected)

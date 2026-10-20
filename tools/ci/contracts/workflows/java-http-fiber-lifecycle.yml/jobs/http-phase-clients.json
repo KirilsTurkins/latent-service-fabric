@@ -50,6 +50,22 @@
         "run": "git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c"
       },
       {
+        "name": "Fetch the exact current native producer with bounded pending-wait observation",
+        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b"
+      },
+      {
+        "name": "Check the shared strict frozen-tuple native authenticator",
+        "run": "python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v"
+      },
+      {
+        "name": "Check bounded public compiler traces and original default command identity",
+        "run": "python3 -B -m unittest tools.tests.test_java_teavm_failure_trace -v"
+      },
+      {
+        "name": "Check pinned coroutine repairs and mandatory original-entry liveness regression",
+        "run": "python3 -B -m unittest tools.tests.test_java_http_fibers.PinnedCoroutinePhiRepair -v"
+      },
+      {
         "name": "Check standard socket timeout identity and captured-source registration",
         "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
       },
@@ -74,7 +90,7 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Retrieve exactly the five authenticated V7 products without a native rebuild",
-        "run": "python3 -B tools/http_tenant_native_products.py --output \"$RUNNER_TEMP/java-http-phase-prepared\""
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/java-http-phase-prepared\""
       },
       {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
@@ -107,7 +123,7 @@
   },
   "jobId": "http-phase-clients",
   "kind": "job",
-  "reviewReason": "Retain every original Java fibre/default/tenant command, guard and deadline; add exact successful8f source fetch before helper controls and three standard SocketTimeoutException identity/source controls. Version only authenticated tuple/mandatory stages; no legacy grant.",
+  "reviewReason": "Explicit reviewed native tuple update after current pending-wait observer merge: replace only acquisition module8f with shared strict f919 wrapper; identical output/env/bounds, original8f/36/77 receipts and all old controls retained, exact new source fetch and factory controls additive. All current native/107 auxiliary source bytes equal authenticated f919; no historical qualification transfer.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

@@ -1,4 +1,4 @@
-# Pinned TeaVM coroutine copied-phi correction
+# Pinned TeaVM coroutine corrections
 
 `CoroutineTransformation.java` is the unmodified Apache-2.0 source from
 [TeaVM 0.15.0](https://github.com/konsoletyper/teavm/blob/0.15.0/core/src/main/java/org/teavm/backend/lowlevel/transform/CoroutineTransformation.java),
@@ -13,6 +13,14 @@ JAR's three required classes are checked before compilation. Copied phi inputs
 must retain both redirected original-domain predecessors and internal copied
 predecessors. The original-block phi filter is unchanged. Removing the latter
 inputs can leave an empty used phi and an undefined reference temporary in C.
+
+The entry-block correction carries the original block index into liveness
+queries. TeaVM analyzes the original graph before its split prologue moves block
+zero into a continuation appended at the original block count. Querying that
+new index in the original liveness table fails out of bounds; it must query
+original block zero. The other original blocks retain their indices. The fixed
+IR control separately requires that original failure and a corrected single
+async call with the integer live across it retained in the saved state.
 
 The pinned JDK compiles only this class, its two generated companion classes,
 and the fixed IR control against the already checksummed compiler JAR closure.
@@ -39,3 +47,9 @@ Run `39367488958`, job `118447530336`, established both real JVM IR controls,
 then refused at that load fence. It did not compile a component or execute the
 signed lifecycle programme. The corrected Gradle selection needs its own
 hosted result; the earlier refusal remains retained.
+
+Run `39461289033`, job `118761117056`, subsequently established the exact owned
+compiler JAR load but failed in `LivenessAnalyzer.liveOut` while processing the
+appended entry continuation. Its bounded public compiler stack identifies this
+separate defect; no guest ran. The entry-liveness correction still requires its
+real original/corrected IR controls and fresh component execution in hosted CI.

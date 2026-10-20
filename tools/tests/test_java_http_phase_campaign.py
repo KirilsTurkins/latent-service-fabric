@@ -141,9 +141,9 @@ class JavaHttpPhaseCampaign(unittest.TestCase):
             with self.assertRaises(WorkflowError): campaign.selected_clients(value)
 
     def test_full_native_and_auxiliary_source_fence_rejects_extra_wit_before_build(self):
-        from tools import http_tenant_native_products as native
+        from tools import wait_runtime_native_products as native
         from tools.java_replay_materials import git_source_identity
-        record = {'source': git_source_identity(native.SOURCE), 'materials': native._git_materials()}
+        record = {'source': git_source_identity(native.SOURCE), 'materials': native.READER._git_materials()}
         with patch.object(campaign, 'read_json', return_value=record):
             self.assertTrue(campaign.native_source(Path('prepared'))['equalToCompiledProducer'])
             original = campaign.inventory

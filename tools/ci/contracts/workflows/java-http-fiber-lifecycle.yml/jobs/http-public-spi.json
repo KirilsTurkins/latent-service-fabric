@@ -50,6 +50,14 @@
         "run": "git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c"
       },
       {
+        "name": "Fetch the exact current native producer before optional SPI controls",
+        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b"
+      },
+      {
+        "name": "Check shared strict fixed-tuple acquisition for optional SPI products",
+        "run": "python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v"
+      },
+      {
         "name": "Check the captured standard socket timeout exception identity",
         "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
       },
@@ -62,7 +70,7 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Retrieve exactly the five authenticated V7 products without a native rebuild",
-        "run": "python3 -B tools/http_tenant_native_products.py --output \"$RUNNER_TEMP/java-http-spi-prepared\""
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/java-http-spi-prepared\""
       },
       {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
@@ -95,7 +103,7 @@
   },
   "jobId": "http-public-spi",
   "kind": "job",
-  "reviewReason": "Keep all prior SPI and default-client controls; add exact successful8f source fetch and3 standard timeout-identity controls to the separate manual-only SPI job.",
+  "reviewReason": "Preserve every incoming default/fiber/phase obligation and add only independent optional public-SPI job with explicit false selector; current f919 tuple uses same strict factory, old helpers immutable, no default-client qualification inferred.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

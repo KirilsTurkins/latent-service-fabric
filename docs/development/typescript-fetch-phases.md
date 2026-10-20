@@ -1,5 +1,7 @@
 # Explicit TypeScript Fetch phase-contract candidate
 
+See the reusable [API/profile matrix and normal dependency/grant workflow](../component-development/typescript-fetch-profiles.md).
+
 The compiler can select `lsf-fetch-phase-buffered-v2` when the existing
 `spidermonkey-activation-promises-clocks-imports-v1` runtime and the explicit
 `latent:http/phase-timing@0.4.0` import are both declared. Package names do not
@@ -30,3 +32,108 @@ V7 component, provider, production enablement or whole #691/#745 completion is
 claimed. That actual qualification depends on #1184's maintained phase contract
 and separately authenticated native products. The existing engine and compiler
 splicer identities must still validate; this is not a replacement engine.
+
+## Signed consumer programme
+
+The focused `typescript-fetch-phases.yml` lane prepares one fresh component with
+unchanged Ky 2.2.0 and Wretch 3.0.9, plus an outside-checkout transitive local
+package. It uses normal dependency capture, removes the original local package,
+and performs normal compilation, packaging, signing and node admission.
+The compiler engine and splicer retain their authenticated historical identities;
+only the separately authenticated V7 native producer supplies the host products.
+
+Its pending execution gate covers both clients' ordinary JSON and HTTP-error
+paths, actual empty and Latin1 wire reasons through Response.clone(), public
+abort during held headers/body, an uncertain single POST without replay, a denied
+target without contact, root cancellation/deadline, and a fresh invocation. The
+peer releases public-abort responses only after a source-ordered positive native
+timer barrier proves public rejection and original I/O ownership. Root cancellation
+and deadline responses stay held. Each terminal invocation must retire
+its physical owners before the next case. The explicit published-client owner
+profile remains 64 tasks, 64 queued work and 256 native owners; it establishes no
+minimum-client or default-budget claim.
+
+The source and real-wire reference controls pass. Signed execution is pending;
+no whole #691/#745 criterion is credited to preparing this programme. It supplies
+no Fetch connect/read timeout extension, TLS/HTTP2 reason fabrication or new
+stream grant.
+
+Normal package compatibility now selects and captures the frozen V7 manifest
+from the authoritative declared phase interface, while legacy declarations keep
+their original profiles. Phase HTTP combined with transactional state refuses
+until a combined profile is qualified. This supplies no provider or grant.
+The first emitted component at `1e2bf27881` compiled successfully but its old
+selector inspected the phase import under V5 and refused before packaging.
+That failed run remains retained; re-inspection of its exact component/graph
+under the declared V7 profile has no link blocker, and actual signed execution
+still requires the focused lane.
+
+The `8981516dd6` retry compiled and packaged the phase component, then correctly
+refused its first invocation as incompatible-contract: WIT dependency resolution
+had implicitly imported all eight legacy streaming operations alongside their
+nominal resource types. The phase-only fixture now captures a canonical
+resource/type declaration with exactly those eight unused calls removed. Every
+original type and every phase function remains unchanged, as checked by the
+real wasm-tools 1.254.0 parser. No legacy provider or grant is added. Seven focused
+source/wire controls pass; actual signed execution of this correction is pending.
+
+
+The corrected programme now has nineteen invocation outcomes: sixteen default,
+optional extension and lifecycle cases, two zero-work grant denials, and one
+separate node with the phase provider/binding absent. That last node must reject
+before guest work and make zero real contacts; unavailable provider counters are
+recorded as unavailable rather than counted as zero.
+
+Optional Ky `fetch` callbacks are ordinary guest extensions that delegate to the
+same global API. Success and denied-target cases are labelled separately from the
+unchanged default-client cases; they install no privileged plugin or provider.
+
+For both public-abort cases, guest source checks the exact original reason before
+starting a second three-second timer. The unchanged native timer hook must report
+that second successful start and entered wait while the original Store/cell and
+HTTP I/O owners are still charged. Only then does the real peer release its held
+response. The reader has the explicit TypeScript64-task/eight-wait/eight-timer
+bounds and retains the native hook's fixed two public IDs, sixteen-record bound
+and closed fields. The original Go decoder/profile is unchanged. These new signed
+observations remain pending.
+
+Host products use the separately authenticated emitted-type and tenant correction
+at `6f5f180136`, [run39443901256](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39443901256/job/118700610031),
+with25 Rust and four emitted-graph controls. The new
+`http_tenant_native_products.py` authenticator pins the complete archive and
+source/products separately. Original77 and36ea helpers, products and receipts
+remain frozen for their existing consumers; all fourteen historical authentication
+controls still execute alongside the seven new ones. The C-context target and
+actual Rust cases remain registered additively, preserving every prior case.
+
+## Independent tenant HTTP candidate
+
+The source programme adds twelve outcomes using the same compiled component in
+one execution cell: eleven real guest executions and a zero-work foreign grant
+denial. Ordinary Ky and the captured transitive package run under both tenants;
+fresh calls follow real public abort and root cancellation. An optional Ky
+extension succeeds against its own origin and refuses the first tenant's origin
+without contact. Both peers compare distinct ephemeral authorization bytes and
+must observe exactly five requests each, with physical retirement between calls.
+The original provider/runtime limits are unchanged. HTTP installations have
+independent identities and protected credential stores; only the existing scalar
+runtime registrations use their explicit tenant aliases.
+
+This uses the existing neutral packaging/signing derivation to preserve the
+original component, compiler observation, exports and derived world. Each tenant
+publishes and grants its own release. It adds no guest compilation and grants
+nothing implicitly. The complete candidate now requires thirty-one invocation
+outcomes: twenty-seven guest executions and four refusals before guest work.
+These new observations are pending. They require #1225's source-bound native
+products and exact final-graph correction; the previous36ea tuple cannot qualify
+the component decoder's omission of the unused legacy response record.
+
+The1522 source retry compiled, packaged, signed and admitted component
+`sha256:94aa6461fe58e0172fe020e147e4c998ceb866b74a73c28720d3b4b98457215b`.
+Its first Ky call was denied before guest work (CPU0/outbound0). The checked
+capsule retained the nominal0.3 source import, but binding compilation treated
+that zero-function owner as an operational provider requirement. The shared
+source-authority correction is tracked in #1230; no legacy operation/grant is
+added. The [original failure observation](../testing/evidence/typescript-phase-first-admission-failure-2026-10-20.json)
+retains the unchanged native6f5 tuple and original failed call. New execution
+remains pending after that correction.

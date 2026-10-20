@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_http_spi.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add a separate default-false manual public ConnectionFactory SPI programme; preserve every existing default-client/fiber job, command, condition and bound unchanged; no default-client or tenant evidence substitution.",
+  "reviewReason": "Preserve every incoming default/fiber/phase obligation and add only independent optional public-SPI job with explicit false selector; current f919 tuple uses same strict factory, old helpers immutable, no default-client qualification inferred.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "75988caec54280cdb3814f651108b045327b6a8d93d7563bef8c765d3fa472e4"
+  "sha256": "e9fe464d2b97a7c8d3e6237ebb14f7375904605c01b5c5f3d15c8daeb40a3c22"
 }

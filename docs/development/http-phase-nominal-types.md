@@ -26,6 +26,9 @@ inputs and exhausted comparison limits. The source-bound native producer adds
 these controls while retaining its original five tools, eleven controls,
 assertions, overflow checks and shared deadlines. All thirteen native controls
 passed in [run39430989809](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39430989809/job/118655688632).
+The [original retained observation](../testing/evidence/http-phase-nominal-native-2026-10-20.json)
+authenticates that distinct five-tool, nineteen-member producer. Its receipts
+remain unchanged.
 
 The later TypeScript consumer at `f139baeb76` compiled and emitted a valid
 component, but its final graph guard rejected the compiler's omission of only

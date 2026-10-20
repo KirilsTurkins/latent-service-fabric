@@ -32,8 +32,13 @@ native Cargo/toolchain rebuild is part of this campaign.
 
 **Current evidence:** focused source/controller controls pass. Actual compilation,
 signing and the six SPI outcomes have not run. The separate default-false `java_http_spi` workflow selector is prepared, but no
-SPI dispatch or PR has occurred. The native authority repair and compiler-owned
-`SocketTimeoutException` type must be integrated before this programme runs.
+SPI dispatch or PR has occurred. The native authority repair, compiler-owned
+`SocketTimeoutException` type and original-entry coroutine liveness correction
+are integrated in this branch. The selected native source is the independently
+authenticated `f9192fb5785ca7bed8b33dbb869b3d775b72ab4b` tuple through the shared
+strict reader; full current native and auxiliary equality remains mandatory.
+Historical tuple helpers remain unchanged. The real IR and component results
+remain pending; the default-client campaign owns its separate qualification.
 It does not close #688 or #741 or replace the default-client proof.
 
 ## Same-node cross-tenant boundary

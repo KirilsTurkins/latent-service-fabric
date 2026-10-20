@@ -9,6 +9,10 @@ import org.teavm.model.Incoming;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
+import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
@@ -35,6 +39,51 @@ public final class Check {
         var sources = new HashSet<Integer>();
         for (var incoming : phi.getIncomings()) sources.add(incoming.getSource().getIndex());
         return sources;
+    }
+
+    private static void entryLiveness(String mode) {
+        var program = new Program();
+        var entry = program.createBasicBlock();
+        var exit = program.createBasicBlock();
+        program.createVariable(); // The method's original implicit receiver slot.
+        var value = program.createVariable();
+        var constant = new IntegerConstantInstruction();
+        constant.setReceiver(value); constant.setConstant(42); entry.add(constant);
+        var awaited = new MethodReference("control.Await", "await", void.class);
+        var call = new InvokeInstruction();
+        call.setType(InvocationType.SPECIAL); call.setMethod(awaited); entry.add(call);
+        jump(entry, exit);
+        var result = new ExitInstruction(); result.setValueToReturn(value); exit.add(result);
+        var transform = new CoroutineTransformation(name -> null, Set.of(awaited), false);
+        try {
+            transform.apply(program, new MethodReference("control.Owner", "run", int.class));
+        } catch (ArrayIndexOutOfBoundsException failure) {
+            var origin = failure.getStackTrace()[0];
+            if (!mode.equals("original")
+                    || !origin.getClassName().equals("org.teavm.model.util.LivenessAnalyzer")
+                    || !origin.getMethodName().equals("liveOut")) {
+                throw failure;
+            }
+            return;
+        }
+        if (mode.equals("original")) {
+            throw new AssertionError("coroutine-control-original-entry-defect-not-observed");
+        }
+        int calls = 0, pushes = 0;
+        var pushInt = new MethodReference("org.teavm.runtime.Fiber", "push", int.class, void.class);
+        for (var block : program.getBasicBlocks()) {
+            for (var instruction : block) {
+                if (instruction instanceof InvokeInstruction) {
+                    var method = ((InvokeInstruction) instruction).getMethod();
+                    if (method.equals(awaited)) ++calls;
+                    if (method.equals(pushInt)) ++pushes;
+                }
+            }
+        }
+        // One state number plus the integer live across the original entry call.
+        if (calls != 1 || pushes != 2) {
+            throw new AssertionError("coroutine-control-entry-live-value-lost-or-call-replayed");
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -89,6 +138,7 @@ public final class Check {
                 throw new AssertionError("coroutine-control-values-changed");
             }
         }
+        entryLiveness(args[0]);
         System.out.println("{\"schemaVersion\":\"latent.java.coroutine-phi-control.v1\",\"mode\":\""
                 + args[0] + "\",\"passed\":true}");
     }
