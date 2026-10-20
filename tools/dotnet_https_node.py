@@ -131,7 +131,7 @@ def run(artifact: Path,native: dict,output: Path):
                 value=json.loads(config.read_bytes())
                 provider=value['providers']['httpStreaming']['configuration']
                 provider.update(extraRoots=[list(root)],publicRoots=False)
-                write_json(config,value)
+                config.write_text(json.dumps(value,indent=2)+'\n',encoding='utf8')
                 node=connect(client,native['latentd'],private/'node',config,'examples',1)
                 cleanup.callback(node.close);probe=Probe(node,original['latentd'])
                 release=signed/'dotnet-standard-http'
@@ -160,6 +160,8 @@ def run(artifact: Path,native: dict,output: Path):
                     observations.append({'case':label,'invocation':row,'physicalRetirementVerified':True})
                 delete_all(client,[target['name']]);stop(client,node)
                 shutdown=stopped_record(node)
+                require(shutdown['reaped'] is True and shutdown['record']['clean'] is True,
+                        'dotnet-https-clean-node-stop')
                 peer.stop();raw=bytes(peer.buffers[0]);observation=json.loads(raw.splitlines()[-1])
                 encoded=json.dumps(observation).encode('ascii')
                 require(all(token not in body for token in (secret,secret.removeprefix(b'Bearer '))
@@ -168,7 +170,7 @@ def run(artifact: Path,native: dict,output: Path):
                 record['profiles'].append({'profile':profile,'cases':observations,'peer':peer_result(observation,profile),
                     'shutdown':shutdown,'serverCertificate':file_identity(destination/'server-certificate.der'),
                     'operatorTrust':file_identity(destination/'operator-trust.der')})
-                write_json(output/'progress.json',record)
+                write_json(output/('progress-'+profile+'.json'),record)
         require(original=={name:file_identity(path,512*1024**2) for name,path in native.items()}
             and sources=={name:file_identity(ROOT/name) for name in MATERIALS}
             and component==file_identity(artifact/'component.wasm'),'dotnet-https-final-source-component-native')
