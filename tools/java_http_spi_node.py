@@ -39,12 +39,12 @@ def validate_result(row, mode, selected):
         and data.get('resolvedRevision') == selected, 'java-spi-result-owner')
     require(row['exitCode'] == 0 and row['decoded'] == [expected(mode)], 'java-spi-ordinary-result')
     consumption = data['consumption']
-    for key in ('cpuFuel', 'outboundRequests'):
-        value = consumption[key]
-        require(type(value) is str and 0 < len(value) <= 20 and value.isascii()
-            and value.isdecimal() and int(value) < 2**64, 'java-spi-invalid-consumption')
-    require(int(consumption['cpuFuel']) > 0, 'java-spi-did-not-execute-library')
-    outbound = int(consumption['outboundRequests'])
+    fuel = consumption['cpuFuel']
+    require(type(fuel) is str and 0 < len(fuel) <= 20 and fuel.isascii()
+        and fuel.isdecimal() and int(fuel) < 2**64, 'java-spi-invalid-consumption')
+    outbound = consumption['outboundRequests']
+    require(type(outbound) is int and 0 <= outbound < 2**32, 'java-spi-invalid-consumption')
+    require(int(fuel) > 0, 'java-spi-did-not-execute-library')
     require(0 <= outbound <= 1 and (mode in (2, 3) or outbound == 1), 'java-spi-replay-or-outbound-charge')
 
 

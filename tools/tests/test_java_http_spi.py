@@ -14,7 +14,7 @@ from tools.rust_capsule_project import ROOT, read_json, digest
 def response(mode, selected):
     return {'processReaped': True, 'exitCode': 0, 'decoded': [node.expected(mode)],
         'response': {'outcomeKnown': True, 'data': {'resolvedRevision': selected,
-            'consumption': {'cpuFuel': '17', 'outboundRequests': '1'}}}}
+            'consumption': {'cpuFuel': '17', 'outboundRequests': 1}}}}
 
 
 class JavaHttpPublicSpi(unittest.TestCase):
@@ -58,7 +58,7 @@ class JavaHttpPublicSpi(unittest.TestCase):
                 changed = response(mode, selected);changed[field] = invalid
                 with self.subTest(mode=mode, field=field), self.assertRaises(WorkflowError):
                     node.validate_result(changed, mode, selected)
-            for key, invalid in (('cpuFuel', '0'), ('outboundRequests', '2')):
+            for key, invalid in (('cpuFuel', '0'), ('outboundRequests', 2)):
                 changed = response(mode, selected);changed['response']['data']['consumption'][key] = invalid
                 with self.subTest(mode=mode, key=key), self.assertRaises(WorkflowError):
                     node.validate_result(changed, mode, selected)
@@ -81,11 +81,28 @@ class JavaHttpPublicSpi(unittest.TestCase):
 
     def test_unknown_or_boolean_numeric_consumption_cannot_be_qualification(self):
         selected = {'revisionId': 'signed:test'}
-        for key in ('cpuFuel', 'outboundRequests'):
-            for invalid in (True, 1, '', '-1', '1.0', '9'*21):
+        for key, invalid_values in (
+                ('cpuFuel', (True, 1, '', '-1', '1.0', '9'*21)),
+                ('outboundRequests', (True, None, '1', 1.0, -1, 2**32))):
+            for invalid in invalid_values:
                 changed = response(0, selected);changed['response']['data']['consumption'][key] = invalid
                 with self.subTest(key=key, invalid=invalid), self.assertRaises(WorkflowError):
                     node.validate_result(changed, 0, selected)
+
+    def test_actual_cli_consumption_preserves_string_u64_and_integer_u32_fields(self):
+        selected = {'revisionId': 'actual-public-spi'}
+        row = response(0, selected)
+        row['response']['data']['consumption'] = {
+            'cpuFuel': '11094755', 'peakMemoryBytes': '9636600',
+            'outboundRequests': 1, 'childCalls': 0, 'effectCount': 0}
+        node.validate_result(row, 0, selected)
+        row['response']['data']['consumption']['cpuFuel'] = str(2**64-1)
+        node.validate_result(row, 0, selected)
+        for key, value in (('cpuFuel', str(2**64)), ('outboundRequests', 2**32)):
+            changed = response(0, selected)
+            changed['response']['data']['consumption'][key] = value
+            with self.subTest(key=key), self.assertRaises(WorkflowError):
+                node.validate_result(changed, 0, selected)
 
     def test_absent_new_native_authenticator_refuses_before_any_product_or_build(self):
         with tempfile.TemporaryDirectory() as temporary, patch.object(campaign, 'ROOT', Path(temporary)), \
