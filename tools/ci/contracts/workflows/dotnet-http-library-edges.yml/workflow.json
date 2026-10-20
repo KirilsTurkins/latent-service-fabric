@@ -14,7 +14,8 @@
         "paths": [
           ".github/workflows/dotnet-http-library-edges.yml",
           "tools/dotnet_http_library_edges_node.py",
-          "tools/qualify_dotnet_http_library_edges.py"
+          "tools/qualify_dotnet_http_library_edges.py",
+          "tools/dotnet_http_library_edges_fixture.py"
         ]
       },
       "workflow_dispatch": null
@@ -27,7 +28,7 @@
   "requiredJobs": [
     "signed-boundaries"
   ],
-  "reviewReason": "Add10 real signed unchanged Flurl/Refit malformed-JSON/framing/truncation/body-limit and fresh-state outcomes plus2pre-entry refusals using authenticated original component/native products; preserve all existing jobs/cases/commands/limits.",
+  "reviewReason": "Observed a456 signed Refit truncation fault reproduces on reference CLR in application error handling; new source-bound app preserves unmodified libraries/SDK and all10cases plus2status regressions. Build ONE guest using original isolated approved-generator pipeline; original legacy20+HTTPS15 and native producer remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-http-library-edges.yml"
 }

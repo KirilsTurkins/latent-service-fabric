@@ -31,10 +31,12 @@ CASES = (
     ('refit-malformed-framing',1,'/conformance/body/malformed','1:transport-error',1),
     ('flurl-truncated',0,'/conformance/body/truncated','1:transport-error',1),
     ('refit-truncated',1,'/conformance/body/truncated','1:transport-error',1),
+    ('refit-404-unchanged',5,'/conformance/status/404','1:404:error:domain-error',1),
+    ('refit-500-unchanged',7,'/conformance/status/500','1:500:error:domain-error',1),
     ('flurl-fresh-after-errors',0,'/conformance/json',DOMAIN,1),
     ('refit-fresh-after-errors',1,'/conformance/json',DOMAIN,1),
 )
-VECTORS = ['malformed-json']*2+['oversized-body']*2+['malformed-framing']*2+['truncated-body']*2+['domain-json']*2
+VECTORS = ['malformed-json']*2+['oversized-body']*2+['malformed-framing']*2+['truncated-body']*2+['http-404','http-500']+['domain-json']*2
 MATERIALS = ('tools/dotnet_http_library_edges_node.py','tools/dotnet_published_http_node.py','tools/dotnet_standard_http_node.py',
     'tools/fixtures/dotnet-published-http/Main.cs','tools/standard_http/process_peer.py',
     'tools/standard_http/peer.py','tools/standard_http/protocol.py','tools/standard_http/vectors.py',
@@ -44,7 +46,7 @@ MATERIALS = ('tools/dotnet_http_library_edges_node.py','tools/dotnet_published_h
 def peer_result(value):
     validate(value)
     require(value['state']=='stopped' and value['failure'] is None
-        and value['acceptedConnections']==value['startedRequests']==10
+        and value['acceptedConnections']==value['startedRequests']==12
         and value['openConnections']==value['rejectedRequests']==value['listeningOrigins']==0
         and value['committedMutations']==0,
         'dotnet-library-edges-exact-peer-retirement')
@@ -57,8 +59,8 @@ def peer_result(value):
     require(not any(row['kind'] in ('gate-pending','gate-released','mutation-committed')
         for row in value['events']), 'dotnet-library-edges-no-gate-or-mutation')
     require(all(row['closeReason']=='response-write-complete' for row in rows
-        if row['vector'] in ('malformed-json','domain-json')), 'dotnet-library-edges-real-json-responses')
-    return {'contacts':10,'completedWrites':value['completedResponseWrites'],
+        if row['vector'] in ('malformed-json','domain-json','http-404','http-500')), 'dotnet-library-edges-real-json-responses')
+    return {'contacts':12,'completedWrites':value['completedResponseWrites'],
         'mutations':0,'allClosed':True,'exactVectors':list(VECTORS)}
 
 
@@ -156,7 +158,7 @@ def run(artifact: Path, native: dict, output: Path):
         require(before=={name:file_identity(path,512*1024**2) for name,path in native.items()}
             and source=={name:file_identity(ROOT/name) for name in MATERIALS}
             and component==file_identity(artifact/'component.wasm'),'published-dotnet-final-source-and-products')
-        record.update(status='passed',guestExecutions=10,preIoRefusals=2)
+        record.update(status='passed',guestExecutions=12,preIoRefusals=2)
         write_json(output/'qualification.json',record)
         return record
     except BaseException:
