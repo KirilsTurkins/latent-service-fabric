@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "latent.go.managed-http-observation.v1",
+  "status": "passed",
+  "executedSource": "b8933155cec72572d462d15e958745c45f44f08d",
+  "run": 39476760545,
+  "job": 118814611561,
+  "artifact": {
+    "id": 12291075452,
+    "size_in_bytes": 3676999,
+    "digest": "sha256:54b0cc0844aef466a176d9af49aaf1571bd4730db1fde14586039ab9a0723791"
+  },
+  "archiveMembers": 171,
+  "allArchiveCrcAndDigestsVerified": true,
+  "executedGitSourceMaterials": 32,
+  "originalBuildSource": "a357a9ec3e7f8f2b672ee4a5c9c78b9326d240b7",
+  "originalBuildRun": 39472403895,
+  "originalBuildJob": 118799553945,
+  "originalProgrammeStatus": "failed-reader",
+  "originalFailedRecordByteExact": true,
+  "originalHistoricalGitMaterials": 31,
+  "originalNormalRecipeInputsEqualCurrent": 91,
+  "originalCapturedSdkInputsEqualCurrent": 60,
+  "originalWitInputsRestoredAndChecked": 5,
+  "component": {
+    "sha256": "sha256:c12651aa625ec81ec0b30b3bfac210529eac974e27eb05606e0f5ded6b5f1a97",
+    "bytes": 10532076
+  },
+  "componentCompilationPerformedByReplay": false,
+  "nativeCompilationPerformedByReplay": false,
+  "nativeCompiledSource": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+  "runtimeProfile": "go-component-activation-v5",
+  "runtimeLimits": {
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 8,
+    "waits": 16,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 8
+  },
+  "maintenanceTaskReservation": 8,
+  "signedCases": [
+    {
+      "tenant": "examples",
+      "name": "sling-context-while-http-pending",
+      "mode": 4,
+      "exitCode": 0,
+      "decoded": [
+        "cancelled"
+      ],
+      "outboundRequests": 1,
+      "processReaped": true,
+      "physicalAndProviderZero": true,
+      "positiveWhileCliUnfinished": {
+        "records": [
+          {
+            "mode": "pending",
+            "event": "wait-pending",
+            "sequence": 1,
+            "tasks": 10,
+            "waits": 0,
+            "timers": 1
+          },
+          {
+            "mode": "pending",
+            "event": "start-accepted",
+            "sequence": 2,
+            "tasks": 9,
+            "waits": 0,
+            "timers": 1
+          },
+          {
+            "mode": "pending",
+            "event": "next-entered",
+            "sequence": 3,
+            "tasks": 9,
+            "waits": 1,
+            "timers": 1
+          }
+        ],
+        "physicalOwners": {
+          "execution-cell-leases": 1,
+          "guest-invocations": 1,
+          "guest-stores": 1,
+          "guest-host-states": 1,
+          "guest-component-instances": 1
+        },
+        "providerOwners": {
+          "broker_calls": "2",
+          "pool_active_connections": "1",
+          "pool_running_requests": "1"
+        },
+        "tenantCalls": "2",
+        "tenantSessions": "1"
+      }
+    },
+    {
+      "tenant": "foreign",
+      "name": "requests-context-while-http-pending",
+      "mode": 104,
+      "exitCode": 0,
+      "decoded": [
+        "cancelled"
+      ],
+      "outboundRequests": 1,
+      "processReaped": true,
+      "physicalAndProviderZero": true,
+      "positiveWhileCliUnfinished": {
+        "records": [
+          {
+            "mode": "drain",
+            "event": "wait-pending",
+            "sequence": 5,
+            "tasks": 10,
+            "waits": 0,
+            "timers": 1
+          },
+          {
+            "mode": "drain",
+            "event": "start-accepted",
+            "sequence": 6,
+            "tasks": 9,
+            "waits": 0,
+            "timers": 1
+          },
+          {
+            "mode": "drain",
+            "event": "next-entered",
+            "sequence": 7,
+            "tasks": 9,
+            "waits": 1,
+            "timers": 1
+          }
+        ],
+        "physicalOwners": {
+          "execution-cell-leases": 1,
+          "guest-invocations": 1,
+          "guest-stores": 1,
+          "guest-host-states": 1,
+          "guest-component-instances": 1
+        },
+        "providerOwners": {
+          "broker_calls": "2",
+          "pool_active_connections": "1",
+          "pool_running_requests": "1"
+        },
+        "tenantCalls": "2",
+        "tenantSessions": "1"
+      }
+    },
+    {
+      "tenant": "examples",
+      "name": "fresh-private-worker-after-both-deadlines",
+      "mode": 0,
+      "exitCode": 0,
+      "decoded": [
+        "200:domain:7:café:first|λ"
+      ],
+      "outboundRequests": 1,
+      "processReaped": true,
+      "physicalAndProviderZero": true
+    }
+  ],
+  "preEntryDenials": 4,
+  "positivePendingWitnesses": 2,
+  "contacts": 3,
+  "physicalAndProviderZeroRows": 3,
+  "cleanNodeStop": true,
+  "wholeRuntimeQualification": false,
+  "normalKernelStreamQualified": false,
+  "typedHttpHttpsSupported": false
+}

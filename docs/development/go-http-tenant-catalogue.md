@@ -114,8 +114,8 @@ keeps the original 1ad/6f5 record intact and gives no managed-v5 credit.
 
 ## Separate managed worker selection
 
-`qualify_go_http_tenants.py --managed-runtime` is an explicit **source-only
-candidate**, with no signed result yet. Its fresh project selects
+`qualify_go_http_tenants.py --managed-runtime` is an explicitly selected,
+actually qualified managed programme. Its fresh project selects
 `go-component-activation-v5`; both the captured module selection and actual build
 observation must name that profile before node execution. A v4 component cannot
 be relabelled as managed. The default command, client sources, private worker,
@@ -149,10 +149,9 @@ unknown, private, overflow or out-of-profile records failing closed.
 The real peers must retain exactly three authorized contacts, with one held
 header request per tenant, no response bytes and no gate release. Both ordinary
 client results must report context cancellation, followed by provider and physical
-zero before fresh reuse and a clean node stop. This proves timer/helper progress
-while HTTP was pending only if the actual hosted programme passes. Source controls
-and the earlier v4 result cannot satisfy that managed execution gate; it is still
-pending. The first actual run compiled, validated and signed the component, but
+zero before fresh reuse and a clean node stop. Source controls and the earlier
+v4 result cannot satisfy that managed execution gate. The first actual run
+compiled, validated and signed the component, but
 failed its reader because it incorrectly demanded two timer-start records. The
 actual v5 worker uses wait-for, then context timer-start/next; that failure remains
 retained. The corrected default replay authenticates the fixed 182-member build
@@ -162,3 +161,33 @@ It keeps the failed original programme record and reports zero new component
 compilations. A fresh build remains available through explicit manual selection.
 No native producer, engine build, HTTP policy or guest accounting code
 changes, and no raw socket/kernel/HTTPS qualification, are part of this slice.
+
+### Actual managed pending HTTP result
+
+[Run39476760545/job118814611561](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39476760545/job/118814611561)
+passed on b8933155cec72572d462d15e958745c45f44f08d. Independent review
+authenticated all171 archive CRC/hash members,32 executed Git source materials,
+the original31 build-source materials,91 unchanged normal recipe files and60
+captured SDK files. The exact original component remains
+sha256:c12651aa625ec81ec0b30b3bfac210529eac974e27eb05606e0f5ded6b5f1a97
+(10,532,076 bytes); the replay performed no component or native compilation.
+The original failed programme remains failed and byte-exact.
+
+Both ordinary clients returned context cancellation after an actual positive
+pending barrier. Each snapshot retained one original Store/cell, one active HTTP
+connection and running request, two broker calls, and an unfinished CLI. The
+private worker's wait-pending recorded TASK10; the context timer then admitted
+and entered its real next wait with TASK9/wait1/timer1. The selected total
+TASK16 still includes all eight maintained runtime reservations. Each accepted
+root subsequently closed; all three calls reaped and reached physical/provider
+zero. Four pre-entry denials, three exact peer contacts, the fresh parsed-domain
+result and clean node stop passed.
+
+The [source-bound observation](../testing/evidence/go-http-managed-pending-signed-2026-10-20.json)
+joins the earlier v4 HTTP and unchanged-library matrices. Final composition
+retains every executed source/SDK/recipe input. A separately reviewed optional
+TLS CLI addition in the shared peer leaves its default plaintext run AST exact;
+that file is outside the frozen construction/native input sets, so no historical
+guard or receipt is relaxed. This evidence supplies the finite typed-HTTP
+managed-progress requirement, not whole Go runtime, raw-stream, kernel or HTTPS
+qualification.
