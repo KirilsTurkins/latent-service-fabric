@@ -53,3 +53,10 @@ compiler JAR load but failed in `LivenessAnalyzer.liveOut` while processing the
 appended entry continuation. Its bounded public compiler stack identifies this
 separate defect; no guest ran. The entry-liveness correction still requires its
 real original/corrected IR controls and fresh component execution in hosted CI.
+
+Run `39467113742`, job `118781269087`, then passed both real original/corrected
+JVM controls, including the entry-liveness regression, and generated C with the
+exact private JAR loaded (`2e36303865fe91c639bf42b992c12d149d329ed1f64f71291b42d5404bf04105`).
+Its next clang stage failed on an integer GC-root argument in `TimeZone.c`.
+That separate generated-code failure does not invalidate the observed IR result;
+it still means no component or signed Java invocation was produced.

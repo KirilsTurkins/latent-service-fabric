@@ -17,7 +17,7 @@ from tools.application_dependency_store import Store
 from tools.build_observation import build_environment
 from tools.java_capsule_build import RECIPE, FIBER_IO_PROFILE, build
 from tools.java_dependency_authoring import review
-from tools.java_guest.c_failure_context import FIXTURE_SOURCES
+from tools.java_guest.c_failure_context import PHASE_FIXTURE_SOURCES as FIXTURE_SOURCES
 from tools.java_http_client import PHASE_PROFILE_ID
 from tools.java_http_phase_fixture import project, SOURCE, WORLD
 from tools.java_http_phase_node import run as node_controls

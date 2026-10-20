@@ -157,3 +157,14 @@ All current native source and 107 auxiliary inputs must still equal this exact
 producer before and after Java compilation. The reader itself is a captured
 campaign material. The old 77, 36ea and 8f helper files and controls remain
 unchanged; no historical guest result is relabelled as current qualification.
+
+Source `f267339b620446d5e6a4779dcc34c788e460adb8`, tested as the byte-identical
+merge tree `5e515c23196465b683dbed5a136bc476e67d1a88`, passed both real JVM IR
+controls and TeaVM C generation in run `39467113742`, job `118781269087`.
+Artifact `12286760612` retains those logs and the next clang refusal:
+`TimeZone.c:361` passes an integer temporary to a pointer-valued GC-root slot.
+No component or guest invocation exists from that run. The separate phase-only
+failure-context selection now adds exactly `c/j/u/TimeZone.c`, retaining its
+bounded declarations and uses before temporary build cleanup. The original
+two-file fixture selection, all byte/line bounds and clang acceptance remain
+unchanged. No cast or compiler suppression is applied without that evidence.

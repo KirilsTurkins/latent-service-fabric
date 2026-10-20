@@ -44,6 +44,7 @@
           "tools/tests/test_java_http_phases.py",
           "tools/tests/test_java_timeout_exception.py",
           "tools/tests/test_java_teavm_failure_trace.py",
+          "tools/tests/test_java_phase_c_context.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -70,7 +71,7 @@
     "http-fiber-lifecycle",
     "http-phase-clients"
   ],
-  "reviewReason": "Explicit reviewed native tuple update after current pending-wait observer merge: replace only acquisition module8f with shared strict f919 wrapper; identical output/env/bounds, original8f/36/77 receipts and all old controls retained, exact new source fetch and factory controls additive. All current native/107 auxiliary source bytes equal authenticated f919; no historical qualification transfer.",
+  "reviewReason": "Retain exact clang TimeZone integer-to-pointer failure and unchanged acceptance: add phase-only fixed public TimeZone context tuple, preserve original Capsule/GZIP tuple, defaults, anchored reads,128KiB context/4MiB file/16MiB total and original failure. Add only3 scoped reader controls and one workflow command; no cast or guest runtime change.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
