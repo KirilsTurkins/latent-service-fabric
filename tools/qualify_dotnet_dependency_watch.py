@@ -100,7 +100,57 @@ def _public_build_failure(value):
     return result
 
 
+_PROJECTION_PHASES = frozenset({'workspace-owner', 'control-lock', 'control-state', 'project-selection',
+    'attempt-inventory', 'attempt-owner', 'failure-document', 'adapter-result', 'final-state'})
+_PROJECTION_REFUSALS = frozenset({'bound', 'owner', 'schema', 'changed', 'missing-or-unsafe',
+    'missing', 'access', 'busy', 'unavailable'})
+
+
+class _ProjectionRefusal(Exception):
+    def __init__(self, phase, refusal):
+        self.phase, self.refusal = phase, refusal
+
+
+def _projection_refusal(error):
+    # Match only fixed producer/reader codes; never publish an exception message.
+    code = error.args[0] if len(error.args) == 1 and type(error.args[0]) is str else None
+    if code in {'file-byte-limit', 'document-byte-limit', 'document-complexity-limit',
+                'failure-projection-attempt-limit'}:
+        return 'bound'
+    if code in {'workspace-owner-mismatch', 'private-state-directory-required',
+                'single-link-regular-file-required', 'reparse-point-rejected',
+                'unowned-build-attempt', 'failure-projection-workspace-owner',
+                'failure-projection-owned-attempt', 'failure-projection-unsafe-parent',
+                'reparse-or-file-type-rejected'}:
+        return 'owner'
+    if code in {'invalid-json', 'duplicate-field', 'nonfinite-number', 'active-build-state',
+                'build-attempt-state', 'build-request-identity', 'invalid-sha256',
+                'document-object-required', 'unknown-or-missing-field'}:
+        return 'schema'
+    if code in {'source-changed-during-read', 'failure-projection-state-changed'}:
+        return 'changed'
+    if code in {'source-file-unavailable-or-unsafe', 'windows-protected-open-failed'}:
+        return 'missing-or-unsafe'
+    if isinstance(error, FileNotFoundError):
+        return 'missing'
+    if isinstance(error, PermissionError):
+        return 'access'
+    if isinstance(error, (BlockingIOError, TimeoutError)):
+        return 'busy'
+    if isinstance(error, (KeyError, TypeError)):
+        return 'schema'
+    return 'unavailable'
+
+
 def collect_build_failure_metadata(workspace):
+    observed = {'phase': 'workspace-owner'}
+    try:
+        return _collect_build_failure_metadata(workspace, observed)
+    except Exception as error:
+        raise _ProjectionRefusal(observed['phase'], _projection_refusal(error)) from None
+
+
+def _collect_build_failure_metadata(workspace, observed):
     """Inspect only this owned workspace/current selection, without executing a recipe."""
     from tools.dev_workflow import build_cache, paths, state
     from tools.dev_workflow.common import decode, sha
@@ -109,22 +159,27 @@ def collect_build_failure_metadata(workspace):
         require(state.workspace(workspace.parent, workspace.name) == workspace,
                 'failure-projection-workspace-owner')
         # The build creates this lock. Do not create a new workspace/control owner.
+        observed['phase'] = 'control-lock'
         paths.read(workspace, 'build-control.lock', 1)
         with state.lock(workspace, 'build-control.lock', timeout=1):
+            observed['phase'] = 'control-state'
             active = build_control.status(workspace)
             result = {'qualification': False, 'state': active['state'], 'attempts': []}
             if type(active.get('reason')) is str and active['reason'] in _CONTROL_REASONS:
                 result['reasonCode'] = active['reason']
             if active['state'] not in {'reaped', 'uncertain'}:
                 return result
+            observed['phase'] = 'project-selection'
             selected = state.load(workspace, 'project.json')
             source, recipe = sha(selected['snapshot']), sha(selected['trust'])
             output = paths.relative(selected['descriptor']['build']['outputRoot'])
             builds = workspace / 'builds'
+            observed['phase'] = 'attempt-inventory'
             with paths.directory(builds):
                 entries = list(itertools.islice(builds.iterdir(), build_cache.MAX_ATTEMPTS + 1))
                 require(len(entries) <= build_cache.MAX_ATTEMPTS, 'failure-projection-attempt-limit')
                 for entry in sorted(entries):
+                    observed['phase'] = 'attempt-owner'
                     require(re.fullmatch('[0-9a-f]{32}', entry.name), 'failure-projection-owned-attempt')
                     with paths.directory(entry):
                         owner = build_cache.owner(entry)
@@ -133,12 +188,21 @@ def collect_build_failure_metadata(workspace):
                             continue
                         row = {'state': owner['state'], 'source': source, 'recipe': recipe, 'buildKey': owner['key']}
                         prefix = entry.name + '/source/'
+                        observed['phase'] = 'failure-document'
                         raw = _failure_file(builds, prefix + output + '/BUILD-FAILED.json', 65536)
+                        row['failureDocument'] = 'missing'
                         if raw is not None:
-                            row.update(_public_build_failure(decode(raw, 65536)))
+                            failure = decode(raw, 65536)
+                            projected = _public_build_failure(failure)
+                            row['failureDocument'] = ('observed' if type(failure) is dict
+                                and type(failure.get('formatVersion')) is int and failure['formatVersion'] == 1 else 'invalid')
+                            row.update(projected)
+                        observed['phase'] = 'adapter-result'
                         raw = _failure_file(builds, prefix + 'build-cache/compiler-stdout.log', 262144)
+                        row['adapterResult'] = 'missing'
                         if raw is not None:
                             adapter = decode(raw)
+                            row['adapterResult'] = 'invalid'
                             if (type(adapter) is dict and set(adapter) == {'schemaVersion', 'language', 'ownerIssue', 'cleanup', 'code'}
                                     and adapter['schemaVersion'] == 'latent.dev.compiler-result.v1'
                                     and adapter['language'] == 'dotnet' and type(adapter['ownerIssue']) is int
@@ -147,8 +211,11 @@ def collect_build_failure_metadata(workspace):
                                         'compiler-cancelled', 'compiler-input-or-build-failed'}
                                     and adapter['cleanup'] == ('uncertain' if adapter['code'] == 'compiler-cleanup-unconfirmed' else 'reaped')):
                                 row['adapterCode'], row['adapterCleanup'] = adapter['code'], adapter['cleanup']
+                                row['adapterResult'] = 'observed'
+                        observed['phase'] = 'final-state'
                         require(build_cache.owner(entry) == owner, 'failure-projection-state-changed')
                         result['attempts'].append(row)
+            observed['phase'] = 'final-state'
             require(build_control.status(workspace) == active, 'failure-projection-state-changed')
             return result
 
@@ -159,8 +226,12 @@ def add_public_build_failure(public, workspace):
         return
     try:
         public['buildFailureMetadata'] = collect_build_failure_metadata(workspace)
-    except Exception:
-        public['buildFailureMetadata'] = {'qualification': False, 'status': 'unavailable'}
+    except Exception as error:
+        value = {'qualification': False, 'status': 'unavailable'}
+        if (type(error) is _ProjectionRefusal and type(error.phase) is str and error.phase in _PROJECTION_PHASES
+                and type(error.refusal) is str and error.refusal in _PROJECTION_REFUSALS):
+            value.update(readerPhase=error.phase, refusal=error.refusal)
+        public['buildFailureMetadata'] = value
 
 
 class ShutdownOnce:

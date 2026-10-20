@@ -385,6 +385,7 @@ class PublicBuildFailureMetadata(unittest.TestCase):
                 'source': 'sha256:' + '1' * 64, 'recipe': 'sha256:' + '2' * 64,
                 'buildKey': 'sha256:' + '3' * 64, 'stage': 'compile',
                 'commands': [{'stage': 'native-aot', 'exitCode': 1}],
+                'failureDocument': 'observed', 'adapterResult': 'observed',
                 'adapterCode': 'compiler-cleanup-unconfirmed', 'adapterCleanup': 'uncertain'})
             rendered = json.dumps(result)
             for private in ('private compiler text', 'private application path', str(workspace), attempt.name):
@@ -430,17 +431,19 @@ class PublicBuildFailureMetadata(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
             original = failure.read_bytes()
-            for raw in (b'{"formatVersion":1,"stage":"compile","stage":"private"}',
-                        b'{"formatVersion":1,"seconds":NaN}', b' ' * 65537):
+            for raw, refusal in ((b'{"formatVersion":1,"stage":"compile","stage":"private"}', 'schema'),
+                        (b'{"formatVersion":1,"seconds":NaN}', 'schema'), (b' ' * 65537, 'bound')):
                 with self.subTest(rawBytes=len(raw)):
                     failure.write_bytes(raw); public = {'passed': False, 'failure': 'initial-build-failed'}
                     add_public_build_failure(public, workspace)
-                    self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+                    self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable',
+                        'readerPhase': 'failure-document', 'refusal': refusal})
                     self.assertEqual(public['failure'], 'initial-build-failed')
             failure.write_bytes(original)
             os.link(failure, failure.parent / 'same-file')
             public = {'passed': False}; add_public_build_failure(public, workspace)
-            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable',
+                'readerPhase': 'failure-document', 'refusal': 'owner'})
 
     def test_attempt_bound_and_symlink_escape_never_read_foreign_metadata(self):
         import os
@@ -451,7 +454,8 @@ class PublicBuildFailureMetadata(unittest.TestCase):
             for number in range(4):
                 paths.new_directory(workspace / 'builds' / (str(number) * 32))
             public = {'passed': False}; add_public_build_failure(public, workspace)
-            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable',
+                'readerPhase': 'attempt-inventory', 'refusal': 'bound'})
             for number in range(4):
                 (workspace / 'builds' / (str(number) * 32)).rmdir()
             foreign = failure.parent.parent / 'foreign'; foreign.mkdir()
@@ -466,7 +470,8 @@ class PublicBuildFailureMetadata(unittest.TestCase):
             else:
                 (foreign / 'BUILD-FAILED.json').write_text('{"private":"must never read"}')
                 public = {'passed': False}; add_public_build_failure(public, workspace)
-                self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+                self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable',
+                    'readerPhase': 'failure-document', 'refusal': 'owner'})
 
     def test_observer_exception_cannot_replace_original_error_or_touch_success(self):
         from unittest.mock import patch
@@ -486,3 +491,72 @@ class PublicBuildFailureMetadata(unittest.TestCase):
             passed = {'passed': True}; programme.add_public_build_failure(passed, Path('private'))
             programme.add_public_build_failure(public, None)
             reader.assert_not_called(); self.assertEqual(passed, {'passed': True})
+
+    def test_missing_optional_files_are_distinct_from_invalid_actual_producer(self):
+        from tools.qualify_dotnet_dependency_watch import collect_build_failure_metadata
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
+            failure.unlink(); adapter.unlink()
+            row = collect_build_failure_metadata(workspace)['attempts'][0]
+            self.assertEqual(row['failureDocument'], 'missing')
+            self.assertEqual(row['adapterResult'], 'missing')
+            self.assertNotIn('stage', row); self.assertNotIn('adapterCode', row)
+            failure.write_text('{"formatVersion":true,"private":"never publish"}')
+            adapter.write_text('{"schemaVersion":"private unrecognized producer"}')
+            row = collect_build_failure_metadata(workspace)['attempts'][0]
+            self.assertEqual(row['failureDocument'], 'invalid')
+            self.assertEqual(row['adapterResult'], 'invalid')
+            self.assertNotIn('private', json.dumps(row))
+            self.assertNotIn('stage', row); self.assertNotIn('adapterCode', row)
+
+    def test_real_schema_and_owner_refusals_preserve_closed_reader_stage(self):
+        from tools.qualify_dotnet_dependency_watch import add_public_build_failure
+        from tools.dev_workflow import state
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
+            original = state.load(workspace, 'active-build.json')
+            state.atomic(workspace, 'active-build.json', {**original, 'state': 'private invalid state'})
+            public = {'passed': False, 'uncertain': True, 'failure': 'initial-build-failed'}
+            add_public_build_failure(public, workspace)
+            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable',
+                'readerPhase': 'control-state', 'refusal': 'schema'})
+            state.atomic(workspace, 'active-build.json', original)
+            owner = state.load(workspace, 'owner.json')
+            state.atomic(workspace, 'owner.json', {**owner, 'id': 'private wrong owner'})
+            add_public_build_failure(public, workspace)
+            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable',
+                'readerPhase': 'workspace-owner', 'refusal': 'owner'})
+            self.assertIs(public['uncertain'], True)
+            self.assertEqual(public['failure'], 'initial-build-failed')
+            self.assertNotIn('private', json.dumps(public))
+
+    def test_busy_actual_control_lock_preserves_original_uncertain_failure_without_retry(self):
+        from unittest.mock import patch
+        from tools.qualify_dotnet_dependency_watch import add_public_build_failure
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace, attempt, failure, adapter = self.owned(Path(temporary).resolve())
+            public = {'passed': False, 'uncertain': True, 'failure': 'initial-build-failed'}
+            original = RuntimeError('original failure')
+            with patch('tools.dev_workflow.state.lock', side_effect=BlockingIOError('private lock pathname')) as lock:
+                with self.assertRaises(RuntimeError) as caught:
+                    try:
+                        raise original
+                    finally:
+                        add_public_build_failure(public, workspace)
+            self.assertIs(caught.exception, original)
+            lock.assert_called_once()
+            self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable',
+                'readerPhase': 'control-lock', 'refusal': 'busy'})
+            self.assertIs(public['uncertain'], True)
+            self.assertNotIn('private', json.dumps(public))
+
+    def test_public_refusal_projection_rejects_unknown_or_malformed_exception_fields(self):
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        for phase, refusal in (('private path', 'schema'), ('failure-document', 'private reason'),
+                               (True, 'bound'), ('control-state', None)):
+            with self.subTest(phase=phase, refusal=refusal), \
+                    patch.object(programme, 'collect_build_failure_metadata',
+                                 side_effect=programme._ProjectionRefusal(phase, refusal)):
+                public = {'passed': False};programme.add_public_build_failure(public, Path('not-read'))
+                self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})

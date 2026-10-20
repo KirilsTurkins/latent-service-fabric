@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Project only fixed owned failed-build metadata and closed causes without replacing uncertainty or publishing compiler text.",
+  "reviewReason": "Publish only bounded closed observer stage/refusal and missing-invalid fixed producer state; unchanged anchored ownership/current selection/privacy gates and final uncertain result.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9b9bba59895a275c3f5e65b9227e014a731a608a1f37423c345c652858db8aa9"
+  "sha256": "a1fab7bcbb92fe618eef1ccd553a12557792f682badee5d2ea3fbda024810211"
 }

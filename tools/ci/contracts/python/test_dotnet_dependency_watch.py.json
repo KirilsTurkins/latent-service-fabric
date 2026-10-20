@@ -16,9 +16,13 @@
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
     "PublicBuildFailureMetadata.test_actual_owned_failure_producers_retain_closed_cause_and_bind_selection",
     "PublicBuildFailureMetadata.test_attempt_bound_and_symlink_escape_never_read_foreign_metadata",
+    "PublicBuildFailureMetadata.test_busy_actual_control_lock_preserves_original_uncertain_failure_without_retry",
     "PublicBuildFailureMetadata.test_duplicate_nonfinite_oversize_and_hardlinked_metadata_refuse_safely",
+    "PublicBuildFailureMetadata.test_missing_optional_files_are_distinct_from_invalid_actual_producer",
     "PublicBuildFailureMetadata.test_observer_exception_cannot_replace_original_error_or_touch_success",
     "PublicBuildFailureMetadata.test_public_projection_rejects_unknown_fields_bools_and_unbounded_commands",
+    "PublicBuildFailureMetadata.test_public_refusal_projection_rejects_unknown_or_malformed_exception_fields",
+    "PublicBuildFailureMetadata.test_real_schema_and_owner_refusals_preserve_closed_reader_stage",
     "PublicBuildFailureMetadata.test_running_complete_or_wrong_producer_never_claim_a_failure_cause"
   ],
   "guards": {
@@ -214,7 +218,31 @@
       ],
       "skipSites": []
     },
+    "PublicBuildFailureMetadata.test_busy_actual_control_lock_preserves_original_uncertain_failure_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:11818a910cd43d11727754e5198b388dd4054fc0ac0c5d8646e04cdbaeda3a37"
+      ],
+      "skipSites": []
+    },
     "PublicBuildFailureMetadata.test_duplicate_nonfinite_oversize_and_hardlinked_metadata_refuse_safely": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:11818a910cd43d11727754e5198b388dd4054fc0ac0c5d8646e04cdbaeda3a37"
+      ],
+      "skipSites": []
+    },
+    "PublicBuildFailureMetadata.test_missing_optional_files_are_distinct_from_invalid_actual_producer": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -250,6 +278,30 @@
       ],
       "skipSites": []
     },
+    "PublicBuildFailureMetadata.test_public_refusal_projection_rejects_unknown_or_malformed_exception_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:11818a910cd43d11727754e5198b388dd4054fc0ac0c5d8646e04cdbaeda3a37"
+      ],
+      "skipSites": []
+    },
+    "PublicBuildFailureMetadata.test_real_schema_and_owner_refusals_preserve_closed_reader_stage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:11818a910cd43d11727754e5198b388dd4054fc0ac0c5d8646e04cdbaeda3a37"
+      ],
+      "skipSites": []
+    },
     "PublicBuildFailureMetadata.test_running_complete_or_wrong_producer_never_claim_a_failure_cause": {
       "bases": [
         "unittest.TestCase"
@@ -265,6 +317,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_dependency_watch.py",
-  "reviewReason": "Retain all fourteen watch controls and add six owned failure producer/privacy/bounds/original-error controls.",
+  "reviewReason": "Keep all original fourteen watch cases byte-equivalent; retain all six failure-reader controls and their rejection gates with explicit closed refusal assertions, add four real producer/missing/schema/owner/lock/privacy controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
