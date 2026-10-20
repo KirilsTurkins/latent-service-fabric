@@ -1,0 +1,83 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed unchanged Ky ofetch and outside consumers with original finite limits",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check real bounded reader and original Fetch controls",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_buffered_reader tools.tests.test_typescript_fetch tools.tests.test_typescript_published_fetch -v"
+      },
+      {
+        "name": "Install normal compiler isolation boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install normal pinned public compiler tools",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/published-fetch-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire fixed original import engine compiler and historical ordinary host",
+        "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/published-fetch-original\""
+      },
+      {
+        "name": "Capture build sign and execute both changed outside identities",
+        "run": "python3 -B tools/qualify_typescript_published_fetch.py --acquired \"$RUNNER_TEMP/published-fetch-original\" --tools \"$RUNNER_TEMP/published-fetch-tools\" --output \"$RUNNER_TEMP/published-fetch\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain actual source build native outcomes ownership and explicit unsupported results",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-published-fetch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/published-fetch-original/acquisition.json\n${{ runner.temp }}/published-fetch/*.json\n${{ runner.temp }}/published-fetch/variant-*/capture.json\n${{ runner.temp }}/published-fetch/variant-*/build/*.json\n${{ runner.temp }}/published-fetch/variant-*/build/component.wasm\n${{ runner.temp }}/published-fetch/variant-*/build/logs/**\n${{ runner.temp }}/published-fetch/variant-*/node/*.json\n${{ runner.temp }}/published-fetch/variant-*/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "published-fetch",
+  "kind": "job",
+  "reviewReason": "Add fixed authenticated original import compiler reuse and finite signed unchanged Ky/ofetch/private consumer programme; preserve historical Fetch controls and all prior CI obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-published-fetch.yml"
+}

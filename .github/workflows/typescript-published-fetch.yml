@@ -1,0 +1,73 @@
+name: TypeScript published Fetch clients
+on:
+  push:
+    branches: ['feat/typescript-published-fetch-20261020']
+    paths:
+      - '.github/workflows/typescript-published-fetch.yml'
+      - 'tools/typescript_published_fetch_fixture.py'
+      - 'tools/typescript_fetch_replay_inputs.py'
+      - 'tools/qualify_typescript_published_fetch.py'
+      - 'tools/typescript_guest/fetch.mjs'
+      - 'sdk/typescript-guest/activation/fetch-globals.d.ts'
+      - 'tools/tests/test_typescript_published_fetch.py'
+      - 'tools/tests/test_typescript_buffered_reader.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: typescript-published-fetch-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  published-fetch:
+    name: Signed unchanged Ky ofetch and outside consumers with original finite limits
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check real bounded reader and original Fetch controls
+        run: python3 -B -m unittest tools.tests.test_typescript_buffered_reader tools.tests.test_typescript_fetch tools.tests.test_typescript_published_fetch -v
+      - name: Install normal compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install normal pinned public compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/published-fetch-tools"
+      - name: Acquire fixed original import engine compiler and historical ordinary host
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_fetch_replay_inputs.py --output "$RUNNER_TEMP/published-fetch-original"
+      - name: Capture build sign and execute both changed outside identities
+        run: python3 -B tools/qualify_typescript_published_fetch.py --acquired "$RUNNER_TEMP/published-fetch-original" --tools "$RUNNER_TEMP/published-fetch-tools" --output "$RUNNER_TEMP/published-fetch"
+      - name: Retain actual source build native outcomes ownership and explicit unsupported results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-published-fetch-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/published-fetch-original/acquisition.json
+            ${{ runner.temp }}/published-fetch/*.json
+            ${{ runner.temp }}/published-fetch/variant-*/capture.json
+            ${{ runner.temp }}/published-fetch/variant-*/build/*.json
+            ${{ runner.temp }}/published-fetch/variant-*/build/component.wasm
+            ${{ runner.temp }}/published-fetch/variant-*/build/logs/**
+            ${{ runner.temp }}/published-fetch/variant-*/node/*.json
+            ${{ runner.temp }}/published-fetch/variant-*/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7
