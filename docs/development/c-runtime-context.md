@@ -118,10 +118,16 @@ There is no second registry, value array or destructor budget.
 
 The new fixed C11 fixture uses the ordinary public headers and entry points.
 Pinned Clang rejects the original PAL for four unresolved `tss_*` symbols and
-links the new PAL with the same4MiB maximum memory and64KiB stack. The owning
-compiled-core run is pending: its required cases cover root/child context
-isolation, deletion without callbacks, shared pthread/C11 exhaustion, error
-returns, stale handles, bounded/reentrant/cyclic destructors and context errno.
+links the new PAL with the same4MiB maximum memory and64KiB stack.
+[Run39490031609/job118860442491](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39490031609/job/118860442491)
+passed the actual compiled-core C11 cases: root/child context isolation, deletion
+without callbacks, shared pthread/C11 exhaustion, error returns, stale handles,
+bounded/reentrant/cyclic destructors and context errno. The
+[source-bound original receipt](../testing/evidence/c11-tss-core-2026-10-20.json)
+retains the original report and all44 member identities for artifact12296081910
+(19,765B; SHA-256 `9d25dc0ce5d68e80cd7108f5c6c41fa9775e6af27ef8b4bc6903aecfaf837985`).
+Independent review authenticated all14 Git sources and11 products and replayed
+the retained C11 core under the same Node24.19.0 public assertions.
 All original26 Rust/parser, C isolation/refusal and pthread controls remain.
 This C11 source addition does not select a production thread profile or supply
 thread creation/join, canonical children, charged bootstrap, synchronization,
