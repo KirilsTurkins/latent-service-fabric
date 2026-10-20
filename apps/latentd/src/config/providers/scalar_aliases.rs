@@ -1,9 +1,9 @@
 use latent_core::PlatformError;
 use serde::Deserialize;
 
-use super::{invalid, ConfiguredProviders, HostBinding, ProviderIdentity, ScalarInstallation};
+use super::{invalid, ConfiguredProviders, HostBinding, ProviderIdentity};
 
-/// An explicit logical identity for an already installed stateless provider.
+/// An explicit logical identity for an already installed scalar or activation-local registration.
 /// The original registration, implementation, epoch and resource limits remain.
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -13,16 +13,34 @@ pub struct ScalarAlias {
 }
 
 impl ConfiguredProviders {
-    fn scalar_sources(&self) -> [(Option<&ScalarInstallation>, &'static str); 5] {
+    fn scalar_sources(&self) -> [(Option<&ProviderIdentity>, &'static str); 6] {
         [
             (
-                self.clock_monotonic.as_ref(),
+                self.clock_monotonic.as_ref().map(|value| &value.identity),
                 "latent:clock/monotonic@0.1.0",
             ),
-            (self.clock_wall.as_ref(), "latent:clock/wall@0.1.0"),
-            (self.random.as_ref(), "latent:random/random@0.1.0"),
-            (self.context.as_ref(), "latent:context/context@0.1.0"),
-            (self.log.as_ref(), "latent:log/log@0.1.0"),
+            (
+                self.clock_wall.as_ref().map(|value| &value.identity),
+                "latent:clock/wall@0.1.0",
+            ),
+            (
+                self.random.as_ref().map(|value| &value.identity),
+                "latent:random/random@0.1.0",
+            ),
+            (
+                self.context.as_ref().map(|value| &value.identity),
+                "latent:context/context@0.1.0",
+            ),
+            (
+                self.log.as_ref().map(|value| &value.identity),
+                "latent:log/log@0.1.0",
+            ),
+            (
+                self.activation_runtime
+                    .as_ref()
+                    .map(|value| &value.identity),
+                latent_core::activation_runtime::CAPABILITY,
+            ),
         ]
     }
 
@@ -35,8 +53,8 @@ impl ConfiguredProviders {
             .into_iter()
             .filter_map(|(value, contract)| {
                 value
-                    .filter(|value| value.identity.id == source)
-                    .map(|value| (&value.identity, contract))
+                    .filter(|identity| identity.id == source)
+                    .map(|identity| (identity, contract))
             });
         let selected = found
             .next()
@@ -98,14 +116,17 @@ impl ConfiguredProviders {
             let same_scope = |value: &ProviderIdentity| {
                 value.tenant == alias.identity.tenant && value.service == alias.identity.service
             };
-            if self.scalar_sources().into_iter().any(|(value, other)| {
-                other == contract && value.is_some_and(|value| same_scope(&value.identity))
-            }) || self.scalar_aliases[..index].iter().any(|value| {
-                same_scope(&value.identity)
-                    && self
-                        .scalar_source(&value.source)
-                        .is_ok_and(|(_, other)| other == contract)
-            }) {
+            if self
+                .scalar_sources()
+                .into_iter()
+                .any(|(value, other)| other == contract && value.is_some_and(same_scope))
+                || self.scalar_aliases[..index].iter().any(|value| {
+                    same_scope(&value.identity)
+                        && self
+                            .scalar_source(&value.source)
+                            .is_ok_and(|(_, other)| other == contract)
+                })
+            {
                 return Err(invalid("providers.scalarAliases.scope"));
             }
         }

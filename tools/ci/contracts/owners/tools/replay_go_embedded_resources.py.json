@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_go_embedded_resources.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reuse the merged maintained exact producer/source compatibility predicate instead of duplicating allowances. Preserve all three replay cases, exact helper selector, startup-test-only original/current inventories and original native27 proof; no production/native scope expansion.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "675e0c4ecf8534864d410a9e76a99aeb39ab929d7915a5ad522de46862e7d349"
+}

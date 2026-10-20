@@ -1,0 +1,86 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Actual Go default baseline and managed live stack GC and heap costs",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Install pinned repository source controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Reject fabricated memory observations and changed original products",
+        "run": "python3 -m unittest tools.tests.test_go_runtime_costs tools.tests.test_go_node_stop tools.tests.test_sdk_scratch_qualification -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the completed exact producer before restoring any executable",
+        "run": "python3 tools/qualify_go_node_stop.py --record-producer --output \"$RUNNER_TEMP/go-runtime-costs-producer.json\""
+      },
+      {
+        "name": "Restore only the authenticated public normal Go products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+          "path": "${{ runner.temp }}/go-runtime-costs-normal",
+          "run-id": 39373374237
+        }
+      },
+      {
+        "name": "Install the existing network-denied compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the exact maintained Go compiler and generator",
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-runtime-costs-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-runtime-costs-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-runtime-costs-tools/go\" --output \"$RUNNER_TEMP/go-runtime-costs-tools/go-async\"\necho \"$RUNNER_TEMP/go-runtime-costs-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Compile identical ordinary source and execute both real signed profiles",
+        "run": "python3 tools/qualify_go_runtime_costs.py --normal-qualification \"$RUNNER_TEMP/go-runtime-costs-normal\" --producer-receipt \"$RUNNER_TEMP/go-runtime-costs-producer.json\" --output \"$RUNNER_TEMP/go-runtime-costs\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source builds real memory results and physical retirement including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-runtime-costs-reference-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-runtime-costs-producer.json\n${{ runner.temp }}/go-runtime-costs/*.json\n${{ runner.temp }}/go-runtime-costs/logs/**\n${{ runner.temp }}/go-runtime-costs/stack-placement/*.json\n${{ runner.temp }}/go-runtime-costs/stack-placement/logs/**\n${{ runner.temp }}/go-runtime-costs/profile-*/*.json\n${{ runner.temp }}/go-runtime-costs/profile-*/logs/**\n${{ runner.temp }}/go-runtime-costs/profile-*/build/*.json\n${{ runner.temp }}/go-runtime-costs/profile-*/build/logs/**\n${{ runner.temp }}/go-runtime-costs/profile-*/build/component.wasm\n${{ runner.temp }}/go-runtime-costs/profile-*/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "live-cost",
+  "kind": "job",
+  "reviewReason": "Finite Go742 cost slice: same ordinary source default/v5 baseline, actual held recursive stacks and live12MiB heap through GC/checksum, fresh calls, exact original64MiB/1B/120s and Task16/Wait4/Timer2 profile, real per-call consumption and physical owner retirement/clean node stop. Authenticate retained94d native5/normal27 without rebuild/repeat. Do not infer physical memory accounting or unused logical-bucket exhaustion from MemStats/HostCompleted. Exact owned recursive function additionally requires pinned Go1.27.2 Wasm compiler assembly/escape evidence of the array on an at-least8KiB stack frame, plus actual signed StackInuse growth>=540672B. All46 focused controls PASS; actual compilation/signed execution pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-runtime-cost-reference.yml"
+}

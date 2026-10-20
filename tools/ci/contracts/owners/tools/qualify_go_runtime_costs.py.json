@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_runtime_costs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual205 default async-v1 capsule has no activation import; preserve three runtime grants without adding invalid activation grant; explicitv5 still installs exact original activation provider/policy. Originalsix cases/source/budgets/native unchanged. Programme-path oldsource RED,19 focused PASS; new signed result pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d06809de6ee6361f4142ef19b968e25a764f99ff760d7ec3f578408964dfe469"
+}

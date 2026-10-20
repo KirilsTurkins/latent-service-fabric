@@ -98,8 +98,8 @@ the normal CLR embedded-resource qualification for string-hash initialization.
 This does not enable secure random APIs. The existing clock grant is preserved;
 missing LOG is tested while RANDOM is granted, and missing RANDOM is tested while
 CLOCK and LOG are granted, before restoring the exact complete list. The new
-campaign requires 45 total outcomes. Resource and Console acceptance after this
-correction still require successful signed execution.
+campaign requires 45 total outcomes. Resource and Console acceptance at that revision was still pending; the
+later successful45-outcome metadata-derived replay is recorded below.
 Cross-tenant logging, default asynchronous workers, callback cancellation,
 pending remote exporters and the complete six-language #681 matrix remain
 separate acceptance work. This profile adds no scratch filesystem.
@@ -119,7 +119,11 @@ An explicit material receipt binds the original adapter, source WIT and derived
 adapter. The BCL's original synchronous imports remain unchanged. The separately
 admitted runtime/HTTP adapters keep their existing async projection and root
 ownership machinery. No BCL method, engine reentrancy flag, grant or resource
-limit is changed. Actual signed execution of this repair remains pending.
+limit is changed. The [successful45-outcome replay](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39314452672/job/118272183568)
+verified the eight Console cases, denials, trap/fresh recovery and physical
+cleanup (artifact12217781637). It retained the original NativeAOT/core bytes
+and bound the new metadata-only composition, package and signature separately;
+it was not a new BCL/NativeAOT compilation.
 
 
 The repaired closed adapter is also derived from the application's authenticated

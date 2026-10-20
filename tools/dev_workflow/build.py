@@ -67,7 +67,7 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
 
 def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trusted: str, cli: Path, control=None,
             executable_approval=None) -> dict:
-    from .executable_approval import selection, maintained
+    from .executable_approval import selection
     project.validate(descriptor)
     selection(descriptor, executable_approval)
     require(trusted == project.trust_identity(descriptor), "workspace-recipe-trust-required")
@@ -103,7 +103,7 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
         try:
             check()
             if receipt is None:
-                if maintained(descriptor):
+                if inventory is not None:
                     # Bind the explicit failed-request viewer to the authenticated
                     # compiler closure without retaining an ambient tool path.
                     raw = paths.read(tool_root, recipe['inventory']['path'], tool_inventory.MAX_DOCUMENT)

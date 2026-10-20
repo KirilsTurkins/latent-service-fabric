@@ -1,0 +1,155 @@
+{
+  "run": 39394512962,
+  "job": 118533782955,
+  "artifact": 12252127256,
+  "head": "1a56c53aa2dd738c1afd7e4f95577462c19a2061",
+  "knownReapedInvocations": 15,
+  "physicalRetirements": 15,
+  "zeroOwnerControls": 15,
+  "cleanNodes": 1,
+  "realPeerContacts": 0,
+  "cases": [
+    {
+      "name": "bootstrap",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14478734"
+    },
+    {
+      "name": "thenable",
+      "mode": 1,
+      "decoded": [
+        "thenable:pending:once|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14835563"
+    },
+    {
+      "name": "microtasks",
+      "mode": 2,
+      "decoded": [
+        "microtasks:nested:run-to-completion|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "23571885"
+    },
+    {
+      "name": "rejection",
+      "mode": 3,
+      "decoded": [
+        "rejection:pending:exact-object|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14968580"
+    },
+    {
+      "name": "finally",
+      "mode": 4,
+      "decoded": [
+        "finally:values:reason:order|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "19635061"
+    },
+    {
+      "name": "interval",
+      "mode": 5,
+      "decoded": [
+        "interval:three:clear:no-overlap|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "15056290"
+    },
+    {
+      "name": "timer-nesting",
+      "mode": 6,
+      "decoded": [
+        "timer:arguments:nesting:microtask|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "15046391"
+    },
+    {
+      "name": "timer-clear",
+      "mode": 7,
+      "decoded": [
+        "timer:clear-before-fire:idempotent|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "15016785"
+    },
+    {
+      "name": "callback-exception",
+      "mode": 8,
+      "decoded": null,
+      "error": "guest-trap",
+      "cpuFuel": "1293732"
+    },
+    {
+      "name": "fresh-after-callback-exception",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14478734"
+    },
+    {
+      "name": "unhandled-rejection",
+      "mode": 9,
+      "decoded": null,
+      "error": "guest-trap",
+      "cpuFuel": "2827807"
+    },
+    {
+      "name": "fresh-after-unhandled-rejection",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14478734"
+    },
+    {
+      "name": "fuel-bootstrap",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14478734"
+    },
+    {
+      "name": "synchronous-fuel",
+      "mode": 10,
+      "decoded": null,
+      "error": "resource-exhausted",
+      "cpuFuel": "50000000"
+    },
+    {
+      "name": "fresh-after-synchronous-fuel",
+      "mode": 0,
+      "decoded": [
+        "ready|fresh=1"
+      ],
+      "error": null,
+      "cpuFuel": "14478734"
+    }
+  ],
+  "component": {
+    "sha256": "sha256:499e0a720fd1bb886b8ca594404f39b14466d98fa9f739f9eace160b514243fc",
+    "bytes": 12414799
+  },
+  "historicalNative": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "callbackOriginProven": false,
+  "fullTicketQualification": false,
+  "artifactArchive": {
+    "bytes": 8717342,
+    "sha256": "sha256:daa224a4f3cafe6cd19989b5ea3060a35fec1ff466bd6c98c8d63ee648ad8aa9"
+  },
+  "sourceAndBuildDocumentsRechecked": true,
+  "allMembersCRCAndHashChecked": true
+}

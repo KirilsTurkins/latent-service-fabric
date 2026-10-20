@@ -1,0 +1,71 @@
+name: TypeScript root and accepted work
+on:
+  push:
+    branches: ['feat/typescript-root-lifecycle-20261020']
+    paths:
+      - '.github/workflows/typescript-root-lifecycle.yml'
+      - 'sdk/typescript-guest/probes/root-lifecycle/**'
+      - 'tools/typescript_root_lifecycle.py'
+      - 'tools/qualify_typescript_root_lifecycle.py'
+      - 'tools/tests/test_typescript_root_lifecycle.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: typescript-root-lifecycle-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fetch-conformance:
+    name: Signed root settlement accepted callbacks and opaque work
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check accepted-work and marker refusal controls
+        run: python3 -B -m unittest tools.tests.test_typescript_root_lifecycle -v
+      - name: Install normal compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install normal pinned public compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/root-lifecycle-tools"
+      - name: Acquire exact historical import engine and original native tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_fetch_replay_inputs.py --output "$RUNNER_TEMP/root-lifecycle-original"
+      - name: Build sign and execute ordinary root and accepted-work cases
+        run: python3 -B tools/qualify_typescript_root_lifecycle.py --acquired "$RUNNER_TEMP/root-lifecycle-original" --tools "$RUNNER_TEMP/root-lifecycle-tools" --output "$RUNNER_TEMP/root-lifecycle"
+      - name: Retain exact source compiler results real contacts and physical ownership
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-root-lifecycle-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/root-lifecycle-original/acquisition.json
+            ${{ runner.temp }}/root-lifecycle/*.json
+            ${{ runner.temp }}/root-lifecycle/build/*.json
+            ${{ runner.temp }}/root-lifecycle/build/*.wit
+            ${{ runner.temp }}/root-lifecycle/build/component.wasm
+            ${{ runner.temp }}/root-lifecycle/build/package/**
+            ${{ runner.temp }}/root-lifecycle/build/logs/
+            ${{ runner.temp }}/root-lifecycle/node/*.json
+            ${{ runner.temp }}/root-lifecycle/node/controls/
+          if-no-files-found: warn
+          retention-days: 7

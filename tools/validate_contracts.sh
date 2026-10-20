@@ -167,10 +167,15 @@ case "${VALIDATION_LANE}" in
         cargo test -p latent-wasmtime --test containment_backend --locked -- \
             --ignored --nocapture --test-threads=1
 
+    GO_CLOSED_ADAPTERS="${OUTPUT}/go-closed-adapters"
+    python3 tools/qualify_go_closed_filesystem.py --prepare-adapters-only --output "${GO_CLOSED_ADAPTERS}"
+
     LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
     LSF_GENERIC_FIXTURES="${GENERIC_FIXTURES}" \
     LSF_ENGINE_MEMORY_COMPONENT="${ENGINE_MEMORY_COMPONENT}" \
     LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
+    LSF_GO_CLOSED_ADAPTER_OLD="${GO_CLOSED_ADAPTERS}/old.wasm" \
+    LSF_GO_CLOSED_ADAPTER_CURRENT="${GO_CLOSED_ADAPTERS}/current.wasm" \
         cargo test -p latent-wasmtime --test generic_backend --locked -- \
             --ignored --nocapture --test-threads=1
 

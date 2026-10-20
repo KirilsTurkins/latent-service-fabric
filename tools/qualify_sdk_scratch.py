@@ -57,6 +57,15 @@ def package_identity(directory, marker):
 
 
 def prepared(directory, language, native_directory=None):
+    return _prepared_with_inputs(directory, language, current_inputs(language), native_directory)
+
+
+def _prepared_with_inputs(directory, language, expected_source, native_directory=None):
+    """Validate all tuple bytes against an independently authenticated source closure.
+
+    The normal entry above always requires current_inputs. A source-specific
+    historical consumer must establish its exact compatibility before this seam.
+    """
     receipt_path = directory/'qualification.json'
     receipt = read_json(receipt_path)
     require(receipt.get('schemaVersion') == 'latent.'+language+'-capsule.qualification.v1'
@@ -64,7 +73,7 @@ def prepared(directory, language, native_directory=None):
             'scratch-original-normal-qualification-required')
     source = directory/'source-inputs.json'
     require(digest(read_file(source, 16*1024*1024)) == receipt['sourceIdentityDigest']
-            and read_json(source, 16*1024*1024) == current_inputs(language),
+            and read_json(source, 16*1024*1024) == expected_source,
             'scratch-original-source-mismatch')
     binaries = {name: (directory/'native-binaries'/name.replace('/', '-') if native_directory is None
         else native_directory/name) for name in PRODUCTS}

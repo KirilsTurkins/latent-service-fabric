@@ -7,6 +7,31 @@ from the [Go SDK](../../sdk/go-guest/toolchain.lock.json), with authenticated
 runtime and dispatcher source overlays. Application source imports no LSF task
 facade. The existing `go-component-async-v1` default remains separately selected.
 
+These are explicit finite profiles, not a claim that every native Go API or
+#742 requirement is complete. Later versions retain the earlier transformation
+seams; qualification remains tied to each observed source/component/native
+tuple rather than inferred from version order.
+
+| Selection | Implemented ordinary behavior and finite qualification |
+| --- | --- |
+| `go-component-async-v1` (default) | Existing ordinary template ABI; no opt-in activation goroutine support is implied. |
+| `go-component-activation-v1` | Goroutines, channels/sync, Sleep and accepted-work drain; CPU-only loops have the original fuel/deadline containment, without compiler checkpoints. |
+| `go-component-activation-v2` | Adds compiler checkpoints in selected ordinary application/transitive source; the [retained CPU observation](../testing/evidence/go-checkpoints-2026-10-16.json) keeps its own positive and no-checkpoint negative identities. |
+| `go-component-activation-v3` | Adds original standard timer heap, callbacks/rearm/context deadlines; [hosted timer job117698091612](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39135166555/job/117698091612) passed its finite timer campaign after the historical failures below. |
+| `go-component-activation-v4` | Moves linked module initialization into the first admitted async root; the eight initializer and thirteen published retry-worker calls passed [job117706598344](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39138076044/job/117706598344), with their original source/limits. |
+| `go-component-activation-v5` | Adds eight source-pinned maintenance capacity reservations, not eight observed live workers; actual [synchronization33](../development/go-synchronization.md), [cross-tenant admission12](../development/go-runtime-admission.md), [queued-owner34/20guests](../development/go-runtime-queued-ownership.md) and [timer43/native17](../development/go-managed-timers.md) retain separate bounded evidence. |
+
+The v1-v3 startup restrictions below apply to those selections, not the v4/v5
+first-admitted-root initializer path. Providers, publication grants, owner
+ceilings and request bounds remain explicit for every selection. Standard
+HTTP through the selected typed profile has its own
+[finite qualification](../development/go-standard-http-candidate.md);
+ordinary low-level `net`/DNS/TLS is not enabled by this profile table. Full
+stack/GC/result/queue costs, every late-wake/race and supported kernel/TLS
+accounting remain separate requirements. The new
+[live node-stop programme](../development/go-node-stop.md) is source-prepared;
+it receives no execution credit until its owning lane passes.
+
 Set `runtimeProfile` to `go-component-activation-v1` in `capsule-project.json`.
 For captured dependencies, select that same profile in the captured native
 module selection; disagreement is rejected. The selected WIT world must
@@ -21,11 +46,10 @@ async public export shape and captured runtime WIT, without application edits:
 
 ```bash
 python3 tools/go_capsule.py new /tmp/my-greeting \
-  --runtime-profile go-component-activation-v4
+  --runtime-profile go-component-activation-v5
 ```
 
-This selects the current unqualified v4 candidate; it does not install a
-provider or grant. Omitting the flag keeps the ordinary default template's
+This selects the explicit v5 profile; it does not install a provider or grant. Omitting the flag keeps the ordinary default template's
 existing WIT/profile. Review the explicit async public ABI when choosing an
 activation profile. Native module resolution inherits the project's exact
 runtime profile and records it in the captured graph; an explicitly conflicting
@@ -43,7 +67,8 @@ The generated async entry closes admission after the ordinary handler returns,
 waits for every accepted sibling to exit, then seals the result. A sibling panic,
 unknown parked work, denied admission or unconfirmed settlement cannot produce
 success. A finite list of pinned runtime GC housekeeping entry points is
-separate from application tasks. Pre-entry initializer goroutines are rejected.
+separate from application tasks. Under v1-v3, pre-entry initializer goroutines are rejected; v4/v5 admit them
+inside the original async root as described below.
 Application finalizer and cleanup registration is rejected, including during
 initialization. Only the exact pinned runtime Pinner leak-check and `os.file`
 close finalizers are permitted as housekeeping; neither calls application code.
@@ -86,7 +111,7 @@ explicitly rather than invoke an unsafe suspension. Native assembly, CGo and
 unsupported runtime operations retain their existing boundaries. This profile
 does not add standard timer APIs or initializer goroutine support.
 
-The source candidate `go-component-activation-v3` adds the pinned Go timer heap
+The `go-component-activation-v3` profile adds the pinned Go timer heap
 beneath `time.NewTimer`, `After`, `AfterFunc`, `NewTicker`, timer/ticker Stop and
 Reset, and `context.WithTimeout`. Each timer reserves its original host owner
 before allocation. The existing Go heap retains synchronous timer-channel
@@ -105,17 +130,19 @@ The dispatcher checks actual runnable owned goroutines after every scheduler
 idle notification: a callback published after the notification requires a fresh
 quiescence round before WAIT or EXIT. Unknown parked work still fails.
 
-The candidate's native reference and signed test cover timer/channel Stop and
+The v3 native reference and signed test cover timer/channel Stop and
 Reset, recurrence, callbacks, resetting a running callback with permitted
 overlap, context cancellation, plain GC, stopped/retained timer GC, collection,
 timer limits, callback panic,
 root drain, cancellation and deadline. These commands are qualification gates;
-source preparation alone does not establish successful execution. In
-particular, the latest timer source still needs a successful complete signed
-replay before it is a qualified profile. Initializer background work, standard
-networking and the complete #742 acceptance matrix remain unfinished.
+source preparation alone does not establish successful execution. The actual
+finite v3 timer replay passed job117698091612; the later v5 replay separately
+passed all43 ordered outcomes and17 native modes, as linked above. The earlier
+failed replays below retain their historical identities. Arbitrary initializer
+background work, low-level networking and the complete #742 acceptance matrix
+remain unfinished.
 
-The first hosted replay of the fresh-quiescence source passed modes 0 through
+The historical first hosted replay of the fresh-quiescence source passed modes 0 through
 6, including callback drain, then trapped with memory out of bounds in the
 forced-GC case. This remains a failed acceptance result. A failure-only diagnostic
 replays that exact component with three private read-only source overlays in a
@@ -163,7 +190,7 @@ LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE=/tmp/go-checkpoints \
   -- --ignored --exact --nocapture
 ```
 
-The additional source candidate `go-component-activation-v4` moves the original
+The `go-component-activation-v4` profile moves the original
 linked module initialization graph into the first admitted async root, before
 its ordinary handler. Go runtime bootstrap and GC enablement remain in their
 original startup order. Module variables and `init` functions retain the
@@ -181,16 +208,14 @@ An initializer worker waiting for future work remains accepted work: an hour
 ticker does not make that worker managed idle, and root return must not discard
 it. The original deadline and cancellation apply during initialization too.
 
-The candidate's source transformation has been checked against the exact pinned
-upstream files. It has not yet passed emitted-component or signed-node
-qualification. Its maintained gate requires the unchanged fixture's native Go
-reference and eight signed activations covering blocking variable initialization,
+The source transformation is checked against the exact pinned upstream files.
+The actual job117706598344 passed the emitted component and maintained native
+reference/eight signed activations covering blocking variable initialization,
 condition signaling, ordered init functions, an initializer-created ticker
 worker, explicit shutdown, pending cancellation, unretired-work deadline,
 preallocation task exhaustion, unsupported affinity and fresh state. The earlier
-v1, v2 and v3 gates remain required. This candidate does not complete #742's
-runtime-cost, approved networking and unchanged published transitive-module
-acceptance requirements.
+v1, v2 and v3 gates remain required. This finite result does not complete #742's runtime-cost, approved low-level
+networking or arbitrary published transitive-module acceptance requirements.
 
 ```bash
 python3 tools/qualify_go_activation.py --output /tmp/go-owned-initializers \
@@ -221,9 +246,10 @@ execution must pass nine successful activations covering repeated timer reuse,
 retry exhaustion and ordinary context cancellation, then original activation
 cancellation, root deadline, preallocation task exhaustion and fresh reuse.
 The receipt binds the graph, original runtime source files, compiler inputs,
-native reference and component separately. This gate has been added as source;
-acquisition, component compilation and signed execution have not yet completed.
-It preserves the existing pure-module and all earlier runtime gates.
+native reference and component separately. The captured graph, native reference, component compilation and all thirteen
+signed outcomes passed actual job117706598344. This finite published result
+preserves the existing pure-module and all earlier runtime gates; it does not
+qualify arbitrary library workers or application cleanup callbacks.
 
 ```bash
 python3 tools/qualify_go_runtime_dependencies.py --output /tmp/go-published-runtime
@@ -316,9 +342,10 @@ result drain. A nil second lookup retires that exact original host token and
 awaits the existing dispatcher fence. It never dereferences the missing timer
 or refunds pending physical readiness early. Stale-token, unconfirmed-stop and
 live-callback refusals remain. This independent collection-race repair does not
-establish a second cause of the original mode 9 trap. Source regressions and
-existing networking-branch execution retain their own identities; the parent
-timer and initializer PRs still require fresh complete signed qualification.
+establish a second cause of the original mode 9 trap. Source regressions and existing networking-branch execution retain their own
+identities. The later complete timer and initializer/published campaigns passed
+the exact jobs listed above; they do not retroactively turn an earlier failed
+component into passing evidence.
 
 ### Standard weak canonicalization cache
 
@@ -331,5 +358,7 @@ published libraries) without enabling application cleanup or finalizer callbacks
 Dead trie metadata may remain until the fresh component Store retires. It remains
 charged to that original Store's finite Wasm heap/memory budget; no persistent
 cache, background callback, new grant or per-task budget is introduced. This is
-source adaptation, not signed-worker qualification: the unchanged published-worker
-assertions, task/wait ceilings and original deadline must still pass actual CI.
+source adaptation whose finite published-worker qualification is separately
+observed in job117706598344. The unchanged published-worker assertions,
+task/wait ceilings and original deadline remain mandatory; no application
+cleanup callback or unbounded cache behavior is approved.

@@ -1372,6 +1372,9 @@
         "broker::clock::window::tests::one_checked_window_never_extends_the_original_deadline",
         "broker::clock::window::tests::only_the_exact_busy_constructor_can_wait",
         "broker::currentness::tests::only_exact_authority_bookkeeping_contention_is_waitable",
+        "broker::http::refusal::tests::disabled_unrelated_and_overbound_observations_cannot_leak_or_expand_capture",
+        "broker::http::refusal::tests::exact_busy_capacity_and_active_dial_are_closed_static_witnesses",
+        "broker::http::refusal::tests::writer_failure_preserves_the_original_typed_error_and_borrowed_source",
         "broker::io::tests::all_limit_dimensions_have_finite_hard_ceilings",
         "broker::io::tests::an_unbounded_store_deadline_cannot_admit_host_io",
         "broker::io::tests::bounded_ring_backpressures_without_spawning_and_preserves_order",
@@ -1548,7 +1551,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 173,
+      "minimumCases": 176,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -4434,14 +4437,17 @@
         "authoring::current_java::refreshed::tests::refreshed_current_mode_refuses_relative_input_before_read_or_output",
         "authoring::current_java::refreshed::tests::refreshed_current_mode_keeps_forbidden_capture_unsigned_before_output",
         "authoring::current_java::refreshed::tests::refreshed_current_mode_refuses_existing_or_relative_output_before_inputs",
-        "authoring::inputs::tests::shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle"
+        "authoring::inputs::tests::shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle",
+        "authoring::resource_neutral::tests::neutral_resource_scope_preserves_component_world_exports_and_original_documents",
+        "authoring::resource_neutral::tests::neutral_resource_scope_refuses_foreign_scoped_names_and_new_grants",
+        "authoring::resource_neutral::tests::neutral_resource_derivation_refuses_changed_original_inventory_and_reserved_assets"
       ],
       "expectedIgnored": [],
       "id": "latent-policy.example.capsule-authoring",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 38,
+      "minimumCases": 41,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -7321,7 +7327,12 @@
         "backend::call_phase::tests::only_generic_runtime_failure_gets_the_actual_closed_call_boundary",
         "backend::call_phase::tests::call_boundary_does_not_relabel_traps_accounting_or_lifecycle_failures",
         "host::tests::finite_default_table_limit_admits_go_minimum_and_rejects_excess",
-        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration"
+        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration",
+        "host::runtime::positive_timer_observer::tests::closed_record_has_only_static_labels_and_actual_count_fields",
+        "host::runtime::positive_timer_observer::tests::disabled_or_any_other_activation_has_no_observer",
+        "host::runtime::positive_timer_observer::tests::each_selected_mode_has_at_most_eight_events",
+        "host::runtime::positive_timer_observer::tests::failed_output_does_not_panic_or_return_a_guest_result",
+        "host::runtime::positive_timer_observer::tests::repeated_tables_share_the_process_bound_including_one_overflow_record"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7334,7 +7345,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 379,
+      "minimumCases": 384,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -10327,7 +10338,10 @@
         "worker_stacks::tests::linux::timed_out_shutdown_retains_live_blocking_thread_owner_until_real_stop",
         "worker_stacks::tests::two_blocking_workers_have_one_shared_checked_stack_envelope",
         "standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row",
-        "standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity"
+        "standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity",
+        "config::tests::providers::scalar_aliases::activation_aliases_cannot_replace_limits_epoch_or_missing_registration",
+        "config::tests::providers::scalar_aliases::activation_aliases_keep_original_configuration_and_exact_binding_scope",
+        "standalone::start::tests::provider_startup::activation_aliases_publish_original_limits_to_two_tenants_and_reap"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10396,7 +10410,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 456,
+      "minimumCases": 459,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

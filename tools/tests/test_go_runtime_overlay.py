@@ -595,6 +595,9 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             path = goroot / "src" / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
+        fake = goroot / 'src/net/net_fake.go'
+        fake.parent.mkdir(parents=True)
+        fake.write_bytes((Path(__file__).parent / 'fixtures/go-closed-network/net_fake.go.in').read_bytes())
         contracts = {name: hashlib.sha256(data).hexdigest() for name, data in original.items()}
         return goroot, original, contracts
 
@@ -645,7 +648,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             upstream_rows = json.loads(upstream.read_text())["Replace"]
             strict_rows = json.loads(strict.read_text())["Replace"]
             self.assertEqual(len(upstream_rows), 5)
-            self.assertEqual(len(strict_rows), 9)
+            self.assertEqual(len(strict_rows), 10)
             for name in original:
                 self.assertEqual((goroot / "src" / name).read_bytes(), original[name])
             os_source = str(goroot / "src/runtime/os_wasip1.go")

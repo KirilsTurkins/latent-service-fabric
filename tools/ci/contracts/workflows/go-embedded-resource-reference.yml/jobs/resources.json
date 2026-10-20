@@ -1,0 +1,86 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Fresh Go embedded data original27 plus8 on authenticated normal products",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Install pinned source controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check exact source closures original programme and resource failure guards",
+        "run": "python3 -B -m unittest tools.tests.test_embedded_resource_conformance tools.tests.test_go_embedded_resource_replay -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the successful producer before restoring any executable",
+        "run": "python3 -B tools/replay_go_embedded_resources.py --record-producer --output \"$RUNNER_TEMP/go-embedded-producer.json\""
+      },
+      {
+        "name": "Restore only the authenticated public normal Go bundle",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+          "path": "${{ runner.temp }}/go-embedded-normal",
+          "run-id": 39373374237
+        }
+      },
+      {
+        "name": "Install the unchanged compiler namespace prerequisite",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the existing pinned component compiler no native host build",
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-embedded-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-embedded-tools/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-embedded-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-embedded-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-embedded-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-embedded-tools/go\" --output \"$RUNNER_TEMP/go-embedded-tools/go-async\"\necho \"$RUNNER_TEMP/go-embedded-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Build one fresh greeting sign admit and require original27 plus8 resource calls",
+        "run": "python3 -B tools/replay_go_embedded_resources.py --normal-qualification \"$RUNNER_TEMP/go-embedded-normal\" --producer-receipt \"$RUNNER_TEMP/go-embedded-producer.json\" --output \"$RUNNER_TEMP/go-embedded-resources\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public source identities actual results and failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-embedded-resource-reference-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-embedded-producer.json\n${{ runner.temp }}/go-embedded-resources/*.json\n${{ runner.temp }}/go-embedded-resources/logs/**\n${{ runner.temp }}/go-embedded-resources/build/*.json\n${{ runner.temp }}/go-embedded-resources/build/logs/**\n${{ runner.temp }}/go-embedded-resources/build/component.wasm\n${{ runner.temp }}/go-embedded-resources/node/workflow.json\n${{ runner.temp }}/go-embedded-resources/node/FAILED.json\n${{ runner.temp }}/go-embedded-resources/node/controls/*.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "resources",
+  "kind": "job",
+  "reviewReason": "Add one input-free20-minute Go embedded-resource replay using authenticated successful94d normal27/native5/fourcompanions. Exact reviewed unused-helper and single startup-test postimages only; all native/SDK/WIT/used inputs and original programme gates retained. Fresh resource greeting+eight actual calls remain pending; no host rebuild or current-normal fabrication.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-embedded-resource-reference.yml"
+}
