@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}",
     "name": "Signed Rust unsupported operation diagnostics",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
@@ -73,7 +74,7 @@
   },
   "jobId": "compatibility",
   "kind": "job",
-  "reviewReason": "Add signed Rust native-reference/captured unsupported-operation qualification using this run existing native products; retain every existing command, bound and prior case.",
+  "reviewReason": "Branch-only manual scratch selection: default false preserves every old job on PR/push/ordinary dispatch; explicit selection keeps normal authoring35 plus scratch20 byte-identical and skips only unrelated jobs. No production source or native receipt rebind.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

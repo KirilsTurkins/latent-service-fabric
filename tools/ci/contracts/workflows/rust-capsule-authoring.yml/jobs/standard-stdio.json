@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}",
     "name": "Rebuilt Rust standard stdio and signed ordinary libraries",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
@@ -77,7 +78,7 @@
   },
   "jobId": "standard-stdio",
   "kind": "job",
-  "reviewReason": "Explicit Rust entropy profiles use current authenticated std and getrandom source derivations; preserve default profiles, all prior commands, isolation and executable-input approval.",
+  "reviewReason": "Branch-only manual scratch selection: default false preserves every old job on PR/push/ordinary dispatch; explicit selection keeps normal authoring35 plus scratch20 byte-identical and skips only unrelated jobs. No production source or native receipt rebind.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

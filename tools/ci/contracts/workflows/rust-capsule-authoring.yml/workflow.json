@@ -59,7 +59,15 @@
           "docs/component-development/rust-dependencies.md"
         ]
       },
-      "workflow_dispatch": {}
+      "workflow_dispatch": {
+        "inputs": {
+          "qualify-scratch-refusals": {
+            "default": false,
+            "description": "Run the unchanged normal Rust prerequisite and separate scratch packet only",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -76,7 +84,7 @@
     "standard-entropy",
     "standard-stdio"
   ],
-  "reviewReason": "Add a separately bounded20-minute signed Rust scratch-refusal child using exact normal public products; preserve all original authoring commands/jobs/35-minute limit and source-only other-language scope.",
+  "reviewReason": "Branch-only manual scratch selection: default false preserves every old job on PR/push/ordinary dispatch; explicit selection keeps normal authoring35 plus scratch20 byte-identical and skips only unrelated jobs. No production source or native receipt rebind.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

@@ -1,7 +1,12 @@
 name: Rust capsule authoring
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      qualify-scratch-refusals:
+        description: Run the unchanged normal Rust prerequisite and separate scratch packet only
+        type: boolean
+        default: false
   pull_request:
     branches: [development]
     paths:
@@ -57,6 +62,7 @@ env:
 
 jobs:
   standard-clocks:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Rebuilt Rust standard clocks and signed grants
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -147,6 +153,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   git-components:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Captured Cargo Git offline components and signed execution
     needs: authoring
     runs-on: ubuntu-24.04
@@ -211,6 +218,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   standard-stdio:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Rebuilt Rust standard stdio and signed ordinary libraries
     needs: authoring
     runs-on: ubuntu-24.04
@@ -276,6 +284,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   standard-entropy:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Rebuilt Rust standard entropy and signed ordinary libraries
     needs: authoring
     runs-on: ubuntu-24.04
@@ -339,6 +348,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   compatibility:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Signed Rust unsupported operation diagnostics
     needs: authoring
     runs-on: ubuntu-24.04
@@ -460,6 +470,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   dependency-matrix:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Varied captured Cargo graphs without optional catalogues
     needs: authoring
     runs-on: ubuntu-24.04
@@ -519,6 +530,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   git-closure:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Native Cargo Git capture and offline metadata
     runs-on: ubuntu-24.04
     timeout-minutes: 20

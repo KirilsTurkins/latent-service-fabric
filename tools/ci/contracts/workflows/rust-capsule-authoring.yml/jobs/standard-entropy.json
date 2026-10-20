@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}",
     "name": "Rebuilt Rust standard entropy and signed ordinary libraries",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
@@ -73,7 +74,7 @@
   },
   "jobId": "standard-entropy",
   "kind": "job",
-  "reviewReason": "Retain normal exact approval for the complete captured compiler script/macro closure; record actual inputs and capture before owned std compilation. No execution waiver or source preimage change.",
+  "reviewReason": "Branch-only manual scratch selection: default false preserves every old job on PR/push/ordinary dispatch; explicit selection keeps normal authoring35 plus scratch20 byte-identical and skips only unrelated jobs. No production source or native receipt rebind.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
