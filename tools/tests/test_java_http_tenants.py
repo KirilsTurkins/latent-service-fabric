@@ -190,7 +190,7 @@ class JavaHttpTenantTests(unittest.TestCase):
                 signed=Path(argv[2]);signed.mkdir();(signed/'release-set.json').write_text('{}')
                 return SimpleNamespace(returncode=0)
             def configure(directory,*arguments):
-                path=directory/'node.json';path.write_text('{}');return path
+                path=directory/'node.json';path.write_text('{"limits":{"maximumComponentBytes":67108864}}');return path
             class BrokenPeer:
                 def __init__(self,*args,**kwargs):pass
                 def close(self):raise RuntimeError('cleanup-only')
