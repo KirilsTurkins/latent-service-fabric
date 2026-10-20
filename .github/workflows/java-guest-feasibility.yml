@@ -305,6 +305,7 @@ jobs:
             ${{ runner.temp }}/java-published-http/campaign/http-request/provider/after-*.json
             ${{ runner.temp }}/java-published-http/campaign/http-request/provider/controls/standard-*.json
             ${{ runner.temp }}/java-published-http/campaign/webb-build/*.json
+            ${{ runner.temp }}/java-published-http/campaign/webb-build/compiler-logs/*-java-to-c.log
             ${{ runner.temp }}/java-published-http/campaign/webb-node/qualification.json
             ${{ runner.temp }}/java-published-http/campaign/webb-node/after-*.json
             ${{ runner.temp }}/java-published-http/campaign/webb-node/controls/standard-*.json

@@ -70,7 +70,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-published-http-replay-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-published-http-prepared/retrieval.json\n${{ runner.temp }}/java-published-http-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-published-http-replay/qualification.json\n${{ runner.temp }}/java-published-http-replay/FAILED.json\n${{ runner.temp }}/java-published-http-replay/campaign/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/build/*.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/after-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/controls/standard-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-build/*.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-node/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-node/after-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-node/controls/standard-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/compiler/compiler-cache-selection.json",
+          "path": "${{ runner.temp }}/java-published-http-prepared/retrieval.json\n${{ runner.temp }}/java-published-http-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-published-http-replay/qualification.json\n${{ runner.temp }}/java-published-http-replay/FAILED.json\n${{ runner.temp }}/java-published-http-replay/campaign/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/build/*.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/after-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/http-request/provider/controls/standard-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-build/*.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-published-http-replay/campaign/webb-node/qualification.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-node/after-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/webb-node/controls/standard-*.json\n${{ runner.temp }}/java-published-http-replay/campaign/compiler/compiler-cache-selection.json",
           "retention-days": 3
         }
       }
@@ -79,7 +79,7 @@
   },
   "jobId": "published-http-replay",
   "kind": "job",
-  "reviewReason": "Correct nonexistent focused replay test module to both actual published modules; retain all five private-provider cases and all other commands guards limits and artifacts.",
+  "reviewReason": "Retain only public Webb fixture java-to-c compiler log under unchanged4MiB producer limit; all commands guards timebounds and existing artifacts remain.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-published-http-replay.yml"
 }
