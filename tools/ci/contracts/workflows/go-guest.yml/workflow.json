@@ -57,6 +57,10 @@
           "tools/go_standard_entropy_probe.py",
           "tools/tests/test_go_standard_entropy.py",
           "tools/qualify_go_activation.py",
+          "tools/qualify_go_synchronization.py",
+          "tools/tests/test_go_synchronization.py",
+          "docs/development/go-synchronization.md",
+          ".github/workflows/go-synchronization-reference.yml",
           "tools/qualify_go_http_context.py",
           "tools/tests/test_go_http_context.py",
           "tools/tests/test_go_managed_idle.py",
@@ -153,6 +157,10 @@
           "tools/probe_go_authoring.py",
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
+          "tools/qualify_go_synchronization.py",
+          "tools/tests/test_go_synchronization.py",
+          "docs/development/go-synchronization.md",
+          ".github/workflows/go-synchronization-reference.yml",
           "tools/qualify_go_standard_entropy.py",
           "tools/go_standard_entropy_fixture.py",
           "tools/go_standard_entropy_probe.py",
@@ -245,7 +253,7 @@
     "retained-scalar-ownership",
     "upstream-probe"
   ],
-  "reviewReason": "Preserve both current Go qualification and private/generator feature trigger paths",
+  "reviewReason": "Preserve every existing trigger and add the owning synchronization qualifier/test/guide/focused-workflow paths; no old gate or branch removed.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
