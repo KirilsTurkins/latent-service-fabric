@@ -4,6 +4,9 @@ use super::*;
 #[path = "go/managed_idle.rs"]
 mod managed_idle;
 
+#[path = "go/managed_timers.rs"]
+mod managed_timers;
+
 #[path = "go/admission.rs"]
 mod admission;
 
@@ -17,6 +20,27 @@ fn checkpoint_component(
     variable: &str,
     profile: &str,
 ) -> (latent_packaging::PackageBundle, Vec<u8>) {
+    assert!(
+        matches!(
+            (variable, profile),
+            ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2")
+                | ("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1")
+                | ("LSF_GO_TIMER_FIXTURE", "go-component-activation-v3")
+                | ("LSF_GO_MANAGED_TIMER_FIXTURE", "go-component-activation-v5")
+                | ("LSF_GO_INITIALIZER_FIXTURE", "go-component-activation-v4")
+                | ("LSF_GO_PUBLISHED_FIXTURE", "go-component-activation-v4")
+                | ("LSF_GO_MANAGED_IDLE_FIXTURE", "go-component-activation-v5")
+                | (
+                    "LSF_GO_SYNCHRONIZATION_FIXTURE",
+                    "go-component-activation-v5"
+                )
+                | (
+                    "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE",
+                    "go-component-activation-v1"
+                )
+        ),
+        "only reviewed fixture/profile pairs may select captured Go source"
+    );
     let prepared = std::path::PathBuf::from(
         std::env::var_os(variable).expect("compile the Go checkpoint fixture"),
     );
@@ -25,9 +49,10 @@ fn checkpoint_component(
         variable,
         "LSF_GO_SYNCHRONIZATION_FIXTURE" | "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE"
     );
-    let timers = profile == "go-component-activation-v3";
+    let managed_timers = variable == "LSF_GO_MANAGED_TIMER_FIXTURE";
+    let timers = profile == "go-component-activation-v3" || managed_timers;
     let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
-    let managed = profile == "go-component-activation-v5";
+    let managed = profile == "go-component-activation-v5" && !managed_timers;
     let initializers = profile == "go-component-activation-v4" && !published;
     let expected: &[u8] = if synchronization {
         include_bytes!("../../../../../sdk/go-guest/runtime/synchronization-conformance/main.go")
