@@ -32,7 +32,7 @@
       },
       {
         "name": "Check source, product selection and unchanged provider gates",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_published_http_replay tools.tests.test_java_private_http -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_published_http tools.tests.test_java_published_replay tools.tests.test_java_private_http -v\n"
       },
       {
         "env": {
@@ -79,7 +79,7 @@
   },
   "jobId": "published-http-replay",
   "kind": "job",
-  "reviewReason": "Scope fixed historical-product replay to the named qualification branch and explicit manual request; normal programme remains mandatory",
+  "reviewReason": "Correct nonexistent focused replay test module to both actual published modules; retain all five private-provider cases and all other commands guards limits and artifacts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-published-http-replay.yml"
 }

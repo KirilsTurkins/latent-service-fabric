@@ -54,7 +54,7 @@ jobs:
       - name: Check source, product selection and unchanged provider gates
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_java_published_http_replay tools.tests.test_java_private_http -v
+          python3 -B -m unittest tools.tests.test_java_published_http tools.tests.test_java_published_replay tools.tests.test_java_private_http -v
       - name: Retrieve only the fixed e97 host and four original03a helper binaries
         env:
           GH_TOKEN: ${{ github.token }}
