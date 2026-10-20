@@ -24,7 +24,7 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, read_json, write_json
 
 SOURCE = 'examples/java-http-fiber-lifecycle/Capsule.java'
-WORLD = 'examples/java-http-fiber-lifecycle/world.wit'
+WORLD = 'examples/java-standard-http/world.wit'
 MAX_SECONDS = 1800
 MATERIALS = tuple(dict.fromkeys((*RECIPE, SOURCE, WORLD, 'tools/java_standard_http_library.py',
     'tools/java_standard_http_project.py', 'tools/java_standard_http_node.py',
@@ -37,9 +37,23 @@ MATERIALS = tuple(dict.fromkeys((*RECIPE, SOURCE, WORLD, 'tools/java_standard_ht
     'tools/guest_runtime_profiles.py', 'tools/static_api/node.py')))
 
 
+def fiber_world(source):
+    """Derive the byte-exact historical activation world from its sole owner."""
+    require(type(source) is bytes and len(source) == 379
+        and digest(source) == 'sha256:d63ed1564c9cc756a44db868c0719260ea1fba079966538fec2ea2e8d35510b2',
+        'java-http-fiber-canonical-world-preimage')
+    marker = b'    import latent:clock/wall@0.1.0;\n'
+    require(source.count(marker) == 2, 'java-http-fiber-canonical-import-shape')
+    derived = source.replace(marker, marker + b'    import latent:runtime/activation@0.1.0;\n', 1)
+    require(len(derived) == 423
+        and digest(derived) == 'sha256:9856ff27e76adb36697ecf4aba403e9b956d1623944537d22727fffd3b0f5026',
+        'java-http-fiber-derived-world-preimage')
+    return derived
+
+
 def project(directory):
     app = library_project(directory)
-    source, wit = read_file(ROOT/SOURCE), read_file(ROOT/WORLD)
+    source, wit = read_file(ROOT/SOURCE), fiber_world(read_file(ROOT/WORLD))
     (app/'src/dev/latent/app/Capsule.java').write_bytes(source)
     (app/'wit/world.wit').write_bytes(wit)
     # These are exactly the captured SDK definitions, not synthetic type stubs.

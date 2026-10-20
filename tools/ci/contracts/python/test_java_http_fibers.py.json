@@ -36,11 +36,13 @@
     "JavaHttpFiberSource.test_actual_normal_project_retains_sdk_and_published_lock_with_explicit_world",
     "JavaHttpFiberSource.test_budget_narrowing_never_mutates_or_elevates_original",
     "JavaHttpFiberSource.test_forged_or_stale_sibling_observation_does_not_release",
+    "JavaHttpFiberSource.test_one_authoritative_world_derives_exact_historical_captured_bytes",
     "JavaHttpFiberSource.test_only_existing_qualified_profile_and_normal_apis_are_selected",
     "JavaHttpFiberSource.test_real_peer_requires_completed_independent_primary_response",
     "JavaHttpFiberSource.test_result_checks_actual_full_resolved_revision_and_known_reaped_outcome",
     "JavaHttpFiberSource.test_sibling_completion_before_pending_gate_cannot_prove_concurrent_progress",
     "JavaHttpFiberSource.test_terminal_codes_cannot_replace_cancellation_deadline_or_fuel",
+    "JavaHttpFiberSource.test_world_derivation_rejects_changed_or_already_extended_preimage",
     "JavaHttpNativeRefusalReader.test_closed_host_stage_category_reason_pairs_are_not_qualification",
     "JavaHttpNativeRefusalReader.test_failed_real_run_retains_only_after_cleanup_and_preserves_original_failure",
     "JavaHttpNativeRefusalReader.test_malformed_unknown_or_private_payload_never_enters_projection",
@@ -501,6 +503,18 @@
       ],
       "skipSites": []
     },
+    "JavaHttpFiberSource.test_one_authoritative_world_derives_exact_historical_captured_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaHttpFiberSource.test_only_existing_qualified_profile_and_normal_apis_are_selected": {
       "bases": [
         "unittest.TestCase"
@@ -550,6 +564,18 @@
       "skipSites": []
     },
     "JavaHttpFiberSource.test_terminal_codes_cannot_replace_cancellation_deadline_or_fuel": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpFiberSource.test_world_derivation_rejects_changed_or_already_extended_preimage": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -876,6 +902,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Retain all original lifecycle controls; add bounded receipt projection and malformed/missing/refusal controls without changing runtime limits.",
+  "reviewReason": "Use one exact canonical Java HTTP WIT owner and derive only the historical activation import; retain all old guards and add exact-byte/tamper controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

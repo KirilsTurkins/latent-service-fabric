@@ -22,7 +22,8 @@ class JavaHttpFiberSource(unittest.TestCase):
             app = campaign.project(Path(temporary)/'application')
             descriptor = read_json(app/'capsule-project.json')
             lock = read_json(app/'sdk-lock.json')
-            source, wit = read_file(campaign.ROOT/campaign.SOURCE), read_file(campaign.ROOT/campaign.WORLD)
+            source = read_file(campaign.ROOT/campaign.SOURCE)
+            wit = campaign.fiber_world(read_file(campaign.ROOT/campaign.WORLD))
             self.assertEqual(descriptor['service'], 'examples/java-standard-http')
             self.assertEqual(descriptor['limits']['outboundRequests'], 8)
             self.assertEqual(descriptor['limits']['cpuFuel'], 1_000_000_000)
@@ -37,6 +38,29 @@ class JavaHttpFiberSource(unittest.TestCase):
             self.assertIn('http-request', str(declaration))
             for name, identity in lock['sdk'].items():
                 self.assertEqual(digest(read_file(app/'vendor/lsf'/name)), identity['digest'])
+
+    def test_one_authoritative_world_derives_exact_historical_captured_bytes(self):
+        source = read_file(campaign.ROOT/campaign.WORLD)
+        world = campaign.fiber_world(source)
+        self.assertEqual(len(source), 379)
+        self.assertEqual(len(world), 423)
+        self.assertEqual(digest(world), 'sha256:9856ff27e76adb36697ecf4aba403e9b956d1623944537d22727fffd3b0f5026')
+        addition = b'    import latent:runtime/activation@0.1.0;\n'
+        self.assertEqual(world.count(addition), 1)
+        self.assertEqual(world.replace(addition, b'', 1), source)
+        self.assertNotIn(addition, world.split(b'world runtime-support {', 1)[1])
+        self.assertEqual(campaign.WORLD, 'examples/java-standard-http/world.wit')
+        self.assertFalse((campaign.ROOT/'examples/java-http-fiber-lifecycle/world.wit').exists())
+
+    def test_world_derivation_rejects_changed_or_already_extended_preimage(self):
+        source = read_file(campaign.ROOT/campaign.WORLD)
+        for changed in (source.replace(b'which: u32', b'which: u64'),
+                        source.replace(b'http/streaming@0.3.0', b'http/streaming@0.4.0'),
+                        source.replace(b'export api;', b'export other;'),
+                        source + b'\n', campaign.fiber_world(source), bytearray(source)):
+            with self.subTest(kind=type(changed).__name__), self.assertRaisesRegex(
+                    WorkflowError, 'canonical-world-preimage'):
+                campaign.fiber_world(changed)
 
     def test_only_existing_qualified_profile_and_normal_apis_are_selected(self):
         self.assertEqual(FIBER_IO_PROFILE, 'teavm-activation-fibers-io-v1')
