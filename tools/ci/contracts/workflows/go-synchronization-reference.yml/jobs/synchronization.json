@@ -41,6 +41,10 @@
         "run": "python3 -m unittest tools.tests.test_go_synchronization tools.tests.test_go_managed_idle -v"
       },
       {
+        "name": "Check exact cross-tenant admission evidence controls",
+        "run": "python3 -m unittest tools.tests.test_go_admission -v"
+      },
+      {
         "name": "Install captured compiler namespace",
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
@@ -55,16 +59,29 @@
         "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-synchronization-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-synchronization-tools/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-synchronization-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-synchronization-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-synchronization-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-synchronization-tools/go\" --output \"$RUNNER_TEMP/go-synchronization-tools/go-async\"\necho \"$RUNNER_TEMP/go-synchronization-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
+        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'synchronization'",
         "name": "Compile ordinary synchronization with the actual v5 runtime and native reference",
         "run": "python3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-synchronization\" --runtime-profile go-component-activation-v5 --fixture synchronization"
       },
       {
+        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'synchronization'",
         "name": "Compile the identical source without compiler checkpoints",
         "run": "python3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-synchronization-negative\" --runtime-profile go-component-activation-v1 --fixture synchronization"
       },
       {
+        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'synchronization'",
         "name": "Run the one real signed synchronization and retirement target",
         "run": "python3 tools/qualify_go_synchronization.py --source-commit \"${{ github.sha }}\" --fixture \"$RUNNER_TEMP/go-synchronization\" --no-checkpoints \"$RUNNER_TEMP/go-synchronization-negative\" --output \"$RUNNER_TEMP/go-synchronization-result\""
+      },
+      {
+        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'admission'",
+        "name": "Compile the unchanged managed Go fixture for shared-cell admission",
+        "run": "python3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-admission\" --runtime-profile go-component-activation-v5 --fixture managed-idle"
+      },
+      {
+        "if": "env.LSF_GO_REFERENCE_CAMPAIGN == 'admission'",
+        "name": "Run actual signed cross-tenant cell ownership and retirement",
+        "run": "python3 tools/qualify_go_synchronization.py --campaign admission --source-commit \"${{ github.sha }}\" --fixture \"$RUNNER_TEMP/go-admission\" --output \"$RUNNER_TEMP/go-admission-result\""
       },
       {
         "if": "always()",
@@ -73,7 +90,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "go-synchronization-reference-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-synchronization-result/receipt.json\n${{ runner.temp }}/go-synchronization-result/signed.stdout.log\n${{ runner.temp }}/go-synchronization-result/signed.stderr.log\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization/logs/\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization-negative/logs/\n",
+          "path": "${{ runner.temp }}/go-synchronization-result/receipt.json\n${{ runner.temp }}/go-synchronization-result/signed.stdout.log\n${{ runner.temp }}/go-synchronization-result/signed.stderr.log\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization/logs/\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-synchronization-negative/logs/\n${{ runner.temp }}/go-admission/GO-ACTIVATION-COMPILE.json\n${{ runner.temp }}/go-admission/GO-ACTIVATION-FAILED.json\n${{ runner.temp }}/go-admission/logs/\n${{ runner.temp }}/go-admission-result/receipt.json\n${{ runner.temp }}/go-admission-result/signed.stdout.log\n${{ runner.temp }}/go-admission-result/signed.stderr.log\n",
           "retention-days": 7
         }
       }
@@ -82,7 +99,7 @@
   },
   "jobId": "synchronization",
   "kind": "job",
-  "reviewReason": "Add finite actual Go synchronization/retirement source/native/signed controls under unchanged v5 task/wait/maintenance capacities. Preserve every existing Go workflow command and artifact, profile and source guard; no pass claim before actual execution.",
+  "reviewReason": "Add exact signed two-tenant one-cell admission and original-retirement controls; preserve every prior command, case and finite bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-synchronization-reference.yml"
 }

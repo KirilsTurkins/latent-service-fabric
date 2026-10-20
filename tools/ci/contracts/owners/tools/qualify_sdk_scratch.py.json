@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_sdk_scratch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Remove unrelated entropy selector from generic .NET scratch run: actual component final imports only monotonic; preserve unchanged original authority and all six filesystem outcomes, original gates and budgets.",
+  "reviewReason": "Reviewed composition preserves actual669 Rust whole-lock fetch/offline build and merged C closed report tokens; neither exercised Rust behavior nor normal prepared verifier changes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d2732149da7939602a9ec347863547576219f27fdd9d8a41948a7c9a1fac97cf"
+  "sha256": "16c54ac6f44cd142cef6a1171b78c7b12a169042e9552fb573ca7af2a3c81d98"
 }

@@ -59,6 +59,8 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_synchronization.py",
           "tools/tests/test_go_synchronization.py",
+          "tools/tests/test_go_admission.py",
+          "docs/development/go-runtime-admission.md",
           "docs/development/go-synchronization.md",
           ".github/workflows/go-synchronization-reference.yml",
           "tools/qualify_go_http_context.py",
@@ -159,6 +161,8 @@
           "tools/qualify_go_activation.py",
           "tools/qualify_go_synchronization.py",
           "tools/tests/test_go_synchronization.py",
+          "tools/tests/test_go_admission.py",
+          "docs/development/go-runtime-admission.md",
           "docs/development/go-synchronization.md",
           ".github/workflows/go-synchronization-reference.yml",
           "tools/qualify_go_standard_entropy.py",
@@ -253,7 +257,7 @@
     "retained-scalar-ownership",
     "upstream-probe"
   ],
-  "reviewReason": "Preserve every existing trigger and add the owning synchronization qualifier/test/guide/focused-workflow paths; no old gate or branch removed.",
+  "reviewReason": "Add exact signed two-tenant one-cell admission and original-retirement controls; preserve every prior command, case and finite bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

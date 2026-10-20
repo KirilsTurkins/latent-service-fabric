@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "ClosedFilesystem.test_exact_published_zig_source_selection_is_closed_and_versioned",
+    "ClosedFilesystem.test_normal_compiler_admission_binds_port_and_refuses_changed_native_source",
+    "ClosedFilesystem.test_overlay_keeps_initial_mode_validation_and_refuses_without_imports",
+    "ClosedFilesystem.test_standard_project_captures_overlay_without_rewriting_application",
+    "ClosedFilesystem.test_three_materials_preserve_original_bytes_and_detect_late_mutation",
+    "ClosedFilesystem.test_wrong_libc_or_overlay_cannot_be_admitted"
+  ],
+  "guards": {
+    "ClosedFilesystem.test_exact_published_zig_source_selection_is_closed_and_versioned": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c5bf6b37882e4c6784c7b23583ad617d81bd6e7370c94253ddcae9522f15fa",
+        "class:setup-sha256:5c9cacaa97d5317c1044dddaa6f93d7245efc407f62b7ef29fa51d7febd32a0f"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystem.test_normal_compiler_admission_binds_port_and_refuses_changed_native_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c5bf6b37882e4c6784c7b23583ad617d81bd6e7370c94253ddcae9522f15fa",
+        "class:setup-sha256:5c9cacaa97d5317c1044dddaa6f93d7245efc407f62b7ef29fa51d7febd32a0f"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystem.test_overlay_keeps_initial_mode_validation_and_refuses_without_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c5bf6b37882e4c6784c7b23583ad617d81bd6e7370c94253ddcae9522f15fa",
+        "class:setup-sha256:5c9cacaa97d5317c1044dddaa6f93d7245efc407f62b7ef29fa51d7febd32a0f"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystem.test_standard_project_captures_overlay_without_rewriting_application": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c5bf6b37882e4c6784c7b23583ad617d81bd6e7370c94253ddcae9522f15fa",
+        "class:setup-sha256:5c9cacaa97d5317c1044dddaa6f93d7245efc407f62b7ef29fa51d7febd32a0f"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystem.test_three_materials_preserve_original_bytes_and_detect_late_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c5bf6b37882e4c6784c7b23583ad617d81bd6e7370c94253ddcae9522f15fa",
+        "class:setup-sha256:5c9cacaa97d5317c1044dddaa6f93d7245efc407f62b7ef29fa51d7febd32a0f"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystem.test_wrong_libc_or_overlay_cannot_be_admitted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c5bf6b37882e4c6784c7b23583ad617d81bd6e7370c94253ddcae9522f15fa",
+        "class:setup-sha256:5c9cacaa97d5317c1044dddaa6f93d7245efc407f62b7ef29fa51d7febd32a0f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_closed_filesystem.py",
+  "reviewReason": "Reviewed closed-file C port: exact libc/overlay preimages and three materials, preserved argument and warning checks, default-off20min historical27 plus fresh33 replay without native rebuild; all original job bodies retained after exact manual guard normalization.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

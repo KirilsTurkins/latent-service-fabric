@@ -148,6 +148,18 @@ def build_component(language, app, destination, binaries, *, tools=None, wasi_sd
     return build(*args, tools=tools, offline=True)
 
 
+def locked_dependencies(language, app, commands):
+    """Seed the whole owned lock, including native and target-specific resolver rows."""
+    if language != 'rust':
+        return None
+    before = inventory(snapshot(app))
+    commands.run('scratch-locked-dependency-download', 'cargo', 'fetch', '--locked',
+                 '--manifest-path', app/'Cargo.toml')
+    require(inventory(snapshot(app)) == before, 'scratch-locked-download-mutated-source')
+    return {'lock': file_identity(app/'Cargo.lock'), 'compilerExecution': False,
+            'subsequentBuildOffline': True, 'sourceUnchanged': True}
+
+
 def execution_report(language, artifact, node):
     from tools import guest_compatibility as compatibility
     from tools.sdk_scratch_probe import refusal
@@ -160,7 +172,7 @@ def execution_report(language, artifact, node):
             and [row['mode'] for row in observed['cases']] == list(CASES[language]),
             'scratch-report-actual-cases-required')
     operations = {'rust': ('std::fs::File::open', 'std::fs::OpenOptions::open', 'std::fs::create_dir'),
-        'c': ('fopen(read)', 'fopen(create)', 'tmpfile'), 'go': ('os.Open', 'os.OpenFile', 'os.CreateTemp'),
+        'c': ('fopen/read', 'fopen/create', 'tmpfile'), 'go': ('os.Open', 'os.OpenFile', 'os.CreateTemp'),
         'java': ('java.io.FileInputStream', 'java.io.FileOutputStream', 'java.io.File.createTempFile'),
         'dotnet': ('System.IO.File.OpenRead', 'System.IO.File.Open', 'System.IO.Path.GetTempFileName')}
     findings = list(original['findings'])
@@ -205,6 +217,8 @@ def qualify(language, output, native_qualification, *, native_directory=None, to
         app, fixture = project(language, output/'application')
         record['fixture'] = fixture
         before = inventory(snapshot(app))
+        stage = 'locked-fixture-dependency-download'
+        record['dependencyPreparation'] = locked_dependencies(language, app, commands)
         stage = 'normal-component-build'
         artifact = build_component(language, app, output/'build', binaries, tools=tools, wasi_sdk=wasi_sdk)
         require(read_file(artifact/'source-inputs.json') == before, 'scratch-actual-compiled-source-mismatch')
