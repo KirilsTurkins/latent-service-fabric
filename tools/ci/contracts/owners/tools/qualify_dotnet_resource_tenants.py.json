@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_resource_tenants.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Create owned command output parent before real bounded runner; original public provenance, metadata derivation and node gates unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "4f183527a997a01793657aaeb195270c6944cd15a5b2193c1534a04759d48881"
+}
