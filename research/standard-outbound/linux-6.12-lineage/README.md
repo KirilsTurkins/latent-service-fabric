@@ -91,3 +91,59 @@ Before any supported profile can be selected, the missing obligations include:
 
 No kernel/node build, BTF authentication, sealed final-free fact, full allocation
 qualification or production enablement is claimed by this source prerequisite.
+
+## Constructor admission prerequisite
+
+The additive constructor recipe authenticates the same three whole preimages
+and preserves the five free-hook derivations above. It also derives admission
+before the first allocator in the exact upstream sk_prot_alloc, inet_twsk_alloc
+and __alloc_skb functions:
+
+    python tools/host_stream_kernel_birth_derivation.py --source-dir exact-linux-source --output fresh-derived-source
+
+The private admission.h carrier copies the complete original eight-word scope
+and nonwrapping owner generation. A checked bundle reserves the complete byte
+sum, sufficient fixed table slots and every allocation generation before any
+allocator may run. SKB header/fclone storage and data head require two distinct
+records, both admitted together within the unchanged original allowance.
+Header-only plans, missing costs, foreign/sealed parents, stale scope, capacity
+and generation overflow refuse before allocation. A draining live parent may
+still create charged descendants. Replaying a copied commit ticket poisons the
+experiment; it cannot create a second allocation or release credit.
+
+Original security/module failures, TIME_WAIT quota ordering and SKB header/data
+cleanup remain in the derived constructors. Failed or uncertain allocator entry
+retains the whole original reservation and poisons its owner, including unused
+second-allocation tickets. No inferred allocator failure, cache return or normal
+cleanup branch refunds a ticket.
+
+This does **not** authenticate physical costs or authority. The C reference
+supplies explicit model costs and context. A complete future trusted factory must
+bind actual prepaid activation/tenant/provider/boot scope and a source-qualified
+disjoint physical layout; arbitrary callers cannot supply either as proof.
+proto->obj_size, requested payload length and socket buffer settings are not
+complete physical costs. SKB NAPI, allocator rounding, fclone layout and every
+remaining allocation path still require the full selected-kernel closure.
+
+In particular, sk_prot_alloc precedes socket initialization. It cannot read a
+valid cookie or invent one. The current constructor observation with no cookie
+cannot commit a socket record; it remains charged and poisoned in the model.
+The trusted sk_alloc/clone initialization and cookie handoff are an explicit
+remaining integration gate.
+
+The actual uninstalled CONFIG_LSF_STREAM_LINEAGE constructor adapter therefore
+**refuses every constructor before allocation**: no trusted context, physical
+layout or cookie handoff has been installed. It shares the existing private
+lineage state/lock, with no public registrar, Kconfig, Makefile, userspace release
+or certificate. With that CONFIG absent, the header preserves original behavior
+without touching lineage state. This candidate cannot be installed as a normal
+networking kernel profile.
+
+Supplemental controls now include the original-constructor missing-admission
+counterexample, ten derived constructor controls, fourteen carrier controls and
+three controls compiling the actual selected adapter/unselected header. They run
+against explicit C allocator/type/spinlock doubles in a tiny freestanding Wasm
+reference. They establish neither Linux execution nor real locking, allocator
+costs, kernel authority, final-free proof or supported installation. All earlier
+26 supplemental C controls and 18 source controls remain unchanged; the new
+source suite adds eight controls. No production qualification flag changes.
