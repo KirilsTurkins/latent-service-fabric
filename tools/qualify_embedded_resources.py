@@ -118,6 +118,21 @@ def capture_compiler(language):
     return node,npm
 
 
+def captured_rust_component(app, arguments):
+    # Capture already vendors the complete native graph and removes the original
+    # path sources. Only the normal compiler may project its reviewed CAS into
+    # a fresh Cargo home; fetching the original manifest would reopen dead paths.
+    from tools.rust_capsule_build import build
+    verified = verify_inputs(app, 'rust')
+    require(verified is not None, 'embedded-resource-Rust-reviewed-closure-required')
+    artifact = build(*arguments, offline=True)
+    selected = read_json(artifact/'cargo-inputs.json')
+    require(selected['networkResolution'] is False and selected['inputIdentity'] == verified.identity,
+            'embedded-resource-Rust-network-resolution-or-closure')
+    return artifact, {'inputIdentity':verified.identity, 'networkResolution':False,
+                      'originalManifestFetchPerformed':False, 'subsequentBuildOffline':True}
+
+
 def campaign(language, output, binaries, companions, ancestry, *, tools=None):
     require(language in LANGUAGES and sys.platform == 'linux' and sys.version_info >= (3,13)
         and os.geteuid() != 0, 'embedded-resource-unprivileged-linux-python313')
@@ -148,12 +163,7 @@ def campaign(language, output, binaries, companions, ancestry, *, tools=None):
             record['selectedGoPackages'] = selected_go_packages(read_json(artifact/'go-module-build-inputs.json'))
             require(read_json(artifact/'compiler-containment.json')['network'] == 'denied', 'embedded-resource-Go-network-not-denied')
         elif language == 'rust':
-            from tools.qualify_sdk_scratch import locked_dependencies
-            from tools.rust_capsule_build import build
-            record['lockedDownload'] = locked_dependencies(language,app,commands)
-            artifact = build(*arguments,offline=True)
-            require(read_json(artifact/'cargo-inputs.json')['networkResolution'] is False,
-                    'embedded-resource-Rust-network-resolution')
+            artifact,record['capturedRustOffline'] = captured_rust_component(app,arguments)
         else:
             from tools.typescript_guest.build import build
             require(tools is not None, 'embedded-resource-TypeScript-tools-required')
