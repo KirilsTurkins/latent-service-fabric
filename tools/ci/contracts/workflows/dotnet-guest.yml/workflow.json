@@ -93,18 +93,27 @@
           ".github/workflows/dotnet-guest.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "closed_filesystem_replay": {
+            "default": false,
+            "description": "Fresh pure and joined filesystem qualification with authenticated historical native products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
     }
   },
   "requiredJobs": [
+    "closed-filesystem-reference",
     "published-tasks",
     "scratch-refusals",
     "toolchain"
   ],
-  "reviewReason": "Compose the unchanged normal parent and both separately budgeted published and scratch children without removing commands",
+  "reviewReason": "Diagnostic-only reviewed exact42e acquisition reuse: default-false20m fresh filesystem lane, unchanged original three job bodies and commands except exact manual guard, no native host compilation/current normal receipt fabrication.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

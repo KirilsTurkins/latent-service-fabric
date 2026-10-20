@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.closed_filesystem_replay }}",
     "name": "NativeAOT component qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -257,7 +258,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Compose the unchanged normal parent and both separately budgeted published and scratch children without removing commands",
+  "reviewReason": "Diagnostic-only reviewed exact42e acquisition reuse: default-false20m fresh filesystem lane, unchanged original three job bodies and commands except exact manual guard, no native host compilation/current normal receipt fabrication.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

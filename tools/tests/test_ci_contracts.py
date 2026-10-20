@@ -879,6 +879,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         c_selector = data['workflowContracts']['.github/workflows/c-guest-authoring.yml']['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
         self.assertEqual(c_selector['type'], 'boolean')
         self.assertIs(c_selector['default'], False)
+        dotnet_selector = data['workflowContracts']['.github/workflows/dotnet-guest.yml']['on']['workflow_dispatch']['inputs']['closed_filesystem_replay']
+        self.assertEqual(dotnet_selector['type'], 'boolean')
+        self.assertIs(dotnet_selector['default'], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
@@ -896,6 +899,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                 # execution fields retain the immutable historical obligation.
                 self.assertEqual(value['jobIf'], 'success()', key)
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
+            if value['workflow'] == '.github/workflows/dotnet-guest.yml':
+                self.assertEqual(value['jobIf'], 'success()', key)
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.closed_filesystem_replay }}"
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.

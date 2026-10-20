@@ -1,0 +1,112 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.closed_filesystem_replay }}",
+    "name": "Fresh pure and joined BCL filesystem with authenticated native products",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check closed filesystem derivation and argument controls",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_closed_filesystem tools.tests.test_sdk_scratch_probe -v\n"
+      },
+      {
+        "name": "Check pure joined source and strict actual outcome controls",
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_filesystem_qualification -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve only exact source-bound native products and companion packages",
+        "run": "git fetch --no-tags --depth=1 origin 75b408ea0184936aa1dc21df2c9dd5e6c44bbc46\npython3 tools/replay_dotnet_filesystem.py --prepare --output \"$RUNNER_TEMP/filesystem-prepared\"\n"
+      },
+      {
+        "name": "Install captured NativeAOT namespace and loader inputs",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the pinned native compiler and closed runtime",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Build two fresh NativeAOT components and require all78 filesystem outcomes",
+        "run": "python3 tools/replay_dotnet_filesystem.py --prepared \"$RUNNER_TEMP/filesystem-prepared\" --host \"$RUNNER_TEMP/filesystem-prepared/selected-host\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-closed-filesystem-replay\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source, compiler, component and node evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-filesystem-focused-${{ github.sha }}",
+          "path": "${{ runner.temp }}/filesystem-prepared/retrieval.json\n${{ runner.temp }}/filesystem-prepared/selected-host/host-retrieval.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/qualified.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/FAILED.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/logs/**\n${{ runner.temp }}/dotnet-closed-filesystem-replay/pure/build/*.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/pure/build/derived-closed-filesystem-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem-replay/pure/build/component.wasm\n${{ runner.temp }}/dotnet-closed-filesystem-replay/pure/build/logs/**\n${{ runner.temp }}/dotnet-closed-filesystem-replay/pure/node/workflow.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/pure/node/FAILED.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/pure/node/controls/*.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/build/*.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/build/derived-closed-filesystem-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/build/derived-task-wait-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/build/component.wasm\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/build/logs/**\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/node/workflow.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/node/FAILED.json\n${{ runner.temp }}/dotnet-closed-filesystem-replay/joined/node/controls/*.json\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-authoring-tools/logs/**",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "closed-filesystem-reference",
+  "kind": "job",
+  "reviewReason": "Diagnostic-only reviewed exact42e acquisition reuse: default-false20m fresh filesystem lane, unchanged original three job bodies and commands except exact manual guard, no native host compilation/current normal receipt fabrication.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}

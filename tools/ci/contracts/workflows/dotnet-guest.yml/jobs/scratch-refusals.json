@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.closed_filesystem_replay }}",
     "name": "Ordinary .NET filesystem refusals and fresh state",
     "needs": "toolchain",
     "runs-on": "ubuntu-24.04",
@@ -83,7 +84,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Reviewed additive .NET filesystem qualification: keep original six calls, all other languages, normal75min parent and20min scratch child; add six precise argument cases and explicit joined-CoreLib phase without filesystem grants or native host build.",
+  "reviewReason": "Diagnostic-only reviewed exact42e acquisition reuse: default-false20m fresh filesystem lane, unchanged original three job bodies and commands except exact manual guard, no native host compilation/current normal receipt fabrication.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
