@@ -1,0 +1,41 @@
+{
+  "files": [
+    {
+      "path": "activation-runtime-globals.d.ts",
+      "sha256": "sha256:589cf515d06c16454916ecd28a5b1b785db30034300d67e0676b66ca4bcdfb7b",
+      "bytes": 1215
+    },
+    {
+      "path": "capsule.d.ts",
+      "sha256": "sha256:34e3fa1430ef7425ebcc34222b01bb1bdc8a18206cfec3c0d7809f753c1b3d8c",
+      "bytes": 421
+    },
+    {
+      "path": "clock-runtime-globals.d.ts",
+      "sha256": "sha256:200c8e3d6be9c33a56101b8c5ce9b2d7e252b27c7fb8631884b4654fbb227cc7",
+      "bytes": 159
+    },
+    {
+      "path": "fetch-runtime-globals.d.ts",
+      "sha256": "sha256:7e83c9cdd4e9f76f1652688f001dd4d5f332b83f3704c4e6549f1e6140162c40",
+      "bytes": 4561
+    },
+    {
+      "path": "interfaces/examples-typescript-fetch-api.d.ts",
+      "sha256": "sha256:1d3fb5da812fc6831caabdb2ca9fb21e6fd8c1ad307d0fce4b2d3e006d555aad",
+      "bytes": 127
+    },
+    {
+      "path": "interfaces/latent-http-phase-timing.d.ts",
+      "sha256": "sha256:4fd7b633fb85719fc8ea5cb0ec252f4f5debd274a0364347805dafc0fe11dae3",
+      "bytes": 2375
+    },
+    {
+      "path": "interfaces/latent-http-streaming.d.ts",
+      "sha256": "sha256:f61515416db0cff69513c8e7331f58b3f64ed894129d45a822f7c46d035effd3",
+      "bytes": 2530
+    }
+  ],
+  "filesDigest": "sha256:2247793b6cef08bf1dfbd3392d87e35f735b98d88a9378c98229684915f70fe1",
+  "bytes": 11388
+}
