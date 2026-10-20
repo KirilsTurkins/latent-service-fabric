@@ -199,3 +199,42 @@ class JavaComponentProfileIdentity(unittest.TestCase):
             component.unlink();component.mkdir()
             with self.assertRaisesRegex(WorkflowError, 'resource-identity-file'):
                 campaign.component_profile(artifact)
+
+
+class JavaPhaseOperatorComponentLimit(unittest.TestCase):
+    def test_selected_control_profile_preserves_private_fields_and_only_projects_bounded_limits(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary);evidence = root/'evidence';evidence.mkdir()
+            original = {'formatVersion': 1, 'defaultProfile': 'operator', 'profiles': [{
+                'name': 'operator', 'endpoint': 'http://127.0.0.1:1234', 'tenant': 'private-tenant',
+                'token': 'private-value-not-for-receipts', 'connectTimeoutMillis': 2000,
+                'rpcTimeoutMillis': 15000}]}
+            config = root/'client.json';raw = json.dumps(original);config.write_text(raw)
+            client = SimpleNamespace(config=config, directory=root, evidence=evidence)
+            result = node.component_operator(client)
+            selected = json.loads(client.config.read_text())
+            limits = selected['profiles'][0].pop('limits')
+            self.assertEqual(selected, original);self.assertEqual(config.read_text(), raw)
+            self.assertEqual(limits, {'maximumComponentBytes': 67108864,
+                'maximumPayloadBytes': 1048576, 'maximumResponseBytes': 4194304})
+            self.assertEqual(result['limits'], limits)
+            public = (evidence/'operator-component-profile.json').read_text()
+            for private in ('private-value', 'private-tenant', '127.0.0.1', 'token', 'endpoint'):
+                self.assertNotIn(private, public)
+            self.assertFalse(result['guestAndProviderBudgetsChanged'])
+
+    def test_nonoriginal_or_already_selected_operator_profile_refuses_without_changing_config(self):
+        import json
+        for changed in ({'limits': {}}, {'name': 'other'}):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary);evidence = root/'evidence';evidence.mkdir()
+                value = {'formatVersion': 1, 'defaultProfile': 'operator', 'profiles': [
+                    {'name': 'operator', **changed}]}
+                config = root/'client.json';raw = json.dumps(value);config.write_text(raw)
+                client = SimpleNamespace(config=config, directory=root, evidence=evidence)
+                with self.assertRaisesRegex(WorkflowError, 'original-operator-profile'):
+                    node.component_operator(client)
+                self.assertEqual(client.config, config);self.assertEqual(config.read_text(), raw)
+                self.assertFalse((root/'phase-component-client.json').exists())
+                self.assertEqual(list(evidence.iterdir()), [])

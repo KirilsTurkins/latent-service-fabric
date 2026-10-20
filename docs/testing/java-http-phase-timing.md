@@ -223,3 +223,17 @@ and reject altered profile/digest, over-64 MiB and nonregular inputs. No runtime
 or application budget changes. The owning artifact additionally retains only
 this public fixture's component and assembled package so a later reader-only
 repair can reuse them. Signed client/deadline and tenant execution is pending.
+
+
+The next actual source `aa56bdebad8c12f20acce4ec4ecfeca73cf554be` built and
+signed successfully, then CLI publication refused locally before dispatch
+(run `39481897196`, job `118832292958`, artifact `12290889682`). Its 17,034,179-byte
+component exceeds the operator CLI's default 16 MiB input ceiling; the normal
+CLI explicitly permits up to 64 MiB. The selected campaign now creates a
+private operator profile with exactly that 64 MiB component ceiling and the
+unchanged 1 MiB payload/4 MiB response ceilings. The original profile, global
+defaults and all guest/provider/node limits remain unchanged. Both tenant
+clients use the same explicit ceiling. Only bounded numeric limits are retained
+publicly, never endpoint, tenant, token or the private profile. The original
+failure and authenticated component/package permit a fresh signed node-only
+replay, without recompilation or an invented successful old qualification.

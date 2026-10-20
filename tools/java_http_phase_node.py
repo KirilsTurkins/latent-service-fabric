@@ -34,6 +34,26 @@ TERMINAL = {4: 'deadline-exceeded', 5: 'cancelled', 8: 'deadline-exceeded', 9: '
 FRESH_AFTER = {4, 5, 7, 8, 9}
 
 
+def component_operator(client):
+    """Select the permitted component input ceiling for this explicit campaign only."""
+    value = read_json(client.config)
+    require(value.get('formatVersion') == 1 and value.get('defaultProfile') == 'operator'
+        and type(value.get('profiles')) is list and len(value['profiles']) == 1
+        and value['profiles'][0].get('name') == 'operator'
+        and 'limits' not in value['profiles'][0], 'java-phase-original-operator-profile')
+    limits = {'maximumComponentBytes': 64 * 1024 * 1024,
+        'maximumPayloadBytes': 1024 * 1024, 'maximumResponseBytes': 4 * 1024 * 1024}
+    value['profiles'][0]['limits'] = limits
+    selected = client.directory/'phase-component-client.json'
+    write_json(selected, value)
+    public = {'schemaVersion': 'latent.java.http.operator-component-profile.v1',
+        'limits': limits, 'defaultComponentBytes': 16 * 1024 * 1024,
+        'guestAndProviderBudgetsChanged': False}
+    write_json(client.evidence/'operator-component-profile.json', public)
+    client.config = selected
+    return public
+
+
 def configuration(directory, releases, peer, credential, backlogs):
     path = fiber_configuration(directory, releases, peer, credential)
     value = read_json(path)
@@ -229,6 +249,7 @@ def run(artifact, binaries, output, *, deadline):
             config = configuration(work/'node', signed, peer, credential, backlogs)
             stage = 'node'
             node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1)
+            component_operator(client)
             probe = Probe(node, before['latentd'])
             source = signed/'java-standard-http'
             published = client.call('release', 'publish-package', source/'package', '--evidence', source/'evidence/index.json',
