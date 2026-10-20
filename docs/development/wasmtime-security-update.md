@@ -55,6 +55,29 @@ and preparation identities. Fresh RustSec, minimum-Rust, strict Clippy, runtime
 and containment results must be recorded separately; this source change and its
 data-only controls do not claim those hosted results.
 
+### Current trust-store repair
+
+The later fresh RustSec database `e6f94f3760d5e6c54c1b05f204002263bc025524`
+reported five findings across the workspace and authenticated provider locks:
+[RUSTSEC-2026-0381](https://rustsec.org/advisories/RUSTSEC-2026-0381.html),
+[RUSTSEC-2026-0382](https://rustsec.org/advisories/RUSTSEC-2026-0382.html), and
+[RUSTSEC-2026-0383](https://rustsec.org/advisories/RUSTSEC-2026-0383.html).
+The patched same-line selections are webpki-roots and webpki-root-certs
+**1.0.10**, and rustls-webpki **0.103.16**. They remove the affected emSign root
+and reject the distrusted intermediate keys. Their minimum Rust version is
+1.71, below the existing workspace minimum. The root lock changes only these
+three version/checksum records; all dependency edges remain unchanged.
+
+The private bounded rustls package remains 0.23.46, the latest published stable
+rustls at this repair. Its original archive, complete source preimages and
+upstream lock text remain authenticated. Its separately maintained lock derives
+exactly the two affected leaf updates and the already-declared private package
+name from that original text. The [provider derivation](../../sdk/host-stream-tls/rustls-0.23.46-bounds/README.md#distinct-provider-dependency)
+records the original and maintained identities. Every tracked Cargo lock and
+the upstream advisory coordinate remain scanned. Neither the earlier zero-finding
+scan nor an earlier native tuple qualifies this repaired dependency closure;
+fresh advisory checks and newly built native products are required.
+
 ## Historical October 3 and 4, 2026 update
 
 The fresh security baseline on October 4 found

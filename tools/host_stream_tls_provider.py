@@ -18,8 +18,18 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/rustls-outbound"
 RECORD = "sdk/host-stream-tls/rustls-0.23.46-bounds/PROVIDER.json"
 NAME = "latent-rustls-outbound"
-RECORD_SHA256 = "b0c1ba7a2900b849204d6ee531a05697709ab798c6ac566c60c7581045f12070"
+RECORD_SHA256 = "e7f8d01b9b61ee9b4bb9868e95f31626e56bdec60a11e92f973b99b900f0cdea"
 UPSTREAM_MANIFEST_SHA256 = "ef983ace35d7ad699e22682ee0ee45211f805b074fc9e84190b62f200259070f"
+UPSTREAM_LOCK_SHA256 = "8fb66853b333f7bb99c0d1c0cfcecf15d1a08940f09c7ce26eb3626af81ee6fa"
+MAINTAINED_LOCK_SHA256 = "52c650e082bdae0a19592b2ae0aa84894d2bc2570f02a198c3a047ca7b08597a"
+LOCK_UPDATES = (
+    ("rustls-webpki", "0.103.15", "0.103.16",
+     "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2",
+     "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"),
+    ("webpki-roots", "1.0.9", "1.0.10",
+     "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a",
+     "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9"),
+)
 
 
 def derived_manifest(original: bytes) -> bytes:
@@ -30,6 +40,37 @@ def derived_manifest(original: bytes) -> bytes:
     if original.count(old) != 1:
         raise ValueError("host-tls-provider-manifest-shape")
     return original.replace(old, new, 1)
+
+
+def derived_lock(original: bytes) -> bytes:
+    """Reproduce the two precise Cargo updates and the private package identity."""
+    if hashlib.sha256(original).hexdigest() != UPSTREAM_LOCK_SHA256:
+        raise ValueError("host-tls-provider-lock-preimage")
+    header, *blocks = original.split(b"[[package]]\n")
+    old = b'name = "rustls"\nversion = "0.23.46"\n'
+    selected = [block for block in blocks if block.startswith(old)]
+    if len(blocks) != 134 or len(selected) != 1:
+        raise ValueError("host-tls-provider-lock-shape")
+    blocks.remove(selected[0])
+    renamed = selected[0].replace(old, b'name = "latent-rustls-outbound"\nversion = "0.23.46"\n', 1)
+    index = next(i for i, block in enumerate(blocks)
+                 if tomllib.loads(block.decode())["name"] > NAME)
+    blocks.insert(index, renamed)
+    for name, before, after, old_checksum, new_checksum in LOCK_UPDATES:
+        prefix = (f'name = "{name}"\nversion = "{before}"\n'
+                  'source = "registry+https://github.com/rust-lang/crates.io-index"\n'
+                  f'checksum = "{old_checksum}"\n').encode()
+        replacement = prefix.replace(f'version = "{before}"'.encode(),
+                                     f'version = "{after}"'.encode(), 1)
+        replacement = replacement.replace(old_checksum.encode(), new_checksum.encode(), 1)
+        matches = [i for i, block in enumerate(blocks) if block.startswith(prefix)]
+        if len(matches) != 1:
+            raise ValueError("host-tls-provider-lock-package")
+        blocks[matches[0]] = blocks[matches[0]].replace(prefix, replacement, 1)
+    result = header + b"[[package]]\n" + b"[[package]]\n".join(blocks)
+    if hashlib.sha256(result).hexdigest() != MAINTAINED_LOCK_SHA256:
+        raise ValueError("host-tls-provider-lock-result")
+    return result
 
 
 def verify(root: Path = ROOT) -> dict:
@@ -90,10 +131,24 @@ def verify(root: Path = ROOT) -> dict:
         if expected[row["path"]]["afterSha256"] != row["afterSha256"]:
             raise ValueError("host-tls-provider-parser-identity")
     changed = {name for name, row in expected.items() if row["beforeSha256"] != row["afterSha256"]}
-    if changed != captured.CURRENT_FILES | {"Cargo.toml"}:
+    if changed != captured.CURRENT_FILES | {"Cargo.toml", "Cargo.lock"}:
         raise ValueError("host-tls-provider-change-set")
+    if (expected["Cargo.lock"]["beforeSha256"] != UPSTREAM_LOCK_SHA256
+            or expected["Cargo.lock"]["afterSha256"] != MAINTAINED_LOCK_SHA256):
+        raise ValueError("host-tls-provider-lock-derivation")
+    derivation = record["lockDerivation"]
+    original_lock = derivation["original"].encode()
+    if (derivation != {"original": derivation["original"], "originalSha256": UPSTREAM_LOCK_SHA256,
+                       "maintainedSha256": MAINTAINED_LOCK_SHA256,
+                       "generator": "cargo 1.97.1",
+                       "commands": [["cargo", "update", "--manifest-path", "Cargo.toml", "-p", name,
+                                     "--precise", after] for name, _, after, _, _ in LOCK_UPDATES]}
+            or derived_lock(original_lock) != read_file(source / "Cargo.lock", 65536)):
+        raise ValueError("host-tls-provider-lock-derivation")
     return {"schemaVersion": record["schemaVersion"], "package": record["package"],
             "recordSha256": RECORD_SHA256, "files": actual, "upstream": record["upstream"],
+            "upstreamLockSha256": UPSTREAM_LOCK_SHA256,
+            "maintainedLockSha256": MAINTAINED_LOCK_SHA256,
             "licenseFiles": record["licenseFiles"],
             "accountingQualified": False, "installed": False}
 
@@ -107,6 +162,8 @@ def reproduce(archive: Path, output: Path) -> dict:
         raise ValueError("host-tls-provider-upstream-closure")
     manifest = output / "Cargo.toml"
     manifest.write_bytes(derived_manifest(manifest.read_bytes()))
+    lock = output / "Cargo.lock"
+    lock.write_bytes(derived_lock(lock.read_bytes()))
     for name, row in checked["files"].items():
         data = read_file(output / name, 4 * 1024 * 1024)
         if {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)} != row:

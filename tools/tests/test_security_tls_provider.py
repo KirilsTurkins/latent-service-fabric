@@ -37,7 +37,10 @@ class BoundedTlsAdvisoryIdentity(unittest.TestCase):
         self.assertEqual(len(selected), 1)
         self.assertEqual(selected[0]["privatePackage"], "latent-rustls-outbound")
         self.assertEqual(selected[0]["buildLock"], "Cargo.lock")
-        self.assertEqual(selected[0]["sourceEvidenceLock"], tls.LOCK)
+        self.assertEqual(selected[0]["maintainedProviderLock"], tls.LOCK)
+        self.assertEqual(selected[0]["upstreamSourceLockEvidence"], tls.bounded.RECORD + "#lockDerivation.original")
+        self.assertEqual(selected[0]["upstreamSourceLockSha256"], tls.bounded.UPSTREAM_LOCK_SHA256)
+        self.assertEqual(selected[0]["maintainedProviderLockSha256"], tls.bounded.MAINTAINED_LOCK_SHA256)
         self.assertEqual(selected[0]["recordSha256"], tls.bounded.RECORD_SHA256)
         self.assertEqual(selected[0]["coverage"], "OSV-and-RustSec-authenticated-origin")
 

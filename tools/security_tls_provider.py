@@ -24,7 +24,8 @@ def origin(repo: Path, paths: list[str]) -> dict | None:
             "checksum": checked["upstream"]["archiveSha256"],
             "privatePackage": bounded.NAME, "recordSha256": checked["recordSha256"],
             "manifestSha256": checked["files"]["Cargo.toml"]["sha256"],
-            "sourceEvidenceLockSha256": checked["files"]["Cargo.lock"]["sha256"]}
+            "upstreamSourceLockSha256": checked["upstreamLockSha256"],
+            "maintainedProviderLockSha256": checked["maintainedLockSha256"]}
 
 
 def advisory_lock(checked: dict) -> bytes:
@@ -44,5 +45,6 @@ def inventory_record(repo: Path, entry: dict, paths: list[str]) -> tuple[dict, d
     require(checked is not None, "missing-bounded-tls-source")
     return checked, {"path": MANIFEST, "coverage": "OSV-and-RustSec-authenticated-origin",
                      "buildLock": "Cargo.lock", "packages": 1, **checked,
-                     "sourceEvidenceLock": LOCK,
-                     "boundary": "The vendored upstream lock is immutable source evidence, not the provider build lock; RustSec still scans it independently."}
+                     "maintainedProviderLock": LOCK,
+                     "upstreamSourceLockEvidence": bounded.RECORD + "#lockDerivation.original",
+                     "boundary": "The workspace lock selects the provider for normal builds. The separately maintained provider lock has an authenticated upstream preimage and a closed Cargo-generated security derivation; RustSec scans both tracked locks intact."}
