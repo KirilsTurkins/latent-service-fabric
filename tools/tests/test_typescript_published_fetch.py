@@ -17,6 +17,23 @@ from tools.standard_http.peer import Peer
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'config.json'
+            original={'providers':{'activationRuntime':{'limits':dict(qualify.base.OWNER_LIMITS)}},
+                'execution':{'maximumWallTimeMillis':120000},'budgetProfile':{'maximumOutboundRequests':1}}
+            path.write_text(json.dumps(original))
+            changed=qualify.owner_probe_configuration(path)
+            self.assertEqual(changed,{**qualify.base.OWNER_LIMITS,'tasks':64,'queuedWork':64,'nativeOwners':256})
+            actual=json.loads(path.read_bytes())
+            actual['providers']['activationRuntime']['limits']=dict(qualify.base.OWNER_LIMITS)
+            self.assertEqual(actual,original)
+            with self.assertRaisesRegex(WorkflowError,'original-limits'):
+                qualify.owner_probe_configuration(path)
+        self.assertEqual(qualify.base.OWNER_LIMITS['tasks'],16)
+        self.assertEqual(qualify.base.OWNER_LIMITS['queuedWork'],16)
+        self.assertEqual(qualify.base.OWNER_LIMITS['nativeOwners'],64)
+
     def test_failed_client_is_recorded_as_failure_and_never_relabelled_success(self):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temporary:

@@ -58,6 +58,9 @@
         "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/published-fetch-original\""
       },
       {
+        "env": {
+          "DIAGNOSE_OWNER_PROFILE": "${{ inputs.diagnose-owner-profile || false }}"
+        },
         "name": "Capture build sign and execute both changed outside identities",
         "run": "python3 -B tools/qualify_typescript_published_fetch.py --acquired \"$RUNNER_TEMP/published-fetch-original\" --tools \"$RUNNER_TEMP/published-fetch-tools\" --output \"$RUNNER_TEMP/published-fetch\""
       },
@@ -68,7 +71,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-published-fetch-${{ github.sha }}",
-          "path": "${{ runner.temp }}/published-fetch-original/acquisition.json\n${{ runner.temp }}/published-fetch/*.json\n${{ runner.temp }}/published-fetch/variant-*/capture.json\n${{ runner.temp }}/published-fetch/variant-*/build/*.json\n${{ runner.temp }}/published-fetch/variant-*/build/component.wasm\n${{ runner.temp }}/published-fetch/variant-*/build/logs/**\n${{ runner.temp }}/published-fetch/variant-*/node/*.json\n${{ runner.temp }}/published-fetch/variant-*/node/controls/*.json\n",
+          "path": "${{ runner.temp }}/published-fetch-original/acquisition.json\n${{ runner.temp }}/published-fetch/*.json\n${{ runner.temp }}/published-fetch/variant-*/capture.json\n${{ runner.temp }}/published-fetch/variant-*/build/*.json\n${{ runner.temp }}/published-fetch/variant-*/build/component.wasm\n${{ runner.temp }}/published-fetch/variant-*/build/logs/**\n${{ runner.temp }}/published-fetch/variant-*/node/*.json\n${{ runner.temp }}/published-fetch/variant-*/node/controls/*.json\n${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile/*.json\n${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile/controls/*.json\n",
           "retention-days": 7
         }
       }
@@ -77,7 +80,7 @@
   },
   "jobId": "published-fetch",
   "kind": "job",
-  "reviewReason": "Review the actual ofetch declaration failure and replace only the new unmerged Fetch fixture with unchanged browser Wretch; retain all existing Fetch, archive and authority controls.",
+  "reviewReason": "Preserve the mandatory original owner profile and command; opt-in diagnostic reuses the same actual signed input in a separate node with fixed finite owner limits and cannot change original qualification failure.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-published-fetch.yml"
 }

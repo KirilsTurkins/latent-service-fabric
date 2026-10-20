@@ -84,3 +84,17 @@ after the Ky failure instead of ending evidence collection at the first case.
 Full #691 acceptance still requires default HTTP-error compatibility, streaming
 and abandonment, Abort/timeout races, uncertainty, limit exhaustion and
 cross-tenant lifecycle qualification.
+
+The7a2 actual attempt retained all six original failed HTTP cases. Ky reached one
+outbound open but the peer received no HTTP bytes; Wretch and the outside Wretch
+consumer trapped before outbound dispatch. Both pure buffered-reader/JSON probes
+passed. Artifact12241909608 retains223 members and original failed outcomes;
+this is not published-client compatibility qualification.
+
+An opt-in manual diagnostic reuses the same compiled/signed input in a separate
+node with fixed Task64/Queue64/Native256 owner ceilings; all other bounds remain.
+The original Task16/Queue16/Native64 attempt stays mandatory and failed. The
+separate result cannot populate successful variants or turn original failure
+into qualification. This comparison tests owner pressure without early refunds,
+source forks, transport replacement or an assumed engine cause. A passing
+larger-profile result alone would not establish correct physical accounting.

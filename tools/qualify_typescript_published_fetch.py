@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from contextlib import ExitStack
 import json
+import os
 from pathlib import Path
 import secrets
 import shutil
@@ -71,10 +72,21 @@ def require_original_clients(observed, failed):
     require(not failed and observed==expected,'published-fetch-original-client-outcomes-failed')
 
 
-def execute(artifact, native, output):
+def owner_probe_configuration(path):
+    """One fixed differential profile; never used by original qualification."""
+    value=json.loads(read_file(path))
+    original=value['providers']['activationRuntime']['limits']
+    require(original==base.OWNER_LIMITS,'published-fetch-owner-probe-original-limits')
+    changed={**original,'tasks':64,'queuedWork':64,'nativeOwners':256}
+    value['providers']['activationRuntime']['limits']=changed
+    path.write_text(json.dumps(value,indent=2)+"\n",encoding="utf-8")
+    return changed
+
+
+def execute(artifact, native, output, *, diagnostic_owner_profile=False):
     output = fresh(output)
     record = {'schemaVersion': 'latent.typescript.published-fetch-execution.v1', 'status': 'in-progress',
-              'fullTicketQualification': False, 'cases': []}
+              'fullTicketQualification': False, 'cases': [], 'diagnosticOwnerProfile':diagnostic_owner_profile}
     stage, expires = 'sign', time.monotonic()+300
     try:
         original = base.build_evidence(artifact)
@@ -98,6 +110,7 @@ def execute(artifact, native, output):
             cleanup.callback(peer.close)
             startup = peer.line(min(expires, time.monotonic()+10))
             config = base.configuration(work/'node', signed, startup, credential)
+            if diagnostic_owner_profile:record['diagnosticLimits']=owner_probe_configuration(config)
             record['configurationIdentity'] = file_identity(config)
             stage = 'node'
             node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
@@ -162,7 +175,7 @@ def execute(artifact, native, output):
         raise
 
 
-def qualify(acquired, tools, output):
+def qualify(acquired, tools, output, *, diagnose_owner_profile=False):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'published-fetch-Linux-Python313')
     acquired, tools = acquired.resolve(strict=True), tools.resolve(strict=True)
     require(output.resolve() != ROOT and ROOT not in output.resolve().parents
@@ -196,7 +209,18 @@ def qualify(acquired, tools, output):
                 runtime_engine=acquired/'engine/engine.wasm', runtime_engine_receipt=acquired/'engine/engine-input.json',
                 runtime_splicer=acquired/'splicer/splicer', runtime_splicer_receipt=acquired/'splicer/splicer-input.json')
             stage = f'signed-execution-{index}'
-            observed = execute(artifact, native, variant/'node')
+            try:
+                observed = execute(artifact, native, variant/'node')
+            except WorkflowError:
+                if diagnose_owner_profile:
+                    # A distinct node/Store uses the exact same signed input.
+                    # Its result cannot populate original variants or turn the
+                    # failed original profile into qualification success.
+                    try:
+                        execute(artifact,native,variant/'diagnostic-owner-profile',diagnostic_owner_profile=True)
+                    except WorkflowError:
+                        pass
+                raise
             require(before == inventory(snapshot(app)), 'published-fetch-captured-source-changed')
             record['variants'].append({'capture': capture, 'source': digest(before),
                 'build': base.build_evidence(artifact), 'cases': observed['cases'],
@@ -216,5 +240,6 @@ def qualify(acquired, tools, output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('acquired', 'tools', 'output'): parser.add_argument('--'+name, type=Path, required=True)
+    parser.add_argument('--diagnose-owner-profile',action='store_true',default=os.environ.get('DIAGNOSE_OWNER_PROFILE')=='true')
     args = parser.parse_args()
-    print(json.dumps(qualify(args.acquired, args.tools, args.output)))
+    print(json.dumps(qualify(args.acquired, args.tools, args.output,diagnose_owner_profile=args.diagnose_owner_profile)))

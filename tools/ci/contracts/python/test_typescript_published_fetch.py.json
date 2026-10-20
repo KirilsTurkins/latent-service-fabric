@@ -7,6 +7,7 @@
     "PublishedFetchTests.test_fixed_archive_members_reject_duplicate_unsafe_and_missing_inputs",
     "PublishedFetchTests.test_native_inputs_reject_fabricated_current_receipts_before_using_binaries",
     "PublishedFetchTests.test_outside_identity_cannot_escape_its_owned_directory",
+    "PublishedFetchTests.test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting",
     "PublishedFetchTests.test_peer_requires_all_six_exact_authorized_contacts",
     "PublishedFetchTests.test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ",
     "PublishedFetchTests.test_reader_probes_and_closed_diagnostics_cannot_replace_client_success"
@@ -96,6 +97,18 @@
       ],
       "skipSites": []
     },
+    "PublishedFetchTests.test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PublishedFetchTests.test_peer_requires_all_six_exact_authorized_contacts": {
       "bases": [
         "unittest.TestCase"
@@ -135,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_published_fetch.py",
-  "reviewReason": "Retain every original published-client requirement; collect failed rows and redacted audits after verified physical retirement and require the complete ordered case set with no failures.",
+  "reviewReason": "Preserve the mandatory original owner profile and command; opt-in diagnostic reuses the same actual signed input in a separate node with fixed finite owner limits and cannot change original qualification failure.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
