@@ -19,7 +19,8 @@ from tools.rust_capsule_project import ROOT, snapshot
 
 PACKAGE = 'Outside.Standard.Tasks'
 CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cancel',
-         'context', 'suppressed-context', 'delay', 'cancel-after', 'nested', 'monitor')
+         'context', 'suppressed-context', 'delay', 'cancel-after', 'nested', 'monitor',
+         'timer-periodic-context', 'timer-change', 'timer-dispose', 'timer-self-dispose-drain')
 LIBRARY_SOURCE = r'''using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -126,6 +127,83 @@ public static class Library {
             pending = Task.Run(() => { lock (sync) { lock (sync) { return 31; } } });
             if (pending.GetAwaiter().GetResult() != 31) throw new Exception("reentrant monitor changed");
             break;
+        case "timer-periodic-context": {
+            Stage = "periodic-create";
+            local.Value = "timer-captured";
+            var ticks = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            int count = 0;
+            Timer? timer = null;
+            timer = new Timer(_ => {
+                try {
+                    Stage = "periodic-callback";
+                    if (local.Value != "timer-captured") throw new InvalidOperationException("timer context lost");
+                    local.Value = "timer-callback";
+                    if (++count >= 3) { timer!.Change(Timeout.Infinite, Timeout.Infinite); ticks.TrySetResult(true); }
+                } catch (Exception error) { ticks.TrySetException(error); }
+            }, null, Timeout.Infinite, Timeout.Infinite);
+            try {
+                local.Value = "timer-caller";
+                Incomplete(ticks.Task); timer.Change(1, 1);
+                Stage = "periodic-join"; ticks.Task.GetAwaiter().GetResult();
+                timer.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                int retired = count;
+                Task.Delay(3).GetAwaiter().GetResult();
+                if (retired < 3 || count != retired || local.Value != "timer-caller")
+                    throw new InvalidOperationException("periodic disposal or caller context changed");
+            } finally { timer.Dispose(); }
+            break;
+        }
+        case "timer-change": {
+            Stage = "change-create";
+            int count = 0;
+            var next = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var timer = new Timer(_ => next.TrySetResult(++count), null, Timeout.Infinite, Timeout.Infinite);
+            Task.Run(() => { if (count != 0) throw new InvalidOperationException("disabled timer fired"); })
+                .GetAwaiter().GetResult();
+            timer.Change(10000, Timeout.Infinite);
+            timer.Change(1, Timeout.Infinite);
+            Stage = "change-first";
+            if (next.Task.GetAwaiter().GetResult() != 1) throw new InvalidOperationException("changed due time lost");
+            next = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Incomplete(next.Task); timer.Change(1, Timeout.Infinite);
+            Stage = "change-second";
+            if (next.Task.GetAwaiter().GetResult() != 2) throw new InvalidOperationException("timer reset lost");
+            timer.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            Task.Delay(3).GetAwaiter().GetResult();
+            if (count != 2) throw new InvalidOperationException("retired reset fired again");
+            break;
+        }
+        case "timer-dispose": {
+            Stage = "dispose-create";
+            int count = 0;
+            var timer = new Timer(_ => ++count, null, 10000, Timeout.Infinite);
+            timer.Dispose(); timer.Dispose();
+            Task.Delay(3).GetAwaiter().GetResult();
+            if (count != 0) throw new InvalidOperationException("disposed timer fired");
+            if (timer.Change(0, Timeout.Infinite)) throw new InvalidOperationException("disposed timer accepted reset");
+            timer.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            break;
+        }
+        case "timer-self-dispose-drain": {
+            Stage = "self-dispose-create";
+            var completion = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Timer? timer = null;
+            timer = new Timer(_ => {
+                try {
+                    Stage = "self-dispose-callback";
+                    var disposal = timer!.DisposeAsync();
+                    if (disposal.IsCompleted) throw new InvalidOperationException("live timer callback marked retired");
+                    completion.SetResult(disposal.AsTask());
+                } catch (Exception error) { completion.TrySetException(error); }
+            }, null, Timeout.Infinite, Timeout.Infinite);
+            try {
+                Incomplete(completion.Task); timer.Change(1, Timeout.Infinite);
+                Stage = "self-dispose-join";
+                completion.Task.GetAwaiter().GetResult().GetAwaiter().GetResult();
+                timer.Dispose();
+            } finally { timer.Dispose(); }
+            break;
+        }
         default: throw new Exception("unknown finite managed task case");
         }
         if (SynchronizationContext.Current != null) throw new Exception("custom context escaped");

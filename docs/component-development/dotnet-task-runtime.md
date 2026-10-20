@@ -31,7 +31,7 @@ The original source and local feed are removed before offline NativeAOT build.
 
 The signed programme keeps all 27 original node cases and adds distinct
 activation/entropy setup refusals, four isolated single-missing-grant refusals
-and 12 managed task cases. Every successful case
+and 16 managed task cases. Every successful case
 requires the actual expected return value, known and reaped invocation, original
 fuel/memory limits, zero outbound/log/effect consumption, provider-idle counters
 and physical retirement observations. Original shutdown and cleanup assertions
@@ -58,6 +58,21 @@ exposed the original ThreadPoolWorkQueue selector's RANDOM dependency; after
 that explicit grant, six initial cases passed before the first timer exposed
 TimerQueue's WALL dependency. The final passing run includes both declarations
 and independently refuses each of the four missing grants before guest entry.
+
+Four additional ordinary timer lifecycle cases now cover periodic callback
+ExecutionContext with stable post-disposal counts, disabled/change/reset behavior,
+disposal before a due time with rejected reset, and a callback that observes its
+own DisposeAsync as genuinely incomplete until the callback returns. Their four
+reference CLR controls pass with SDK10.0.303. The pinned BCL Timer.Change returns
+false after cancellation; the fixture preserves that behavior. No callback,
+scheduler or Timer implementation is replaced.
+
+Actual execution of this expanded sixteen-case programme is pending. It keeps
+the original twelve cases and reaches exactly48 recorded invocations, within the
+existing48-call ceiling, original provider limits and all four missing-grant
+denials. The retained twelve-case receipt above belongs to its original source
+and does not qualify these additional cases. Complete simultaneous reset/dispose
+races, shutdown/tenant fencing and managed CPU scheduling remain separate.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU
