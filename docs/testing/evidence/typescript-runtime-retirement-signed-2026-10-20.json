@@ -1,0 +1,470 @@
+{
+  "schemaVersion": "latent.typescript.runtime-retirement-observation.v1",
+  "status": "passed",
+  "actualSource": "f25f3c455d5a713b2e087fdf27212b87cc36c00a",
+  "run": 39358519866,
+  "job": 118418918078,
+  "artifact": {
+    "id": 12236774157,
+    "bytes": 8794871,
+    "sha256": "sha256:0b27d3ff7d8dcbc8d813150e19e2bf9c1f29642a1f99e9ae12bee31578c1ad7f"
+  },
+  "qualification": {
+    "sha256": "sha256:6247ad96c0e02c65ce762d273cffff2e7046c86c55093826be79bca565fa2ffd",
+    "bytes": 5825
+  },
+  "nativeOutput": {
+    "sha256": "sha256:53a9f7313711d3943da050d926ea5c7b9d6997f0149794588b754b9a69a04c34",
+    "bytes": 4828
+  },
+  "nativeObservation": {
+    "sha256": "sha256:a061f9acbbb16f0d3a74c43b250fdc6f2073da8844790bdab760f22569d490e7",
+    "bytes": 6737
+  },
+  "nativeTestSource": {
+    "sha256": "sha256:a2722a9256543e9334745b5d245b0a183cd8cf5419cf534c3abe8a93bc89eeb4",
+    "files": 3293,
+    "bytes": 25783702,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "sourceVerifiedFromGit": true,
+  "materialRows": {
+    "tools/qualify_typescript_runtime_retirement.py": {
+      "sha256": "sha256:dc8a6de3f87ec8c2772c8fbf54f1ac7d05146a596af2ebc57cd1b4c127712baa",
+      "bytes": 8796
+    },
+    "tools/typescript_runtime_retirement_fixture.py": {
+      "sha256": "sha256:4c3b0a3b6b8831549fcb3f2cf911be8b666485fac0cfba5edfb253003d4ded38",
+      "bytes": 7799
+    },
+    "crates/latent-wasmtime/tests/local_service/runtime/typescript.rs": {
+      "sha256": "sha256:6cda4a2fd10578947921e0da79244b60d5a1a1e1f0a53c01c6324688914d976e",
+      "bytes": 13823
+    },
+    "tools/typescript_guest/build.py": {
+      "sha256": "sha256:33d62de1c101d0f5b12a342bb73d7f06be5e290fe9c1de29360d6947688bd801",
+      "bytes": 21534
+    },
+    "tools/typescript_guest/bundle.mjs": {
+      "sha256": "sha256:cddf651966f4e2f6ed8c15635117c851784987cc15b841ea69770be814b3b8d0",
+      "bytes": 11995
+    },
+    "tools/typescript_guest/runtime_profile.py": {
+      "sha256": "sha256:b8ee8fe3de02b6db4f5f6d0f45c6f6cda3bc4b8b8fcf0a7f8969136009d0f4ce",
+      "bytes": 21776
+    },
+    "tools/typescript_guest/clock_engine.py": {
+      "sha256": "sha256:c9d75ae50b8290e380f1b5d9d33729df931767ca2efb59dcd556c05df96af669",
+      "bytes": 7780
+    },
+    "tools/typescript_guest/clock_app.mjs": {
+      "sha256": "sha256:523fe669da8ee559e3c3d436f50d70fa83785c27603e4edbb67d441708b1a698",
+      "bytes": 2720
+    }
+  },
+  "readerSource": "14a5a832ddb2390064cb19b1d234e5ebc2c43417",
+  "frozenRegistry": {
+    "sha256": "sha256:ff6c70af8eb07ddbe01b0ae43f54726bbe8720457911f3cf35fb78dea8ec9b8c",
+    "bytes": 711061
+  },
+  "oneExactCasePassed": true,
+  "filteredCases": 47,
+  "strictReaderReprojection": "passed",
+  "twoFreshComponentBuilds": {
+    "typescript-runtime-retirement": {
+      "marker": {
+        "sha256": "sha256:caf39adc94daa122a90c5ffdec0a557123504ee2000cf683ca9119c03fac56d0",
+        "bytes": 2941
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:336f60a6cda18ce35c015fedffbfcd842e0e982fa5548784ae323e1cb6ae8334",
+          "bytes": 12072032
+        },
+        "source-inputs.json": {
+          "sha256": "sha256:2a695986bc435c9b8abcd3d75d5f11dba2ad31a8f49cb2c398953e1a1c99b6ca",
+          "bytes": 14775
+        },
+        "build-observation.json": {
+          "sha256": "sha256:49706d68d40f3e477c5a5dc9a39aaa3c85a11b19de087262f3766039b9503ad9",
+          "bytes": 4164
+        }
+      },
+      "packageInputs": {
+        "sha256": "sha256:74c99237a95381ff8cd8759d9fa5c7888b0d10931977cb6c148ec4bd10893193",
+        "bytes": 1463
+      }
+    },
+    "typescript-service-callee": {
+      "marker": {
+        "sha256": "sha256:9e65eb366bc2dd4942b44f659cc4d601e536db81daa2cd1230ae82c72ed7945b",
+        "bytes": 2335
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:a0a2a5eba3b399211e4d843f0218b229e943e4ad9693934b636c6c084d649018",
+          "bytes": 12459478
+        },
+        "source-inputs.json": {
+          "sha256": "sha256:19d4c1b83dbae72146bcf62249985d7bb438f39bf571c7c3e88362ec8b84c4d4",
+          "bytes": 7974
+        },
+        "build-observation.json": {
+          "sha256": "sha256:1b008126ed911f87a0b9c09d6e068b5a352d61aa24355dd77e047e353181e492",
+          "bytes": 2852
+        }
+      },
+      "packageInputs": {
+        "sha256": "sha256:dd0b320fd92c2d07ed4ba36299c3eefe8c6f6d4188144e0d7f2b2967024d11c9",
+        "bytes": 944
+      }
+    }
+  },
+  "outsidePackageOriginalRemoved": true,
+  "publishedLibrary": false,
+  "historicalCompiler": {
+    "compiledSourceMerge": "2cd6bb0d1ca39e3205ef0cf6296170fcab4005fe",
+    "originalPrHead": "02fbe2f9ed5c2cec6f568ebc7cce99216a12631e",
+    "qualification": {
+      "sha256": "sha256:f9aded6b7b0ba702d9ec105d30320a0b2d44c22a2ab090e88e1bc1e813bda778",
+      "bytes": 25162
+    },
+    "sourceInputs": {
+      "sha256": "sha256:593c8dbaa193fc9ed8b3f88ff650975b55abf2b124c2cfeaf0decc534f723b34",
+      "bytes": 41819
+    },
+    "normalNode": {
+      "sha256": "sha256:ceaacb9c49b1595ff726aa3139aa7f0a75c03a6f63561602a0e406405191f649",
+      "bytes": 281497
+    },
+    "nativeBinaries": {
+      "latent": {
+        "sha256": "sha256:25253f0ad347c9b710b240360dc5f16e4b1faf73b6373ed416de72e54d4a9145",
+        "bytes": 68801736
+      },
+      "latentd": {
+        "sha256": "sha256:61bfcc6da1f9704ffdab3aa157eba8e24dccc43b6e794739e5b1d0e7d4b9a616",
+        "bytes": 182156984
+      },
+      "examples/package": {
+        "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+        "bytes": 17726192
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+        "bytes": 7224720
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:5a1fb049382ef7c3d828be500525e335855a5cbaee6697d4a6dd0d6d3a700aa5",
+        "bytes": 23847136
+      }
+    },
+    "historicalNormalOutcomes": 30,
+    "currentNormalReceiptFabricated": false
+  },
+  "originalEngine": {
+    "engine": {
+      "sha256": "sha256:c2394ccbcb7f39bf6264fd6b2208349a7d072a82d61074629b14c51ad9e88fa7",
+      "bytes": 10146325
+    },
+    "receipt": {
+      "sha256": "sha256:385624cf28f1b700bd8364c77549a5dda34dbe6735fcf21ac86f140f8b24715c",
+      "bytes": 6936
+    },
+    "SDKInputs": 31,
+    "rebuilt": false,
+    "receiptRebound": false,
+    "originalRun": 39319524998,
+    "originalArtifact": 12223506878
+  },
+  "outcomes": [
+    {
+      "case": "typescript-retirement-reference-1",
+      "cpuFuel": 11261846,
+      "decoded": [
+        42
+      ],
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 1,
+      "outcome": "Succeeded",
+      "peakMemoryBytes": 9508080
+    },
+    {
+      "case": "typescript-retirement-reference-3",
+      "cpuFuel": 11326338,
+      "decoded": [
+        42
+      ],
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 3,
+      "outcome": "Succeeded",
+      "peakMemoryBytes": 9508264
+    },
+    {
+      "case": "typescript-promise-pending-then-resolved",
+      "cpuFuel": 11346013,
+      "decoded": [
+        42
+      ],
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 5,
+      "outcome": "Succeeded",
+      "peakMemoryBytes": 9508264,
+      "pending": {
+        "calls": 1,
+        "readWaits": 1,
+        "stores": 1
+      }
+    },
+    {
+      "case": "typescript-fresh-after-promise-resolution",
+      "cpuFuel": 11261846,
+      "decoded": [
+        42
+      ],
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 1,
+      "outcome": "Succeeded",
+      "peakMemoryBytes": 9508080
+    },
+    {
+      "case": "typescript-pending-promise-cancel",
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 0,
+      "outcome": "Cancelled",
+      "pending": {
+        "calls": 1,
+        "readWaits": 1,
+        "stores": 1
+      }
+    },
+    {
+      "case": "typescript-fresh-after-promise-cancel",
+      "cpuFuel": 11261846,
+      "decoded": [
+        42
+      ],
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 1,
+      "outcome": "Succeeded",
+      "peakMemoryBytes": 9508080
+    },
+    {
+      "case": "typescript-promise-original-root-deadline",
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 0,
+      "outcome": "DeadlineExceeded",
+      "pending": {
+        "calls": 1,
+        "readWaits": 1,
+        "stores": 1
+      }
+    },
+    {
+      "case": "typescript-fresh-after-promise-deadline",
+      "cpuFuel": 11261846,
+      "decoded": [
+        42
+      ],
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 1,
+      "outcome": "Succeeded",
+      "peakMemoryBytes": 9508080
+    },
+    {
+      "callbackOriginProven": false,
+      "case": "typescript-root-trap-mode",
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 2,
+      "outcome": "GuestTrap"
+    },
+    {
+      "case": "typescript-fresh-after-root-trap",
+      "cpuFuel": 11261846,
+      "decoded": [
+        42
+      ],
+      "idle": {
+        "activeInvocations": 0,
+        "bufferBytes": 0,
+        "calls": 0,
+        "cancellationProbes": 0,
+        "cancellationRegistrations": 0,
+        "componentInstances": 0,
+        "handles": 0,
+        "hostStates": 0,
+        "instanceReservations": 0,
+        "quotaActivations": 0,
+        "readWaits": 0,
+        "results": 0,
+        "sessions": 0,
+        "stores": 0,
+        "temporaryBuffers": 0
+      },
+      "mode": 1,
+      "outcome": "Succeeded",
+      "peakMemoryBytes": 9508080
+    }
+  ],
+  "physicalCountersPerIdle": 15,
+  "fullTicketQualification": false,
+  "crossTenantQualified": false,
+  "callbackOriginProven": false,
+  "composition": {
+    "development": "7c3cb3b4e9ff41d1c796918b8a0b207aa00a10fd",
+    "nativeProductionUnchanged": true,
+    "typescriptCaseAndFixtureUnchanged": true,
+    "nativeScopeChangedPaths": [
+      "crates/latent-wasmtime/tests/local_service/runtime/go.rs",
+      "crates/latent-wasmtime/tests/local_service/runtime/go/synchronization.rs"
+    ],
+    "futureFilteredCases": 48,
+    "nativeProgrammeRepeated": false
+  }
+}
