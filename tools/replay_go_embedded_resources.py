@@ -1,7 +1,6 @@
 """Fresh resource greeting on the authenticated historical94d Go normal bundle."""
 from __future__ import annotations
 import argparse
-import copy
 from pathlib import Path
 import sys
 
@@ -15,32 +14,19 @@ from tools.qualify_embedded_resources import HELPERS, campaign
 from tools.qualify_sdk_scratch import _prepared_with_inputs, current_inputs
 from tools.rust_capsule_project import ROOT, read_json, write_json
 
-HELPER = 'run_rust_capsule_workflow.py'
-RESOURCE_HELPER = {'sha256':'sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7','bytes':34233}
-ORIGINAL_RUNTIME = {'sha256':'sha256:d1d1507dc96ad0477edb06ec12af301e44c6a63d28abf9cb3c6e839d65b35738',
-    'files':3299,'bytes':25834970,'scope':'explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs',
-    'hermetic':False,'implicitCompilerInputs':'not-attested'}
-# Git94d..6b296e changes only this one native-scope TEST file. No native
-# implementation is relabelled as compiled from the present checkout.
-STARTUP_TEST_RUNTIME = {**ORIGINAL_RUNTIME,
-    'sha256':'sha256:410f3bea073b8a650b7539c28e3ec1ff2a766b6c2e1ecdd43d41cad459f76c4f','bytes':25835711}
-STARTUP_TEST = 'apps/latentd/tests/standalone_node/startup.rs'
+HELPER = producer.WORKFLOW_HELPER
+RESOURCE_HELPER = producer.RESOURCE_ONLY_HELPER
+ORIGINAL_RUNTIME = producer.ORIGINAL_RUNTIME
+STARTUP_TEST_RUNTIME = producer.TEST_ONLY_RUNTIME
+STARTUP_TEST = producer.STARTUP_TEST['path']
 MATERIALS = (*HELPERS,'tools/replay_go_embedded_resources.py','tools/qualify_go_node_stop.py',
     'tools/qualify_sdk_scratch.py',STARTUP_TEST)
 
 
 def compatible_source(original,current):
-    require(type(original) is dict and type(current) is dict and original.keys() == current.keys()
-        and original['runtime'] == ORIGINAL_RUNTIME and current['runtime'] == STARTUP_TEST_RUNTIME
-        and original['helpers'][HELPER] == producer.ORIGINAL_HELPER
-        and current['helpers'][HELPER] == RESOURCE_HELPER, 'embedded-Go-closed-source-preimages')
-    normalized = copy.deepcopy(current)
-    normalized['runtime'] = ORIGINAL_RUNTIME
-    normalized['helpers'][HELPER] = producer.ORIGINAL_HELPER
-    require(normalized == original, 'embedded-Go-no-native-SDK-WIT-used-helper-drift')
-    return {'compiledSource':producer.PRODUCER_HEAD,'compiledRuntime':ORIGINAL_RUNTIME,
-        'currentRuntime':STARTUP_TEST_RUNTIME,'nativeImplementationChanged':False,
-        'nativeTestOnlyChange':STARTUP_TEST,'unusedNormalWorkflowHelper':RESOURCE_HELPER,
+    compatibility = producer.compatible_normal_source(original,current)
+    require(current['helpers'][HELPER] == RESOURCE_HELPER, 'embedded-Go-exact-resource-selector-required')
+    return {**compatibility,'compiledSource':producer.PRODUCER_HEAD,
         'currentNativeCompilationClaimed':False,'normalReceiptRelabelled':False}
 
 

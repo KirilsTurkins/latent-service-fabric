@@ -25,7 +25,7 @@ class GoEmbeddedReplay(unittest.TestCase):
             elif mode == 'used-helper': changed['helpers'][mode] = {'substituted':'source'}
             elif mode == 'unreviewed-helper': changed['helpers'][replay.HELPER]['bytes'] += 1
             else: changed['runtime']['sha256'] = 'sha256:'+'0'*64
-            with self.subTest(mode=mode), self.assertRaisesRegex(RuntimeError,'embedded-Go-'):
+            with self.subTest(mode=mode), self.assertRaisesRegex(RuntimeError,'Go-node-stop-|embedded-Go-'):
                 replay.compatible_source(original,changed)
 
     def test_original_source_is_verified_before_any_retained_product_can_be_selected(self):
@@ -43,7 +43,7 @@ class GoEmbeddedReplay(unittest.TestCase):
             self.assertEqual(result[2]['physicalSamples'],20)
         current = copy.deepcopy(current); current['runtime']['bytes'] += 1
         with patch.object(replay,'read_json',return_value=original), patch.object(replay,'current_inputs',return_value=current), \
-                patch.object(replay,'_prepared_with_inputs') as checked, self.assertRaisesRegex(RuntimeError,'closed-source'):
+                patch.object(replay,'_prepared_with_inputs') as checked, self.assertRaisesRegex(RuntimeError,'Go-node-stop-'):
             replay.selected(Path('never-executed'))
         checked.assert_not_called()
 

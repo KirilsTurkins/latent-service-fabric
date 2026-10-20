@@ -53,3 +53,22 @@ its finite 39-outcome programme and real returned clock widths. The
 scope. AC3 resource/error coverage and AC8 concurrent/cancel/pending-flush/
 late/fresh-cross-tenant requirements remain open; this candidate closes neither
 the whole ticket nor those coupled runtime requirements.
+
+## Targeted Go reference lane
+
+The input-free20-minute `go-embedded-resource-reference.yml` job authenticates
+completed run39373374237/job118465965449 and its exact public normal bundle
+artifact12242839929 before restoring any executable. The merged maintained
+producer validator allows only its enumerated unused-runner and native-test
+postimages; this resource lane additionally requires its exact reviewed
+resource selector. The original native producer and normal27 receipt stay
+historical. Only one fresh greeting is built, normally signed/admitted, then
+all original27 plus eight new calls are required. Its actual result is pending.
+
+The job installs the already pinned componentize-go tool and Go1.27.2 compiler;
+it does not rebuild latentd, the four companions or the original SDK baseline.
+Public metadata/receipts and the fresh component are retained, with no demo
+signing keys, compiler caches or GitHub credentials in the artifact. Twelve
+source controls comprise the nine fixture/protocol cases and three replay
+source/producer/workflow cases. Rust and TypeScript still need their separately
+authenticated retained-product lanes; this Go job supplies no pass for them.
