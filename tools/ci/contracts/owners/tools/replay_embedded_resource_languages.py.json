@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_embedded_resource_languages.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Exact producer/normal30 captured-dependency record and required public entropy-selection package layer observed before dispatch; no original cases, guards, authority or workflows removed.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "bb99e3d83b4c2c032be04bd6fc122fff04e06b6191c53e55c303ab9e96a6c7dd"
+}

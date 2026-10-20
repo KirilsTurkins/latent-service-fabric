@@ -1,0 +1,106 @@
+name: Actual Rust and TypeScript embedded resource references
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['diagnostic/rust-typescript-embedded-resources-20261020']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: embedded-resource-languages-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+
+jobs:
+  resources:
+    name: Fresh ${{ matrix.language }} transitive data and trap recovery
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [rust, typescript]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        if: matrix.language == 'rust'
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v1
+        if: matrix.language == 'rust'
+        with:
+          version: 0.16.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6.4.0
+        if: matrix.language == 'typescript'
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install the original bounded compiler namespace and source controls
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install -r tools/requirements.lock
+      - name: Check fixed artifact selections original programmes and drift refusals
+        run: python3 -B -m unittest tools.tests.test_embedded_resource_conformance tools.tests.test_go_embedded_resource_replay tools.tests.test_embedded_resource_language_replay -v
+      - name: Authenticate the successful native producer before restoring executables
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_go_embedded_resources.py --record-producer --output "$RUNNER_TEMP/embedded-native-producer.json"
+      - name: Restore only the authenticated native normal bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36
+          run-id: 39373374237
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/embedded-native-normal
+      - name: Acquire only pinned public companion components and normal provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_embedded_resource_languages.py --language "${{ matrix.language }}" --acquire --output "$RUNNER_TEMP/embedded-original"
+      - name: Install the existing pinned Rust binding compiler
+        if: matrix.language == 'rust'
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/embedded-tools"
+          echo "$RUNNER_TEMP/embedded-tools" >> "$GITHUB_PATH"
+      - name: Install the existing pinned public TypeScript compiler
+        if: matrix.language == 'typescript'
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/embedded-tools"
+      - name: Build one fresh greeting sign and require the complete original plus six new calls
+        run: |
+          python3 -B tools/replay_embedded_resource_languages.py --language "${{ matrix.language }}" \
+            --original "$RUNNER_TEMP/embedded-original" --normal-qualification "$RUNNER_TEMP/embedded-native-normal" \
+            --producer-receipt "$RUNNER_TEMP/embedded-native-producer.json" --tools "$RUNNER_TEMP/embedded-tools" \
+            --output "$RUNNER_TEMP/embedded-resources"
+      - name: Retain bounded public provenance components actual results and failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: embedded-resource-${{ matrix.language }}-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/embedded-native-producer.json
+            ${{ runner.temp }}/embedded-original/acquisition.json
+            ${{ runner.temp }}/embedded-resources/*.json
+            ${{ runner.temp }}/embedded-resources/logs/**
+            ${{ runner.temp }}/embedded-resources/build/*.json
+            ${{ runner.temp }}/embedded-resources/build/logs/**
+            ${{ runner.temp }}/embedded-resources/build/component.wasm
+            ${{ runner.temp }}/embedded-resources/node/workflow.json
+            ${{ runner.temp }}/embedded-resources/node/FAILED.json
+            ${{ runner.temp }}/embedded-resources/node/controls/*.json

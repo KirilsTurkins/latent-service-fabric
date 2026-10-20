@@ -12,10 +12,12 @@
     "GoRuntimeCosts.test_private_unknown_duplicate_reordered_or_foreign_mode_observations_are_rejected",
     "GoRuntimeCosts.test_recursive_reference_uses_the_identical_complete_owned_function_without_execution",
     "GoRuntimeCosts.test_reference_module_is_beneath_the_go_temporary_root_that_ignores_root_go_mod",
+    "GoRuntimeCosts.test_retained_pinned_wasm_diagnostics_prove_the_real_array_initialization_and_checksum_copy",
     "GoRuntimeCosts.test_same_ordinary_source_has_explicit_default_and_v5_profiles_with_original_sdk_and_budgets",
     "GoRuntimeCosts.test_small_generic_stack_growth_cannot_be_mistaken_for_two_recursive_live_stacks",
     "GoRuntimeCosts.test_success_requires_real_reaped_known_result_revision_original_budget_and_zero_effects",
-    "GoRuntimeCosts.test_unknown_profile_refuses_before_creating_an_application"
+    "GoRuntimeCosts.test_unknown_profile_refuses_before_creating_an_application",
+    "GoRuntimeCosts.test_wasm_reference_rejects_wrong_initialization_copy_source_line_and_other_function"
   ],
   "guards": {
     "GoRuntimeCosts.test_actual_stats_parser_keeps_source_data_separate_from_physical_qualification": {
@@ -162,6 +164,18 @@
       ],
       "skipSites": []
     },
+    "GoRuntimeCosts.test_retained_pinned_wasm_diagnostics_prove_the_real_array_initialization_and_checksum_copy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "GoRuntimeCosts.test_same_ordinary_source_has_explicit_default_and_v5_profiles_with_original_sdk_and_budgets": {
       "bases": [
         "unittest.TestCase"
@@ -209,10 +223,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "GoRuntimeCosts.test_wasm_reference_rejects_wrong_initialization_copy_source_line_and_other_function": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_runtime_costs.py",
-  "reviewReason": "Actual38f65/run39390120215 compiler-only reference failed before components: Go ignores go.mod directly in TMPDIR. Put the identical exact function/module under owned project child, retain parent temporary/output/deadline bounds and exact pinned compiler/stack diagnostics. Actual-source old RED/new GREEN environment-root control; all47 focused PASS. No guest or compiler-placement qualification from the failed run, no native rebuild or limit change.",
+  "reviewReason": "Actual3337/run39392610753 pinnedGo1.27.2 wasm compile passed but oldreader omitted STEXT align and expected symbolicSP. Exact36853B actualdiagnostics f839812c show original16424B frame: SP+40 initialization8192B and SP+8232 checksumcopy8192B. Closed functionpair/source-lines/recursivecall/noheapescape and alteredlayout/size/function/line/escape/oversize negatives;18focusedPASS. Originalmodule/class/decorator/skip contexts retainedAST-exact and14oldtestbodies unchanged; twooldcontrols replace syntheticwrongarchitecture output with actualpinnedWasmfixture, twoadditivecases. Ordinaryapplication/SDK/native/probe/budgets/all6signedgates unchanged. Fullsignedcostqualification remainsfalse.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
