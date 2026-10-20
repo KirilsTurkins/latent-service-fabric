@@ -21,6 +21,12 @@ CAPABILITIES = {
     "intents": ("latent:intents/staging@0.1.0", {"Transaction"}),
 }
 
+# These facades require a separately selected managed compiler port. Keep the
+# ordinary generated SDK catalogue and its existing default path unchanged.
+MANAGED_CAPABILITIES = {
+    "network": ("latent:network/streams@0.1.0", {"Connection", "Chunk"}),
+}
+
 
 def export_declarations(text: str) -> str:
     """Keep the pinned export package's canonical types when replacing stubs.
@@ -84,14 +90,14 @@ def explicit_resource_owners(text: str) -> str:
     return result
 
 
-def install(sdk: Path, module: Path, *, http_context: bool = False) -> bool:
+def install(sdk: Path, module: Path, *, http_context: bool = False, network_context: bool = False) -> bool:
     output = module / "lsf"
     output.mkdir()
     (output / "ownership").mkdir()
     (output / "ownership/owner.go").write_bytes((sdk / "ownership/owner.go").read_bytes())
     sources = [(p, p.read_text()) for p in sorted(module.glob("*/wit_bindings.go"))]
     installed = {}
-    for name, (identity, excluded) in CAPABILITIES.items():
+    for name, (identity, excluded) in (CAPABILITIES | MANAGED_CAPABILITIES).items():
         matches = [(path, text) for path, text in sources
                    if re.search(r"(?m)^//go:wasmimport " + re.escape(identity) + r" ", text)]
         if not matches:
@@ -99,6 +105,11 @@ def install(sdk: Path, module: Path, *, http_context: bool = False) -> bool:
         if len(matches) != 1:
             raise ValueError("ambiguous-Go-SDK-capability-identity:" + identity)
         source, text = matches[0]
+        if name == 'network':
+            if not network_context:
+                raise ValueError('go-network-requires-selected-context')
+            from tools.go_guest.network_context import generated_source
+            text = generated_source(text)
         if name == 'streaming' and http_context:
             from tools.go_guest.http_context import generated_source
             text = generated_source(text)
@@ -123,6 +134,8 @@ def install(sdk: Path, module: Path, *, http_context: bool = False) -> bool:
         if name == 'streaming' and http_context:
             (directory / 'context.go').write_text(
                 (sdk / 'capabilities/streaming-context.go.in').read_text().replace('@raw@', raw), encoding='utf-8')
+        if name == 'network':
+            (directory / 'owner.go').write_bytes((sdk / 'capabilities/network-owner.go.in').read_bytes())
     if "intents" in installed:
         if "state" not in installed:
             raise ValueError("intent staging requires the canonical imported state owner")

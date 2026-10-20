@@ -1,0 +1,117 @@
+// This private owner is installed only for the declared streams capability.
+package network
+
+import (
+	"context"
+	"sync"
+	"sync/atomic"
+)
+
+const (
+	streamRead = iota
+	streamWrite
+	streamReady
+	streamInspect
+	streamDirections
+)
+
+// Unlike the generic SDK Owner, one connection permits independent directions.
+// Each admitted borrow retains the original resource until its canonical call
+// returns or cancellation is acknowledged. There is no implicit waiter queue.
+type connectionOwner[T any] struct {
+	mu      sync.Mutex
+	value   T
+	active  uint8
+	cancels [streamDirections]context.CancelFunc
+	idle    chan struct{}
+	closed  chan struct{}
+	closing bool
+}
+
+func newConnectionOwner[T any](value T) *connectionOwner[T] {
+	idle := make(chan struct{})
+	close(idle)
+	return &connectionOwner[T]{value: value, idle: idle, closed: make(chan struct{})}
+}
+
+func (o *connectionOwner[T]) borrow(ctx context.Context, direction int) (T, context.Context, func(), bool) {
+	var empty T
+	if o == nil || ctx == nil || direction < 0 || direction >= streamDirections {
+		return empty, nil, nil, false
+	}
+	o.mu.Lock()
+	bit := uint8(1 << direction)
+	if o.closing || o.active&bit != 0 {
+		o.mu.Unlock()
+		return empty, nil, nil, false
+	}
+	child, cancel := context.WithCancel(ctx)
+	if o.active == 0 {
+		o.idle = make(chan struct{})
+	}
+	o.active |= bit
+	o.cancels[direction] = cancel
+	value := o.value
+	o.mu.Unlock()
+	var released atomic.Bool
+	release := func() {
+		if !released.CompareAndSwap(false, true) {
+			panic("lsf: duplicate stream borrow release")
+		}
+		cancel()
+		o.mu.Lock()
+		defer o.mu.Unlock()
+		if o.active&bit == 0 {
+			panic("lsf: missing stream borrow")
+		}
+		o.active &^= bit
+		o.cancels[direction] = nil
+		if o.active == 0 {
+			close(o.idle)
+		}
+	}
+	return value, child, release, true
+}
+
+// beginClose cancels each real outstanding call and waits for its owner to
+// release after terminal acknowledgement. It never consumes an active borrow.
+// Concurrent subsequent Close calls wait for the same original final close.
+func (o *connectionOwner[T]) beginClose() (T, bool) {
+	var empty T
+	if o == nil {
+		return empty, false
+	}
+	o.mu.Lock()
+	if o.closing {
+		done := o.closed
+		o.mu.Unlock()
+		<-done
+		return empty, false
+	}
+	o.closing = true
+	idle, cancels := o.idle, o.cancels
+	o.mu.Unlock()
+	for _, cancel := range cancels {
+		if cancel != nil {
+			cancel()
+		}
+	}
+	<-idle
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if o.active != 0 {
+		panic("lsf: stream close before borrow retirement")
+	}
+	return o.value, true
+}
+
+func (o *connectionOwner[T]) finishClose() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if !o.closing || o.active != 0 {
+		panic("lsf: stream final close without original owner")
+	}
+	var empty T
+	o.value = empty
+	close(o.closed)
+}

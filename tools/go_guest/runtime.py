@@ -142,11 +142,13 @@ def prepare_compiler(goroot: Path, destination: Path) -> Path:
 def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
             *, sdk: Path | None = None, activation: bool = False, checkpoints: bool = False, timers: bool = False,
             initializers: bool = False, http_context: bool = False, standard_log: bool = False,
-            managed_idle: bool = False) -> Path:
+            managed_idle: bool = False, network_context: bool = False) -> Path:
     goroot, destination = checked_roots(goroot, destination)
     sources = checked_sources(goroot, PREIMAGES)
     if type(standard_log) is not bool:
         raise ValueError('Go-standard-log-selection-must-be-boolean')
+    if type(network_context) is not bool or network_context and not (activation and checkpoints and timers and initializers and managed_idle):
+        raise ValueError('go-network-requires-complete-managed-v5-profile')
     if type(managed_idle) is not bool or managed_idle and not (activation and checkpoints and timers and initializers):
         raise ValueError('Go-managed-idle-requires-complete-activation-profile')
     sources['net/net_fake.go'] = closed_network_source(
@@ -200,7 +202,7 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
         from tools.go_guest.activation import runtime_sources, async_source
         runtime_sources(goroot, sources, sdk, checkpoints=checkpoints, timers=timers, initializers=initializers)
         activation_source = async_source(go_package.resolve(), sdk, checkpoints=checkpoints, timers=timers, initializers=initializers)
-        if http_context:
+        if http_context or network_context:
             from tools.go_guest.http_context import async_source as http_async_source
             upstream, adapted = activation_source
             activation_source = upstream, http_async_source(adapted, sdk)
