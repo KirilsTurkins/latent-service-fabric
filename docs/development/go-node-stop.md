@@ -97,3 +97,12 @@ six-invocation/four-node programme remains pending until its dedicated hosted
 lane succeeds. This slice does not qualify independent stack/GC/result/queue
 costs, every scheduler race/late wake or low-level net/DNS/TLS. #742 and #736
 remain open for their other literal requirements and mandatory evidence.
+
+The later88ae execution compiled and signed the same fixture, then rejected a
+real durable audit epoch before SIGTERM: the reader incorrectly treated it as
+an integer. Epochs now require the producer's exact32 lower-case hexadecimal
+characters; sequences require a nonzero canonical u64. Matching activation
+witnesses must share one epoch before their sequence order can be compared.
+The retained three-page sample contains only the earlier fresh activation, so
+parsing it correctly still yields no live-work barrier. No numeric-epoch
+fallback, extra polling allowance, or shutdown success is introduced.

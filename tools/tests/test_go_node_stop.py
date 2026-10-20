@@ -21,7 +21,7 @@ def inventory():
 
 
 def event(sequence, operation, *, completed=False, activation='pending', provider=probe.PROFILE):
-    return {'epoch': '1', 'sequence': str(sequence), 'data': {'observation': {
+    return {'epoch': '1' * 32, 'sequence': str(sequence), 'data': {'observation': {
         'kind': 'PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME' if completed else
                 'PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED',
         'outcome': 'AUDIT_OBSERVATION_OUTCOME_SUCCEEDED',
@@ -137,7 +137,8 @@ class GoNodeStop(unittest.TestCase):
         raw[0]['data']['records'].pop()
         self.assertIsNone(barrier(inventory(), raw, 'pending', 'drain'))
         raw = pages()
-        raw[0]['data']['records'][-1]['sequence'] = '0'
+        raw[0]['data']['records'][-2]['sequence'] = '6'
+        raw[0]['data']['records'][-1]['sequence'] = '5'
         self.assertIsNone(barrier(inventory(), raw, 'pending', 'pending'))
 
     def test_initializer_only_or_other_activation_cannot_stand_in_for_accepted_body_work(self):
@@ -487,6 +488,37 @@ class GoNodeStop(unittest.TestCase):
             self.assertEqual(client.deadline, 100.0)
             self.assertEqual(len(list(root.glob('refused-audit-*.json'))), 16)
             signal.assert_not_called()
+
+
+    def test_durable_audit_identity_uses_exact_native_hex_epoch_and_positive_u64_sequence(self):
+        self.assertEqual(probe.audit_identity({'epoch': '29a808c0260f0a8ead5fbdf3bb7bab82', 'sequence': '6'}),
+            ('29a808c0260f0a8ead5fbdf3bb7bab82', 6))
+        self.assertEqual(probe.audit_identity({'epoch': '0' * 32, 'sequence': str(2**64-1)}),
+            ('0' * 32, 2**64-1))
+        for epoch in (1, True, '1', 'a' * 31, 'a' * 33, 'A' * 32, 'g' * 32,
+                      '29a808c0-260f-0a8e-ad5f-bdf3bb7bab82', None):
+            with self.subTest(epoch=epoch), self.assertRaisesRegex(RuntimeError, 'canonical-audit-epoch'):
+                probe.audit_identity({'epoch': epoch, 'sequence': '1'})
+        for sequence in (0, '0', True, -1, str(2**64), '01', '1.0', 'private'):
+            with self.subTest(sequence=sequence), self.assertRaisesRegex(RuntimeError, 'Go-node-stop-'):
+                probe.audit_identity({'epoch': 'a' * 32, 'sequence': sequence})
+
+    def test_actual_88ae_audit_pages_parse_but_prior_fresh_records_cannot_prove_pending_work(self):
+        actual = json.loads((Path(__file__).parent / 'fixtures/go_node_stop/audit-88ae.json').read_bytes())
+        self.assertEqual(actual['source']['artifact'], 12252293537)
+        self.assertEqual([len(page['data']['records']) for page in actual['pages']], [14, 12, 2])
+        self.assertEqual(actual['pages'][0]['data']['records'][0]['epoch'], '29a808c0260f0a8ead5fbdf3bb7bab82')
+        self.assertIsNone(probe.barrier(actual['inventory'], actual['pages'], 'node-stop-pending', 'pending',
+            provider_usage=actual['providerUsage']))
+        self.assertEqual(probe.barrier(inventory(), pages(), 'pending', 'pending',
+            provider_usage=provider_usage())['hostCompletedTimerStarts'], 3)
+
+    def test_timer_witness_sequences_from_distinct_epochs_cannot_be_combined(self):
+        actual = pages()
+        actual[0]['data']['records'][-1]['epoch'] = '2' * 32
+        with self.assertRaisesRegex(RuntimeError, 'single-witness-epoch'):
+            barrier(inventory(), actual, 'pending', 'pending')
+
 
 
 if __name__ == '__main__':
