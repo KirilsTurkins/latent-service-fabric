@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "GoResourceRuntimeFixture.test_explicit_managed_profile_retains_sdk_and_original_budgets_except_declared_log_bytes",
+    "GoResourceRuntimeFixture.test_foreign_original_directory_is_rejected_before_any_project_write",
+    "GoResourceRuntimeFixture.test_transitive_module_source_uses_real_embedded_readers_and_ordinary_go_callbacks"
+  ],
+  "guards": {
+    "GoResourceRuntimeFixture.test_explicit_managed_profile_retains_sdk_and_original_budgets_except_declared_log_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d6e70cefec7d6270a7202abe89dad0ae1759e8df6f754a582bff030dc826cb40",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoResourceRuntimeFixture.test_foreign_original_directory_is_rejected_before_any_project_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d6e70cefec7d6270a7202abe89dad0ae1759e8df6f754a582bff030dc826cb40",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoResourceRuntimeFixture.test_transitive_module_source_uses_real_embedded_readers_and_ordinary_go_callbacks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d6e70cefec7d6270a7202abe89dad0ae1759e8df6f754a582bff030dc826cb40",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_resource_runtime_fixture.py",
+  "reviewReason": "Admit explicitly selected v5 ordinary embedded-stream callback source while preserving captured SDK/budgets and no signed execution claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
