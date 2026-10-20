@@ -210,16 +210,20 @@ def closed_diagnostic(row):
     if (type(row.get('exitCode')) is not int or row['exitCode'] != 0 or row.get('processReaped') is not True
             or type(decoded) is not list or len(decoded) != 1 or type(decoded[0]) is not str):
         return {'status': 'unavailable'}
-    match = re.fullmatch(r'1:diagnostic:([1-7]):([0-9]{1,3}):([0-9]{1,3}):([01]):([01]):([01]):([0-9]{1,3}):([0-9]{1,3})', decoded[0])
+    boundary = re.fullmatch(r'1:diagnostic-v2:([1-7]):([0-9]{1,3}):([0-9]{1,3}):([01]):([01]):([01]):([0-9]{1,3}):([0-9]{1,3}):([0-4]):([0-4])', decoded[0])
+    match = boundary or re.fullmatch(r'1:diagnostic:([1-7]):([0-9]{1,3}):([0-9]{1,3}):([01]):([01]):([01]):([0-9]{1,3}):([0-9]{1,3})', decoded[0])
     if match is None:
         return {'status': 'unavailable'}
-    phase, root, child, timer, entered, completed, sibling, child_status = map(int, match.groups())
+    phase, root, child, timer, entered, completed, sibling, child_status = map(int, match.groups()[:8])
     codes = {0, *range(100, 116), 199, 200}
     if root not in codes or child not in codes or sibling not in {0, 200} or child_status not in {0, 200}:
         return {'status': 'unavailable'}
-    return {'status': 'observed', 'phase': phase, 'rootError': root, 'childError': child,
+    result = {'status': 'observed', 'phase': phase, 'rootError': root, 'childError': child,
         'timerFired': bool(timer), 'childEntered': bool(entered), 'childCompleted': bool(completed),
         'siblingStatus': sibling, 'childStatus': child_status}
+    if boundary is not None:
+        result['callBoundary'] = dict(zip(('root', 'child'), map(int, boundary.groups()[8:])))
+    return result
 
 
 def _counter(value):

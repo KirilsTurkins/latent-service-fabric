@@ -19,6 +19,8 @@ public final class Capsule implements Bindings.Exports {
     private static volatile String childContext;
     private static final ThreadLocal<String> context = new ThreadLocal<>();
     private static volatile int diagnosticChildError;
+    private static volatile int diagnosticRootBoundary;
+    private static volatile int diagnosticChildBoundary;
 
     private static int closedError(Throwable value) {
         String[] codes = {"invalid-url", "invalid-request", "permission-denied", "request-too-large",
@@ -39,9 +41,10 @@ public final class Capsule implements Bindings.Exports {
     private static String diagnose(String endpoint) {
         int phase = 1, rootError = 0, siblingStatus = 0;
         diagnosticChildError = 0;
+        diagnosticRootBoundary = diagnosticChildBoundary = 0;
         Thread child = new Thread(() -> {
             entered = 1;
-            try { childStatus = get(endpoint + "/conformance/hold/headers"); }
+            try { childStatus = diagnosticGet(endpoint + "/conformance/hold/headers", true); }
             catch (Throwable error) { diagnosticChildError = closedError(error); }
             finally { completed = 1; }
         });
@@ -57,7 +60,7 @@ public final class Capsule implements Bindings.Exports {
             phase = 5;
             if (timerFired != 0) {
                 phase = 6;
-                siblingStatus = get(endpoint + "/conformance/json");
+                siblingStatus = diagnosticGet(endpoint + "/conformance/json", false);
                 phase = 7;
             }
         } catch (Throwable error) { rootError = closedError(error); }
@@ -66,8 +69,30 @@ public final class Capsule implements Bindings.Exports {
             try { child.join(); }
             catch (Throwable error) { if (rootError == 0) rootError = closedError(error); }
         }
-        return ":diagnostic:" + phase + ":" + rootError + ":" + diagnosticChildError + ":"
-            + timerFired + ":" + entered + ":" + completed + ":" + siblingStatus + ":" + childStatus;
+        return ":diagnostic-v2:" + phase + ":" + rootError + ":" + diagnosticChildError + ":"
+            + timerFired + ":" + entered + ":" + completed + ":" + siblingStatus + ":" + childStatus
+            + ":" + diagnosticRootBoundary + ":" + diagnosticChildBoundary;
+    }
+
+    private static void diagnosticBoundary(boolean child, int phase) {
+        if (child) diagnosticChildBoundary = phase;
+        else diagnosticRootBoundary = phase;
+    }
+
+    // The same standard connect() called by code() is idempotent. Splitting
+    // these calls only in caught mode separates open from pending headers.
+    private static int diagnosticGet(String endpoint, boolean child) throws Exception {
+        diagnosticBoundary(child, 1);
+        HttpRequest request = HttpRequest.get(endpoint).followRedirects(false);
+        try {
+            var connection = request.getConnection();
+            diagnosticBoundary(child, 2);
+            connection.connect();
+            diagnosticBoundary(child, 3);
+            int status = request.code();
+            diagnosticBoundary(child, 4);
+            return status;
+        } finally { request.disconnect(); }
     }
 
     private static int get(String endpoint) {

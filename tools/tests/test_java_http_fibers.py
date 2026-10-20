@@ -142,6 +142,42 @@ class JavaHttpFiberSource(unittest.TestCase):
                     node.validate_result(changed, mode, selected)
 
 
+class JavaHttpDiagnosticCallBoundary(unittest.TestCase):
+    def test_v2_closed_operation_boundary_distinguishes_open_from_headers_without_raw_text(self):
+        value={'exitCode':0,'processReaped':True,
+            'decoded':['1:diagnostic-v2:6:107:112:1:1:1:0:0:2:3']}
+        observed=node.closed_diagnostic(value)
+        self.assertEqual(observed['status'],'observed')
+        self.assertEqual((observed['rootError'],observed['childError']),(107,112))
+        self.assertEqual(observed['callBoundary'],{'root':2,'child':3})
+
+    def test_unknown_boundary_extra_payload_or_unreaped_result_never_projects(self):
+        value={'exitCode':0,'processReaped':True,
+            'decoded':['1:diagnostic-v2:6:107:112:1:1:1:0:0:2:3']}
+        for replacement in ('1:diagnostic-v2:6:107:112:1:1:1:0:0:5:3',
+                '1:diagnostic-v2:6:107:112:1:1:1:0:0:2:3:private/path',
+                '1:diagnostic-v2:6:107:112:1:1:1:0:0:true:3'):
+            self.assertEqual(node.closed_diagnostic({**value,'decoded':[replacement]}),{'status':'unavailable'})
+        self.assertEqual(node.closed_diagnostic({**value,'processReaped':False}),{'status':'unavailable'})
+
+    def test_diagnostic_only_explicit_connect_keeps_all_strict_java_callers_byte_exact(self):
+        import hashlib
+        raw=(campaign.ROOT/campaign.SOURCE).read_bytes().replace(b'\r\n',b'\n')
+        unchanged=raw[raw.index(b'    private static int get(String endpoint) {'):]
+        self.assertEqual(hashlib.sha256(unchanged).hexdigest(),
+            '5cbcfc51dd856d53e2baa217c0a9200edb462e7d82d4f177570584a4857820f1')
+        text=raw.decode('utf-8')
+        self.assertIn('private static int diagnosticGet(',text)
+        diagnostic=text.split('private static int diagnosticGet(',1)[1].split('private static int get(',1)[0]
+        self.assertEqual(diagnostic.count('.connect();'),1)
+        self.assertEqual(diagnostic.count('request.code();'),1)
+        self.assertEqual(diagnostic.count('request.disconnect();'),1)
+        self.assertLess(diagnostic.index('request.getConnection();'),diagnostic.index('diagnosticBoundary(child, 2);'))
+        self.assertLess(diagnostic.index('.connect();'),diagnostic.index('diagnosticBoundary(child, 3);'))
+        self.assertLess(diagnostic.index('request.code();'),diagnostic.index('diagnosticBoundary(child, 4);'))
+        self.assertIn('finally { request.disconnect(); }',diagnostic)
+
+
 class JavaHttpFiberControlBoundaries(unittest.TestCase):
     def test_supervisor_releases_once_only_after_pending_owner_and_later_sibling(self):
         with tempfile.TemporaryDirectory() as temporary:

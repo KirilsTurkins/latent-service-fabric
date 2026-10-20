@@ -107,3 +107,14 @@ runs every original strict case unchanged. Its observations are explicitly not
 qualification. The fixed compiler preparation record is copied from the actual
 private compiler directory before that directory is retired; unrelated JSON
 files remain excluded. No lifecycle cause or passed programme is claimed yet.
+
+The `229c753b` run retained two actual pending usage samples. Its configured
+pool, I/O, broker and per-session ceilings all accommodate a second comparable
+request; those samples do not prove the peak usage or the refused operation.
+No limit is raised. The additional caught diagnostic now records a closed
+operation boundary for each caller: 0 not started, 1 library/factory, 2 standard
+`connect`, 3 response headers, 4 headers returned. Only this diagnostic explicitly
+calls the same idempotent `HttpURLConnection.connect()` before the library's
+`code()` call. Every strict caller and lifecycle assertion remains byte-identical.
+The old v1 diagnostic remains readable; malformed v2 fields are unavailable.
+These markers are failure localization, not qualification or a proven cause.
