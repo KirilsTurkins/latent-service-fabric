@@ -8233,7 +8233,8 @@
         "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
         "random::standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
         "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells",
-        "logging::standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state"
+        "logging::standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state",
+        "streaming::fixture::phase_nominal_owner_has_no_operational_binding_or_session"
       ],
       "expectedIgnored": [
         "all_rust_examples_are_exact_signed_phase2_packages",
@@ -8268,7 +8269,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 13,
+      "minimumCases": 14,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

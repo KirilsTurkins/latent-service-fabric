@@ -83,6 +83,29 @@ class SelectionTests(unittest.TestCase):
                 discovery.validate_custom_listing(bad, names)
 
 
+    def test_guest_sdk_retains_active_shared_nominal_fixture_and_thirteen_ignored_guests(self):
+        data = registry.load()
+        suite = next(row for row in data['suites'] if row['id'] == 'latent-wasmtime.test.guest-sdk')
+        name = 'streaming::fixture::phase_nominal_owner_has_no_operational_binding_or_session'
+        source = registry.ROOT / 'crates/latent-wasmtime/tests/guest_sdk/streaming.rs'
+        shared = registry.ROOT / 'crates/latent-wasmtime/tests/streaming_http/fixture.rs'
+        self.assertIn('#[path = "../streaming_http/fixture.rs"]\n#[allow(dead_code, unused_imports)]\nmod fixture;',
+                      source.read_text(encoding='utf-8'))
+        self.assertIn('#[tokio::test]\nasync fn ' + name.rsplit('::', 1)[-1] + '()',
+                      shared.read_text(encoding='utf-8'))
+        ignored = frozenset(suite['expectedIgnored'])
+        available = ignored | {name}
+        discovery.validate_cases(suite, available, ignored, data['selections'])
+        self.assertEqual(len(ignored), 13)
+        self.assertEqual(suite['minimumCases'], 14)
+        self.assertEqual(frozenset(suite['expectedCases']), available)
+        self.assertNotIn(name, ignored)
+        for discovered, skipped in ((ignored, ignored), (available | {'foreign::test'}, ignored),
+                                   (available, available)):
+            with self.subTest(discovered=discovered, ignored=skipped), self.assertRaises(ValueError):
+                discovery.validate_cases(suite, discovered, skipped, data['selections'])
+
+
 class ArtifactTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
