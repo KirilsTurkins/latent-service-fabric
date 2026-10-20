@@ -1,6 +1,7 @@
 {
   "cases": [
     "ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings",
+    "ManagedResourceRuntime.test_entropy_policy_generation_requires_exact_original_tenant_document_and_live_record",
     "ManagedResourceRuntime.test_missing_optional_duplicate_or_foreign_import_fails_before_configuration",
     "ManagedResourceRuntime.test_normal_async_greeting_world_and_public_namespace_cannot_be_relabelled",
     "ManagedResourceRuntime.test_original_managed_bounds_distinct_tenant_aliases_and_no_implicit_grants",
@@ -11,6 +12,18 @@
   ],
   "guards": {
     "ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
+        "class:setup-sha256:0df9006b27064cbc16d969d29b51844ae93bebfd1b67879ddd2cbb851f8c6251"
+      ],
+      "skipSites": []
+    },
+    "ManagedResourceRuntime.test_entropy_policy_generation_requires_exact_original_tenant_document_and_live_record": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -109,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_resource_runtime.py",
-  "reviewReason": "Finite managed resource callback authority and authenticated final compiler/linker binding controls; preserve all prior fixture guards and original runtime caps.",
+  "reviewReason": "Preserve original eight managed joined source/authority controls; actual b168 failed because policy generations are tenant-global. Validate exact original policy documents and use observed generation6/7, preserve all original ceilings/grants, add malformed/foreign/revoked document controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

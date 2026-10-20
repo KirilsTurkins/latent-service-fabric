@@ -69,6 +69,19 @@ def grant(client,node,manifest,publication,target,tenant):
         grants=[*target['grants'],{'capability':ACTIVATION,'policy':policy_id}]),denied
 
 
+def policy_generation(client,identity,tenant,kind,document):
+    args=['--kind','provider-binding'] if kind=='provider-binding' else []
+    observed=client.call('policy',*args,'get','--id',identity)
+    current=observed.get('data',{}).get('policy',{});generation=current.get('generation')
+    require(observed.get('category')=='success' and observed.get('outcomeKnown') is True
+        and current.get('tenant')==tenant and current.get('id')==identity
+        and current.get('recordKind')==kind and current.get('revoked') is False
+        and current.get('document')==document and type(generation) is str and 0<len(generation)<=20
+        and generation.isascii() and generation.isdecimal() and str(int(generation))==generation
+        and 0<int(generation)<2**64,'resource-dotnet-original-entropy-policy-observation')
+    return generation
+
+
 def grant_secure(client,node,manifest,publication,target,tenant):
     """Add only the secure operation to this selected fixture's original budget."""
     provider='random' if tenant=='examples' else 'random-foreign'
@@ -76,20 +89,28 @@ def grant_secure(client,node,manifest,publication,target,tenant):
     require(len(rows)==1 and rows[0]['tenant']==tenant and rows[0]['profile']=='system-random-v1'
         and rows[0]['capability']==RANDOM,'resource-dotnet-original-entropy-provider')
     binding_id='random-'+tenant+'-installed';policy_id='random-'+tenant+'-allow'
-    path=client.directory/('resource-secure-binding-'+tenant+'.json')
-    write_json(path,{'formatVersion':1,'tenant':tenant,'capability':RANDOM,'providerProfile':'system-random-v1',
+    binding={'formatVersion':1,'tenant':tenant,'capability':RANDOM,'providerProfile':'system-random-v1',
         'configurationDigest':rows[0]['configurationDigest'],'configurationEpoch':1,
-        'restriction':{'operations':['bytes','u64-value']}})
-    client.call('policy','--kind','provider-binding','apply','--id',binding_id,'--file',path,
-        '--operation-id','resource-dotnet-secure-binding-'+tenant,'--expected-generation','1')
-    path=client.directory/('resource-secure-policy-'+tenant+'.json')
-    write_json(path,{'formatVersion':1,'tenant':tenant,'rules':[{'id':'ordinary-resource-entropy','effect':'allow',
+        'restriction':{'operations':['bytes']}}
+    policy={'formatVersion':1,'tenant':tenant,'rules':[{'id':'resource-runtime','effect':'allow',
         'principals':[{'kind':'administrator','subject':resources.SUBJECTS[tenant]}],
         'services':[target['service']],'publications':[publication],'capability':RANDOM,
-        'operations':['bytes','u64-value'],'resources':{'kind':'random'},
-        'ceiling':{'operations':16,'inputBytes':8,'outputBytes':4096,'wallTimeMillis':5000}}]})
+        'operations':['bytes'],'resources':{'kind':'random'},
+        'ceiling':{'operations':16,'inputBytes':8,'outputBytes':4096,'wallTimeMillis':5000}}]}
+    # These records use tenant-global generations. Observe and authenticate
+    # both original documents before changing either; never guess generation1.
+    binding_generation=policy_generation(client,binding_id,tenant,'provider-binding',binding)
+    policy_generation_value=policy_generation(client,policy_id,tenant,'policy',policy)
+    binding['restriction']['operations'].append('u64-value')
+    policy['rules'][0]['operations'].append('u64-value')
+    path=client.directory/('resource-secure-binding-'+tenant+'.json')
+    write_json(path,binding)
+    client.call('policy','--kind','provider-binding','apply','--id',binding_id,'--file',path,
+        '--operation-id','resource-dotnet-secure-binding-'+tenant,'--expected-generation',binding_generation)
+    path=client.directory/('resource-secure-policy-'+tenant+'.json')
+    write_json(path,policy)
     client.call('policy','apply','--id',policy_id,'--file',path,'--operation-id','resource-dotnet-secure-policy-'+tenant,
-        '--expected-generation','1')
+        '--expected-generation',policy_generation_value)
     return deploy(client,manifest,publication,generation=str(target['generation']),grants=target['grants'])
 
 

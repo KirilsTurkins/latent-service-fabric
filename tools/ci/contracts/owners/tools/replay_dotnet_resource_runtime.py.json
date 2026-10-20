@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_resource_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Authenticate the exact b168 fresh AOT build and original failed controller after policy generation repair; no host/engine/SDK/guest build, no historical pass relabel. Keep the original owning workflow byte-identical and add a separate fixed-source20-minute manual node-only replay with unchanged15 cases and budgets.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "4fda30480ee6eaa7fe357b7efd577c91848a4e610324b1ec1f6f04965d08a7e7"
+}

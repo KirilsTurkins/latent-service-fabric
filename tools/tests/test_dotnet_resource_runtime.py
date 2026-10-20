@@ -135,7 +135,24 @@ class ManagedResourceRuntime(unittest.TestCase):
 
     def test_secure_operation_upgrade_preserves_noncrypto_operation_budget_and_existing_grant(self):
         with tempfile.TemporaryDirectory() as temporary:
-            client=SimpleNamespace(directory=Path(temporary),call=Mock(return_value={'outcomeKnown':True}))
+            original_binding={'formatVersion':1,'tenant':'examples','capability':runtime.RANDOM,
+                'providerProfile':'system-random-v1','configurationDigest':'sha256:'+'a'*64,
+                'configurationEpoch':1,'restriction':{'operations':['bytes']}}
+            original_policy={'formatVersion':1,'tenant':'examples','rules':[{'id':'resource-runtime','effect':'allow',
+                'principals':[{'kind':'administrator','subject':runtime.resources.SUBJECTS['examples']}],
+                'services':['my-greeting'],'publications':['controlled-publication'],'capability':runtime.RANDOM,
+                'operations':['bytes'],'resources':{'kind':'random'},
+                'ceiling':{'operations':16,'inputBytes':8,'outputBytes':4096,'wallTimeMillis':5000}}]}
+            observed={'random-examples-installed':('provider-binding','6',original_binding),
+                'random-examples-allow':('policy','7',original_policy)}
+            def control(*args):
+                identity=args[args.index('--id')+1];kind,generation,document=observed[identity]
+                if 'get' in args:return {'category':'success','outcomeKnown':True,'data':{'policy':{
+                    'id':identity,'tenant':'examples','generation':generation,'recordKind':kind,
+                    'revoked':False,'document':copy.deepcopy(document)}}}
+                if args[-2:]!=('--expected-generation',generation):raise WorkflowError('state-conflict')
+                return {'outcomeKnown':True}
+            client=SimpleNamespace(directory=Path(temporary),call=Mock(side_effect=control))
             node=SimpleNamespace(startup_record={'providers':[{'id':'random','tenant':'examples',
                 'profile':'system-random-v1','capability':runtime.RANDOM,'configurationDigest':'sha256:'+'a'*64}]})
             target={'service':'my-greeting','generation':'4','grants':[{'capability':runtime.RANDOM,'policy':'random-examples-allow'}]}
@@ -146,8 +163,29 @@ class ManagedResourceRuntime(unittest.TestCase):
             self.assertEqual(binding['restriction']['operations'],['bytes','u64-value'])
             rule=policy['rules'][0];self.assertEqual(rule['operations'],['bytes','u64-value'])
             self.assertEqual(rule['ceiling'],{'operations':16,'inputBytes':8,'outputBytes':4096,'wallTimeMillis':5000})
+            self.assertEqual(rule['id'],'resource-runtime')
             self.assertEqual(deployment.call_args.kwargs['grants'],target['grants'])
-            self.assertTrue(all(args[-2:]==('--expected-generation','1') for args,kwargs in client.call.call_args_list))
+            calls=[args for args,kwargs in client.call.call_args_list]
+            self.assertEqual(['get' in args for args in calls],[True,True,False,False])
+            self.assertEqual([args[-1] for args in calls[2:]],['6','7'])
+
+    def test_entropy_policy_generation_requires_exact_original_tenant_document_and_live_record(self):
+        document={'restriction':{'operations':['bytes']}}
+        original={'id':'controlled','tenant':'examples','generation':'6','recordKind':'provider-binding',
+            'revoked':False,'document':document}
+        for change in ('tenant','document','kind','revoked','zero','leading-zero','foreign-digit','unknown'):
+            record=copy.deepcopy(original);response={'category':'success','outcomeKnown':True,'data':{'policy':record}}
+            if change=='tenant':record['tenant']='foreign'
+            elif change=='document':record['document']['restriction']['operations'].append('u64-value')
+            elif change=='kind':record['recordKind']='policy'
+            elif change=='revoked':record['revoked']=True
+            elif change=='zero':record['generation']='0'
+            elif change=='leading-zero':record['generation']='06'
+            elif change=='foreign-digit':record['generation']='\u0666'
+            else:response['outcomeKnown']=False
+            client=SimpleNamespace(call=Mock(return_value=response))
+            with self.subTest(change=change),self.assertRaisesRegex(WorkflowError,'original-entropy-policy-observation'):
+                runtime.policy_generation(client,'controlled','examples','provider-binding',document)
 
     @staticmethod
     def build(directory):
