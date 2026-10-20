@@ -106,6 +106,7 @@ jobs:
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/FAILED.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/*.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-to-c.log
+            ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm.log
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/qualification.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json
