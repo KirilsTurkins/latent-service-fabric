@@ -26,8 +26,16 @@ the complete two-member artifact, public certificate and all nine Git source
 materials; the [retained proof](evidence/http-tls-peer-reference-2026-10-20.json)
 records the exact tested commit and artifact digest.
 
+The owned `tools/standard_http/process_peer.py` CLI also accepts the explicit
+`--certificate` and `--private-key` pair. Omitting both retains the ordinary
+plain HTTP peer. Incomplete pairs, relative paths and oversized or nonregular
+TLS inputs fail before opening a listener. A separate process reference runs
+TLS1.2 and TLS1.3 domain requests and rejects a wrong hostname, then requires
+the original peer's final observation and a reaped subprocess. This new process
+qualification is pending; the historical six-case proof above is unchanged.
+
 This supplies reusable encrypted fixture input for #688/#691/#692/#693 and
 their shared HTTP tests. It executes no signed guest and certifies no provider,
 kernel ownership bound or complete HTTP-client ticket. Existing plain peer
-source and receipts remain unchanged; signed consumers must separately retain
+class and historical receipts remain unchanged; signed consumers must separately retain
 their actual authority, result and physical-retirement evidence.

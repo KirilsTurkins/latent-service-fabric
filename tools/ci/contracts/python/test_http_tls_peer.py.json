@@ -6,6 +6,7 @@
     "HttpTlsPeerTests.test_pending_write_resumes_write_on_readable_socket",
     "HttpTlsPeerTests.test_public_origins_are_tls_and_keys_or_credentials_never_enter_receipts",
     "HttpTlsPeerTests.test_reference_cli_help_bootstraps_outside_checkout_without_network_or_artifacts",
+    "HttpTlsPeerTests.test_tls_process_refuses_missing_or_unbounded_inputs_before_acquiring_peer",
     "HttpTlsPeerTests.test_tls_read_can_require_write_readiness_without_losing_the_read",
     "HttpTlsPeerTests.test_tls_receipt_does_not_accept_plain_transport_or_provider_qualification",
     "HttpTlsPeerTests.test_tls_write_retries_retain_exact_buffer_and_require_original_operation",
@@ -84,6 +85,18 @@
       ],
       "skipSites": []
     },
+    "HttpTlsPeerTests.test_tls_process_refuses_missing_or_unbounded_inputs_before_acquiring_peer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9df698ef8cb352282942e8b708602883b8cd7e336646673047cd08af2dcdab4c",
+        "class:setup-sha256:bbee17779c3c80e13f7230d2f6b8bd04de1513cf6a76948f7ca2c7c03cf21228"
+      ],
+      "skipSites": []
+    },
     "HttpTlsPeerTests.test_tls_read_can_require_write_readiness_without_losing_the_read": {
       "bases": [
         "unittest.TestCase"
@@ -135,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_http_tls_peer.py",
-  "reviewReason": "Add a bounded independent TLS fixture reference lane with ten portable controls and six real TLS/HTTP outcomes; no guest/provider/kernel qualification or previous command replacement.",
+  "reviewReason": "Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
