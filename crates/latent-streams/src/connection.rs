@@ -955,3 +955,28 @@ pub(crate) fn network_error(error: NetworkError) -> StreamError {
         NetworkError::Closed => StreamErrorCode::Revoked,
     })
 }
+
+// This observer exposes no socket or authority in normal/provider binaries.
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+impl Connection {
+    pub(crate) fn kernel_reference_identity(&self) -> [u64; 3] {
+        use std::os::fd::AsRawFd;
+        let mut state = self.state.lock().unwrap();
+        let socket = state.socket.as_mut().unwrap().resource();
+        let tcp = &socket.stream.tcp;
+        let (local, peer) = (tcp.local_addr().unwrap(), tcp.peer_addr().unwrap());
+        assert_eq!(local.ip(), std::net::Ipv4Addr::LOCALHOST);
+        assert_eq!(peer.ip(), std::net::Ipv4Addr::LOCALHOST);
+        let link = std::fs::read_link(format!("/proc/self/fd/{}", tcp.as_raw_fd())).unwrap();
+        let inode = link
+            .to_str()
+            .unwrap()
+            .strip_prefix("socket:[")
+            .unwrap()
+            .strip_suffix(']')
+            .unwrap()
+            .parse::<u64>()
+            .unwrap();
+        [u64::from(local.port()), u64::from(peer.port()), inode]
+    }
+}

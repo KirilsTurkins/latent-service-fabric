@@ -2,6 +2,7 @@
   "cases": [
     "BoundedTlsProviderReference.test_changed_source_identity_fails_before_output_or_any_native_process",
     "BoundedTlsProviderReference.test_exact_bounded_provider_and_separate_upstream_peer_are_both_compiled",
+    "BoundedTlsProviderReference.test_kernel_tail_witness_cannot_be_replaced_with_a_logical_drop_substitute",
     "BoundedTlsProviderReference.test_maximum_valid_and_last_physical_trust_owner_cases_are_mandatory",
     "BoundedTlsProviderReference.test_only_all_exact_named_zero_filtered_successes_are_evidence",
     "BoundedTlsProviderReference.test_partial_catalogue_changed_budget_or_ignored_controls_are_refused",
@@ -21,6 +22,18 @@
       "skipSites": []
     },
     "BoundedTlsProviderReference.test_exact_bounded_provider_and_separate_upstream_peer_are_both_compiled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BoundedTlsProviderReference.test_kernel_tail_witness_cannot_be_replaced_with_a_logical_drop_substitute": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -83,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_tls_provider_reference.py",
-  "reviewReason": "Extend actual current bounded TLS reference with maximum-valid TLS1.2/1.3 and last physical trust-owner controls; preserve all23 old cases, public refusal, original900-second timeout and every original allowance; no production qualification",
+  "reviewReason": "A bounded current-Linux real-provider pressure and active-close witness distinguishes remaining kernel tail from FD/native-lease refund; closed numeric observations never certify retirement or enable an unqualified profile; all25 earlier cases and900s cap retained",
   "schemaVersion": "latent.ci.contracts.v1"
 }

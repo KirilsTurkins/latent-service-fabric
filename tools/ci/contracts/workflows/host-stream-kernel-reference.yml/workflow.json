@@ -1,0 +1,27 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "host-stream-kernel-reference-${{ github.ref }}"
+    },
+    "name": "Current stream kernel owner reference",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/host-stream-kernel-tail-20261020"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "reference"
+  ],
+  "reviewReason": "A bounded current-Linux real-provider pressure and active-close witness distinguishes remaining kernel tail from FD/native-lease refund; closed numeric observations never certify retirement or enable an unqualified profile; all25 earlier cases and900s cap retained",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/host-stream-kernel-reference.yml"
+}

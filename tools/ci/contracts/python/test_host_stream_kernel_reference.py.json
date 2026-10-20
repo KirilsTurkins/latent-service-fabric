@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "HostStreamKernelReference.test_exact_kernel_tail_witness_keeps_all_physical_qualification_false",
+    "HostStreamKernelReference.test_fd_absence_or_missing_case_cannot_substitute_for_actual_tail",
+    "HostStreamKernelReference.test_unknown_private_unbounded_or_forged_retirement_fields_are_rejected",
+    "HostStreamKernelReference.test_wrong_platform_or_changed_source_refuses_before_any_build_or_output"
+  ],
+  "guards": {
+    "HostStreamKernelReference.test_exact_kernel_tail_witness_keeps_all_physical_qualification_false": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelReference.test_fd_absence_or_missing_case_cannot_substitute_for_actual_tail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelReference.test_unknown_private_unbounded_or_forged_retirement_fields_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelReference.test_wrong_platform_or_changed_source_refuses_before_any_build_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_reference.py",
+  "reviewReason": "A bounded current-Linux real-provider pressure and active-close witness distinguishes remaining kernel tail from FD/native-lease refund; closed numeric observations never certify retirement or enable an unqualified profile; all25 earlier cases and900s cap retained",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
