@@ -93,6 +93,8 @@ impl StreamLifecycle {
         Ok(false)
     }
 
+    /// Nonproduction logical reference only; no kernel/TLS accounting or
+    /// provider-readiness qualification follows from this development install.
     #[cfg(any(test, feature = "development-outbound"))]
     pub fn install_for_qualification(
         pools: Arc<ProviderPools>,

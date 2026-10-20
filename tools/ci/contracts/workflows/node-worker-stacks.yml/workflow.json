@@ -19,6 +19,8 @@
           "apps/latentd/src/command/inspection.rs",
           "apps/latentd/src/config.rs",
           "apps/latentd/src/config/derive.rs",
+          "apps/latentd/src/config/topology.rs",
+          "apps/latentd/src/config/tests.rs",
           "apps/latentd/src/lib_root.rs",
           "apps/latentd/src/config/tests/providers.rs",
           "apps/latentd/Cargo.toml",
@@ -47,6 +49,8 @@
           "apps/latentd/src/command/inspection.rs",
           "apps/latentd/src/config.rs",
           "apps/latentd/src/config/derive.rs",
+          "apps/latentd/src/config/topology.rs",
+          "apps/latentd/src/config/tests.rs",
           "apps/latentd/src/lib_root.rs",
           "apps/latentd/src/config/tests/providers.rs",
           "apps/latentd/Cargo.toml",
@@ -70,9 +74,10 @@
     }
   },
   "requiredJobs": [
-    "reference"
+    "reference",
+    "topology"
   ],
-  "reviewReason": "One checked standalone worker/stack profile fixes the two-blocking-worker topology undercount and ambient native stack default; exact-source small Linux mapping/timeout reference, all prior limits and cases preserved; no full-node/TLS/kernel qualification",
+  "reviewReason": "Precharge the standalone fixed 38-row composition; preserve original worker-stack job and add only exact reporter/config regressions under unchanged snapshot and provider limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/node-worker-stacks.yml"
 }

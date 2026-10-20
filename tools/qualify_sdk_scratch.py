@@ -216,7 +216,7 @@ def qualify(language, output, native_qualification, *, native_directory=None, to
             *(artifact if name == 'greeting' else companions[name] for name in TEMPLATES))
         stage = 'actual-signed-standard-api-results'
         node = run(binaries['latent'], binaries['latentd'], output/'signed', output/'node',
-            language=language, noncrypto_entropy=language == 'dotnet', standard_scratch_refusal=True)
+            language=language, standard_scratch_refusal=True)
         require(node['status'] == 'passed' and node['standardScratchRefusal']['status'] == 'passed'
                 and len(node['invocations']) == inherited['originalInvocations']+6
                 and len(node['standardScratchRefusal']['cases']) == 3

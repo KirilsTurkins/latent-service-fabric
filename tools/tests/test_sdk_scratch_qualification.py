@@ -171,5 +171,61 @@ class ScratchQualification(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'scratch-report-signed-component-mismatch'):
                 qualifier.execution_report('rust', root, node)
 
+    def test_c_child_reuses_exact_normal_bundle_and_pinned_compiler_without_native_build(self):
+        from tools.ci_lane_inventory import workflow_model
+        model = workflow_model((qualifier.ROOT/'.github/workflows/c-guest-authoring.yml').read_text())
+        jobs = model['jobs']
+        selector = model['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
+        self.assertEqual((selector['type'], selector['default']), ('boolean', False))
+        self.assertNotIn('if', jobs['runtime'])
+        self.assertEqual(jobs['standard-facilities']['timeout-minutes'], 25)
+        self.assertEqual(jobs['standard-facilities']['if'],
+            "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}")
+        child = jobs['scratch-refusals']
+        self.assertEqual(child['needs'], 'runtime')
+        self.assertEqual(child['timeout-minutes'], 20)
+        self.assertEqual(jobs['runtime']['timeout-minutes'], 35)
+        commands = '\n'.join(step.get('run', '') for step in child['steps'])
+        self.assertIn('tools/qualify_sdk_scratch.py --language c', commands)
+        self.assertNotIn('cargo build', commands)
+        self.assertNotIn('cargo test', commands)
+        tools = [step['with'] for step in child['steps'] if 'setup@' in step.get('uses', '')
+            or 'setup-zig@' in step.get('uses', '')]
+        self.assertIn({'version': '1.254.0'}, tools)
+        self.assertIn({'version': '0.16.0'}, tools)
+        export = jobs['runtime']['steps'][-2]['run']
+        self.assertIn('--export-bundle --language c', export)
+        self.assertIn('--native-qualification "$RUNNER_TEMP/c-capsule-authoring"', export)
+        self.assertNotIn('c-application-library', export)
+        upload = jobs['runtime']['steps'][-1]['with']
+        self.assertEqual(upload['name'], 'c-scratch-prepared-${{ github.sha }}')
+
+    def test_c_componentization_refusal_cannot_become_runtime_unsupported_or_signed_success(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            normal = root/'normal'; normal.mkdir()
+            record = ordinary(normal)
+            node = json.loads((normal/'node/workflow.json').read_bytes())
+            node['language'] = 'c'
+            replace_json(normal/'node/workflow.json', node)
+            record['schemaVersion'] = 'latent.c-capsule.qualification.v1'
+            record['node']['receiptDigest'] = file_identity(normal/'node/workflow.json')['sha256']
+            replace_json(normal/'qualification.json', record)
+            with patch.object(qualifier, 'current_inputs', return_value={'source': 'original normal qualification'}), \
+                    patch.object(qualifier.sys, 'platform', 'linux'), \
+                    patch.object(qualifier.os, 'geteuid', return_value=1000, create=True), \
+                    patch.object(qualifier, 'build_component', side_effect=ValueError('fixed C componentization refusal')), \
+                    patch.object(qualifier, 'run') as node_run:
+                with self.assertRaisesRegex(ValueError, '^fixed C componentization refusal$'):
+                    qualifier.qualify('c', root/'failed', normal)
+            failure = json.loads((root/'failed/FAILED.json').read_bytes())
+            self.assertEqual(failure['status'], 'failed')
+            self.assertEqual(failure['stage'], 'normal-component-build')
+            self.assertFalse(failure['scratchStorageImplemented'])
+            self.assertFalse(failure['fullTicketQualification'])
+            self.assertFalse((root/'failed/qualification.json').exists())
+            self.assertFalse((root/'failed/compatibility-execution-report.json').exists())
+            node_run.assert_not_called()
+
 
 if __name__ == '__main__': unittest.main()

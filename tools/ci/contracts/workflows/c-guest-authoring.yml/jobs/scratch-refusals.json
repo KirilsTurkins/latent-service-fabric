@@ -1,0 +1,73 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed ordinary C scratch refusal and fresh-state packet",
+    "needs": "runtime",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the existing bounded compiler namespace and pinned bindings",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Read only this run's identity-checked existing native products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "c-scratch-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-scratch-prepared"
+        }
+      },
+      {
+        "name": "Check captured-source and exact-outcome refusal controls",
+        "run": "python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification"
+      },
+      {
+        "name": "Execute original signed programme and six ordinary filesystem refusal calls",
+        "run": "python3 tools/qualify_sdk_scratch.py --language c --native-qualification \"$RUNNER_TEMP/c-scratch-prepared\" --output \"$RUNNER_TEMP/c-scratch-refusals\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded diagnostic evidence including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "c-scratch-refusals-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-scratch-refusals/qualification.json\n${{ runner.temp }}/c-scratch-refusals/FAILED.json\n${{ runner.temp }}/c-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/c-scratch-refusals/logs/**\n${{ runner.temp }}/c-scratch-refusals/build/*.json\n${{ runner.temp }}/c-scratch-refusals/build/logs/**\n${{ runner.temp }}/c-scratch-refusals/build/component.wasm\n${{ runner.temp }}/c-scratch-refusals/build/core-componentization-failed.wasm\n${{ runner.temp }}/c-scratch-refusals/build/component.wit\n${{ runner.temp }}/c-scratch-refusals/node/workflow.json\n${{ runner.temp }}/c-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/c-scratch-refusals/node/controls/*.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "scratch-refusals",
+  "kind": "job",
+  "reviewReason": "Add explicit default-false manual scratch selection retaining mandatory original runtime35 and new same-products child20; skip only unchanged extra standards25 on that manual selection, with all PR/push/default jobs and commands preserved.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-guest-authoring.yml"
+}
