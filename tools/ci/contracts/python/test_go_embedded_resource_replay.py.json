@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "GoEmbeddedReplay.test_input_free_twenty_minute_lane_restores_exact_normal_products_without_building_a_host",
+    "GoEmbeddedReplay.test_only_exact_unused_helper_and_one_reviewed_test_postimage_are_compatible",
+    "GoEmbeddedReplay.test_original_source_is_verified_before_any_retained_product_can_be_selected"
+  ],
+  "guards": {
+    "GoEmbeddedReplay.test_input_free_twenty_minute_lane_restores_exact_normal_products_without_building_a_host": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2d1b1fdaeca1eff3eeafa4d5a37c50b623a0cee803ece925a635d7c179760a2f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoEmbeddedReplay.test_only_exact_unused_helper_and_one_reviewed_test_postimage_are_compatible": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2d1b1fdaeca1eff3eeafa4d5a37c50b623a0cee803ece925a635d7c179760a2f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoEmbeddedReplay.test_original_source_is_verified_before_any_retained_product_can_be_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2d1b1fdaeca1eff3eeafa4d5a37c50b623a0cee803ece925a635d7c179760a2f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_embedded_resource_replay.py",
+  "reviewReason": "Add one input-free20-minute Go embedded-resource replay using authenticated successful94d normal27/native5/fourcompanions. Exact reviewed unused-helper and single startup-test postimages only; all native/SDK/WIT/used inputs and original programme gates retained. Fresh resource greeting+eight actual calls remain pending; no host rebuild or current-normal fabrication.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

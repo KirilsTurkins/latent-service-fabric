@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-embedded-resource-reference-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0"
+    },
+    "name": "Actual Go embedded resource reference",
+    "on": {
+      "push": {
+        "branches": [
+          "diagnostic/go-embedded-resources-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "resources"
+  ],
+  "reviewReason": "Add one input-free20-minute Go embedded-resource replay using authenticated successful94d normal27/native5/fourcompanions. Exact reviewed unused-helper and single startup-test postimages only; all native/SDK/WIT/used inputs and original programme gates retained. Fresh resource greeting+eight actual calls remain pending; no host rebuild or current-normal fabrication.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-embedded-resource-reference.yml"
+}
