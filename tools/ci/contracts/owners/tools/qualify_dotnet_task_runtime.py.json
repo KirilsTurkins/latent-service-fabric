@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_task_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve exact task assertions and explicit clock/activation authority; additionally capture the entropy grant helper needed by the original CoreLib thread-pool selector. No automatic production grants or weakened bounds.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "90ca359d69b917bc3c245b1d9fe4e536b00e7f037aab4542e406133e12922f3e"
+}

@@ -1,0 +1,1909 @@
+{
+  "schemaVersion": "latent.dotnet.tasks.merge-evidence.v1",
+  "status": "passed",
+  "executedSource": "ac156a7923fb932180ce0eb231042f5b5fe06438",
+  "featureIntegrationSource": "e2ce633b1ef2efa31d6378ad193508b02d01cbdb",
+  "run": 39348130572,
+  "job": 118385603833,
+  "artifact": {
+    "id": 12231559740,
+    "sha256": "sha256:eba1a19708048f86b2214882491293c86af22ff5e546100a4e39c915d229325a",
+    "bytes": 2838330
+  },
+  "qualification": {
+    "sha256": "sha256:699e1f7afe363624de1040af5f217873fb66476a4e03616cf0503deef217e07e",
+    "bytes": 52286
+  },
+  "workflow": {
+    "sha256": "sha256:0ea988a036545cd2b08ba5ae392e4aabddd18408ef9821c326805a10c442a0a2",
+    "bytes": 503877
+  },
+  "materials": {
+    "tools/dotnet_task_runtime_fixture.py": {
+      "executed": {
+        "sha256": "sha256:896c6238a2b38ea8f5a1d5ea832c3dc2bc56faa13e032e980ccbacc467730fd5",
+        "bytes": 12978
+      },
+      "integrated": {
+        "sha256": "sha256:896c6238a2b38ea8f5a1d5ea832c3dc2bc56faa13e032e980ccbacc467730fd5",
+        "bytes": 12978
+      },
+      "byteIdentical": true
+    },
+    "tools/dotnet_task_runtime_probe.py": {
+      "executed": {
+        "sha256": "sha256:fb4e1e0bba09d1c73d8f3753c235be416583b2c9d3716912d1b74b4860fa90b2",
+        "bytes": 9557
+      },
+      "integrated": {
+        "sha256": "sha256:fb4e1e0bba09d1c73d8f3753c235be416583b2c9d3716912d1b74b4860fa90b2",
+        "bytes": 9557
+      },
+      "byteIdentical": true
+    },
+    "tools/qualify_dotnet_task_runtime.py": {
+      "executed": {
+        "sha256": "sha256:90ca359d69b917bc3c245b1d9fe4e536b00e7f037aab4542e406133e12922f3e",
+        "bytes": 6682
+      },
+      "integrated": {
+        "sha256": "sha256:90ca359d69b917bc3c245b1d9fe4e536b00e7f037aab4542e406133e12922f3e",
+        "bytes": 6682
+      },
+      "byteIdentical": true
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "executed": {
+        "sha256": "sha256:0bc3c149ae0226e98e7ad53683a5116e2a8c4c3076332dd3853c93fbe077d906",
+        "bytes": 29093
+      },
+      "integrated": {
+        "sha256": "sha256:a869dbb77b4550d7db381cc3ff8ffc765c7c3cd22108e645e8cd2d8fb24dc281",
+        "bytes": 30367
+      },
+      "byteIdentical": false,
+      "projection": "Whole-module AST identical after removing only default-off TypeScript clock parameter, require guards and conditional branches."
+    },
+    "tools/dotnet_guest/task_wait.py": {
+      "executed": {
+        "sha256": "sha256:2d95ff74c5d0924cd53896f544a1853be649cb33df4051a2eb9687b3abb31f5a",
+        "bytes": 10233
+      },
+      "integrated": {
+        "sha256": "sha256:2d95ff74c5d0924cd53896f544a1853be649cb33df4051a2eb9687b3abb31f5a",
+        "bytes": 10233
+      },
+      "byteIdentical": true
+    },
+    "tools/dotnet_guest/async_exports.py": {
+      "executed": {
+        "sha256": "sha256:30dee63b944c832b981048c8677c3a7134aa478b02adaad1a7a4cac2eccf2f10",
+        "bytes": 16972
+      },
+      "integrated": {
+        "sha256": "sha256:30dee63b944c832b981048c8677c3a7134aa478b02adaad1a7a4cac2eccf2f10",
+        "bytes": 16972
+      },
+      "byteIdentical": true
+    },
+    "tools/dotnet_guest/compiler.py": {
+      "executed": {
+        "sha256": "sha256:9acbaa76a2eb36191c5426827aae669a1e70538531179395cc2f99d846c3eca3",
+        "bytes": 33168
+      },
+      "integrated": {
+        "sha256": "sha256:9acbaa76a2eb36191c5426827aae669a1e70538531179395cc2f99d846c3eca3",
+        "bytes": 33168
+      },
+      "byteIdentical": true
+    },
+    "tools/dotnet_guest/entropy_grants.py": {
+      "executed": {
+        "sha256": "sha256:3bbe872763642fbb514c3f19978996ba9332404ea1a1aefe1b9c60fd887ebaf9",
+        "bytes": 5068
+      },
+      "integrated": {
+        "sha256": "sha256:3bbe872763642fbb514c3f19978996ba9332404ea1a1aefe1b9c60fd887ebaf9",
+        "bytes": 5068
+      },
+      "byteIdentical": true
+    }
+  },
+  "runtimeInputs": {
+    "digest": "sha256:6dbbf4da36e957633e37a80ddbafb52a7e78036e751769a484ef0f379d4894ab",
+    "gitLfFiles": 40,
+    "byteIdentical": true
+  },
+  "inherited": {
+    "schemaVersion": "latent.dotnet.task-replay-materials.v1",
+    "historicalOriginal": {
+      "schemaVersion": "latent.dotnet.reflection-replay-inputs.v1",
+      "status": "passed",
+      "compiledSource": {
+        "head": "03a3f74598f2abfd0224169ae2871818f6c8419d",
+        "testedMerge": "0e46e59358bb4bae16169690041daacbf113555a",
+        "tree": "30e699965ff81243d3b24673c28758b132a26ad3",
+        "run": 39287260436,
+        "job": 118177684118
+      },
+      "fixtureSource": "ac156a7923fb932180ce0eb231042f5b5fe06438",
+      "strictOriginalSourceMatch": true,
+      "strictCurrentSourceMatch": false,
+      "sourceIdentityDigest": "sha256:8c4a67079973d4dde66e89f273b18eec8d619f07a4c08aceb1ae4a2cf224ebcf",
+      "nativeProducts": {
+        "latent": {
+          "sha256": "sha256:3b799d5afec30ada02c382797bfae9e1445a675ba0b838a0681b9cf826aa0ddc",
+          "bytes": 68801608
+        },
+        "latentd": {
+          "sha256": "sha256:8de485de8ce13e162b755d9d3505fdf07b6703d7427de70dd1312c39f135d599",
+          "bytes": 182143440
+        },
+        "examples/package": {
+          "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+          "bytes": 17726192
+        },
+        "examples/capsule_contracts": {
+          "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+          "bytes": 7224720
+        },
+        "examples/capsule_authoring": {
+          "sha256": "sha256:d560fb7003732efca6477e29bf51aa0510103b903a68a9c71b0a4c49caf1ee43",
+          "bytes": 23847032
+        }
+      },
+      "artifact": {
+        "id": 12206326792,
+        "digest": "sha256:e0b7127a34c4e8578d71fc0b8ed92a157827f8782ef643c3525f967a1757f382",
+        "selected": {
+          "dotnet-capsule-dependencies/qualification.json": {
+            "sha256": "sha256:a844856c87fae01a5cd21ab74cbc5c2a87746d60938763ee8063d0582df0a7b2",
+            "bytes": 31271
+          },
+          "dotnet-capsule-dependencies/source-inputs.json": {
+            "sha256": "sha256:8c4a67079973d4dde66e89f273b18eec8d619f07a4c08aceb1ae4a2cf224ebcf",
+            "bytes": 43829
+          },
+          "dotnet-capsule-dependencies/source-inputs-after.json": {
+            "sha256": "sha256:8c4a67079973d4dde66e89f273b18eec8d619f07a4c08aceb1ae4a2cf224ebcf",
+            "bytes": 43829
+          },
+          "dotnet-capsule-dependencies/native-binaries/latent": {
+            "sha256": "sha256:3b799d5afec30ada02c382797bfae9e1445a675ba0b838a0681b9cf826aa0ddc",
+            "bytes": 68801608
+          },
+          "dotnet-capsule-dependencies/native-binaries/latentd": {
+            "sha256": "sha256:8de485de8ce13e162b755d9d3505fdf07b6703d7427de70dd1312c39f135d599",
+            "bytes": 182143440
+          },
+          "dotnet-capsule-dependencies/native-binaries/examples-package": {
+            "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+            "bytes": 17726192
+          },
+          "dotnet-capsule-dependencies/native-binaries/examples-capsule_contracts": {
+            "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+            "bytes": 7224720
+          },
+          "dotnet-capsule-dependencies/native-binaries/examples-capsule_authoring": {
+            "sha256": "sha256:d560fb7003732efca6477e29bf51aa0510103b903a68a9c71b0a4c49caf1ee43",
+            "bytes": 23847032
+          },
+          "dotnet-capsule-dependencies/builds/word-count/BUILD-COMPLETE.json": {
+            "sha256": "sha256:fa5289d87f4ccf28a1341d9b55a4723abb705979539bfc08efc74d6092820418",
+            "bytes": 3829
+          },
+          "dotnet-capsule-dependencies/builds/word-count/build-observation.json": {
+            "sha256": "sha256:afd09b5d9d4defb41076aaacaf4f3e6a8551f2674a42000dc55bd31687fb118b",
+            "bytes": 4624
+          },
+          "dotnet-capsule-dependencies/builds/word-count/source-inputs.json": {
+            "sha256": "sha256:7110cad20eae61dc705de19f9e3ebc318d71ecfe1bcacdd30e8924701403fc26",
+            "bytes": 15729
+          },
+          "dotnet-capsule-dependencies/builds/word-count/recipe-inputs.json": {
+            "sha256": "sha256:aa25b2598ff0dd42abb0e9a66cb7866686d8ec708d4977a0b0c0ad193c37f592",
+            "bytes": 7766
+          },
+          "dotnet-capsule-dependencies/builds/word-count/package-inputs.json": {
+            "sha256": "sha256:6b1c5a40b9d72c9bf57051619b010d42cb94e98e6b33f71b812fe146db7a2051",
+            "bytes": 936
+          },
+          "dotnet-capsule-dependencies/builds/word-count/package-source.json": {
+            "sha256": "sha256:6948f13a3473673d93a23431a3346d6069f9f1ec6a4c371635506ec70ddbb34b",
+            "bytes": 1308
+          },
+          "dotnet-capsule-dependencies/builds/word-count/deployment.json": {
+            "sha256": "sha256:56740088928117f0ecf48af8c5f694eabcae75ae718a0d73d1c1e3434c4dfe7b",
+            "bytes": 890
+          },
+          "dotnet-capsule-dependencies/builds/word-count/component.wasm": {
+            "sha256": "sha256:868144202847632617caa13c3e6de2d06f0445461108242a3b270f1a6adad261",
+            "bytes": 2337715
+          },
+          "dotnet-capsule-dependencies/builds/word-count/capsule.json": {
+            "sha256": "sha256:b17dd40b57d29fecf4dea613557f35a987de862c2606a6b1806ec184f0039ed6",
+            "bytes": 1136
+          },
+          "dotnet-capsule-dependencies/builds/word-count/contracts.json": {
+            "sha256": "sha256:16934cdac62a23e71b7e63837703e9edda69117809f7ef38057c8058c5305b92",
+            "bytes": 677
+          },
+          "dotnet-capsule-dependencies/builds/word-count/wit-lock.json": {
+            "sha256": "sha256:8b356992d1fc5ea0be7028ca194c6b406bfc66a320b98609b27d1d3e178d1859",
+            "bytes": 524
+          },
+          "dotnet-capsule-dependencies/builds/word-count/compatibility-report.json": {
+            "sha256": "sha256:08b09330e4d9a078f23dfa0adc86d753b35b7b6e473a0db049806194dde1d9ce",
+            "bytes": 1254
+          },
+          "dotnet-capsule-dependencies/builds/word-count/wit/deps/clock/package.wit": {
+            "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+            "bytes": 139
+          },
+          "dotnet-capsule-dependencies/builds/word-count/wit/world.wit": {
+            "sha256": "sha256:5aecf75e46f3fac76546b90ea434b71212d90f5f28ebeeeb55c8e95c375a74b8",
+            "bytes": 184
+          },
+          "dotnet-capsule-dependencies/builds/shipping/BUILD-COMPLETE.json": {
+            "sha256": "sha256:b8d6fec883ef425e24e01c4b4a2301676d53bc76424156fa32f9dd4e2b2cd2b2",
+            "bytes": 3824
+          },
+          "dotnet-capsule-dependencies/builds/shipping/build-observation.json": {
+            "sha256": "sha256:18a4ec67fc77db8aaa255e25696bc0471529164c5687e6c41fff6a31b6be2dd6",
+            "bytes": 4624
+          },
+          "dotnet-capsule-dependencies/builds/shipping/source-inputs.json": {
+            "sha256": "sha256:601d1a0a538e6734c26ae04da9c9b981b2503706a68ebba3aef0b13ba77460dd",
+            "bytes": 15729
+          },
+          "dotnet-capsule-dependencies/builds/shipping/recipe-inputs.json": {
+            "sha256": "sha256:aa25b2598ff0dd42abb0e9a66cb7866686d8ec708d4977a0b0c0ad193c37f592",
+            "bytes": 7766
+          },
+          "dotnet-capsule-dependencies/builds/shipping/package-inputs.json": {
+            "sha256": "sha256:410c023a0ac9f083d775308d6af5e78cc344f6f82a79c55c52806a5b1b0d4849",
+            "bytes": 936
+          },
+          "dotnet-capsule-dependencies/builds/shipping/package-source.json": {
+            "sha256": "sha256:509f7b5e529187a2d1843b7396aff770c54197b88d013cc372c912c4ac4b1c7c",
+            "bytes": 1306
+          },
+          "dotnet-capsule-dependencies/builds/shipping/deployment.json": {
+            "sha256": "sha256:0819ad925914d9a6d9f20dbaf9604a81357da057be1938821710f4c54c08109e",
+            "bytes": 886
+          },
+          "dotnet-capsule-dependencies/builds/shipping/component.wasm": {
+            "sha256": "sha256:649325a171f61f914fceb159a9aacea32d3072fdf725476029ec1caa0b4e5339",
+            "bytes": 2336756
+          },
+          "dotnet-capsule-dependencies/builds/shipping/capsule.json": {
+            "sha256": "sha256:ebd4754a15182766a4926ed8cf8dedc579f047f545f4b8e9fda0d9e387b8d4b2",
+            "bytes": 1130
+          },
+          "dotnet-capsule-dependencies/builds/shipping/contracts.json": {
+            "sha256": "sha256:514a63dc5089ab5d09c9f671ea6c56a667f43c2f8d458a30f39c31a152f061a1",
+            "bytes": 729
+          },
+          "dotnet-capsule-dependencies/builds/shipping/wit-lock.json": {
+            "sha256": "sha256:d32ee6e1b6fb715e68106b416d54f6777c416e14c2836214ce01db58671d070f",
+            "bytes": 520
+          },
+          "dotnet-capsule-dependencies/builds/shipping/compatibility-report.json": {
+            "sha256": "sha256:719dadee51ce063d4ecafe872602c5f8bb5827831d90e053556ccc3ed4679c0b",
+            "bytes": 1254
+          },
+          "dotnet-capsule-dependencies/builds/shipping/wit/deps/clock/package.wit": {
+            "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+            "bytes": 139
+          },
+          "dotnet-capsule-dependencies/builds/shipping/wit/world.wit": {
+            "sha256": "sha256:5bc66235416d64e94ed438466a27505006cd6d9520217191600c6625892e277d",
+            "bytes": 195
+          },
+          "dotnet-capsule-dependencies/builds/http-status/BUILD-COMPLETE.json": {
+            "sha256": "sha256:3317b2523ee1fad28ac341a213385fb7351d52cd19d3155190b4dcb3952a8bfd",
+            "bytes": 3827
+          },
+          "dotnet-capsule-dependencies/builds/http-status/build-observation.json": {
+            "sha256": "sha256:ca0fc32dfa6bf5f1461d1ed2cc9ee7b871bdffbb9d48f577aa3bf6b408950fa2",
+            "bytes": 4625
+          },
+          "dotnet-capsule-dependencies/builds/http-status/source-inputs.json": {
+            "sha256": "sha256:6bf5f2bd20b1d80ef9c9aae7ec61520ba2fd84913d3e31aa2610451a522f7e8d",
+            "bytes": 15857
+          },
+          "dotnet-capsule-dependencies/builds/http-status/recipe-inputs.json": {
+            "sha256": "sha256:aa25b2598ff0dd42abb0e9a66cb7866686d8ec708d4977a0b0c0ad193c37f592",
+            "bytes": 7766
+          },
+          "dotnet-capsule-dependencies/builds/http-status/package-inputs.json": {
+            "sha256": "sha256:b89cc211f738b3e3c2d43be0f17889070bab038328415cbba6952f757aeb4279",
+            "bytes": 1064
+          },
+          "dotnet-capsule-dependencies/builds/http-status/package-source.json": {
+            "sha256": "sha256:2789e89e5ebff7b5bc48b3e9fc4efc1c5f60b2b942b0b9d8a99ec73c6bdcc101",
+            "bytes": 1471
+          },
+          "dotnet-capsule-dependencies/builds/http-status/deployment.json": {
+            "sha256": "sha256:4c1a038afac7112c6501d12453c9f120371554529ebc6fb647ac128934b9799a",
+            "bytes": 892
+          },
+          "dotnet-capsule-dependencies/builds/http-status/component.wasm": {
+            "sha256": "sha256:88674f26579581757212b84b5c55275fff4fafd92be457e77616caa088734f7b",
+            "bytes": 2378117
+          },
+          "dotnet-capsule-dependencies/builds/http-status/capsule.json": {
+            "sha256": "sha256:ff96bea8839e449d8a9d581a549928bc0517bcd8f6147b2c2d6e802819fec9d9",
+            "bytes": 1222
+          },
+          "dotnet-capsule-dependencies/builds/http-status/contracts.json": {
+            "sha256": "sha256:9d9294032020f60eae15fe7d936d5c788e20cbd55f5e1eae83929247165cebc1",
+            "bytes": 720
+          },
+          "dotnet-capsule-dependencies/builds/http-status/wit-lock.json": {
+            "sha256": "sha256:71fd00f23f8c75e0e7af2c946eff1a6ff0a86ca1f341425fbddf37aab6081011",
+            "bytes": 718
+          },
+          "dotnet-capsule-dependencies/builds/http-status/compatibility-report.json": {
+            "sha256": "sha256:e9176d2cda661c337a7e101060a33b60ca814b588be9943a0fce6784ec7f8bff",
+            "bytes": 1254
+          },
+          "dotnet-capsule-dependencies/builds/http-status/wit/deps/clock/package.wit": {
+            "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+            "bytes": 139
+          },
+          "dotnet-capsule-dependencies/builds/http-status/wit/deps/http-v2/package.wit": {
+            "sha256": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d",
+            "bytes": 1296
+          },
+          "dotnet-capsule-dependencies/builds/http-status/wit/world.wit": {
+            "sha256": "sha256:946650d8f4559a94b05a18695c4e64e62e11be5c64f594ee0d85e1ea3ed56ef1",
+            "bytes": 278
+          },
+          "dotnet-capsule-dependencies/builds/recovery/BUILD-COMPLETE.json": {
+            "sha256": "sha256:7d746efe2588f23d5b48f4e06d1857597facf0f95daf6a1f8db1dfccbcdfd6e4",
+            "bytes": 3827
+          },
+          "dotnet-capsule-dependencies/builds/recovery/build-observation.json": {
+            "sha256": "sha256:1fd02424b36dbf2cc7fd320bb76ffb00b68a10e7aa9fd29013e86d1d9d3b1110",
+            "bytes": 4624
+          },
+          "dotnet-capsule-dependencies/builds/recovery/source-inputs.json": {
+            "sha256": "sha256:6da68413cf89b9da4577f1fa2a5a8a57f6394a8a9f5a3a3d4c7677042f81dc74",
+            "bytes": 15729
+          },
+          "dotnet-capsule-dependencies/builds/recovery/recipe-inputs.json": {
+            "sha256": "sha256:aa25b2598ff0dd42abb0e9a66cb7866686d8ec708d4977a0b0c0ad193c37f592",
+            "bytes": 7766
+          },
+          "dotnet-capsule-dependencies/builds/recovery/package-inputs.json": {
+            "sha256": "sha256:ea35614424012fb3af2de4aca34c76d6e5e13d68c50b8a442200f50e431c4bf8",
+            "bytes": 936
+          },
+          "dotnet-capsule-dependencies/builds/recovery/package-source.json": {
+            "sha256": "sha256:3fb978eccd6074a6e6cb8caf1fefc6c3ccea0165f4ef71c022a5ca0bf1c8645a",
+            "bytes": 1306
+          },
+          "dotnet-capsule-dependencies/builds/recovery/deployment.json": {
+            "sha256": "sha256:2d33b8c442e1db942423fee91cd0f9fd7f67e303cca4b9dfda3cadaa9067d2d4",
+            "bytes": 886
+          },
+          "dotnet-capsule-dependencies/builds/recovery/component.wasm": {
+            "sha256": "sha256:279086074e077e00c5c86517933f5c0f4aac9cedd1b2c113ec093033f41b1a1f",
+            "bytes": 2424600
+          },
+          "dotnet-capsule-dependencies/builds/recovery/capsule.json": {
+            "sha256": "sha256:acc1edb7f73f60b2e6e79739d1eb512da6ed81d4e3f320c4bd5d2d66621c5ddf",
+            "bytes": 1130
+          },
+          "dotnet-capsule-dependencies/builds/recovery/contracts.json": {
+            "sha256": "sha256:51d382453dcf0aafe3a820bd4ecc8c3a1e4058fce3de901112c873006db7a98e",
+            "bytes": 630
+          },
+          "dotnet-capsule-dependencies/builds/recovery/wit-lock.json": {
+            "sha256": "sha256:5aa6b0f8e2a7f95abe1dc78cb3cf9e3fc41ac458b2cc928376e3f7486f2c6aaf",
+            "bytes": 520
+          },
+          "dotnet-capsule-dependencies/builds/recovery/compatibility-report.json": {
+            "sha256": "sha256:d73178be7ba92cc4ddf35c7a7dd47e01c976d050ef933b97bf015d5c092fa230",
+            "bytes": 1254
+          },
+          "dotnet-capsule-dependencies/builds/recovery/wit/deps/clock/package.wit": {
+            "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+            "bytes": 139
+          },
+          "dotnet-capsule-dependencies/builds/recovery/wit/world.wit": {
+            "sha256": "sha256:8206b96f735cba75c68fd416bd3b8ee51b9b9ebd3ab3a3ebb8b1d6f8e0c8726b",
+            "bytes": 152
+          },
+          "dotnet-capsule-dependencies/node/workflow.json": {
+            "sha256": "sha256:3dbddfc782ef454e0f93fc72f23a985a6feb39754ba056c42b854c67b6194f45",
+            "bytes": 329344
+          }
+        },
+        "networkBytes": 71686834
+      },
+      "normalQualificationRecreated": false,
+      "nativeProductsCompiled": false,
+      "fullTicketQualification": false
+    },
+    "historicalNormalNode": {
+      "receiptDigest": "sha256:3dbddfc782ef454e0f93fc72f23a985a6feb39754ba056c42b854c67b6194f45",
+      "compiledSource": "03a3f74598f2abfd0224169ae2871818f6c8419d"
+    },
+    "selectedHost": {
+      "compiledSource": "e97d44ddc744c9bd738d9b3b7a7d8b7234133e36",
+      "run": 39320463437,
+      "job": 118292873857,
+      "artifact": 12220651992,
+      "binary": {
+        "sha256": "sha256:1ade67dfc9c461068ac7680a397f310eaf31e0e97b671a4dafd16ad710e1d050",
+        "bytes": 184227152
+      },
+      "sourceIdentity": {
+        "sha256": "sha256:db1b074b88c12884ac449bb873357759ab3807bcce79135c1ec45e705e84e92a",
+        "files": 3168,
+        "bytes": 23911170,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "frozenHistoricalNativeSourceMatches": true,
+      "currentNativeSourceMatchClaimed": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "selectedBinaries": {
+      "latent": {
+        "sha256": "sha256:3b799d5afec30ada02c382797bfae9e1445a675ba0b838a0681b9cf826aa0ddc",
+        "bytes": 68801608
+      },
+      "latentd": {
+        "sha256": "sha256:1ade67dfc9c461068ac7680a397f310eaf31e0e97b671a4dafd16ad710e1d050",
+        "bytes": 184227152
+      },
+      "package": {
+        "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+        "bytes": 17726192
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+        "bytes": 7224720
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:d560fb7003732efca6477e29bf51aa0510103b903a68a9c71b0a4c49caf1ee43",
+        "bytes": 23847032
+      }
+    },
+    "companionBuilds": {
+      "word-count": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:afd09b5d9d4defb41076aaacaf4f3e6a8551f2674a42000dc55bd31687fb118b",
+        "sourceDigest": "sha256:7110cad20eae61dc705de19f9e3ebc318d71ecfe1bcacdd30e8924701403fc26",
+        "componentDigest": "sha256:868144202847632617caa13c3e6de2d06f0445461108242a3b270f1a6adad261",
+        "sdkBindingDigest": "sha256:46d0b148a3b4b1cd6e3796120a349ac6b860b55bd600601e13c60b4cc53bb02f",
+        "buildSeconds": 16.515359,
+        "commands": [
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.013873
+          },
+          {
+            "stage": "dotnet-version",
+            "exitCode": 0,
+            "seconds": 0.105007
+          },
+          {
+            "stage": "wasm-tools-version",
+            "exitCode": 0,
+            "seconds": 0.013728
+          },
+          {
+            "stage": "wit-bindgen-version",
+            "exitCode": 0,
+            "seconds": 0.013521
+          },
+          {
+            "stage": "dotnet-sdks",
+            "exitCode": 0,
+            "seconds": 0.013458
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.266425
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.296727
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.064549
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.094963
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.094677
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.064613
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.115093
+          },
+          {
+            "stage": "component-composer-version",
+            "exitCode": 0,
+            "seconds": 0.013996
+          },
+          {
+            "stage": "declared-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.013959
+          },
+          {
+            "stage": "bindings",
+            "exitCode": 0,
+            "seconds": 0.074281
+          },
+          {
+            "stage": "bindings-drift",
+            "exitCode": 0,
+            "seconds": 0.074295
+          },
+          {
+            "stage": "canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.013597
+          },
+          {
+            "stage": "locked-restore",
+            "exitCode": 0,
+            "seconds": 0.904186
+          },
+          {
+            "stage": "native-aot",
+            "exitCode": 0,
+            "seconds": 8.114279
+          },
+          {
+            "stage": "native-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.013905
+          },
+          {
+            "stage": "internal-io-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.01354
+          },
+          {
+            "stage": "internal-io-unbundle",
+            "exitCode": 0,
+            "seconds": 0.01344
+          },
+          {
+            "stage": "internal-io-print",
+            "exitCode": 0,
+            "seconds": 0.013349
+          },
+          {
+            "stage": "internal-io-encode",
+            "exitCode": 0,
+            "seconds": 0.013363
+          },
+          {
+            "stage": "internal-io-validate",
+            "exitCode": 0,
+            "seconds": 0.013718
+          },
+          {
+            "stage": "internal-io-selected-wit",
+            "exitCode": 0,
+            "seconds": 0.013588
+          },
+          {
+            "stage": "native-aot-raw-wit",
+            "exitCode": 0,
+            "seconds": 0.01394
+          },
+          {
+            "stage": "closed-runtime-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.013621
+          },
+          {
+            "stage": "closed-runtime-composition",
+            "exitCode": 0,
+            "seconds": 0.023985
+          },
+          {
+            "stage": "validate",
+            "exitCode": 0,
+            "seconds": 0.013724
+          },
+          {
+            "stage": "runtime-final-wit",
+            "exitCode": 0,
+            "seconds": 0.013629
+          },
+          {
+            "stage": "surface",
+            "exitCode": 0,
+            "seconds": 0.013343
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.013323
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 0.418418
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.195687
+          }
+        ]
+      },
+      "shipping": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:18a4ec67fc77db8aaa255e25696bc0471529164c5687e6c41fff6a31b6be2dd6",
+        "sourceDigest": "sha256:601d1a0a538e6734c26ae04da9c9b981b2503706a68ebba3aef0b13ba77460dd",
+        "componentDigest": "sha256:649325a171f61f914fceb159a9aacea32d3072fdf725476029ec1caa0b4e5339",
+        "sdkBindingDigest": "sha256:813a2067a8f33e11028b188bc1550f927dd4d62ae14d0f32b13337b3ad9cf9f1",
+        "buildSeconds": 16.324423,
+        "commands": [
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.013939
+          },
+          {
+            "stage": "dotnet-version",
+            "exitCode": 0,
+            "seconds": 0.114925
+          },
+          {
+            "stage": "wasm-tools-version",
+            "exitCode": 0,
+            "seconds": 0.013588
+          },
+          {
+            "stage": "wit-bindgen-version",
+            "exitCode": 0,
+            "seconds": 0.013383
+          },
+          {
+            "stage": "dotnet-sdks",
+            "exitCode": 0,
+            "seconds": 0.013266
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.256604
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.286826
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.064378
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.104868
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.094715
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.064425
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.114917
+          },
+          {
+            "stage": "component-composer-version",
+            "exitCode": 0,
+            "seconds": 0.014073
+          },
+          {
+            "stage": "declared-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.013955
+          },
+          {
+            "stage": "bindings",
+            "exitCode": 0,
+            "seconds": 0.074485
+          },
+          {
+            "stage": "bindings-drift",
+            "exitCode": 0,
+            "seconds": 0.074421
+          },
+          {
+            "stage": "canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.0137
+          },
+          {
+            "stage": "locked-restore",
+            "exitCode": 0,
+            "seconds": 0.914613
+          },
+          {
+            "stage": "native-aot",
+            "exitCode": 0,
+            "seconds": 7.9014
+          },
+          {
+            "stage": "native-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.013861
+          },
+          {
+            "stage": "internal-io-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.013766
+          },
+          {
+            "stage": "internal-io-unbundle",
+            "exitCode": 0,
+            "seconds": 0.013808
+          },
+          {
+            "stage": "internal-io-print",
+            "exitCode": 0,
+            "seconds": 0.013668
+          },
+          {
+            "stage": "internal-io-encode",
+            "exitCode": 0,
+            "seconds": 0.013716
+          },
+          {
+            "stage": "internal-io-validate",
+            "exitCode": 0,
+            "seconds": 0.013677
+          },
+          {
+            "stage": "internal-io-selected-wit",
+            "exitCode": 0,
+            "seconds": 0.013529
+          },
+          {
+            "stage": "native-aot-raw-wit",
+            "exitCode": 0,
+            "seconds": 0.013998
+          },
+          {
+            "stage": "closed-runtime-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.0139
+          },
+          {
+            "stage": "closed-runtime-composition",
+            "exitCode": 0,
+            "seconds": 0.02397
+          },
+          {
+            "stage": "validate",
+            "exitCode": 0,
+            "seconds": 0.013819
+          },
+          {
+            "stage": "runtime-final-wit",
+            "exitCode": 0,
+            "seconds": 0.01366
+          },
+          {
+            "stage": "surface",
+            "exitCode": 0,
+            "seconds": 0.013568
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.013596
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 0.428156
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.196067
+          }
+        ]
+      },
+      "http-status": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:ca0fc32dfa6bf5f1461d1ed2cc9ee7b871bdffbb9d48f577aa3bf6b408950fa2",
+        "sourceDigest": "sha256:6bf5f2bd20b1d80ef9c9aae7ec61520ba2fd84913d3e31aa2610451a522f7e8d",
+        "componentDigest": "sha256:88674f26579581757212b84b5c55275fff4fafd92be457e77616caa088734f7b",
+        "sdkBindingDigest": "sha256:37fbe8bbea42cd8ee1935909b2aec1a332ad08a64aa0ed91c19a4537d97f727a",
+        "buildSeconds": 16.491978,
+        "commands": [
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.013879
+          },
+          {
+            "stage": "dotnet-version",
+            "exitCode": 0,
+            "seconds": 0.1048
+          },
+          {
+            "stage": "wasm-tools-version",
+            "exitCode": 0,
+            "seconds": 0.013773
+          },
+          {
+            "stage": "wit-bindgen-version",
+            "exitCode": 0,
+            "seconds": 0.013733
+          },
+          {
+            "stage": "dotnet-sdks",
+            "exitCode": 0,
+            "seconds": 0.01368
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.266919
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.297156
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.064629
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.105468
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.105532
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.064519
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.114894
+          },
+          {
+            "stage": "component-composer-version",
+            "exitCode": 0,
+            "seconds": 0.013942
+          },
+          {
+            "stage": "declared-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.013951
+          },
+          {
+            "stage": "bindings",
+            "exitCode": 0,
+            "seconds": 0.114585
+          },
+          {
+            "stage": "bindings-drift",
+            "exitCode": 0,
+            "seconds": 0.084517
+          },
+          {
+            "stage": "canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.013598
+          },
+          {
+            "stage": "locked-restore",
+            "exitCode": 0,
+            "seconds": 0.902228
+          },
+          {
+            "stage": "native-aot",
+            "exitCode": 0,
+            "seconds": 8.054394
+          },
+          {
+            "stage": "native-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.014021
+          },
+          {
+            "stage": "internal-io-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.013794
+          },
+          {
+            "stage": "internal-io-unbundle",
+            "exitCode": 0,
+            "seconds": 0.013896
+          },
+          {
+            "stage": "internal-io-print",
+            "exitCode": 0,
+            "seconds": 0.013835
+          },
+          {
+            "stage": "internal-io-encode",
+            "exitCode": 0,
+            "seconds": 0.013856
+          },
+          {
+            "stage": "internal-io-validate",
+            "exitCode": 0,
+            "seconds": 0.013779
+          },
+          {
+            "stage": "internal-io-selected-wit",
+            "exitCode": 0,
+            "seconds": 0.013647
+          },
+          {
+            "stage": "native-aot-raw-wit",
+            "exitCode": 0,
+            "seconds": 0.013902
+          },
+          {
+            "stage": "closed-runtime-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.01367
+          },
+          {
+            "stage": "closed-runtime-composition",
+            "exitCode": 0,
+            "seconds": 0.023966
+          },
+          {
+            "stage": "validate",
+            "exitCode": 0,
+            "seconds": 0.01372
+          },
+          {
+            "stage": "runtime-final-wit",
+            "exitCode": 0,
+            "seconds": 0.013732
+          },
+          {
+            "stage": "surface",
+            "exitCode": 0,
+            "seconds": 0.013684
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.013719
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 0.387835
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.195753
+          }
+        ]
+      },
+      "recovery": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:1fd02424b36dbf2cc7fd320bb76ffb00b68a10e7aa9fd29013e86d1d9d3b1110",
+        "sourceDigest": "sha256:6da68413cf89b9da4577f1fa2a5a8a57f6394a8a9f5a3a3d4c7677042f81dc74",
+        "componentDigest": "sha256:279086074e077e00c5c86517933f5c0f4aac9cedd1b2c113ec093033f41b1a1f",
+        "sdkBindingDigest": "sha256:3b26c2acebb8d7383dbc8ac5ffbc337e12a8f724a60f36bc88fd4dc5f7917f78",
+        "buildSeconds": 16.879332,
+        "commands": [
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.01394
+          },
+          {
+            "stage": "dotnet-version",
+            "exitCode": 0,
+            "seconds": 0.1048
+          },
+          {
+            "stage": "wasm-tools-version",
+            "exitCode": 0,
+            "seconds": 0.013459
+          },
+          {
+            "stage": "wit-bindgen-version",
+            "exitCode": 0,
+            "seconds": 0.013471
+          },
+          {
+            "stage": "dotnet-sdks",
+            "exitCode": 0,
+            "seconds": 0.013412
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.266885
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.287352
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.074772
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.104776
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.095089
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.07463
+          },
+          {
+            "stage": "nuget-content-hash",
+            "exitCode": 0,
+            "seconds": 0.115082
+          },
+          {
+            "stage": "component-composer-version",
+            "exitCode": 0,
+            "seconds": 0.013946
+          },
+          {
+            "stage": "declared-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.014192
+          },
+          {
+            "stage": "bindings",
+            "exitCode": 0,
+            "seconds": 0.125391
+          },
+          {
+            "stage": "bindings-drift",
+            "exitCode": 0,
+            "seconds": 0.084746
+          },
+          {
+            "stage": "canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.013819
+          },
+          {
+            "stage": "locked-restore",
+            "exitCode": 0,
+            "seconds": 0.923355
+          },
+          {
+            "stage": "native-aot",
+            "exitCode": 0,
+            "seconds": 8.302102
+          },
+          {
+            "stage": "native-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.013916
+          },
+          {
+            "stage": "internal-io-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.013718
+          },
+          {
+            "stage": "internal-io-unbundle",
+            "exitCode": 0,
+            "seconds": 0.013768
+          },
+          {
+            "stage": "internal-io-print",
+            "exitCode": 0,
+            "seconds": 0.013756
+          },
+          {
+            "stage": "internal-io-encode",
+            "exitCode": 0,
+            "seconds": 0.013859
+          },
+          {
+            "stage": "internal-io-validate",
+            "exitCode": 0,
+            "seconds": 0.013877
+          },
+          {
+            "stage": "internal-io-selected-wit",
+            "exitCode": 0,
+            "seconds": 0.01385
+          },
+          {
+            "stage": "native-aot-raw-wit",
+            "exitCode": 0,
+            "seconds": 0.013969
+          },
+          {
+            "stage": "closed-runtime-adapter-wit",
+            "exitCode": 0,
+            "seconds": 0.013859
+          },
+          {
+            "stage": "closed-runtime-composition",
+            "exitCode": 0,
+            "seconds": 0.024038
+          },
+          {
+            "stage": "validate",
+            "exitCode": 0,
+            "seconds": 0.013868
+          },
+          {
+            "stage": "runtime-final-wit",
+            "exitCode": 0,
+            "seconds": 0.013881
+          },
+          {
+            "stage": "surface",
+            "exitCode": 0,
+            "seconds": 0.013813
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.013781
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 0.478819
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.195876
+          }
+        ]
+      }
+    },
+    "originalHostOverwritten": false,
+    "nativeRecompiled": false,
+    "freshApplicationNativeAotRequired": true,
+    "currentHeadNormalQualificationClaimed": false
+  },
+  "captured": {
+    "schemaVersion": "latent.dotnet.tasks.fixture.v1",
+    "originalFiles": {
+      "Library.cs": "sha256:2e95b9d3bd4c514a3266234b26220a10c5c715c01c33de4484eb2ccdd7cd4b03",
+      "Library.csproj": "sha256:5caacb0ae37d456cbe4fcc078d02954dceef32a7c4c635611f82383da7ace769",
+      "global.json": "sha256:0aa4b85ae248d59bbc4138f346d952b7fae4fe18cc701d921fa1c003211be777",
+      "nuget.config": "sha256:e497501960554d323eef45860c14474958accd1ae7f3ae6f95b10e4c1d340401"
+    },
+    "assemblyDigest": "sha256:a08736d471a5fe8401d86adb788ec5cdd36548fdb2f59b6854d226e28cc67a0d",
+    "packageDigest": "sha256:83363de46f60fab58e48b0456d14c7a72cd7afa9d80313d356e8c25c1d034a01",
+    "dependencyLock": "sha256:c8eb0fd8fa12d8257f27754eb97bdb7c260db8f36fc6297a19d7e8502d83a7d9",
+    "originalLibraryAndFeedRemoved": true,
+    "applicationSchedulerReplacement": false,
+    "httpDeclaration": false,
+    "entropyDeclaration": "explicit-threadpool-selector-seed",
+    "cases": [
+      "run",
+      "when-all",
+      "thread-pool",
+      "scheduler",
+      "error",
+      "cancel",
+      "context",
+      "suppressed-context",
+      "delay",
+      "cancel-after",
+      "nested",
+      "monitor"
+    ]
+  },
+  "component": {
+    "sha256": "sha256:598fe9f05c5ce389aa6786af4a96df08761be5e87016a7395b72bf954082414d",
+    "bytes": 2385720
+  },
+  "taskWaitPort": {
+    "patch": "latent.dotnet.stackful-task-wait.v1",
+    "sourceDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+    "outputDigest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+    "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+    "method": "System.Boolean System.Threading.Tasks.Task::InternalWaitCore(System.Int32,System.Threading.CancellationToken)",
+    "originalWaitBodyDigest": "sha256:9b5bc35a1a68b80111c7eddc9cbc0903e6062d4e5e3b8f84e8f359445dd6e875",
+    "originalLoopBodyDigest": "sha256:1631857d71d2e5ecca2e22c95a6421aaecf016d9cba018412388b2d1c6646e19",
+    "originalDispatchBodyDigest": "sha256:05e0128b899121d13842a4c76993d2becaaebe2e57ecff53f1ea750ba39ba629",
+    "originalContextBodyDigest": "sha256:865b97bff2c7df2a4ce36e8b802dc2a98f5865dbaf6119def4e85d21288afa29",
+    "originalContextRestoreBodyDigest": "sha256:d55f695b66f4e330e22b6e1d3aae2ce29c4d1ce059cf9c7a7b4afc0da9dc837a",
+    "maximumNestedWaits": 32,
+    "finiteAndCancellableWaits": "original-unsupported",
+    "completion": "actual-task-only",
+    "exceptionPropagation": "original-TaskAwaiter",
+    "nestedTaskIdentity": "save-restore-finally",
+    "defaultClientComponentQualified": false,
+    "callerContexts": "original-RunInternal-Default",
+    "contextNotifications": "original-runtime",
+    "generatedHelperCount": 9,
+    "contextCallback": "same-CoreLib-ContextCallback(object)",
+    "unchangedOriginalMethods": 44741,
+    "completeOriginalWaitRemainderPreserved": true,
+    "timerDriver": "TimerQueue.SetNextTimer-only",
+    "timerDriverIdle": "Timer.ActiveCount==0",
+    "timerDriverCancellation": "original-CancellationTokenSource-CancelAndDispose",
+    "timerDriverIdentity": "original-task-reference-and-epoch",
+    "timerDriverCallbacks": "original-queued-user-callbacks-preserved",
+    "timerDriverScheduledToFire": "untouched",
+    "timerDriverCacheCleanup": false,
+    "timerDriverRegistrationContext": "no-new-capture-original-flow-restored",
+    "timerDriverModifiedOriginalMethods": 3,
+    "timerDriverOriginalBodies": {
+      "System.Void System.Threading.TimerQueue::SetNextTimer(System.Int64,System.Int64)": "fbd678f159bf3f73bd97acdf9b59cb5073f46e551503f045a6959a4de99a7d1c",
+      "System.Void System.Threading.TimerQueue::TimerHandler(System.Object)": "f0d96beadf3c85c3a7912ec1d894528c2b1b7fe8a77aca41d2263e574330b9d9",
+      "System.Void System.Threading.TimerQueue::DeleteTimer(System.Threading.TimerQueueTimer)": "97df4a648d3a936be0a512e16dff243bee88b9b77a44c5865e8c6f3f0d4f2f8d"
+    },
+    "zeroCacheLifetime": "CheckPollables-original-Poll-call-only",
+    "zeroCacheDetach": "before-original-Poll",
+    "zeroCacheDispose": "original-owned-Pollable-finally",
+    "zeroCacheForeignHolders": "untouched",
+    "zeroCacheModifiedOriginalMethods": 1,
+    "zeroCacheOriginalBodies": {
+      "System.Void System.Threading.WasiEventLoop::CheckPollables(System.Object)": "721d297cf7e66afbb320299c85f6fe8a0b8c174c5f05250081c16230e8396dfe"
+    },
+    "profile": "dotnet-stackful-task-wait-v1",
+    "frameworkInput": {
+      "name": "task-wait-original-corelib",
+      "digest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+      "size": 5694976
+    },
+    "tool": {
+      "name": "dotnet-http-errors-tool",
+      "digest": "sha256:3e2842ebe878eb66c3af3a9456d482f94820d47065ea05a71b792b914578655f",
+      "size": 136704
+    },
+    "derived": {
+      "name": "task-wait-derived-corelib",
+      "digest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+      "size": 5605888
+    },
+    "sourceCaptureDigest": "sha256:c9600455a73fcdc2d95fa15739561baf785fc23b142041696849c0b6ebd2a417",
+    "targetsDigest": "sha256:30569558384808f4ffa5c8b1bf1062fd8474d6bf4d01b08ea969e3aa906dbb47",
+    "nativeAotReferenceBinding": {
+      "referenceListDigest": "sha256:96122b825b9543d2d6f51a4cb297371f4b0edcf7add30fcf315f4463a2bff444",
+      "responseFiles": [
+        {
+          "digest": "sha256:a92fc44a2bdb877c3217fc1cc0db67431d90937dcfe276746e8b5bff0850100a",
+          "size": 66806
+        }
+      ]
+    },
+    "selection": {
+      "requiredDeclarations": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:runtime/activation@0.1.0"
+      ],
+      "asyncExportBridge": {
+        "exports": 1,
+        "managedTaskSchedulingQualified": false,
+        "profile": "dotnet-native-aot-stackful-async-exports-v1"
+      }
+    }
+  },
+  "invocations": 44,
+  "originalNodeCases": 27,
+  "managedTaskCases": [
+    {
+      "mode": "run",
+      "result": [
+        {
+          "ok": "ordinary-tasks:run|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51031958",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56557568",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "5677993"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-run-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "when-all",
+      "result": [
+        {
+          "ok": "ordinary-tasks:when-all|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51105914",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56688640",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "16421"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-when-all-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "thread-pool",
+      "result": [
+        {
+          "ok": "ordinary-tasks:thread-pool|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51084034",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56688640",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "14781"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-thread-pool-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "scheduler",
+      "result": [
+        {
+          "ok": "ordinary-tasks:scheduler|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51023814",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56557568",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "14705"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-scheduler-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "error",
+      "result": [
+        {
+          "ok": "ordinary-tasks:error|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51228094",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56688640",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "15438"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-error-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "cancel",
+      "result": [
+        {
+          "ok": "ordinary-tasks:cancel|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51209317",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56688640",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "15041"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-cancel-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "context",
+      "result": [
+        {
+          "ok": "ordinary-tasks:context|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51155686",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56691440",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "22431"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-context-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "suppressed-context",
+      "result": [
+        {
+          "ok": "ordinary-tasks:suppressed-context|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51094012",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56688640",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "15406"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-suppressed-context-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "delay",
+      "result": [
+        {
+          "ok": "ordinary-tasks:delay|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51149949",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56691440",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "25430"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-delay-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "cancel-after",
+      "result": [
+        {
+          "ok": "ordinary-tasks:cancel-after|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51285941",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56691440",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "32171"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-cancel-after-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "nested",
+      "result": [
+        {
+          "ok": "ordinary-tasks:nested|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51027600",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56557568",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "15640"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-nested-retired",
+      "settlingObservations": 1
+    },
+    {
+      "mode": "monitor",
+      "result": [
+        {
+          "ok": "ordinary-tasks:monitor|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "51024586",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "56557568",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "14766"
+      },
+      "retirementPhase": "dotnet-ordinary-tasks-monitor-retired",
+      "settlingObservations": 1
+    }
+  ],
+  "singleMissingGrantDenials": [
+    {
+      "missingCapability": "latent:clock/monotonic@0.1.0",
+      "error": "permission-denied",
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1035"
+      }
+    },
+    {
+      "missingCapability": "latent:clock/wall@0.1.0",
+      "error": "permission-denied",
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1014"
+      }
+    },
+    {
+      "missingCapability": "latent:runtime/activation@0.1.0",
+      "error": "permission-denied",
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1021"
+      }
+    },
+    {
+      "missingCapability": "latent:random/random@0.1.0",
+      "error": "permission-denied",
+      "outcomeKnown": true,
+      "processReaped": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1024"
+      }
+    }
+  ],
+  "providerIdleObservations": 18,
+  "physicalSamples": 36,
+  "nodeShutdown": {
+    "processId": 10010,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 848,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 6,
+          "jobs_completed": 6,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 1,
+          "completed": 1,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "peerShutdown": {
+    "requests": 8,
+    "authorized": 8,
+    "unexpected": 0,
+    "holds": 3,
+    "closedHolds": 3
+  },
+  "limits": {
+    "overallSeconds": 900,
+    "invocationMillis": 120000,
+    "controlMillis": 15000,
+    "controlProcessSeconds": 25,
+    "peerSeconds": 900
+  },
+  "failureHistory": [
+    {
+      "run": 39343413251,
+      "cause": "Original ThreadPoolWorkQueue selector requires explicit RANDOM; first Task.Run trapped.",
+      "status": "failed"
+    },
+    {
+      "run": 39346280817,
+      "cause": "Six task cases passed, then TimerQueue static initialization required explicit WALL.",
+      "status": "failed"
+    }
+  ],
+  "qualificationLimits": {
+    "fullTicketQualification": false,
+    "cpuPreemptionQualified": false,
+    "monitorWaitQualified": false,
+    "threadLocalLogicalIsolationQualified": false,
+    "transactionalReplayQualified": false,
+    "currentHeadNormalNativeQualificationClaimed": false,
+    "productionGrantsInstalled": false
+  }
+}
