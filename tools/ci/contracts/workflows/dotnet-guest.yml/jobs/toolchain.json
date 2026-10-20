@@ -214,6 +214,20 @@
         "run": "python3 tools/qualify_dotnet_task_runtime.py --output \"$RUNNER_TEMP/dotnet-task-runtime\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --native-qualification \"$RUNNER_TEMP/dotnet-capsule-authoring\""
       },
       {
+        "name": "Export exact normal public products for the separate published task programme",
+        "run": "python3 tools/qualify_sdk_scratch.py --export-bundle --language dotnet --native-qualification \"$RUNNER_TEMP/dotnet-capsule-authoring\" --output \"$RUNNER_TEMP/dotnet-published-prepared\""
+      },
+      {
+        "name": "Retain identity-checked normal task prerequisites",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "dotnet-published-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-published-prepared/",
+          "retention-days": 3
+        }
+      },
+      {
         "if": "always()",
         "name": "Retain output and failed attempts",
         "uses": "actions/upload-artifact",
@@ -243,7 +257,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Preserve every original75-minute parent step and workflow property; add public normal-bundle export and separate20-minute ordinary.NET scratch child without native host rebuild, filesystem or entropy grants.",
+  "reviewReason": "Compose the unchanged normal parent and both separately budgeted published and scratch children without removing commands",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
