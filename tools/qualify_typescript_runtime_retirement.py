@@ -46,12 +46,27 @@ def test_command():
             CASE, '--', '--ignored', '--exact', '--show-output', '--test-threads=1']
 
 
+def registry_filtered():
+    suites = read_json(ROOT/'tools/ci/suites.json')['suites']
+    rows = [row for row in suites if row['id'] == 'latent-wasmtime.test.local-service']
+    require(len(rows) == 1, 'typescript-retirement-one-registered-target')
+    row = rows[0]
+    cases = row['expectedCases']
+    require(type(cases) is list and len(cases) == len(set(cases)) == row['minimumCases']
+            and CASE in cases and CASE in row['expectedIgnored'] and row['target'] == 'local_service',
+            'typescript-retirement-exact-registered-cases')
+    return len(cases)-1
+
+
 def observation(raw):
     require(type(raw) is bytes and 0 < len(raw) <= 4*1024**2, 'typescript-retirement-output-bound')
     text = raw.decode('utf-8', errors='strict')
-    require(f'test {CASE} ... ok' in text
-            and re.search(r'^test result: ok\. 1 passed; 0 failed; 0 ignored;', text, re.MULTILINE),
-            'typescript-retirement-one-exact-native-case')
+    names = re.findall(r'^test (\S+) \.\.\. ([^\r\n]+)\r?$', text, re.MULTILINE)
+    require(names == [(CASE, 'ok')], 'typescript-retirement-one-exact-native-case')
+    summaries = [line for line in text.splitlines() if line.startswith('test result:')]
+    require(len(summaries) == 1 and re.fullmatch(
+        rf'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; {registry_filtered()} filtered out; finished in [0-9]+\.[0-9]+s',
+        summaries[0]), 'typescript-retirement-exact-native-totals')
     lines = [line.removeprefix('TYPESCRIPT_RETIREMENT ') for line in text.splitlines()
              if line.startswith('TYPESCRIPT_RETIREMENT ')]
     require(len(lines) == 1 and len(lines[0]) <= 65536, 'typescript-retirement-one-bounded-observation')

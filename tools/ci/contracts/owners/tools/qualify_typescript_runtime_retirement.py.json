@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_runtime_retirement.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review one bounded exact native case driver; original scalar source/engine/native compiler ancestry and current target source remain distinct, no public errors or guest limits changed.",
+  "reviewReason": "Require exactly the anchored selected libtest name and complete registry-bound totals; reject duplicate/spoofed cases and partial totals. Native component/test inputs unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dc8a6de3f87ec8c2772c8fbf54f1ac7d05146a596af2ebc57cd1b4c127712baa"
+  "sha256": "e42d3f81e652e0a9f91d5723ef689b953ac618dbb95ecb2171d53efb0f8bfe47"
 }

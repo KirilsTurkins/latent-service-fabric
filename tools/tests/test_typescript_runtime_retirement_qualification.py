@@ -25,7 +25,7 @@ def document():
 
 def encoded(value):
     return (f'test {gate.CASE} ... ok\n\nTYPESCRIPT_RETIREMENT '+json.dumps(value)+
-            '\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 456 filtered out;\n').encode()
+            f'\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; {gate.registry_filtered()} filtered out; finished in 0.01s\n').encode()
 
 
 class RetirementQualification(unittest.TestCase):
@@ -47,7 +47,13 @@ class RetirementQualification(unittest.TestCase):
         for raw in (encoded(value).replace(b'1 passed', b'0 passed'),
                     encoded(value).replace(b'0 ignored', b'1 ignored'),
                     encoded(value)+b'TYPESCRIPT_RETIREMENT {}\n',
-                    encoded(value).replace(f'test {gate.CASE} ... ok'.encode(), b'test another ... ok')):
+                    encoded(value).replace(f'test {gate.CASE} ... ok'.encode(), b'test another ... ok'),
+                    encoded(value).replace(f'test {gate.CASE} ... ok'.encode(), f'test prefix::{gate.CASE} ... ok'.encode()),
+                    encoded(value)+f'test {gate.CASE} ... ok\n'.encode(),
+                    encoded(value)+b'test another ... ok\n',
+                    encoded(value).replace(b'0 measured', b'1 measured'),
+                    encoded(value).replace(f'{gate.registry_filtered()} filtered'.encode(), b'999 filtered'),
+                    encoded(value)+b'test result: ok. 0 passed; 0 failed; 0 ignored;\n'):
             with self.subTest(output=raw[:50]), self.assertRaises(RuntimeError): gate.observation(raw)
 
     def test_unretired_boolean_or_unavailable_owner_and_unobserved_pending_are_refused(self):
