@@ -231,9 +231,7 @@ impl ProviderRuntime {
                 .map_err(|_| unavailable())?;
                 providers.push(owner.record(&http.identity, provider.reference()));
                 if http.phase_timing {
-                    owner
-                        .runtime
-                        .install_phase_http(Arc::new(provider))?;
+                    owner.runtime.install_phase_http(Arc::new(provider))?;
                 } else {
                     owner.runtime.install_streaming_http(Arc::new(provider))?;
                 }
