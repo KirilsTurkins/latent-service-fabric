@@ -232,7 +232,7 @@ def qualify(language, output, native_qualification, *, native_directory=None, to
         node = run(binaries['latent'], binaries['latentd'], output/'signed', output/'node',
             language=language, standard_scratch_refusal=True)
         require(node['status'] == 'passed' and node['standardScratchRefusal']['status'] == 'passed'
-                and len(node['invocations']) == inherited['originalInvocations']+6+(6 if language == 'dotnet' else 0)
+                and len(node['invocations']) == inherited['originalInvocations']+6+(6 if language in {'dotnet', 'java'} else 0)
                 and len(node['standardScratchRefusal']['cases']) == 3
                 and node['nodeShutdown']['reaped'] and node['nodeShutdown']['record']['clean'],
                 'scratch-original-and-six-new-signed-outcomes-required')

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_sdk_scratch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed additive .NET filesystem qualification: keep original six calls, all other languages, normal75min parent and20min scratch child; add six precise argument cases and explicit joined-CoreLib phase without filesystem grants or native host build.",
+  "reviewReason": "Preserve exact .NET and Java six-argument campaigns, original generic six calls and language-specific inherited normal counts; retain Go52-only classification and no provider changes",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4b85d9d3132564f26ee6c80097742c802f0340b9079fcb282ad5e452a53c3b69"
+  "sha256": "1b5729e914f6050c4c219b11a85883f7ee201ff5061a428e7a36a8a014c8c3d6"
 }
