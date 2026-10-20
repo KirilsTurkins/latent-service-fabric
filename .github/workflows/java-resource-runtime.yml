@@ -14,6 +14,11 @@ on:
       - 'tools/tests/test_java_joined*.py'
       - '.github/workflows/java-resource-runtime.yml'
   workflow_dispatch:
+    inputs:
+      replay_retained_component:
+        description: Re-sign the authenticated original c277 Java component without compiling again
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,7 +30,7 @@ concurrency:
 
 jobs:
   joined-facilities:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/feat/java-resource-runtime-20261020') || github.head_ref == 'feat/java-resource-runtime-20261020' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.replay_retained_component) || (github.event_name == 'push' && github.ref == 'refs/heads/feat/java-resource-runtime-20261020') || github.head_ref == 'feat/java-resource-runtime-20261020' }}
     name: Fresh Java resources across ordinary timer callbacks and two tenants
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -100,3 +105,60 @@ jobs:
             ${{ runner.temp }}/java-resource-runtime/node/foreign-controls/*.json
             ${{ runner.temp }}/java-resource-runtime/node/signed/my-greeting/build-observation.json
             ${{ runner.temp }}/java-resource-runtime/node/signed/release-set.json
+
+  retained-component:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay_retained_component }}
+    name: Sign unchanged Java component and execute the original joined programme
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch exact original Java compiler and native observer sources
+        run: |
+          git fetch --no-tags --depth=1 origin c27764d83e1be8b34cfe7351a30d221dec3a6dc8
+          git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
+      - name: Check public-output, retained-build and pending-owner refusal controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_joined_resources tools.tests.test_java_joined_runtime tools.tests.test_java_joined_owners tools.tests.test_java_resource_replay tools.tests.test_sdk_native_products_reader -v
+      - name: Authenticate the same five retained native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/java-resource-native"
+      - name: Restore only the immutable original public Java build artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: java-resource-runtime-c27764d83e1be8b34cfe7351a30d221dec3a6dc8
+          run-id: 39467964642
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/java-resource-original
+      - name: Authenticate all original members and run only fresh signing and joined cases
+        run: |
+          python3 -B tools/replay_java_resource_runtime.py \
+            --native "$RUNNER_TEMP/java-resource-native" \
+            --retained "$RUNNER_TEMP/java-resource-original" \
+            --output "$RUNNER_TEMP/java-resource-replay"
+      - name: Retain bounded public original identities and fresh node results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-resource-runtime-replay-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/java-resource-native/*.json
+            ${{ runner.temp }}/java-resource-original/java-resource-runtime/FAILED.json
+            ${{ runner.temp }}/java-resource-original/java-resource-runtime/build/**
+            ${{ runner.temp }}/java-resource-replay/*.json
+            ${{ runner.temp }}/java-resource-replay/node/*.json
+            ${{ runner.temp }}/java-resource-replay/node/node-stderr.txt
+            ${{ runner.temp }}/java-resource-replay/node/commands/logs/**
+            ${{ runner.temp }}/java-resource-replay/node/examples-controls/*.json
+            ${{ runner.temp }}/java-resource-replay/node/foreign-controls/*.json
+            ${{ runner.temp }}/java-resource-replay/node/signed/my-greeting/build-observation.json
+            ${{ runner.temp }}/java-resource-replay/node/signed/release-set.json

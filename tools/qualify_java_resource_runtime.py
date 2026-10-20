@@ -18,6 +18,7 @@ from tools.build_observation import build_environment
 from tools.build_process_signals import owned_cancellation
 from tools.java_capsule_build import FIBER_IO_PROFILE, RECIPE, build
 from tools.java_guest.resources import PROFILE as RESOURCE_PROFILE
+from tools.java_guest import coroutine_patch
 from tools.java_standard_http_library import compiler_cache
 from tools.phase2_operator_process import require,stopped_record
 from tools.phase2_operator_scenario import connect,stop
@@ -46,7 +47,7 @@ MATERIALS=tuple(sorted(set((*fixture.MATERIALS,*RECIPE,
 
 def build_evidence(artifact):
     names=('BUILD-COMPLETE.json','build-observation.json','source-inputs.json','recipe-inputs.json',
-        'package-inputs.json','runtime-profile.json','source-origins.json','coroutine-compiler-profile.json',
+        'package-inputs.json','runtime-profile.json','source-origins.json','coroutine-compiler-preparation.json',
         'java-classpath.json','application-dependencies.json','bindings.json')
     identities={name:file_identity(artifact/name,32*1024**2) for name in names}
     component=file_identity(artifact/'component.wasm',64*1024**2)
@@ -63,6 +64,16 @@ def build_evidence(artifact):
         and profile['profile']==FIBER_IO_PROFILE
         and {'dev.latent.app.Capsule','outside.resourceruntime.Library','outside.resourceruntimedata.Data'}
             <=set(profile['checkpointClasses']), 'resource-java-original-compiler-and-library-checkpoints')
+    # The maintained builder retains this public preparation receipt; the
+    # loader's private coroutine-compiler-profile.json is not a package output.
+    prepared=read_json(artifact/'coroutine-compiler-preparation.json')
+    require(prepared['schemaVersion']=='latent.java.coroutine-compiler-patch.v1'
+        and prepared['upstreamSourceSha256']==coroutine_patch.UPSTREAM_SHA256
+        and prepared['originalInputsUnchanged'] is True
+        and prepared['realCorrectedIrInputsPreserved'] is True
+        and prepared['realOriginalIrDefectObserved'] is True
+        and set(prepared['replacedClasses'])==coroutine_patch.PATCH_CLASSES,
+        'resource-java-original-public-coroutine-preparation')
     for name,filename in (('build-recipe','recipe-inputs.json'),('package-inputs','package-inputs.json'),
         ('java-runtime-profile','runtime-profile.json'),('java-source-origins','source-origins.json'),
         ('application-dependency-closure','application-dependencies.json'),('java-classpath-selection','java-classpath.json')):

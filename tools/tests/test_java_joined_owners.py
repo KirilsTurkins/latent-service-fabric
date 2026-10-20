@@ -110,7 +110,10 @@ class JavaJoinedOwners(unittest.TestCase):
     @staticmethod
     def build(directory):
         docs={'source-inputs.json':{},'recipe-inputs.json':{},'package-inputs.json':{},'source-origins.json':{},
-            'coroutine-compiler-profile.json':{},'application-dependencies.json':{},'java-classpath.json':{},
+            'coroutine-compiler-preparation.json':{'schemaVersion':'latent.java.coroutine-compiler-patch.v1',
+                'upstreamSourceSha256':qualification.coroutine_patch.UPSTREAM_SHA256,'originalInputsUnchanged':True,
+                'realCorrectedIrInputsPreserved':True,'realOriginalIrDefectObserved':True,
+                'replacedClasses':dict.fromkeys(qualification.coroutine_patch.PATCH_CLASSES,{})},'application-dependencies.json':{},'java-classpath.json':{},
             'runtime-profile.json':{'profile':qualification.FIBER_IO_PROFILE,'checkpointClasses':[
                 'dev.latent.app.Capsule','outside.resourceruntime.Library','outside.resourceruntimedata.Data']},
             'bindings.json':{'immutableResources':{'profile':qualification.RESOURCE_PROFILE,
@@ -133,6 +136,7 @@ class JavaJoinedOwners(unittest.TestCase):
     def test_rehashed_profile_checkpoint_and_resource_substitution_cannot_borrow_observed_build(self):
         with tempfile.TemporaryDirectory() as temporary,patch.object(qualification,'package_identity',return_value={}):
             directory=Path(temporary);self.build(directory)
+            self.assertFalse((directory/'coroutine-compiler-profile.json').exists())
             self.assertEqual(qualification.build_evidence(directory)['package'],{})
             for change in ('profile','checkpoint','resource'):
                 self.build(directory)

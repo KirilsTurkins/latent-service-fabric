@@ -51,3 +51,21 @@ no successful Java joined-runtime receipt is currently claimed.
 No native-thread support, complete Java scheduler acceptance, asynchronous
 console-flush delivery, late-callback proof or complete #681/#741 qualification
 is claimed. The ordinary Java SDK and existing signed programmes remain intact.
+
+
+The first owning c277 job genuinely completed the fresh normal FIO component
+(`1569a4ce8a15e61601b458f11dd1c332085f28db1f85954b9a000a6044946d8f`,
+1,898,554 bytes; 42.2451 seconds), then failed before node execution because the
+reader requested a private coroutine workspace file. The maintained builder
+publishes `coroutine-compiler-preparation.json`; the corrected reader verifies
+that public receipt and never invents the absent private file.
+
+The opt-in retained-component replay authenticates the exact failed job/artifact
+and all 105 immutable public member preimages. It restores only eight original
+raw WIT/resource files from their authenticated package layers, leaving every
+original marker/observation byte unchanged. All 98 original Git materials are
+checked; only the current receipt reader and workflow can differ. Current
+helper/fixture/native identities are rechecked after fresh normal signing and
+the unchanged 13-outcome node programme. No Java compiler, JDK, NativeAOT, host
+or engine build runs in this 20-minute replay. The earlier owning failure stays
+failed; no successful joined runtime outcome is claimed until that replay passes.
