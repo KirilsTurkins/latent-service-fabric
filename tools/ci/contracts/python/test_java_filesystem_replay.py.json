@@ -13,7 +13,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "module:setup-sha256:4e01a5caa4338a5997860876eb209df1992fe0f9182c5aa1d6307c44c8697513",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -25,7 +25,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "module:setup-sha256:4e01a5caa4338a5997860876eb209df1992fe0f9182c5aa1d6307c44c8697513",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -37,7 +37,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "module:setup-sha256:4e01a5caa4338a5997860876eb209df1992fe0f9182c5aa1d6307c44c8697513",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -49,7 +49,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:b7885954e3e3a0917674a0aec2f030ea61d9c7b32227e0ad4a5c3d28333eaf87",
+        "module:setup-sha256:4e01a5caa4338a5997860876eb209df1992fe0f9182c5aa1d6307c44c8697513",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -57,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_filesystem_replay.py",
-  "reviewReason": "Retain all four cases and strengthen shallow-checkout fetch-before-projection ordering",
+  "reviewReason": "All four original case IDs, decorators and skip sites retained. Explicitly reviewed fixture41/38 correction and five new named-memory-pair mutation controls; no removed acceptance or skip.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

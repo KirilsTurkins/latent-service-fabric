@@ -71,7 +71,7 @@
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Compile five fresh Java components sign admit and require all39 outcomes",
+        "name": "Compile five fresh Java components sign admit and require all41 outcomes",
         "run": "python3 tools/replay_java_closed_filesystem.py --prepared \"$RUNNER_TEMP/java-filesystem-prepared\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/java-filesystem-replay\""
       },
       {
@@ -90,7 +90,7 @@
   },
   "jobId": "closed-filesystem-reference",
   "kind": "job",
-  "reviewReason": "Fetch the exact already-required production and historical revisions before shallow-checkout source projection controls; no native command, budget, source preimage or original job change",
+  "reviewReason": "Only diagnostic step label39 to41 changes; every command/limit is byte-identical. Actual Java original baseline has29 including the separate4MiB host-memory/fresh pair, plus12 scratch cases.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

@@ -28,7 +28,7 @@ on:
         type: boolean
         default: false
       replay-closed-filesystem:
-        description: Fresh five Java components and39 signed filesystem outcomes using exact retained native products
+        description: Fresh five Java components and41 signed filesystem outcomes using exact retained native products
         type: boolean
         default: false
 
@@ -797,7 +797,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: python3 tools/replay_java_closed_filesystem.py --prepare --output "$RUNNER_TEMP/java-filesystem-prepared"
-    - name: Compile five fresh Java components sign admit and require all39 outcomes
+    - name: Compile five fresh Java components sign admit and require all41 outcomes
       env:
         GH_TOKEN: ${{ github.token }}
       run: python3 tools/replay_java_closed_filesystem.py --prepared "$RUNNER_TEMP/java-filesystem-prepared" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"

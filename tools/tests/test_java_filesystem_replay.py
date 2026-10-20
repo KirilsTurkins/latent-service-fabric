@@ -1,4 +1,4 @@
-"""Private retained-native adapter must prove current five components and39 cases."""
+"""Private adapter proves41 cases, including Java's original host-memory pair."""
 import copy
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,11 +13,12 @@ from tools.rust_capsule_project import inventory, snapshot, write_json
 
 
 def observed_node():
-    return {'status': 'passed', 'invocations': [{'processReaped': True,
-        'response': {'outcomeKnown': True}} for _ in range(39)],
+    value = {'status': 'passed', 'invocations': [{'processReaped': True,
+        'response': {'outcomeKnown': True}} for _ in range(41)],
         'nodeShutdown': {'reaped': True, 'record': {'clean': True}},
         'providerIdle': [{'unavailable': [], 'counters': {name: '0' for name in ACTIVE_COUNTERS}}
-                         for _ in range(18)], 'samples': [{} for _ in range(36)],
+                         for _ in range(18)], 'samples': [{'phase': 'ordinary'} for _ in range(36)]+
+                             [{'phase': 'after-host-memory'}, {'phase': 'after-host-memory-fresh'}],
         'standardScratchRefusal': {'status': 'passed', 'language': 'java', 'cases': [
             {'mode': mode, 'observation': {'unsupported': True},
              'invocation': {'decoded': [{'ok': 'scratch|java|unsupported-operation|fresh=1'}]}}
@@ -25,6 +26,11 @@ def observed_node():
         'javaFilesystemArguments': {'status': 'passed', 'cases': [
             {'mode': mode, 'category': category, 'invocation': {'decoded': [{'ok': 'scratch|java|' + category + '|fresh=1'}]}}
             for mode, category in replay.JAVA_ARGUMENTS.items()]}}
+    value['invocations'][-2].update(activation='authoring-host-memory', exitCode=4,
+        response={'outcomeKnown': True, 'error': {'code': 'resource-exhausted'},
+                  'data': {'consumption': {'peakMemoryBytes': '0'}}})
+    value['invocations'][-1].update(activation='authoring-after-host-memory', exitCode=0, decoded=[1])
+    return value
 
 
 class JavaFilesystemReplay(unittest.TestCase):
@@ -34,7 +40,7 @@ class JavaFilesystemReplay(unittest.TestCase):
             ['git', 'show', replay.PRODUCTION + ':' + source], cwd=replay.ROOT, timeout=30).decode())
         actual = workflow_model((replay.ROOT / source).read_bytes().decode())
         self.assertEqual(actual['on']['workflow_dispatch']['inputs']['replay-closed-filesystem'], {
-            'description': 'Fresh five Java components and39 signed filesystem outcomes using exact retained native products',
+            'description': 'Fresh five Java components and41 signed filesystem outcomes using exact retained native products',
             'type': 'boolean', 'default': False})
         for name in original['jobs']:
             before, after = copy.deepcopy(original['jobs'][name]), copy.deepcopy(actual['jobs'][name])
@@ -71,7 +77,7 @@ class JavaFilesystemReplay(unittest.TestCase):
                 replay.production_inputs()
 
     def test_exact39_requires_three_unsupported_six_original_errors_and_every_owner_retired(self):
-        self.assertEqual(replay.node_observation(observed_node())['invocations'], 39)
+        self.assertEqual(replay.node_observation(observed_node())['invocations'], 41)
         changes = (
             lambda row: row['invocations'].pop(),
             lambda row: row['invocations'][0].update(processReaped=False),
@@ -81,6 +87,11 @@ class JavaFilesystemReplay(unittest.TestCase):
             lambda row: row['providerIdle'].pop(),
             lambda row: row['providerIdle'][0]['counters'].update({ACTIVE_COUNTERS[0]: '1'}),
             lambda row: row['nodeShutdown']['record'].update(clean=False),
+            lambda row: row['invocations'][-2].update(activation='unrelated-call'),
+            lambda row: row['invocations'][-2]['response']['error'].update(code='guest-trap'),
+            lambda row: row['invocations'][-2]['response']['data']['consumption'].update(peakMemoryBytes='4194305'),
+            lambda row: row['invocations'][-1].update(decoded=[2]),
+            lambda row: row['samples'][-1].update(phase='after-host-memory'),
         )
         for change in changes:
             row = observed_node(); change(row)
@@ -114,7 +125,7 @@ class JavaFilesystemReplay(unittest.TestCase):
             self.assertEqual([app.name for app, _ in built], list(replay.TEMPLATES))
             self.assertEqual(len(built), 5)
             self.assertEqual(signed.call_args.args[4:], tuple(path for _, path in built))
-            self.assertEqual(result['observation']['invocations'], 39)
+            self.assertEqual(result['observation']['invocations'], 41)
             self.assertFalse(result['inherited']['normalJavaReceiptFabricated'])
             self.assertFalse((root / 'observed/qualification.json').exists())
             self.assertTrue((root / 'observed/qualified.json').is_file())

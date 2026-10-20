@@ -63,10 +63,19 @@ def selected_products(prepared):
 
 def node_observation(node):
     from tools.rust_capsule_node import ACTIVE_COUNTERS
-    require(node['status'] == 'passed' and len(node['invocations']) == 39
+    require(node['status'] == 'passed' and len(node['invocations']) == 41
         and all(row['processReaped'] and row['response']['outcomeKnown'] is True for row in node['invocations'])
         and node['nodeShutdown']['reaped'] and node['nodeShutdown']['record']['clean'],
-        'java-filesystem-original27-and12-known-reaped-required')
+        'java-filesystem-original29-and12-known-reaped-required')
+    memory = [row for row in node['invocations'] if row.get('activation') == 'authoring-host-memory']
+    fresh = [row for row in node['invocations'] if row.get('activation') == 'authoring-after-host-memory']
+    require(len(memory) == len(fresh) == 1 and memory[0]['exitCode'] == 4
+        and memory[0]['response']['error']['code'] == 'resource-exhausted'
+        and int(memory[0]['response']['data']['consumption']['peakMemoryBytes']) <= 4*1024**2
+        and fresh[0]['exitCode'] == 0 and fresh[0]['decoded'] == [1]
+        and [row['phase'] for row in node['samples']].count('after-host-memory') == 1
+        and [row['phase'] for row in node['samples']].count('after-host-memory-fresh') == 1,
+        'java-filesystem-original-host-memory-and-fresh-controls-required')
     scratch = node['standardScratchRefusal']
     require(scratch['status'] == 'passed' and scratch['language'] == 'java'
         and [row['mode'] for row in scratch['cases']] == ['open', 'create', 'temp']
@@ -78,13 +87,13 @@ def node_observation(node):
         == list(JAVA_ARGUMENTS.items()) and all(row['invocation']['decoded'] ==
             [{'ok': 'scratch|java|' + row['category'] + '|fresh=1'}] for row in arguments['cases']),
         'java-filesystem-six-preserved-argument-errors-required')
-    require(len(node['providerIdle']) == 18 and len(node['samples']) == 36,
+    require(len(node['providerIdle']) == 18 and len(node['samples']) == 38,
         'java-filesystem-original-and-all-new-retirement-samples-required')
     require(all(not row['unavailable'] and all(name in row['counters'] and int(row['counters'][name]) == 0
         for name in ACTIVE_COUNTERS) for row in node['providerIdle']), 'java-filesystem-provider-owners-not-retired')
-    return {'invocations': 39, 'originalProgrammeInvocations': 27,
+    return {'invocations': 41, 'originalProgrammeInvocations': 29,
         'filesystemAndArgumentCalls': 12, 'caughtUnsupported': 3, 'preservedArgumentErrors': 6,
-        'providerIdleSamples': 18, 'physicalSamples': 36, 'cleanReapedShutdown': True}
+        'providerIdleSamples': 18, 'physicalSamples': 38, 'originalHostMemoryPair': True, 'cleanReapedShutdown': True}
 
 
 def qualify(output, prepared, wasi_sdk):
@@ -127,7 +136,7 @@ def qualify(output, prepared, wasi_sdk):
                             command_seconds=60)
         commands.run('filesystem-demo-sign', binaries['examples/capsule_authoring'], 'demo-sign',
             output / 'signed', *(builds[name] for name in TEMPLATES))
-        stage = 'actual39-signed-admitted-outcomes'
+        stage = 'actual41-signed-admitted-outcomes'
         node = run(binaries['latent'], binaries['latentd'], output / 'signed', output / 'node',
                    language='java', standard_scratch_refusal=True)
         record['observation'] = node_observation(node)
