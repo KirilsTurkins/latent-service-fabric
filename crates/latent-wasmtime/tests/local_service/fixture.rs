@@ -639,6 +639,9 @@ impl Fixture {
         store.apply(target.clone()).await.unwrap();
         if let Some(other) = &additional_runtime_tenant {
             let mut other_consumer = consumer.clone();
+            // Deployment IDs are global; tenant-scoped services still need distinct objects.
+            other_consumer.id = DeploymentId(format!("caller-{}", other.0));
+            other_consumer.metadata.name = other_consumer.id.0.clone();
             other_consumer.metadata.tenant = Some(other.clone());
             other_consumer.publication = Some(
                 latent_artifacts::PublicationRef::package(
