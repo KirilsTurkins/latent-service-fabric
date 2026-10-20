@@ -24,13 +24,34 @@ const OPS: [&str; 8] = [
 pub fn bytes(url: &str) -> Vec<u8> {
     let mut component = Component::new();
     let spec = latent_core::PHASE3_HOST_ABI_V7.interface(CAP).unwrap();
+    let original = "latent:http/streaming@0.3.0";
+    let resources = ["upload", "body", "chunk"];
+    let mut owner = InstanceType::new();
+    for name in resources {
+        owner.export(name, ComponentTypeRef::Type(TypeBounds::SubResource));
+    }
     let mut types = ComponentTypeSection::new();
-    types.instance(&host::interface_with_dependencies(
+    types.instance(&owner); // type 0: original resource owner only, no operations.
+    component.section(&types);
+    let mut imports = ComponentImportSection::new();
+    imports.import(original, ComponentTypeRef::Instance(0));
+    component.section(&imports);
+    let mut aliases = ComponentAliasSection::new();
+    for name in resources {
+        aliases.alias(Alias::InstanceExport {
+            instance: 0,
+            kind: ComponentExportKind::Type,
+            name,
+        });
+    }
+    component.section(&aliases); // actual shared resource types 1..=3.
+    let mut types = ComponentTypeSection::new();
+    types.instance(&host::interface_with_resource_aliases(
         &[
             (
                 "old-http.wit",
                 latent_core::PHASE3_HOST_ABI_V3
-                    .interface("latent:http/streaming@0.3.0")
+                    .interface(original)
                     .unwrap()
                     .wit,
             ),
@@ -38,27 +59,32 @@ pub fn bytes(url: &str) -> Vec<u8> {
         ],
         spec.interface,
         None,
-    ));
+        &[
+            (original, "upload", 1),
+            (original, "body", 2),
+            (original, "chunk", 3),
+        ],
+    )); // type 4: selected phase interface, sharing the original resource types.
     types
         .function()
         .async_(true)
         .params([("which", PrimitiveValType::U32)])
-        .result(Some(PrimitiveValType::U32.into()));
+        .result(Some(PrimitiveValType::U32.into())); // type 5.
     component.section(&types);
     let mut imports = ComponentImportSection::new();
-    imports.import(CAP, ComponentTypeRef::Instance(0));
+    imports.import(CAP, ComponentTypeRef::Instance(4));
     component.section(&imports);
     let mut aliases = ComponentAliasSection::new();
     for name in OPS {
         aliases.alias(Alias::InstanceExport {
-            instance: 0,
+            instance: 1,
             kind: ComponentExportKind::Func,
             name,
         });
     }
     for name in ["upload", "body", "chunk"] {
         aliases.alias(Alias::InstanceExport {
-            instance: 0,
+            instance: 1,
             kind: ComponentExportKind::Type,
             name,
         });
@@ -91,7 +117,7 @@ pub fn bytes(url: &str) -> Vec<u8> {
             ],
         );
     }
-    for resource in 2..5 {
+    for resource in 6..9 {
         canonical.resource_drop(resource);
     }
     canonical.waitable_set_new();
@@ -133,13 +159,13 @@ pub fn bytes(url: &str) -> Vec<u8> {
     });
     component.section(&aliases);
     let mut canonical = CanonicalFunctionSection::new();
-    canonical.lift(17, 1, []);
+    canonical.lift(17, 5, []);
     component.section(&canonical);
     let mut instances = ComponentInstanceSection::new();
     instances.export_items([("run", ComponentExportKind::Func, 8)]);
     component.section(&instances);
     let mut exports = ComponentExportSection::new();
-    exports.export(CONTRACT, ComponentExportKind::Instance, 1, None);
+    exports.export(CONTRACT, ComponentExportKind::Instance, 2, None);
     component.section(&exports);
     component.finish()
 }

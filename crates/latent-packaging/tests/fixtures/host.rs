@@ -4,7 +4,8 @@
 
 use std::collections::BTreeMap;
 use wasm_encoder::{
-    ComponentTypeRef, ComponentValType as Value, InstanceType, PrimitiveValType as P, TypeBounds,
+    Alias, ComponentOuterAliasKind, ComponentTypeRef, ComponentValType as Value, InstanceType,
+    PrimitiveValType as P, TypeBounds,
 };
 use wit_parser::{FunctionKind, Resolve, Type, TypeDefKind, TypeId};
 
@@ -24,6 +25,20 @@ pub fn interface_with_dependencies(
     encode_interface(&resolve, name, asynchronous)
 }
 
+/// Share actual outer resource identities instead of redefining foreign owners.
+pub fn interface_with_resource_aliases(
+    sources: &[(&str, &str)],
+    name: &str,
+    asynchronous: Option<bool>,
+    resources: &[(&str, &str, u32)],
+) -> InstanceType {
+    let mut resolve = Resolve::default();
+    for (path, source) in sources {
+        resolve.push_source(path, source).unwrap();
+    }
+    encode_with_resources(&resolve, name, asynchronous, resources)
+}
+
 /// Parse one exact committed package directory and its own declared WIT deps.
 /// This is an unexecuted type fixture, not an installed WASI implementation.
 pub fn interface_from_directory(
@@ -37,6 +52,15 @@ pub fn interface_from_directory(
 }
 
 fn encode_interface(resolve: &Resolve, name: &str, asynchronous: Option<bool>) -> InstanceType {
+    encode_with_resources(resolve, name, asynchronous, &[])
+}
+
+fn encode_with_resources(
+    resolve: &Resolve,
+    name: &str,
+    asynchronous: Option<bool>,
+    resources: &[(&str, &str, u32)],
+) -> InstanceType {
     let (_, interface) = resolve
         .interfaces
         .iter()
@@ -48,6 +72,25 @@ fn encode_interface(resolve: &Resolve, name: &str, asynchronous: Option<bool>) -
         types: BTreeMap::new(),
         names: BTreeMap::new(),
     };
+    for (owner, name, outer) in resources {
+        let (_, owner) = resolve
+            .interfaces
+            .iter()
+            .find(|(id, _)| resolve.id_of(*id).as_deref() == Some(*owner))
+            .unwrap();
+        let resource = owner.types[*name];
+        assert!(matches!(
+            resolve.types[resource].kind,
+            TypeDefKind::Resource
+        ));
+        let index = encoder.host.type_count();
+        encoder.host.alias(Alias::Outer {
+            kind: ComponentOuterAliasKind::Type,
+            count: 1,
+            index: *outer,
+        });
+        assert!(encoder.types.insert(resource, Value::Type(index)).is_none());
+    }
     for id in interface.types.values() {
         encoder.value(Type::Id(*id));
     }

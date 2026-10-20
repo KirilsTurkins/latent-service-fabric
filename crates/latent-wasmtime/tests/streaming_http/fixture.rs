@@ -184,6 +184,12 @@ impl Fixture {
                 contract: ContractId(capability.into()),
                 optional: false,
             });
+            if phase_timing {
+                artifact.manifest.imports.push(ContractImport {
+                    contract: ContractId(component::CAP.into()),
+                    optional: true,
+                });
+            }
             let release = artifact.descriptor.release_digest.clone();
             let receipt = catalog
                 .publish_managed(
