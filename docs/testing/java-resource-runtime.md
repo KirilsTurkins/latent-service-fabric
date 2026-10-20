@@ -16,14 +16,35 @@ declaration and operator grant. This fixture supplies no SDK executor, logger,
 entropy callback or manual task pump.
 
 The [ordinary JDK reference observation](evidence/java-resource-runtime-reference-2026-10-20.json)
-records three successful modes: two callbacks with retained streams, fresh
-resource state, and timer cancellation followed by a valid read. A separate
+records four successful modes: two callbacks with retained streams, fresh
+resource state, timer cancellation followed by a valid read, and an exact caught
+callback error followed by a fresh resource read. A separate
 normal local-JAR capture observed the actual nested TimerTask class files,
 exact parent/child edge and resource bytes, then removed the original inputs.
 The five focused source controls reject changed original source, foreign or
 missing classes, unbounded generated class sets and implicit budget changes.
-These are JDK/capture and source checks, not an emitted TeaVM component or
-signed/admitted runtime qualification. That owning programme remains pending.
+The new 30-minute owning job authenticates the separately compiled f919 native
+observer products, installs the existing pinned Java compiler tooling and
+compiles one fresh offline `teavm-activation-fibers-io-v1` component. It performs
+normal neutral-resource signing/admission for two tenants with explicit
+CLOCK/WALL/RANDOM/LOG/ACTIVATION authority. It does not rebuild the native host,
+engine or five-template SDK baseline.
+
+The pending programme has eleven joined calls and two missing-runtime denials.
+It includes overlapping callbacks, clear, a root trap, caught callback error,
+accepted-root timer cancellation/deadline and fresh same/foreign-tenant reads.
+An uncaught ordinary TimerTask exception is not asserted to trap the root;
+the caught case checks the exact exception class and resource recovery.
+Before cancellation/deadline, a fresh fixed native record must prove either
+accepted timer-to-`begin_wait`, or the original `wait-for` future returning
+`Poll::Pending`. All five physical guest owners and current provider charges
+remain mandatory. Audit loss/refusal is never positive barrier evidence.
+Original 8-task/2-executor/8-queue/16-wait/8-timer/8-result/8-native-owner limits,
+64 MiB memory, one-billion fuel and 256 log-byte budget remain unchanged.
+
+The JDK/capture/source checks are not emitted-component or signed/admitted
+qualification. The owning programme is newly queued only after publication;
+no successful Java joined-runtime receipt is currently claimed.
 
 No native-thread support, complete Java scheduler acceptance, asynchronous
 console-flush delivery, late-callback proof or complete #681/#741 qualification

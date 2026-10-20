@@ -105,25 +105,58 @@ public final class Library {
         return "resource-runtime|" + name + "=00ff80410d0a|empty=0|fresh=1";
     }
 
+    private static String callbackFailure(Data data) {
+        Shared state = new Shared();
+        boolean[] caught = {false};
+        Timer timer = new Timer("resource-failure", true);
+        timer.schedule(callback(state, () -> {
+            boolean armed = false;
+            try {
+                require(Data.read(data.first) == 0);
+                facilities("callback-error");
+                armed = true;
+                throw new IllegalStateException("resource-callback-error");
+            } catch (IllegalStateException error) {
+                require(armed && error.getClass() == IllegalStateException.class);
+                caught[0] = true;
+            } finally {
+                data.close();
+                timer.cancel();
+            }
+            synchronized (state) { state.completed++; state.notifyAll(); }
+        }), 1);
+        synchronized (state) {
+            while (state.completed != 1 && state.failure == null) waitOn(state);
+        }
+        require(state.failure == null && caught[0]);
+        try (Data fresh = new Data()) {
+            require(Data.read(fresh.first) == 0 && Data.read(fresh.second) == 0);
+            require(Data.read(fresh.first) == 255 && Data.read(fresh.second) == 255);
+            Data.remainder(fresh.first); Data.remainder(fresh.second); fresh.verifyEmpty();
+        }
+        return "resource-runtime|callback-error=IllegalStateException|fresh=1";
+    }
+
     public static String run(String mode) {
         require(++visits == 1);
         Data data = new Data();
-        if (mode.equals("pending") || mode.equals("callback-error")) {
+        if (mode.equals("pending")) {
             Timer timer = new Timer("resource-accepted", true);
             timer.schedule(new TimerTask() {
                 @Override public void run() {
                     try {
                         require(Data.read(data.first) == 0);
                         facilities("accepted");
-                        if (mode.equals("callback-error")) throw new IllegalStateException("resource-callback-error");
                     } finally { data.close(); timer.cancel(); }
                 }
-            }, mode.equals("pending") ? 60_000 : 1);
+            }, 60_000);
+            facilities("pending-accepted");
             return "resource-runtime|accepted-root-return";
         }
         try (data) {
             if (mode.equals("trap")) throw new IllegalStateException("resource-root-trap");
             if (mode.equals("parallel")) return parallel(data);
+            if (mode.equals("callback-error")) return callbackFailure(data);
             if (mode.equals("fresh")) return fresh(data, "fresh");
             if (mode.equals("clear")) {
                 boolean[] fired = {false};

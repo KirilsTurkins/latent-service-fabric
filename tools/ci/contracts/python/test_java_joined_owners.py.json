@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "JavaJoinedOwners.test_audit_loss_never_replaces_native_physical_or_provider_retention",
+    "JavaJoinedOwners.test_caught_callback_error_remains_a_success_value_and_root_trap_stays_terminal",
+    "JavaJoinedOwners.test_closed_native_reader_rejects_unknown_duplicate_overflow_and_foreign_profile_counts",
+    "JavaJoinedOwners.test_current_mode_cannot_borrow_the_other_public_activation_pending_event",
+    "JavaJoinedOwners.test_rehashed_profile_checkpoint_and_resource_substitution_cannot_borrow_observed_build",
+    "JavaJoinedOwners.test_stale_before_invocation_observation_is_refused_and_read_deadline_restored",
+    "JavaJoinedOwners.test_timer_and_fallback_wait_paths_require_actual_positive_host_wait_and_original_root"
+  ],
+  "guards": {
+    "JavaJoinedOwners.test_audit_loss_never_replaces_native_physical_or_provider_retention": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84",
+        "class:setup-sha256:d8f0e45acf4fb20752f015fbf1d87c7bfb5e8bd0a014065495fcac68b3fab28c"
+      ],
+      "skipSites": []
+    },
+    "JavaJoinedOwners.test_caught_callback_error_remains_a_success_value_and_root_trap_stays_terminal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84",
+        "class:setup-sha256:d8f0e45acf4fb20752f015fbf1d87c7bfb5e8bd0a014065495fcac68b3fab28c"
+      ],
+      "skipSites": []
+    },
+    "JavaJoinedOwners.test_closed_native_reader_rejects_unknown_duplicate_overflow_and_foreign_profile_counts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84",
+        "class:setup-sha256:d8f0e45acf4fb20752f015fbf1d87c7bfb5e8bd0a014065495fcac68b3fab28c"
+      ],
+      "skipSites": []
+    },
+    "JavaJoinedOwners.test_current_mode_cannot_borrow_the_other_public_activation_pending_event": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84",
+        "class:setup-sha256:d8f0e45acf4fb20752f015fbf1d87c7bfb5e8bd0a014065495fcac68b3fab28c"
+      ],
+      "skipSites": []
+    },
+    "JavaJoinedOwners.test_rehashed_profile_checkpoint_and_resource_substitution_cannot_borrow_observed_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84",
+        "class:setup-sha256:d8f0e45acf4fb20752f015fbf1d87c7bfb5e8bd0a014065495fcac68b3fab28c"
+      ],
+      "skipSites": []
+    },
+    "JavaJoinedOwners.test_stale_before_invocation_observation_is_refused_and_read_deadline_restored": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84",
+        "class:setup-sha256:d8f0e45acf4fb20752f015fbf1d87c7bfb5e8bd0a014065495fcac68b3fab28c"
+      ],
+      "skipSites": []
+    },
+    "JavaJoinedOwners.test_timer_and_fallback_wait_paths_require_actual_positive_host_wait_and_original_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84",
+        "class:setup-sha256:d8f0e45acf4fb20752f015fbf1d87c7bfb5e8bd0a014065495fcac68b3fab28c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_joined_owners.py",
+  "reviewReason": "Add original Java pending-owner, callback-error and rehashed build-source refusal controls; no old test/skip change",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

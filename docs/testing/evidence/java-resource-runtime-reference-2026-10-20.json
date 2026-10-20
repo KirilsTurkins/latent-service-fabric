@@ -1,11 +1,11 @@
 {
   "schemaVersion": "latent.java.resource-runtime.reference.v1",
   "status": "passed",
-  "javaVersion": "openjdk version \"25.0.3\" 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)",
+  "javaVersion": "openjdk version \"25.0.3\" 2026-04-21 LTS\r\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)\r\n",
   "sources": {
     "examples/java-resource-runtime/parent/Library.java": {
-      "sha256": "09a14bb62cd9ae041c5f1c6964a08c808bc70e6b91eefd80d9ad2e115c4e39ba",
-      "bytes": 5783
+      "sha256": "fbbc6d3f8121b067b0dcf2fcefc05e327049e240f2978311bef7ca1ba084db36",
+      "bytes": 7147
     },
     "examples/java-resource-runtime/child/Data.java": {
       "sha256": "c28d2ed9a2640ed0392140143e8fd3824e4d76eabf81840ef97551469452234c",
@@ -18,7 +18,6 @@
       "result": "resource-runtime|parallel=255:255|callbacks=2|fresh=1",
       "logLines": 2,
       "status": "passed",
-      "nativeAot": false,
       "componentModel": false
     },
     {
@@ -26,7 +25,6 @@
       "result": "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1",
       "logLines": 1,
       "status": "passed",
-      "nativeAot": false,
       "componentModel": false
     },
     {
@@ -34,45 +32,15 @@
       "result": "resource-runtime|clear=00ff80410d0a|empty=0|fresh=1",
       "logLines": 1,
       "status": "passed",
-      "nativeAot": false,
+      "componentModel": false
+    },
+    {
+      "mode": "callback-error",
+      "result": "resource-runtime|callback-error=IllegalStateException|fresh=1",
+      "logLines": 1,
+      "status": "passed",
       "componentModel": false
     }
   ],
-  "scope": "ordinary JDK reference only; not TeaVM, an emitted component, native host or signed execution",
-  "normalLocalJarCapture": {
-    "originalJars": {
-      "outside-resource-runtime-data/2026.10.20": {
-        "digest": "sha256:1130ef65ec7e7d1d73489a87b9e8a1fcec246e45ea55a0932f30f41297303772",
-        "size": 3019
-      },
-      "outside-resource-runtime/2026.10.20": {
-        "digest": "sha256:9b39c4fd7f716015273ee18b1f174b7793f17d296b3e2d784c092de46c459b98",
-        "size": 11048
-      }
-    },
-    "parent": "outside-resource-runtime/2026.10.20",
-    "child": "outside-resource-runtime-data/2026.10.20",
-    "capturedInputIdentity": "sha256:a8c8de7921aa0fbd33a96caab082a08bfd9bf6d5b3bdbdd8977f6fa5924a4866",
-    "resources": {
-      "outside/resourceruntimedata/utf8.txt": {
-        "digest": "sha256:bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd",
-        "size": 12
-      },
-      "outside/resourceruntimedata/binary.bin": {
-        "digest": "sha256:1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b",
-        "size": 6
-      },
-      "outside/resourceruntimedata/empty.bin": {
-        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "size": 0
-      }
-    },
-    "originalInputsRemoved": true,
-    "applicationSchedulerInjected": false,
-    "applicationTransportInjected": false,
-    "catalogueRegistration": false
-  },
-  "sourceControls": 5,
-  "signedGuestExecution": "pending",
-  "fullTicketQualification": false
+  "scope": "ordinary JDK only; not TeaVM, native host or signed execution"
 }

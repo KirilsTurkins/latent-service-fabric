@@ -1,0 +1,44 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-resource-runtime-${{ github.ref }}"
+    },
+    "name": "Java joined resources and standard facilities",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          "examples/java-resource-runtime/**",
+          "tools/java_resource_runtime_*.py",
+          "tools/java_resource_timer_observer.py",
+          "tools/qualify_java_resource_runtime.py",
+          "tools/tests/test_java_joined*.py",
+          ".github/workflows/java-resource-runtime.yml"
+        ]
+      },
+      "push": {
+        "branches": [
+          "feat/java-resource-runtime-20261020"
+        ],
+        "paths": [
+          ".github/workflows/java-resource-runtime.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "joined-facilities"
+  ],
+  "reviewReason": "Add one bounded exact-branch qualification trigger without changing existing jobs or caps",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-resource-runtime.yml"
+}
