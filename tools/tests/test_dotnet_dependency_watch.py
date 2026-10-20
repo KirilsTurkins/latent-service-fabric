@@ -560,3 +560,57 @@ class PublicBuildFailureMetadata(unittest.TestCase):
                                  side_effect=programme._ProjectionRefusal(phase, refusal)):
                 public = {'passed': False};programme.add_public_build_failure(public, Path('not-read'))
                 self.assertEqual(public['buildFailureMetadata'], {'qualification': False, 'status': 'unavailable'})
+
+
+class OptionalAdapterFailureIsolation(unittest.TestCase):
+    def test_empty_malformed_and_bounded_invalid_adapter_keep_authenticated_failure(self):
+        from tools.qualify_dotnet_dependency_watch import collect_build_failure_metadata
+        from tools.dev_workflow.common import encode
+        for raw, refusal in ((b'', 'bound'), (b'{', 'schema'),
+                (b'{"code":1,"code":2}', 'schema'), (b'{"seconds":NaN}', 'schema'),
+                (b' ' * 262145, 'bound'),
+                (encode([None] * 32769), 'bound')):
+            with self.subTest(bytes=len(raw)), tempfile.TemporaryDirectory() as temporary:
+                workspace, attempt, failure, adapter = PublicBuildFailureMetadata().owned(Path(temporary).resolve())
+                adapter.write_bytes(raw)
+                value = collect_build_failure_metadata(workspace)
+                self.assertEqual(value['state'], 'uncertain')
+                self.assertEqual(value['reasonCode'], 'guest-build-cleanup-unconfirmed')
+                row = value['attempts'][0]
+                self.assertEqual(row['stage'], 'compile')
+                self.assertEqual(row['commands'], [{'stage': 'native-aot', 'exitCode': 1}])
+                self.assertEqual(row['failureDocument'], 'observed')
+                self.assertEqual(row['adapterResult'], 'invalid')
+                self.assertEqual(row['adapterRefusal'], refusal)
+                self.assertNotIn('adapterCode', row)
+                self.assertNotIn('private', json.dumps(value))
+
+    def test_invalid_adapter_does_not_relax_owner_or_final_identity_checks(self):
+        import os
+        from unittest.mock import patch
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.dev_workflow import build_cache, state
+        for kind in ('hardlink', 'changed'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                workspace, attempt, failure, adapter = PublicBuildFailureMetadata().owned(Path(temporary).resolve())
+                adapter.write_bytes(b'')
+                public = {'passed': False, 'uncertain': True, 'failure': 'initial-build-failed'}
+                if kind == 'hardlink':
+                    os.link(adapter, adapter.parent / 'alias')
+                    programme.add_public_build_failure(public, workspace)
+                    self.assertEqual(public['buildFailureMetadata']['refusal'], 'owner')
+                else:
+                    actual = programme._failure_file
+                    def mutate(root, relative, maximum):
+                        raw = actual(root, relative, maximum)
+                        if relative.endswith('compiler-stdout.log'):
+                            value = build_cache.owner(attempt)
+                            state.atomic(attempt, 'attempt.json', {**value, 'key': 'sha256:' + '9' * 64})
+                        return raw
+                    with patch.object(programme, '_failure_file', side_effect=mutate):
+                        programme.add_public_build_failure(public, workspace)
+                    self.assertEqual(public['buildFailureMetadata']['readerPhase'], 'final-state')
+                    self.assertEqual(public['buildFailureMetadata']['refusal'], 'changed')
+                self.assertNotIn('attempts', public['buildFailureMetadata'])
+                self.assertIs(public['uncertain'], True)
+                self.assertEqual(public['failure'], 'initial-build-failed')

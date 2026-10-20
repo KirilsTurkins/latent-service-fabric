@@ -153,7 +153,7 @@ def collect_build_failure_metadata(workspace):
 def _collect_build_failure_metadata(workspace, observed):
     """Inspect only this owned workspace/current selection, without executing a recipe."""
     from tools.dev_workflow import build_cache, paths, state
-    from tools.dev_workflow.common import decode, sha
+    from tools.dev_workflow.common import DevError, decode, sha
     from tools.dev_workflow import build_control
     with paths.directory(workspace):
         require(state.workspace(workspace.parent, workspace.name) == workspace,
@@ -198,11 +198,24 @@ def _collect_build_failure_metadata(workspace, observed):
                                 and type(failure.get('formatVersion')) is int and failure['formatVersion'] == 1 else 'invalid')
                             row.update(projected)
                         observed['phase'] = 'adapter-result'
-                        raw = _failure_file(builds, prefix + 'build-cache/compiler-stdout.log', 262144)
                         row['adapterResult'] = 'missing'
+                        try:
+                            raw = _failure_file(builds, prefix + 'build-cache/compiler-stdout.log', 262144)
+                        except DevError as error:
+                            if error.code != 'file-byte-limit':
+                                raise
+                            raw = None
+                            row.update(adapterResult='invalid', adapterRefusal='bound')
                         if raw is not None:
-                            adapter = decode(raw)
                             row['adapterResult'] = 'invalid'
+                            try:
+                                adapter = decode(raw)
+                            except DevError as error:
+                                refusal = _projection_refusal(error)
+                                if refusal not in {'bound', 'schema'}:
+                                    raise
+                                row['adapterRefusal'] = refusal
+                                adapter = None
                             if (type(adapter) is dict and set(adapter) == {'schemaVersion', 'language', 'ownerIssue', 'cleanup', 'code'}
                                     and adapter['schemaVersion'] == 'latent.dev.compiler-result.v1'
                                     and adapter['language'] == 'dotnet' and type(adapter['ownerIssue']) is int
