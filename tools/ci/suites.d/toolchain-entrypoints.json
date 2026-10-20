@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-component-threading.bin.c-context",
+      "ignoredLeaves": [],
+      "kind": "bin",
+      "manifest": "crates/latent-component-threading/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-component-threading",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/bin/c-context.rs",
+      "target": "c-context",
+      "timeoutSeconds": 900
+    }
+  ]
+}
