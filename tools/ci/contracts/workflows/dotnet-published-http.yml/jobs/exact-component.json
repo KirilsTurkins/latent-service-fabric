@@ -1,0 +1,67 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "github.event_name != 'workflow_dispatch' || !inputs.fresh_component",
+    "name": "Original captured Flurl Refit component with corrected progress records",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install the existing locked reader dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Fetch the exact successful native and component build sources",
+        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b 7e3de703bc7666cee9407ff15205b9d5809a9c20"
+      },
+      {
+        "name": "Check original origin and archive refusal boundaries",
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_published_http_replay tools.tests.test_sdk_native_products_reader -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the same five native products without rebuilding",
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/published-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Execute all original signed library outcomes without recompiling the component",
+        "run": "python3 -B tools/replay_dotnet_published_http.py --native \"$RUNNER_TEMP/published-native\" --output \"$RUNNER_TEMP/published-replay\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain public build ancestry and actual signed replay evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-published-http-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/published-native/*.json\n${{ runner.temp }}/published-replay/*.json\n${{ runner.temp }}/published-replay/node/*.json\n${{ runner.temp }}/published-replay/node/controls/*.json\n${{ runner.temp }}/published-replay/original/published-http/FAILED.json\n${{ runner.temp }}/published-replay/original/published-http/catalogue-free-source.json\n${{ runner.temp }}/published-replay/original/published-http/node/FAILED.json\n${{ runner.temp }}/published-replay/original/published-http/build/*.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "exact-component",
+  "kind": "job",
+  "reviewReason": "Limit exact-SHA provenance fetch to one commit each; no ancestry history is used by original Git material verification. All signing, runtime and source checks unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-published-http.yml"
+}

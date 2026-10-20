@@ -271,7 +271,7 @@ class Compiler:
             self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
                 output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None,
-                task_wait_port=self.task_wait_port)
+                task_wait_port=self.task_wait_port, package_cache=self.package_cache)
         resources = install_resources(snapshot(work, exclude=("dependencies", "application-vendor")), project)
         if self.isolation is not None and resources is not None:
             self.isolation.protect_inputs(project / "Capsule.csproj")

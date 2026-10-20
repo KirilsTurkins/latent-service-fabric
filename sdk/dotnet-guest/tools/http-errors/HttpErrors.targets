@@ -21,6 +21,6 @@
       <IlcReference Include="$(LsfHttpErrorAssembly)" />
     </ItemGroup>
     <WriteLinesToFile File="$(LsfHttpErrorReferenceReceipt)"
-        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+        Lines="$(LsfHttpErrorAssembly)" Overwrite="false" Encoding="UTF-8" />
   </Target>
 </Project>

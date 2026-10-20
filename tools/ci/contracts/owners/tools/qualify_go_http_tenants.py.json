@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_http_tenants.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve actual 1ad/6f5 signed proof and its frozen guards while selecting the independently authenticated current f919 canonical reader for future workflow runs; all guest/controller/original bounds unchanged.",
+  "reviewReason": "Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fc68ae4ce8c5b6f778eb621a19a0a3cef965b5c134f4b50cd75f0ea96ebd0727"
+  "sha256": "f5238720c4f03e12d99c66cf15a4d7acb766eeb8bdebb1d539c3de95650f027a"
 }
