@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_resource_tenants.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Manual-only finite Go/TypeScript two-tenant resource controller; exact original/native producer identities and no guest/native compilation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "fac184bf3f28bf36264ca8dea31ea99a3e04d8d44a4946b12a474b63d668c24b"
+}

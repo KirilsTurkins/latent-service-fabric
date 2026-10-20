@@ -1,0 +1,23 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "resource-tenants-${{ github.ref }}"
+    },
+    "name": "Same-node resource tenant isolation",
+    "on": {
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "tenants"
+  ],
+  "reviewReason": "Add separate manual20min retained-product tenant-isolation lane; all original workflows/jobs/commands remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/resource-tenant-isolation.yml"
+}
