@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Actual socket pressure and kernel close-tail witness",
+    "name": "Actual original-owner retention through kernel close tails",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -56,7 +56,7 @@
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "retain bounded compiler diagnostics for measured kernel-reference build failure",
+  "reviewReason": "retain all original required command keys while extending actual kernel owner reference",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-kernel-reference.yml"
 }

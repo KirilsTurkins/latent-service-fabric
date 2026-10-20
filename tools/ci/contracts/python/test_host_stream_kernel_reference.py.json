@@ -3,6 +3,7 @@
     "HostStreamKernelReference.test_actual_cargo_json_errors_keep_only_bounded_codes_and_primary_source_spans",
     "HostStreamKernelReference.test_exact_kernel_tail_witness_keeps_all_physical_qualification_false",
     "HostStreamKernelReference.test_fd_absence_or_missing_case_cannot_substitute_for_actual_tail",
+    "HostStreamKernelReference.test_refunding_any_corrected_or_failed_original_owner_is_rejected",
     "HostStreamKernelReference.test_unknown_private_unbounded_or_forged_retirement_fields_are_rejected",
     "HostStreamKernelReference.test_wrong_platform_or_changed_source_refuses_before_any_build_or_output"
   ],
@@ -15,7 +16,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
       ],
       "skipSites": []
     },
@@ -27,7 +28,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
       ],
       "skipSites": []
     },
@@ -39,7 +40,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelReference.test_refunding_any_corrected_or_failed_original_owner_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
       ],
       "skipSites": []
     },
@@ -51,7 +64,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
       ],
       "skipSites": []
     },
@@ -63,13 +76,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:e0de0d7ff7e067fc41b537b95633019745bb06b153134735ba2bbfd541a5e047"
+        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_reference.py",
-  "reviewReason": "retain bounded compiler diagnostics for measured kernel-reference build failure",
+  "reviewReason": "explicit fixture review: extend data-only evidence from 4 FD-only rows and 1 case to old+retained 8 rows, 4 failed-owner rows and all 30 cases; no skip, setup, decorator or base removal",
   "schemaVersion": "latent.ci.contracts.v1"
 }

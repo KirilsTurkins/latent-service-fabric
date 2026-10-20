@@ -3,7 +3,7 @@ name: Current stream kernel owner reference
 on:
   workflow_dispatch: {}
   push:
-    branches: ['feat/host-stream-kernel-tail-20261020']
+    branches: ['feat/host-stream-kernel-tail-20261020', 'feat/host-stream-kernel-retirement-20261020']
 
 permissions:
   contents: read
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   reference:
-    name: Actual socket pressure and kernel close-tail witness
+    name: Actual original-owner retention through kernel close tails
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:

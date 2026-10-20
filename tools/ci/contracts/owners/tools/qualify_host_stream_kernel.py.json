@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "retain bounded compiler diagnostics for measured kernel-reference build failure",
+  "reviewReason": "retain original kernel owners across failed DNS/connect and actual close-tail retirement uncertainty",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "31e2e794f6e9090918213535faf3d8412a2382b7e3ea5bc350bd261d3c4163a9"
+  "sha256": "538d4ed7a40ea2bff34364e2d593a968e61c02ac80fa464ceeec726502904058"
 }

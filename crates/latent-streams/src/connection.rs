@@ -7,7 +7,10 @@ use latent_capabilities::broker::{
         OutboundStream, StreamInterest, StreamObservation, StreamReadiness, StreamScope,
         StreamShutdown, StreamState, MAXIMUM_CHUNK_BYTES, STREAM_CAPABILITY,
     },
-    pools::{PoolAdmission, PoolCall, PooledConnection, ProviderClient, ProviderMetadata},
+    pools::{
+        ConnectionReservation, PoolAdmission, PoolCall, PooledConnection, ProviderClient,
+        ProviderMetadata,
+    },
     AuditProviderOutcome, CapabilityAuditDurability, CapabilityCallCost, CapabilityRequestDigest,
     CapabilityStreamBudget, ProviderCall,
 };
@@ -104,23 +107,82 @@ fn expired() -> latent_core::PlatformError {
 }
 
 pub(crate) struct Socket {
-    stream: Arc<crate::transport::Transport>,
+    stream: Option<Arc<crate::transport::Transport>>,
     _tls_native: Option<HostMemoryReservation>,
     _tls_metadata: Option<ProviderMetadata>,
-    _native: HostMemoryReservation,
-    _metadata: ProviderMetadata,
+    _native: Option<HostMemoryReservation>,
+    _metadata: Option<ProviderMetadata>,
+    _dns_native: Option<HostMemoryReservation>,
+    _dns_metadata: Option<ProviderMetadata>,
+    kernel_mode: crate::kernel::Mode,
+    _kernel_scope: Arc<StreamScope>,
 }
 struct Connecting {
     future: Pin<Box<dyn Future<Output = io::Result<TcpStream>> + Send>>,
-    native: Option<HostMemoryReservation>,
-    metadata: Option<ProviderMetadata>,
+}
+// Declared before every actual resolver/socket future. Unwinding, cancellation,
+// failed currentness and ordinary errors all drop those futures before moving
+// these exact original leases into the bounded non-reusable client owner table.
+struct SocketOwner {
+    reservation: Option<ConnectionReservation<Socket>>,
+    value: Option<Socket>,
+    armed: bool,
+}
+impl SocketOwner {
+    fn value(&mut self) -> &mut Socket {
+        self.value.as_mut().expect("socket preparation")
+    }
+    fn connected(mut self) -> Result<PhysicalSocket, StreamError> {
+        let reservation = self.reservation.take().expect("original dial reservation");
+        let value = self.value.take().expect("original socket owners");
+        match reservation.connected_retaining_on_error(value) {
+            Ok(connection) => Ok(PhysicalSocket(Some(connection))),
+            Err((error, reservation, value)) => {
+                self.reservation = Some(reservation);
+                self.value = Some(value);
+                Err(error.into())
+            }
+        }
+    }
+}
+impl Drop for SocketOwner {
+    fn drop(&mut self) {
+        if self.armed
+            && self
+                .value
+                .as_ref()
+                .is_some_and(|v| v.kernel_mode.retains_unproved())
+        {
+            let mut value = self.value.take().expect("original socket owners");
+            drop(value.stream.take());
+            self.reservation
+                .take()
+                .expect("original dial reservation")
+                .quarantine(value);
+        }
+    }
+}
+struct PhysicalSocket(Option<PooledConnection<Socket>>);
+impl PhysicalSocket {
+    fn resource(&mut self) -> &mut Socket {
+        self.0.as_mut().expect("physical socket owner").resource()
+    }
+}
+impl Drop for PhysicalSocket {
+    fn drop(&mut self) {
+        let mut original = self.0.take().expect("physical socket owner");
+        if original.resource().kernel_mode.retains_unproved() {
+            drop(original.resource().stream.take());
+            original.quarantine();
+        }
+    }
 }
 #[expect(
     clippy::struct_excessive_bools,
     reason = "independent EOF, half-close, cancellation, and observed-write facts"
 )]
 struct State {
-    socket: Option<PooledConnection<Socket>>,
+    socket: Option<PhysicalSocket>,
     pending: usize,
     busy: [bool; 3],
     closing: bool,
@@ -140,7 +202,7 @@ pub(crate) struct Connection {
     idle: Duration,
     transfer: IoTransfer,
     call: PoolCall,
-    scope: StreamScope,
+    scope: Arc<StreamScope>,
     owner_memory: HostMemoryReservation,
     _owner_metadata: ProviderMetadata,
 }
@@ -176,6 +238,7 @@ pub(crate) async fn connect(
     admission: PoolAdmission,
     requested_deadline: Instant,
 ) -> Result<Box<dyn OutboundStream>, StreamError> {
+    let scope = Arc::new(scope);
     let ready = admission.wait().await?;
     let destination = &inner.config.destinations[index];
     let maximum = inner.config.limits.maximum_transfer_bytes;
@@ -260,16 +323,32 @@ pub(crate) async fn connect(
 )]
 async fn create_socket(
     inner: &Inner,
-    scope: &StreamScope,
+    scope: &Arc<StreamScope>,
     index: usize,
     client: &Arc<ProviderClient<Socket>>,
     call: &PoolCall,
     deadline: Instant,
-) -> Result<(PooledConnection<Socket>, Instant), StreamError> {
+) -> Result<(PhysicalSocket, Instant), StreamError> {
     let destination = &inner.config.destinations[index];
     let reservation = client.reserve_connection_wait(call).await?;
-    // DNS packet/socket state is prepaid temporarily and released only after
-    // the resolver future (including a pending TCP fallback) is destroyed.
+    let mut owned = SocketOwner {
+        reservation: Some(reservation),
+        value: Some(Socket {
+            stream: None,
+            _tls_native: None,
+            _tls_metadata: None,
+            _native: None,
+            _metadata: None,
+            _dns_native: None,
+            _dns_metadata: None,
+            kernel_mode: inner.kernel_mode,
+            _kernel_scope: Arc::clone(scope),
+        }),
+        armed: false,
+    };
+    // Prepay DNS packet/socket ownership before the resolver can allocate its
+    // UDP/TCP state. Unknown final kernel retirement retains the same bundle;
+    // only the historical logical reference stops at owned-future destruction.
     let (address, valid_until) = match &destination.resolution {
         StreamResolution::Static { addresses } => (
             *addresses
@@ -278,11 +357,17 @@ async fn create_socket(
             deadline,
         ),
         StreamResolution::Dns { .. } => {
-            let mut dns_memory = scope.reserve_host_memory(64 * 1024)?;
-            let _dns_metadata = inner.pools.reserve_protocol_metadata(64 * 1024)?;
+            owned.value()._dns_native = Some(scope.reserve_host_memory(64 * 1024)?);
+            owned.value()._dns_metadata = Some(inner.pools.reserve_protocol_metadata(64 * 1024)?);
             let resolver = inner.resolvers[index]
                 .as_ref()
                 .ok_or_else(|| error(StreamErrorCode::DnsFailed))?;
+            owned.armed = true;
+            let dns_memory = owned
+                .value()
+                ._dns_native
+                .as_mut()
+                .expect("original DNS allowance");
             let answers = wait_current(
                 call.io(),
                 deadline,
@@ -299,12 +384,17 @@ async fn create_socket(
             (first, answers.valid_until.into_std())
         }
     };
+    if !inner.kernel_mode.retains_unproved() {
+        // Historical logical-only references retain their original semantics.
+        drop(owned.value()._dns_native.take());
+        drop(owned.value()._dns_metadata.take());
+    }
     if Instant::now() >= valid_until || !destination.addresses.permits(address) {
         return Err(error(StreamErrorCode::Denied));
     }
     recheck_io(call.io(), deadline.min(valid_until)).await?;
-    let metadata = inner.pools.reserve_protocol_metadata(96 * 1024)?;
-    let mut native = scope.reserve_host_memory(96 * 1024)?;
+    owned.value()._metadata = Some(inner.pools.reserve_protocol_metadata(96 * 1024)?);
+    owned.value()._native = Some(scope.reserve_host_memory(96 * 1024)?);
     let tls_allowance = inner.tls[index]
         .as_ref()
         .map(|_| {
@@ -318,12 +408,23 @@ async fn create_socket(
             ))
         })
         .transpose()?;
+    if let Some((memory, metadata)) = tls_allowance {
+        owned.value()._tls_native = Some(memory);
+        owned.value()._tls_metadata = Some(metadata);
+    }
+    owned.armed = true;
     let socket = if address.is_ipv4() {
         TcpSocket::new_v4()
     } else {
         TcpSocket::new_v6()
     }
     .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
+    owned
+        .value()
+        ._native
+        .as_mut()
+        .expect("original socket allowance")
+        .confirm();
     socket
         .set_send_buffer_size(16 * 1024)
         .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
@@ -341,12 +442,9 @@ async fn create_socket(
     if actual > 96 * 1024 {
         return Err(error(StreamErrorCode::Exhausted));
     }
-    native.confirm();
     let peer = SocketAddr::new(address, destination.endpoint.port);
     let mut connecting = Connecting {
         future: Box::pin(socket.connect(peer)),
-        native: Some(native),
-        metadata: Some(metadata),
     };
     recheck_io(call.io(), deadline.min(valid_until)).await?;
     let stream = wait_current(
@@ -368,13 +466,9 @@ async fn create_socket(
     stream
         .set_nodelay(true)
         .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
-    let (tls_native, tls_metadata) = match tls_allowance {
-        Some((mut memory, metadata)) => {
-            memory.confirm();
-            (Some(memory), Some(metadata))
-        }
-        None => (None, None),
-    };
+    if let Some(memory) = owned.value()._tls_native.as_mut() {
+        memory.confirm();
+    }
     let transport = match &inner.tls[index] {
         Some(tls) => crate::transport::Transport::tls(
             stream,
@@ -398,14 +492,8 @@ async fn create_socket(
             .map_err(|_| error(StreamErrorCode::TlsFailed))?;
         }
     }
-    let socket = Socket {
-        stream: Arc::new(transport),
-        _tls_native: tls_native,
-        _tls_metadata: tls_metadata,
-        _native: connecting.native.take().expect("socket memory"),
-        _metadata: connecting.metadata.take().expect("socket metadata"),
-    };
-    Ok((reservation.connected(socket)?, valid_until))
+    owned.value().stream = Some(Arc::new(transport));
+    Ok((owned.connected()?, valid_until))
 }
 
 impl Connection {
@@ -471,7 +559,9 @@ impl Connection {
                 .as_mut()
                 .ok_or_else(|| error(StreamErrorCode::InvalidState))?
                 .resource()
-                .stream,
+                .stream
+                .as_ref()
+                .expect("live socket transport"),
         );
         state.pending += 1;
         state.busy[direction] = true;
@@ -963,7 +1053,7 @@ impl Connection {
         use std::os::fd::AsRawFd;
         let mut state = self.state.lock().unwrap();
         let socket = state.socket.as_mut().unwrap().resource();
-        let tcp = &socket.stream.tcp;
+        let tcp = &socket.stream.as_ref().expect("live socket transport").tcp;
         let (local, peer) = (tcp.local_addr().unwrap(), tcp.peer_addr().unwrap());
         assert_eq!(local.ip(), std::net::Ipv4Addr::LOCALHOST);
         assert_eq!(peer.ip(), std::net::Ipv4Addr::LOCALHOST);

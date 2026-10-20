@@ -19,7 +19,8 @@ from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_project import fresh
 from tools.test_run import redact
 
-EXTRA = ("tools/host_stream_kernel_observer.py", "tools/qualify_host_stream_kernel.py")
+EXTRA = ("tools/host_stream_kernel_observer.py", "tools/qualify_host_stream_kernel.py",
+         "crates/latent-capabilities/src/broker/pools.rs", "crates/latent-capabilities/src/broker/pools/client.rs")
 STAGES = ("connected", "send-pressure", "after-fd-drop", "after-peer-drop")
 
 
@@ -29,29 +30,48 @@ def snapshot(root: Path) -> dict:
     return value
 
 
-def outcomes(raw: bytes, total: int) -> list[dict]:
-    if len(raw) > 65536 or type(total) is not int or total != 26:
+def outcomes(raw: bytes, expected: set[str]) -> dict:
+    if len(raw) > 65536 or len(expected) != 30:
         raise ValueError("kernel-reference-output-bound")
-    names = re.findall(rb"^test ([a-zA-Z0-9_:]+) \.\.\. ok$", raw, re.M)
-    summaries = re.findall(rb"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", raw, re.M)
-    if names != [provider.KERNEL_CASE.encode()] or summaries != [(b"1", b"0", b"0", b"0", b"25")]:
-        raise ValueError("kernel-reference-missing-case")
+    provider.outcomes(raw, expected)
     rows = [json.loads(value) for value in re.findall(rb"^KERNEL_OWNER_OBSERVATION (.+)$", raw, re.M)]
-    if [r.get("stage") for r in rows] != list(STAGES):
-        raise ValueError("kernel-reference-barriers")
+    groups = {}
+    for programme in ("fd-only", "retain-unproved"):
+        selected = [row for row in rows if row.get("programme") == programme]
+        if [row.get("stage") for row in selected] != list(STAGES):
+            raise ValueError("kernel-reference-barriers")
+        groups[programme] = selected
+    if len(rows) != 8:
+        raise ValueError("kernel-reference-extra-programme")
     for row in rows:
-        if set(row) != {"stage", "observation", "hostMemoryBytes", "poolConnections"}:
+        if set(row) != {"programme", "stage", "observation", "hostMemoryBytes", "poolConnections"}:
             raise ValueError("kernel-reference-private-or-unknown-field")
         if (type(row["hostMemoryBytes"]) is not int or not 0 <= row["hostMemoryBytes"] <= 1024 * 1024
                 or type(row["poolConnections"]) is not int or row["poolConnections"] not in (0, 1)):
             raise ValueError("kernel-reference-owner-bounds")
         observer.validate_projection(row["observation"])
-    if (rows[1]["hostMemoryBytes"] < 98304 or rows[1]["poolConnections"] != 1
-            or rows[2]["hostMemoryBytes"] != 0 or rows[2]["poolConnections"] != 0
-            or rows[2]["observation"]["matchingRows"] != 1
-            or rows[2]["observation"]["state"] not in ("FIN-WAIT-1", "FIN-WAIT-2", "TIME-WAIT")):
-        raise ValueError("kernel-reference-tail-witness-missing")
-    return rows
+    for programme, rows in groups.items():
+        if rows[1]["hostMemoryBytes"] < 98304 or rows[1]["poolConnections"] != 1:
+            raise ValueError("kernel-reference-pressure-owner")
+        if rows[2]["observation"]["matchingRows"] != 1 or rows[2]["observation"]["state"] not in ("FIN-WAIT-1", "FIN-WAIT-2", "TIME-WAIT"):
+            raise ValueError("kernel-reference-tail-witness-missing")
+        for row in rows[2:]:
+            if programme == "fd-only":
+                if row["hostMemoryBytes"] or row["poolConnections"]:
+                    raise ValueError("kernel-reference-old-refund-not-red")
+            elif row["hostMemoryBytes"] < 98304 or row["poolConnections"] != 1:
+                raise ValueError("kernel-reference-corrected-early-refund")
+    failed = [json.loads(value) for value in re.findall(rb"^KERNEL_QUARANTINE_OBSERVATION (.+)$", raw, re.M)]
+    stages = {"failed-connect": 98304, "failed-connect-after-stop": 98304,
+              "cancelled-dns": 65536, "cancelled-dns-after-stop": 65536}
+    if len(failed) != 4 or {row.get("stage") for row in failed} != set(stages):
+        raise ValueError("kernel-reference-failed-dial-barriers")
+    for row in failed:
+        if (set(row) != {"stage", "hostMemoryBytes", "poolConnections", "failedCleanup", "providerKernelOwners"}
+                or type(row["hostMemoryBytes"]) is not int or not stages[row["stage"]] <= row["hostMemoryBytes"] <= 1024 * 1024
+                or any(type(row[key]) is not int or row[key] != 1 for key in ("poolConnections", "failedCleanup", "providerKernelOwners"))):
+            raise ValueError("kernel-reference-failed-dial-refund-or-private-field")
+    return {"programmes": groups, "failedDialOwners": failed}
 
 
 
@@ -137,16 +157,16 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     listed = command([str(executable.executable), "--list"], "list", 30, 65536)
     ignored = command([str(executable.executable), "--ignored", "--list"], "ignored", 30, 65536)
     discovery.validate_cases(suite, discovery.listing(listed), discovery.listing(ignored), {})
-    raw = command([str(executable.executable), provider.KERNEL_CASE, "--exact", "--show-output", "--test-threads=1"], "tests", 30, 65536)
-    rows = outcomes(raw, len(suite["expectedCases"]))
+    raw = command([str(executable.executable), "--show-output", "--test-threads=1"], "tests", suite["timeoutSeconds"], 65536)
+    rows = outcomes(raw, set(suite["expectedCases"]))
     after = snapshot(root)
     if before != after:
         raise ValueError("kernel-reference-source-changed")
-    receipt = {"schemaVersion": "lsf.host-stream-kernel-tail-reference.v1", "sourceRevision": revision,
+    receipt = {"schemaVersion": "lsf.host-stream-kernel-tail-reference.v2", "sourceRevision": revision,
                "compiler": compiler, "kernelRelease": kernel, "sourceBefore": before, "sourceAfter": after, "compiledTls": libraries,
                "testExecutableSha256": provider.digest_file(executable.executable, 1024 * 1024 * 1024),
-               "executedCases": [provider.KERNEL_CASE], "registeredCases": sorted(suite["expectedCases"]), "ignored": [],
-               "barriers": rows, "oldFdRefundIsNotKernelRetirement": True,
+               "executedCases": sorted(suite["expectedCases"]), "registeredCases": sorted(suite["expectedCases"]), "ignored": [],
+               "observations": rows, "oldFdRefundIsNotKernelRetirement": True, "originalOwnersQuarantinedWithoutRetirementProof": True,
                "kernelAccountingQualified": False, "productionInstallation": False, "fullTlsAccountingQualified": False}
     (output / "receipt.json").write_bytes((json.dumps(receipt, indent=2) + "\n").encode())
     return receipt
@@ -158,7 +178,7 @@ def main() -> int:
     parser.add_argument("--source-commit", default=os.environ.get("GITHUB_SHA"))
     args = parser.parse_args()
     qualify(provider.provider.ROOT, args.output, args.source_commit)
-    print("Actual kernel tail after FD refund observed; kernel accounting remains unqualified")
+    print("Actual old kernel-tail refund and corrected original-owner quarantine observed; kernel accounting remains unqualified")
     return 0
 
 
