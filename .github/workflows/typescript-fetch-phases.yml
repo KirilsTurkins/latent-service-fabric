@@ -37,6 +37,8 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
       - name: Fetch the immutable tenant isolation producer source object
         run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
+      - name: Fetch the immutable operational authority producer source object
+        run: git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
