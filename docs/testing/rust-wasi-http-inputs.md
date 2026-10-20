@@ -6,6 +6,8 @@ The maintained Rust builder does not yet install a default WASI HTTP backend. Th
 
 The [source-bound observation](evidence/rust-wasi-http-inputs-2026-10-20.json) binds the complete 58-member artifact, 76 source materials, 69 compiler recipe rows, native products and original build documents. Before isolated offline compilation, normal authoring refused unapproved executable inputs; the campaign reviewed the exact 15 captured build-tool/procedural-macro inputs. Original library sources were removed before the approved build. Native products were reused from the separately authenticated Wasmtime 48.0.7 producer at `fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12`; no native host or engine was rebuilt.
 
+The source was later composed with development `6133f1cdeb01518b1aa00b447939ec8461e70438`. All 69 recipe rows and 75 of 76 source materials remain byte-identical. The shared native reader adds an opt-in protocol tree; its default stays false for the unchanged frozen fc9 wrapper. Later native API changes were not compiled or exercised by this observation.
+
 ## Actual graph
 
 The 480,776-byte component contains three core modules and 94 core imports. Raw modules retain both WASI 0.2.2 and 0.2.12 families. The normal componentizer's validated final external graph exposes exactly:
@@ -27,4 +29,4 @@ The existing smaller .NET HTTP subset remains a separate profile. This observati
 
 ## Reproduce the input control
 
-Run the dedicated `Rust WASI HTTP compiler inputs` workflow on the maintained input-control branch. It reuses pinned native products and performs one bounded offline guest compile; it does not sign or run an HTTP component. Six focused controls cover project/SDK invariants, upstream identities, bounded import decoding and exact executable approval. Compiler/import observations and normal compatibility failures are retained separately.
+The dedicated `Rust default WASI HTTP compiler inputs` workflow on the input-control branch produced the historical observation. After native source changes, a new run requires a separately authenticated matching producer; its source-equality guard remains closed. It reuses pinned native products and performs one bounded offline guest compile; it does not sign or run an HTTP component. Six focused controls cover project/SDK invariants, upstream identities, bounded import decoding and exact executable approval. Compiler/import observations and normal compatibility failures are retained separately.

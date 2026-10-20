@@ -633,5 +633,24 @@
     "Normal validated componentization exposes only the six final 0.2.12 imports; raw modules still contain both 0.2.2 and 0.2.12 identities. No raw resources were manually renamed.",
     "Import decoding establishes compiler inputs, not reachable effects or a functioning HTTP/runtime implementation.",
     "Native products remain attributed to fc9b44a6; later development composition is not a new native or guest compilation."
-  ]
+  ],
+  "compositionReview": {
+    "development": "6133f1cdeb01518b1aa00b447939ec8461e70438",
+    "recipeRowsUnchanged": 69,
+    "materialRowsUnchanged": 75,
+    "changedMaterial": {
+      "path": "tools/sdk_native_products_reader.py",
+      "old": {
+        "sha256": "sha256:3273c1932b7196cf49a343ae4a3f8a9f02ea07539f700b39d4c96d57aafced22",
+        "bytes": 16979
+      },
+      "current": {
+        "sha256": "sha256:3218c285fcaf2e85b8d22758b3c469add5d3c6b0a33571272779caaf848cdfde",
+        "bytes": 17336
+      }
+    },
+    "semanticAssessment": "The shared native reader adds a strict include_protocol=False default; the frozen fc9 wrapper does not opt in. Historical auxiliary trees and pins remain unchanged. Current native code has later API changes and is not attributed to this compiler observation.",
+    "currentNativeCompilationClaimed": false,
+    "newGuestCompilationClaimed": false
+  }
 }
