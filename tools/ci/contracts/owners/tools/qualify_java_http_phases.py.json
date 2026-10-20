@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_http_phases.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact clang TimeZone integer-to-pointer failure and unchanged acceptance: add phase-only fixed public TimeZone context tuple, preserve original Capsule/GZIP tuple, defaults, anchored reads,128KiB context/4MiB file/16MiB total and original failure. Add only3 scoped reader controls and one workflow command; no cast or guest runtime change.",
+  "reviewReason": "Fix observed17MiB component hashing after successful normal assembly: use existing streaming regular-file identity reader with the unchanged producer64MiB ceiling, exact profile and digest; source reader default/runtime/budgets unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7ba027f3fec38f7d2e71b6ba8ad07ea9d7f63755663bb4d90650b2a857aa6df4"
+  "sha256": "67770520d517310591aa0b38ea57be883a05d8f0f1b4dca7d40e72f8520e92ae"
 }

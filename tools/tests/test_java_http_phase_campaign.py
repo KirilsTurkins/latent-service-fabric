@@ -163,3 +163,39 @@ class JavaHttpPhaseCampaign(unittest.TestCase):
             with self.assertRaises(WorkflowError) as caught:
                 campaign.run(Path('output'), Path('prepared'), Path('sdk'))
             self.assertIs(caught.exception, original_error);execute.assert_not_called()
+
+
+class JavaComponentProfileIdentity(unittest.TestCase):
+    def test_actual_component_larger_than_source_cap_preserves_exact_profile_and_digest(self):
+        import json
+        from tools.rust_capsule_project import read_file
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact = Path(temporary);component = artifact/'component.wasm'
+            with component.open('wb') as target: target.truncate(17_034_179)
+            identity = campaign.file_identity(component, 64 * 1024 * 1024)['sha256']
+            profile = {'profile': campaign.PHASE_PROFILE_ID, 'componentDigest': identity}
+            path = artifact/'http-client-profile.json';path.write_text(json.dumps(profile))
+            # The actual failed campaign used this source-file reader (4 MiB).
+            with self.assertRaisesRegex(ValueError, 'bounded regular file'): read_file(component)
+            self.assertEqual(campaign.component_profile(artifact), profile)
+            for field, wrong in (('componentDigest', 'sha256:'+'0'*64), ('profile', 'unselected')):
+                changed = {**profile, field: wrong};path.write_text(json.dumps(changed))
+                with self.subTest(field=field), self.assertRaisesRegex(WorkflowError, 'actual-selected-profile-drift'):
+                    campaign.component_profile(artifact)
+            path.write_text(json.dumps(profile))
+            component.write_bytes(b'changed component')
+            with self.assertRaisesRegex(WorkflowError, 'actual-selected-profile-drift'):
+                campaign.component_profile(artifact)
+
+    def test_component_above_producer_bound_and_nonregular_input_refuse_before_signing(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact = Path(temporary);component = artifact/'component.wasm'
+            (artifact/'http-client-profile.json').write_text(json.dumps({
+                'profile': campaign.PHASE_PROFILE_ID, 'componentDigest': 'sha256:'+'0'*64}))
+            with component.open('wb') as target: target.truncate(64 * 1024 * 1024+1)
+            with self.assertRaisesRegex(WorkflowError, 'resource-identity-bound'):
+                campaign.component_profile(artifact)
+            component.unlink();component.mkdir()
+            with self.assertRaisesRegex(WorkflowError, 'resource-identity-file'):
+                campaign.component_profile(artifact)
