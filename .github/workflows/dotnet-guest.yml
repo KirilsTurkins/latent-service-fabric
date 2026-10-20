@@ -529,6 +529,7 @@ jobs:
             ${{ runner.temp }}/dotnet-published-tasks/node/public-workflow.json
             ${{ runner.temp }}/dotnet-published-tasks/node/workflow.json
             ${{ runner.temp }}/dotnet-published-tasks/node/FAILED.json
+            ${{ runner.temp }}/dotnet-published-tasks/node/controls/unexpected-invocation-diagnostics.json
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
           if-no-files-found: warn
           retention-days: 3

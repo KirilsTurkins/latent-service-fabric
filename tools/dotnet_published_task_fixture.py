@@ -21,8 +21,10 @@ using System.Threading.Tasks;
 using Polly;
 using Polly.Retry;
 public static class PublishedTasks {
+    public static string Stage { get; private set; } = "entry";
     private static int calls;
     public static string Run(string mode) {
+        Stage = "guards";
         if (++calls != 1) throw new Exception("published request state leaked");
         if (SynchronizationContext.Current != null) throw new Exception("custom context installed");
         int attempts = 0, callbacks = 0;
@@ -31,6 +33,7 @@ public static class PublishedTasks {
         int value;
         switch (mode) {
         case "legacy": {
+            Stage = "legacy-create";
             var policy = Policy.Handle<InvalidOperationException>().WaitAndRetryAsync(2,
                 _ => TimeSpan.FromMilliseconds(1), (_, _, _, _) => ++callbacks);
             var pending = policy.ExecuteAsync(() => ++attempts < 3
@@ -40,20 +43,24 @@ public static class PublishedTasks {
             break;
         }
         case "modern": {
+            Stage = "modern-create";
             var pipeline = new ResiliencePipelineBuilder<int>().AddRetry(new RetryStrategyOptions<int> {
                 MaxRetryAttempts = 2, Delay = TimeSpan.FromMilliseconds(1),
                 BackoffType = DelayBackoffType.Constant, UseJitter = false,
                 ShouldHandle = new PredicateBuilder<int>().Handle<InvalidOperationException>(),
                 OnRetry = _ => { ++callbacks; return ValueTask.CompletedTask; }
             }).Build();
+            Stage = "modern-execute";
             var pending = pipeline.ExecuteAsync(_ => ++attempts < 3
                 ? ValueTask.FromException<int>(original) : new ValueTask<int>(gate.Task));
+            Stage = "modern-pending";
             if (pending.IsCompleted) throw new Exception("modern pending work skipped");
-            gate.SetResult(43); value = pending.AsTask().GetAwaiter().GetResult();
+            gate.SetResult(43); Stage = "modern-join"; value = pending.AsTask().GetAwaiter().GetResult();
             if (value != 43 || attempts != 3 || callbacks != 2) throw new Exception("modern retry changed");
             break;
         }
         case "error": {
+            Stage = "error-create";
             var policy = Policy.Handle<InvalidOperationException>().WaitAndRetryAsync(1,
                 _ => TimeSpan.FromMilliseconds(1), (_, _, _, _) => ++callbacks);
             var pending = policy.ExecuteAsync<int>(() => { ++attempts; return Task.FromException<int>(original); });
@@ -63,6 +70,7 @@ public static class PublishedTasks {
             value = 47; break;
         }
         case "cancel": {
+            Stage = "cancel-create";
             using var cancellation = new CancellationTokenSource();
             var policy = Policy.Handle<InvalidOperationException>().WaitAndRetryAsync(2,
                 _ => TimeSpan.FromMilliseconds(10000), (_, _, _, _) => ++callbacks);
@@ -97,9 +105,22 @@ def application(output):
     before = path.read_text(encoding='utf-8')
     marker = '    public static Result<string, string> Greet(string name)\n    {'
     require(before.count(marker) == 1, 'dotnet-published-task-greeting-preimage')
-    path.write_text(before.replace(marker, marker + '\n        if (name.StartsWith("published:", '
-        'System.StringComparison.Ordinal))\n            return Result<string, string>.Ok('
-        'global::PublishedTasks.Run(name.Substring(10)));'), encoding='utf-8', newline='\n')
+    path.write_text(before.replace(marker, marker + r'''
+        if (name.StartsWith("published:", System.StringComparison.Ordinal)) {
+            try { return Result<string, string>.Ok(global::PublishedTasks.Run(name.Substring(10))); }
+            catch (System.Exception error) {
+                string kind = error switch {
+                    System.PlatformNotSupportedException => "unsupported",
+                    System.InvalidOperationException => "invalid-operation",
+                    System.OperationCanceledException => "cancelled",
+                    System.AggregateException => "aggregate",
+                    System.TimeoutException => "timeout",
+                    _ => "unknown"
+                };
+                return Result<string, string>.Err("published-task-failure:" + global::PublishedTasks.Stage + ":" + kind);
+            }
+        }
+'''), encoding='utf-8', newline='\n')
     (app / 'src/PublishedTasks.cs').write_text(SOURCE, encoding='utf-8', newline='\n')
     authoring.edit(app, 'add', identity=PACKAGE, version=VERSION)
     return app

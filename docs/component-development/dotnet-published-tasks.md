@@ -33,7 +33,13 @@ physical retirement and refusal of combined qualification selectors.
 
 The first focused attempt stopped before package capture because its command
 log directory had not been created; no component result is inferred. That setup
-is corrected and a fresh signed campaign is running. The ordinary twelve-case
+is corrected. The next fresh NativeAOT component compiled, signed and passed
+the real legacy retry case, then failed the modern pipeline result assertion.
+That first modern result was omitted by the old probe, so its exact cause is
+unknown. The probe now retains the failed invocation before asserting and the
+fixture emits only a closed managed stage/error kind; expected results, budgets
+and retirement requirements are unchanged. A fresh campaign is running.
+The ordinary twelve-case
 task programme is separately qualified in #1152; it does not establish these
 published library cases or complete #746.
 
