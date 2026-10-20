@@ -104,8 +104,14 @@ class Port:
         if any(file_identity(path, 'task-wait-derived-corelib', MAX_ASSEMBLY) != self.identity for path in (self.assembly, self.retained)):
             raise ValueError('task-wait-derived-CoreLib-changed')
 
-    def finish(self, project: Path, evidence: Path) -> dict:
+    def finish(self, project: Path, evidence: Path, *, corelib_port=None) -> dict:
         self.recheck()
+        selected = self.assembly
+        if corelib_port is not None:
+            from tools.dotnet_guest.closed_filesystem import Port as ClosedFilesystemPort
+            if type(corelib_port) is not ClosedFilesystemPort:
+                raise ValueError('task-wait-authenticated-final-corelib-required')
+            selected = corelib_port.final_for(self)
         references = read_file(self.references, http_errors.MAX_RECEIPT).decode('utf-8-sig').splitlines()
         if (not 1 <= len(references) <= 512 or references.count(str(self.assembly)) != 1
                 or any(Path(path).name == 'System.Private.CoreLib.dll' and path != str(self.assembly) for path in references)):
@@ -122,13 +128,17 @@ class Port:
             found = [line[3:] for line in body.decode('utf-8-sig').splitlines()
                 if line.startswith('-r:') and Path(line[3:].strip('"')).name == 'System.Private.CoreLib.dll']
             if found:
-                if found != [str(self.assembly)]:
+                if found != [str(selected)]:
                     raise ValueError('task-wait-native-aot-reference-drift')
                 matched.append({'digest': digest(body), 'size': len(body)})
         if len(matched) != 1:
             raise ValueError('task-wait-native-aot-reference-not-observed')
         result = {**self.evidence, 'nativeAotReferenceBinding': {
             'referenceListDigest': digest(read_file(self.references, http_errors.MAX_RECEIPT)), 'responseFiles': matched}}
+        if corelib_port is not None:
+            result['nativeAotReferenceBinding']['finalCoreLibDerivation'] = {
+                'profile': corelib_port.evidence['profile'], 'intermediateDigest': self.identity['digest'],
+                'selectedDigest': corelib_port.identity['digest']}
         write_json(evidence / 'task-wait-port.json', result)
         return result
 
