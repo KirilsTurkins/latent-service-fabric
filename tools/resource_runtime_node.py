@@ -20,6 +20,15 @@ LIVE = ('execution-cell-leases', 'guest-invocations', 'guest-stores', 'guest-hos
 PENDING_MODES = {'node-stop-pending':'pending', 'node-stop-drain':'drain'}
 
 
+def selection(language):
+    require(language in ('typescript','go'),'resource-runtime-closed-language')
+    if language == 'go':
+        from tools import go_resource_runtime_fixture as selected
+        from tools.go_node_stop_probe import OWNER_LIMITS
+        return selected, (*SCALARS,'latent:random/random@0.1.0'), OWNER_LIMITS, 'greeting', 'greet', 'resource-runtime:'
+    return fixture, SCALARS, LIMITS, 'resource-runtime', 'run', ''
+
+
 def integer(value):
     require(type(value) is int and 0 <= value < 2**64 or type(value) is str and value.isascii()
             and value.isdecimal() and len(value) <= 20 and int(value) < 2**64,
@@ -27,30 +36,32 @@ def integer(value):
     return int(value)
 
 
-def configure(settings, capsule):
+def configure(settings, capsule, *, language='typescript'):
+    _fixture,scalars,limits,_template,_function,_prefix=selection(language)
     imports = capsule.get('imports')
-    require(type(imports) is list and len(imports) == 4
+    require(type(imports) is list and len(imports) == len(scalars)+1
             and all(type(r) is dict and set(r) == {'contract','optional'} and r['optional'] is False for r in imports)
-            and {r['contract'] for r in imports} == {ACTIVATION,*SCALARS},
+            and {r['contract'] for r in imports} == {ACTIVATION,*scalars},
             'resource-runtime-exact-declared-imports')
-    resources.configure(settings, {**capsule, 'imports':[r for r in imports if r['contract'] != ACTIVATION]}, 'typescript')
+    resources.configure(settings, {**capsule, 'imports':[r for r in imports if r['contract'] != ACTIVATION]}, language)
     providers = settings['providers']
     providers['activationRuntime'] = {'identity':{'id':'activation','tenant':'examples','service':RUNTIME_SERVICES['examples'],'epoch':1},
-                                      'limits':dict(LIMITS)}
+                                      'limits':dict(limits)}
     providers['scalarAliases'].append({'source':'activation', 'identity':{
         'id':'activation-foreign','tenant':'foreign','service':RUNTIME_SERVICES['foreign'],'epoch':1}})
     for tenant in resources.TENANTS:
         providers['bindings'].append({'name':'activation-'+tenant,'tenant':tenant,'consumerService':SERVICE,
             'providerService':RUNTIME_SERVICES[tenant],
             'contract':ACTIVATION,'providerBinding':'activation-'+tenant+'-installed'})
-    require(len(providers['bindings']) == 9 and len(providers['scalarAliases']) == 4,
+    require(len(providers['bindings']) == 1+2*(len(scalars)+1) and len(providers['scalarAliases']) == len(scalars)+1,
             'resource-runtime-original-provider-capacity')
     return settings
 
 
-def grant(client, node, manifest, publication, target, tenant):
-    target = resources.install_grants(client,node,manifest,publication,target,list(SCALARS),'typescript',tenant)
-    denied = call(client,target,'resource-runtime','run',['parallel'],'resource-'+tenant+'-without-runtime')
+def grant(client, node, manifest, publication, target, tenant, *, language='typescript'):
+    _fixture,scalars,_limits,template,function,prefix=selection(language)
+    target = resources.install_grants(client,node,manifest,publication,target,list(scalars),language,tenant)
+    denied = call(client,target,template,function,[prefix+'parallel'],'resource-'+tenant+'-without-runtime')
     resources.require_denied_before_guest(denied)
     identity = 'activation' if tenant == 'examples' else 'activation-foreign'
     rows = [r for r in node.startup_record['providers'] if r['id'] == identity]
@@ -69,7 +80,7 @@ def grant(client, node, manifest, publication, target, tenant):
     write_json(policy, {'formatVersion':1,'tenant':tenant,'rules':[{'id':'resource-runtime','effect':'allow',
         'principals':[{'kind':'administrator','subject':resources.SUBJECTS[tenant]}],
         'services':[target['service']],'publications':[publication],'capability':ACTIVATION,'operations':OPERATIONS,
-        'resources':{'kind':'clock'},'ceiling':{'operations':4096,'inputBytes':0,'outputBytes':32768,'wallTimeMillis':5000}}]})
+        'resources':{'kind':'clock'},'ceiling':{'operations':4096,'inputBytes':0,'outputBytes':32768,'wallTimeMillis':5000 if language == 'typescript' else target['budget']['wallTimeLimitMillis']}}]})
     client.call('policy','apply','--id',policy_id,'--file',policy,
         '--operation-id','grant-resource-activation-'+tenant,'--expected-generation','0')
     return deploy(client,manifest,publication,generation=str(target['generation']),
@@ -189,7 +200,8 @@ def retire(client, probe, target, output, label):
     value={'provider':idle,'physical':physical};write_json(output/('retired-'+label+'.json'),value);return value
 
 
-def programme(clients, targets, probe, output, component):
+def programme(clients, targets, probe, output, component, *, language='typescript'):
+    selected,_scalars,_limits,template,function,prefix=selection(language)
     result={'status':'incomplete','cases':[],'attempts':[],'concurrencyKind':'interleaved-runtime-owned-logical-tasks',
             'nativeThreadsQualified':False,'consoleFlushQueuePresent':False,'lateWakeAttemptObserved':False,
             'fullTicketQualification':False}
@@ -197,7 +209,7 @@ def programme(clients, targets, probe, output, component):
         (output/'programme-progress.json').write_bytes((json.dumps(result,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode())
     def invoke(tenant, mode, label, terminal=None):
         client,target=clients[tenant],targets[tenant];revision=selected_revision(client,target)
-        row=call(client,target,'resource-runtime','run',[mode],label)
+        row=call(client,target,template,function,[prefix+mode],label)
         result['attempts'].append({'tenant':tenant,'mode':mode,'invocation':row});checkpoint()
         require(row['processReaped'] and row['response']['outcomeKnown'] and revision['releaseDigest'] == component
                 and row['response']['data']['resolvedRevision'] == revision,'resource-runtime-original-revision-and-terminal')
@@ -208,7 +220,7 @@ def programme(clients, targets, probe, output, component):
         if terminal:
             require(row['exitCode']==4 and row['response']['error']['code']==terminal,'resource-runtime-exact-trap')
             if mode=='callback-error':require(0<int(usage['logBytes'])<=16384,'resource-runtime-callback-log-reached')
-        else:require(row['exitCode']==0 and row['decoded']==[fixture.EXPECTED[mode]] and 0<int(usage['logBytes'])<=16384,
+        else:require(row['exitCode']==0 and row['decoded']==([selected.EXPECTED[mode]] if language == 'typescript' else [{'ok':selected.EXPECTED[mode]}]) and 0<int(usage['logBytes'])<=16384,
                      'resource-runtime-exact-resource-callback-value-and-log')
         result['cases'].append({'tenant':tenant,'mode':mode,'invocation':row,
             'retirement':retire(client,probe,target,output,label),'callbackOriginProven':False})
@@ -222,7 +234,7 @@ def programme(clients, targets, probe, output, component):
         client,target=clients['examples'],targets['examples'];label='node-stop-pending' if mode=='cancel' else 'node-stop-drain'
         revision=selected_revision(client,target)
         client.node.drain();observer_offset=len(client.node.buffers[1])
-        pending=start_call(client,target,'resource-runtime','run',['pending'],label,wall=3000 if mode=='deadline' else None)
+        pending=start_call(client,target,template,function,[prefix+'pending'],label,wall=3000 if mode=='deadline' else None)
         try:
             live=wait_pending(client,pending,probe,target,output,label,observer_offset=observer_offset)
             cancellation=None
