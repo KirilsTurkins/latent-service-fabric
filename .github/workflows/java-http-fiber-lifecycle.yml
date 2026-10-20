@@ -215,6 +215,7 @@ jobs:
             ${{ runner.temp }}/java-http-phases/campaign/FAILED.json
             ${{ runner.temp }}/java-http-phases/campaign/build/*.json
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-to-c.log
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-owned-classes.log
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm.log
             ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm-context.command.json

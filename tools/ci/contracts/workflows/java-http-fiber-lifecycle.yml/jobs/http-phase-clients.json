@@ -82,7 +82,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-http-phases-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-http-phase-prepared/retrieval.json\n${{ runner.temp }}/java-http-phase-prepared/native-products.json\n${{ runner.temp }}/java-http-phase-prepared/source-inputs.json\n${{ runner.temp }}/java-http-phases/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/build/*.json\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-phases/campaign/node/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-phases/campaign/compiler-cache-selection.json\n${{ runner.temp }}/java-http-phases/campaign/final-materials.json",
+          "path": "${{ runner.temp }}/java-http-phase-prepared/retrieval.json\n${{ runner.temp }}/java-http-phase-prepared/native-products.json\n${{ runner.temp }}/java-http-phase-prepared/source-inputs.json\n${{ runner.temp }}/java-http-phases/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/build/*.json\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-phases/campaign/node/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-phases/campaign/compiler-cache-selection.json\n${{ runner.temp }}/java-http-phases/campaign/final-materials.json",
           "retention-days": 3
         }
       }
@@ -91,7 +91,7 @@
   },
   "jobId": "http-phase-clients",
   "kind": "job",
-  "reviewReason": "Replace only the selected native retrieval CLI with the independently authenticated nominal36ea tuple; preserve original77 helper, exact original seven-control command, all previous steps/fields/bounds and historic obligations. Add a fetch before every dependent control and a separate seven-control command. Retire only the now-unobserved old CLI owner metadata, not its source or tests.",
+  "reviewReason": "Retain only the actual failed public-fixture java-owned-classes compiler log under its unchanged 4MiB producer bound, using the existing always-upload. No command, step, limit, authority, fixture or failure outcome changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
