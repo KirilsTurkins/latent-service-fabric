@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "ClosedFilesystemQualification.test_default_off_replay_preserves_all_original_job_bodies_and_bounds",
+    "ClosedFilesystemQualification.test_historical_native_five_and_four_companions_keep_original_identity",
+    "ClosedFilesystemQualification.test_historical_pin_and_generic_current_verifier_are_not_interchangeable",
+    "ClosedFilesystemQualification.test_native_and_signer_layer_mutations_fail_before_current_compilation",
+    "ClosedFilesystemQualification.test_rehashed_receipt_cannot_authenticate_foreign_source_or_node"
+  ],
+  "guards": {
+    "ClosedFilesystemQualification.test_default_off_replay_preserves_all_original_job_bodies_and_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e24c6d970c9750b09868306f56472cb8183bff7f615175212f420c6b0040a90a",
+        "class:setup-sha256:458a591eb1e37dd7ff058a0b826ef954f46ee7fea83863a3291f6fb363ebb93c"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemQualification.test_historical_native_five_and_four_companions_keep_original_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e24c6d970c9750b09868306f56472cb8183bff7f615175212f420c6b0040a90a",
+        "class:setup-sha256:458a591eb1e37dd7ff058a0b826ef954f46ee7fea83863a3291f6fb363ebb93c"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemQualification.test_historical_pin_and_generic_current_verifier_are_not_interchangeable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e24c6d970c9750b09868306f56472cb8183bff7f615175212f420c6b0040a90a",
+        "class:setup-sha256:458a591eb1e37dd7ff058a0b826ef954f46ee7fea83863a3291f6fb363ebb93c"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemQualification.test_native_and_signer_layer_mutations_fail_before_current_compilation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e24c6d970c9750b09868306f56472cb8183bff7f615175212f420c6b0040a90a",
+        "class:setup-sha256:458a591eb1e37dd7ff058a0b826ef954f46ee7fea83863a3291f6fb363ebb93c"
+      ],
+      "skipSites": []
+    },
+    "ClosedFilesystemQualification.test_rehashed_receipt_cannot_authenticate_foreign_source_or_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e24c6d970c9750b09868306f56472cb8183bff7f615175212f420c6b0040a90a",
+        "class:setup-sha256:458a591eb1e37dd7ff058a0b826ef954f46ee7fea83863a3291f6fb363ebb93c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_closed_filesystem_qualification.py",
+  "reviewReason": "Reviewed closed-file C port: exact libc/overlay preimages and three materials, preserved argument and warning checks, default-off20min historical27 plus fresh33 replay without native rebuild; all original job bodies retained after exact manual guard normalization.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -55,6 +55,11 @@
             "default": false,
             "description": "Run the original normal C qualification and same-products scratch child",
             "type": "boolean"
+          },
+          "replay-closed-filesystem": {
+            "default": false,
+            "description": "Fresh closed-file C component using the authenticated passed normal products",
+            "type": "boolean"
           }
         }
       }
@@ -64,11 +69,12 @@
     }
   },
   "requiredJobs": [
+    "closed-filesystem",
     "runtime",
     "scratch-refusals",
     "standard-facilities"
   ],
-  "reviewReason": "Add explicit default-false manual scratch selection retaining mandatory original runtime35 and new same-products child20; skip only unchanged extra standards25 on that manual selection, with all PR/push/default jobs and commands preserved.",
+  "reviewReason": "Reviewed closed-file C port: exact libc/overlay preimages and three materials, preserved argument and warning checks, default-off20min historical27 plus fresh33 replay without native rebuild; all original job bodies retained after exact manual guard normalization.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

@@ -178,6 +178,28 @@ source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.
 
+The first C scratch child failed during actual compilation, before signing or
+invocation: [job118415549455](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39354843145/job/118415549455)
+retained Zig0.16's deprecated `tmpfile` diagnostic under the unchanged `-Werror`.
+That failure is not a caught Unsupported result. The compiler-owned
+`c-closed-filesystem-stdio-v1` overlay now keeps the original libc declarations
+via `include_next`, then maps ordinary WASI `fopen` and `tmpfile` to null with
+`ENOTSUP`. The original `fopen` initial-mode `EINVAL` check remains ahead of
+the closed refusal. Other stdio operations and non-WASI includes are unchanged;
+no file descriptor, filesystem import or writable storage is supplied.
+
+Compiler admission authenticates the exact Zig0.16 selected stdio header and
+WASI libc `fopen` source, plus the captured overlay, and rechecks all three
+materials after compilation. The two upstream preimages come from the
+[pinned Zig source](https://codeberg.org/ziglang/zig/src/tag/0.16.0/lib/libc/wasi/libc-top-half/musl/src/stdio/fopen.c).
+The overlay is part of normal SDK capture and recipe identity; no application
+call is rewritten and no warning is disabled. Six new focused controls pass,
+including source drift refusal and normal compiler admission; the previous
+compiler fails the new required-material control. Actual fresh component and
+signed Unsupported results remain pending. The planned replay retains the
+original passed27-call parent/native products separately from the changed
+compiler and fresh component, without weakening the normal prepared verifier.
+
 ECMAScript has no standard filesystem API. The corresponding TypeScript packet
 (`tools/qualify_typescript_scratch_refusals.py`) captures an outside npm module,
 removes its originals and invokes the real isolated compiler for reachable
