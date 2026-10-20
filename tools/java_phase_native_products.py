@@ -13,6 +13,9 @@ import urllib.error
 import urllib.request
 import zipfile
 
+if __package__ in {None, ''}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from tools.java_replay_materials import api, git_source_identity, NoRedirect, Ranges, REPOSITORY
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
