@@ -185,9 +185,7 @@ fn load_observed(
         .find(|layer| layer.role == LayerRole::CapsuleManifest)
         .ok_or("capsule manifest missing")?;
     let manifest: Value = serde_json::from_slice(&manifest.bytes)?;
-    if manifest["metadata"]["tenant"] != json!(tenant) {
-        return Err("demo signer is confined to the examples tenant".into());
-    }
+    require_fixture_tenant(&manifest, tenant)?;
     let service = manifest["metadata"]["name"]
         .as_str()
         .ok_or("service identity missing")?
@@ -226,11 +224,18 @@ fn load_observed(
     })
 }
 
+pub(super) fn require_fixture_tenant(manifest: &Value, tenant: Option<&str>) -> Result<()> {
+    if manifest["metadata"]["tenant"] != json!(tenant) {
+        return Err("demo signer is confined to the examples tenant".into());
+    }
+    Ok(())
+}
+
 fn identity(bytes: &[u8]) -> Value {
     json!({"digest":artifact_blob_digest(bytes).as_str(),"size":bytes.len()})
 }
 
-fn sbom(input: &PackageInput, source_snapshot_digest: &str) -> Result<SbomInventory> {
+pub(super) fn sbom(input: &PackageInput, source_snapshot_digest: &str) -> Result<SbomInventory> {
     let layer = input
         .layers
         .iter()
