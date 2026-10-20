@@ -254,6 +254,24 @@ class JavaHttpFiberControlBoundaries(unittest.TestCase):
 
 
 class JavaPublicCFailureContext(unittest.TestCase):
+    def test_retained_actual_teavm_nested_c_layout_reaches_both_selected_sources(self):
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = Path(temporary)/'compiled/project/build/teavm-c/c'
+            # Independent literal layout from the completed compiler log,
+            # rather than constructing paths from the collector allowlist.
+            names = ('c/d/l/a/Capsule.c', 'c/j/u/z/GZIPInputStream.c')
+            log = b''
+            for name in names:
+                path = generated/name;path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('void actual_function(void* argument) {\n'
+                    '    int32_t teavm_local_6;\n    void* teavm_local_17;\n'
+                    '    teavm_local_6 = teavm_local_17;\n}\n', encoding='utf-8')
+                log += f'{path.as_posix()}:4:19: error: incompatible pointer to integer conversion\n'.encode()
+            result = context.collect(generated, log, context.FIXTURE_SOURCES)
+            self.assertEqual(tuple(row['path'] for row in result['errors']), names)
+            self.assertTrue(all(row['errorLine'] == 4 for row in result['errors']))
+
     @staticmethod
     def fixture(root):
         from tools.java_guest import c_failure_context as context
@@ -398,7 +416,9 @@ class JavaPublicCFailureContext(unittest.TestCase):
             self.assertIs(caught.exception, failure)
             value = read_json(root/'0-c-to-wasm-context.command.json')
             self.assertEqual(value, {'schemaVersion': context.SCHEMA, 'status': 'unavailable', 'stage': 'c-to-wasm',
-                'publicFixtureOnly': True, 'reason': 'bounded-selected-context-unavailable'})
+                'publicFixtureOnly': True, 'reason': 'bounded-selected-context-unavailable',
+                'refusal': 'file-unavailable-or-unsafe'})
+            self.assertEqual(context.refusal(ValueError('private path and diagnostic')), 'unavailable')
             (root/'0-c-to-wasm-context.command.json').unlink()
             with mock.patch.object(context.paths, 'write_new', side_effect=OSError('observer')), \
                     self.assertRaises(RuntimeError) as caught:

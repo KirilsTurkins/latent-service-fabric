@@ -8,10 +8,12 @@ import re
 from tools.dev_workflow import paths
 from tools.rust_capsule_project import digest
 
-FIXTURE_SOURCES = ('d/l/a/Capsule.c', 'j/u/z/GZIPInputStream.c')
+FIXTURE_SOURCES = ('c/d/l/a/Capsule.c', 'c/j/u/z/GZIPInputStream.c')
 MAX_FILE = 4 * 1024 * 1024
 MAX_CONTEXT = 128 * 1024
 SCHEMA = 'latent.java.public-fixture-c-context.v1'
+REFUSALS = frozenset({'input-invalid', 'outside-generated-root', 'error-bound', 'line-bound',
+    'line-invalid', 'function-unavailable', 'declaration-bound', 'no-selected-error', 'byte-bound'})
 ERROR = re.compile(r'^([^\r\n]{1,4096}\.c):([1-9][0-9]{0,6}):[1-9][0-9]{0,6}: error:')
 FUNCTION = re.compile(r'[A-Za-z_][A-Za-z0-9_* ]{0,512}\([^\r\n]{0,2048}\)\s*\{')
 DECLARATION = re.compile(r'\s*(?:(?:volatile|const|unsigned|signed|struct)\s+)*'
@@ -80,6 +82,20 @@ def encoded(value: dict) -> bytes:
     return (json.dumps(value, sort_keys=True, ensure_ascii=True, separators=(',', ':')) + '\n').encode('utf-8')
 
 
+def refusal(error: Exception) -> str:
+    code = error.args[0] if len(error.args) == 1 and type(error.args[0]) is str else ''
+    selected = code.removeprefix('java-c-failure-context-')
+    if code.startswith('java-c-failure-context-') and selected in REFUSALS:
+        return selected
+    if code in {'file-byte-limit', 'source-file-unavailable-or-unsafe', 'single-link-regular-file-required',
+                'reparse-point-rejected', 'source-changed-during-read', 'windows-protected-open-failed',
+                'reparse-or-file-type-rejected'}:
+        return 'file-unavailable-or-unsafe'
+    if isinstance(error, UnicodeError):
+        return 'encoding'
+    return 'unavailable'
+
+
 def run(compiler, generated: Path, selected: tuple[str, ...], *arguments) -> str:
     """Observe only failed clang; the original exception and command stay intact."""
     selection(selected)
@@ -95,9 +111,10 @@ def run(compiler, generated: Path, selected: tuple[str, ...], *arguments) -> str
                 try:
                     log = paths.read(compiler.directory, str(ordinal) + '-c-to-wasm.log', MAX_FILE)
                     result = collect(generated, log, selected)
-                except Exception:
+                except Exception as error:
                     result = {'schemaVersion': SCHEMA, 'status': 'unavailable', 'stage': 'c-to-wasm',
-                              'publicFixtureOnly': True, 'reason': 'bounded-selected-context-unavailable'}
+                              'publicFixtureOnly': True, 'reason': 'bounded-selected-context-unavailable',
+                              'refusal': refusal(error)}
                 raw = encoded(result)
                 if compiler.retained_bytes + len(raw) > 16 * 1024 * 1024:
                     raise ValueError('java-c-failure-context-total-bound')
