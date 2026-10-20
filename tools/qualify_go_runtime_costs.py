@@ -49,27 +49,29 @@ def stack_placement_observation(stderr):
 
 def stack_placement_reference(output):
     output.mkdir()
+    work = output / 'project'
+    work.mkdir()
     source = fixture.stack_reference_source()
-    (output / 'main.go').write_bytes(source)
-    (output / 'go.mod').write_bytes(b'module lsf-cost-stack-proof\n\ngo 1.27.2\n')
+    (work / 'main.go').write_bytes(source)
+    (work / 'go.mod').write_bytes(b'module lsf-cost-stack-proof\n\ngo 1.27.2\n')
     compiler = shutil.which('go')
     require(compiler is not None, 'Go-cost-maintained-Go-compiler-required')
     environment = build_environment(output)
     environment.update(GOOS='wasip1', GOARCH='wasm', GOTOOLCHAIN='local', GOWORK='off',
         GOFLAGS='-mod=readonly', GOPROXY='off', GOSUMDB='off', CGO_ENABLED='0',
         GOCACHE=str(output / 'cache'), GOMODCACHE=str(output / 'modules'))
-    commands = Commands(output, output, environment, deadline_seconds=240, command_seconds=180)
+    commands = Commands(work, output, environment, deadline_seconds=240, command_seconds=180)
     require(commands.run('stack-reference-compiler-version', compiler, 'version').strip()
             == b'go version go1.27.2 linux/amd64', 'Go-cost-pinned-compiler-version')
     commands.run('stack-reference-compile-not-execute', compiler, 'build',
         '-gcflags=lsf-cost-stack-proof=-m=2 -S', '-o', output / 'not-executed.wasm', '.')
     stderr = read_file(output / 'logs/01-stack-reference-compile-not-execute.stderr.txt', 262144)
     result = stack_placement_observation(stderr)
-    result.update(source=file_identity(output / 'main.go'),
+    result.update(source=file_identity(work / 'main.go'),
         compiler=file_identity(Path(compiler), 64 * 1024 * 1024),
         compilerDiagnostics=file_identity(output / 'logs/01-stack-reference-compile-not-execute.stderr.txt', 262144),
         commands=commands.records)
-    require(read_file(output / 'main.go') == source, 'Go-cost-reference-source-changed')
+    require(read_file(work / 'main.go') == source, 'Go-cost-reference-source-changed')
     write_json(output / 'placement.json', result)
     return result
 

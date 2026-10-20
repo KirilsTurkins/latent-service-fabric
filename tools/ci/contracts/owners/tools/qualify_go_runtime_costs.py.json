@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_runtime_costs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Finite Go742 cost slice: same ordinary source default/v5 baseline, actual held recursive stacks and live12MiB heap through GC/checksum, fresh calls, exact original64MiB/1B/120s and Task16/Wait4/Timer2 profile, real per-call consumption and physical owner retirement/clean node stop. Authenticate retained94d native5/normal27 without rebuild/repeat. Do not infer physical memory accounting or unused logical-bucket exhaustion from MemStats/HostCompleted. Exact owned recursive function additionally requires pinned Go1.27.2 Wasm compiler assembly/escape evidence of the array on an at-least8KiB stack frame, plus actual signed StackInuse growth>=540672B. All46 focused controls PASS; actual compilation/signed execution pending.",
+  "reviewReason": "Actual38f65/run39390120215 compiler-only reference failed before components: Go ignores go.mod directly in TMPDIR. Put the identical exact function/module under owned project child, retain parent temporary/output/deadline bounds and exact pinned compiler/stack diagnostics. Actual-source old RED/new GREEN environment-root control; all47 focused PASS. No guest or compiler-placement qualification from the failed run, no native rebuild or limit change.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "85b12dccbdf8234bd9aab75a3dbcd8328be8412b7abcee0a342ae3da0560f0bb"
+  "sha256": "7409a6af495cfa0cd6767cfcce75196f48b11362cb733e228980e88085827315"
 }

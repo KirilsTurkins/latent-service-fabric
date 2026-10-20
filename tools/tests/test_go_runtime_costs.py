@@ -220,6 +220,39 @@ class GoRuntimeCosts(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'real-stack-growth'):
             probe.observed([{'ok': weak}], 'stack-gc')
 
+    def test_reference_module_is_beneath_the_go_temporary_root_that_ignores_root_go_mod(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            compiler = root / 'go-not-executable'
+            compiler.write_bytes(b'controlled-compiler-identity-only')
+            output = root / 'placement'
+            check = self
+            class ControlledCommands:
+                def __init__(self, work, logs, environment, **bounds):
+                    check.assertEqual(work, output / 'project')
+                    check.assertEqual(logs, output)
+                    check.assertNotEqual(str(work), environment['TMPDIR'])
+                    check.assertEqual((work / 'main.go').read_bytes(), fixture.stack_reference_source())
+                    check.assertIn(b'module lsf-cost-stack-proof', (work / 'go.mod').read_bytes())
+                    check.assertEqual(bounds, {'deadline_seconds': 240, 'command_seconds': 180})
+                    self.records = []
+                    (output / 'logs').mkdir()
+                def run(self, stage, *args):
+                    self.records.append({'stage': stage, 'exitCode': 0})
+                    if stage == 'stack-reference-compiler-version':
+                        return b'go version go1.27.2 linux/amd64\n'
+                    check.assertEqual(args[1], 'build')
+                    check.assertIn('-gcflags=lsf-cost-stack-proof=-m=2 -S', args)
+                    (output / 'logs/01-stack-reference-compile-not-execute.stderr.txt').write_bytes(
+                        b'main.costRecursive STEXT size=500 args=0x28 locals=0x2040 funcid=0x0\n'
+                        b'MOVD $main.frame+48(SP), R0\n')
+                    return b''
+            with patch.object(reference, 'Commands', ControlledCommands), \
+                    patch.object(reference.shutil, 'which', return_value=str(compiler)):
+                value = reference.stack_placement_reference(output)
+            self.assertEqual(value['compilerFrameBytes'], 8256)
+            self.assertFalse(value['referenceExecuted'])
+
 
 if __name__ == '__main__':
     unittest.main()
