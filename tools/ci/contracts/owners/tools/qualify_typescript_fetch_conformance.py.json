@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_fetch_conformance.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain each returned actual invocation before its unchanged strict validation, including failures; the6b DELETE failure had no persisted response row. No execution/budget/contact/cleanup predicate changes and no inferred trap cause.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6e9efedf843f7e90cedbadbefb6a3c9400c610ee8c9f2185aed849584f0abe90"
+}

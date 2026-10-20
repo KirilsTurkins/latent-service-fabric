@@ -1,0 +1,34 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-fetch-conformance-${{ github.ref }}"
+    },
+    "name": "TypeScript standard Fetch conformance",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-http-conformance-20261020"
+        ],
+        "paths": [
+          ".github/workflows/typescript-fetch-conformance.yml",
+          "sdk/typescript-guest/probes/fetch-conformance/**",
+          "tools/typescript_fetch_conformance.py",
+          "tools/qualify_typescript_fetch_conformance.py",
+          "tools/tests/test_typescript_fetch_conformance.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "fetch-conformance"
+  ],
+  "reviewReason": "Add the independent signed standard Fetch provider campaign, preserving the original one-request and published-library campaigns and every original command.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-fetch-conformance.yml"
+}
