@@ -10,7 +10,7 @@ import time
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
-from tools.java_http_phase_node import configuration, grants, usage, component_operator
+from tools.java_http_phase_node import configuration, grants, usage, component_operator, component_node_profile
 from tools.java_http_spi_fixture import CASES
 from tools.phase2_operator_process import require, write_json, stopped_record
 from tools.phase2_operator_scenario import connect, stop
@@ -109,6 +109,7 @@ def run(artifact: Path, binaries: dict, output: Path, *, deadline: float):
             client = RecordingClient(binaries['latent'], work/'client', cancellation,
                 min(deadline, time.monotonic()+160), evidence=output/'controls', invocation_timeout_millis=120000)
             config = configuration(work/'node', signed, peer, credential, [])
+            result['nodeComponentInputProfile'] = component_node_profile(config)
             stage = 'node'
             node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1)
             component_operator(client)

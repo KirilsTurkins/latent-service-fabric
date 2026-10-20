@@ -64,3 +64,9 @@ dispatch skips normal baseline jobs. Removing the selector, exact two exclusions
 and copied job restores the entire old workflow. Both entries use the same
 programme, authority, component operator ceiling and budgets; neither runs
 automatically as a substitute for default-client qualification.
+
+The separate SPI campaign inherits the same explicit 64 MiB node component-input
+profile and 64 MiB operator input profile as the phase campaign. Its public
+receipt projects the actual node selection separately. Guest execution, provider,
+cell and cache budgets remain unchanged. SPI execution remains pending; this
+source update does not transfer any default-client or tenant result.
