@@ -52,3 +52,16 @@ Eight focused controls pass; no actual guest case has passed this lane yet.
 This does not qualify network streaming/backpressure, every runtime resource
 limit, provider absence or cross-tenant reuse. Those literal whole-ticket
 requirements remain open rather than being inferred from these narrower rows.
+
+Actual sourcece8b33b54b passed all25 ordinary response/method/body/refusal/
+redirect/uncertainty cases, preserving exact original budgets and physical idle
+checks. Its next explicit-abort call returned the correct reason after204ms,
+but the25ms fixture timer fired before the request reached the required real
+peer gate. The strict pending-gate assertion correctly failed; no stalled-I/O
+abort qualification follows from that result. Artifact12242583798 retains279
+members and this failed programme (SHA2569618136e5c06d0695ee47749c8c8017153b658ae4782960b3c647b8638876a72).
+The two pending-abort inputs now request1000ms, verify that full interval with
+the authorized monotonic clock inside the guest, and hold the actually observed
+peer gate for2seconds. The early-return/no-gate refusals and all production
+limits remain. Root-return drain still uses its original150ms release. Actual
+pending-I/O abort/timeout and subsequent root terminal cases remain unqualified.

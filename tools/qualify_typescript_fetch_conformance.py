@@ -84,12 +84,12 @@ def execute(artifact, native, output):
                 require(peer.observation()['startedRequests']-before==outbound,'fetch-conformance-exact-contact-delta')
                 result['cases'].append({'name':name,'outbound':outbound,'result':row['decoded']})
                 base.retire(client,probe,target,output,name)
-            for name,mode,vector,expected in [
-                ('explicit-abort',30,'pending-headers','explicit-abort'),
-                ('operation-timeout',31,'partial-body','operation-timeout'),
-                ('root-return-drains-accepted',32,'pending-headers','accepted-fetch-root-return')]:
+            for name,mode,vector,expected,release_after in [
+                ('explicit-abort',30,'pending-headers','explicit-abort',2.0),
+                ('operation-timeout',31,'partial-body','operation-timeout',2.0),
+                ('root-return-drains-accepted',32,'pending-headers','accepted-fetch-root-return',.15)]:
                 stage=name
-                row=cases.invoke(client,target,peer,mode,vector,'conformance-'+name,release_after=.15)
+                row=cases.invoke(client,target,peer,mode,vector,'conformance-'+name,release_after=release_after)
                 base.require_result(row,expected,1)
                 result['cases'].append({'name':name,'outbound':1,'result':row['decoded'],'realGateReleased':True})
                 base.retire(client,probe,target,output,name)

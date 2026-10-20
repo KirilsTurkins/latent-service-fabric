@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_fetch_conformance.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the final explicit six-file qualification source inventory and preserve every actual signed case and physical-owner requirement.",
+  "reviewReason": "Retain all 25 passed standard cases and strict no-gate/early-return refusals; pending-abort fixture requests one second verified by guest monotonic clock while real gate is held two seconds, with production limits unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "69ebe578fa40fdce5790612666de53c4a4aae90177df9a9d59767f0cacb770c3"
+  "sha256": "d1efeeeb227a758d78e2adb6849105703b7cf2b274d381fbd2f351de66576890"
 }

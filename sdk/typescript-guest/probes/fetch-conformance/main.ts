@@ -106,10 +106,12 @@ export const api: typeof Contract = {
     }
     if (mode === 30 || mode === 31) {
       const controller = new AbortController();
-      const timer = mode === 30 ? setTimeout(() => controller.abort(reason), 25) : undefined;
-      const signal = mode === 30 ? controller.signal : AbortSignal.timeout(25);
+      const started = performance.now();
+      const timer = mode === 30 ? setTimeout(() => controller.abort(reason), 1000) : undefined;
+      const signal = mode === 30 ? controller.signal : AbortSignal.timeout(1000);
       try { await fetch(url, {signal}); }
       catch (error) {
+        if (performance.now() - started < 1000) throw new Error('fetch-conformance-early-abort');
         if (mode === 30 && error === reason) return 'explicit-abort';
         if (mode === 31 && error instanceof Error && error.name === 'TimeoutError') return 'operation-timeout';
         throw error;
