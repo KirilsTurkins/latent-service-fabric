@@ -9,7 +9,8 @@ unique, and an additional HTTP installation cannot reuse another installation's
 tenant/service scope or a scalar alias identity.
 
 All real installations and scalar aliases together still occupy at most the
-original 14 descriptor slots. The array cannot allocate over 16 entries. Existing
+original 14 descriptor slots. The decoded array also has a sixteen-entry
+capacity check. Existing
 node-wide I/O, pool, metadata, configuration, worker and request ceilings are
 unchanged; installing more providers never multiplies those ceilings. Each
 provider's original client/connection key, configuration digest and epoch remain
