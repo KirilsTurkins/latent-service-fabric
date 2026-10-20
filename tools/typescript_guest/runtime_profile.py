@@ -327,6 +327,28 @@ def compiled_world_matches(selected: dict, component: dict, world: str, *, profi
             return False
     else:
         return False
+    # The phase interface uses the legacy resource identities, not its response
+    # record. Normal component emission prunes that one unreachable named type.
+    # Bind both complete source interfaces before allowing this exact omission.
+    legacy_name = 'latent:http/streaming@0.3.0'
+    phase_name = 'latent:http/phase-timing@0.4.0'
+    nominal = expected['imports'].get(legacy_name)
+    observed_nominal = actual['imports'].get(legacy_name)
+    phase = expected['imports'].get(phase_name)
+    if (profile == IMPORT_PROFILE and isinstance(nominal, dict)
+            and isinstance(observed_nominal, dict) and isinstance(phase, dict)
+            and 'response' not in observed_nominal.get('types', {})
+            and digest(json.dumps(nominal, sort_keys=True, separators=(',', ':')).encode()) ==
+                'sha256:9a09e86887874c6f34f82be8ac587a3b4fd790a8f4fa46b5939e0167471c80c2'
+            and digest(json.dumps(phase, sort_keys=True, separators=(',', ':')).encode()) ==
+                'sha256:3e6ba450daa7340b22b4d47e46da428d2a36478825e47b5d8aa8bff8d3f8689b'):
+        pruned_nominal = {'types': {name: value for name, value in nominal['types'].items()
+                                  if name != 'response'}, 'functions': nominal['functions']}
+        if observed_nominal != pruned_nominal:
+            return False
+        expected['imports'][legacy_name] = pruned_nominal
+        if actual == expected:
+            return True
     activation = expected['imports'].get(ACTIVATION_INTERFACE)
     if (not isinstance(activation, dict)
             or set(activation['functions']) != {'register', 'park', 'wake', 'settle', 'close',
