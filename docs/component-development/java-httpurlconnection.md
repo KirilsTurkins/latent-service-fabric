@@ -15,8 +15,12 @@ This is an implementation candidate. Native Java ownership controls and a
 [finite signed ordinary-API provider gate](../testing/java-standard-http.md)
 passed, including actual TeaVM component execution, HTTP errors, denied targets,
 body failures/early close, uncertain POST and physical retirement. One unchanged
-published default client also passes that finite provider matrix. Two independent
-clients, private dependencies and the complete profile remain unqualified.
+published default client also passes that finite provider matrix. The later
+[two-published-client campaign](../testing/java-published-http.md) passed all
+26 cases using unchanged `http-request:6.0` and DavidWebb with its transitive
+JSON parser. The [private-JAR campaign](../testing/java-private-http.md) passed
+its separate 26-case captured-source gate. Those source-bound results leave the
+complete profile unqualified.
 Issue #688 remains open.
 It is independent of the listener-free Java HttpServer profile. Selecting both
 profiles merges their SDK compiler provider lists without replacing either list.
@@ -102,6 +106,8 @@ The source-bound signed `http-client-profile.json` asset records exact adapter,
 recipe, source and component identities and a pending qualification state. It is
 not execution evidence or authority. Remaining work includes pinned TeaVM ABI
 checks for inherited JDK members, HTTPS and redirect semantics, distinct timeout
-phases, two unchanged independent default clients and an outside-checkout private
-JAR, the shared real-provider adversarial matrix, native/guest cost measurements
-and fresh cross-tenant cleanup. Existing direct Java SDK regressions remain in CI.
+phases, pending/sibling/cancellation behavior, native/guest cost measurements
+and fresh cross-tenant cleanup. The two published clients and outside-checkout
+private JAR have passed the finite shared real-provider matrix linked above;
+their receipts do not qualify the remaining surfaces. Existing direct Java SDK
+regressions remain in CI.

@@ -71,11 +71,12 @@
     "dependency-matrix",
     "git-closure",
     "git-components",
+    "scratch-refusals",
     "standard-clocks",
     "standard-entropy",
     "standard-stdio"
   ],
-  "reviewReason": "Add explicit ordinary Rust entropy campaign; retain every old job, ordered command, test and guard.",
+  "reviewReason": "Add a separately bounded20-minute signed Rust scratch-refusal child using exact normal public products; preserve all original authoring commands/jobs/35-minute limit and source-only other-language scope.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

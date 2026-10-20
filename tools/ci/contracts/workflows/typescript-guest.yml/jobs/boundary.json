@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}",
+    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks && !inputs.qualify-scratch-refusals }}",
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -192,7 +192,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Retain exact original and entropy ordered command fields; add current dependency-negative controls under unchanged75-minute budget.",
+  "reviewReason": "Add only a default-false manual three-case captured node:fs refusal job using authenticated historical contracts/package tools, preserving all existing language commands, budgets and original native attribution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

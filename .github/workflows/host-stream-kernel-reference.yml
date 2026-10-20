@@ -1,0 +1,54 @@
+name: Current stream kernel owner reference
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: ['feat/host-stream-kernel-tail-20261020', 'feat/host-stream-kernel-retirement-20261020']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: host-stream-kernel-reference-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reference:
+    name: Actual original-owner retention through kernel close tails
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: true
+      - name: Reject invented retirement, private fields and partial evidence
+        run: python3 -m unittest tools.tests.test_host_stream_kernel_observer tools.tests.test_host_stream_kernel_reference tools.tests.test_host_stream_tls_provider_reference -v
+      - name: Observe one real provider pressure and kernel tail under original allowances
+        run: python3 tools/qualify_host_stream_kernel.py --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/host-stream-kernel-reference"
+      - name: Retain bounded numeric observations and exact source identities
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: host-stream-kernel-reference-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/host-stream-kernel-reference/receipt.json
+            ${{ runner.temp }}/host-stream-kernel-reference/cargo.stderr.log
+            ${{ runner.temp }}/host-stream-kernel-reference/cargo-diagnostics.json
+            ${{ runner.temp }}/host-stream-kernel-reference/tests.stdout.log
+            ${{ runner.temp }}/host-stream-kernel-reference/tests.stderr.log
+            ${{ runner.temp }}/host-stream-kernel-reference/list.stdout.log
+            ${{ runner.temp }}/host-stream-kernel-reference/ignored.stdout.log
+          if-no-files-found: warn
+          retention-days: 7

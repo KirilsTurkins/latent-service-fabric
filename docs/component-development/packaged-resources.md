@@ -139,6 +139,52 @@ clock, entropy or logging authority. Resource packaging introduces no scheduler
 or background worker. Runtime stream closure, concurrent access and retirement
 remain subject to the language runtime and activation-ownership qualification.
 
+The maintained scratch-refusal packet is separate from immutable-resource
+lookup. `tools/qualify_sdk_scratch.py` consumes that language's exact passed normal
+qualification, native five and four unchanged companion packages; it builds one
+new ordinary greeting component and uses the original signing/admission/node
+pipeline. Its default-off runner selector adds entry, open, create, temporary
+file/directory, explicit fixture-trap and fresh-state calls. Every successful
+refusal must be caught by the actual standard API, preserve original budgets,
+produce no external effects and retire physical/provider owners. A later close or
+write error cannot disguise an already successful open/create. The packet grants
+no filesystem or scratch provider and preserves required existing runtime grants.
+
+The source fixtures use `std::fs`, libc `fopen`/`tmpfile`, Go `os` file APIs, Java
+`java.io` and .NET `System.IO`. Rust has no standard temporary-file factory, so its
+third case is a relative temporary-directory creation attempt. C compiler imports
+must still satisfy the maintained closed profile: a componentization failure is
+retained as failure and cannot be counted as a caught runtime Unsupported error.
+`NotFound`, access denial and general I/O categories remain distinct from concrete
+Unsupported; neither a generic trap nor a successful compiler build proves API
+support or refusal. Source controls currently pass; signed five-language results
+are pending and no whole criterion is complete. The Rust workflow has a separate
+20-minute child consuming an exact normal public bundle; the original 35-minute
+parent and all its commands remain mandatory. Other language execution wiring
+retains its own pending boundary. Actual results also project into the existing
+source/component-bound compatibility report: only precise Unsupported is
+`unsupported-reached`; NotFound, other errors and the deliberate fixture trap
+remain unresolved observations.
+
+ECMAScript has no standard filesystem API. The corresponding TypeScript packet
+(`tools/qualify_typescript_scratch_refusals.py`) captures an outside npm module,
+removes its originals and invokes the real isolated compiler for reachable
+`node:fs` open/create/temp operations. Only the exact uninstalled-standard-module
+bundle diagnostic counts. This is compiler-refusal evidence, not a claim that a
+Node filesystem facade executes in the component. A default-false `qualify-scratch-refusals`
+selection in the registered TypeScript workflow runs only these three compiler
+refusals under a separate 20-minute job, reusing authenticated historical public
+contracts/packager tools; it performs no native rebuild or node invocation.
+Its current compiler receipt and original compiled-source ancestry remain separate.
+[Actual three-case qualification](../testing/evidence/typescript-scratch-refusals-2026-10-20.json)
+passed at source99eaccd694 in run39350623578/job118393691728: all three outside
+packages were captured/reviewed, originals removed and the actual compiler
+completed with the exact uninstalled-module refusal. All112 compiler materials
+remain exact after composition. This executes no node and qualifies no native
+filesystem result; the native-language programmes remain separately pending.
+The owning language receipts
+feed the existing SDK conformance work in #694; this adds no cross-language gate.
+
 Related: [captured dependencies](application-dependencies.md),
 [compatibility reports](library-compatibility.md), and
 [guest SDK development](guest-sdk.md).

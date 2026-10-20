@@ -868,9 +868,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         # Review only this exact job-level guard change; all command bytes,
         # step guards, timeouts, environments and historical obligations below
         # remain independently equal to the immutable original floor.
-        reviewed_typescript_observer_guard = "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}"
+        reviewed_typescript_observer_guard = "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks && !inputs.qualify-scratch-refusals }}"
         inputs = data["workflowContracts"][".github/workflows/typescript-guest.yml"]["on"]["workflow_dispatch"]["inputs"]
-        for name in ("observe-failed-fetch", "observe-fetch-boundaries", "replay-entropy-policy"):
+        for name in ("observe-failed-fetch", "observe-fetch-boundaries", "replay-entropy-policy", "qualify-standard-clocks", "qualify-scratch-refusals"):
             self.assertEqual(inputs[name]["type"], "boolean")
             self.assertIs(inputs[name]["default"], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")

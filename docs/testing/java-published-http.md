@@ -47,7 +47,7 @@ Focused Python controls verify normal project selection, exact transitive
 closure, SHA256 CAS refusal before review, changed published originals,
 historical-product mutation and original exception preservation. They are
 source controls, not JAR/TeaVM execution. The actual two-client signed result
-is pending. HTTPS/certificate APIs, independent timeout phases, applicable
+passed on the source identified below. HTTPS/certificate APIs, independent timeout phases, applicable
 pending/sibling/cancellation behavior and broader #688/#741 requirements remain
 separate and open.
 
@@ -62,7 +62,7 @@ structured receipts. No Webb component or SSL transport failure is claimed.
 The source correction supplies a canonical abstract HTTPS type with explicit
 unsupported construction/mutators, retaining plain HTTP identity and the
 original HTTPS factory refusal. Host type/refusal controls are source evidence;
-the corrected two-component signed gate remains required.
+the corrected two-component signed gate subsequently passed as recorded below.
 
 
 The corrected `fb8209c` attempt (`39349722856` / `118390793119`) compiled
@@ -71,7 +71,33 @@ qualifying TLS. Seven Webb cases passed before the redirect assertion: the
 published library legitimately returned `302` with a null error body, yielding
 `1:302:null`; the retained invocation records one outbound request. The fixture
 now uses Webb's ordinary `Response.ensureSuccess()` on 3xx responses to request
-the redirect refusal expected by the unchanged shared programme. It continues to
+an explicit caller-level non-success exception. The backend returned `302` with
+redirect following disabled; this is not evidence that the SDK or provider
+rejected the status. It continues to
 inspect HTTP404/500 as responses and keeps `followRedirects(false)`. No library,
-provider, oracle, grant or retry behavior changed; the corrected full 26-case
-result is pending.
+provider, oracle, grant or retry behavior changed.
+
+### Passed source-bound two-client execution
+
+[Run 39351070454, job 118395099868](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39351070454/job/118395099868)
+passed the complete 26-case programme at feature source
+`d0bb3c9e8180659524ec4683e079b4b18a513fb4`, tested merge
+`550cc92eb94464e69278c7147358c1a51e5e11f6` and tree
+`d46d186291d50de174e6cca107fe6cc2deddda25`. Artifact `12233945123`
+has SHA-256 `3ddb6323023a70057075f7c84ecc1ad0a22064664c1dcbcab825e98299054aa2`.
+The fresh `http-request` component is
+`sha256:36f679cc2fc6b46277aea8cafe41f72df978317405a52f4623f1f7e3ad297582`
+(1,427,187 bytes); the fresh Webb component is
+`sha256:59f48c1d8f222329141d2936b3e0c3cf149811a5033731d2f357c3eebec209ba`
+(2,557,269 bytes). Both use the same 10,966-entry compiler inventory and recipe.
+
+Independent retained-JSON verification checked all 76 source-material rows,
+both diagnostic materials, both original JAR identities and their captured
+transitive/resource edges. All 26 exact outcomes, four zero-work grant denials
+and 26 idle retirement snapshots passed. Each client made eleven primary peer
+contacts, one committed mutation, zero secondary contacts, and shut down its
+node and peer cleanly and reaped. The historical helper/host sources above
+remain explicit; these are fresh Java components, not a current native rebuild.
+The two libraries retain their distinct response/error semantics. This finite
+result does not qualify HTTPS, nonzero phase timeouts, concurrent pending I/O,
+cross-tenant state isolation or the full #688/#741 tickets.

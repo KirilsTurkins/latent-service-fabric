@@ -7,6 +7,11 @@ from .common import encode
 
 TRAP_CODES = frozenset({"guest-trap", "guest-runtime-error", "budget-accounting-failed",
                         "runtime-lifecycle-unproven", "result-limit-exceeded", "invalid-component-result"})
+TRAP_KINDS = frozenset({"stack-overflow", "memory-out-of-bounds", "heap-misaligned",
+    "table-out-of-bounds", "indirect-call-to-null", "bad-signature", "integer-overflow",
+    "integer-division-by-zero", "bad-conversion-to-integer", "unreachable-code",
+    "allocation-too-large", "guest-fault", "runtime-error"})
+RUNTIME_PHASES = frozenset({"instantiate", "export-lookup", "call-and-postreturn"})
 CURRENTNESS_REASONS = frozenset({
     "admission-authority-busy", "admission-authority-poisoned", "admission-control-busy",
     "admission-clock-lease-uncovered", "admission-clock-regression", "admission-durability-uncertain",
@@ -32,6 +37,13 @@ def _decimal(value, bits):
             return None
         number = value
     return str(number) if number < 1 << bits else None
+
+
+def valid_trap_kind(kind, code, phase=None):
+    return (isinstance(kind, str) and kind in TRAP_KINDS
+        and ((code == 'guest-runtime-error' and kind == 'runtime-error'
+              and (phase is None or isinstance(phase, str) and phase in RUNTIME_PHASES))
+             or (code == 'guest-trap' and kind != 'runtime-error' and phase is None)))
 
 
 def original_result(value: dict) -> dict:
@@ -78,6 +90,18 @@ def original_result(value: dict) -> dict:
         output["trapDetailsUnavailable"] = True
         return output
     output["guestTrapCode"] = code
+    kinds = [row for row in details if isinstance(row, dict) and row.get('kind') == 'activation.guest-trap-kind']
+    if kinds:
+        fields = kinds[0].get('fields')
+        if (len(kinds) == 1 and isinstance(fields, dict) and {'kind'} <= fields.keys()
+                and fields.keys() <= {'kind', 'phase'}
+                and ('phase' not in fields or isinstance(fields['phase'], str))
+                and valid_trap_kind(fields.get('kind'), code, fields.get('phase'))):
+            output['guestTrapKind'] = fields['kind']
+            if 'phase' in fields:
+                output['guestRuntimePhase'] = fields['phase']
+        else:
+            output['trapKindUnavailable'] = True
     reasons = [row for row in details if isinstance(row, dict) and row.get("kind") == "admission.currentness"]
     if code == "guest-runtime-error" and len(reasons) == 1 and isinstance(reasons[0].get("fields"), dict):
         reason = reasons[0]["fields"].get("reason")

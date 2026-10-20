@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}",
+    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks && !inputs.qualify-scratch-refusals }}",
     "name": "Source-owned asynchronous import compiler",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -72,7 +72,7 @@
   },
   "jobId": "source-splicer",
   "kind": "job",
-  "reviewReason": "Reviewed default-false fixed-artifact replay; original full jobs/commands/budgets remain mandatory for normal PR/push and ordinary dispatch.",
+  "reviewReason": "Add only a default-false manual three-case captured node:fs refusal job using authenticated historical contracts/package tools, preserving all existing language commands, budgets and original native attribution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
