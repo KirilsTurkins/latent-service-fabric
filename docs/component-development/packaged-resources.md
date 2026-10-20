@@ -177,11 +177,36 @@ passed33 invocations at source488b264e9b with clean retirement, but its open and
 create calls caught `DirectoryNotFoundException` and its temporary-file call
 caught `IOException`. Those results remain unresolved behavior for criterion5,
 not concrete Unsupported. The earlier entropy-specific harness failure remains
-separate. Rust scratch is still pending. Actual results also project into the existing
+separate. Rust results are recorded below. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.
 
+The corrected Rust parent passed at source38fedd53bb in
+[job118418832964](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39358494292/job/118418832964).
+Its scratch child then failed during offline compilation: the workspace fetch
+had not downloaded the owned fixture lock's `cpufeatures0.2.17`. No scratch guest
+ran. The qualifier now performs a bounded data-only `cargo fetch --locked`
+against that fixture's manifest, verifies its complete source inventory is
+unchanged, and retains the subsequent build's offline requirement. The first
+replay at de9eb70c30 then retained a second compile failure for `addr2line0.26.1`: `--target`
+filtered native rows out of that lock download. The corrected fetch has no target
+filter, so it acquires the whole exact lock without executing its packages. The separate
+default-false `replay-scratch-refusals` lane authenticates the passed38 public
+bundle, native five and four companions, then builds/signs one fresh component
+and requires the original27 plus six calls. Its 20-minute limit and the original
+nine job bodies are preserved. The original native source stays historical38;
+no normal receipt is rebound to later host changes.
+
+The corrected [run39366052154/job118443039897](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39366052154/job/118443039897)
+at source669fbc56f1 passed the whole targeted job: data-only whole-lock fetch,
+fresh offline component build, normal packaging/signing/admission and all33
+known/reaped invocations. Ordinary `File::open`, `OpenOptions::open` and
+`create_dir` each caught `ErrorKind::Unsupported`. All12 provider-idle samples
+had zero active owners,30 physical samples were retained, and shutdown was
+clean. The [source-bound observation](../testing/evidence/rust-scratch-signed-2026-10-20.json)
+retains both earlier compile failures separately; this finite Rust result does
+not complete the six-language scratch or whole resource/facility criterion.
 The first C scratch child failed during actual compilation, before signing or
 invocation: [job118415549455](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39354843145/job/118415549455)
 retained Zig0.16's deprecated `tmpfile` diagnostic under the unchanged `-Werror`.

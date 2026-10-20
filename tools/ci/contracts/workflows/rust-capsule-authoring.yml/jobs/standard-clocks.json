@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}",
     "name": "Rebuilt Rust standard clocks and signed grants",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -89,7 +90,7 @@
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Preserve every existing gate and finite deadline; add exact authenticated child proofs, typed pre-signing and grant negatives, native contract controls and pinned release version evidence.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

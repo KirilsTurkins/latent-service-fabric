@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_sdk_scratch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve closed compatibility token grammar: map only C operation names to fopen/read and fopen/create after actual33 signed success; original job report failure retained.",
+  "reviewReason": "Reviewed composition preserves actual669 Rust whole-lock fetch/offline build and merged C closed report tokens; neither exercised Rust behavior nor normal prepared verifier changes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "eda86b51a2a3356b15c28cfca902e7f573d1882e259aaee491084db54bcfb6eb"
+  "sha256": "16c54ac6f44cd142cef6a1171b78c7b12a169042e9552fb573ca7af2a3c81d98"
 }
