@@ -58,7 +58,7 @@ def settings(original_settings, startups, credentials):
     # second installation with its own private credential store and origin set.
     for name in (*RUNTIME,'activationRuntime'):
         source = providers[name]['identity']
-        providers['scalarAliases'].append({'source':name,'identity':{
+        providers['scalarAliases'].append({'source':source['id'],'identity':{
             'id':source['id']+'-foreign','tenant':'foreign','service':source['service']+'-foreign','epoch':1}})
     providers['bindings'] = []
     for tenant in TENANTS:

@@ -71,6 +71,8 @@ class GoHttpTenantControls(unittest.TestCase):
         self.assertEqual(len(selected['providers']['bindings']),10)
         self.assertEqual(len(selected['providers']['scalarAliases']),4)
         self.assertTrue(all(row['source'] != 'httpStreaming' for row in selected['providers']['scalarAliases']))
+        installed_ids = {selected['providers'][name]['identity']['id'] for name in (*node.RUNTIME,'activationRuntime')}
+        self.assertEqual({row['source'] for row in selected['providers']['scalarAliases']},installed_ids)
 
     def test_runtime_limit_increase_or_another_cell_cannot_enter_isolation_programme(self):
         original,startups,credentials = self.configured()
