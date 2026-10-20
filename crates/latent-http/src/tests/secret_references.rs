@@ -411,7 +411,10 @@ async fn separate_http_installation_cannot_rebind_foreign_tenant_provider_or_ori
         ),
         Err(StreamingHttpError::Http(HttpError::PermissionDenied))
     ));
-    assert_eq!(control.budget.consumption().outbound_requests, 0);
+    assert_eq!(
+        control.budget.snapshot_at(Instant::now()).outbound_requests,
+        0
+    );
     let after = f.pools.snapshot().unwrap();
     assert_eq!(after.connections, original.connections);
     assert_eq!(after.pending_requests, original.pending_requests);
