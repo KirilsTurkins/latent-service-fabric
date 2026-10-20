@@ -61,3 +61,15 @@ budgets are unchanged by this reader correction.
 The checked-in compiler diagnostic fixture removes only four trailing spaces
 from the hexadecimal dump; every assembly/escape-analysis line is retained.
 The full original diagnostic hash remains bound by the retained actual artifact.
+
+
+The later205ce run passed the exact stack-reference parser and compiled,
+packaged and signed the default-profile component. It stopped during deployment
+setup before any cost invocation: that capsule imports the two clocks and random,
+while the programme incorrectly added an activation grant. Native manifest
+validation correctly rejects grants for contracts absent from the capsule.
+The programme now retains the ordinary runtime-granted target for async-v1 and
+installs the additional activation grant only for the explicitly selected v5
+component. The actual programme-path control fails on the prior source and checks
+both profiles without changing the six cases, their source, limits or host.
+Corrected signed execution remains pending; these controls do not qualify costs.

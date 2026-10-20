@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_runtime_costs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual3337/run39392610753 pinnedGo1.27.2 wasm compile passed but oldreader omitted STEXT align and expected symbolicSP. Exact36853B actualdiagnostics f839812c show original16424B frame: SP+40 initialization8192B and SP+8232 checksumcopy8192B. Closed functionpair/source-lines/recursivecall/noheapescape and alteredlayout/size/function/line/escape/oversize negatives;18focusedPASS. Originalmodule/class/decorator/skip contexts retainedAST-exact and14oldtestbodies unchanged; twooldcontrols replace syntheticwrongarchitecture output with actualpinnedWasmfixture, twoadditivecases. Ordinaryapplication/SDK/native/probe/budgets/all6signedgates unchanged. Fullsignedcostqualification remainsfalse.",
+  "reviewReason": "Actual205 default async-v1 capsule has no activation import; preserve three runtime grants without adding invalid activation grant; explicitv5 still installs exact original activation provider/policy. Originalsix cases/source/budgets/native unchanged. Programme-path oldsource RED,19 focused PASS; new signed result pending.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b8e9fab3057cb32b92c5b696be68b1b2a6e5701d168ab63da955ff3907e7cdb8"
+  "sha256": "d06809de6ee6361f4142ef19b968e25a764f99ff760d7ec3f578408964dfe469"
 }
