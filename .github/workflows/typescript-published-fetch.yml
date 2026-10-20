@@ -76,7 +76,7 @@ jobs:
             ${{ runner.temp }}/published-fetch/variant-*/build/logs/**
             ${{ runner.temp }}/published-fetch/variant-*/node/*.json
             ${{ runner.temp }}/published-fetch/variant-*/node/controls/*.json
-            ${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile/*.json
-            ${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile/controls/*.json
+            ${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile*/*.json
+            ${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile*/controls/*.json
           if-no-files-found: warn
           retention-days: 7

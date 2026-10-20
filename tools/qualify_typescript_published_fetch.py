@@ -72,18 +72,21 @@ def require_original_clients(observed, failed):
     require(not failed and observed==expected,'published-fetch-original-client-outcomes-failed')
 
 
-def owner_probe_configuration(path):
+def owner_probe_configuration(path, probe="all"):
     """One fixed differential profile; never used by original qualification."""
     value=json.loads(read_file(path))
     original=value['providers']['activationRuntime']['limits']
     require(original==base.OWNER_LIMITS,'published-fetch-owner-probe-original-limits')
-    changed={**original,'tasks':64,'queuedWork':64,'nativeOwners':256}
+    choices={'all':{'tasks':64,'queuedWork':64,'nativeOwners':256},
+        'task-only':{'tasks':64},'queue-only':{'queuedWork':64},'native-only':{'nativeOwners':256}}
+    require(probe in choices,'published-fetch-owner-probe-selection')
+    changed={**original,**choices[probe]}
     value['providers']['activationRuntime']['limits']=changed
     path.write_text(json.dumps(value,indent=2)+"\n",encoding="utf-8")
     return changed
 
 
-def execute(artifact, native, output, *, diagnostic_owner_profile=False):
+def execute(artifact, native, output, *, diagnostic_owner_profile=False, owner_probe="all"):
     output = fresh(output)
     record = {'schemaVersion': 'latent.typescript.published-fetch-execution.v1', 'status': 'in-progress',
               'fullTicketQualification': False, 'cases': [], 'diagnosticOwnerProfile':diagnostic_owner_profile}
@@ -110,7 +113,9 @@ def execute(artifact, native, output, *, diagnostic_owner_profile=False):
             cleanup.callback(peer.close)
             startup = peer.line(min(expires, time.monotonic()+10))
             config = base.configuration(work/'node', signed, startup, credential)
-            if diagnostic_owner_profile:record['diagnosticLimits']=owner_probe_configuration(config)
+            if diagnostic_owner_profile:
+                record['diagnosticLimits']=owner_probe_configuration(config,owner_probe)
+                record['diagnosticOwnerProbe']=owner_probe
             record['configurationIdentity'] = file_identity(config)
             stage = 'node'
             node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
@@ -216,10 +221,12 @@ def qualify(acquired, tools, output, *, diagnose_owner_profile=False):
                     # A distinct node/Store uses the exact same signed input.
                     # Its result cannot populate original variants or turn the
                     # failed original profile into qualification success.
-                    try:
-                        execute(artifact,native,variant/'diagnostic-owner-profile',diagnostic_owner_profile=True)
-                    except WorkflowError:
-                        pass
+                    for probe in ('task-only','queue-only','native-only'):
+                        try:
+                            execute(artifact,native,variant/('diagnostic-owner-profile-'+probe),
+                                diagnostic_owner_profile=True,owner_probe=probe)
+                        except WorkflowError:
+                            pass
                 raise
             require(before == inventory(snapshot(app)), 'published-fetch-captured-source-changed')
             record['variants'].append({'capture': capture, 'source': digest(before),

@@ -98,3 +98,11 @@ separate result cannot populate successful variants or turn original failure
 into qualification. This comparison tests owner pressure without early refunds,
 source forks, transport replacement or an assumed engine cause. A passing
 larger-profile result alone would not establish correct physical accounting.
+
+The a75 manual diagnostic passed all eight probe/client observations under the
+separate64/64/256 profile, with exactly six real HTTP contacts and verified
+physical retirement. Original16/16/64 still failed; artifact12242633589 retains
+both outcomes (SHA2565dceaab832ae2f53931bcb2d4e3691e0e905385f97021f14f4c989e135262d96).
+The next diagnostic varies only one owner ceiling per separate node: Task64,
+Queue64 or Native256. The original failed profile remains mandatory and no
+single-dimension result is inferred from the all-three passing comparison.

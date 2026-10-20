@@ -17,6 +17,19 @@ from tools.standard_http.peer import Peer
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_owner_dimension_probes_change_only_their_named_original_ceiling(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for probe,key,value in [('task-only','tasks',64),('queue-only','queuedWork',64),('native-only','nativeOwners',256)]:
+                path=Path(temporary)/(probe+'.json')
+                original={'providers':{'activationRuntime':{'limits':dict(qualify.base.OWNER_LIMITS)}}}
+                path.write_text(json.dumps(original))
+                self.assertEqual(qualify.owner_probe_configuration(path,probe),{**qualify.base.OWNER_LIMITS,key:value})
+                self.assertEqual(json.loads(path.read_bytes())['providers']['activationRuntime']['limits'],{**qualify.base.OWNER_LIMITS,key:value})
+            path=Path(temporary)/'unknown.json';path.write_text(json.dumps(original));before=path.read_bytes()
+            with self.assertRaisesRegex(WorkflowError,'probe-selection'):
+                qualify.owner_probe_configuration(path,'arbitrary-profile')
+            self.assertEqual(path.read_bytes(),before)
+
     def test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting(self):
         with tempfile.TemporaryDirectory() as temporary:
             path=Path(temporary)/'config.json'

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_published_fetch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve the mandatory original owner profile and command; opt-in diagnostic reuses the same actual signed input in a separate node with fixed finite owner limits and cannot change original qualification failure.",
+  "reviewReason": "Preserve original failed qualification and the unchanged required command; distinguish each owner ceiling in three fixed separate-node diagnostics after all-three bounded profile passes, without inferring a cause or lifting the original result.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "980d9cb88cf66d815196310516195755ebc7d4fdfd26f1e62a1edc6cfb2dc220"
+  "sha256": "811dc5d0256cbb31b4633b9b01a5cb8a18a5998c24d9c139a043eda59a309c97"
 }
