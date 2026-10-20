@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "latent.go.smtp-starttls.observation.v1",
+  "sourceRevision": "dcb4f99d9a10ca4c785c772c68a63bca0110c6af",
+  "run": 39447505901,
+  "job": 118713217150,
+  "artifact": {
+    "id": 12277611451,
+    "node_id": "MDg6QXJ0aWZhY3QxMjI3NzYxMTQ1MQ==",
+    "name": "go-smtp-tls-runtime-dcb4f99d9a10ca4c785c772c68a63bca0110c6af",
+    "size_in_bytes": 2885453,
+    "url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12277611451",
+    "archive_download_url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12277611451/zip",
+    "expired": false,
+    "digest": "sha256:71f160c817af3417279cbaa411b1319c325e6a6840188952c9a8fbdd3cef7c10",
+    "created_at": "2026-10-20T15:35:43Z",
+    "updated_at": "2026-10-20T15:35:43Z",
+    "expires_at": "2026-10-27T15:35:41Z",
+    "workflow_run": {
+      "id": 39447505901,
+      "repository_id": 1337591365,
+      "head_repository_id": 1337591365,
+      "head_branch": "feat/go-smtp-starttls-20261020",
+      "head_sha": "dcb4f99d9a10ca4c785c772c68a63bca0110c6af"
+    }
+  },
+  "archiveMembers": 54,
+  "archiveAllCrcAndSha256Checked": true,
+  "sourceInputs": {
+    "count": 5451,
+    "bytes": 45332635,
+    "digest": "sha256:505152068e003454acd6ef6676282dd5c657fb4a9e60c708a0e56287ba9e84a0",
+    "allRowsMatchGit": true
+  },
+  "component": {
+    "sha256": "2913e0637d38cadb684b4d47686e039da90c50b9f54736b252788117a2a0f1fe",
+    "bytes": 9422932,
+    "profile": "go-component-activation-v5",
+    "compilerMaterials": {
+      "go": {
+        "name": "go",
+        "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+        "size": 17164055
+      },
+      "componentize-go": {
+        "name": "componentize-go",
+        "digest": "sha256:b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb",
+        "size": 13330416
+      },
+      "wasm-tools": {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      },
+      "go-checkpoints": {
+        "name": "go-checkpoints",
+        "digest": "sha256:47c8d2deb5f1692a6bbbc883725587d1f87673e86b10360a42a1695086f8e1af",
+        "size": 4812912
+      }
+    }
+  },
+  "cacheReference": {
+    "cases": [
+      "TestCacheRetainsIdentityThroughGC",
+      "TestCacheRejectsOversizedDERBeforeParseOrCopy",
+      "TestCacheRejectsNinthDistinctCertificateAndRetainsHits",
+      "TestCacheAggregateDERBudgetAndNoEviction",
+      "TestCacheParseFailureMatchesUpstreamAndConsumesNoEntry",
+      "TestFreshCacheStartsEmpty",
+      "TestConcurrentSameCertificatePublishesOnce",
+      "TestCacheExactPerDERBoundaryAndOneByteRefusal"
+    ],
+    "compilerDigest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+    "cacheSourceDigest": "sha256:22b814966b7b64ab962c581c8216702158e5c7e9e9ad20359fa3fae6235de959",
+    "testSourceDigest": "sha256:ece110165f1e366051cb6157b123523126782425eece80056f857edc115368e6",
+    "projection": "package-declaration-only; exact-production-cache-body",
+    "entries": 8,
+    "maximumDERBytes": 16384,
+    "maximumAggregateDERBytes": 65536
+  },
+  "cacheTransformation": {
+    "name": "go-runtime-overlay/crypto_tls_cache.go",
+    "upstreamDigest": "sha256:553ad7a40a9b198bea838833e3e5ed5660ec9b031ad75f58a9ea119e44bd3bfb",
+    "adaptedDigest": "sha256:22b814966b7b64ab962c581c8216702158e5c7e9e9ad20359fa3fae6235de959",
+    "profile": "go-component-activation-v5"
+  },
+  "signedObservations": {
+    "cases": [
+      {
+        "case": "ordinary-smtp-plain",
+        "contacts": 1,
+        "mode": 0,
+        "result": "ordinary-smtp-plain"
+      },
+      {
+        "case": "ordinary-starttls13",
+        "contacts": 1,
+        "mode": 1,
+        "result": "ordinary-smtp-tls13"
+      },
+      {
+        "case": "hostname-refused",
+        "contacts": 1,
+        "mode": 2,
+        "result": "ordinary-starttls-hostname-refused"
+      },
+      {
+        "case": "trust-refused",
+        "contacts": 1,
+        "mode": 3,
+        "result": "ordinary-starttls-trust-refused"
+      },
+      {
+        "case": "ordinary-starttls12",
+        "contacts": 1,
+        "mode": 4,
+        "result": "ordinary-smtp-tls12"
+      },
+      {
+        "case": "fresh-starttls13",
+        "contacts": 1,
+        "mode": 5,
+        "result": "ordinary-smtp-tls13"
+      }
+    ],
+    "userSpaceOwners": [
+      {
+        "case": "ordinary-smtp-plain",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "ordinary-starttls13",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "hostname-refused",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "trust-refused",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "ordinary-starttls12",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "fresh-starttls13",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      }
+    ],
+    "completion": {
+      "cases": 6,
+      "cleanLogicalProviderStop": true,
+      "contacts": 6,
+      "hostTlsQualified": false,
+      "kernelRetirementQualified": false,
+      "normalProviderInstalled": false
+    }
+  },
+  "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "nativeExecutableDigest": "sha256:9c5cf5a5d0421225d253a7fbe6fe669f42d30835271d9ba983b87699c86496cb",
+  "sourceBeforeAndAfterUnchanged": true,
+  "originalFailureObservation": "go-smtp-tls-cache-trap-2026-10-20.json",
+  "normalProviderInstalled": false,
+  "hostTlsAccountingQualified": false,
+  "kernelAccountingQualified": false,
+  "fullGoNetworkingQualified": false,
+  "limitations": [
+    "Eight cache limits/lifetime controls execute the exact cache body on pinned native Go; they are separate from six signed guest SMTP/TLS observations.",
+    "The signed harness uses explicit development logical TCP installation, explicit roots and fixed peers; it does not qualify a normal stream provider or final kernel retirement.",
+    "Final composition adds the separately referenced Write progression and unrelated independently reviewed HTTP/native/TS changes; the raw execution remains attributed to this source."
+  ]
+}

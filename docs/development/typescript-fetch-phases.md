@@ -127,3 +127,13 @@ outcomes: twenty-seven guest executions and four refusals before guest work.
 These new observations are pending. They require #1225's source-bound native
 products and exact final-graph correction; the previous36ea tuple cannot qualify
 the component decoder's omission of the unused legacy response record.
+
+The1522 source retry compiled, packaged, signed and admitted component
+`sha256:94aa6461fe58e0172fe020e147e4c998ceb866b74a73c28720d3b4b98457215b`.
+Its first Ky call was denied before guest work (CPU0/outbound0). The checked
+capsule retained the nominal0.3 source import, but binding compilation treated
+that zero-function owner as an operational provider requirement. The shared
+source-authority correction is tracked in #1230; no legacy operation/grant is
+added. The [original failure observation](../testing/evidence/typescript-phase-first-admission-failure-2026-10-20.json)
+retains the unchanged native6f5 tuple and original failed call. New execution
+remains pending after that correction.

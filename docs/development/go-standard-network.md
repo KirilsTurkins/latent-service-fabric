@@ -25,10 +25,16 @@ The compiler-owned connection uses independent read/write ownership and an
 exclusive final close. Close cancels active canonical operations and waits for
 their actual acknowledgements before consuming or dropping the original own
 resource. Same-direction overlap is refused instead of queued. Reads consume
-one owned nonempty chunk of at most 16 KiB; only an absent chunk is EOF. Writes
-perform one bounded host attempt, preserve an accepted prefix and return
-`io.ErrShortWrite` for a short result. There is no reconnect, write-all retry,
-proxy, application executor or conversion of HTTP authority into TCP authority.
+one owned nonempty chunk of at most 16 KiB; only an absent chunk is EOF. A public
+`Write` holds its original direction owner while advancing across acknowledged
+positive prefixes in host fragments of at most 16 KiB. Its original absolute
+deadline is checked before every fragment; elapsed time never becomes a fresh
+per-fragment allowance. Any host error or uncertain effect stops the call and
+preserves the cumulative accepted count and typed uncertainty. Zero progress
+returns `io.ErrShortWrite`; accepted bytes are never resent. The existing
+per-connection transfer and lifetime bounds remain authoritative. There is no
+reconnect, retry after an error, proxy, application executor or conversion of
+HTTP authority into TCP authority.
 The host's existing shared address/SSRF policy remains authoritative.
 
 This finite surface accepts `tcp`, numeric nonzero ports, canonical IP literals
@@ -114,3 +120,32 @@ fields, numeric type substitutions, retained owners, incomplete stop and any
 claimed normal/kernel qualification. This proves the finite declared-TCP guest
 surface under the explicit development provider. The normal provider and full
 networking/TLS/accounting gates remain closed.
+
+
+The bounded write-progress source candidate closes the internal chunk-boundary
+short-write gap for ordinary larger `Write` and `io.Copy` calls. It follows
+[Go 1.27.2's stream write progression](https://github.com/golang/go/blob/go1.27.2/src/internal/poll/fd_unix.go),
+while retaining the smaller host fragment bound and existing activation limits.
+A separate tiny Go reference projects the exact production method without body
+rewrites, with explicit deterministic protocol doubles. It must reproduce the
+original 40 KiB copy stopping at 16 KiB, then pass eight corrected progress,
+partial-error/uncertainty, zero-progress, original-deadline, ownership and refusal
+controls. The [authenticated reference](../testing/evidence/go-write-progress-reference-2026-10-20.json)
+passed on source `fb79a7ab6ea86f53baec78ee341aca075c14a2ef`,
+[run 39443276481/job 118698441927](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39443276481/job/118698441927):
+the old copy returned 16,384 bytes and failed; all eight current cases passed.
+All five archive members passed CRC and SHA-256 checks, and all seven exercised
+source inputs match that Git source. Those doubles do not establish
+emitted-component, live TCP/provider, kernel or full networking qualification.
+The earlier twelve-case signed observation remains attributed to its original
+source; it is not relabelled as execution of this new method.
+
+A follow-up per-fragment close guard also preserves an already acknowledged
+prefix and returns `net.ErrClosed` before any later dispatch after close.
+The follow-up [actual reference](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39446468125/job/118709756425)
+passed on source `150969cbce75daf6411677ea863618328721a948`: the pinned
+previous method reproduced close-between-fragments failure; all nine current
+cases passed, alongside the original chunk-boundary counterexample. All seven
+archive members passed CRC/SHA-256 checks, and all seven exercised inputs match
+that source. All eight original Go control bodies remain unchanged; the earlier
+eight-case observation retains its own source identity. No owner, deadline or fragment bound changes.
