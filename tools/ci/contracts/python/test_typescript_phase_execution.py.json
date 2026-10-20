@@ -1,5 +1,6 @@
 {
   "cases": [
+    "PhaseExecutionTests.test_closed_native_records_use_only_the_explicit_typescript_profile_bounds",
     "PhaseExecutionTests.test_declared_phase_profile_captures_its_manifest_without_changing_legacy_or_transaction_authority",
     "PhaseExecutionTests.test_grants_require_the_actual_phase_provider_and_never_authorize_legacy_calls",
     "PhaseExecutionTests.test_nominal_dependency_preserves_every_original_type_and_removes_only_legacy_calls",
@@ -9,6 +10,18 @@
     "PhaseExecutionTests.test_wire_rewrite_is_closed_to_exact_fixed_status_preimages"
   ],
   "guards": {
+    "PhaseExecutionTests.test_closed_native_records_use_only_the_explicit_typescript_profile_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d218a78060d6abcfacb59f7de5f2a28a4398b4d709ca804e76bf6ae1275943",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PhaseExecutionTests.test_declared_phase_profile_captures_its_manifest_without_changing_legacy_or_transaction_authority": {
       "bases": [
         "unittest.TestCase"
@@ -96,6 +109,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_phase_execution.py",
-  "reviewReason": "Preserve all six original source cases and guards; add exact canonical nominal resource/type-owner projection regression. Remove only eight unused old callable declarations, with unchanged types/phase operations and no provider authority.",
+  "reviewReason": "Explicit reviewed switch to independently authenticated nominal phase producer36ea; retain original77 controls and all historical commands, guards and resource bounds; add public extension, missing provider and accepted post-abort owner observations.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

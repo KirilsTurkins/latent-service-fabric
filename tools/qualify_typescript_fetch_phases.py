@@ -15,6 +15,7 @@ from tools import qualify_typescript_fetch_runtime as base
 from tools import qualify_typescript_published_fetch as published
 from tools import typescript_fetch_conformance as calls
 from tools import typescript_fetch_phase_fixture as fixture
+from tools import typescript_phase_abort_observer as observer
 from tools import typescript_published_fetch_fixture as dependencies
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
@@ -33,10 +34,10 @@ from tools.typescript_guest.build import build
 
 SOURCES = ('.github/workflows/typescript-fetch-phases.yml', fixture.SOURCE,
     'tools/typescript_fetch_phase_fixture.py', 'tools/qualify_typescript_fetch_phases.py',
-    'tools/http_phase_wit.py',
+    'tools/http_phase_wit.py', 'tools/typescript_phase_abort_observer.py',
     'tools/typescript_published_fetch_fixture.py', 'tools/qualify_typescript_published_fetch.py',
     'tools/qualify_typescript_fetch_runtime.py', 'tools/typescript_fetch_conformance.py',
-    'tools/qualify_typescript_fetch_conformance.py', 'tools/java_phase_native_products.py',
+    'tools/qualify_typescript_fetch_conformance.py', 'tools/http_phase_native_products.py',
     'tools/standard_http/peer.py', 'tools/standard_http/vectors.py',
     'tools/standard_http/protocol.py', 'tools/standard_http/observations.py')
 
@@ -91,6 +92,112 @@ def grants(client, node, publication, origin):
     return result, result+[{'capability': fixture.HTTP, 'policy': 'http-allow'}]
 
 
+
+def after_public_abort(client, node, process, peer, probe, target, mode):
+    """The second accepted timer is source-ordered after exact public rejection."""
+    expires = min(client.deadline, time.monotonic()+3)
+    for _ in range(64):
+        require(time.monotonic() < expires and not process.owner.exited(),
+                'phase-fetch-public-abort-barrier-deadline')
+        peer.poll(.05)
+        process.drain()
+        node.drain()
+        observed = observer.observe(bytes(node.buffers[1]))
+        require(observed['status'] in ('not-observed', 'observed'),
+                'phase-fetch-public-abort-native-marker')
+        records = [row for row in observed['records'] if row['mode'] == mode]
+        starts = [row for row in records if row['event'] == 'start-accepted']
+        entered = [row for row in records if row['event'] == 'next-entered']
+        require(len(starts) <= 2, 'phase-fetch-public-abort-exact-timer-programme')
+        if len(starts) != 2 or not entered or entered[-1]['sequence'] <= starts[-1]['sequence']:
+            continue
+        require(entered[-1]['tasks'] >= 1 and entered[-1]['waits'] >= 1
+            and 1 <= entered[-1]['timers'] <= 2 and len(peer.gates()) == 1,
+                'phase-fetch-public-abort-original-pending-timer')
+        usage = client.call('capability', 'list', '--deployment', target['name'],
+            '--include-node-usage')['data']['nodeUsage']
+        require(not usage['unavailable'] and int(usage['counters']['pool_running_requests']) == 1
+            and int(usage['counters']['io_calls']) >= 1, 'phase-fetch-public-abort-original-io-still-charged')
+        physical = sample(client, probe, 'after-public-abort-before-peer-release', 1, active=True)
+        require(not process.owner.exited(), 'phase-fetch-public-abort-caller-still-owned')
+        return {'nativeRecords': observed, 'selectedMode': mode, 'providerOwners': usage,
+                'physicalOwners': physical, 'publicExactReasonBeforeSecondTimer': True,
+                'peerReleased': False, 'nativeHookChanged': False}
+    raise ValueError('phase-fetch-public-abort-barrier-attempts')
+
+
+def missing_provider(signed, native, output):
+    """An actual second node omits the selected phase provider and its binding."""
+    output = fresh(output)
+    record = {'status': 'in-progress', 'phaseProviderInstalled': False,
+              'unavailableCountersCountedAsZero': False}
+    try:
+        with tempfile.TemporaryDirectory(prefix='lsf-phase-absent-') as temporary, \
+                owned_cancellation() as cancellation, ExitStack() as cleanup:
+            work = Path(temporary)
+            for name in ('node', 'client', 'peer'):
+                (work/name).mkdir(mode=0o700)
+            authorization = ('Bearer '+secrets.token_hex(32)).encode()
+            credential = work/'peer/authorization'
+            credential.write_bytes(authorization)
+            credential.chmod(0o600)
+            peer = fixture.PhasePeer(authorization, maximum_seconds=120)
+            cleanup.callback(peer.close)
+            startup = {'destinations': peer.provider_destinations(),
+                       'origins': {role: peer.origin(role) for role in ('primary', 'secondary')}}
+            config, owner = configuration(work/'node', signed, startup, credential)
+            value = read_json(config)
+            require(value['providers']['httpStreaming']['phaseTiming'] is True,
+                    'phase-fetch-absence-original-selection')
+            del value['providers']['httpStreaming']
+            selected = [row for row in value['providers']['bindings'] if row['contract'] == fixture.HTTP]
+            require(len(selected) == 1, 'phase-fetch-absence-exact-binding')
+            value['providers']['bindings'].remove(selected[0])
+            config.write_bytes((json.dumps(value, indent=2)+'\n').encode())
+            record.update(configurationIdentity=file_identity(config), ownerProfile=owner)
+            client = RecordingClient(native['latent'], work/'client', cancellation, time.monotonic()+120,
+                evidence=output/'controls', invocation_timeout_millis=120000, control_timeout_millis=125000)
+            client.environment[observer.ENVIRONMENT] = '1'
+            node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
+            cleanup.callback(node.close)
+            require(all(row['capability'] != fixture.HTTP for row in node.startup_record['providers']),
+                    'phase-fetch-absence-real-startup')
+            record['startup'] = node.startup_record
+            probe = Probe(node, file_identity(native['latentd']))
+            source = signed/'typescript-fetch'
+            publication = client.call('release', 'publish-package', source/'package', '--evidence',
+                source/'evidence/index.json', '--operation-id', 'phase-absent-publish',
+                '--expected-generation', '0')['data']['operation']['publication']['id']
+            target = deploy(client, source/'deployment.json', publication)
+            row = calls.invoke(client, target, peer, 0, 'domain-json', 'phase-provider-absent')
+            write_json(output/'invocation.json', row)
+            response = row['response']
+            require(row['exitCode'] == 4 and row['processReaped'] and row['decoded'] is None
+                and response['outcomeKnown'] is True and response['data']['terminalState'] == 'rejected'
+                and response['error']['code'] == 'incompatible-contract'
+                and all(int(value) == 0 for name, value in response['data']['consumption'].items()
+                        if name != 'wallTimeMicros'), 'phase-fetch-missing-provider-refusal-before-guest')
+            record['invocation'] = row
+            record['physicalRetirement'] = sample(client, probe, 'phase-provider-absent-retired', 1)
+            record['providerObservation'] = client.call('capability', 'list', '--deployment', target['name'],
+                '--include-node-usage')['data']['nodeUsage']
+            record['shutdown'] = shutdown_owned_node(client, node)
+            peer.close()
+            observed = peer.observation()
+            fixture.validate(observed)
+            require(observed['state'] == 'stopped' and observed['acceptedConnections'] == 0
+                and observed['startedRequests'] == 0 and not observed['requests'],
+                    'phase-fetch-missing-provider-zero-real-contact')
+            record['peer'] = observed
+        record['status'] = 'passed'
+        write_json(output/'qualification.json', record)
+        return record
+    except BaseException:
+        record['status'] = 'failed'
+        write_json(output/'FAILED.json', record)
+        raise
+
+
 def execute(artifact, native, output):
     output = fresh(output)
     original = base.build_evidence(artifact)
@@ -119,6 +226,7 @@ def execute(artifact, native, output):
             record.update(configurationIdentity=file_identity(config), ownerProfile=owner)
             client = RecordingClient(native['latent'], work/'client', cancellation, time.monotonic()+300,
                 evidence=output/'controls', invocation_timeout_millis=120000, control_timeout_millis=125000)
+            client.environment[observer.ENVIRONMENT] = '1'
             node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
             cleanup.callback(node.close)
             probe = Probe(node, file_identity(native['latentd']))
@@ -145,18 +253,26 @@ def execute(artifact, native, output):
                 stage = name
                 if expected is None:
                     expected = '1|'+('ky:', 'wretch:', 'outside:')[mode]+json_bytes(DOMAIN).decode()
-                process = start_call(client, target, 'typescript-fetch', 'run', [mode, peer.url(vector)], 'phase-'+name)
+                activation = ('node-stop-pending' if vector == 'pending-headers' else 'node-stop-drain') if mode == 9 else 'phase-'+name
+                process = start_call(client, target, 'typescript-fetch', 'run', [mode, peer.url(vector)], activation)
                 try:
                     if mode == 9:
-                        calls.wait_gate(client, process, peer)
-                        write_json(output/('held-'+name+'.json'), sample(client, probe, name, 1, active=True))
+                        gate = calls.wait_gate(client, process, peer)
+                        try:
+                            observed = after_public_abort(client, node, process, peer, probe, target,
+                                'pending' if vector == 'pending-headers' else 'drain')
+                        finally:
+                            node.drain()
+                            write_json(output/('native-'+name+'.json'), observer.observe(bytes(node.buffers[1])))
+                        write_json(output/('after-public-'+name+'.json'), observed)
+                        peer.release(gate)
                     row = calls.drive(client, process, peer)
                 finally:
                     process.close()
                 write_json(output/('invocation-'+name+'.json'), row)
-                outbound = 0 if mode == 12 else 1
+                outbound = 0 if mode in (12, 14) else 1
                 base.require_result(row, expected, outbound)
-                if mode == 12:
+                if mode in (12, 14):
                     peer.poll(0)
                     require(all(item['role'] == 'primary' for item in peer.observation()['requests']),
                             'phase-fetch-denied-target-contact')
@@ -197,9 +313,12 @@ def execute(artifact, native, output):
             record['cases'].append({'name': 'fresh', 'result': row['decoded'], 'outbound': 1})
             record['shutdown'] = shutdown_owned_node(client, node)
             write_json(output/'shutdown.json', record['shutdown'])
+            write_json(output/'timer-observer-final.json', observer.observe(bytes(node.buffers[1])))
             peer.close()
             record['peer'] = fixture.peer_evidence(peer.observation())
             write_json(output/'peer.json', record['peer'])
+        stage = 'missing-provider'
+        record['missingProvider'] = missing_provider(signed, native, output/'missing-provider')
         require(base.build_evidence(artifact) == original, 'phase-fetch-built-input-changed')
         record.update(status='passed', artifact=original)
         write_json(output/'qualification.json', record)
@@ -211,7 +330,7 @@ def execute(artifact, native, output):
 
 
 def qualify(acquired: Path, native_input: Path, tools: Path, output: Path):
-    from tools.java_phase_native_products import native_products, verify_prepared
+    from tools.http_phase_native_products import native_products, verify_prepared
     acquired, native_input, tools, output = (path.resolve() for path in (acquired, native_input, tools, output))
     require(ROOT != output and ROOT not in output.parents
         and all(output != path and output not in path.parents and path not in output.parents

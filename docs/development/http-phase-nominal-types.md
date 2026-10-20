@@ -22,7 +22,11 @@ normal contract driver rejected the valid resource-only dependency with
 closed semantic matrix and normal contract derivation, including malformed
 inputs and exhausted comparison limits. The source-bound native producer adds
 these controls while retaining its original five tools, eleven controls,
-assertions, overflow checks and shared deadlines. Actual results are pending.
+assertions, overflow checks and shared deadlines. The [source-bound native
+programme passed all13 controls](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39430989809/job/118655688632).
+The [retained observation](../testing/evidence/http-phase-nominal-native-2026-10-20.json)
+authenticates all five tools, nineteen archive members,3311 native Git inputs and
+114 auxiliary compile materials. Signed language execution remains separate.
 
 This recognizes descriptive types. It installs no provider, grants no legacy
 operation, changes no default host profile and supplies no destination, credential

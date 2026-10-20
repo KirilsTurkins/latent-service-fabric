@@ -17,6 +17,8 @@
           "tools/typescript_fetch_phase_fixture.py",
           "tools/qualify_typescript_fetch_phases.py",
           "tools/java_phase_native_products.py",
+          "tools/http_phase_native_products.py",
+          "tools/http_phase_wit.py",
           "tools/tests/test_typescript_phase_execution.py"
         ]
       },
@@ -29,7 +31,7 @@
   "requiredJobs": [
     "phases"
   ],
-  "reviewReason": "Fetch the exact nonancestor producer source object before existing Git-based acquisition controls; preserve all compiler and guest commands.",
+  "reviewReason": "Explicit reviewed switch to independently authenticated nominal phase producer36ea; retain original77 controls and all historical commands, guards and resource bounds; add public extension, missing provider and accepted post-abort owner observations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-phases.yml"
 }

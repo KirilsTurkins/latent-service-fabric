@@ -44,7 +44,9 @@ Its pending execution gate covers both clients' ordinary JSON and HTTP-error
 paths, actual empty and Latin1 wire reasons through Response.clone(), public
 abort during held headers/body, an uncertain single POST without replay, a denied
 target without contact, root cancellation/deadline, and a fresh invocation. The
-peer never releases the four held responses. Each terminal invocation must retire
+peer releases public-abort responses only after a source-ordered positive native
+timer barrier proves public rejection and original I/O ownership. Root cancellation
+and deadline responses stay held. Each terminal invocation must retire
 its physical owners before the next case. The explicit published-client owner
 profile remains 64 tasks, 64 queued work and 256 native owners; it establishes no
 minimum-client or default-budget claim.
@@ -72,3 +74,29 @@ resource/type declaration with exactly those eight unused calls removed. Every
 original type and every phase function remains unchanged, as checked by the
 real wasm-tools 1.254.0 parser. No legacy provider or grant is added. Seven focused
 source/wire controls pass; actual signed execution of this correction is pending.
+
+
+The corrected programme now has nineteen invocation outcomes: sixteen default,
+optional extension and lifecycle cases, two zero-work grant denials, and one
+separate node with the phase provider/binding absent. That last node must reject
+before guest work and make zero real contacts; unavailable provider counters are
+recorded as unavailable rather than counted as zero.
+
+Optional Ky `fetch` callbacks are ordinary guest extensions that delegate to the
+same global API. Success and denied-target cases are labelled separately from the
+unchanged default-client cases; they install no privileged plugin or provider.
+
+For both public-abort cases, guest source checks the exact original reason before
+starting a second three-second timer. The unchanged native timer hook must report
+that second successful start and entered wait while the original Store/cell and
+HTTP I/O owners are still charged. Only then does the real peer release its held
+response. The reader has the explicit TypeScript64-task/eight-wait/eight-timer
+bounds and retains the native hook's fixed two public IDs, sixteen-record bound
+and closed fields. The original Go decoder/profile is unchanged. These new signed
+observations remain pending.
+
+Host products now use the separately authenticated nominal-type correction at
+`36eaed79db`, [run39430989809](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39430989809/job/118655688632),
+with thirteen native controls. Original77 products and receipts remain frozen for
+their existing consumers. The C-context Cargo target and both actual new nominal
+Rust tests are registered additively; all prior rows/cases remain intact.

@@ -18,6 +18,26 @@ from tools.typescript_guest.project import validate
 
 
 class PhaseExecutionTests(unittest.TestCase):
+    def test_closed_native_records_use_only_the_explicit_typescript_profile_bounds(self):
+        from tools import typescript_phase_abort_observer as reader
+        from tools import go_node_stop_timer_observer as go_reader
+        raw = (b'LSF-GO-NODE-STOP-TIMER-V1|pending|start-accepted|1|32|0|1\n'
+               b'LSF-GO-NODE-STOP-TIMER-V1|pending|next-entered|2|32|1|1\n'
+               b'LSF-GO-NODE-STOP-TIMER-V1|drain|start-accepted|3|64|8|8\n')
+        result = reader.observe(raw)
+        self.assertEqual(result['status'], 'observed')
+        self.assertEqual(len(result['records']), 3)
+        self.assertIs(result['qualification'], False)
+        self.assertEqual(go_reader.observe(raw)['status'], 'invalid-marker')
+        for changed in (raw.replace(b'|64|8|8', b'|65|8|8'),
+                        raw.replace(b'|64|8|8', b'|64|9|8'),
+                        raw.replace(b'|64|8|8', b'|64|8|9'),
+                        raw.replace(b'|drain|', b'|private|'),
+                        raw.replace(b'|3|64|', b'|2|64|'), raw+raw):
+            self.assertEqual(reader.observe(changed)['status'], 'invalid-marker')
+        self.assertEqual(reader.observe(raw+b'LSF-GO-NODE-STOP-TIMER-V1|overflow\n')['status'], 'overflow')
+        self.assertEqual(reader.observe(b'x'*262145)['status'], 'invalid-source')
+
     def test_nominal_dependency_preserves_every_original_type_and_removes_only_legacy_calls(self):
         import re
         source = (fixture.ROOT/'wit/platform/http-v3/package.wit').read_bytes()

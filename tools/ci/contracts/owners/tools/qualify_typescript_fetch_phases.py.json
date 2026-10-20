@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_fetch_phases.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Capture the nominal type-owner helper as a consumer input. No executable workflow/default/provider change.",
+  "reviewReason": "Explicit reviewed switch to independently authenticated nominal phase producer36ea; retain original77 controls and all historical commands, guards and resource bounds; add public extension, missing provider and accepted post-abort owner observations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "604b6ea60e2c46294eaf1adf325933f67c5adf47fd4ada56adea9eb18868636d"
+  "sha256": "e83928937de59aaf53b57963251ea8331b18034a9e7e77c61666935cbdd1e121"
 }

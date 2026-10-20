@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/http_phase_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Explicit reviewed switch to independently authenticated nominal phase producer36ea; retain original77 controls and all historical commands, guards and resource bounds; add public extension, missing provider and accepted post-abort owner observations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6f595fab55632819e2b99ae1acba29b151dc0d2b291cb2d14c7dcf3f6993e2aa"
+}

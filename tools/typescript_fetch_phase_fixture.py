@@ -10,6 +10,7 @@ from tools.phase2_operator_process import require
 from tools.rust_capsule_project import ROOT, digest, read_file
 from tools.standard_http.peer import Peer
 from tools.standard_http.observations import validate
+from tools.standard_http.vectors import DOMAIN, json_bytes
 
 SOURCE = 'sdk/typescript-guest/probes/fetch-phases/main.ts'
 HTTP = 'latent:http/phase-timing@0.4.0'
@@ -27,6 +28,8 @@ VECTORS = (
     ('abort-body', 9, 'partial-body', 'abort:exact-reason|fresh=1'),
     ('uncertain-post', 11, 'commit-close', 'uncertain:true|fresh=1'),
     ('denied-target', 12, 'denied-target', 'denied:no-contact|fresh=1'),
+    ('public-guest-extension', 13, 'domain-json', 'extension:1:'+json_bytes(DOMAIN).decode()+'|fresh=1'),
+    ('public-extension-denied', 14, 'denied-target', 'extension:denied:no-contact|fresh=1'),
 )
 
 
@@ -72,7 +75,7 @@ class PhasePeer(Peer):
 
 def peer_evidence(value):
     validate(value)
-    expected = [row[2] for row in VECTORS if row[0] != 'denied-target'] + ['pending-headers', 'partial-body', 'domain-json']
+    expected = [row[2] for row in VECTORS if row[1] not in (12, 14)] + ['pending-headers', 'partial-body', 'domain-json']
     require(value['state'] == 'stopped'
             and value['acceptedConnections'] == value['startedRequests'] == len(expected)
             and value['rejectedRequests'] == 0 and value['committedMutations'] == 1
@@ -80,11 +83,13 @@ def peer_evidence(value):
             and all(row['role'] == 'primary' and row['state'] == 'closed'
                     and row['authorizationPresent'] is True for row in value['requests']),
             'phase-fetch-exact-peer-contacts')
-    # The four held operations close their original transport, without release
-    # or a fabricated completed response. All eight other responses are written.
-    require(value['completedResponseWrites'] == 8
-            and not any(row['kind'] == 'gate-released' for row in value['events']),
-            'phase-fetch-held-responses-not-released')
+    # Public abort rejects before the original I/O is released and completed;
+    # the separate root cancellation/deadline gates are never released.
+    contacts = [row for row in VECTORS if row[1] not in (12, 14)]
+    released = [index+1 for index, row in enumerate(contacts) if row[1] == 9]
+    require(value['completedResponseWrites'] == 11
+            and [row['request'] for row in value['events'] if row['kind'] == 'gate-released'] == released,
+            'phase-fetch-exact-public-abort-releases')
     mutation, = [row for row in value['requests'] if row['vector'] == 'commit-close']
     require(mutation['method'] == 'POST' and mutation['bodyBytes'] == 3
             and mutation['bodySha256'] == 'sha256:'+hashlib.sha256(b'one').hexdigest(),
