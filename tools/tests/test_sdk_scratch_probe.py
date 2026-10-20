@@ -15,6 +15,47 @@ def invocation(value=None, *, trap=False):
 
 
 class ScratchProbe(unittest.TestCase):
+    def dotnet(self, *, changed=None, grants=None):
+        rows = [invocation('scratch|dotnet|entry|fresh=1')]
+        rows += [invocation('scratch|dotnet|platform-not-supported|fresh=1') for _ in range(3)]
+        rows += [invocation(trap=True), invocation('scratch|dotnet|entry|fresh=1')]
+        rows += [invocation('scratch|dotnet|' + category + '|fresh=1') for category in probe.DOTNET_ARGUMENTS.values()]
+        if changed: changed(rows)
+        result = {'invocations': [], 'providerIdle': [], 'samples': []}
+        with patch('tools.rust_capsule_node.call', side_effect=rows) as calls, \
+                patch('tools.rust_capsule_node.assert_value'), \
+                patch('tools.rust_capsule_node.provider_idle', return_value={'idle': True}) as idle, \
+                patch('tools.rust_capsule_node.sample', return_value={'retired': True}) as sample:
+            probe.probe(object(), {'budget': {'cpuFuel': 1000, 'memoryBytes': 8192}, 'grants': grants or []},
+                object(), result, 5, language='dotnet')
+        return result, calls, idle, sample
+
+    def test_dotnet_retains_all_six_calls_then_original_argument_categories_with_retirement(self):
+        result, calls, idle, samples = self.dotnet()
+        expected = ['entry', 'open', 'create', 'temp', 'trap', 'fresh', *probe.DOTNET_ARGUMENTS]
+        self.assertEqual([row.args[4] for row in calls.call_args_list], [['scratch:' + name] for name in expected])
+        self.assertEqual((len(result['invocations']), idle.call_count, samples.call_count), (12, 12, 12))
+        self.assertTrue(result['dotnetFilesystemArguments']['publicApiValidationPreserved'])
+        self.assertEqual([(r['mode'], r['category']) for r in result['dotnetFilesystemArguments']['cases']], list(probe.DOTNET_ARGUMENTS.items()))
+
+    def test_dotnet_argument_error_cannot_be_replaced_by_unsupported_trap_or_unknown_result(self):
+        changes = (lambda rows: rows[6].update(decoded=[{'ok': 'scratch|dotnet|platform-not-supported|fresh=1'}]),
+            lambda rows: rows[6].update(exitCode=4),
+            lambda rows: rows[6].update(processReaped=False),
+            lambda rows: rows[6]['response']['data']['consumption'].update(outboundRequests=1))
+        for change in changes:
+            with self.subTest(change=change), self.assertRaisesRegex(RuntimeError, 'scratch-'):
+                self.dotnet(changed=change)
+
+    def test_only_explicit_dotnet_join_can_retain_activation_and_no_filesystem_grants(self):
+        grant = [{'capability': 'latent:runtime/activation@0.1.0'}]
+        result, _, _, _ = self.dotnet(grants=grant)
+        self.assertEqual(result['standardScratchRefusal']['preservedRuntimeGrants'], grant)
+        with self.assertRaisesRegex(RuntimeError, 'scratch-no-filesystem-or-storage-grant'):
+            self.execute(grants=grant)
+        with self.assertRaisesRegex(RuntimeError, 'scratch-no-filesystem-or-storage-grant'):
+            self.dotnet(grants=[{'capability': 'latent:blob/blob@0.1.0'}])
+
     def test_only_bounded_exact_caught_results_count_and_not_found_is_not_unsupported(self):
         labels = {'rust': 'io-error|kind=unsupported', 'c': 'errno=nosys',
             'go': 'path-error|errno=52', 'java': 'unsupported-operation', 'dotnet': 'platform-not-supported'}

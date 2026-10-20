@@ -1,0 +1,86 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-scratch-refusals }}",
+    "name": "Fresh offline signed Rust scratch with historical normal products",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install original compiler namespace and binding tools",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Check locked fixture download and exact historical-product guards",
+        "run": "python3 -B -m unittest tools.tests.test_sdk_scratch_qualification tools.tests.test_rust_scratch_replay"
+      },
+      {
+        "name": "Read only the original passed38 normal public bundle",
+        "uses": "actions/download-artifact",
+        "with": {
+          "artifact-ids": "12236803645",
+          "github-token": "${{ github.token }}",
+          "merge-multiple": true,
+          "path": "${{ runner.temp }}/rust-scratch-original",
+          "run-id": 39358494292
+        }
+      },
+      {
+        "name": "Download owned locked fixture dependencies then build offline sign and require all33",
+        "run": "python3 -B tools/replay_rust_scratch.py --native \"$RUNNER_TEMP/rust-scratch-original\" --output \"$RUNNER_TEMP/rust-scratch-replay\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public provenance and actual API results including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-scratch-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-scratch-replay/*.json\n${{ runner.temp }}/rust-scratch-replay/logs/**\n${{ runner.temp }}/rust-scratch-replay/build/*.json\n${{ runner.temp }}/rust-scratch-replay/build/logs/**\n${{ runner.temp }}/rust-scratch-replay/build/component.wasm\n${{ runner.temp }}/rust-scratch-replay/node/workflow.json\n${{ runner.temp }}/rust-scratch-replay/node/FAILED.json\n${{ runner.temp }}/rust-scratch-replay/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "scratch-replay",
+  "kind": "job",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}

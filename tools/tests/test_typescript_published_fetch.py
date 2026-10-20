@@ -17,6 +17,77 @@ from tools.standard_http.peer import Peer
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_named_client_profile_preserves_native_request_and_all_other_settings(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'config.json'
+            original={'providers':{'activationRuntime':{'limits':dict(qualify.base.OWNER_LIMITS)}},
+                'budgetProfile':{'maximumOutboundRequests':1},'execution':{'maximumWallTimeMillis':120000}}
+            path.write_text(json.dumps(original))
+            selected=qualify.client_owner_configuration(path)
+            self.assertEqual(selected,{'name':'typescript-published-client-owners-v1',
+                'limits':{**qualify.base.OWNER_LIMITS,'tasks':64,'queuedWork':64,'nativeOwners':256}})
+            actual=json.loads(path.read_bytes())
+            self.assertEqual(actual['providers']['activationRuntime']['limits']['nativeOwners'],256)
+            actual['providers']['activationRuntime']['limits']=dict(qualify.base.OWNER_LIMITS)
+            self.assertEqual(actual,original)
+            before=path.read_bytes()
+            with self.assertRaisesRegex(WorkflowError,'client-original-limits'):
+                qualify.client_owner_configuration(path)
+            self.assertEqual(path.read_bytes(),before)
+        self.assertEqual(qualify.base.OWNER_LIMITS['tasks'],16)
+        self.assertEqual(qualify.base.OWNER_LIMITS['queuedWork'],16)
+
+    def test_owner_dimension_probes_change_only_their_named_original_ceiling(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for probe,key,value in [('task-only','tasks',64),('queue-only','queuedWork',64),('native-only','nativeOwners',256)]:
+                path=Path(temporary)/(probe+'.json')
+                original={'providers':{'activationRuntime':{'limits':dict(qualify.base.OWNER_LIMITS)}}}
+                path.write_text(json.dumps(original))
+                self.assertEqual(qualify.owner_probe_configuration(path,probe),{**qualify.base.OWNER_LIMITS,key:value})
+                self.assertEqual(json.loads(path.read_bytes())['providers']['activationRuntime']['limits'],{**qualify.base.OWNER_LIMITS,key:value})
+            path=Path(temporary)/'unknown.json';path.write_text(json.dumps(original));before=path.read_bytes()
+            with self.assertRaisesRegex(WorkflowError,'probe-selection'):
+                qualify.owner_probe_configuration(path,'arbitrary-profile')
+            self.assertEqual(path.read_bytes(),before)
+
+    def test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'config.json'
+            original={'providers':{'activationRuntime':{'limits':dict(qualify.base.OWNER_LIMITS)}},
+                'execution':{'maximumWallTimeMillis':120000},'budgetProfile':{'maximumOutboundRequests':1}}
+            path.write_text(json.dumps(original))
+            changed=qualify.owner_probe_configuration(path)
+            self.assertEqual(changed,{**qualify.base.OWNER_LIMITS,'tasks':64,'queuedWork':64,'nativeOwners':256})
+            actual=json.loads(path.read_bytes())
+            actual['providers']['activationRuntime']['limits']=dict(qualify.base.OWNER_LIMITS)
+            self.assertEqual(actual,original)
+            with self.assertRaisesRegex(WorkflowError,'original-limits'):
+                qualify.owner_probe_configuration(path)
+        self.assertEqual(qualify.base.OWNER_LIMITS['tasks'],16)
+        self.assertEqual(qualify.base.OWNER_LIMITS['queuedWork'],16)
+        self.assertEqual(qualify.base.OWNER_LIMITS['nativeOwners'],64)
+
+    def test_failed_client_is_recorded_as_failure_and_never_relabelled_success(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temporary:
+            client=type('Client',(),{'evidence':Path(temporary)})()
+            row={'exitCode':4,'decoded':None}
+            with patch('tools.capsule_invocation_diagnostics.capture') as capture:
+                self.assertIs(qualify.checked_client_result(client,row,'1|ky:expected','ky-json'),False)
+                capture.assert_called_once_with(client,row)
+            expected=['buffered-reader-probe','buffered-json-probe']+[row[0] for row in qualify.VECTORS]
+            qualify.require_original_clients(expected,[])
+            with self.assertRaises(WorkflowError):qualify.require_original_clients(expected,['ky-json'])
+            with self.assertRaises(WorkflowError):qualify.require_original_clients(expected[:-1],[])
+
+    def test_reader_probes_and_closed_diagnostics_cannot_replace_client_success(self):
+        self.assertIn(b"mode === 5",fixture.MAIN)
+        self.assertIn(b"mode === 6",fixture.MAIN)
+        self.assertIn(b"catch (error) { return diagnostic(error); }",fixture.MAIN)
+        self.assertIn(b"labels.get(error.message) ?? 'unknown'",fixture.MAIN)
+        self.assertNotIn(b'${error.message}',fixture.MAIN)
+        self.assertEqual(qualify.VECTORS[0],('ky-json',0,'/conformance/json','ky:'))
+
     def test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge(self):
         identity,size,sha=inputs.ARTIFACTS['engine']
         metadata={'id':identity,'size_in_bytes':size,'digest':'sha256:'+sha,'expired':False,

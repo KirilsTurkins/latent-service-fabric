@@ -3,6 +3,14 @@
 Declare immutable files in `capsule-resources.json`. The six maintained builders
 use the same exact-byte package assembler. It reads captured project files and
 selected dependency resources; it never reads a new host path during assembly.
+Application declarations are validated at source capture, before language
+resolution, contracts tools or compiler execution. The C builder performs the
+same preflight immediately after its separate source capture. Missing bytes,
+unsafe paths, collisions and count/aggregate exhaustion retain their distinct
+static categories. Dependency-owned additions are still checked after their
+reviewed closure is available, and full package/member verification still runs
+before writing resource layers. Source capture may impose stricter file limits
+than the resource profile's upper bounds.
 
 ```json
 {
@@ -109,29 +117,45 @@ logical name, staged source, media type, digest and captured artifact owner. Its
 bytes and size must occur in that owner's reviewed dependency file inventory.
 A package name alone cannot make an unobserved file a trusted resource.
 
-| Language | Compile-time data path | Standard runtime lookup qualification |
-| --- | --- | --- |
-| Rust | Captured data selected by `include_bytes!` / `include_str!` | No general runtime filesystem lookup advertised |
-| C | Captured constant data; explicit [C23 `#embed`](c-compiled-resources.md) and declared dependency resource objects | Signed C23 exact bytes/aliases/empty/missing and trap/fuel fresh-state controls; no runtime filesystem lookup |
-| TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
-| Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
-| Java | Captured selected classpath resource bytes | Selected `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` signed-node cases; broader lookup APIs pending |
-| .NET | One verified selection supplies package layers and embedded compiler inputs | `Assembly.GetManifestResourceStream` runs in the focused signed resource fixture; broader library/distribution acceptance remains open |
+| Language | Selected standard data path | Actual finite component evidence | Remaining API boundary |
+| --- | --- | --- | --- |
+| Rust | Captured `include_bytes!` / `include_str!` data, including transitive UTF-8/binary inputs | [Signed outside/transitive resource and entropy programme](../testing/evidence/rust-standard-entropy-signed-2026-10-20.json) | Compile-time inclusion does not provide runtime filesystem lookup |
+| C | Captured constants and explicit [C23 `#embed`](c-compiled-resources.md) with declared dependency resource objects | [C23 exact UTF-8/binary/empty/alias/missing and trap/fuel/fresh controls](../testing/evidence/c23-resources-passed-2026-10-19.json) | No general runtime filesystem or resource-stream facade |
+| TypeScript | Static ESM imports of captured `.txt` and `.bin` assets through a transitive package | [Signed clock library's exact text/binary data checks](../testing/evidence/typescript-standard-clocks-signed-2026-10-20.json) | Dynamic asset lookup, arbitrary extensions and a Node filesystem are outside these observations |
+| Go | Captured `//go:embed` string data in a transitive module | [Signed outside entropy library's exact embedded UTF-8 checks](../testing/evidence/go-standard-entropy-signed-2026-10-19.json) | This string path does not qualify every `embed.FS` lookup, missing file or independent stream handle |
+| Java | Selected immutable classpath bytes through `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` | [Signed two-library class resource observation](../testing/evidence/java-two-library-resource-node-2026-10-02.json) and [direct ClassLoader owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39174038239/job/117813178316) | Other resource APIs and general filesystem lookup need separate evidence |
+| .NET | One verified selection supplies package layers and embedded compiler inputs; `Assembly.GetManifestResourceStream` | [Signed binary/empty/literal/missing/position/disposal controls](../testing/evidence/dotnet-utc-resource-control-2026-10-12.json) | Broader resource APIs, NuGet distribution and concurrent stream lifecycle need their own qualification |
 
 The [.NET resource and explicit wall-clock reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-12/pr856-reconciliation.md)
 records fresh signed-node checks for binary/empty resources, literal names,
 independent stream positions, absent lookup and disposal. Those checks do not
-qualify every NuGet library or a new packaged toolkit. Java's selected class and
-classloader lookup cases require current-head emitted-component qualification;
-other Java lookup APIs remain outside that finite evidence.
+qualify every NuGet library or a new packaged toolkit. Java's direct ClassLoader
+selection also has an [exact-head post-merge reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/issues/681#issuecomment-6256601737).
+Other Java lookup APIs remain outside that finite evidence.
+
+Each linked observation keeps its tested source, component, compiler and native
+identities. Publishing this matrix does not reclassify an old host as a build of
+current development. The TypeScript and Go rows now name the exact executed
+static-import/embedded-string paths instead of treating those paths as wholly
+unexecuted; neither row advertises a general dynamic lookup API.
 
 This table identifies the ingestion paths and their runtime acceptance boundaries;
 package assembly alone does not prove those APIs execute. The index records
 `runtimeLookup: language-profile-qualification-required`. Each language owner
 must qualify the unchanged standard API in a signed admitted component, including
 transitive data, outside-checkout/offline and lifecycle cases, before advertising
-that path as supported. A runtime lookup cannot resolve dependencies or fall
-back to the host filesystem.
+that path as supported. The linked finite observations supply the named paths'
+existing execution evidence; they do not complete the whole six-language matrix.
+A runtime lookup cannot resolve dependencies or fall back to the host filesystem.
+
+The remaining [#681](https://github.com/KirilsTurkins/latent-service-fabric/issues/681)
+matrix includes every selected API's missing/denied/malformed/exhausted outcomes,
+all-six compiler collision/traversal/limit/tamper controls, and resource/log
+callbacks under each corresponding runtime's concurrent reads, root cancellation,
+pending flush, trap, late completion and fresh cross-tenant reuse. The scalar
+resource, logging, clock and entropy observations retain their separate scopes;
+stream close/disposal alone is not evidence that a host owner retired. These
+remaining rows feed [#694](https://github.com/KirilsTurkins/latent-service-fabric/issues/694).
 
 Scratch storage is separate and currently unsupported by this resource profile.
 It grants no writable filesystem, temporary directory, durable state, ambient
@@ -177,11 +201,38 @@ passed33 invocations at source488b264e9b with clean retirement, but its open and
 create calls caught `DirectoryNotFoundException` and its temporary-file call
 caught `IOException`. Those results remain unresolved behavior for criterion5,
 not concrete Unsupported. The earlier entropy-specific harness failure remains
-separate. Rust scratch is still pending. Actual results also project into the existing
+separate. The compiler-owned [closed CoreLib filesystem boundary](dotnet-closed-filesystem.md)
+now has exact-source derivation and reference-chain controls; its fresh pure/joined
+NativeAOT and signed argument/Unsupported gates remain pending. Rust results are recorded below. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.
 
+The corrected Rust parent passed at source38fedd53bb in
+[job118418832964](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39358494292/job/118418832964).
+Its scratch child then failed during offline compilation: the workspace fetch
+had not downloaded the owned fixture lock's `cpufeatures0.2.17`. No scratch guest
+ran. The qualifier now performs a bounded data-only `cargo fetch --locked`
+against that fixture's manifest, verifies its complete source inventory is
+unchanged, and retains the subsequent build's offline requirement. The first
+replay at de9eb70c30 then retained a second compile failure for `addr2line0.26.1`: `--target`
+filtered native rows out of that lock download. The corrected fetch has no target
+filter, so it acquires the whole exact lock without executing its packages. The separate
+default-false `replay-scratch-refusals` lane authenticates the passed38 public
+bundle, native five and four companions, then builds/signs one fresh component
+and requires the original27 plus six calls. Its 20-minute limit and the original
+nine job bodies are preserved. The original native source stays historical38;
+no normal receipt is rebound to later host changes.
+
+The corrected [run39366052154/job118443039897](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39366052154/job/118443039897)
+at source669fbc56f1 passed the whole targeted job: data-only whole-lock fetch,
+fresh offline component build, normal packaging/signing/admission and all33
+known/reaped invocations. Ordinary `File::open`, `OpenOptions::open` and
+`create_dir` each caught `ErrorKind::Unsupported`. All12 provider-idle samples
+had zero active owners,30 physical samples were retained, and shutdown was
+clean. The [source-bound observation](../testing/evidence/rust-scratch-signed-2026-10-20.json)
+retains both earlier compile failures separately; this finite Rust result does
+not complete the six-language scratch or whole resource/facility criterion.
 The first C scratch child failed during actual compilation, before signing or
 invocation: [job118415549455](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39354843145/job/118415549455)
 retained Zig0.16's deprecated `tmpfile` diagnostic under the unchanged `-Werror`.
@@ -232,7 +283,21 @@ passed at source99eaccd694 in run39350623578/job118393691728: all three outside
 packages were captured/reviewed, originals removed and the actual compiler
 completed with the exact uninstalled-module refusal. All112 compiler materials
 remain exact after composition. This executes no node and qualifies no native
-filesystem result; the native-language programmes remain separately pending.
+filesystem result; each native-language observation retains its own scope.
+The Java workflow also exports its exact passed normal public products, then
+runs one fresh Java component in a separate 20-minute scratch child. The original
+55-minute parent steps and deadline remain intact. The default-false manual
+`qualify-scratch-refusals` selector skips only the unrelated dependency-ingestion
+matrix; normal PR/manual runs retain it. The child uses the same pinned JDK,
+Gradle, WASI SDK and bindings, with no Rust setup or native-host build. It retains
+every caught category and compatibility-report finding: a Java FileNotFound or
+generic I/O error is unresolved behavior, not a reached Unsupported result.
+The [actual Java packet](java-closed-filesystem.md) now records41 known/reaped
+outcomes, including three precise caught Unsupported operations, six original
+argument-error categories and clean physical/provider retirement. The failed
+outer report expected39 rather than the Java baseline29 plus12; strict
+source-backed reprojection retains that failure and verifies41. It grants no
+filesystem provider or scratch storage.
 The owning language receipts
 feed the existing SDK conformance work in #694; this adds no cross-language gate.
 

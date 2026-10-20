@@ -33,6 +33,8 @@ internal static class Program
     {
         if (args.Length == 4 && args[0] == "--task-wait")
             return TaskWait.Run(args[1..]);
+        if (args.Length == 5 && args[0] == "--closed-filesystem")
+            return ClosedFilesystem.Run(args[1..]);
         try
         {
             var synchronousRead = args.Length == 4 && args[0] == "--sync-read";

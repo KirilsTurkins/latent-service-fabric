@@ -12,6 +12,11 @@ on:
       - 'tools/tests/test_typescript_published_fetch.py'
       - 'tools/tests/test_typescript_buffered_reader.py'
   workflow_dispatch:
+    inputs:
+      diagnose-owner-profile:
+        description: Collect a distinct bounded owner-profile differential after original failure
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -19,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   published-fetch:
-    name: Signed unchanged Ky Wretch and outside consumers with original finite limits
+    name: Signed unchanged clients with explicit bounded owner profile
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -54,6 +59,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/typescript_fetch_replay_inputs.py --output "$RUNNER_TEMP/published-fetch-original"
       - name: Capture build sign and execute both changed outside identities
+        env:
+          DIAGNOSE_OWNER_PROFILE: ${{ inputs.diagnose-owner-profile || false }}
         run: python3 -B tools/qualify_typescript_published_fetch.py --acquired "$RUNNER_TEMP/published-fetch-original" --tools "$RUNNER_TEMP/published-fetch-tools" --output "$RUNNER_TEMP/published-fetch"
       - name: Retain actual source build native outcomes ownership and explicit unsupported results
         if: always()
@@ -69,5 +76,7 @@ jobs:
             ${{ runner.temp }}/published-fetch/variant-*/build/logs/**
             ${{ runner.temp }}/published-fetch/variant-*/node/*.json
             ${{ runner.temp }}/published-fetch/variant-*/node/controls/*.json
+            ${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile*/*.json
+            ${{ runner.temp }}/published-fetch/variant-*/diagnostic-owner-profile*/controls/*.json
           if-no-files-found: warn
           retention-days: 7

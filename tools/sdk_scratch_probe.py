@@ -14,7 +14,12 @@ LABELS = {
 # WASI's closed numeric errno set, not arbitrary guest-provided text or codes.
 GO_ERRNOS = (8, 28, 44, 52, 58, 63, 76)
 UNSUPPORTED = frozenset(('io-error|kind=unsupported', 'errno=notsup', 'errno=nosys',
-    'path-error|errno=52', 'path-error|errno=58', 'platform-not-supported', 'unsupported-operation'))
+    'path-error|errno=52', 'platform-not-supported', 'unsupported-operation'))
+DOTNET_ARGUMENTS = {'argument-null': 'argument-null', 'argument-empty': 'argument', 'argument-nul': 'argument',
+    'argument-mode': 'argument-out-of-range', 'argument-access': 'argument-out-of-range', 'argument-combination': 'argument'}
+JAVA_ARGUMENTS = {'argument-input-null': 'null-pointer', 'argument-output-null': 'null-pointer',
+    'argument-output-empty': 'file-not-found', 'argument-file-null': 'null-pointer',
+    'argument-temp-null': 'null-pointer', 'argument-temp-prefix': 'illegal-argument'}
 
 
 def refusal(language, decoded):
@@ -34,8 +39,9 @@ def probe(client, target, accounting, result, population, *, language):
     from tools.rust_capsule_node import assert_value, call, provider_idle, sample
     require(language in LANGUAGES, 'scratch-probe-language')
     grants = target.get('grants', [])
+    allowed = RUNTIME_CAPABILITIES | ({'latent:runtime/activation@0.1.0'} if language == 'dotnet' else set())
     require(type(grants) is list and all(type(row) is dict
-            and row.get('capability') in RUNTIME_CAPABILITIES for row in grants),
+            and row.get('capability') in allowed for row in grants),
             'scratch-no-filesystem-or-storage-grant')
     rows = []
 
@@ -78,3 +84,24 @@ def probe(client, target, accounting, result, population, *, language):
         'scratchStorageImplemented': False, 'allErrorsAreUnsupported': all(row['observation']['unsupported'] for row in rows),
         'persistentFilesystemClaimed': False,
         'fullTicketQualification': False}
+    if language == 'dotnet':
+        arguments = []
+        for mode, category in DOTNET_ARGUMENTS.items():
+            row = invoke(mode)
+            require(row['exitCode'] == 0 and row.get('decoded') == [{'ok': 'scratch|dotnet|' + category + '|fresh=1'}],
+                    'scratch-dotnet-original-argument-validation')
+            retired(mode)
+            arguments.append({'mode': mode, 'category': category, 'invocation': row})
+        result['dotnetFilesystemArguments'] = {'status': 'passed', 'cases': arguments,
+            'publicApiValidationPreserved': True, 'rawExceptionMessagesDisclosed': False}
+
+    if language == 'java':
+        arguments = []
+        for mode, category in JAVA_ARGUMENTS.items():
+            row = invoke(mode)
+            require(row['exitCode'] == 0 and row.get('decoded') == [{'ok': 'scratch|java|' + category + '|fresh=1'}],
+                    'scratch-java-original-argument-validation')
+            retired(mode)
+            arguments.append({'mode': mode, 'category': category, 'invocation': row})
+        result['javaFilesystemArguments'] = {'status': 'passed', 'cases': arguments,
+            'publicApiValidationPreserved': True, 'rawExceptionMessagesDisclosed': False}
