@@ -30,7 +30,7 @@ struct sock { atomic64_t sk_cookie; };
 #define __always_inline inline
 #endif
 static unsigned int model_lock_depth, preemption_depth, cookie_calls, inject_race, invalidate;
-static u64 competing_cookie;
+static u64 competing_cookie, last_compare_return;
 static u64 model_competing_cookie(void);
 static void model_preempt(void);
 static int local_inc_return(local_t *value) { return ++*value; }
@@ -40,14 +40,17 @@ static u64 atomic64_dec_return(atomic64_t *value) { return --*value; }
 static u64 atomic64_read(const atomic64_t *value) { return *value; }
 static u64 atomic64_cmpxchg(atomic64_t *value, u64 before, u64 after)
 {
-    u64 original = *value;
+    u64 original;
     if (inject_race) {
         inject_race = 0;
         competing_cookie = model_competing_cookie();
         *value = competing_cookie;
-    } else if (*value == before) {
+    }
+    original = *value;
+    if (original == before) {
         *value = after;
     }
+    last_compare_return = original;
     return original;
 }
 static void preempt_disable(void)
@@ -239,7 +242,10 @@ int main(void)
     lsf_stream_socket_reserved(&bundle, &sk);
     inject_race = 1;
     lsf_stream_socket_initialized(&sk);
-    assert(competing_cookie && sk.sk_cookie == competing_cookie && !lsf_stream_state.poisoned);
+    original_cookie = lsf_stream_state.allocations[bundle.tokens[0].slot].token.cookie;
+    assert(competing_cookie && original_cookie == sk.sk_cookie &&
+           sk.sk_cookie == competing_cookie && last_compare_return == competing_cookie);
+    assert(sock_gen_cookie(&sk) == competing_cookie && !lsf_stream_state.poisoned);
     assert(!preemption_depth && !model_lock_depth);
     pass("HANDOFF_CONTROL unchanged-upstream-compare-exchange-keeps-competing-winner PASS");
 
