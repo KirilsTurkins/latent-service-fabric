@@ -3,7 +3,10 @@
 The selected NativeAOT/WASI profile joins ordinary incomplete managed tasks
 through the original CoreLib ThreadPoolWorkQueue dispatcher and WASI event loop.
 It requires an authenticated canonical async export, declared monotonic CLOCK
-and ACTIVATION interfaces, and separately installed operator grants. An HTTP
+and ACTIVATION interfaces, and separately installed operator grants. The
+fixture also explicitly declares RANDOM for the original CoreLib thread-pool
+selector seed and installs the existing bounded bytes-only entropy policy. No
+production grant is automatic. An HTTP
 declaration is unnecessary for task and timer progress. The compiler selects the
 existing activation adapter; it adds no network import, provider or grant.
 
@@ -24,7 +27,7 @@ SynchronizationContext, scheduler, executor, HTTP handler or task implementation
 The original source and local feed are removed before offline NativeAOT build.
 
 The signed programme keeps all 27 original node cases and adds a distinct
-activation-authority refusal plus 12 managed task cases. Every successful case
+activation-authority refusal, an entropy-authority refusal and 12 managed task cases. Every successful case
 requires the actual expected return value, known and reaped invocation, original
 fuel/memory limits, zero outbound/log/effect consumption, provider-idle counters
 and physical retirement observations. Original shutdown and cleanup assertions
@@ -35,7 +38,13 @@ These are existing bounded provider settings, not measured CLR heap costs.
 All 12 cases passed a separate reference CLR control using SDK 10.0.303. The
 20 focused selection, authority and observation controls also pass. These results
 do not qualify guest execution: actual fresh NativeAOT compilation and signed
-execution are pending until a source-bound passing receipt is retained.
+execution are pending until a source-bound passing receipt is retained. The
+first signed programme compiled and admitted successfully but trapped in its
+first Task.Run case. Pinned ThreadPoolWorkQueueThreadLocals initializes a
+Random.XoshiroImpl; its constructor calls the native non-cryptographic entropy
+entrypoint. The original fixture omitted RANDOM, leaving that entrypoint on
+the closed path. The explicit declaration selects the existing exact-preimage
+entropy adapter. The new run must still pass every original task assertion.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU
