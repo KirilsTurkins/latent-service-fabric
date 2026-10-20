@@ -214,3 +214,8 @@ indexes retained package observations separately from these API diagnostics. Its
 content keys bind exact package graphs, configurations, compiler/runtime/backend
 inputs and original evidence. Catalogue membership grants no authority and is not
 a dependency resolution, build or admission input.
+
+The separate [six-language API/runtime matrix](runtime-capabilities.md) identifies
+finite implemented and qualified surfaces, explicit profile limits and proposed
+ports without using sample package names as API eligibility. Its versioned data
+binds source files and original evidence; it installs no runtime or authority.

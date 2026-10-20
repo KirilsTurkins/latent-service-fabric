@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_security_profile_workflow.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain current runtime owners and bounded compiler recipes; add explicit Java fixtures and reviewed Wasmtime 48.0.5 identities without relaxing source, budget or license checks.",
+  "reviewReason": "Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "351f837d316b8ce46969c2201de81932649be270597764875813cf51f3837cee"
+  "sha256": "9264563438cb7128e318114eb140e60c7fc365ed221bdd245cf7d6491f544ae3"
 }

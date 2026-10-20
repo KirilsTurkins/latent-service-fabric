@@ -1,0 +1,408 @@
+{
+  "formatVersion": 1,
+  "patches": [
+    {
+      "name": "wac-imported-resource-alias-v1",
+      "profile": "dotnet-native-aot-component-v1",
+      "original": {
+        "name": "sdk-bundled-component-composer",
+        "digest": "sha256:ae5fd306d30beab87a25cd69dc1fa3065e720343456cd872b727eda847813f7f",
+        "size": 21738648
+      },
+      "selected": {
+        "name": "component-composer",
+        "digest": "sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406",
+        "size": 21726840
+      },
+      "selection": {
+        "formatVersion": 1,
+        "version": "0.10.1",
+        "target": "x86_64-unknown-linux-musl",
+        "size": 21726840,
+        "digest": "sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406",
+        "url": "https://github.com/bytecodealliance/wac/releases/download/v0.10.1/wac-cli-x86_64-unknown-linux-musl",
+        "upstreamFix": "https://github.com/bytecodealliance/wac/pull/205"
+      }
+    },
+    {
+      "name": "dotnet-owned-retirement-v1",
+      "profile": "dotnet-owned-retirement-v1",
+      "original": {
+        "name": "original-retirement-wit",
+        "digest": "sha256:885b4083f58df8f4cdf5fea917cf7e961242a65fd8052e4d6f68ce85811c0fb1",
+        "size": 4167
+      },
+      "selected": {
+        "name": "private-retirement-wit",
+        "digest": "sha256:10ef93ba448070d4519cf172f00e0d661b8a7924baac84bbc338775b61e14c3d",
+        "size": 4307
+      },
+      "selection": {
+        "profile": "dotnet-owned-retirement-v1",
+        "privateImport": "latent:dotnet-retirement/owner@0.1.0",
+        "publicGraphUnchanged": true,
+        "originalDigest": "sha256:885b4083f58df8f4cdf5fea917cf7e961242a65fd8052e4d6f68ce85811c0fb1",
+        "selectedDigest": "sha256:10ef93ba448070d4519cf172f00e0d661b8a7924baac84bbc338775b61e14c3d",
+        "authority": "none",
+        "qualification": "unknown",
+        "signedExecution": "not-run"
+      }
+    },
+    {
+      "name": "dotnet-native-entropy-v2",
+      "profile": "dotnet-native-entropy-v2",
+      "original": {
+        "name": "noncrypto-entropy-original-native-archive",
+        "digest": "sha256:48b05195164bf556bf6cf41456f7a531275a8ad192ca74a1f0388d375955ae95",
+        "size": 254498
+      },
+      "selected": {
+        "name": "noncrypto-entropy-object",
+        "digest": "sha256:4a4fce477244a0ae45cf73e67324fb3ce924f593686bcc290a3682db7839f4f6",
+        "size": 974
+      },
+      "selection": {
+        "requiredDeclaration": "latent:random/random@0.1.0",
+        "originalMember": {
+          "digest": "sha256:5012866cd28f6e0e7eb173cf764d77b7fdefc4b4198eeb7fd26a9db716fa0093",
+          "size": 2325
+        },
+        "sourceDigest": "sha256:cbeb2b58248b5e27133e447169a9aa8ca7328cce4706acaa7de83ea0ab295a2e",
+        "targetsDigest": "sha256:d1d2605f2fd1ffa49c45551d4cd2735b09313fd23e22a1765e64569fe5b03fdc",
+        "nativeLinkBinding": {
+          "responseDigest": "sha256:3f8f0397359ed96c5952e211826aa35bee4b91c88a6bbd6b88876ce5e11be35a",
+          "responseSize": 3608,
+          "objectOccurrences": 1,
+          "wrapOccurrences": 1,
+          "secureWrapOccurrences": 1
+        },
+        "secureRandom": "declared-provider-u64"
+      }
+    },
+    {
+      "name": "latent.dotnet.standard-rng-managed.v1",
+      "profile": "dotnet-standard-rng-managed-v1",
+      "original": {
+        "name": "standard-rng-original-framework",
+        "digest": "sha256:7264a768f8e344533902eb61582fef1f737699bd5f11305b7f752193c809b8b4",
+        "size": 284672
+      },
+      "selected": {
+        "name": "standard-rng-derived-framework",
+        "digest": "sha256:0e876616590dcce7d78456c55414768e0514f8fbab561608ff8b975117cf00f7",
+        "size": 249344
+      },
+      "selection": {
+        "sourceCaptureDigest": "sha256:12c70163eb9053b74d8bc223d295baaa461705ebe6b8b875723be88d5d09bd75",
+        "targetsDigest": "sha256:f44ecb6fa5011d3b2ea6c0275c8312b08f1ebf5379e73323b7288e662290dcc3",
+        "helper": {
+          "name": "standard-rng-helper",
+          "digest": "sha256:1ead40eccfdd14061ca2f4cff8bf3b9f351bab262f479ad858845112234186ce",
+          "size": 14848
+        },
+        "replaced": [
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::.ctor()",
+          "System.Security.Cryptography.RandomNumberGenerator System.Security.Cryptography.RandomNumberGenerator::Create()",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::Dispose()",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::Fill(System.Span`1<System.Byte>)",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::GetBytes(System.Byte[],System.Int32,System.Int32)",
+          "System.Byte[] System.Security.Cryptography.RandomNumberGenerator::GetBytes(System.Int32)",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::GetBytes(System.Span`1<System.Byte>)",
+          "System.String System.Security.Cryptography.RandomNumberGenerator::GetHexString(System.Int32,System.Boolean)",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::GetHexString(System.Span`1<System.Char>,System.Boolean)",
+          "System.Int32 System.Security.Cryptography.RandomNumberGenerator::GetInt32(System.Int32)",
+          "System.Int32 System.Security.Cryptography.RandomNumberGenerator::GetInt32(System.Int32,System.Int32)",
+          "T[] System.Security.Cryptography.RandomNumberGenerator::GetItems(System.ReadOnlySpan`1<T>,System.Int32)",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::GetItems(System.ReadOnlySpan`1<T>,System.Span`1<T>)",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::GetNonZeroBytes(System.Byte[])",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::GetNonZeroBytes(System.Span`1<System.Byte>)",
+          "System.String System.Security.Cryptography.RandomNumberGenerator::GetString(System.ReadOnlySpan`1<System.Char>,System.Int32)",
+          "System.Void System.Security.Cryptography.RandomNumberGenerator::Shuffle(System.Span`1<T>)"
+        ],
+        "unchangedMethods": 3240,
+        "nativeAotReferenceBinding": [
+          {
+            "digest": "sha256:f78f413ddc1dc0411eb2577984b817290322b2095d4c076134be12b08a298ba1",
+            "size": 79379
+          }
+        ],
+        "namedAlgorithmFactorySupported": false
+      }
+    },
+    {
+      "name": "latent.dotnet.http-errors.v1",
+      "profile": "dotnet-wasi-http-errors-v1",
+      "original": {
+        "name": "http-error-framework",
+        "digest": "sha256:3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587",
+        "size": 310272
+      },
+      "selected": {
+        "name": "dotnet-http-errors-derived",
+        "digest": "sha256:192d99f1396e7c5207115812ab4b527e9bf210f6da007e0963d1295d048d08f9",
+        "size": 312320
+      },
+      "selection": {
+        "sourceCaptureDigest": "sha256:f48defa8b5047f55fc9aa0f5074f9e97d32dd689be12bf38ac4c14c9cbdb8d0d",
+        "targetsDigest": "sha256:1883c71c318fa360eb4972464c0c7d10a770ae3eab1bd4ce923f195bbb96c31f",
+        "method": "System.String System.Net.Http.WasiHttpInterop::ErrorCodeToString(WasiHttpWorld.wit.imports.wasi.http.v0_2_0.ITypes/ErrorCode)",
+        "categories": [
+          "latent-http-request-too-large",
+          "latent-http-response-too-large",
+          "latent-http-deadline-exceeded",
+          "latent-http-cancelled",
+          "latent-http-budget-exhausted",
+          "latent-http-tls-failed",
+          "latent-http-connection-failed",
+          "latent-http-unavailable",
+          "latent-http-uncertain",
+          "latent-http-invalid-state"
+        ],
+        "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+        "arbitraryPayloadDisclosure": false,
+        "nativeAotReferenceBinding": {
+          "referenceListDigest": "sha256:09ae323780738076b7acaa591639d132ccd7b992e65673da5a1fa3257d1dbd97",
+          "responseFiles": [
+            {
+              "digest": "sha256:f78f413ddc1dc0411eb2577984b817290322b2095d4c076134be12b08a298ba1",
+              "size": 79379
+            }
+          ]
+        },
+        "synchronousRead": {
+          "profile": "dotnet-wasi-sync-response-read-v1",
+          "method": "System.Int32 System.Net.Http.WasiInputStream::Read(System.Byte[],System.Int32,System.Int32)",
+          "asyncMethod": "System.Threading.Tasks.Task`1<System.Int32> System.Net.Http.WasiInputStream::ReadAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)",
+          "originalReadBodyDigest": "sha256:22dba7f1b062b95ef2ea790d97715ef949ad2dd2b16028dfc22e35dc2a463433",
+          "originalAsyncBodyDigest": "sha256:768ad563f6648ec53d282e3c425e5a3c8cdc52054023c2a01bc875c3ac9dc942",
+          "modifiedOriginalMethods": 1,
+          "unchangedOriginalMethods": 2092,
+          "completion": "original-ReadAsync-TaskAwaiter",
+          "bufferValidation": "original-Stream.ValidateBufferArguments",
+          "emptyRead": "zero-without-provider-contact",
+          "disposal": "original-ObjectDisposedException.ThrowIf",
+          "generatedHelpers": 0,
+          "newHostImports": 0,
+          "defaultClientComponentQualified": false,
+          "responseReadErrors": {
+            "profile": "dotnet-wasi-response-read-errors-v1",
+            "method": "System.Void System.Net.Http.WasiInputStream/<ReadAsync>d__17::MoveNext()",
+            "originalIlBytes": 446,
+            "originalIlDigest": "sha256:785ff886dedc4ce9d1340bbd4262043c2a142821524448383e135fb61f1292a5",
+            "exceptionType": "System.IO.IOException",
+            "message": "HTTP response body read failed.",
+            "nativeErrorOwnership": "dispose-before-throw",
+            "closed": "original-eof",
+            "cancellation": "original-propagation",
+            "unknownError": "original-rethrow",
+            "modifiedOriginalMethods": 1,
+            "generatedHelpers": 1,
+            "newHostImports": 0,
+            "pendingGuestIoQualified": false
+          },
+          "requestContentHeaders": {
+            "profile": "dotnet-wasi-request-content-length-v1",
+            "method": "WasiHttpWorld.wit.imports.wasi.http.v0_2_0.ITypes/Fields System.Net.Http.WasiHttpInterop::ConvertRequestHeaders(System.Net.Http.HttpRequestMessage)",
+            "originalIlBytes": 297,
+            "originalIlDigest": "sha256:b38ac3de4ab20fbeb71b1fb783b501721061ec8139403125cd40b8590f0ac2b9",
+            "getter": "System.Nullable`1<System.Int64> System.Net.Http.Headers.HttpContentHeaders::get_ContentLength()",
+            "getterIlBytes": 104,
+            "getterIlDigest": "sha256:b1414b862ff467801df85e05df0fba005cf796f3e63d963cb46e7c166df881be",
+            "noContent": "original-no-content-branch",
+            "explicitLength": "original-value-including-null",
+            "unknownLength": "original-null-no-buffering",
+            "modifiedOriginalMethods": 1,
+            "generatedHelpers": 1,
+            "newHostImports": 0,
+            "serializesContent": false,
+            "buffersContent": false,
+            "defaultClientComponentQualified": false
+          },
+          "synchronousSend": {
+            "profile": "dotnet-wasi-sync-send-v1",
+            "method": "System.Net.Http.HttpResponseMessage System.Net.Http.WasiHttpHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+            "asyncMethod": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.WasiHttpHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+            "originalBody": "authenticated-PlatformNotSupportedException-throw",
+            "defaultConstruction": "original-HttpClient-HttpClientHandler-WasiHttpHandler",
+            "completion": "original-SendAsync-TaskAwaiter",
+            "requestAndCancellation": "original-arguments",
+            "modifiedOriginalMethods": 1,
+            "generatedHelpers": 0,
+            "newHostImports": 0,
+            "nativeSendQualified": false
+          },
+          "defaultHandlerSynchronousSend": {
+            "profile": "dotnet-default-httpclient-sync-send-v1",
+            "method": "System.Net.Http.HttpResponseMessage System.Net.Http.HttpClientHandler::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+            "asyncMethod": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.HttpClientHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+            "originalBody": "authenticated-PlatformNotSupportedException-throw",
+            "defaultConstruction": "original-HttpClient-HttpClientHandler-WasiHttpHandler",
+            "completion": "original-SendAsync-TaskAwaiter",
+            "requestAndCancellation": "original-arguments",
+            "preCancellation": "original-CancellationToken.ThrowIfCancellationRequested-before-SendAsync",
+            "modifiedOriginalMethods": 1,
+            "generatedHelpers": 0,
+            "newHostImports": 0,
+            "nativeSendQualified": false
+          },
+          "asynchronousPreCancellation": {
+            "profile": "dotnet-wasi-async-pre-cancellation-v1",
+            "method": "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage> System.Net.Http.WasiHttpHandler::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)",
+            "originalIlBytes": 63,
+            "originalIlDigest": "sha256:7b7f39644060fdb94e9dc4d970fd4b7239b5a6a629d2986aceea862463ee692b",
+            "cancellationCheck": "original-CoreLib-CancellationToken.IsCancellationRequested",
+            "cancelledResult": "original-CoreLib-Task.FromCanceled<HttpResponseMessage>",
+            "uncancelled": "complete-original-method-body",
+            "originalAsyncStateMachine": "unchanged",
+            "modifiedOriginalMethods": 1,
+            "generatedHelpers": 0,
+            "newHostImports": 0,
+            "preCancelledGuestIoQualified": false,
+            "pendingGuestIoQualified": false
+          },
+          "taskWaitDerivedDigest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6"
+        }
+      }
+    },
+    {
+      "name": "dotnet-stackful-task-wait-v1",
+      "profile": "dotnet-stackful-task-wait-v1",
+      "original": {
+        "name": "task-wait-original-corelib",
+        "digest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+        "size": 5694976
+      },
+      "selected": {
+        "name": "task-wait-derived-corelib",
+        "digest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+        "size": 5605888
+      },
+      "selection": {
+        "sourceCaptureDigest": "sha256:f48defa8b5047f55fc9aa0f5074f9e97d32dd689be12bf38ac4c14c9cbdb8d0d",
+        "targetsDigest": "sha256:e69abf0d87991adf46797bb68c48d06ebd1f1231755b91264639e6bf64c9649a",
+        "method": "System.Boolean System.Threading.Tasks.Task::InternalWaitCore(System.Int32,System.Threading.CancellationToken)",
+        "maximumNestedWaits": 32,
+        "completion": "actual-task-only",
+        "exceptionPropagation": "original-TaskAwaiter",
+        "nestedTaskIdentity": "save-restore-finally",
+        "originalWaitBodyDigest": "sha256:9b5bc35a1a68b80111c7eddc9cbc0903e6062d4e5e3b8f84e8f359445dd6e875",
+        "originalLoopBodyDigest": "sha256:1631857d71d2e5ecca2e22c95a6421aaecf016d9cba018412388b2d1c6646e19",
+        "originalDispatchBodyDigest": "sha256:05e0128b899121d13842a4c76993d2becaaebe2e57ecff53f1ea750ba39ba629",
+        "unchangedOriginalMethods": 44741,
+        "completeOriginalWaitRemainderPreserved": true,
+        "nativeAotReferenceBinding": {
+          "referenceListDigest": "sha256:5f5738af11127cf3811b6b26cc5de78b12b1814f8a2422fa4ad5669893352cc1",
+          "responseFiles": [
+            {
+              "digest": "sha256:f78f413ddc1dc0411eb2577984b817290322b2095d4c076134be12b08a298ba1",
+              "size": 79379
+            }
+          ],
+          "finalCoreLibDerivation": {
+            "profile": "dotnet-closed-filesystem-v1",
+            "intermediateDigest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+            "selectedDigest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb"
+          }
+        }
+      }
+    },
+    {
+      "name": "dotnet-closed-filesystem-v1",
+      "profile": "dotnet-closed-filesystem-v1",
+      "original": {
+        "name": "task-wait-original-corelib",
+        "digest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+        "size": 5694976
+      },
+      "selected": {
+        "name": "closed-filesystem-derived-corelib",
+        "digest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb",
+        "size": 5605888
+      },
+      "selection": {
+        "sourceCaptureDigest": "sha256:f48defa8b5047f55fc9aa0f5074f9e97d32dd689be12bf38ac4c14c9cbdb8d0d",
+        "targetsDigest": "sha256:6a44c6bae0f66a4ecb7b9dcbd27dc3f3c26ddbb9d9fb4492b3bb8d77dbf5407e",
+        "base": {
+          "name": "closed-filesystem-base-corelib",
+          "digest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+          "size": 5605888
+        },
+        "taskWaitIntermediate": {
+          "name": "task-wait-derived-corelib",
+          "digest": "sha256:75e20677f372373fcd31d74fa0506b9fa3491243e276054d8155849a3b9bf8e6",
+          "size": 5605888
+        },
+        "originalMethodBodies": {
+          "Microsoft.Win32.SafeHandles.SafeFileHandle Interop/Sys::Open(System.String,Interop/Sys/OpenFlags,System.Int32)": "45c08142a966e0bf75b1199633662f29f40bb13b5e6c731685c18c18d673e947",
+          "System.IntPtr Interop/Sys::MksTemps(System.Byte*,System.Int32)": "706bc70525fa1dc2baec392c7ddb1febd377a584567dd6565fa9f65b87a31ccc"
+        },
+        "modifiedOriginalMethods": 2,
+        "unchangedBaseMethods": 44753,
+        "otherBaseBodiesUnchanged": true,
+        "publicWrappersUnchanged": true,
+        "newHostImports": 0,
+        "filesystemAuthority": false,
+        "nativeAotReferenceBinding": {
+          "referenceListDigest": "sha256:dc9f3af695e51b26e810729276d913e0a8d3532789f9a7d4edc4f3d3ac0445e0",
+          "responseFiles": [
+            {
+              "digest": "sha256:f78f413ddc1dc0411eb2577984b817290322b2095d4c076134be12b08a298ba1",
+              "size": 79379
+            }
+          ],
+          "selectedCoreLibDigest": "sha256:2053c6e28210cfbb32b26ccdc4d152103274254128c857f867707591b590bdcb"
+        }
+      }
+    },
+    {
+      "name": "dotnet-private-async-io-v1",
+      "profile": "dotnet-private-async-io-v1",
+      "original": {
+        "name": "original-native-aot-component",
+        "digest": "sha256:600c814233257d61582b74317dc67416f418a1930932b8411b477a58748a3106",
+        "size": 10268210
+      },
+      "selected": {
+        "name": "internal-io-component",
+        "digest": "sha256:74f0ed2a8d7a929498dc075dd96451a9c633fb6fb98788f149846ead50f522ae",
+        "size": 10273040
+      },
+      "selection": {
+        "profile": "dotnet-private-async-io-v1",
+        "originalDigest": "sha256:600c814233257d61582b74317dc67416f418a1930932b8411b477a58748a3106",
+        "selectedDigest": "sha256:74f0ed2a8d7a929498dc075dd96451a9c633fb6fb98788f149846ead50f522ae",
+        "functions": {
+          "wasi:io/poll@0.2.6": [
+            "[method]pollable.block",
+            "poll"
+          ],
+          "wasi:io/streams@0.2.6": [
+            "[method]input-stream.blocking-read",
+            "[method]output-stream.blocking-flush"
+          ]
+        },
+        "coreModules": [
+          {
+            "digest": "sha256:2b9e3148bcd84fef79b68cac32172d25afd52c68460f8e59b8d2b8b4ac98dfb6",
+            "size": 10241544
+          },
+          {
+            "digest": "sha256:7c80e176a91c386eb7d024a9559b5964f28e9173cb5c956628ab676961708b4e",
+            "size": 980
+          },
+          {
+            "digest": "sha256:139d3e9f4490ac65251257a6eda28a691fde689221b1e9644ac3a4990ad0eb2d",
+            "size": 458
+          },
+          {
+            "digest": "sha256:c31cc6ffd33735cbd42510e5afdd4cd5adf9b8591bd9c2af517674101268c9ea",
+            "size": 24
+          }
+        ],
+        "coreBytesUnchanged": true,
+        "publicApplicationGraphUnchanged": true,
+        "signedExecution": "not-run"
+      }
+    }
+  ]
+}

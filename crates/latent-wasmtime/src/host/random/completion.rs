@@ -55,7 +55,7 @@ unsafe impl ComponentType for Bytes {
     unsafe_code,
     reason = "retain exact byte allocation and affine call until both generated canonical lowering paths finish or unwind"
 )]
-// SAFETY: Wasmtime 48.0.6 StaticHostFn::lower_result owns the returned tuple by
+// SAFETY: Wasmtime 48.0.7 StaticHostFn::lower_result owns the returned tuple by
 // value while it invokes these methods. Both delegate unchanged to Value's
 // Lower, including guest realloc and bounds/alignment checks. The host buffer
 // and call therefore survive realloc, nested failure and either lowering path.

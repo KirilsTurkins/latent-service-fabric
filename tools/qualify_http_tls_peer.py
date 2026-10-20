@@ -14,6 +14,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.http_tls_peer_reference import CASES, exercise
+from tools.http_tls_process_reference import exercise as exercise_process
 from tools.owned_test_process import run_owned
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
@@ -24,6 +25,7 @@ MATERIALS = ('tools/qualify_http_tls_peer.py', 'tools/http_tls_peer_reference.py
     'tools/standard_http/protocol.py', 'tools/standard_http/vectors.py',
     'tools/standard_http/observations.py', 'tools/owned_test_process.py',
     '.github/workflows/http-tls-fixture.yml')
+MATERIALS += ('tools/http_tls_process_reference.py', 'tools/standard_http/process_peer.py')
 
 CONFIGURATION = '''[req]
 prompt = no
@@ -73,6 +75,8 @@ def qualify(output):
             stage = 'six-real-tls-protocol-controls'
             record['cases'] = exercise(certificate, key)
             require([row['case'] for row in record['cases']] == list(CASES), 'tls-reference-six-cases')
+            stage = 'owned-tls-peer-process'
+            record['processQualification'] = exercise_process(certificate, key)
         require(time.monotonic()-started <= 60 and file_identity(openssl) == original_tool
                 and materials == {name:file_identity(ROOT/name) for name in MATERIALS}
                 and subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=10).decode().strip() == source,

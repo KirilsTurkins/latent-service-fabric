@@ -29,6 +29,15 @@ clock imports. The default compiler path and `teavm-activation-fibers-v1` keep
 their original C import conventions. No application source, dependency worker,
 host authority or native thread is substituted by this selection.
 
+The maintained fiber conformance world declares `run: async func`. A service
+entry that can actually block its root pump on canonical readiness must retain
+an asynchronous WIT function contract. The Java body still uses the supported
+synchronous C ABI lowering; component-type metadata carries the async entry
+contract. A short sleep that is already due does not prove pending suspension.
+The later [joined resource programme](java-resource-runtime.md) passes its thirteen
+public-host outcomes after this fixture-only entry correction; its entire component
+diff is three sync-to-async type bytes. The Java/C binding bodies remain identical.
+
 ## Ownership and readiness
 
 Every actually asynchronous WIT import is lowered using the pinned C generator.

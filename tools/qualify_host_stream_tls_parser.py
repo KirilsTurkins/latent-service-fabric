@@ -30,7 +30,7 @@ CASES = {
 }
 OLD_CASE = "tls13-five-thousand-tiny-certificates-old"
 PARSER_CEILING = 64 * 1024
-CURRENT_LOCK_SHA256 = "334b1e01f646aae3ff92b8fb039172082a08273b8d088c6d6e184fe94a34760b"
+CURRENT_LOCK_SHA256 = "2d234f87b8ea78099329495b8daf18e77fcfc2026bc5e858136862e21f3227e6"
 
 
 def current_reference_lock() -> bytes:

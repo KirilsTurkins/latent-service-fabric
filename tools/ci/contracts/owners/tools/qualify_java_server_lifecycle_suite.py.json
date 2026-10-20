@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_server_lifecycle_suite.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "New maintained actual Java source build sign and shared-ingress lifecycle owner with strict ordinary-default native capture",
+  "reviewReason": "Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1a8526ada3ed3fe8fc83c6d294d90262321997cd5b43f1c629b8478fd997d49f"
+  "sha256": "2a2738cbe586dd3cda430ed66e68c43e292363ee9b8c0375d38b5f1cee5506b2"
 }

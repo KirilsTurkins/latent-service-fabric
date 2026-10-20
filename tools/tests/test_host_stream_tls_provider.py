@@ -30,7 +30,7 @@ class BoundedTlsProviderSource(unittest.TestCase):
         self.assertEqual(len(result["files"]), 119)
         changed = {name for name, row in record["files"].items()
                    if row["beforeSha256"] != row["afterSha256"]}
-        self.assertEqual(changed, provider.captured.CURRENT_FILES | {"Cargo.toml"})
+        self.assertEqual(changed, provider.captured.CURRENT_FILES | {"Cargo.toml", "Cargo.lock"})
         self.assertFalse(result["accountingQualified"])
         self.assertFalse(result["installed"])
         for name, expected in record["licenseFiles"].items():
@@ -74,6 +74,50 @@ class BoundedTlsProviderSource(unittest.TestCase):
                     target.write_bytes(target.read_bytes() + b"changed\n")
                 with self.assertRaises(ValueError):
                     provider.verify(root)
+
+    def test_current_lock_is_the_exact_cargo_generated_security_derivation(self):
+        record = json.loads((provider.ROOT / provider.RECORD).read_bytes())
+        original = record["lockDerivation"]["original"].encode()
+        self.assertEqual(len(original), 31170)
+        self.assertEqual(hashlib.sha256(original).hexdigest(), provider.UPSTREAM_LOCK_SHA256)
+        maintained = (provider.ROOT / provider.PROVIDER / "Cargo.lock").read_bytes()
+        self.assertEqual(provider.derived_lock(original), maintained)
+        before = tomllib.loads(original.decode())["package"]
+        after = tomllib.loads(maintained.decode())["package"]
+        self.assertEqual(len(before), 134)
+        self.assertEqual(len(after), 134)
+        renamed = next(row for row in after if row["name"] == provider.NAME)
+        self.assertEqual({**renamed, "name": "rustls"}, next(row for row in before if row["name"] == "rustls"))
+        changed = {"rustls", provider.NAME, "rustls-webpki", "webpki-roots"}
+        self.assertEqual([row for row in before if row["name"] not in changed],
+                         [row for row in after if row["name"] not in changed])
+        for name, _, version, _, checksum in provider.LOCK_UPDATES:
+            old = next(row for row in before if row["name"] == name)
+            new = next(row for row in after if row["name"] == name)
+            self.assertEqual(new, {**old, "version": version, "checksum": checksum})
+
+    def test_lock_preimage_and_maintained_result_drift_are_refused(self):
+        record = json.loads((provider.ROOT / provider.RECORD).read_bytes())
+        original = record["lockDerivation"]["original"].encode()
+        for changed in (original + b"\n", original.replace(b'"0.103.15"', b'"0.103.14"', 1),
+                        original.replace(b'"ring"', b'"foreign"', 1)):
+            self.assertNotEqual(original, changed)
+            with self.assertRaisesRegex(ValueError, "lock-preimage"):
+                provider.derived_lock(changed)
+        with patch.object(provider, "MAINTAINED_LOCK_SHA256", "0" * 64), \
+                self.assertRaisesRegex(ValueError, "lock-result"):
+            provider.derived_lock(original)
+
+    def test_selected_root_trust_dependencies_use_patched_versions(self):
+        lock = tomllib.loads((provider.ROOT / "Cargo.lock").read_text(encoding="utf-8"))
+        for name, version in (("rustls-webpki", "0.103.16"), ("webpki-roots", "1.0.10"),
+                              ("webpki-root-certs", "1.0.10")):
+            selected = [row["version"] for row in lock["package"] if row["name"] == name]
+            self.assertEqual(selected, [version])
+        for crate in ("latent-http", "latent-nats", "latent-oci"):
+            manifest = provider.ROOT / "crates" / crate / "Cargo.toml"
+            self.assertEqual(tomllib.loads(manifest.read_text(encoding="utf-8"))["dependencies"]["webpki-roots"],
+                             "=1.0.10")
 
     def test_global_shadowing_changed_lock_and_accounting_enablement_are_refused(self):
         for kind in ("global-patch", "global-replace", "workspace", "lock", "accounting"):

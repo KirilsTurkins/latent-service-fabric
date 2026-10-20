@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "latent.dotnet.runtime.v1",
+  "profile": "http",
+  "declaredImports": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0",
+    "latent:http/streaming@0.3.0",
+    "latent:random/random@0.1.0",
+    "latent:runtime/activation@0.1.0"
+  ],
+  "emittedImports": [
+    "latent:random/random@0.1.0",
+    "wasi:cli/environment@0.2.6",
+    "wasi:cli/exit@0.2.6",
+    "wasi:cli/stderr@0.2.6",
+    "wasi:cli/stdin@0.2.6",
+    "wasi:cli/stdout@0.2.6",
+    "wasi:cli/terminal-input@0.2.6",
+    "wasi:cli/terminal-output@0.2.6",
+    "wasi:cli/terminal-stderr@0.2.6",
+    "wasi:cli/terminal-stdin@0.2.6",
+    "wasi:cli/terminal-stdout@0.2.6",
+    "wasi:clocks/monotonic-clock@0.2.6",
+    "wasi:clocks/wall-clock@0.2.6",
+    "wasi:filesystem/preopens@0.2.6",
+    "wasi:filesystem/types@0.2.6",
+    "wasi:http/outgoing-handler@0.2.0",
+    "wasi:http/types@0.2.0",
+    "wasi:io/error@0.2.6",
+    "wasi:io/poll@0.2.6",
+    "wasi:io/streams@0.2.6",
+    "wasi:random/insecure@0.2.6"
+  ],
+  "rawComponent": {
+    "name": "raw-native-aot-component",
+    "digest": "sha256:74f0ed2a8d7a929498dc075dd96451a9c633fb6fb98788f149846ead50f522ae",
+    "size": 10273040
+  },
+  "adapter": {
+    "name": "http-runtime",
+    "digest": "sha256:362dc958af5a9afd98c165aa6c93946986c8921f9b63e94a14382684f7ff597a",
+    "size": 253090
+  },
+  "additionalAdapters": [
+    {
+      "name": "noncrypto-entropy",
+      "digest": "sha256:2dbf0dacbc5c95439609a6ed8db7ecb935e4a5ce3581d688cfb6c9478fefc7c0",
+      "size": 28716
+    },
+    {
+      "name": "wall-clock-runtime",
+      "digest": "sha256:387ce4a0195f1eed12721a0303448e5cf9a19d6322de64647afd61a4628d874a",
+      "size": 21215
+    }
+  ],
+  "internalIoPort": {
+    "profile": "dotnet-private-async-io-v1",
+    "originalDigest": "sha256:600c814233257d61582b74317dc67416f418a1930932b8411b477a58748a3106",
+    "selectedDigest": "sha256:74f0ed2a8d7a929498dc075dd96451a9c633fb6fb98788f149846ead50f522ae",
+    "functions": {
+      "wasi:io/poll@0.2.6": [
+        "[method]pollable.block",
+        "poll"
+      ],
+      "wasi:io/streams@0.2.6": [
+        "[method]input-stream.blocking-read",
+        "[method]output-stream.blocking-flush"
+      ]
+    },
+    "coreModules": [
+      {
+        "digest": "sha256:2b9e3148bcd84fef79b68cac32172d25afd52c68460f8e59b8d2b8b4ac98dfb6",
+        "size": 10241544
+      },
+      {
+        "digest": "sha256:7c80e176a91c386eb7d024a9559b5964f28e9173cb5c956628ab676961708b4e",
+        "size": 980
+      },
+      {
+        "digest": "sha256:139d3e9f4490ac65251257a6eda28a691fde689221b1e9644ac3a4990ad0eb2d",
+        "size": 458
+      },
+      {
+        "digest": "sha256:c31cc6ffd33735cbd42510e5afdd4cd5adf9b8591bd9c2af517674101268c9ea",
+        "size": 24
+      }
+    ],
+    "coreBytesUnchanged": true,
+    "publicApplicationGraphUnchanged": true,
+    "signedExecution": "not-run"
+  },
+  "retirementPort": {
+    "profile": "dotnet-owned-retirement-v1",
+    "privateImport": "latent:dotnet-retirement/owner@0.1.0",
+    "publicGraphUnchanged": true,
+    "originalDigest": "sha256:885b4083f58df8f4cdf5fea917cf7e961242a65fd8052e4d6f68ce85811c0fb1",
+    "selectedDigest": "sha256:10ef93ba448070d4519cf172f00e0d661b8a7924baac84bbc338775b61e14c3d",
+    "authority": "none",
+    "qualification": "unknown",
+    "signedExecution": "not-run"
+  }
+}

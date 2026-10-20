@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Six real TLS peer controls without a guest or provider build",
+    "name": "TLS transport and owned process controls without a guest or provider build",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -46,7 +46,7 @@
   },
   "jobId": "fixture",
   "kind": "job",
-  "reviewReason": "Add a bounded independent TLS fixture reference lane with ten portable controls and six real TLS/HTTP outcomes; no guest/provider/kernel qualification or previous command replacement.",
+  "reviewReason": "Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/http-tls-fixture.yml"
 }

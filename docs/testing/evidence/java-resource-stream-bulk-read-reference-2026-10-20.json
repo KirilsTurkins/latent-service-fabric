@@ -1,0 +1,285 @@
+{
+  "classAdaptation": {
+    "adaptedClassSha256": "24fbdbd316a2b9f60debb0d1b7842b55ac874f33ee538ca360d1975c10d38694",
+    "count": 1,
+    "from": "java/io/ByteArrayInputStream",
+    "originalClassSha256": "d868e5b159b2a49b3955244707fb26af100ff5d9b95d60c1ff15c98aa32b2cbd",
+    "remainingConstantPoolAndAllMethodBytesUnchanged": true,
+    "soleConstantPoolOwnerReplacement": true,
+    "to": "org/teavm/classlib/java/io/TByteArrayInputStream"
+  },
+  "commands": [
+    {
+      "exitCode": 0,
+      "name": "compile-control",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 1,
+      "name": "old-all",
+      "stderrSha256": "be2590390bf695b2d040c47c83591cc9135d17c08f182ecfcecc742714333c01",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-all",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "623bff355f4466ddfe8075955340f47dfe049e6c4394ca41b51dd89c1e96d454"
+    },
+    {
+      "exitCode": 1,
+      "name": "old-bounded",
+      "stderrSha256": "8aa1127a56d27ee273c347138c261e2d0cf6ac14d6c5d3ebf218b8d3bd59fac0",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-bounded",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "9478f3d0a4db3fa115a8c7660775613c3108462d63f3accfe2b7d0f554f42338"
+    },
+    {
+      "exitCode": 0,
+      "name": "old-zero",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "9b9261577dd8a2e564bdad42802d873905edfccb43aadcf00c1795e8ed7d7c3d"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-zero",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "9b9261577dd8a2e564bdad42802d873905edfccb43aadcf00c1795e8ed7d7c3d"
+    },
+    {
+      "exitCode": 0,
+      "name": "old-negative",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "10d1dd80d68ab06927ab8b6477d5a23917535770f84c21916bcce1a3b30c5bf1"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-negative",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "10d1dd80d68ab06927ab8b6477d5a23917535770f84c21916bcce1a3b30c5bf1"
+    },
+    {
+      "exitCode": 1,
+      "name": "old-maximum",
+      "stderrSha256": "522c8058cb458cca30de2497fef139f8f13d660756fe597cf03a0ecfa4d64555",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-maximum",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "36b800c7e38284f3e90acf03b4ac9f78645594b45924e0d3c9718b10eda3599b"
+    },
+    {
+      "exitCode": 1,
+      "name": "old-mark-close",
+      "stderrSha256": "a2258074e02480f9055aeb44b565310e3ecc0cc39f630d9aec05ded52156e10a",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-mark-close",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "08aaf7c9348d0b671a290f6b4cc8133f7a1dec3d6e31756e28ca73306f289d84"
+    },
+    {
+      "exitCode": 1,
+      "name": "old-independent",
+      "stderrSha256": "21d7a359e2680750680c6bbb4ee27a12d8c37b180888d3cd66a46bbe5e86194a",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-independent",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "4f71b636d5c08fdf368c6f47ec7802c95a9459e6fbfb5d343b8095c933c29f79"
+    },
+    {
+      "exitCode": 0,
+      "name": "old-empty",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "94e858119b36099679f1af572e1d068920ab7b4723528c3c74c61a89d954af80"
+    },
+    {
+      "exitCode": 0,
+      "name": "new-empty",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "94e858119b36099679f1af572e1d068920ab7b4723528c3c74c61a89d954af80"
+    }
+  ],
+  "componentExecutionQualified": false,
+  "control": {
+    "path": "sdk/java-guest/resources/conformance/ImmutableResourceStreamControl.java",
+    "sha256": "b0d63cc78da246a6cb3a7836f7165304e775d2f1e72543674dd11c5f8935074b"
+  },
+  "date": "2026-10-20",
+  "diagnosticOnly": true,
+  "jar": {
+    "jar": {
+      "bytes": 17718996,
+      "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410"
+    },
+    "member": {
+      "bytes": 2033,
+      "path": "org/teavm/classlib/java/io/TByteArrayInputStream.class",
+      "sha256": "6af2b1c92d7b01c0a2bb9159f642a4922888b7d7b356cb7e0cbd828d4baca31d"
+    },
+    "url": "https://repo.maven.apache.org/maven2/org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar"
+  },
+  "newGreenCases": [
+    "new-all",
+    "new-bounded",
+    "new-zero",
+    "new-negative",
+    "new-maximum",
+    "new-mark-close",
+    "new-independent",
+    "new-empty"
+  ],
+  "observedSourceBase": "9c228c01c95c7e6d2f9f12e5fcae19a533b071af",
+  "oldRedCases": [
+    "old-all",
+    "old-bounded",
+    "old-maximum",
+    "old-mark-close",
+    "old-independent"
+  ],
+  "productionMaterials": {
+    "sdk/java-guest/resources/compiler/dev/latent/guest/resources/ImmutableResourceStream.java": {
+      "bytes": 764,
+      "sha256": "f6ab5ac031328027ca4588866e5594bcd525d3fe6f78dea6fa9635b9faa6ef1d"
+    },
+    "tools/java_guest/resources.py": {
+      "bytes": 7846,
+      "sha256": "77389b62f5f820e03a81ef852105ab122087c381954d06283f79b7da394918c1"
+    }
+  },
+  "referenceSources": [
+    "https://raw.githubusercontent.com/konsoletyper/teavm/0.15.0/classlib/src/main/java/org/teavm/classlib/java/io/TByteArrayInputStream.java",
+    "https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/ByteArrayInputStream.html"
+  ],
+  "retainedDiagnostic": {
+    "allCasesPhysicallyRetired": true,
+    "artifact": 12289744935,
+    "artifactBytes": 1570016,
+    "artifactSha256": "2ff4b86f45686c1f73a760b80dfc43958027c74d9d7d29141ad660e4c0737135",
+    "cases": [
+      {
+        "activation": "resource-java-foreign-fresh",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "5194750",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "9439992",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "7704"
+        },
+        "error": "guest-trap",
+        "known": true,
+        "mode": "fresh",
+        "reaped": true,
+        "tenant": "foreign"
+      },
+      {
+        "activation": "resource-java-clear",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "5328399",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "9440176",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "14083"
+        },
+        "error": "guest-trap",
+        "known": true,
+        "mode": "clear",
+        "reaped": true,
+        "tenant": "examples"
+      },
+      {
+        "activation": "resource-java-parallel",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "6699091",
+          "effectCount": 0,
+          "logBytes": "219",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "9439992",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "19041"
+        },
+        "error": "guest-trap",
+        "known": true,
+        "mode": "parallel",
+        "reaped": true,
+        "tenant": "examples"
+      }
+    ],
+    "cleanShutdown": true,
+    "diagnosticOnly": true,
+    "guestComponentsCompiled": 0,
+    "job": 118824660653,
+    "jobConclusion": "success",
+    "membersVerified": 250,
+    "nativePendingBarrierStatus": "not-observed",
+    "nativeProductsBuilt": 0,
+    "originalProgrammePassed": false,
+    "rawNodeSha256": "2cd9c28436008ef96ea971abab74c52e3458795ea49c58dce1289060e946ba5a",
+    "rawQualificationSha256": "7e454599d85854490cbcca077fc4cb5620b6f6f450b25a6cbc59246f00cfb4fa",
+    "run": 39479565545,
+    "signedProgrammeQualification": false,
+    "status": "diagnostic-observed",
+    "workflowHead": "9c228c01c95c7e6d2f9f12e5fcae19a533b071af"
+  },
+  "schemaVersion": "latent.java.resource-stream-host-control.v1",
+  "source": {
+    "bytes": 764,
+    "path": "sdk/java-guest/resources/compiler/dev/latent/guest/resources/ImmutableResourceStream.java",
+    "sha256": "f6ab5ac031328027ca4588866e5594bcd525d3fe6f78dea6fa9635b9faa6ef1d"
+  },
+  "sourceAndJarsRecheckedAfterControls": true,
+  "supportJars": [
+    {
+      "path": "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar",
+      "platform": "any",
+      "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+      "size": 2956367
+    },
+    {
+      "path": "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar",
+      "platform": "any",
+      "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+      "size": 12599
+    },
+    {
+      "path": "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar",
+      "platform": "any",
+      "sha256": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8",
+      "size": 101636
+    }
+  ],
+  "synchronization": {
+    "correctionReadAllBytes": "synchronized",
+    "correctionReadNBytesInt": "nonsynchronized",
+    "jdkReadAllBytes": "synchronized",
+    "jdkReadNBytesInt": "inherited nonsynchronized InputStream method"
+  }
+}

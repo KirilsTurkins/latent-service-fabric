@@ -30,6 +30,39 @@ header ownership and immutable views remain in force. HTTPS remains explicitly
 unsupported; selecting this profile does not grant any destination or transport
 authority.
 
+The source-bound signed result is now [independently verified](evidence/java-http-phase-signed-2026-10-20.json):
+[run 39489934505 / job 118860114936](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39489934505/job/118860114936),
+artifact `12295264122` (326,546 bytes, SHA256
+`fbed245b0cab6f82fbd28d94e264db9a53217c98e329a2da1ff5050a4d7b1da9`).
+All 295 public members passed CRC and SHA checks. The phase subprogramme passed
+all 16 signed cases and two zero-work grant denials, with 13 real HTTP contacts,
+exact signed revision identities, zero retained physical owners per case and raw
+clean/reaped node and stopped-peer records. Ordinary DavidWebb nonzero defaults,
+HttpRequest defaults, connect/header/body timeouts, root deadline/cancellation
+separation and fresh calls all executed. No runtime or provider limit was raised.
+
+The component was genuinely compiled at `aa56bdebad8c12f20acce4ec4ecfeca73cf554be`
+(tested source `370e0653078715807ae538de437a36aa6a05a68f`), then replayed at
+`5211438ff692bcc1066bb1675b3f88924b3650be` with the reviewed operator and node
+64 MiB component-input profiles. Its 17,034,179-byte digest is
+`1cfb94306437ffc5e63ba76d981c04cba9ba98419c2b2b3c536f5d91005a6a53`.
+All 199 captured SDK files and 73 compiler recipe files remain byte-identical;
+of 105 compared campaign materials, only the two reviewed control profiles
+differ from the build source, and their bytes match that actual replay. Native
+products remain the explicit historical `f9192fb5785ca7bed8b33dbb869b3d775b72ab4b`
+compilation. This evidence does not claim compilation of current development's
+native source; the normal campaign retains its complete native-source equality
+refusal rather than waiving it after integration.
+
+The **whole workflow failed later** in the separate twelve-outcome tenant
+programme: its first authorized `webb-first` call returned an uncertain dispatched
+RPC cancellation after 120 seconds. The foreign-ungranted and foreign-operator
+denials had completed, but no authorized tenant success is inferred. That failure
+is retained, not retried on the old node. A separate fresh tenant-only diagnostic
+and optional public SPI campaign remain pending. Neither #688 nor #741 is complete.
+The chronological entries below preserve earlier failed revisions and their
+then-pending statements; they do not supersede this bounded actual result.
+
 Focused source controls and an installed-JDK reference exercise the actual derived
 adapter against a modeled typed port. The reference checks 27 phase outcomes and
 four legacy controls, including exception identity, root-error separation, timeout

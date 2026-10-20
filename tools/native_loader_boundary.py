@@ -48,7 +48,7 @@ FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b42
 # same pinned generated ABI. The exact output buffer is zeroized/freed before
 # its affine ProviderCall drops. No host pointer, resource or raw access is added.
 RANDOM_RESULT = f"{CRATE}/src/host/random/completion.rs"
-RANDOM_RESULT_SHA256 = "b56cdbeec6196b7ec45c83b64229a8a31ed52abd76901717ff5ab843f00323cf"
+RANDOM_RESULT_SHA256 = "4490c7099ef74dd0c5cb0ae0c7a280904f71f8f97f2b5c91a752b1c681443802"
 # This third exception only allocates and unmaps guarded root stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
@@ -83,7 +83,7 @@ def validate(root: Path) -> list[str]:
     if workspace["lints"]["rust"].get("unsafe_code") != "forbid":
         errors.append("workspace unsafe_code must remain forbid")
     engine = workspace["dependencies"]["wasmtime"]
-    if engine.get("version") != "=48.0.6" or engine.get("default-features") is not False:
+    if engine.get("version") != "=48.0.7" or engine.get("default-features") is not False:
         errors.append("native loader requires review of the pinned Wasmtime engine")
     if "parallel-compilation" in engine.get("features", []):
         errors.append("isolated compiler must not enable parallel-compilation")

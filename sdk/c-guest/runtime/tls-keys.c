@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <pthread.h>
 #include <stddef.h>
+#include <threads.h>
 
 #define KEY_COUNT 128u
 #define KEY_BITS 7u
@@ -11,6 +12,9 @@
 
 _Static_assert(sizeof(pthread_key_t) == sizeof(unsigned), "unsupported pthread key ABI");
 _Static_assert(KEY_COUNT == (1u << KEY_BITS), "invalid pthread key encoding");
+_Static_assert(_Generic((tss_t *)0, pthread_key_t *: 1, default: 0),
+    "unsupported C11 thread-specific key ABI");
+_Static_assert(TSS_DTOR_ITERATIONS == DESTRUCTOR_PASSES, "unsupported C11 destructor bound");
 #ifdef PTHREAD_KEYS_MAX
 _Static_assert(KEY_COUNT >= PTHREAD_KEYS_MAX, "header key limit exceeds PAL");
 #endif
@@ -81,6 +85,18 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
     values[index].generation = definition->generation;
     values[index].value = (void *)value;
     return 0;
+}
+
+int tss_create(tss_t *key, tss_dtor_t destructor) {
+    return pthread_key_create(key, destructor) == 0 ? thrd_success : thrd_error;
+}
+
+void tss_delete(tss_t key) { (void)pthread_key_delete(key); }
+
+void *tss_get(tss_t key) { return pthread_getspecific(key); }
+
+int tss_set(tss_t key, void *value) {
+    return pthread_setspecific(key, value) == 0 ? thrd_success : thrd_error;
 }
 
 /* Internal closing hook, not a public pthread entry point or retirement proof.
