@@ -25,8 +25,15 @@ pub fn interface_with_dependencies(
     encode_interface(&resolve, name, asynchronous)
 }
 
-/// Share actual outer resource identities instead of redefining foreign owners.
-pub fn interface_with_resource_aliases(
+/// Import the original named type closure without any operations or authority.
+pub fn interface_types(source: &str, name: &str) -> InstanceType {
+    let mut resolve = Resolve::default();
+    resolve.push_source("host.wit", source).unwrap();
+    encode_with_resources(&resolve, name, None, &[], false)
+}
+
+/// Share actual outer type identities instead of redefining foreign owners.
+pub fn interface_with_type_aliases(
     sources: &[(&str, &str)],
     name: &str,
     asynchronous: Option<bool>,
@@ -36,7 +43,7 @@ pub fn interface_with_resource_aliases(
     for (path, source) in sources {
         resolve.push_source(path, source).unwrap();
     }
-    encode_with_resources(&resolve, name, asynchronous, resources)
+    encode_with_resources(&resolve, name, asynchronous, resources, true)
 }
 
 /// Parse one exact committed package directory and its own declared WIT deps.
@@ -52,7 +59,7 @@ pub fn interface_from_directory(
 }
 
 fn encode_interface(resolve: &Resolve, name: &str, asynchronous: Option<bool>) -> InstanceType {
-    encode_with_resources(resolve, name, asynchronous, &[])
+    encode_with_resources(resolve, name, asynchronous, &[], true)
 }
 
 fn encode_with_resources(
@@ -60,6 +67,7 @@ fn encode_with_resources(
     name: &str,
     asynchronous: Option<bool>,
     resources: &[(&str, &str, u32)],
+    include_functions: bool,
 ) -> InstanceType {
     let (_, interface) = resolve
         .interfaces
@@ -71,8 +79,8 @@ fn encode_with_resources(
         host: InstanceType::new(),
         types: BTreeMap::new(),
         names: BTreeMap::new(),
-        // Only the explicit shared-owner path restricts named exports. Foreign
-        // nested definitions still encode, but are not new interface members.
+        // Only the explicit shared-owner path restricts named exports. Imported
+        // foreign definitions retain their original outer names and identities.
         exports: (!resources.is_empty()).then(|| interface.types.values().copied().collect()),
     };
     for (owner, name, outer) in resources {
@@ -82,10 +90,7 @@ fn encode_with_resources(
             .find(|(id, _)| resolve.id_of(*id).as_deref() == Some(*owner))
             .unwrap();
         let resource = owner.types[*name];
-        assert!(matches!(
-            resolve.types[resource].kind,
-            TypeDefKind::Resource
-        ));
+        assert_eq!(resolve.types[resource].name.as_deref(), Some(*name));
         let index = encoder.host.type_count();
         encoder.host.alias(Alias::Outer {
             kind: ComponentOuterAliasKind::Type,
@@ -96,6 +101,9 @@ fn encode_with_resources(
     }
     for id in interface.types.values() {
         encoder.value(Type::Id(*id));
+    }
+    if !include_functions {
+        return encoder.host;
     }
     for function in interface.functions.values() {
         let params: Vec<_> = function
