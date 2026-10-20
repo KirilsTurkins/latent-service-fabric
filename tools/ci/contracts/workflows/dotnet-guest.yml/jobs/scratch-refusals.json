@@ -61,7 +61,7 @@
       },
       {
         "name": "Check exact CoreLib composition and pure joined filesystem controls",
-        "run": "python3 -B -m unittest tools.tests.test_dotnet_closed_filesystem tools.tests.test_dotnet_filesystem_qualification -v"
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_closed_filesystem tools.tests.test_dotnet_filesystem_qualification tools.tests.test_dotnet_filesystem_runtime -v"
       },
       {
         "name": "Require pure and joined signed Unsupported and original argument validation",
@@ -83,7 +83,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Reviewed additive .NET filesystem qualification: keep original six calls, all other languages, normal75min parent and20min scratch child; add six precise argument cases and explicit joined-CoreLib phase without filesystem grants or native host build.",
+  "reviewReason": "Retain all existing child commands and append six focused explicit activation-only setup controls to existing source unittest command",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

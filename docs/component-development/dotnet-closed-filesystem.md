@@ -35,19 +35,28 @@ verification of the entire downloaded NuGet archive. The pure derivation keeps
 `75e20677...` TaskWait intermediate and44,753 other base method bodies unchanged.
 Serialized output is reopened and checked before each receipt is issued.
 
-These are actual IL/metadata and focused reference-chain controls. Fresh
-NativeAOT compilation, preserved invalid-argument results, signed reached/caught
-Unsupported results and physical retirement remain mandatory owning gates.
-No guest execution pass, writable scratch implementation, whole criterion or
-whole-ticket completion is claimed by this source milestone.
+The [first actual focused run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39371941107/job/118461535088)
+compiled both components with NativeAOT. The pure component passed all39
+outcomes, including three caught `PlatformNotSupportedException` results, six
+original argument errors,18 zero-active-owner samples,36 physical samples and
+clean shutdown. The joined component was rejected before entry with
+`incompatible-contract`: the test configured CLOCK but omitted the declared
+ACTIVATION provider. That failed run remains a failure, not a joined pass.
 
 The owning20-minute scratch child preserves its normal pure-component command,
 then adds a joined TaskWait component. Each programme retains the original27
 SDK outcomes, the six filesystem/trap/fresh calls, and six named null, empty,
 NUL-path, invalid-mode, invalid-access and incompatible-mode/access cases.
-The pure component has no ACTIVATION grant; the joined component declares and
-receives it explicitly. The six argument results must retain their exact
+The pure component has no ACTIVATION grant. A separate default-off joined
+selector configures only its declared ACTIVATION provider, with the original
+task limits and policy ceilings. After the original CLOCK denial, a separate
+missing-ACTIVATION invocation must be denied before guest entry with zero
+consumption; only then is the ACTIVATION grant installed for the greeting.
+No WALL, RANDOM, HTTP or filesystem authority is added. The six argument results must retain their exact
 `ArgumentNullException`, `ArgumentException` or `ArgumentOutOfRangeException`
 categories. Unsupported, a generic trap or an unknown error cannot satisfy
 those controls. Both phases must retain zero active owners, clean shutdown and
-the exact final CoreLib reference chain. Actual78 outcomes remain pending.
+the exact final CoreLib reference chain. Pure39 plus joined40 (one additional
+authority denial) make79 required outcomes; the joined40 remain pending.
+This finite proof does not establish writable scratch, every filesystem query,
+the whole criterion or whole-ticket completion.

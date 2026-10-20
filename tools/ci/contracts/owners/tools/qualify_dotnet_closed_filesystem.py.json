@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_closed_filesystem.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact pure/joined BCL validation/Unsupported/retirement gates with explicit unprivileged Linux/Python313 admission and unchanged1100/600 command limits.",
+  "reviewReason": "Retain pure39 and require joined40 including one separate ACTIVATION denial with exact original validation, retirement and CoreLib chain",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "871879c92484b5fffe99e138e20d19c0908d7268398597411eb2b303cbbdb75d"
+  "sha256": "82c368c9b7b8bf0f9d4be0577ceba4de1dc92e5cae661a5af67a392686de32c5"
 }

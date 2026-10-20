@@ -8,6 +8,9 @@ import unittest
 
 from tools import dotnet_closed_filesystem_fixture as fixture, qualify_dotnet_closed_filesystem as qualification
 from tools.dotnet_guest import closed_filesystem, task_wait
+from tools.dotnet_guest.runtime import ACTIVATION, CLOCK
+from tools.dotnet_filesystem_runtime import LIMITS
+from tools.tests.test_dotnet_filesystem_runtime import refused
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
 from tools.rust_capsule_project import digest, read_file, write_json
 from tools.sdk_scratch_probe import DOTNET_ARGUMENTS
@@ -36,6 +39,11 @@ class DotnetFilesystemQualification(unittest.TestCase):
             'standardScratchRefusal': scratch, 'dotnetFilesystemArguments': {'status': 'passed', 'cases': argument_rows},
             'nodeShutdown': {'reaped': True, 'record': {'clean': True}}, 'samples': [{} for _ in range(36)],
             'providerIdle': [{'unavailable': [], 'counters': {key: '0' for key in ACTIVE_COUNTERS}} for _ in range(18)]}
+        if joined:
+            denied = refused(); node['invocations'].append(denied)
+            node['dotnetFilesystemRuntimeAuthority'] = {'denied': denied,
+                'requiredDeclarations': [CLOCK, ACTIVATION], 'providerLimits': LIMITS,
+                'additionalWallEntropyOrHttpAuthority': False}
         derived = {'digest': digest(b'final-corelib')}
         intermediate = {'digest': digest(b'intermediate-corelib')}
         binding = {'responseFiles': [{'digest': digest(b'actual-ilc-response'), 'size': 100}],
@@ -94,7 +102,9 @@ class DotnetFilesystemQualification(unittest.TestCase):
 
     def test_joined_phase_binds_original_intermediate_and_same_final_native_response(self):
         output, node, port = self.make(joined=True)
-        self.assertEqual(qualification.observed(output, joined=True)['port']['baseDigest'], port['taskWaitIntermediate']['digest'])
+        proof = qualification.observed(output, joined=True)
+        self.assertEqual(proof['invocations'], 40)
+        self.assertEqual(proof['port']['baseDigest'], port['taskWaitIntermediate']['digest'])
         task = json.loads(read_file(output / 'build/task-wait-port.json'))
         for field in ('selectedDigest', 'response'):
             changed = copy.deepcopy(task)
@@ -102,6 +112,19 @@ class DotnetFilesystemQualification(unittest.TestCase):
             else: changed['nativeAotReferenceBinding']['responseFiles'] = []
             replace_json(output / 'build/task-wait-port.json', changed)
             with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'actual-task-wait-chain'):
+                qualification.observed(output, joined=True)
+
+    def test_joined_requires_separate_zero_entry_activation_denial_and_no_unrelated_authority(self):
+        output, node, _ = self.make(joined=True)
+        for mutation in ('fuel', 'unrelated', 'limits', 'missing-denial', 'wrong-capability'):
+            changed = copy.deepcopy(node); authority = changed['dotnetFilesystemRuntimeAuthority']
+            if mutation == 'fuel': authority['denied']['response']['data']['consumption']['cpuFuel'] = '1'
+            elif mutation == 'unrelated': authority['additionalWallEntropyOrHttpAuthority'] = True
+            elif mutation == 'limits': authority['providerLimits']['tasks'] = 9
+            elif mutation == 'missing-denial': changed['invocations'][-1] = invocation('unrelated')
+            else: authority['requiredDeclarations'] = [CLOCK]
+            replace_json(output / 'node/workflow.json', changed)
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(RuntimeError, 'explicit-activation-denial'):
                 qualification.observed(output, joined=True)
 
     def test_pure_cannot_inherit_runtime_authority_or_join_without_explicit_grant(self):
