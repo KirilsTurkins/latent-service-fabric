@@ -1,0 +1,87 @@
+name: Actual Go synchronization reference
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: ['feat/go-runtime-retirement-20261020']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-synchronization-reference-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+
+jobs:
+  synchronization:
+    name: Actual signed Go condition, lock, select and retirement controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Install pinned repository source controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: true
+      - name: Check finite source and fail-closed execution contracts
+        run: python3 -m unittest tools.tests.test_go_synchronization tools.tests.test_go_managed_idle -v
+      - name: Install captured compiler namespace
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install the exact maintained compiler and generator
+        run: |
+          set -euo pipefail
+          cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
+          test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
+          mkdir -p "$RUNNER_TEMP/go-synchronization-tools"
+          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-synchronization-tools/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-synchronization-tools/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/go-synchronization-tools/go.tar.gz" -C "$RUNNER_TEMP/go-synchronization-tools"
+          python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/go-synchronization-tools/go" --output "$RUNNER_TEMP/go-synchronization-tools/go-async"
+          echo "$RUNNER_TEMP/go-synchronization-tools/go-async/bin" >> "$GITHUB_PATH"
+      - name: Compile ordinary synchronization with the actual v5 runtime and native reference
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-synchronization" --runtime-profile go-component-activation-v5 --fixture synchronization
+      - name: Compile the identical source without compiler checkpoints
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-synchronization-negative" --runtime-profile go-component-activation-v1 --fixture synchronization
+      - name: Run the one real signed synchronization and retirement target
+        run: python3 tools/qualify_go_synchronization.py --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-synchronization" --no-checkpoints "$RUNNER_TEMP/go-synchronization-negative" --output "$RUNNER_TEMP/go-synchronization-result"
+      - name: Retain bounded actual results and compiler source identities
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: go-synchronization-reference-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-synchronization-result/receipt.json
+            ${{ runner.temp }}/go-synchronization-result/signed.stdout.log
+            ${{ runner.temp }}/go-synchronization-result/signed.stderr.log
+            ${{ runner.temp }}/go-synchronization/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-synchronization/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-synchronization/logs/
+            ${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-synchronization-negative/logs/
+          if-no-files-found: warn
+          retention-days: 7
