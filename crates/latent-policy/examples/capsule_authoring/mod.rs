@@ -3,6 +3,7 @@ mod early_http;
 mod freshness;
 mod inputs;
 mod policy;
+mod resource_neutral;
 
 pub(super) use current_java::sign_reconstructed_current_java;
 pub(super) use current_java::sign_refreshed_current_java;
@@ -75,7 +76,12 @@ pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
 
 pub(super) fn sign_shared_server(output: &Path, input: &Path) -> Result<()> {
     let build = inputs::load_shared_server(input)?;
-    sign_checked_scoped(output, vec![build], false, None, true)
+    sign_checked_scoped(output, vec![build], false, None, true, false)
+}
+
+pub(super) fn sign_neutral_resources(output: &Path, input: &Path) -> Result<()> {
+    let build = resource_neutral::load(input)?;
+    sign_checked_scoped(output, vec![build], false, None, false, true)
 }
 
 pub(super) fn sign_demo_separated(output: &Path, paths: &[OsString]) -> Result<()> {
@@ -104,7 +110,14 @@ fn sign_checked(
     separate_builders: bool,
     compiler_source: Option<&str>,
 ) -> Result<()> {
-    sign_checked_scoped(output, builds, separate_builders, compiler_source, false)
+    sign_checked_scoped(
+        output,
+        builds,
+        separate_builders,
+        compiler_source,
+        false,
+        false,
+    )
 }
 
 fn sign_checked_scoped(
@@ -113,6 +126,7 @@ fn sign_checked_scoped(
     separate_builders: bool,
     compiler_source: Option<&str>,
     shared_server: bool,
+    neutral_resources: bool,
 ) -> Result<()> {
     if !output.is_absolute() || output.exists() || builds.is_empty() || builds.len() > 16 {
         return Err("choose a fresh absolute fixture output and bounded checked builds".into());
@@ -154,7 +168,7 @@ fn sign_checked_scoped(
         .collect::<Vec<_>>();
     let (mut policy, mut policy_document) =
         policy::create_for_builders(now, &publisher_public, &assignments)?;
-    if shared_server {
+    if shared_server || neutral_resources {
         let mut value: serde_json::Value = serde_json::from_slice(&policy_document)?;
         value["tenants"]
             .as_array_mut()
@@ -205,7 +219,7 @@ fn sign_checked_scoped(
             },
         )
         .map_err(|error| error.message)?;
-        if shared_server {
+        if shared_server || neutral_resources {
             verify_package_once(
                 &policy,
                 PackageVerificationRequest {
@@ -254,6 +268,15 @@ fn sign_checked_scoped(
         record["tenant"] = serde_json::Value::Null;
         record["tenants"] = json!([TENANT, "foreign"]);
         record["trust"] = json!("isolated-neutral-server-two-tenant-test-only");
+    }
+    if neutral_resources {
+        record["tenant"] = serde_json::Value::Null;
+        record["tenants"] = json!([TENANT, "foreign"]);
+        record["trust"] = json!("isolated-neutral-resource-two-tenant-test-only");
+        record["packagingOnly"] = json!(true);
+        record["componentCompilationPerformed"] = json!(false);
+        record["inheritedCompilerObservationAsset"] =
+            json!("resource-original-build-observation.json");
     }
     if let Some(source) = compiler_source {
         record["schemaVersion"] = json!("latent.component.signing-fixture.v1");

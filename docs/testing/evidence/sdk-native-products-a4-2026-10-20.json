@@ -1,0 +1,92 @@
+{
+  "head": "a4f05f3f243889cc7ba7a0404bdc76afec32d3c2",
+  "run": 39400186766,
+  "job": 118552659402,
+  "artifact": 12255531553,
+  "archiveBytes": 65925279,
+  "archiveDigest": "sha256:0b5756327d92f45e59e65da2f9d059d6f7e464e59830e43761931c97c4391e8e",
+  "allMembersCRCAndHashChecked": 15,
+  "nativeSource": {
+    "sha256": "sha256:d4dad6d54a4f348817e33818e5f744370186bc20904124e961877f036fe97961",
+    "files": 3301,
+    "bytes": 25861866,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "materials": {
+    ".github/workflows/sdk-native-products.yml": {
+      "sha256": "sha256:a6b086a4ee2842c19f1707d8d12bea1272c4bc9923a965a7834a026dac1dbff9",
+      "bytes": 6089
+    },
+    ".cargo/managed-guest.toml": {
+      "sha256": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+      "bytes": 652
+    },
+    "tools/qualify_rust_capsules.py": {
+      "sha256": "sha256:fac4196052dc39012bed473194f9b91757396769be2967177a9cae87fb0395c6",
+      "bytes": 36770
+    },
+    "tools/toolchain.toml": {
+      "sha256": "sha256:83574cfd769a6c26613e3e3f5be36f302d34270a7d61aaa4a80ccbea9a4df19d",
+      "bytes": 1044
+    },
+    "tools/rust_capsule_build.py": {
+      "sha256": "sha256:a00cb2afce425556cc0a9a776c5a23f757c3012f3440eda6c0e1cc709e0a2948",
+      "bytes": 45923
+    },
+    "tools/build_observation.py": {
+      "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+      "bytes": 7868
+    },
+    "tools/build_process.py": {
+      "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+      "bytes": 9063
+    },
+    "tools/build_process_linux.py": {
+      "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+      "bytes": 3853
+    }
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:02d9b09e992f4a6c95aa8d7bdf327c9fb9c946b476fa3f263c5d447513748793",
+      "bytes": 68801952
+    },
+    "latentd": {
+      "sha256": "sha256:9f69fcb013782efb53202afb5b5d84ba5eb30831ec4174d3fc6b37bf40e9ed94",
+      "bytes": 184305808
+    },
+    "examples/package": {
+      "sha256": "sha256:f826023c756212d9ec907faf23cf5f9802eac127310e74cd13a1e39a0d4cffa5",
+      "bytes": 17726192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:a0ea59c420231a5f4a2e614762e930a883a42ef663afbfc2b172d509c2606b88",
+      "bytes": 7224720
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:f27b0972c5595d70357e5eb361d432eff925a5292f948a0134c4699bbffd445e",
+      "bytes": 23986200
+    }
+  },
+  "profile": "normal-managed-guest-default-features",
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "focusedActualTests": {
+    "02-closed-http-refusal-controls": [
+      "broker::http::refusal::tests::disabled_unrelated_and_overbound_observations_cannot_leak_or_expand_capture",
+      "broker::http::refusal::tests::exact_busy_capacity_and_active_dial_are_closed_static_witnesses",
+      "broker::http::refusal::tests::writer_failure_preserves_the_original_typed_error_and_borrowed_source"
+    ],
+    "03-neutral-resource-signing-controls": [
+      "authoring::resource_neutral::tests::neutral_resource_derivation_refuses_changed_original_inventory_and_reserved_assets",
+      "authoring::resource_neutral::tests::neutral_resource_scope_preserves_component_world_exports_and_original_documents",
+      "authoring::resource_neutral::tests::neutral_resource_scope_refuses_foreign_scoped_names_and_new_grants"
+    ]
+  },
+  "signedQualification": false,
+  "guestComponentsCompiled": false,
+  "historicalReceiptRewritten": false,
+  "schemaVersion": "latent.sdk.native-products.observation.v1",
+  "scope": "Normal native products and six filtered native source controls; no guest qualification"
+}

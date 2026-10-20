@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_fetch_conformance.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve the actual selectedTrue controller AST while deferring an optional helper import until explicit buffered selection; prevent an unselected dependency from influencing the original31-case path. Retain all prior controls, actualsix/no-contact and both publishedidentity receipts; source-only current no-resource preflight composition stays separately attributed.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ed5a7ef4f645817535812d84939dddf715499afb63bf105583df0d2197a06df0"
+}

@@ -40,6 +40,8 @@ jobs:
         save-if: false
     - name: Check exact type-only phase provider admission boundary
       run: cargo test --locked -p latent-wasmtime --lib surface::tests::phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_calls -- --exact --nocapture
+    - name: Check actual nominal preparation and reject operational owner injection
+      run: cargo test --locked -p latent-wasmtime --test streaming_http fixture::phase_nominal_owner_has_no_operational_binding_or_session -- --exact --nocapture
     - name: Execute the new canonical ABI with actual sockets and fresh Stores
       run: 'cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture
 

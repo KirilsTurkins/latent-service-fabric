@@ -74,7 +74,7 @@ the new sysroot through a cache glob. The required
 checks on its dependency graph. TLS and thread overlays are not selected by this
 clock-only build.
 
-## Standard stdio candidate
+## Standard stdio profile
 
 The owned clock/sysroot build now selects a pinned stdio PAL alongside clocks.
 Its default PAL returns `io::ErrorKind::Unsupported` for nonempty stdin reads,
@@ -111,8 +111,8 @@ The eight host tests in `stdio_reference.rs` exercise the actual PAL files with
 a synthetic bridge. `tools/run_rust_stdio_reference.py` also extracts the three
 exact pinned upstream methods: the old write/write_all/flush Unsupported
 assertions fail and the new reference passes. These controls do not qualify the
-rebuilt std, generated binding, component or signed node. Actual default standard
-logging and fresh-state/failure qualification remain required before acceptance.
+rebuilt std, generated binding, component or signed node. The later signed
+observation below supplies the finite component evidence separately.
 
 The new `Rebuilt Rust standard stdio and signed ordinary libraries` job is an
 independent 20-minute child of the existing authoring job. It reuses only that
@@ -136,7 +136,14 @@ lacked the declared LOG interface mapping. Creators now reuse
 `latent_guest::bindings::log`, preserving existing mappings and template bodies.
 The normal compiler recipe excludes workspace Cargo metadata; explicitly prepared
 standard-runtime profiles still capture and authenticate it. These corrections
-require a fresh campaign; no signed logging pass is claimed.
+required a fresh campaign. The later
+[6ffab campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39293312298/job/118210886706)
+passed closed30 and logging43 with authenticated owned std, unchanged ordinary
+library calls, all73 known/reaped outcomes and both clean shutdowns. All seven
+jobs in that workflow passed. The historical compiler/helper ancestry remains
+separate from the fixture source; later import/IDE repairs did not change the
+exercised stdio implementation. This finite observation does not qualify all
+APIs, concurrent logging callbacks or remote delivery.
 
 `tools/qualify_rust_standard_clock.py` prepares an ordinary `SystemTime::now`
 component using that emitted std graph and the pinned bindings/component tool.

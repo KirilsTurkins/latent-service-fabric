@@ -2,6 +2,7 @@
 //! These DTOs do not grant network authority. Only the original session can do so.
 use super::{io::IoBuffer, pools::PoolCall, CapabilitySession};
 use latent_core::{BoxFuture, PlatformError, PlatformErrorCode};
+pub(super) mod refusal;
 
 pub const HTTP_CAPABILITY: &str = "latent:http/client@0.2.0";
 pub const MAXIMUM_HTTP_REASON_BYTES: usize = 512;
@@ -65,6 +66,7 @@ pub enum HttpError {
 }
 impl From<PlatformError> for HttpError {
     fn from(error: PlatformError) -> Self {
+        refusal::observe(refusal::Stage::TypedHttpConversion, &error);
         match error.code {
             PlatformErrorCode::PermissionDenied | PlatformErrorCode::Unauthenticated => {
                 Self::PermissionDenied

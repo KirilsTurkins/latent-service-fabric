@@ -98,6 +98,22 @@ all = "warn"
                     "Component::deserialize(engine, proof.bytes())", replacement))
                 self.assertTrue(boundary.validate(self.root))
 
+    def test_random_result_exception_binds_abi_zeroization_and_affine_call_retirement(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.RANDOM_RESULT).read_text(encoding="utf-8")
+        self.write(boundary.RANDOM_RESULT, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for before, after in (
+            ('type Value = Result<Vec<u8>, wit::RandomError>;', 'type Value = Vec<u8>;'),
+            ('_call: Option<ProviderCall>', '_call: ()'),
+            ('bytes.zeroize();', 'bytes.clear();'),
+            ('self.value.linear_lower_to_memory(cx, ty, offset)', 'unrelated_lower(cx, ty, offset)'),
+            ('unsafe impl Lower for Bytes', 'unsafe fn additional_site() {}\nunsafe impl Lower for Bytes'),
+        ):
+            with self.subTest(change=before):
+                self.assertIn(before, source)
+                self.write(boundary.RANDOM_RESULT, source.replace(before, after))
+                self.assertTrue(boundary.validate(self.root))
+
     def test_child_admission_and_retirement_notification_cannot_be_bypassed(self) -> None:
         source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK_CHILD).read_text(encoding="utf-8")
         self.write(boundary.NATIVE_STACK_CHILD, source)

@@ -1,0 +1,83 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed independent task queue native timer and memory boundaries",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check independent resource-limit evidence controls",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_runtime_limits -v"
+      },
+      {
+        "name": "Install normal compiler isolation boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install normal pinned public compiler tools",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/runtime-limits-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire exact historical import engine and original native tools",
+        "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/runtime-limits-original\""
+      },
+      {
+        "name": "Build sign and execute ordinary JavaScript resource boundaries",
+        "run": "python3 -B tools/qualify_typescript_runtime_limits.py --acquired \"$RUNNER_TEMP/runtime-limits-original\" --tools \"$RUNNER_TEMP/runtime-limits-tools\" --output \"$RUNNER_TEMP/runtime-limits\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain exact source compiler results real contacts and physical ownership",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-runtime-limits-${{ github.sha }}",
+          "path": "${{ runner.temp }}/runtime-limits-original/acquisition.json\n${{ runner.temp }}/runtime-limits/*.json\n${{ runner.temp }}/runtime-limits/build/*.json\n${{ runner.temp }}/runtime-limits/build/*.wit\n${{ runner.temp }}/runtime-limits/build/component.wasm\n${{ runner.temp }}/runtime-limits/build/package/**\n${{ runner.temp }}/runtime-limits/build/logs/\n${{ runner.temp }}/runtime-limits/node/*.json\n${{ runner.temp }}/runtime-limits/node/*/*.json\n${{ runner.temp }}/runtime-limits/node/*/controls/\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "fetch-conformance",
+  "kind": "job",
+  "reviewReason": "Add a separate ordinary-JavaScript signed programme for independent exact task/queue/native/timer exhaustion and measured narrowed memory growth; preserve all earlier programmes, original owner dimensions not selected, manifest/node ceilings, effects and physical retirement requirements. Five adversarial evidence controls reject wrong resource labels, false early timer boundaries, generic failure, absent memory growth, hidden effects, unknown outcomes and unreaped owners. Actual execution remains pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-runtime-limits.yml"
+}

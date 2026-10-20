@@ -1,0 +1,197 @@
+# Ordinary Java HTTP with pending fiber work
+
+This finite qualification combines unchanged `http-request:6.0` calls with the
+existing `teavm-activation-fibers-io-v1` compiler profile. It adds no new runtime
+profile or transport; the selected compiler bridge repairs below preserve the
+original authority and budgets. The authored fixture
+imports HTTP, clocks and activation explicitly; operators install and grant
+them separately. The original 26 published-client results remain independently
+source-bound in [the two-client report](java-published-http.md).
+
+One fresh project uses normal declaration, pinned Gradle resolution, exact
+captured-graph review and SHA-256 CAS. Its SDK and activation WIT bytes come
+unchanged from the captured SDK. After acquiring one pinned compiler cache,
+the component build uses the normal read-only/offline compiler-cache path and
+the explicit existing fiber-I/O profile. A normal signed package is admitted
+and deployed; no application-supplied LSF transport or scheduling hook is used.
+
+The seven primary controls require actual peer gates, not an already-completed
+future or a modeled scheduler:
+
+1. An ordinary child Thread waits for HTTP headers while a Timer fires and a
+   sibling HTTP call completes. The result checks root/child ThreadLocal values.
+2. An independent single-thread executor finishes an HTTP call while another
+   executor remains blocked after the first five bytes of a streamed body.
+3. The root computes its return value before its accepted child completes. The
+   invocation process and physical activation must remain owned until the peer
+   releases the child's headers, and the returned counter must still be zero.
+4. An uncaught Java root exception drains the accepted child before becoming a
+   trap. This exercises the existing exception path; it does not claim that
+   arbitrary native traps execute Java finally blocks.
+5. One explicit cancellation is acknowledged only after a real pending request
+   and charged activation have been observed. An uncertain cancellation is never
+   replayed.
+6. A narrowed 3,000 ms root deadline expires with a held request, before the
+   unchanged HTTP grant's 5,000 ms ceiling. Cold preparation must not substitute
+   for the required actual pending-request witness.
+7. A narrowed 100,000,000-fuel terminal trap occurs with pending HTTP, bypassing
+   guest cleanup. Exact fuel consumption and elapsed time below the original
+   HTTP ceiling are required; failure to reach the peer is a failed control.
+
+Four fresh invocations after the terminal controls check reset static/child
+state and ordinary HTTP success. A separate initial fresh GET establishes the
+component's normal path; it does not alter any configured timer. Missing
+activation authority must refuse with zero fuel and zero peer contact while
+the same endpoint's HTTP/clock grants are present. Every successful or terminal
+control requires complete idle host topology/cells/quotas and zero provider
+owners afterward. The peer allows fourteen primary contacts, no mutation or
+secondary contact, and must close all sockets/listeners. Node shutdown must
+be clean and reaped.
+
+Earlier attempts used the independently authenticated historical `03a3f745`
+helpers and `e97d44dd` host, with their source limits preserved below. The next
+focused lane selects the five products from exact native producer `a4f05f3f`,
+run `39400186766`, job `118552659402`. Its `latent.sdk.native-products.v1`
+receipt is a build record, **not** a normal signed qualification or a guest
+compilation receipt. The lane checks the successful official source/run/job,
+preflights seven fixed artifact members, verifies all frozen Git native and
+recipe material identities, and rechecks the five product hashes before and
+after one fresh Java compilation/execution. No historical receipt is rewritten.
+Source/project/peer controls run locally without a component; the signed hosted
+lifecycle result remains **pending**.
+
+The first real offline build exposed two invalid pointer-to-integer loop copies
+in pinned TeaVM 0.15 output. Bounded generated-C declarations and every use of
+the failed variables were retained before temporary-source cleanup. The pinned
+coroutine splitter removes internal copied-block phi inputs after remapping
+their source IDs. The captured compiler now corrects that predicate in a private
+core JAR, preserves every unrelated JAR entry and the immutable checked cache,
+and records the actually loaded compiler class source. Real old/corrected IR
+controls precede component compilation. No C cast, ignored warning, altered
+fixture or optimization change substitutes for a valid loop. Hosted compilation
+and the signed lifecycle result remain pending until that campaign passes.
+
+This advances the finite HTTP pending/sibling/drain/cancellation surface of
+#688 and #741 only. It does not establish HTTPS, nonzero connect/read phase
+timeouts or Webb's default phase-timeout behavior, all scheduler fairness/races,
+late callbacks after acknowledged cancellation, cross-tenant isolation, physical
+allocation upper bounds or whole-ticket closure. All original profiles, grants,
+limits and qualifications remain required in their existing lanes.
+
+
+The corrected IR controls passed on head `87c7565d`, but Gradle's loaded
+code-source path differed from the owned replacement path. Its observed JAR
+SHA-256 was `2cf7cf02569ad8db77f403595c6283d95e44d924567e5d04e2c622af624667f3`;
+the strict path fence refused before component generation. Gradle 9.1.0's
+`TransformedClassPath` explicitly permits an original JAR copy. The compiler
+therefore requires exact selected/loaded JAR byte identity, plus all three
+loaded class-resource identities and their same-JAR/classloader ownership,
+instead of identical filesystem paths. A different JAR or transformed class
+still refuses. Expected preparation identities are retained before `generateC`;
+this correction does not claim a passed component or lifecycle programme.
+
+
+Exact head `78311a7772` subsequently compiled and signed the component. Its
+loaded compiler receipt verified that `2cf7cf02...` was a byte-identical Gradle
+copy of the selected private JAR, including all three class resources. The
+ordinary fresh HTTP preflight returned 200 with one outbound request and clean
+retirement. The first concurrent held-header case then trapped after two
+outbound requests; no lifecycle case passed. Failure-only evidence now retains
+the actual invocation, pending owner, controlled peer events and release state
+before preserving that same assertion. This is diagnostic retention, with all
+original result checks, provider ceilings and cancellation behavior unchanged.
+
+
+Head `b19a3612` reproduced the strict first held-header failure after a successful
+fresh preflight. The retained peer saw the held request but no later sibling;
+that alone cannot distinguish timer progress, an earlier Java exception, or an
+HTTP error followed by draining the accepted child. An additional caught
+fixture invocation now publishes only a bounded phase and closed numeric HTTP
+error categories. It retains the same provider ceilings and root budget, then
+runs every original strict case unchanged. Its observations are explicitly not
+qualification. The fixed compiler preparation record is copied from the actual
+private compiler directory before that directory is retired; unrelated JSON
+files remain excluded. No lifecycle cause or passed programme is claimed yet.
+
+The `229c753b` run retained two actual pending usage samples. Its configured
+pool, I/O, broker and per-session ceilings all accommodate a second comparable
+request; those samples do not prove the peak usage or the refused operation.
+No limit is raised. The additional caught diagnostic now records a closed
+operation boundary for each caller: 0 not started, 1 library/factory, 2 standard
+`connect`, 3 response headers, 4 headers returned. Only this diagnostic explicitly
+calls the same idempotent `HttpURLConnection.connect()` before the library's
+`code()` call. Every strict caller and lifecycle assertion remains byte-identical.
+The old v1 diagnostic remains readable; malformed v2 fields are unavailable.
+These markers are failure localization, not qualification or a proven cause.
+
+
+Exact head `854f4b5a` passed its fresh HTTP preflight but failed strict mode 0.
+Its caught observation localized root error 107 to standard `connect()` and
+child error 112 to response-header waiting; it did not identify the erased
+provider refusal. Aggregate spare capacity does not rule out the separate
+per-client active-dial gate. The original failure remains a failure.
+
+The child-ready witness now follows successful ordinary `connect()` and
+precedes the same library `code()` call. Source tracing establishes that this
+connect completes physical setup and clears its original dial reservation;
+response headers can still remain genuinely pending. The existing peer gate,
+strict sibling/body results, request disconnect, budgets and retirement checks
+remain mandatory. This corrects the witness premise without asserting that it
+caused the old error. No sleep, retry, increased ceiling or manual pump is added.
+
+The owned node explicitly enables a default-off closed native refusal observer.
+Only sixteen fixed stage/category/reason records may be projected from its
+bounded stderr, after cleanup, into `controls/http-refusals.json`. Raw stderr,
+URLs, identities and exception messages are excluded. Observer retention cannot
+replace the original assertion or cleanup failure, and the projection always
+has `qualification=false`; an absent marker is not evidence of success.
+
+
+On source `9cfea774`, run `39404622270`, job `118567443579`, the
+new a4f-native campaign built successfully and passed its ordinary HTTP preflight.
+Both pending modes then exhausted exactly 1,000,000,000 fuel with one accepted
+TCP connection and no request bytes. The bounded native refusal projection
+contained no records. This establishes neither sibling progress nor a provider
+refusal cause; the prior `854f4b5a` admission failure remains separate.
+
+The selected fiber-I/O bridge now uses the maintained canonical
+`probe_thread_yield()` before polling a retained waitable set. A Java
+`Thread.yield()` only reschedules the guest queue; `waitable-set.poll` itself
+does not suspend to the host executor. Without the canonical yield, a continuously
+runnable guest readiness loop can starve the pending host import. The new yield
+retains every original call/result/wait owner; it performs no take, cancellation,
+operation replay, sleep or budget change. It may also yield voluntarily when
+a retained set contains a completion not yet consumed. The synchronous bridge
+and its default profile are unchanged. The identical signed lifecycle programme
+must still pass on a newly compiled component; source controls alone do not
+qualify the repair.
+
+On source `116478df8596345fe165a9954137aa950620d92c`, run
+`39408731864`, job `118580955669`, artifact `12259355624`, the fresh component
+`sha256:54d4f8c4307844bf44184a7e6f675376e90b759acc80bd4ba718b2399f270bdc`
+passed its preflight and all eleven strict lifecycle invocations. Retained
+per-case records bind the signed revision, pending peer gates, sibling progress,
+root return/exception draining, cancellation, deadline and fuel outcomes, four
+fresh invocations, zero open peer connections and physical provider retirement.
+The final retained case observes fourteen qualification requests plus the two
+separate diagnostic requests. The compiler recipe and captured SDK inputs are
+bound to the actual tested merge `ad5b6c1b6bc5c6921e462cb019fcec402bb09966`;
+the native products retain their separate `a4f05f3f` producer attribution.
+
+The workflow nevertheless **failed**: the final writer repeated every complete
+peer history inside the aggregate, exceeding its unchanged 262,144-byte limit.
+Neither a raw final shutdown record, final peer aggregate nor product-final
+record was uploaded. Reaching that writer proves the preceding source-bound
+clean/reaped shutdown, final peer and three node-product equality guards ran;
+this inference is distinct from retained raw final-record proof. The outer
+five-product/source recheck was not reached, and no complete campaign receipt
+is claimed for that run.
+
+The summary now references each already retained case by its fixed relative
+path, byte count and SHA-256 after checking its exact content and case order.
+Passed summaries require all eleven cases; missing or changed receipts refuse.
+The full invocation records, caller results and writer limit remain unchanged.
+Future campaigns also retain separate bounded shutdown, final peer and node
+product records before writing the summary. Focused controls reproduce the old
+size refusal and verify the bounded projection; no additional guest execution
+is attributed to this serialization correction. Full #688 and #741 remain open.

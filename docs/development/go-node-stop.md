@@ -1,0 +1,137 @@
+# Real node stop with live Go work
+
+This finite #742/#736 programme exercises the existing standalone-node SIGTERM
+path with a real signed Go activation still owning work. It is separate from
+the previously qualified cancellation, trap, drain, admission and queue cases.
+An idle node shutdown, manager-handle drop or cancel acknowledgement is not
+substituted for physical shutdown while Go work remains live.
+
+The explicitly selected managed-v5 greeting fixture retains the original
+creator's WIT, SDK and request budgets: 1,000,000,000 fuel, 64 MiB memory and
+120 seconds. An ordinary initializer goroutine receives from a 1 ms NewTimer.
+One mode waits for two ordinary hour-long timer goroutines through WaitGroup;
+another returns its root result while an accepted timer sibling remains. Each
+activation checks fresh globals and the completed initializer. There is no
+application executor, Gosched, runtime-observer shim or early timer result.
+All three timer sites use the standard NewTimer/channel/Stop path matching the
+explicit timer-start/next/stop grant. Sleep's distinct wait-for import is not
+granted or exercised by this programme; its separate qualifications remain
+attributed to their original programmes.
+
+The operator installs exactly four explicit bindings for the sole greeting
+service: the existing Go monotonic/wall/random requirements and activation
+runtime. The original small Go owner profile remains Task16/Executor2/Queue2/
+Wait4/Timer2/Result2/Native2, including the eight v5 maintenance reservations.
+No HTTP, socket, filesystem or logging authority is installed. The original
+normal27 signed Go programme and native products are authenticated separately;
+the new fixture does not replace or rewrite that baseline.
+
+Before SIGTERM, bounded original audit pages must show host-returned timer-start
+provider boundaries for the initializer and actual body timers, followed by
+their timer-next dispatch. The returned-root mode also requires its actual
+close operation. Every named record must match the exact activation and
+provider. Missing, duplicate, foreign or unpaged positive witnesses cannot
+qualify. HostCompleted alone does not assert a typed success: the authenticated
+runtime must check each start result before its later timer-next dispatch.
+An explicitly retained audit-query ResourceExhausted is a refused observation,
+never a timer witness. Only that exact known read-only refusal can consume a
+polling attempt; all unknown or unrelated errors remain fatal. The original
+sixteen attempts and ten-second total observation deadline are unchanged.
+The existing source-authenticated native control-refusal switch supplies only
+closed host stage/reason labels on stderr. No private error text, new owner,
+queue capacity or guest permission is added. A refused read cannot authorize
+SIGTERM, and every successful barrier still requires the complete named positives.
+A capability inspection must additionally show actual retained tenant and node
+provider calls alongside the live Store/caller. These are original ProviderCall
+owners retained through the pending timer operation, not a guessed elapsed wait.
+A
+bounded audit queue of 64 operations selects the ordinary supported node
+default instead of the shared tiny helper's eight slots. It remains charged
+by the node configuration and does not change any guest owner/request limit.
+Optional diagnostic capture uses try_lock and can drop observations even when
+queue capacity is available. The raw global dropped count is retained; it is
+not treated as loss of a required named positive which is actually present.
+The diagnostic stream supplies no absence, exclusivity or complete-history
+claim, and its absence is not evidence for a guest-trap cause. A
+complete node topology must simultaneously show the original cell, invocation,
+Store, host-state and component instance live. The caller must still be
+running. There is no fixed sleep used as admission or retirement proof.
+
+The existing Process.stop sends SIGTERM, waits under its unchanged process
+watchdog and reaps the real node. Its actual stopped record must be clean,
+with all reported original activation/quota/queue/native/Store/cleanup
+populations zero, telemetry flushed and the epoch helper joined. The pending
+invocation is retained as its actual terminal result; an uncertain transport
+outcome remains uncertain and does not become an invented accepted cancellation.
+It cannot return a fake successful value. The node is then restarted from the
+same signed products and persistent node directory, and the fresh invocation
+must return fresh-state value42 under the exact published route/revision.
+The restarted node must also shut down cleanly and be reaped.
+
+Raw controls and audit pages stay in separately bounded records. The compact
+live-work receipt binds their exact file digests instead of copying up to four
+64 KiB pages into the smaller controller document. Compiler/build failures
+retain their actual stage and cannot create a successful execution receipt.
+Native products, component/source and helpers are rechecked after the run.
+
+The dedicated lane restores only the exact public normal-products artifact
+12242839929 from successful source94d/run39373374237/job118465965449. Its
+metadata, digest, actual baseline/export steps, native5 tuple and all original
+companions are authenticated before any restored binary executes. Native,
+Go SDK, WIT, schemas, authoring guide and used compiler/helper inputs must still
+match. The enumerated metadata differences are the exact reviewed .NET-only
+and Java/resource default-off extensions of the unused normal-workflow helper, plus the single
+native integration test's corrected runtime-stack topology assertions. Both
+whole native-source inventories and the test preimages are pinned; any other
+native inventory is refused. The receipt explicitly distinguishes this changed
+test inventory from byte-equal production source, and never claims a native
+rebuild. Helper changes are pinned by whole-file hashes, not a general source
+exemption. The new programme never calls that helper. The ordinary
+prepared-products verifier still requires its complete
+current source by default. Original27 remains attributed to its real source,
+and the lane builds one new fixture component without another native build or
+repeating that already-passed baseline.
+
+Focused source/model controls are not execution evidence. The actual new
+six-invocation/four-node programme remains pending until its dedicated hosted
+lane succeeds. This slice does not qualify independent stack/GC/result/queue
+costs, every scheduler race/late wake or low-level net/DNS/TLS. #742 and #736
+remain open for their other literal requirements and mandatory evidence.
+
+The later88ae execution compiled and signed the same fixture, then rejected a
+real durable audit epoch before SIGTERM: the reader incorrectly treated it as
+an integer. Epochs now require the producer's exact32 lower-case hexadecimal
+characters; sequences require a nonzero canonical u64. Matching activation
+witnesses must share one epoch before their sequence order can be compared.
+The retained three-page sample contains only the earlier fresh activation, so
+parsing it correctly still yields no live-work barrier. No numeric-epoch
+fallback, extra polling allowance, or shutdown success is introduced.
+
+
+The corrected 067003 run parsed those epochs and retained all 16 original polling
+attempts, but still failed before SIGTERM: no complete set of named timer
+positives was retained. Store/session/provider ownership stayed live; those
+snapshots do not expose per-activation timer/read-wait counts or prove progress
+past registration. The optional stream had 149 drops, including 130 already
+reported on the first page. This does not establish that query contention caused
+the missing events, and no ordering-only retry is counted as a fix.
+
+A new native observer is off by default and selected only by
+`LSF_GO_NODE_STOP_TIMER_OBSERVER=1` together with the two exact public fixture
+activation IDs. It emits fixed `pending`/`drain` mode labels and
+`start-accepted`, `next-entered`, `root-close` events with only a sequence and
+actual Task/Wait/Timer counts. The start hook runs after successful timer
+allocation; the next hook runs after a real timer wait owner is admitted; close
+runs after the actual runtime close. Typed errors cannot become positive records.
+The observer does not print activation IDs, tokens, request data or error text.
+
+A static process-wide budget permits at most 15 normal records, no more than 8
+per mode, plus one closed overflow marker: 16 total records even if tables are
+recreated under the same fixture IDs. Failed output is ignored by execution;
+missing, extra, malformed, duplicate or overflowed observations never qualify a
+stop. The small per-Table observer field remains covered by the existing
+`size_of<Table>` original host-memory reservation. No owner/authority/grace/wall
+limit or original error/retirement path changes. The reader always reports
+`qualification: false`; it does not replace the strict stop barrier. This source
+requires a new authenticated native producer and actual execution before it can
+supply positive diagnostic evidence. Historical 94d has no such observer.

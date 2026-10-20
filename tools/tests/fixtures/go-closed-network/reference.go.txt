@@ -1,0 +1,28 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"net"
+)
+
+func main() {
+	listener, err := net.Listen("tcp", "127.0.0.1:38171")
+	if err == nil {
+		fmt.Println("tcp=fake-listener")
+		listener.Close()
+	} else if errors.Is(err, errors.ErrUnsupported) {
+		fmt.Println("tcp=unsupported")
+	} else {
+		panic("unexpected TCP result")
+	}
+	packet, err := net.ListenPacket("udp", "127.0.0.1:38172")
+	if err == nil {
+		fmt.Println("udp=fake-listener")
+		packet.Close()
+	} else if errors.Is(err, errors.ErrUnsupported) {
+		fmt.Println("udp=unsupported")
+	} else {
+		panic("unexpected UDP result")
+	}
+}

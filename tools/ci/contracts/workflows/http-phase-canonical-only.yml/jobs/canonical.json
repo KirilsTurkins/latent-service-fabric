@@ -34,6 +34,10 @@
         "run": "cargo test --locked -p latent-wasmtime --lib surface::tests::phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_calls -- --exact --nocapture"
       },
       {
+        "name": "Check actual nominal preparation and reject operational owner injection",
+        "run": "cargo test --locked -p latent-wasmtime --test streaming_http fixture::phase_nominal_owner_has_no_operational_binding_or_session -- --exact --nocapture"
+      },
+      {
         "name": "Execute the new canonical ABI with actual sockets and fresh Stores",
         "run": "cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture\n"
       }
@@ -42,7 +46,7 @@
   },
   "jobId": "canonical",
   "kind": "job",
-  "reviewReason": "Preserve every original focused canonical step/command/bound; add only the named type-only provider availability libtest before the unchanged three actual canonical cases.",
+  "reviewReason": "Add the actual preparation/type-owner classification control; retain original admission control and exact three canonical command.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/http-phase-canonical-only.yml"
 }

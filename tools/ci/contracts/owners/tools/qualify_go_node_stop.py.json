@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_node_stop.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual ad39/run39388790535 audit query018 ResourceExhausted after component/sign/fresh success, before SIGTERM. Explicitly retain only the exact known read-only refused observation inside original 16attempt/10second envelope; refusal never supplies barrier evidence. Complete named timer and actual provider/Store/caller positives still mandatory; all unknown/unrelated errors fatal. Existing 94d native closed control-refusal observer enabled with unchanged native code/limits/authority. All20 old test bodies retained AST-exact, four additive controls;35 focused PASS. No whole live-stop pass or exact refusal cause inferred; scoped actual closed reason remains pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7755ae7dbcf5f5ddb553892643b822034adc37ae64c9ac141320491153b98080"
+}

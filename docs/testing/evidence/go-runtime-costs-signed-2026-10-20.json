@@ -1,0 +1,388 @@
+{
+  "schemaVersion": "lsf.go-runtime-costs-signed-evidence.v1",
+  "sourceRevision": "f54b862fa9ad592832909c28e337223698222e9c",
+  "deliveryMerge": "540876c4f15d347bd1781325fc8d88f61c03eb07",
+  "workflow": {
+    "run": 39400337326,
+    "job": 118553168961,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "id": 12256585356,
+    "name": "go-runtime-costs-reference-f54b862fa9ad592832909c28e337223698222e9c",
+    "zipSha256": "0931f540ea6b6afafe80651284fe9843c036b9683ddeffda87cee71de0feee95",
+    "zipBytes": 1694189,
+    "members": 213
+  },
+  "independentVerification": {
+    "allMemberDigestsVerified": true,
+    "rawKnownReapedRows": 6,
+    "zeroEffectRows": 6,
+    "physicalIdleAndZeroQuotaRows": 6,
+    "cleanReapedNodeStops": 2,
+    "committedHelpersEqualActual": true,
+    "sourceSnapshotRowCounts": [
+      95,
+      96
+    ],
+    "sourceSnapshotsRegeneratedEqual": true
+  },
+  "historicalNativeProducer": {
+    "run": 39373374237,
+    "job": 118465965449,
+    "head": "94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+    "artifact": 12242839929,
+    "artifactDigest": "sha256:d748d316bec91a06f3856b5f64e18e16ab71dd824d7a16d1fd8f6ec8c39ec4ea",
+    "originalNormalSignedInvocations": 27,
+    "newNativeBuild": false
+  },
+  "nativeBinaries": {
+    "latent": {
+      "sha256": "sha256:89f271237572b4d038c9bc8f750fc5d26b101c1d9ae26d7bbb330cf4492c31cf",
+      "bytes": 68822632
+    },
+    "latentd": {
+      "sha256": "sha256:9edddd5b7c717cc52697da8fe7956f5e72cd272a021f9cd5fefae6dfaec74d79",
+      "bytes": 184372872
+    },
+    "examples/package": {
+      "sha256": "sha256:a651511c18cd47291f4a5c361374146283099b9932747ef546b80aeec50dae14",
+      "bytes": 17727600
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:eced9e7bb21f4ce41d1f7c6cd48755cd6b9b00ff209d1f32b63de9e556489e2f",
+      "bytes": 7224920
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:2f9b3a63d33aa6e890d9559b757dc861d04ae0eaf5376a618ed547a3f65444b0",
+      "bytes": 23848176
+    }
+  },
+  "nativeExecutablesRebuilt": false,
+  "ownerLimits": {
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 2,
+    "waits": 4,
+    "timers": 2,
+    "results": 2,
+    "nativeOwners": 2
+  },
+  "stackPlacementReference": {
+    "target": "wasip1/wasm",
+    "function": "main.costRecursive",
+    "compilerFrameBytes": 16424,
+    "ordinaryArrayBytes": 8192,
+    "arrayStackOffset": 40,
+    "checksumCopyStackOffset": 8232,
+    "placementEvidence": "wasm-SP-relative-initialization-and-checksum-copy",
+    "referenceExecuted": false,
+    "finalComponentPlacementInferredFromReferenceAlone": false,
+    "source": {
+      "sha256": "sha256:8d31e478ff8c89cb37f4c8d370f2f410b6a007971a8decb9588801ce9a21f435",
+      "bytes": 592
+    },
+    "compiler": {
+      "sha256": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+      "bytes": 17164055
+    },
+    "compilerDiagnostics": {
+      "sha256": "sha256:f839812c2f619022416a5f79333ba1e7bc3822c5422fba99bcd8e44fdcf68e21",
+      "bytes": 36853
+    },
+    "commands": [
+      {
+        "stage": "stack-reference-compiler-version",
+        "exitCode": 0,
+        "seconds": 0.014882
+      },
+      {
+        "stage": "stack-reference-compile-not-execute",
+        "exitCode": 0,
+        "seconds": 1.963068
+      }
+    ]
+  },
+  "observations": [
+    {
+      "profile": "go-component-async-v1",
+      "name": "baseline",
+      "mode": "baseline",
+      "memory": {
+        "beforeHeapAlloc": 21672,
+        "heapAlloc": 21672,
+        "beforeStackInuse": 131072,
+        "stackInuse": 131072,
+        "heapSys": 393216,
+        "stackSys": 131072,
+        "sys": 1507328,
+        "beforeNumGC": 0,
+        "numGC": 0,
+        "goroutines": 1
+      },
+      "consumption": {
+        "cpuFuel": 1121795,
+        "peakMemoryBytes": 3014656,
+        "wallTimeMicros": 16784
+      },
+      "raw": {
+        "sha256": "sha256:80c6d41a1701d771abf38d7441a4570ab58462a6026ae6222af486ce6e846b45",
+        "bytes": 1649
+      },
+      "physicalRetirement": {
+        "sha256": "sha256:2ef2309ce78950472a6f9ac877d5d095019c92a3092c817b331bb45bae1c4660",
+        "bytes": 11487
+      },
+      "budget": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      }
+    },
+    {
+      "profile": "go-component-activation-v5",
+      "name": "baseline",
+      "mode": "baseline",
+      "memory": {
+        "beforeHeapAlloc": 22656,
+        "heapAlloc": 22656,
+        "beforeStackInuse": 163840,
+        "stackInuse": 163840,
+        "heapSys": 360448,
+        "stackSys": 163840,
+        "sys": 1507328,
+        "beforeNumGC": 0,
+        "numGC": 0,
+        "goroutines": 2
+      },
+      "consumption": {
+        "cpuFuel": 1223545,
+        "peakMemoryBytes": 3147360,
+        "wallTimeMicros": 19917
+      },
+      "raw": {
+        "sha256": "sha256:1accb39bd97fc9d25777d122e7c368d9d551370167dd43156f4d6ff262db7fbc",
+        "bytes": 1649
+      },
+      "physicalRetirement": {
+        "sha256": "sha256:58532dfaeee190b3c656a1c0c4412cf0586aa22bfdff709f8804333471ca0adb",
+        "bytes": 11487
+      },
+      "budget": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      }
+    },
+    {
+      "profile": "go-component-activation-v5",
+      "name": "live-stack-GC",
+      "mode": "stack-gc",
+      "memory": {
+        "beforeHeapAlloc": 22656,
+        "heapAlloc": 25104,
+        "beforeStackInuse": 163840,
+        "stackInuse": 2260992,
+        "heapSys": 1409024,
+        "stackSys": 2260992,
+        "sys": 4718592,
+        "beforeNumGC": 0,
+        "numGC": 1,
+        "goroutines": 4
+      },
+      "consumption": {
+        "cpuFuel": 119741899,
+        "peakMemoryBytes": 6358624,
+        "wallTimeMicros": 812717
+      },
+      "raw": {
+        "sha256": "sha256:7f69d8365e162f9f5221604ae174e27cc98b47051e7399207d64636e30d6e0ea",
+        "bytes": 1670
+      },
+      "physicalRetirement": {
+        "sha256": "sha256:3b0541d37b6872af6bf04488abf943720d7042d2d35791926957751dd371f583",
+        "bytes": 11487
+      },
+      "budget": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      }
+    },
+    {
+      "profile": "go-component-activation-v5",
+      "name": "fresh-after-stack-GC",
+      "mode": "baseline",
+      "memory": {
+        "beforeHeapAlloc": 22656,
+        "heapAlloc": 22656,
+        "beforeStackInuse": 163840,
+        "stackInuse": 163840,
+        "heapSys": 360448,
+        "stackSys": 163840,
+        "sys": 1507328,
+        "beforeNumGC": 0,
+        "numGC": 0,
+        "goroutines": 2
+      },
+      "consumption": {
+        "cpuFuel": 1223248,
+        "peakMemoryBytes": 3147360,
+        "wallTimeMicros": 18120
+      },
+      "raw": {
+        "sha256": "sha256:f9095fbb55cfb48d0c44fa74959bac7a6e68e99e4e40099da5e254c7e4d2668c",
+        "bytes": 1673
+      },
+      "physicalRetirement": {
+        "sha256": "sha256:cebd5a69800847d755f8cf008b42f5b4f1eec7890abffe05a059409a70524604",
+        "bytes": 11488
+      },
+      "budget": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      }
+    },
+    {
+      "profile": "go-component-activation-v5",
+      "name": "live-heap-GC",
+      "mode": "heap-gc",
+      "memory": {
+        "beforeHeapAlloc": 22656,
+        "heapAlloc": 12606416,
+        "beforeStackInuse": 163840,
+        "stackInuse": 163840,
+        "heapSys": 12943360,
+        "stackSys": 163840,
+        "sys": 14483456,
+        "beforeNumGC": 0,
+        "numGC": 2,
+        "goroutines": 2
+      },
+      "consumption": {
+        "cpuFuel": 5261996,
+        "peakMemoryBytes": 16123488,
+        "wallTimeMicros": 50253
+      },
+      "raw": {
+        "sha256": "sha256:3140de82ff7cfc36830aa96ac0903a0631ea4abfc82fef1dc30ad83d286eca90",
+        "bytes": 1671
+      },
+      "physicalRetirement": {
+        "sha256": "sha256:bb00380e288c85abd5390105aee1350a12c13ddedfa2a6aaf411147f4f7d9102",
+        "bytes": 11488
+      },
+      "budget": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      }
+    },
+    {
+      "profile": "go-component-activation-v5",
+      "name": "fresh-after-heap-GC",
+      "mode": "baseline",
+      "memory": {
+        "beforeHeapAlloc": 22656,
+        "heapAlloc": 22656,
+        "beforeStackInuse": 163840,
+        "stackInuse": 163840,
+        "heapSys": 360448,
+        "stackSys": 163840,
+        "sys": 1507328,
+        "beforeNumGC": 0,
+        "numGC": 0,
+        "goroutines": 2
+      },
+      "consumption": {
+        "cpuFuel": 1223248,
+        "peakMemoryBytes": 3147360,
+        "wallTimeMicros": 17900
+      },
+      "raw": {
+        "sha256": "sha256:dd0d3e0cdacda1559cf59ce5286570776830e7f59a9e7272cb4887aa17c8dbb3",
+        "bytes": 1671
+      },
+      "physicalRetirement": {
+        "sha256": "sha256:6e86673a8323e3d04b8e011342f2d38fb7e435fd08b01e21662e4b80d9a57f31",
+        "bytes": 11486
+      },
+      "budget": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      }
+    }
+  ],
+  "componentDigests": {
+    "go-component-async-v1": {
+      "sha256": "sha256:09e8929ebba592fe48d89575d17277df9470a4ef670318195b677591e858d1eb",
+      "bytes": 2558264
+    },
+    "go-component-activation-v5": {
+      "sha256": "sha256:5eef69d2b291870e8b064452242fc159a79a9817b060fe16be41f73aa8bad114",
+      "bytes": 2630617
+    }
+  },
+  "applicationSourceDigest": "sha256:cac0bceac072035ad5d2d40b299aff62714d58f0cec96d356943bb8f6b0d3066",
+  "identicalOrdinarySourceAcrossProfiles": true,
+  "limitations": {
+    "fullCostMatrixQualified": false,
+    "completePhysicalMemoryAccountingQualified": false,
+    "nativePhysicalCostMeasured": false,
+    "minimumCostsEstablished": false,
+    "hardGcOrStackUpperBoundEstablished": false,
+    "taskQueueResultNativeExhaustionQualified": false,
+    "throughputOrFairnessQualified": false,
+    "wholeIssueClosed": false
+  }
+}

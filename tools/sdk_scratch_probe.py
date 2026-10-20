@@ -17,6 +17,9 @@ UNSUPPORTED = frozenset(('io-error|kind=unsupported', 'errno=notsup', 'errno=nos
     'path-error|errno=52', 'platform-not-supported', 'unsupported-operation'))
 DOTNET_ARGUMENTS = {'argument-null': 'argument-null', 'argument-empty': 'argument', 'argument-nul': 'argument',
     'argument-mode': 'argument-out-of-range', 'argument-access': 'argument-out-of-range', 'argument-combination': 'argument'}
+JAVA_ARGUMENTS = {'argument-input-null': 'null-pointer', 'argument-output-null': 'null-pointer',
+    'argument-output-empty': 'file-not-found', 'argument-file-null': 'null-pointer',
+    'argument-temp-null': 'null-pointer', 'argument-temp-prefix': 'illegal-argument'}
 
 
 def refusal(language, decoded):
@@ -90,4 +93,15 @@ def probe(client, target, accounting, result, population, *, language):
             retired(mode)
             arguments.append({'mode': mode, 'category': category, 'invocation': row})
         result['dotnetFilesystemArguments'] = {'status': 'passed', 'cases': arguments,
+            'publicApiValidationPreserved': True, 'rawExceptionMessagesDisclosed': False}
+
+    if language == 'java':
+        arguments = []
+        for mode, category in JAVA_ARGUMENTS.items():
+            row = invoke(mode)
+            require(row['exitCode'] == 0 and row.get('decoded') == [{'ok': 'scratch|java|' + category + '|fresh=1'}],
+                    'scratch-java-original-argument-validation')
+            retired(mode)
+            arguments.append({'mode': mode, 'category': category, 'invocation': row})
+        result['javaFilesystemArguments'] = {'status': 'passed', 'cases': arguments,
             'publicApiValidationPreserved': True, 'rawExceptionMessagesDisclosed': False}

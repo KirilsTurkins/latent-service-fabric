@@ -119,11 +119,11 @@ A package name alone cannot make an unobserved file a trusted resource.
 
 | Language | Selected standard data path | Actual finite component evidence | Remaining API boundary |
 | --- | --- | --- | --- |
-| Rust | Captured `include_bytes!` / `include_str!` data, including transitive UTF-8/binary inputs | [Signed outside/transitive resource and entropy programme](../testing/evidence/rust-standard-entropy-signed-2026-10-20.json) | Compile-time inclusion does not provide runtime filesystem lookup |
+| Rust | Captured `include_bytes!` / `include_str!` and ordinary `std::io::Cursor` over transitive UTF-8+NUL/binary/empty data | [Signed33 with independent borrowed cursors and trap/fresh recovery](../testing/evidence/rust-embedded-resources-signed-2026-10-20.json) | Static inclusion supplies no runtime filesystem lookup; dropping a cursor is separate from host retirement |
 | C | Captured constants and explicit [C23 `#embed`](c-compiled-resources.md) with declared dependency resource objects | [C23 exact UTF-8/binary/empty/alias/missing and trap/fuel/fresh controls](../testing/evidence/c23-resources-passed-2026-10-19.json) | No general runtime filesystem or resource-stream facade |
-| TypeScript | Static ESM imports of captured `.txt` and `.bin` assets through a transitive package | [Signed clock library's exact text/binary data checks](../testing/evidence/typescript-standard-clocks-signed-2026-10-20.json) | Dynamic asset lookup, arbitrary extensions and a Node filesystem are outside these observations |
-| Go | Captured `//go:embed` string data in a transitive module | [Signed outside entropy library's exact embedded UTF-8 checks](../testing/evidence/go-standard-entropy-signed-2026-10-19.json) | This string path does not qualify every `embed.FS` lookup, missing file or independent stream handle |
-| Java | Selected immutable classpath bytes through `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` | [Signed two-library class resource observation](../testing/evidence/java-two-library-resource-node-2026-10-02.json) and [direct ClassLoader owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39174038239/job/117813178316) | Other resource APIs and general filesystem lookup need separate evidence |
+| TypeScript | Static ESM `.txt`/`.bin` imports with empty assets and activation-local independent array copies | [Actual33 and strict report reprojection](../testing/evidence/typescript-embedded-resources-signed-2026-10-20.json) | Original outer report failed; final outer integrity block did not run. No arbitrary dynamic asset import or Node filesystem claim |
+| Go | Captured `//go:embed` and ordinary `embed.FS`/`io/fs` lookups, independent readers and copies | [Signed35 exact UTF-8+NUL/binary/empty/EOF/missing and trap/fresh checks](../testing/evidence/go-embedded-resources-signed-2026-10-20.json) | Only the captured embedded tree is readable; no host filesystem or unrelated resource API is enabled |
+| Java | Selected immutable classpath bytes through `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` | [Signed39 byte/empty/missing/independent-close conformance](../testing/evidence/java-resource-conformance-signed-2026-10-20.json) and [direct ClassLoader owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39174038239/job/117813178316) | Other resource APIs and general filesystem lookup need separate evidence |
 | .NET | One verified selection supplies package layers and embedded compiler inputs; `Assembly.GetManifestResourceStream` | [Signed binary/empty/literal/missing/position/disposal controls](../testing/evidence/dotnet-utc-resource-control-2026-10-12.json) | Broader resource APIs, NuGet distribution and concurrent stream lifecycle need their own qualification |
 
 The [.NET resource and explicit wall-clock reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-12/pr856-reconciliation.md)
@@ -135,9 +135,10 @@ Other Java lookup APIs remain outside that finite evidence.
 
 Each linked observation keeps its tested source, component, compiler and native
 identities. Publishing this matrix does not reclassify an old host as a build of
-current development. The TypeScript and Go rows now name the exact executed
-static-import/embedded-string paths instead of treating those paths as wholly
-unexecuted; neither row advertises a general dynamic lookup API.
+current development. Rust, Go and TypeScript now include exact empty/binary/UTF-8 data and
+independent-reader/copy observations through their named paths. The TypeScript
+outer failure and separate report reprojection stay explicit. None supplies
+a host filesystem, unresolved dynamic import or the coupled AC8 programme.
 
 This table identifies the ingestion paths and their runtime acceptance boundaries;
 package assembly alone does not prove those APIs execute. The index records
@@ -283,10 +284,33 @@ passed at source99eaccd694 in run39350623578/job118393691728: all three outside
 packages were captured/reviewed, originals removed and the actual compiler
 completed with the exact uninstalled-module refusal. All112 compiler materials
 remain exact after composition. This executes no node and qualifies no native
-filesystem result; the native-language programmes remain separately pending.
+filesystem result; each native-language observation retains its own scope.
+The Java workflow also exports its exact passed normal public products, then
+runs one fresh Java component in a separate 20-minute scratch child. The original
+55-minute parent steps and deadline remain intact. The default-false manual
+`qualify-scratch-refusals` selector skips only the unrelated dependency-ingestion
+matrix; normal PR/manual runs retain it. The child uses the same pinned JDK,
+Gradle, WASI SDK and bindings, with no Rust setup or native-host build. It retains
+every caught category and compatibility-report finding: a Java FileNotFound or
+generic I/O error is unresolved behavior, not a reached Unsupported result.
+The [actual Java packet](java-closed-filesystem.md) now records41 known/reaped
+outcomes, including three precise caught Unsupported operations, six original
+argument-error categories and clean physical/provider retirement. The failed
+outer report expected39 rather than the Java baseline29 plus12; strict
+source-backed reprojection retains that failure and verifies41. It grants no
+filesystem provider or scratch storage.
 The owning language receipts
 feed the existing SDK conformance work in #694; this adds no cross-language gate.
 
 Related: [captured dependencies](application-dependencies.md),
 [compatibility reports](library-compatibility.md), and
 [guest SDK development](guest-sdk.md).
+
+The [six-language standard facility matrix](standard-facilities.md) publishes
+the supported logging, wall/monotonic clock and approved entropy paths alongside
+their profile, grant, provenance and error limitations. The new
+[Java resource conformance programme](java-resource-conformance.md) separately
+requires exact transitive binary/empty/text and independent-stream results;
+its finite39-outcome signed observation is now source-bound. The separate
+[Go/Rust/TypeScript resource breadth programme](embedded-resource-conformance.md)
+is still pending signed execution.

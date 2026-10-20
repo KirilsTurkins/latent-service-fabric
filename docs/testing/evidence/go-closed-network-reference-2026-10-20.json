@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "latent.go.closed-network.observation.v1",
+  "source": "6757c7f6863cb1cce078e63899360d31223e6f08",
+  "run": 39410414538,
+  "job": 118586516177,
+  "artifact": 12258913361,
+  "archiveBytes": 2056243,
+  "archiveDigest": "sha256:6b06948292b365fa3da437cc0a5a7649d12bffde7c5c4f9bbcae21d8beb60c45",
+  "members": {
+    "logs/00-go-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "corrected.wasm": {
+      "bytes": 3628931,
+      "sha256": "a8c5227bc9f0d36c34dd3b6627267537945469ab599e6016c596a10714c1ed01"
+    },
+    "logs/00-go-version.stdout.txt": {
+      "bytes": 32,
+      "sha256": "ed4307d760c597256afdc696a61d47d13e832615d7741ead11c64966a440b376"
+    },
+    "closed-overlay.json": {
+      "bytes": 155,
+      "sha256": "15fe82d0d389e0d69cabb9bc275730fabab30d0e928d3e5ca46dd260f47309ff"
+    },
+    "logs/01-node-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/01-node-version.stdout.txt": {
+      "bytes": 9,
+      "sha256": "b7677d3ec37ee1897ba07dc2cfe8292fe421c9ac93396cca5bbece486d1a2a41"
+    },
+    "logs/02-go-root.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/02-go-root.stdout.txt": {
+      "bytes": 51,
+      "sha256": "4a9ca7fa50affa8e186f135e6aa39a2aa6ecd0cdbc2949a79fadd287b33cdcb3"
+    },
+    "logs/03-compile-upstream.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/03-compile-upstream.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/04-execute-upstream.stderr.txt": {
+      "bytes": 166,
+      "sha256": "01e8f0cb04041d39bfc926394d032a03d66e80bff6797bb4b29fcaeca9894f02"
+    },
+    "logs/04-execute-upstream.stdout.txt": {
+      "bytes": 36,
+      "sha256": "a413527da989b4f106858957b4aa97bb4ee8ae94fbffe3d467e7a02b189c2211"
+    },
+    "logs/05-compile-corrected.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/05-compile-corrected.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/06-execute-corrected.stderr.txt": {
+      "bytes": 166,
+      "sha256": "cef849b7aa9ebf3ed68b0a55ff03c02e121cc79c410b87b0db8a1256765fef4b"
+    },
+    "logs/06-execute-corrected.stdout.txt": {
+      "bytes": 32,
+      "sha256": "4b4d2cad78c9e0933ba2cb943cec028aa004011ca50dd930671f95b621dd9750"
+    },
+    "qualification.json": {
+      "bytes": 1757,
+      "sha256": "246cfeeee33a10a57b4cb8d19deedcde09c04dbd5d102af0f57802a76c009757"
+    },
+    "recipe-inputs.json": {
+      "bytes": 570,
+      "sha256": "179675c276238d5af53803a3149ad516f9c23ebd4050deaea3fc8e32ada7d4bb"
+    },
+    "upstream.wasm": {
+      "bytes": 3678058,
+      "sha256": "5e768d59a8fac18b4487b897c635da22e7bb571c8b34384c2c0e1fe3441c5957"
+    }
+  },
+  "receipt": {
+    "schemaVersion": "latent.go.closed-network.reference.v1",
+    "status": "passed",
+    "qualification": "owned-upstream-wasi-reference-only",
+    "signedLsfExecution": false,
+    "providerInstalled": false,
+    "networkReadiness": false,
+    "recipeDigest": "sha256:179675c276238d5af53803a3149ad516f9c23ebd4050deaea3fc8e32ada7d4bb",
+    "tools": {
+      "go": {
+        "name": "go",
+        "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+        "size": 17164055
+      },
+      "node": {
+        "name": "node",
+        "digest": "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+        "size": 125989464
+      }
+    },
+    "commandLimits": {
+      "overallSeconds": 600,
+      "perCommandSeconds": 300
+    },
+    "outcomes": {
+      "upstream": [
+        "tcp=fake-listener",
+        "udp=fake-listener"
+      ],
+      "corrected": [
+        "tcp=unsupported",
+        "udp=unsupported"
+      ]
+    },
+    "modules": {
+      "upstream": {
+        "name": "upstream.wasm",
+        "digest": "sha256:5e768d59a8fac18b4487b897c635da22e7bb571c8b34384c2c0e1fe3441c5957",
+        "size": 3678058
+      },
+      "corrected": {
+        "name": "corrected.wasm",
+        "digest": "sha256:a8c5227bc9f0d36c34dd3b6627267537945469ab599e6016c596a10714c1ed01",
+        "size": 3628931
+      }
+    },
+    "sourceDigest": "sha256:6e3d0449549d7f3c7ef0ceb796dad9c20ec2e041eb6f82397eb2e8556acf5c20",
+    "upstreamDigest": "sha256:784b369c57be52fa87ace5f10e07e3c24b45d549639e1487734b793024188df3",
+    "adaptedDigest": "sha256:4045b16c285764ff370907b4eb9249ed9af9b840f04a8fed92e409ad3ea933ad",
+    "stdoutDigests": {
+      "upstream": "sha256:a413527da989b4f106858957b4aa97bb4ee8ae94fbffe3d467e7a02b189c2211",
+      "corrected": "sha256:4b4d2cad78c9e0933ba2cb943cec028aa004011ca50dd930671f95b621dd9750"
+    }
+  },
+  "all19MembersVerified": true,
+  "all4RecipeFilesGitExact": true,
+  "rawOutcomesRechecked": true,
+  "compiledWasmDigestsRechecked": true,
+  "qualifies": "owned-upstream-WASI-reference-only",
+  "signedLsfExecution": false,
+  "providerInstalled": false,
+  "kernelQualified": false
+}
