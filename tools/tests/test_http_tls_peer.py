@@ -17,6 +17,21 @@ from tools.standard_http.tls_peer import _Channel, TLSPeer, validate_tls
 
 
 class HttpTlsPeerTests(unittest.TestCase):
+    def test_tls_process_refuses_missing_or_unbounded_inputs_before_acquiring_peer(self):
+        from tools.standard_http.process_peer import run
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            certificate, key = root/'certificate.pem', root/'key.pem'
+            certificate.write_bytes(b'certificate')
+            key.write_bytes(b'x'*65537)
+            with patch('tools.standard_http.process_peer.Peer') as plain:
+                for parameters in ({'certificate':certificate}, {'private_key':key},
+                        {'certificate':certificate,'private_key':key},
+                        {'certificate':Path('relative.pem'),'private_key':key}):
+                    with self.subTest(parameters=tuple(parameters)), self.assertRaisesRegex(ValueError,'standard-http-tls-'):
+                        run(root/'absent-credential', **parameters)
+                plain.assert_not_called()
+
     def test_reference_cli_help_bootstraps_outside_checkout_without_network_or_artifacts(self):
         from tools.rust_capsule_project import ROOT
         with tempfile.TemporaryDirectory() as temporary:

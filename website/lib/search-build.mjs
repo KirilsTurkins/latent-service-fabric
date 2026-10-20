@@ -52,7 +52,8 @@ export function searchDocument(output, manifest) {
     const selected = pageRecords(fs.readFileSync(filename, 'utf8'), page, profiles.get(page.channel ?? 'development'));
     if (selected.length) indexedPages++;
     records.push(...selected);
-    requireValue(records.length <= SEARCH_LIMITS.records, 'Search record budget exceeded');
+    requireValue(records.length <= SEARCH_LIMITS.records,
+      `Search record budget exceeded: ${records.length} > ${SEARCH_LIMITS.records} at ${page.route}`);
   }
   const index = new MiniSearch(searchOptions);
   index.addAll(records.map((record, id) => ({id, ...record})));
