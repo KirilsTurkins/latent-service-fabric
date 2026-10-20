@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-context-mechanism-${{ github.ref }}"
+    },
+    "name": "C compiler stack and TLS mechanism",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/c-owned-context-20261020"
+        ],
+        "paths": [
+          "crates/latent-component-threading/**",
+          "sdk/c-guest/runtime-fixtures/context-lowering/**",
+          "tools/qualify_c_context_lowering.py",
+          ".github/workflows/c-context-mechanism.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "compiler"
+  ],
+  "reviewReason": "Add explicit C LLVM21 source-only stack/TLS context mechanism and bounded compiled-core callback controls; preserve all original profiles, commands, cases and gates.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-context-mechanism.yml"
+}

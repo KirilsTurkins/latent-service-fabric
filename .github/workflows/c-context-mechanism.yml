@@ -1,0 +1,63 @@
+name: C compiler stack and TLS mechanism
+on:
+  push:
+    branches: [feat/c-owned-context-20261020]
+    paths:
+      - 'crates/latent-component-threading/**'
+      - 'sdk/c-guest/runtime-fixtures/context-lowering/**'
+      - 'tools/qualify_c_context_lowering.py'
+      - '.github/workflows/c-context-mechanism.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: c-context-mechanism-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  compiler:
+    name: Pinned LLVM21 stack and TLS context control only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Build only the parser and C context source mechanism
+        run: |
+          cargo test --locked -p latent-component-threading --lib --target-dir "$RUNNER_TEMP/c-context-tools"
+          cargo build --locked -p latent-component-threading --bin c-context --target-dir "$RUNNER_TEMP/c-context-tools"
+      - name: Execute fixed C compiler and actual core-Wasm callback controls
+        run: python3 tools/qualify_c_context_lowering.py --zig "$(command -v zig)" --node "$(command -v node)" --transformer "$RUNNER_TEMP/c-context-tools/debug/c-context" --output "$RUNNER_TEMP/c-context-mechanism"
+      - name: Retain source mechanism observations, including failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-context-mechanism-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/c-context-mechanism/report.json
+            ${{ runner.temp }}/c-context-mechanism/*.txt
+            ${{ runner.temp }}/c-context-mechanism/*.wasm
+            ${{ runner.temp }}/c-context-mechanism/*.ll
+            ${{ runner.temp }}/c-context-mechanism/selected/*.json
+            ${{ runner.temp }}/c-context-mechanism/selected/*.wasm
+          if-no-files-found: warn
+          retention-days: 7
