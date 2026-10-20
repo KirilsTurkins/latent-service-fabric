@@ -874,8 +874,14 @@ class RepositoryMigrationTests(unittest.TestCase):
             self.assertEqual(inputs[name]["type"], "boolean")
             self.assertIs(inputs[name]["default"], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
+        diagnostic_input = data["workflowContracts"][".github/workflows/developer-tools.yml"]["on"]["workflow_dispatch"]["inputs"]["dotnet_watch_diagnostic"]
+        self.assertEqual(diagnostic_input["type"], "boolean")
+        self.assertIs(diagnostic_input["default"], False)
         for key, original in legacy["after"].items():
             value = dict(original)
+            if value["workflow"] == ".github/workflows/developer-tools.yml" and value["job"] in {"contracts", "guest-tools", "wsl-image"}:
+                self.assertEqual(value["jobIf"], "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository", key)
+                value["jobIf"] = "${{ (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) && !(github.event_name == 'workflow_dispatch' && inputs.dotnet_watch_diagnostic) }}"
             if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
                 self.assertEqual(value["jobIf"], "success()", key)
                 value["jobIf"] = reviewed_typescript_observer_guard

@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
+    "if": "${{ (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) && !(github.event_name == 'workflow_dispatch' && inputs.dotnet_watch_diagnostic) }}",
     "name": "Developer controller contracts (${{ matrix.os }})",
     "runs-on": "${{ matrix.os }}",
     "steps": [
@@ -61,7 +61,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
+  "reviewReason": "Exclude only explicit manual .NET diagnostics from the independent contracts job; preserve the full original condition, commands, steps and default coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

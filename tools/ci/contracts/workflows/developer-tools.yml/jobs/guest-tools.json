@@ -6,7 +6,7 @@
     "env": {
       "LSF_DEV_LANGUAGE": "${{ matrix.language }}"
     },
-    "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
+    "if": "${{ (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) && !(github.event_name == 'workflow_dispatch' && inputs.dotnet_watch_diagnostic) }}",
     "name": "Guest tool bundle and maintained application builds (${{ matrix.language }})",
     "permissions": {
       "attestations": "write",
@@ -421,7 +421,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain only the two existing owned bounded initial-build diagnostics from the fixed public .NET watch fixture; preserve all commands, guards, coverage and limits.",
+  "reviewReason": "Preserve the full six-language job for every default/PR/push run; only the explicit default-false manual .NET diagnostic selector chooses the exact copied single-language job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

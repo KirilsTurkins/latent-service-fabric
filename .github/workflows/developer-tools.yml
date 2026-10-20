@@ -136,6 +136,11 @@ on:
       - tools/toolchain-smoke/**
       - wit/**
   workflow_dispatch:
+    inputs:
+      dotnet_watch_diagnostic:
+        description: Run only the existing bounded .NET dependency watch diagnostic job
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -148,7 +153,7 @@ jobs:
   contracts:
     # This branch also produces exact-source candidates on push. Its PR must
     # consume those checks without duplicating six compiler bundles and hosts.
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) && !(github.event_name == 'workflow_dispatch' && inputs.dotnet_watch_diagnostic) }}
     name: Developer controller contracts (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -179,7 +184,7 @@ jobs:
         run: python -m unittest tools.tests.test_java_annotation_processors
 
   guest-tools:
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) && !(github.event_name == 'workflow_dispatch' && inputs.dotnet_watch_diagnostic) }}
     name: Guest tool bundle and maintained application builds (${{ matrix.language }})
     runs-on: ubuntu-24.04
     timeout-minutes: 90
@@ -187,6 +192,350 @@ jobs:
       fail-fast: false
       matrix:
         language: [rust, c, java, dotnet, go, typescript]
+    env:
+      LSF_DEV_LANGUAGE: ${{ matrix.language }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Select the runner-owned compiler archive cache
+        run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
+      - name: Restore untrusted pinned compiler archives
+        id: compiler-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives
+          key: compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}
+      - name: Stage the pinned relocatable Python prefix
+        run: |
+          image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'
+          container=$(docker create "$image")
+          trap 'docker rm "$container"' EXIT
+          prefix="$RUNNER_TEMP/guest-tools-cpython"
+          mkdir "$prefix"
+          docker cp "$container:/usr/local/." "$prefix"
+          printf 'LSF_DEV_PYTHON_PREFIX=%s\n' "$prefix" >> "$GITHUB_ENV"
+      - name: Assemble pinned compiler tools and maintained templates
+        env:
+          LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
+        run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
+      - name: Save independently verified compiler archive bytes
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && steps.compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives
+          key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
+      - name: Compile actual projects with isolated tools and separate operator packaging
+        run: python tools/run_dev_guest_tools_tests.py --language "$LSF_DEV_LANGUAGE" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-projects"
+      - name: Prepare selected TypeScript captured-compiler namespace
+        if: matrix.language == 'typescript'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Exercise delivered TypeScript dependency review and signed watch
+        if: matrix.language == 'typescript'
+        run: |
+          python -m unittest tools.tests.test_typescript_dependency_watch
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_typescript_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/typescript-dependency-watch" --qualifier tools/qualify_typescript_dependency_watch.py --fixture tools/typescript_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py
+      - name: Retain public TypeScript dependency watch receipts
+        if: always() && matrix.language == 'typescript'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-dependency-watch-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/typescript-dependency-watch/ci-account.json
+            ${{ runner.temp }}/typescript-dependency-watch/initial-build.stdout
+            ${{ runner.temp }}/typescript-dependency-watch/initial-build.stderr
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Prepare C dependency compiler containment
+        if: matrix.language == 'c'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Qualify delivered C dependency updates through the actual signed watcher
+        if: matrix.language == 'c'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_c_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_c_dependency_watch.py --fixture tools/c_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/c-dependency-watch"
+      - name: Retain bounded C dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'c'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-dependency-watch-${{ github.sha }}
+          path: ${{ runner.temp }}/c-dependency-watch/
+          if-no-files-found: warn
+          retention-days: 7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: matrix.language == 'typescript'
+        with:
+          node-version: 24.19.0
+      - name: Prepare captured Go watch compiler namespace
+        if: matrix.language == 'go'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Qualify normal Go dependency watch through three reviewed signed builds
+        if: matrix.language == 'go'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_go_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_go_dependency_watch.py --fixture tools/go_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/go-dependency-watch"
+      - name: Retain bounded Go dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'go'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/go-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/go-dependency-watch/ci-account.json
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Prepare captured Rust watch compiler namespace
+        if: matrix.language == 'rust'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Qualify normal Rust dependency watch through three reviewed signed builds
+        if: matrix.language == 'rust'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/rust-dependency-watch"
+      - name: Retain bounded Rust dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/rust-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/rust-dependency-watch/ci-account.json
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Prepare captured .NET watch compiler namespace
+        if: matrix.language == 'dotnet'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Qualify normal .NET dependency watch through three reviewed signed builds
+        if: matrix.language == 'dotnet'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dotnet_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_dotnet_dependency_watch.py --fixture tools/dotnet_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/dotnet-dependency-watch"
+      - name: Retain bounded .NET dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'dotnet'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/dotnet-dependency-watch/ci-account.json
+            ${{ runner.temp }}/dotnet-dependency-watch/initial-build.stdout
+            ${{ runner.temp }}/dotnet-dependency-watch/initial-build.stderr
+            ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stdout
+            ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stderr
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Prepare captured Java watch compiler namespace
+        if: matrix.language == 'java'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Qualify normal Java dependency watch through three reviewed signed builds
+        if: matrix.language == 'java'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_java_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_java_dependency_watch.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/java-dependency-watch"
+      - name: Retain bounded Java dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'java'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/java-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/java-dependency-watch/ci-account.json
+            ${{ runner.temp }}/java-dependency-watch/initial-build.stdout
+            ${{ runner.temp }}/java-dependency-watch/initial-build.stderr
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Qualify the static site and TypeScript API in Chromium
+        if: matrix.language == 'typescript'
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api
+          node tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium
+          python tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build "$RUNNER_TEMP/dev-projects/static-api/build" --browser-tools tools/static_api --output "$RUNNER_TEMP/dev-projects/static-api"
+      - name: Compare explicit clock fixtures on signed nodes and the Linux portable host
+        if: matrix.language == 'rust'
+        run: |
+          cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host
+          python -c "import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')"
+          python tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-clock-fixtures"
+          python tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-failure-fixtures"
+          python tools/dev_http_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-http-fixtures"
+          python tools/dev_blob_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-blob-fixtures"
+          python tools/dev_secret_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-secret-fixtures"
+          python tools/dev_metric_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output "$RUNNER_TEMP/dev-metric-fixtures"
+          python tools/dev_local_service_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-local-service-fixtures"
+          python tools/dev_event_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-event-fixtures"
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dev_recovery_ci.py --probe isolation --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-workspace-isolation"
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dev_recovery_ci.py --probe watch --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-watch-fixtures"
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-recovery-fixtures"
+      - name: Retain actual watch failure, revision and revocation observations
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-watch-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-watch-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain actual workspace isolation and expired original receipt observations
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-workspace-isolation-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-workspace-isolation/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain authenticated immediate-event protocol and cleanup receipts
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-event-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-event-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain actual clock fixtures and node comparison receipts
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-clock-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-clock-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain authored failures and actual running cancellation
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-failure-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-failure-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain original-operation recovery and authority receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && matrix.language == 'rust'
+        with:
+          name: developer-recovery-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-recovery-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain authenticated HTTP fixture and comparison receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && matrix.language == 'rust'
+        with:
+          name: developer-http-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-http-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain actual immutable-blob ownership and restart receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && matrix.language == 'rust'
+        with:
+          name: developer-blob-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-blob-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain actual scoped secret disclosure and cleanup receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && matrix.language == 'rust'
+        with:
+          name: developer-secret-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-secret-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain actual metric exports and joined-owner cleanup receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && matrix.language == 'rust'
+        with:
+          name: developer-metric-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-metric-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain actual local caller and callee receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && matrix.language == 'rust'
+        with:
+          name: developer-local-service-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-local-service-fixtures/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Retain identical applications for both native execution hosts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-${{ matrix.language }}-applications-${{ github.sha }}
+          path: ${{ runner.temp }}/dev-projects/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Compile maintained C provider fixtures for native execution
+        if: matrix.language == 'c'
+        run: |
+          python tools/build_portable_c_guests.py --tool-root target/dev-tools/payload --output target/dev-c-portable/providers
+          python -c "from pathlib import Path; import os,shutil; shutil.copytree(Path(os.environ['RUNNER_TEMP'])/'dev-projects', 'target/dev-c-portable/applications')"
+      - name: Retain exact C components and shared scenarios
+        if: matrix.language == 'c'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-c-portable-inputs-${{ github.sha }}
+          path: target/dev-c-portable/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Attest guest tool candidate without release authority
+        if: github.event_name != 'pull_request'
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: target/dev-tools/candidate/SHA256SUMS
+      - name: Retain offline guest tool attestation
+        if: github.event_name != 'pull_request'
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: install -m 0644 "$BUNDLE_PATH" target/dev-tools/candidate/attestation.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-${{ matrix.language }}-tools-candidate-${{ github.sha }}
+          path: target/dev-tools/candidate/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain compiler and application evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: developer-${{ matrix.language }}-builds-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dev-projects/
+            target/dev-tools/logs/
+            target/dev-tools/managed-dependencies/*.log
+            target/dev-tools/managed-dependencies/*.json
+            target/dev-tools/managed-dependencies/logs/
+          if-no-files-found: warn
+          retention-days: 7
+
+  dotnet-watch-diagnostic:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.dotnet_watch_diagnostic }}
+    name: Focused .NET dependency watch diagnostic (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [dotnet]
     env:
       LSF_DEV_LANGUAGE: ${{ matrix.language }}
     permissions:
@@ -735,7 +1084,7 @@ jobs:
           retention-days: 7
 
   wsl-image:
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) && !(github.event_name == 'workflow_dispatch' && inputs.dotnet_watch_diagnostic) }}
     name: Pinned WSL image candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 15

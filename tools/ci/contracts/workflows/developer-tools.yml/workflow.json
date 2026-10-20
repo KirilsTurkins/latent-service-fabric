@@ -147,7 +147,15 @@
           "docs/**"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "dotnet_watch_diagnostic": {
+            "default": false,
+            "description": "Run only the existing bounded .NET dependency watch diagnostic job",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -155,6 +163,7 @@
   },
   "requiredJobs": [
     "contracts",
+    "dotnet-watch-diagnostic",
     "guest-tools",
     "linux-portable",
     "portable-differential",
@@ -162,7 +171,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Retain workflow ownership of the measured guest-tools timeout adjustment without changing workflow triggers or job selection.",
+  "reviewReason": "Add one default-false boolean .NET diagnostic selector and required exact singleton job; preserve all original triggers, permissions, concurrency and jobs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
