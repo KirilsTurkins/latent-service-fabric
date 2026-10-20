@@ -57,7 +57,9 @@ def install(app: Path, outside: Path, tools: Path):
     private = []
     for number, namespace in enumerate(('PrivateFirst', 'PrivateSecond')):
         identity = 'Outside.Http.'+nonce+'.'+('Alpha' if number == 0 else 'Delta')
-        library = outside/('library-'+str(number))
+        workspace = outside/('library-'+str(number))
+        workspace.mkdir(mode=0o700)
+        library = workspace/'project'
         evidence = outside/('compiler-'+str(number))
         library.mkdir(mode=0o700); evidence.mkdir(mode=0o700)
         source = read_file(ROOT/PRIVATE_SOURCE).replace(b'@NAMESPACE@', namespace.encode('ascii'))
