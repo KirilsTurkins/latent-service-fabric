@@ -12,6 +12,7 @@
     "GoNodeStop.test_live_barrier_read_failure_restores_the_original_deadline_and_never_signals_node",
     "GoNodeStop.test_missing_dropped_duplicate_or_partial_audit_is_not_a_live_work_barrier",
     "GoNodeStop.test_original_limits_are_go_limits_and_readiness_does_not_raise_any_capacity",
+    "GoNodeStop.test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer",
     "GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results",
     "GoNodeStop.test_shutdown_requires_each_original_physical_owner_zero_and_real_joined_reaped_report",
     "GoNodeStop.test_uncertain_transport_is_retained_without_inventing_cancellation_or_retirement"
@@ -161,6 +162,18 @@
       ],
       "skipSites": []
     },
+    "GoNodeStop.test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8bf1d69e05a834bd8476ce822e2f424ef4d5e49a90ea33dfc64840bcb5081707",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results": {
       "bases": [
         "unittest.TestCase"
@@ -200,6 +213,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_node_stop.py",
-  "reviewReason": "Actual35795 run39377821189 failed before node startup: configure_node already owns node.json; rewrite only that owned config through bounded262144B bytes instead of exclusive-create writer. Real helper regression old FileExistsError RED/new GREEN, original settings/limits retained, all26 focused PASS; live-stop still pending.",
+  "reviewReason": "Actual ca58 run39379364935 first fresh guest trapped stack-overflow; retained incomplete optional audit had39 drops. Correct source-proven fixture/grant mismatch: owned NewTimer/channel/Stop matches granted timer-start/next/stop instead of ungranted Sleep wait-for. Select supported ordinary-node audit queue64 instead of tiny helper8; preserve strict zero-drop oracle, all original guest owners/cell/request limits and physical stop checks. Two precise old-source controls RED/current27 PASS; corrected signed execution pending.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

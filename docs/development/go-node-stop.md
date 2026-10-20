@@ -8,11 +8,15 @@ substituted for physical shutdown while Go work remains live.
 
 The explicitly selected managed-v5 greeting fixture retains the original
 creator's WIT, SDK and request budgets: 1,000,000,000 fuel, 64 MiB memory and
-120 seconds. An ordinary initializer goroutine uses a channel and 1 ms Sleep.
+120 seconds. An ordinary initializer goroutine receives from a 1 ms NewTimer.
 One mode waits for two ordinary hour-long timer goroutines through WaitGroup;
 another returns its root result while an accepted timer sibling remains. Each
 activation checks fresh globals and the completed initializer. There is no
 application executor, Gosched, runtime-observer shim or early timer result.
+All three timer sites use the standard NewTimer/channel/Stop path matching the
+explicit timer-start/next/stop grant. Sleep's distinct wait-for import is not
+granted or exercised by this programme; its separate qualifications remain
+attributed to their original programmes.
 
 The operator installs exactly four explicit bindings for the sole greeting
 service: the existing Go monotonic/wall/random requirements and activation
@@ -27,6 +31,11 @@ provider boundaries for the initializer and actual body timers, followed by
 their timer-next dispatch. The returned-root mode also requires its actual
 close operation. Every record must name the exact activation and provider;
 dropped, duplicate, incomplete and foreign observations cannot qualify. A
+bounded audit queue of 64 operations selects the ordinary supported node
+default instead of the shared tiny helper's eight slots. It remains charged
+by the node configuration and does not change any guest owner/request limit.
+Optional diagnostic capture is lossy and does not enforce capability admission;
+its absence is not evidence for a guest-trap cause. A
 complete node topology must simultaneously show the original cell, invocation,
 Store, host-state and component instance live. The caller must still be
 running. There is no fixed sleep used as admission or retirement proof.

@@ -8,9 +8,15 @@ from tools.rust_capsule_project import digest, inventory, read_file, snapshot
 
 PROFILE = 'go-component-activation-v5'
 GO = '''
+func nodeStopTimer(duration time.Duration) {
+    timer := time.NewTimer(duration)
+    defer timer.Stop()
+    <-timer.C
+}
+
 var nodeStopInitialized = func() uint32 {
     value := make(chan uint32)
-    go func() { time.Sleep(time.Millisecond); value <- 42 }()
+    go func() { nodeStopTimer(time.Millisecond); value <- 42 }()
     return <-value
 }()
 var nodeStopCalls uint32
@@ -24,11 +30,11 @@ func nodeStopCase(mode string) wit.Result[string, string] {
     case "pending":
         var work sync.WaitGroup
         work.Add(2)
-        for range 2 { go func() { defer work.Done(); time.Sleep(time.Hour) }() }
+        for range 2 { go func() { defer work.Done(); nodeStopTimer(time.Hour) }() }
         work.Wait()
         panic("node-stop-pending-work-returned")
     case "drain":
-        go func() { time.Sleep(time.Hour) }()
+        go func() { nodeStopTimer(time.Hour) }()
         return wit.Ok[string, string]("node-stop|root-returned-with-accepted-work")
     default:
         panic("node-stop-mode")

@@ -112,6 +112,10 @@ def configuration(directory, signed):
     value['audit'].update(records=1024, diskBytes=16777216)
     value['providers'] = {'formatVersion': 1, 'bindings': []}
     runtime_configuration(value, ('greeting',), language='go')
+    # The helper's eight-slot audit queue drops optional observations during
+    # normal v5 startup. Select the ordinary supported node default for this
+    # strict evidence programme; guest, cell and request bounds stay unchanged.
+    value['audit']['queuedOperations'] = 64
     value['providers']['activationRuntime'] = {'identity': {'id': 'activation', 'tenant': 'examples',
         'service': 'activation-host', 'epoch': 1}, 'limits': dict(oracle.OWNER_LIMITS)}
     value['providers']['bindings'].append({'name': 'activation-greeting', 'tenant': 'examples',

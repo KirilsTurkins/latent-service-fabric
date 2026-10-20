@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_node_stop.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual35795 run39377821189 failed before node startup: configure_node already owns node.json; rewrite only that owned config through bounded262144B bytes instead of exclusive-create writer. Real helper regression old FileExistsError RED/new GREEN, original settings/limits retained, all26 focused PASS; live-stop still pending.",
+  "reviewReason": "Actual ca58 run39379364935 first fresh guest trapped stack-overflow; retained incomplete optional audit had39 drops. Correct source-proven fixture/grant mismatch: owned NewTimer/channel/Stop matches granted timer-start/next/stop instead of ungranted Sleep wait-for. Select supported ordinary-node audit queue64 instead of tiny helper8; preserve strict zero-drop oracle, all original guest owners/cell/request limits and physical stop checks. Two precise old-source controls RED/current27 PASS; corrected signed execution pending.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0ae8f2dffa55779ecb8e7560fe56f613dc82fd2c218d92daafa4b58be82085ed"
+  "sha256": "abae15787db35869f7a16634731567458dd4684494189629a7a38a194778b03d"
 }

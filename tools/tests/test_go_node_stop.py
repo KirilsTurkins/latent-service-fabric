@@ -63,6 +63,8 @@ class GoNodeStop(unittest.TestCase):
             self.assertEqual(value['cells'], [{'class': 'standard', 'capacity': 1, 'queueCapacity': 2,
                                               'maximumMemoryBytes': 67108864}])
             self.assertEqual(value['shutdownGraceMillis'], 5000)
+            self.assertEqual(value['audit'], {'mode': 'durable', 'records': 4096, 'diskBytes': 67108864,
+                                              'queuedOperations': 64, 'queryOwners': 2})
             self.assertEqual(value['dataDirectory'], 'data')
             self.assertEqual((node / 'policy.json').read_bytes(), b'{}')
             self.assertLessEqual(path.stat().st_size, 262144)
@@ -75,7 +77,7 @@ class GoNodeStop(unittest.TestCase):
             actual = snapshot(app)
             self.assertEqual(set(actual), set(original))
             self.assertEqual([name for name in actual if actual[name] != original[name]], ['sdk-lock.json', 'src/main.go'])
-            for value in ('time.Sleep(time.Hour)', 'work.Wait()', 'go func()', 'nodeStopCalls != 1',
+            for value in ('nodeStopTimer(time.Hour)', 'work.Wait()', 'go func()', 'nodeStopCalls != 1',
                           'nodeStopInitialized != 42', '"Please enter a name."', '"Hello, "'):
                 self.assertIn(value, actual['src/main.go'].decode())
             self.assertNotIn('Gosched', actual['src/main.go'].decode())
@@ -84,6 +86,26 @@ class GoNodeStop(unittest.TestCase):
                              json.loads(original['capsule-project.json'])['limits'])
             self.assertFalse(record['compilerExecuted'])
             self.assertEqual(record['signedQualification'], 'pending')
+
+    def test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            app, _ = fixture.project(Path(temporary) / 'application')
+            source = (app / 'src/main.go').read_text()
+            self.assertIn('timer := time.NewTimer(duration)\n    defer timer.Stop()\n    <-timer.C', source)
+            self.assertEqual(source.count('nodeStopTimer(time.Millisecond)'), 1)
+            self.assertEqual(source.count('nodeStopTimer(time.Hour)'), 2)
+            self.assertNotIn('time.Sleep(', source)
+            self.assertNotIn('wait-for', probe.OPERATIONS)
+            root = Path(__file__).resolve().parents[2]
+            timer = (root / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
+            asynchronous = (root / 'sdk/go-guest/runtime/timer_async.go.in').read_text()
+            sleep = (root / 'sdk/go-guest/runtime/activation_async.go.in').read_text()
+            self.assertIn('[async-lower]wait-for', sleep)
+            for operation, owner in [('timer-start', timer), ('timer-stop', timer),
+                                     ('timer-next', asynchronous)]:
+                self.assertIn(operation, probe.OPERATIONS)
+                self.assertIn('latent:runtime/activation@0.1.0 ', owner)
+                self.assertIn(operation, owner)
 
     def test_barrier_requires_actual_live_store_and_host_completed_body_timers_not_just_a_wait(self):
         actual = probe.barrier(inventory(), pages(), 'pending', 'pending')
