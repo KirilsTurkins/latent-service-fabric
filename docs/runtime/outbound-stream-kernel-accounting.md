@@ -96,6 +96,16 @@ Complete physical costs, all allocation/clone/page paths, socket-cookie handoff,
 running-kernel/BTF binding and final-free consumption remain required. Neither
 synthetic C layout costs nor this deliberate refusal qualifies a usable profile.
 
+An additional uninstalled derivation now carries a socket's original RESERVED
+record/address into its authenticated outer initialization paths. It uses the
+unchanged kernel cookie generator only after copying the original token/scope,
+then revalidates generation and address before LIVE. Existing clone cookies are
+preserved. This removes the constructor-only model's premature zero-cookie commit
+attempt; it does not install a factory or qualify a kernel. Its C controls compile
+the private hook and upstream cookie chain with explicit doubles; the outer
+constructor insertions remain source-only evidence. Complete live installation,
+physical allocation closure and sealed final-free gates stay open.
+
 The finite ss vocabulary is checked against the [primary iproute2 format source](https://github.com/iproute2/iproute2/blob/v6.17.0/misc/ss.c).
 The actual installed tool digest is retained independently; that format reference
 is not an authenticated source binding for the runner kernel or tool binary.
