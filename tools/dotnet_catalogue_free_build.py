@@ -163,11 +163,16 @@ def main(argv=None):
     parser.add_argument('--packager', required=True, type=Path)
     parser.add_argument('--repository', required=True)
     parser.add_argument('--expect-source-digest', required=True)
+    parser.add_argument('--executable-approval',
+                        help='Exact previously retained isolated analyzer/target request identity')
     args = parser.parse_args(argv)
+    require(args.executable_approval is None or re.fullmatch(r'sha256:[0-9a-f]{64}', args.executable_approval),
+            'catalogue-free-executable-approval-identity')
     before = verify(ROOT)
     require(before['inventoryDigest'] == args.expect_source_digest, 'catalogue-free-unexpected-stage')
     result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository,
-                   tools=args.tools, offline=True)
+                   tools=args.tools, offline=True,
+                   **({'executable_approval':args.executable_approval} if args.executable_approval is not None else {}))
     require(verify(ROOT) == before, 'catalogue-free-stage-changed-during-build')
     recipe = read_json(args.output / 'recipe-inputs.json')
     require(recipe and all(before['files'].get(name) == row for name, row in recipe.items()),
