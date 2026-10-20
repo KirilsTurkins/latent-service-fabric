@@ -24,7 +24,7 @@
       },
       {
         "name": "Fetch the exact original native and component sources",
-        "run": "git fetch --no-tags origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b 7e3de703bc7666cee9407ff15205b9d5809a9c20"
+        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b 7e3de703bc7666cee9407ff15205b9d5809a9c20"
       },
       {
         "name": "Check original origin archive and TLS process boundaries",
@@ -60,7 +60,7 @@
   },
   "jobId": "signed-https",
   "kind": "job",
-  "reviewReason": "Add real signed15-case ordinary Flurl/Refit TLS trust, held cancellation, body disposal and physical cleanup against authenticated original7e3 component; no original gate replacement and no guest/native rebuild.",
+  "reviewReason": "Bound exact original source retrieval to one commit each; signing/material/source validation and all15 TLS outcomes remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-https-libraries.yml"
 }
