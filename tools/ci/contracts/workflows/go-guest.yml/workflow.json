@@ -60,6 +60,8 @@
           "tools/qualify_go_synchronization.py",
           "tools/tests/test_go_synchronization.py",
           "tools/tests/test_go_admission.py",
+          "tools/tests/test_go_managed_timers.py",
+          "docs/development/go-managed-timers.md",
           "tools/tests/test_go_queued.py",
           "docs/development/go-runtime-queued-ownership.md",
           "docs/development/go-runtime-admission.md",
@@ -164,6 +166,8 @@
           "tools/qualify_go_synchronization.py",
           "tools/tests/test_go_synchronization.py",
           "tools/tests/test_go_admission.py",
+          "tools/tests/test_go_managed_timers.py",
+          "docs/development/go-managed-timers.md",
           "tools/tests/test_go_queued.py",
           "docs/development/go-runtime-queued-ownership.md",
           "docs/development/go-runtime-admission.md",
@@ -261,7 +265,7 @@
     "retained-scalar-ownership",
     "upstream-probe"
   ],
-  "reviewReason": "Add one actual signed ordinary node8/queue8 programme: retain original aggregate CPU/memory grants through seven queued roots, foreign cancellation, owned queued cancellation/deadline and original physical retirement; preserve every previous command, case, ignore guard, cap and default campaign.",
+  "reviewReason": "Union independently passed ordinary queue34/20 and v5 timer43/native17; retain exact parent oracles, all commands/limits and historical filtered counts; strict composed catalogue52.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

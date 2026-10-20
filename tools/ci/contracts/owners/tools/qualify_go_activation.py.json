@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add finite actual Go Cond/RWMutex/Once/channel/select synchronization and original-v5 drain/cancel/deadline/admission controls; same-source v1 negative, every old profile/case/guard/cap retained; no runtime qualification claim before hosted execution.",
+  "reviewReason": "Apply unchanged standard timer source/native17 and original43 outcome oracle to current managed v5 with original16/4/2 ownership; retain all legacy v3, synchronization, admission cases, commands, guards and limits; actual hosted qualification pending.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "19d44c3f84cbf5249322ae5f55f35daee653392985a91ea5ca2b1d18f175aa26"
+  "sha256": "edffd7aef8b646d5a1b17020e7a01a65192f968ab653325332f8520deb628e15"
 }

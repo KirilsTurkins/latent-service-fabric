@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "GoManagedTimers.test_all_forty_three_original_outcomes_cover_stop_reset_overlap_gc_and_retirement",
+    "GoManagedTimers.test_exact_v5_timer_source_profile_and_all_seventeen_native_modes_are_required",
+    "GoManagedTimers.test_legacy_v3_reference_capture_remains_selected_and_not_relabelled",
+    "GoManagedTimers.test_missing_duplicate_reordered_and_fake_elapsed_or_capacity_success_are_rejected",
+    "GoManagedTimers.test_private_unknown_boolean_and_unbounded_iteration_fields_fail_closed",
+    "GoManagedTimers.test_unknown_or_v3_profile_cannot_substitute_for_the_closed_managed_timer_campaign",
+    "GoManagedTimers.test_v5_timer_compile_records_native_reference_on_the_same_unmodified_timer_source",
+    "GoManagedTimers.test_wrapper_success_other_target_or_ignored_cases_cannot_qualify_managed_timers"
+  ],
+  "guards": {
+    "GoManagedTimers.test_all_forty_three_original_outcomes_cover_stop_reset_overlap_gc_and_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoManagedTimers.test_exact_v5_timer_source_profile_and_all_seventeen_native_modes_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoManagedTimers.test_legacy_v3_reference_capture_remains_selected_and_not_relabelled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoManagedTimers.test_missing_duplicate_reordered_and_fake_elapsed_or_capacity_success_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoManagedTimers.test_private_unknown_boolean_and_unbounded_iteration_fields_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoManagedTimers.test_unknown_or_v3_profile_cannot_substitute_for_the_closed_managed_timer_campaign": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoManagedTimers.test_v5_timer_compile_records_native_reference_on_the_same_unmodified_timer_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoManagedTimers.test_wrapper_success_other_target_or_ignored_cases_cannot_qualify_managed_timers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f937a3a2fe59c2f9407fcd5dd209faba4eb9751aadc39f299cd6090ea7456b5f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_managed_timers.py",
+  "reviewReason": "Apply unchanged standard timer source/native17 and original43 outcome oracle to current managed v5 with original16/4/2 ownership; retain all legacy v3, synchronization, admission cases, commands, guards and limits; actual hosted qualification pending.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
