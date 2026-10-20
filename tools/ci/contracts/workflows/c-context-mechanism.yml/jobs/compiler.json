@@ -58,7 +58,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "c-context-mechanism-${{ github.sha }}",
-          "path": "${{ runner.temp }}/c-context-mechanism/report.json\n${{ runner.temp }}/c-context-mechanism/*.txt\n${{ runner.temp }}/c-context-mechanism/*.wasm\n${{ runner.temp }}/c-context-mechanism/*.ll\n${{ runner.temp }}/c-context-mechanism/selected/*.json\n${{ runner.temp }}/c-context-mechanism/selected/*.wasm\n",
+          "path": "${{ runner.temp }}/c-context-mechanism/report.json\n${{ runner.temp }}/c-context-mechanism/*.txt\n${{ runner.temp }}/c-context-mechanism/*.wasm\n${{ runner.temp }}/c-context-mechanism/*.ll\n${{ runner.temp }}/c-context-mechanism/selected/*.json\n${{ runner.temp }}/c-context-mechanism/selected/*.wasm\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.json\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm\n",
           "retention-days": 7
         }
       }
@@ -67,7 +67,7 @@
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "Add explicit C LLVM21 source-only stack/TLS context mechanism and bounded compiled-core callback controls; preserve all original profiles, commands, cases and gates.",
+  "reviewReason": "Extend only the explicit unqualified C compiler mechanism with bounded pthread-key and errno PAL controls; retain original26 Rust and original C isolation/refusal controls, limits and engine defaults.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-context-mechanism.yml"
 }

@@ -66,3 +66,44 @@ native engine or application build. C ABI creation/join/identity, errno and key
 TLS destructors, mutex/condition/timed waits, CPU checkpoints, ordinary sockets,
 root draining, cancellation and cross-tenant physical reuse still require their
 own implementation and signed qualification before any #744 criterion closes.
+
+The next explicit source-only PAL, `sdk/c-guest/runtime/tls-keys.c`, supplies
+ordinary WASI-musl `pthread_key_create/delete`, `pthread_get/setspecific` and
+`errno` entry points beneath the selected compiler context mechanism. It has
+128 per-Store key slots, generation-encoded handles and per-context values.
+Deleting a key never invokes its destructor; reusing a slot cannot expose an
+old context's stale value. Generations never wrap: exhausted slots retire.
+The registry's fixed operations must remain non-suspending SDK critical code;
+there is no lock protecting it against arbitrary scheduling instrumentation.
+No maintained builder links this PAL, and no OS-thread safety is advertised.
+
+The internal closing hook clears each value before invoking its destructor,
+allows values to be reinstalled and runs at most four passes. Recursive closing
+returns `EDEADLK`. A cyclic destructor leaves its pending value owned and returns
+`EBUSY` after the fourth pass; the future runtime must retain/quarantine that
+owner rather than treat the hook as physical retirement or refund resources.
+Ordinary pthread key functions return their error codes without changing errno.
+Both direct WASI-musl errno and `__errno_location` address the selected context.
+No C11 `tss_*`, thread creation/join, cancellation unwinding, destructor suspension
+or native owner accounting is supplied by this slice.
+
+The focused compiler controller retains all original controls and adds a real
+compiled-core key/errno control: callback reentry into a second context, stale
+key deletion/reuse, the 128-key ceiling, independent destructor state, clearing
+before callbacks, bounded reinstall passes and retained cyclic pending state.
+It uses the pinned Zig WASI-musl headers with an explicit aggregate identity;
+no libc thread stubs or ambient runtime are linked.
+
+The exact [577492a0 run39413924006/job118598192794](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39413924006/job/118598192794)
+passed all26 Rust controls, the original C isolation/refusal control and the new
+compiled TLS-key/errno control. The [source-bound observation](../testing/evidence/c-tls-keys-mechanism-2026-10-20.json)
+authenticates artifact12261121042 (14,640 bytes), its complete archive SHA-256,
+all35 CRC-checked members, all12 Git source rows and all8 product identities.
+An independent replay of the retained derived TLS-key core under Node24.19.0
+passed the same exact public assertions. The pinned WASI-musl header inventory
+contains343 files/733,646 bytes; compiler implicit inputs remain unattested and
+producer tool binaries were not independently retained.
+
+These actual controls establish the finite compiled-core mechanism only. No
+canonical child, signed component, production node or libc thread lifecycle
+executed. This does not qualify the complete pthread profile or close #744.

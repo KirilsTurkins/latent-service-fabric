@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/resource_tenant_fresh_c.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "One normal captured C23 component with exact source/closure/material before-and-after checks, honest absent historical observation ancestry, actual fresh build records and the existing signed two-tenant controller; no native or full C baseline rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "61d5fa15eaa77b5511aa6164203a504bcd16e6364236beb7cd53b651deb315d3"
+}
