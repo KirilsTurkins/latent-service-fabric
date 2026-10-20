@@ -92,6 +92,18 @@ compiled-core key/errno control: callback reentry into a second context, stale
 key deletion/reuse, the 128-key ceiling, independent destructor state, clearing
 before callbacks, bounded reinstall passes and retained cyclic pending state.
 It uses the pinned Zig WASI-musl headers with an explicit aggregate identity;
-no libc thread stubs or ambient runtime are linked. This is a pending compiler
-control until its source-bound actual result is recorded, not signed component
-or complete pthread-profile qualification.
+no libc thread stubs or ambient runtime are linked.
+
+The exact [577492a0 run39413924006/job118598192794](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39413924006/job/118598192794)
+passed all26 Rust controls, the original C isolation/refusal control and the new
+compiled TLS-key/errno control. The [source-bound observation](../testing/evidence/c-tls-keys-mechanism-2026-10-20.json)
+authenticates artifact12261121042 (14,640 bytes), its complete archive SHA-256,
+all35 CRC-checked members, all12 Git source rows and all8 product identities.
+An independent replay of the retained derived TLS-key core under Node24.19.0
+passed the same exact public assertions. The pinned WASI-musl header inventory
+contains343 files/733,646 bytes; compiler implicit inputs remain unattested and
+producer tool binaries were not independently retained.
+
+These actual controls establish the finite compiled-core mechanism only. No
+canonical child, signed component, production node or libc thread lifecycle
+executed. This does not qualify the complete pthread profile or close #744.
