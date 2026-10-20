@@ -64,9 +64,16 @@ def collect(generated: Path, log: bytes, selected: tuple[str, ...]) -> dict:
             if DECLARATION.fullmatch(lines[index])]
         if len(declarations) > 64:
             raise ValueError('java-c-failure-context-declaration-bound')
+        end = next((index for index in range(error + 1, len(lines)) if FUNCTION.fullmatch(lines[index])), len(lines))
+        symbols = tuple(dict.fromkeys(re.findall(r'\bteavm_local_[0-9]+\b', lines[error])))
+        references = [index for index in range(start, end)
+            if symbols and re.search(r'\b(?:' + '|'.join(map(re.escape, symbols)) + r')\b', lines[index])]
         rows.append({'path': relative, 'sourceDigest': digest(raw), 'sourceBytes': len(raw),
             'errorLine': error + 1, 'function': {'line': start + 1, 'text': lines[start]},
             'declarations': declarations,
+            'symbols': list(symbols), 'referenceCount': len(references),
+            'omittedReferences': max(0, len(references) - 128),
+            'references': [{'line': index + 1, 'text': lines[index]} for index in references[:128]],
             'context': [{'line': index + 1, 'text': lines[index]}
                         for index in range(max(start, error - 64), min(len(lines), error + 65))]})
     if not rows:

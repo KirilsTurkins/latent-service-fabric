@@ -17,8 +17,10 @@
     "JavaPublicCFailureContext.test_anchored_reader_rejects_hardlinks_and_linked_directories",
     "JavaPublicCFailureContext.test_default_and_success_paths_never_read_or_retain_source",
     "JavaPublicCFailureContext.test_exact_context_retains_real_declarations_control_flow_and_byte_identities",
+    "JavaPublicCFailureContext.test_failed_move_definitions_and_uses_stay_inside_the_actual_function",
     "JavaPublicCFailureContext.test_observation_failure_retains_closed_unavailable_and_original_exception_identity",
     "JavaPublicCFailureContext.test_real_failed_compiler_command_preserves_original_command_and_retains_before_cleanup",
+    "JavaPublicCFailureContext.test_reference_witness_bound_is_explicit_without_changing_the_original_failure",
     "JavaPublicCFailureContext.test_retained_actual_teavm_nested_c_layout_reaches_both_selected_sources",
     "JavaPublicCFailureContext.test_source_log_error_declaration_and_output_bounds_fail_closed",
     "JavaPublicCFailureContext.test_unknown_selection_or_outside_location_cannot_read_arbitrary_sources"
@@ -228,6 +230,18 @@
       ],
       "skipSites": []
     },
+    "JavaPublicCFailureContext.test_failed_move_definitions_and_uses_stay_inside_the_actual_function": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:a685002024162e40bd9d886b63c1775d46d4315ee89db51ad0d417a941fa85c9"
+      ],
+      "skipSites": []
+    },
     "JavaPublicCFailureContext.test_observation_failure_retains_closed_unavailable_and_original_exception_identity": {
       "bases": [
         "unittest.TestCase"
@@ -241,6 +255,18 @@
       "skipSites": []
     },
     "JavaPublicCFailureContext.test_real_failed_compiler_command_preserves_original_command_and_retains_before_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:a685002024162e40bd9d886b63c1775d46d4315ee89db51ad0d417a941fa85c9"
+      ],
+      "skipSites": []
+    },
+    "JavaPublicCFailureContext.test_reference_witness_bound_is_explicit_without_changing_the_original_failure": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -291,6 +317,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Preserve original fourteen cases/guards; add independent actual TeaVM nested-c layout RED/GREEN case and explicit closed collector refusal assertions while preserving all privacy and compiler failure controls.",
+  "reviewReason": "Keep every existing case/guard; add two bounded actual-function symbol witness controls, including distant definition, next-function exclusion and explicit128-row omission count, within unchanged fixed-source/context bounds.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

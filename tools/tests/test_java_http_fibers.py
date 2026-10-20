@@ -254,6 +254,40 @@ class JavaHttpFiberControlBoundaries(unittest.TestCase):
 
 
 class JavaPublicCFailureContext(unittest.TestCase):
+    def test_failed_move_definitions_and_uses_stay_inside_the_actual_function(self):
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = Path(temporary)/'generated'
+            path = generated/'c/d/l/a/Capsule.c';path.parent.mkdir(parents=True)
+            path.write_text('void actual_function(void) {\n'
+                '    int32_t teavm_local_6;\n    void* teavm_local_17;\n'
+                '    teavm_local_17 = teavm_local_6;\n'
+                + '\n'.join('    ignored();' for _ in range(200))
+                + '\n    teavm_local_6 = teavm_local_17;\n}\n'
+                'void other_function(void) {\n    teavm_local_17 = unrelated();\n}\n', encoding='utf-8')
+            log = f'{path.as_posix()}:205:1: error: incompatible pointer to integer conversion\n'.encode()
+            row = context.collect(generated, log, context.FIXTURE_SOURCES)['errors'][0]
+            self.assertEqual(row['symbols'], ['teavm_local_6', 'teavm_local_17'])
+            self.assertEqual(row['referenceCount'], 4)
+            self.assertEqual(row['omittedReferences'], 0)
+            self.assertIn('    teavm_local_17 = teavm_local_6;', [item['text'] for item in row['references']])
+            self.assertNotIn('unrelated', str(row['references']))
+
+    def test_reference_witness_bound_is_explicit_without_changing_the_original_failure(self):
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = Path(temporary)/'generated'
+            path = generated/'c/d/l/a/Capsule.c';path.parent.mkdir(parents=True)
+            path.write_text('void actual_function(void) {\n'
+                '    int32_t teavm_local_6;\n    void* teavm_local_17;\n'
+                + '\n'.join('    teavm_local_6 = teavm_local_17;' for _ in range(200))
+                + '\n}\n', encoding='utf-8')
+            log = f'{path.as_posix()}:203:1: error: incompatible pointer to integer conversion\n'.encode()
+            row = context.collect(generated, log, context.FIXTURE_SOURCES)['errors'][0]
+            self.assertEqual(row['referenceCount'], 202)
+            self.assertEqual(len(row['references']), 128)
+            self.assertEqual(row['omittedReferences'], 74)
+
     def test_retained_actual_teavm_nested_c_layout_reaches_both_selected_sources(self):
         from tools.java_guest import c_failure_context as context
         with tempfile.TemporaryDirectory() as temporary:
