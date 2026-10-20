@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_published_http.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Keep original compiler commands and all20 signed plus2 denial gates; authenticate original successful7e3 component and replay after only unique progress filenames, without guest or native recompilation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "fe1298e33b2f8ebccea01c9e6af7ba8799de828d83929f55caca26858c8a5974"
+}

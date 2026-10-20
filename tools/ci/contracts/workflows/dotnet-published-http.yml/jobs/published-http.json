@@ -7,6 +7,7 @@
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
+    "if": "github.event_name == 'workflow_dispatch' && inputs.fresh_component",
     "name": "Signed ordinary Flurl Refit and outside NuGet clients",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -98,7 +99,7 @@
   },
   "jobId": "published-http",
   "kind": "job",
-  "reviewReason": "Add a separate normal captured NativeAOT programme for unchanged Flurl4.0.2/Refit16.4 and two outside NuGet identities, twenty signed cases/two pre-entry refusals and strict15-contact physical-retirement oracle. Capture original generator closure, require its exact isolated approval, retain default compiler/stager behavior. Five new capture/real-peer/approval guards and twelve original boundary controls pass; actual guest results pending. Preserve every existing command, case, cap and failed receipt; no host/native baseline rebuild. Use authenticated f919 wait-observer products through the unchanged shared strict reader and exact frozen wrapper; six reader mutation guards pass. No source-equality waiver or native rebuild.",
+  "reviewReason": "Keep original compiler commands and all20 signed plus2 denial gates; authenticate original successful7e3 component and replay after only unique progress filenames, without guest or native recompilation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

@@ -156,7 +156,7 @@ def run(artifact: Path, native: dict, output: Path):
                     'published-dotnet-original-budget-and-outbound-count')
                 base.retire(client,target,probe,output,label)
                 record['cases'].append({'case':label,'invocation':row,'physicalRetirementVerified':True})
-                write_json(output/'progress.json',record)
+                write_json(output/('progress-'+label+'.json'),record)
             delete_all(client,[target['name']]);stop(client,node)
             record['shutdown'] = stopped_record(node)
             require(record['shutdown']['reaped'] is True and record['shutdown']['record']['clean'] is True,

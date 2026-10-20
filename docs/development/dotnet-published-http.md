@@ -29,8 +29,19 @@ writes, one committed mutation and zero final physical/provider owners are
 required. An optional guest DelegatingHandler supplies no privileged provider or
 extra grant.
 
-Source/capture and staged compiler boundary controls pass. New NuGet resolution,
-generator execution, NativeAOT component and signed library results are pending.
+Source/capture and staged compiler boundary controls pass. Run39474941546 at
+7e3de703bc7666cee9407ff15205b9d5809a9c20 completed normal NuGet resolution,
+generator execution, NativeAOT and packaging. The original Flurl and Refit domain
+calls both passed before the evidence writer refused to overwrite its progress
+file. That failed programme is retained as a failure.
+
+The replay gate authenticates that original archive and component, checks all
+captured SDK/build inputs and generator approval, and restores only the five
+original WIT files from their authenticated package layers. Its sole original
+node change gives each progress record a distinct filename. All twenty signed
+cases and two pre-entry refusals remain mandatory; their complete outcome is
+pending. The original full compiler job remains available through the explicit
+`fresh_component` dispatch input. Replay builds neither the guest nor the host.
 Existing direct HttpClient results retain their historical scope and source;
 they do not give these new libraries passing credit. #693 remains open for the
 new actual gate and its remaining literal lifecycle, authority and isolation
