@@ -68,8 +68,8 @@ def execute(artifact,native,output):
                 published=client.call('release','publish-package',source/'package','--evidence',source/'evidence/index.json',
                     '--operation-id','runtime-limits-publish','--expected-generation','0')
                 publication=published['data']['operation']['publication']['id']
-                runtime,_http=base.grants(client,node,publication,startup['origins']['primary'])
-                target=deploy(client,source/'deployment.json',publication,grants=runtime)
+                _runtime,authorized=base.grants(client,node,publication,startup['origins']['primary'])
+                target=deploy(client,source/'deployment.json',publication,grants=authorized)
                 kwargs={'memory':cases.MEMORY} if name=='memory' else {}
                 bootstrap=None;negative=None
                 for phase,selected in (('bootstrap',0),('boundary',mode),('fresh',0)):

@@ -31,6 +31,12 @@ budget. It retains touched 4 MiB arrays, requires at least 32 MiB growth above
 bootstrap and rejects fuel exhaustion, deadlines, unknown outcomes or peaks
 above the caller limit. It does not catch allocation failure as success.
 
+The retained first attempt was rejected before guest execution because the
+controller omitted HTTP authority required by the declared Fetch-world imports.
+The controller now supplies the same explicit bounded HTTP grant as the other
+zero-contact Fetch fixtures. This grants no implicit permission and does not
+relax the real peer's zero-contact check. No resource boundary ran in that attempt.
+
 Execution results are pending. Source controls and type checking alone do not
 qualify these boundaries. This programme does not establish late-completion or
 cross-tenant isolation and does not close the complete SDK or Fetch matrices.
