@@ -54,3 +54,8 @@ Existing direct HttpClient results retain their historical scope and source;
 they do not give these new libraries passing credit. #693 remains open for the
 remaining literal lifecycle, authority, HTTPS and isolation
 requirements. No complete ticket or production accounting claim is made here.
+
+The optional [versioned compatibility observations](../compatibility-catalogue/v3/README.md)
+bind these two NuGet packages to their original graph, component, configuration,
+compiler, runtime and node binary. Dependency resolution and admission remain
+independent of the catalogue.

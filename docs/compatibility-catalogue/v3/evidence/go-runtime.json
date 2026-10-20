@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "latent.guest.runtime-selection.v1",
+  "language": "go",
+  "profile": "go-component-activation-v4",
+  "sourceDigest": "sha256:c9e831bd96abe17dc1ab28433c95199451c4b1cbef489c35fed257dcb1a127f7",
+  "componentDigest": "sha256:366daa0b443cf0f71ccf9d0014764dff3b346e3520c7cca9544c79c236846e75",
+  "graphDigest": "sha256:6c9f4560cd0c50153c224a4ea32581d456081d35514f87b9d570cc780ee61717",
+  "graphState": "captured",
+  "originalRuntimeInputsDigest": "sha256:44136a682cec8f0bfa007fde9263c04058a71664a5a7b3a8a501deb0ab1b1b02",
+  "originalRuntimeInputCount": 60,
+  "originalRuntimeInputsScope": "captured-sdk-inputs",
+  "bindingInputsDigest": "sha256:6405bc98734cffb08e995d91b1921f91f13853413c49d0f6e920653684e960f3",
+  "toolAndCompilerInputs": [
+    {
+      "name": "application-dependencies",
+      "digest": "sha256:44cc050b055c371eb4b21eefe3ceb517e901d79f8c0cf490613fd2e86fcffda5"
+    },
+    {
+      "name": "build-recipe",
+      "digest": "sha256:c33a6f1828491ba469a3ce113ef60318a54ac8047f45f68fd3369cde48e6b350"
+    },
+    {
+      "name": "compiler-containment",
+      "digest": "sha256:754a0e8c5f6ae76b2ce9ebdbb3427e38ff688d5f708a66d6f5c400abaeab9926"
+    },
+    {
+      "name": "componentize-go",
+      "digest": "sha256:b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb"
+    },
+    {
+      "name": "contracts-tool",
+      "digest": "sha256:a05b743b36fa5e6bdf6fb4cff8f5a5a9f3d94e32f8a5fb365cdc0fbdf8b98fd7"
+    },
+    {
+      "name": "dependency-lock",
+      "digest": "sha256:fef064834fabec9b4ef82f2acad1817030c02316bcda3be780b52aec78a060f5"
+    },
+    {
+      "name": "go",
+      "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0"
+    },
+    {
+      "name": "go-checkpoints",
+      "digest": "sha256:488898fab4b7216609cf9ae568584ba5bf78f4dafeb8678c192693aa559a43ec"
+    },
+    {
+      "name": "go-module-build-inputs",
+      "digest": "sha256:b39615d51de95796645a97bdcf76b6d3cbbfd80ba531d07cbb4fb6b6c4937e00"
+    },
+    {
+      "name": "go-runtime-transformations",
+      "digest": "sha256:97b1a857001d2c365d803ec1aa507c1a7fe3a50b5f80fcf165511b4b72c3a5d7"
+    },
+    {
+      "name": "package-inputs",
+      "digest": "sha256:cf9e6eaee149443b16474dd5e2ee4e081ffad03981fcaf910c5fe4f7ffcdb300"
+    },
+    {
+      "name": "packager",
+      "digest": "sha256:0f9c1190e19ff9eebcc82c23807caa47ccbc2cacdadfe2e41a4805d6a430c3d2"
+    },
+    {
+      "name": "source-snapshot",
+      "digest": "sha256:c9e831bd96abe17dc1ab28433c95199451c4b1cbef489c35fed257dcb1a127f7"
+    },
+    {
+      "name": "toolchain-config",
+      "digest": "sha256:4697bc952fb2758088297231150165a05c7a31b1954ced4f8af0f16296403de2"
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6"
+    }
+  ],
+  "transformations": [
+    {
+      "name": "maintained-sdk-binding-generation",
+      "inputScope": "captured-wit-inventory",
+      "originalDigest": "sha256:6405bc98734cffb08e995d91b1921f91f13853413c49d0f6e920653684e960f3",
+      "resultDigest": "sha256:357b683d2874de3dc34cba35fd9bf3d4f5cb8a533087ed138c700f48d3bcd889",
+      "transformerDigest": "sha256:c33a6f1828491ba469a3ce113ef60318a54ac8047f45f68fd3369cde48e6b350",
+      "configurationDigest": "sha256:ea8c8b2340c7a6c7ab181a0339f4d9ac0f100eb0bdf6689c3ec8f8eb09f67056"
+    }
+  ],
+  "ownerIssue": 742,
+  "qualification": "unknown",
+  "apiSupport": "not-evaluated",
+  "authority": "none",
+  "identity": "sha256:98e833957e7b645556a89b7826f5db2c0b16cc2a7007823bbe362b6902f6fe72"
+}

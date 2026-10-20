@@ -1,0 +1,13 @@
+{
+  "exports": [
+    "examples:dotnet-standard-http/api@1.0.0"
+  ],
+  "imports": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0",
+    "latent:http/streaming@0.3.0",
+    "latent:random/random@0.1.0",
+    "latent:runtime/activation@0.1.0"
+  ],
+  "world": "examples:dotnet-standard-http/service@1.0.0"
+}
