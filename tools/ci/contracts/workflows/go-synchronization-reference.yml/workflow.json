@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-synchronization-reference-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Actual Go synchronization reference",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-runtime-retirement-20261020"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "synchronization"
+  ],
+  "reviewReason": "Add finite actual Go Cond/RWMutex/Once/channel/select synchronization and original-v5 drain/cancel/deadline/admission controls; same-source v1 negative, every old profile/case/guard/cap retained; no runtime qualification claim before hosted execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-synchronization-reference.yml"
+}

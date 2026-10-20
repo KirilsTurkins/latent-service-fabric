@@ -1,0 +1,81 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Ordinary .NET filesystem refusals and fresh state",
+    "needs": "toolchain",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Download this run's exact normal public products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "dotnet-scratch-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-scratch-prepared"
+        }
+      },
+      {
+        "name": "Check ordinary source, original budgets and exact outcome controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification -v\n"
+      },
+      {
+        "name": "Install captured NativeAOT namespace and loader inputs",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the pinned native compiler and closed runtime",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Build fresh NativeAOT component and execute six ordinary filesystem calls",
+        "run": "python3 tools/qualify_sdk_scratch.py --language dotnet --native-qualification \"$RUNNER_TEMP/dotnet-scratch-prepared\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-scratch-refusals\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded filesystem observations including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-scratch-refusals-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-scratch-refusals/qualification.json\n${{ runner.temp }}/dotnet-scratch-refusals/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/dotnet-scratch-refusals/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/build/*.json\n${{ runner.temp }}/dotnet-scratch-refusals/build/component.wasm\n${{ runner.temp }}/dotnet-scratch-refusals/build/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/node/workflow.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/controls/*.json\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "scratch-refusals",
+  "kind": "job",
+  "reviewReason": "Preserve every original75-minute parent step and workflow property; add public normal-bundle export and separate20-minute ordinary.NET scratch child without native host rebuild, filesystem or entropy grants.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}
