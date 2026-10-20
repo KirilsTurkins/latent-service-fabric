@@ -24,7 +24,7 @@ from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory
 HELPERS = ('tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_probe.py',
     'tools/qualify_dotnet_task_runtime.py', 'tools/run_rust_capsule_workflow.py',
     'tools/dotnet_guest/task_wait.py', 'tools/dotnet_guest/async_exports.py',
-    'tools/dotnet_guest/compiler.py')
+    'tools/dotnet_guest/compiler.py', 'tools/dotnet_guest/entropy_grants.py')
 
 
 def qualify(output: Path, tools: Path, native_qualification: Path):

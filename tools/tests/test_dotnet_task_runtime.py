@@ -22,7 +22,7 @@ class ManagedTaskProgramme(unittest.TestCase):
             self.assertIn('greet: async func(', wit)
             self.assertIn(runtime.ACTIVATION, wit)
             self.assertNotIn(runtime.HTTP, wit)
-            self.assertNotIn(runtime.RANDOM, wit)
+            self.assertIn(runtime.RANDOM, wit)
             self.assertEqual((app / 'sdk-lock.json').read_bytes(), before)
             self.assertNotIn('grants', (app / 'capsule-project.json').read_text(encoding='utf-8'))
             with self.assertRaisesRegex(RuntimeError, 'canonical-greeting'): fixture.declare(app)

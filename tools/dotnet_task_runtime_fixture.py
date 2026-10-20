@@ -11,6 +11,7 @@ from tools.build_snapshot import digest
 from tools.dotnet_application_dependencies import resolve
 from tools.dotnet_guest.compiler import Compiler
 from tools.dotnet_guest.project import create
+from tools.dotnet_guest import entropy_grants
 from tools.dotnet_guest.runtime import ACTIVATION
 from tools.phase2_operator_process import require
 from tools.rust_capsule_build import Commands
@@ -153,6 +154,7 @@ def declare(project: Path):
         target = project / 'wit/deps/activation-runtime' / name
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open('xb') as stream: stream.write(body)
+    entropy_grants.declare(project)
 
 
 def prepare(output: Path, outside: Path, tools: Path):
@@ -219,4 +221,5 @@ def prepare(output: Path, outside: Path, tools: Path):
         'assemblyDigest': digest(assembly), 'packageDigest': digest(package),
         'dependencyLock': digest((project / LOCK).read_bytes()),
         'originalLibraryAndFeedRemoved': not library.exists() and not feed.exists(),
-        'applicationSchedulerReplacement': False, 'httpDeclaration': False, 'cases': list(CASES)}
+        'applicationSchedulerReplacement': False, 'httpDeclaration': False,
+        'entropyDeclaration': 'explicit-threadpool-selector-seed', 'cases': list(CASES)}

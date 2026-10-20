@@ -1,5 +1,6 @@
 """Explicit activation authority and ordinary managed-queue retirement controls."""
-from tools.dotnet_guest.runtime import ACTIVATION, CLOCK
+from tools.dotnet_guest import entropy_grants
+from tools.dotnet_guest.runtime import ACTIVATION, CLOCK, RANDOM
 from tools.dotnet_task_runtime_fixture import CASES, expected
 from tools.phase2_operator_process import require, write_json
 
@@ -8,6 +9,7 @@ OPERATIONS = ['register', 'park', 'wake', 'settle', 'close', 'observe', 'wait-fo
 
 
 def configure(settings):
+    entropy_grants.configure(settings)
     settings['providers']['activationRuntime'] = {
         'identity': {'id': 'activation-tasks', 'tenant': 'examples', 'service': 'activation-host', 'epoch': 1},
         'limits': {'tasks': 8, 'executors': 2, 'queuedWork': 8, 'waits': 16,
@@ -51,8 +53,12 @@ def grant(client, node, fixture, targets, publications, result):
     targets['greeting'] = deploy(client, fixture / 'my-greeting/deployment.json', publications['greeting'],
         generation=str(target['generation']), grants=target['grants'] + [
             {'capability': ACTIVATION, 'policy': 'activation-tasks-allow'}])
+    targets['greeting'] = entropy_grants.grant(client, node, fixture / 'my-greeting/deployment.json',
+        publications['greeting'], targets['greeting'], result)
     result['dotnetTaskRuntimeAuthority'] = {'denied': denied, 'provider': provider,
-        'requiredDeclarations': [CLOCK, ACTIVATION], 'httpAuthorityAdded': False,
+        'requiredDeclarations': [CLOCK, ACTIVATION, RANDOM], 'httpAuthorityAdded': False,
+        'entropyAuthority': result['noncryptoEntropyAuthority'],
+        'entropyDenied': result['noncryptoEntropyGrantDenied'],
         'providerTaskLimit': 8, 'providerTimerLimit': 8}
 
 

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_task_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add ordinary default Task/ThreadPool/timer campaign with explicit clock/activation authority, original limits and owner cleanup; retain all existing qualification commands and case guards. Bind the exact Git LF source bytes used by hosted execution.",
+  "reviewReason": "Preserve exact task assertions and explicit clock/activation authority; additionally capture the entropy grant helper needed by the original CoreLib thread-pool selector. No automatic production grants or weakened bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4731d553464a0d8b7e1cd742c77c1f730f29f6caa2a763a31b2cd85b81cd9388"
+  "sha256": "90ca359d69b917bc3c245b1d9fe4e536b00e7f037aab4542e406133e12922f3e"
 }
