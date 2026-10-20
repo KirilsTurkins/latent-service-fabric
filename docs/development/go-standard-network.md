@@ -139,3 +139,9 @@ source inputs match that Git source. Those doubles do not establish
 emitted-component, live TCP/provider, kernel or full networking qualification.
 The earlier twelve-case signed observation remains attributed to its original
 source; it is not relabelled as execution of this new method.
+
+A follow-up per-fragment close guard also preserves an already acknowledged
+prefix and returns `net.ErrClosed` before any later dispatch after close.
+The ninth exact-method control and the earlier unguarded close counterexample
+are pending actual reference execution; the eight-case observation above retains
+its original source identity. No owner, deadline or fragment bound changes.

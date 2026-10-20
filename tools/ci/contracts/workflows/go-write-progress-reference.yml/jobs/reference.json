@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Exact production Write old counterexample and eight bounded controls",
+    "name": "Exact production Write two old counterexamples and nine bounded controls",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -51,7 +51,7 @@
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "Require exact original chunk-boundary failure and eight bounded production-method reference controls; keep original owner, deadline, chunk/transfer limits, typed uncertainty and all signed/provider gates separate.",
+  "reviewReason": "Retain original eight progress controls and add exact prior-source close-between-fragments RED plus ninth closed-prefix control; preserve original caps, one direction owner and deadline.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-write-progress-reference.yml"
 }

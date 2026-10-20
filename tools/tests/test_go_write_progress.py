@@ -66,6 +66,20 @@ class GoWriteProgressTests(unittest.TestCase):
         self.assertIn("GOPROXY='off'",runner)
         self.assertIn("'signedGuestExecuted': False",runner)
         self.assertNotIn("'cargo'",runner);self.assertNotIn('compiler.compile(',runner)
+    def test_close_guard_is_inside_each_fragment_and_has_a_pinned_actual_counterexample(self):
+        body=q.method((ROOT/q.TEMPLATE).read_bytes()).decode()
+        loop=body.index('for written < len(bytes)')
+        self.assertLess(loop,body.index('closed := c.closing || c.writeShut'))
+        self.assertLess(body.index('closed := c.closing || c.writeShut'),body.index('WriteContext('))
+        self.assertIn('return written, c.opError("write", ErrClosed)',body)
+        old=subprocess.check_output(['git','show',q.CLOSE_BASELINE+':'+q.TEMPLATE],cwd=ROOT)
+        self.assertEqual(hashlib.sha256(q.method(old)).hexdigest(),q.CLOSE_SHA)
+        self.assertNotIn(b'closed := c.closing || c.writeShut',q.method(old))
+        rows=[{'Package':'example.invalid/streamwrite','Action':'output','Output':'close-between-fragments: n=40960 error=<nil> calls=3'},
+              {'Package':'example.invalid/streamwrite','Action':'fail','Test':q.CASES[-1]},
+              {'Package':'example.invalid/streamwrite','Action':'fail'}]
+        self.assertEqual(q.observed(self.encoded(rows),True,close=True),[q.CASES[-1]])
+        with self.assertRaises(ValueError):q.observed(self.encoded(rows),False)
     def test_direct_help_works_outside_repo_without_import_path_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             result=subprocess.run([sys.executable,str(ROOT/'tools/qualify_go_write_progress.py'),'--help'],cwd=directory,env=dict(os.environ,PYTHONPATH=''),capture_output=True,timeout=15)

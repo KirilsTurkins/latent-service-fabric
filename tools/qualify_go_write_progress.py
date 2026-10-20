@@ -25,13 +25,16 @@ from tools.test_run import redact
 TEMPLATE = 'sdk/go-guest/runtime/net_stream.go.in'
 TESTS = 'tools/tests/fixtures/go_network/write-progress-test.go.txt'
 BASELINE = '955da9c7465b88541e39b043203abb92782ae26a'
+CLOSE_BASELINE = 'fb79a7ab6ea86f53baec78ee341aca075c14a2ef'
+CLOSE_SHA = '1e101f7b858125ec9ed85a57ea075722bca02b2bfc5546d2e8db5404abe09cf2'
 OLD_SHA = '73caccf7337e69c45e41806f8f22c0d192ee572e13cc150a6bb8f4d8a3e0b4da'
 CASES = ('TestCopyCrossesChunkBoundary', 'TestDirectWriteAdvancesOnlyAcceptedBytes',
     'TestErrorKeepsCumulativePrefixAndUncertaintyWithoutRetry', 'TestZeroProgressStopsWithoutSpin',
     'TestAbsoluteDeadlineDoesNotRestartForEachFragment',
     'TestSameDirectionRefusalAndSingleOwnerSurviveAllFragments',
     'TestImpossibleCountsFailClosedBeforeAnotherDispatch',
-    'TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules')
+    'TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules',
+    'TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch')
 RECIPE = (TEMPLATE, TESTS, 'tools/qualify_go_write_progress.py',
           'tools/owned_test_process.py', 'tools/build_observation.py', 'tools/test_run.py',
           '.github/workflows/go-write-progress-reference.yml')
@@ -52,7 +55,7 @@ def projected(raw: bytes) -> bytes:
     return b'package streamwrite\nimport ("context"; lsfIO "io")\n' + method(raw) + b'\n'
 
 
-def observed(raw: bytes, old: bool) -> list[str]:
+def observed(raw: bytes, old: bool, *, close: bool = False) -> list[str]:
     if not isinstance(raw, bytes) or len(raw) > 1024 * 1024:
         raise ValueError('go-write-reference-output-bound')
     passed, failed, packages, messages = [], [], [], []
@@ -78,7 +81,9 @@ def observed(raw: bytes, old: bool) -> list[str]:
         if action == 'output':
             messages.append(row.get('Output', ''))
     if old:
-        if passed or failed != [CASES[0]] or packages != ['fail'] or not any('chunk-boundary-copy: n=16384' in v for v in messages):
+        expected = CASES[-1] if close else CASES[0]
+        marker = 'close-between-fragments:' if close else 'chunk-boundary-copy: n=16384'
+        if passed or failed != [expected] or packages != ['fail'] or not any(marker in v for v in messages):
             raise ValueError('go-write-original-counterexample-required')
         return failed
     if passed != list(CASES) or failed or packages != ['pass']:
@@ -94,9 +99,13 @@ def qualify(output: Path) -> dict:
     upstream = subprocess.check_output(['git', 'show', BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
     if hashlib.sha256(method(upstream)).hexdigest() != OLD_SHA:
         raise ValueError('go-write-counterexample-preimage')
+    before_close = subprocess.check_output(['git', 'show', CLOSE_BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
+    if hashlib.sha256(method(before_close)).hexdigest() != CLOSE_SHA:
+        raise ValueError('go-write-close-counterexample-preimage')
     record = {'schemaVersion': 'latent.go.write-progress.reference.v1', 'status': 'in-progress',
         'sourceRevision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=30).decode().strip(),
         'baseline': BASELINE, 'oldMethodSha256': OLD_SHA,
+        'beforeCloseGuardBaseline': CLOSE_BASELINE, 'beforeCloseGuardMethodSha256': CLOSE_SHA,
         'currentMethodSha256': hashlib.sha256(method(before[TEMPLATE])).hexdigest(),
         'inputs': {name: {'sha256': hashlib.sha256(raw).hexdigest(), 'size': len(raw)} for name, raw in before.items()},
         'evidenceKind': 'exact-method-with-explicit-protocol-doubles',
@@ -116,14 +125,14 @@ def qualify(output: Path) -> dict:
             GOOS='linux', GOARCH='amd64', CGO_ENABLED='0', GOPROXY='off', GOSUMDB='off',
             GOMAXPROCS='2', GOCACHE=str(output / 'cache'))
         results = {}
-        for name, source in (('old', upstream), ('current', before[TEMPLATE])):
+        for name, source in (('old', upstream), ('before-close-guard', before_close), ('current', before[TEMPLATE])):
             module = output / name; module.mkdir()
             (module / 'go.mod').write_bytes(b'module example.invalid/streamwrite\n\ngo 1.27.2\n')
             (module / 'write.go').write_bytes(projected(source))
             (module / 'write_test.go').write_bytes(before[TESTS])
             args = [str(compiler), 'test', '-json', '-timeout=10s', '-count=1']
-            if name == 'old':
-                args += ['-run', '^' + CASES[0] + '$']
+            if name != 'current':
+                args += ['-run', '^' + (CASES[-1] if name == 'before-close-guard' else CASES[0]) + '$']
             args.append('./...')
             def retain(result):
                 if result is not None:
@@ -136,9 +145,9 @@ def qualify(output: Path) -> dict:
                 retain(failure.result)
                 raise
             retain(result)
-            if result.returncode != (1 if name == 'old' else 0):
+            if result.returncode != (0 if name == 'current' else 1):
                 raise ValueError('go-write-reference-unexpected-command-outcome:' + name)
-            results[name] = observed(result.output, name == 'old')
+            results[name] = observed(result.output, name != 'current', close=name == 'before-close-guard')
         if before != {name: (ROOT / name).read_bytes() for name in RECIPE} or file_identity(compiler, 'go') != identity:
             raise ValueError('go-write-reference-input-changed')
         record.update(status='passed', sourceUnchanged=True, compiler=identity, compilerVersion=version, outcomes=results)

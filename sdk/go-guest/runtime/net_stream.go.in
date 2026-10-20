@@ -267,7 +267,11 @@ func (c *lsfStreamConn) Write(bytes []byte) (int, error) {
 		// Rearming an active direction is still refused by setDeadline.
 		c.mu.Lock()
 		deadline := c.writeDeadline
+		closed := c.closing || c.writeShut
 		c.mu.Unlock()
+		if closed {
+			return written, c.opError("write", ErrClosed)
+		}
 		timeout, err := lsfStreamTimeout(deadline)
 		if err != nil {
 			return written, c.opError("write", err)

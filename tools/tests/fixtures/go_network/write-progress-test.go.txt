@@ -249,3 +249,22 @@ func TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules(t *testing.T) {
 	}
 	heldOnce(t, c)
 }
+func TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch(t *testing.T) {
+	for _, half := range []bool{false, true} {
+		c := conn()
+		c.stream.after = func(_ int) {
+			c.mu.Lock()
+			if half {
+				c.writeShut = true
+			} else {
+				c.closing = true
+			}
+			c.mu.Unlock()
+		}
+		n, err := c.Write(payload(40 * 1024))
+		if n != 16384 || !errors.Is(err, ErrClosed) || len(c.stream.calls) != 1 {
+			t.Fatalf("close-between-fragments: n=%d error=%v calls=%d", n, err, len(c.stream.calls))
+		}
+		heldOnce(t, c)
+	}
+}

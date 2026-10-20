@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   reference:
-    name: Exact production Write old counterexample and eight bounded controls
+    name: Exact production Write two old counterexamples and nine bounded controls
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
