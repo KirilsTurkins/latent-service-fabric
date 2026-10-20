@@ -16,7 +16,7 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.java_guest.bindings import generate
 from tools.java_guest.surface import surface as wit_surface
 from tools.java_guest.sdk import install as install_sdk
-from tools.java_guest import c_failure_context
+from tools.java_guest import c_failure_context, coroutine_patch
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
@@ -304,6 +304,7 @@ class Compiler:
                 target = project / "src/main/resources" / name
                 stage_sdk_service(target, name, data)
         overrides = []
+        coroutine_profile = None
         if fiber_io_profile:
             original = self.sdk / 'fibers/dev/latent/guest/runtime/HostCalls.java'
             replacement = self.sdk / 'fibers/io/dev/latent/guest/runtime/HostCalls.java'
@@ -387,7 +388,11 @@ class Compiler:
                 "sourceOriginDigest": digest(canonical(origins)),
                 "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
             })
+            coroutine_profile = coroutine_patch.stage(self, project, destination)
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
+        if coroutine_profile is not None:
+            coroutine_profile = coroutine_patch.loaded(project, coroutine_profile, compiler=self)
+            write_json(destination / 'coroutine-compiler-profile.json', coroutine_profile)
         retain = source_module(self.sdk / "tools/dependencies.py").retain
         retained = retain(self.dependency_cache, project, destination, False)
         generated = project / "build/teavm-c/c"
@@ -416,6 +421,8 @@ class Compiler:
         if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
         details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
                    "semanticSurfaceDigest": digest(canonical(actual))}
+        if coroutine_profile is not None:
+            details['coroutineCompiler'] = coroutine_profile
         if resource_profile is not None:
             resources.recheck(application_resources, resource_profile)
             details["immutableResources"] = resource_profile

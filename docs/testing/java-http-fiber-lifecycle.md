@@ -55,6 +55,17 @@ compilation. Its fixed branch PR trigger avoids requiring a new workflow name
 on the default branch. Source/project/peer controls run locally without a
 component; the signed hosted result is **pending**.
 
+The first real offline build exposed two invalid pointer-to-integer loop copies
+in pinned TeaVM 0.15 output. Bounded generated-C declarations and every use of
+the failed variables were retained before temporary-source cleanup. The pinned
+coroutine splitter removes internal copied-block phi inputs after remapping
+their source IDs. The captured compiler now corrects that predicate in a private
+core JAR, preserves every unrelated JAR entry and the immutable checked cache,
+and records the actually loaded compiler class source. Real old/corrected IR
+controls precede component compilation. No C cast, ignored warning, altered
+fixture or optimization change substitutes for a valid loop. Hosted compilation
+and the signed lifecycle result remain pending until that campaign passes.
+
 This advances the finite HTTP pending/sibling/drain/cancellation surface of
 #688 and #741 only. It does not establish HTTPS, nonzero connect/read phase
 timeouts or Webb's default phase-timeout behavior, all scheduler fairness/races,

@@ -459,3 +459,152 @@ class JavaPublicCFailureContext(unittest.TestCase):
                 context.run(compiler, root/'missing-generated', context.FIXTURE_SOURCES, '-O2')
             self.assertIs(caught.exception, failure)
             self.assertEqual(compiler.run.call_count, 2)
+
+
+class PinnedCoroutinePhiRepair(unittest.TestCase):
+    def test_exact_pinned_source_repairs_only_copied_phi_filter(self):
+        from tools.java_guest import coroutine_patch as patch
+        source = read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/CoroutineTransformation.java')
+        corrected = patch.corrected_source(source)
+        self.assertEqual(corrected, source.replace(patch.DOMAIN.encode(), patch.COPIED_DOMAIN.encode())
+            .replace(patch.BEFORE.encode(), patch.AFTER.encode()))
+        self.assertIn(b'Licensed under the Apache License, Version 2.0', corrected)
+        self.assertIn(b'phi.getIncomings().removeIf(incoming -> domainSet.contains(incoming.getSource().getIndex()));', corrected)
+        for changed in (source+b' ', source.replace(b'0;', b'1;', 1), b'private source'):
+            with self.subTest(size=len(changed)), self.assertRaisesRegex(ValueError, 'unreviewed-teavm-coroutine-source'):
+                patch.corrected_source(changed)
+
+    def test_private_jar_replaces_exact_compiled_closure_and_retains_every_other_entry(self):
+        import zipfile
+        from tools.java_guest import coroutine_patch as patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary); original=root/'original.jar'; classes=root/'classes'; classes.mkdir()
+            rows={name:b'old-'+name.encode() for name in patch.PATCH_CLASSES}
+            rows.update({'META-INF/MANIFEST.MF':b'Manifest-Version: 1.0\n', 'unrelated/Class.class':b'unchanged'})
+            with zipfile.ZipFile(original,'w') as jar:
+                for name,raw in rows.items():jar.writestr(name,raw)
+            original_bytes=original.read_bytes()
+            for name in patch.PATCH_CLASSES|{patch.CONTROL}:
+                path=classes/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'\xca\xfe\xba\xbecompiled-'+name.encode())
+            target=root/'replacement.jar'; receipt=patch.replace_jar(original,classes,target)
+            self.assertEqual(original.read_bytes(),original_bytes)
+            self.assertEqual(receipt['unchangedEntries'],2)
+            self.assertEqual(set(receipt['replacedClasses']),patch.PATCH_CLASSES)
+            observed=patch.jar_entries(target)
+            for name,raw in rows.items():
+                self.assertEqual(observed[name],(classes/name).read_bytes() if name in patch.PATCH_CLASSES else raw)
+            (classes/'unexpected.class').write_bytes(b'not selected')
+            with self.assertRaisesRegex(ValueError,'compiled-closure'):
+                patch.replace_jar(original,classes,root/'rejected.jar')
+            self.assertFalse((root/'rejected.jar').exists())
+
+    def test_jar_duplicates_unsafe_members_and_missing_class_refuse(self):
+        import warnings,zipfile
+        from tools.java_guest import coroutine_patch as patch
+        for invalid in ('duplicate','escape','missing'):
+            with self.subTest(invalid=invalid), tempfile.TemporaryDirectory() as temporary:
+                path=Path(temporary)/'core.jar'
+                with warnings.catch_warnings(), zipfile.ZipFile(path,'w') as jar:
+                    warnings.simplefilter('ignore')
+                    for name in sorted(patch.PATCH_CLASSES):jar.writestr(name,b'original')
+                    if invalid=='duplicate':jar.writestr(sorted(patch.PATCH_CLASSES)[0],b'other')
+                    elif invalid=='escape':jar.writestr('../outside',b'outside')
+                if invalid=='missing':
+                    with zipfile.ZipFile(path,'w') as jar:jar.writestr('some.class',b'other')
+                with self.assertRaises(ValueError):patch.jar_entries(path)
+
+    def test_loaded_class_receipt_binds_actual_private_jar_and_refuses_mutation(self):
+        import hashlib,json
+        from tools.java_guest import coroutine_patch as patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);folder=root/'compiler-patch';folder.mkdir()
+            jar=folder/'teavm-core-patched.jar';jar.write_bytes(b'owned bytes')
+            sha=hashlib.sha256(jar.read_bytes()).hexdigest()
+            receipt={'replacementJarSha256':sha}
+            actual={'schemaVersion':'latent.java.coroutine-compiler-load.v1',
+                'selectedOwnedReplacement':True,'replacementJarSha256':sha}
+            marker=folder/'loaded.json';marker.write_text(json.dumps(actual))
+            self.assertEqual(patch.loaded(root,receipt)['loadedCompiler'],actual)
+            for changed in ({'selectedOwnedReplacement':False},{'selectedOwnedReplacement':1},
+                            {'replacementJarSha256':'0'*64},
+                            {'schemaVersion':'private unknown'},{'extra':'private path'}):
+                marker.write_text(json.dumps({**actual,**changed}))
+                with self.assertRaisesRegex(ValueError,'loaded-receipt-mismatch'):patch.loaded(root,receipt)
+            marker.write_text(json.dumps(actual));jar.write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError,'used-jar-mutated'):patch.loaded(root,receipt)
+
+    def test_hosted_real_ir_control_requires_old_defect_and_corrected_loop_values(self):
+        text=(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/Check.java').read_text()
+        for required in ('new Program()', 'new Phi()', 'GraphUtils.isIrreducible(',
+                'transform.new SplittingBackend().split(', 'sources(headerPhi)',
+                'Set.of(remaining.getIndex(), copies[1])', 'Set.of(copies[0])',
+                'copiedTail.getIncomings().get(0).getValue() != current',
+                'coroutine-control-unreviewed-original', 'coroutine-control-copied-loop-input-lost'):
+            self.assertIn(required,text)
+        from tools.java_guest import coroutine_patch as patch
+        self.assertEqual(patch.PATCH_CLASSES,frozenset(patch.CLASS_ROOT+name for name in (
+            'CoroutineTransformation.class','CoroutineTransformation$1.class',
+            'CoroutineTransformation$SplittingBackend.class')))
+
+
+    def test_real_pinned_inventory_and_process_boundary_stage_private_patch_only(self):
+        import hashlib,json,zipfile
+        from tools.java_guest import coroutine_patch as patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);sdk=root/'sdk';(sdk/'tools').mkdir(parents=True)
+            (sdk/'tools/dependencies.py').write_bytes(read_file(campaign.ROOT/'sdk/java-guest/tools/dependencies.py'))
+            sources=sdk/'fibers/compiler-patch';sources.mkdir(parents=True)
+            for name in ('CoroutineTransformation.java','Compile.java','Check.java'):
+                (sources/name).write_bytes(read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch'/name))
+            cache=root/'files-2.1';base=cache/'org.teavm/teavm-core/0.15.0/pinned';base.mkdir(parents=True)
+            core=base/'teavm-core-0.15.0.jar'
+            with zipfile.ZipFile(core,'w') as jar:
+                for name in sorted(patch.PATCH_CLASSES):jar.writestr(name,b'original class')
+                jar.writestr('unchanged.class',b'original unrelated')
+            raw=core.read_bytes();sha=hashlib.sha256(raw).hexdigest()
+            project=root/'project';(project/'gradle').mkdir(parents=True)
+            (project/'dependencies.lock.json').write_text(json.dumps({'schemaVersion':1,
+                'maven':'https://repo.maven.apache.org/maven2/','artifacts':[{
+                'path':'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar',
+                'sha256':sha,'size':len(raw),'platform':'any'}]}))
+            (project/'gradle/verification-metadata.xml').write_text(
+                '<verification-metadata xmlns="https://schema.gradle.org/dependency-verification">'
+                '<configuration><verify-metadata>true</verify-metadata><verify-signatures>false</verify-signatures></configuration>'
+                '<components><component group="org.teavm" name="teavm-core" version="0.15.0">'
+                '<artifact name="teavm-core-0.15.0.jar"><sha256 value="'+sha+'"/></artifact>'
+                '</component></components></verification-metadata>')
+            original_script=read_file(campaign.ROOT/'sdk/java-guest/compiler.gradle')
+            (project/'build.gradle').write_bytes(original_script)
+            calls=[]
+            def run(stage,tool,*args):
+                calls.append((stage,tool,args))
+                self.assertEqual(tool,'java')
+                if stage=='java-coroutine-patch':
+                    classes=Path(args[3]);classes.mkdir()
+                    for name in patch.PATCH_CLASSES|{patch.CONTROL}:
+                        path=classes/name;path.parent.mkdir(parents=True,exist_ok=True)
+                        path.write_bytes(b'\xca\xfe\xba\xbecompiled')
+                    return ''
+                mode='original' if stage=='java-coroutine-original-control' else 'corrected'
+                self.assertEqual(args[-1],mode)
+                self.assertEqual(args[0],'-cp')
+                expected=core if mode=='original' else project/'compiler-patch/teavm-core-patched.jar'
+                self.assertTrue(args[1].startswith(str(expected)))
+                return json.dumps({'schemaVersion':'latent.java.coroutine-phi-control.v1','mode':mode,'passed':True})
+            compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run)
+            receipt=patch.stage(compiler,project,root)
+            self.assertEqual([call[0] for call in calls],['java-coroutine-patch',
+                'java-coroutine-original-control','java-coroutine-corrected-control'])
+            self.assertEqual(core.read_bytes(),raw)
+            self.assertEqual(receipt['checkedCompilerJars'],[{'coordinate':
+                'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar','sha256':sha,'bytes':len(raw)}])
+            script=(project/'build.gradle').read_text()
+            for guard in ('org.teavm.backend.c.CTarget.class.classLoader','actual.protectionDomain.codeSource',
+                    'coroutine-patch-loaded-class-mismatch','coroutine-patch-loaded-jar-mutated'):
+                self.assertIn(guard,script)
+            marker=project/'compiler-patch/loaded.json'
+            marker.write_text(json.dumps({'schemaVersion':'latent.java.coroutine-compiler-load.v1',
+                'selectedOwnedReplacement':True,'replacementJarSha256':receipt['replacementJarSha256']}))
+            patch.loaded(project,receipt,compiler=compiler)
+            core.write_bytes(raw+b'changed')
+            with self.assertRaises(ValueError):patch.loaded(project,receipt,compiler=compiler)
