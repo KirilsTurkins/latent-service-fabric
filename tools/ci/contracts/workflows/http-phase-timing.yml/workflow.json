@@ -1,0 +1,58 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "${{ github.workflow }}-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "HTTP phase timing conformance",
+    "on": {
+      "pull_request": {
+        "paths": [
+          ".github/workflows/http-phase-timing.yml",
+          "crates/latent-capabilities/src/broker/**",
+          "crates/latent-component-bindings/**",
+          "crates/latent-core/src/host_profile.rs",
+          "crates/latent-http/**",
+          "crates/latent-packaging/src/semantics/host/**",
+          "crates/latent-packaging/src/semantics/host.rs",
+          "crates/latent-policy/src/capability/**",
+          "crates/latent-policy/src/capability.rs",
+          "crates/latent-wasmtime/**",
+          "apps/latentd/src/config/**",
+          "apps/latentd/src/standalone/providers/runtime.rs",
+          "wit/platform/http-phases/**",
+          "Cargo.toml",
+          "Cargo.lock",
+          "tools/ci/suites.json",
+          "tools/ci/contracts/workflows/http-phase-timing.yml/**"
+        ]
+      },
+      "push": {
+        "branches": [
+          "feat/java-http-phase-profile-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "phase-timing"
+  ],
+  "reviewReason": "Add focused opt-in HTTP V7 real transport and canonical component phase controls; preserve all prior workflow and test obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/http-phase-timing.yml"
+}

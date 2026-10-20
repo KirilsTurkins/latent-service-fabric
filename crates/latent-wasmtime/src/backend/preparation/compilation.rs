@@ -224,6 +224,7 @@ impl super::super::PreparationContext {
                 local_services: self.local_services().is_some(),
                 http: self.http().is_some(),
                 streaming_http: self.streaming_http().is_some(),
+                phase_http: self.phase_http().is_some(),
                 outbound_streams: self.outbound_streams().is_some(),
                 blobs: self.blobs().is_some(),
                 secrets: self.secrets().is_some(),
@@ -282,6 +283,11 @@ impl super::super::PreparationContext {
             .manifest
             .imports
             .iter()
+            .filter(|import| {
+                !surface.phase_type_owner
+                    || import.contract.0
+                        != latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY
+            })
             .map(|import| import.contract.clone())
             .collect();
         // InstancePre now owns the image. Only infallible moves remain before

@@ -2,7 +2,7 @@
 use crate::streaming::wire::RequestBody;
 use crate::{destination::canonical, dns::Answers, HttpDestination, HttpError};
 use latent_capabilities::broker::{
-    io::IoMemory,
+    io::{IoBuffer, IoMemory},
     pools::{
         ConnectionReservation, PoolCall, PooledConnection, ProviderClient, ProviderMetadata,
         ProviderPools,
@@ -14,7 +14,7 @@ use std::{
     pin::Pin,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     task::{Context, Poll},
 };
@@ -44,7 +44,32 @@ pub(crate) struct HttpConnection {
     pub peer: SocketAddr,
     pub wrote: Arc<AtomicBool>,
     pub input: Option<Arc<IoMemory>>,
+    reason: Option<crate::reason::Capture>,
     _memory: ProviderMetadata,
+}
+pub(crate) struct ResponseSettings {
+    pub maximum_headers: usize,
+    pub reason: Option<IoBuffer>,
+}
+impl HttpConnection {
+    pub fn take_reason(
+        &mut self,
+        version: http::Version,
+        status: u16,
+    ) -> Result<Option<IoBuffer>, HttpError> {
+        let reason = self
+            .reason
+            .as_ref()
+            .ok_or(HttpError::ConnectionFailed)?
+            .lock()
+            .map_err(|_| HttpError::ConnectionFailed)?
+            .take()
+            .ok_or(HttpError::ConnectionFailed)?;
+        if !crate::reason::supports_version(version) {
+            return Ok(None);
+        }
+        reason.finish(status).map(Some)
+    }
 }
 pub(crate) struct OwnedRequestBody {
     pub bytes: Vec<u8>,
@@ -85,11 +110,63 @@ pub(crate) async fn connect_for(
     tls: &Arc<rustls::ClientConfig>,
     maximum_headers: usize,
 ) -> Result<PooledConnection<Network>, HttpError> {
+    connect_for_settings(
+        pools,
+        client,
+        scope,
+        destination,
+        answers,
+        tls,
+        ResponseSettings {
+            maximum_headers,
+            reason: None,
+        },
+    )
+    .await
+}
+pub(crate) async fn connect_with_reason(
+    pools: &ProviderPools,
+    client: &Arc<ProviderClient<Network>>,
+    call: &PoolCall,
+    destination: &HttpDestination,
+    answers: &Answers,
+    tls: &Arc<rustls::ClientConfig>,
+    settings: ResponseSettings,
+) -> Result<PooledConnection<Network>, HttpError> {
+    connect_for_settings(
+        pools,
+        client,
+        crate::protocol::ProtocolScope::Invocation(call),
+        destination,
+        answers,
+        tls,
+        settings,
+    )
+    .await
+}
+async fn connect_for_settings(
+    pools: &ProviderPools,
+    client: &Arc<ProviderClient<Network>>,
+    scope: crate::protocol::ProtocolScope<'_>,
+    destination: &HttpDestination,
+    answers: &Answers,
+    tls: &Arc<rustls::ClientConfig>,
+    mut settings: ResponseSettings,
+) -> Result<PooledConnection<Network>, HttpError> {
     let reused = checkout_for(client, scope).await?;
     if let Some(mut connection) = reused {
-        let valid = matches!(connection.resource(), Network::Http(http) if http.driver.is_some() && answers.contains(canonical(http.peer.ip())) && destination.addresses.permits(http.peer.ip()));
-        if valid {
-            return Ok(connection);
+        if let Network::Http(http) = connection.resource() {
+            let valid = http.driver.is_some()
+                && answers.contains(canonical(http.peer.ip()))
+                && destination.addresses.permits(http.peer.ip())
+                && (settings.reason.is_none() || http.reason.is_some());
+            if valid {
+                if let Some(capture) = &http.reason {
+                    *capture.lock().map_err(|_| HttpError::ConnectionFailed)? =
+                        settings.reason.take().map(crate::reason::Reason::new);
+                }
+                return Ok(connection);
+            }
         }
         drop(connection);
     }
@@ -152,11 +229,18 @@ pub(crate) async fn connect_for(
         Stream::Tcp(stream)
     };
     let wrote = Arc::new(AtomicBool::new(false));
+    // Legacy profiles allocate no observer. A pooled phase connection keeps
+    // only the empty slot after its response; the activation buffer moves out.
+    let reason = settings
+        .reason
+        .take()
+        .map(|buffer| Arc::new(Mutex::new(Some(crate::reason::Reason::new(buffer)))));
     let tracked = TrackedStream {
         stream,
         wrote: Arc::clone(&wrote),
+        reason: reason.clone(),
     };
-    let builder = connection_builder(maximum_headers);
+    let builder = connection_builder(settings.maximum_headers);
     let (sender, driver) = scope
         .wait(builder.handshake(hyper_util::rt::TokioIo::new(tracked)))
         .await?
@@ -168,6 +252,7 @@ pub(crate) async fn connect_for(
             peer,
             wrote,
             input: None,
+            reason,
             _memory: memory,
         })))
         .map_err(Into::into)
@@ -246,6 +331,7 @@ pub(crate) enum Stream {
 pub(crate) struct TrackedStream {
     stream: Stream,
     wrote: Arc<AtomicBool>,
+    reason: Option<crate::reason::Capture>,
 }
 impl AsyncRead for TrackedStream {
     fn poll_read(
@@ -253,10 +339,22 @@ impl AsyncRead for TrackedStream {
         cx: &mut Context<'_>,
         buffer: &mut ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
-        match &mut self.get_mut().stream {
+        let this = self.get_mut();
+        let before = buffer.filled().len();
+        let result = match &mut this.stream {
             Stream::Tcp(stream) => Pin::new(stream).poll_read(cx, buffer),
             Stream::Tls(stream) => Pin::new(stream).poll_read(cx, buffer),
+        };
+        if matches!(result, Poll::Ready(Ok(()))) {
+            if let Some(capture) = &this.reason {
+                if let Ok(mut capture) = capture.lock() {
+                    if let Some(reason) = capture.as_mut() {
+                        reason.observe(&buffer.filled()[before..]);
+                    }
+                }
+            }
         }
+        result
     }
 }
 impl AsyncWrite for TrackedStream {

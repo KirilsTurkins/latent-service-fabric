@@ -42,6 +42,11 @@ pub mod host {
         include!(concat!(env!("OUT_DIR"), "/streaming_host.rs"));
     }
 
+    /// Explicit phase operations over the original affine HTTP resources.
+    pub mod http_phases {
+        include!(concat!(env!("OUT_DIR"), "/http_phase_host.rs"));
+    }
+
     /// Bounded immutable-blob resources and explicit storage outcomes.
     pub mod blob {
         include!(concat!(env!("OUT_DIR"), "/blob_host.rs"));

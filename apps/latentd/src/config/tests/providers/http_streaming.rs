@@ -185,3 +185,88 @@ fn protected_configuration_rejects_limits_scope_and_paths_before_side_effects() 
         .derive()
         .is_err());
 }
+
+#[test]
+fn phase_selection_is_explicit_strict_and_never_aliases_the_original_contract() {
+    let original = document();
+    let decode =
+        |value: &Value| super::super::input::decode(&serde_json::to_vec(value).unwrap()).unwrap();
+    assert!(
+        !decode(&original)
+            .providers
+            .as_ref()
+            .unwrap()
+            .http_streaming
+            .as_ref()
+            .unwrap()
+            .phase_timing
+    );
+    let mut selected = original.clone();
+    selected["providers"]["httpStreaming"]["phaseTiming"] = true.into();
+    // The exact old binding cannot silently acquire new interface authority.
+    assert!(decode(&selected)
+        .providers
+        .as_ref()
+        .unwrap()
+        .definitions()
+        .is_err());
+    selected["providers"]["bindings"][0]["contract"] = "latent:http/phase-timing@0.4.0".into();
+    assert_eq!(
+        decode(&selected)
+            .providers
+            .as_ref()
+            .unwrap()
+            .definitions()
+            .unwrap()
+            .len(),
+        1
+    );
+    selected["providers"]["httpStreaming"]["phaseTiming"] = false.into();
+    assert!(decode(&selected)
+        .providers
+        .as_ref()
+        .unwrap()
+        .definitions()
+        .is_err());
+    for invalid in [Value::Null, json!(1), json!("true"), json!({})] {
+        selected["providers"]["httpStreaming"]["phaseTiming"] = invalid;
+        assert!(super::super::input::decode(&serde_json::to_vec(&selected).unwrap()).is_err());
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects() {
+    use std::os::unix::fs::PermissionsExt;
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let path = directory.path().join("node.json");
+    for phase in [false, true] {
+        let mut selected = document();
+        selected["providers"]["httpStreaming"]["phaseTiming"] = phase.into();
+        selected["providers"]["bindings"][0]["contract"] = if phase {
+            "latent:http/phase-timing@0.4.0"
+        } else {
+            "latent:http/streaming@0.3.0"
+        }
+        .into();
+        std::fs::write(&path, serde_json::to_vec(&selected).unwrap()).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let settings = super::super::NodeConfig::load(&path)
+            .unwrap()
+            .derive()
+            .unwrap();
+        assert_eq!(settings.wasmtime.http_phase_timing, phase);
+        assert!(!settings.wasmtime.owned_native_threads);
+        let installed = settings
+            .providers
+            .as_ref()
+            .unwrap()
+            .http_streaming
+            .as_ref()
+            .unwrap();
+        assert_eq!(installed.limits.maximum_chunk_bytes, 1024);
+        assert_eq!(installed.limits.maximum_outstanding_chunks, 2);
+        assert!(!directory.path().join("data").exists());
+    }
+}

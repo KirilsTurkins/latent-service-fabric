@@ -46,6 +46,11 @@ pub(super) fn wasmtime(
         maximum_preparation_document_bytes: preparation_documents(config)?,
         // Capture remains positive even if the effective grant denies logging.
         invocation_log_maximum_bytes: 16 * 1024,
+        http_phase_timing: config
+            .providers
+            .as_ref()
+            .and_then(|providers| providers.http_streaming.as_ref())
+            .is_some_and(|http| http.phase_timing),
         activation_runtime: config
             .providers
             .as_ref()

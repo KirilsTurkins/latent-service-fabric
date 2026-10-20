@@ -17,6 +17,7 @@ use wasmtime::{
     AsContextMut,
 };
 mod body;
+pub(crate) mod phases;
 pub(super) mod table;
 mod upload;
 use table::{Kind, Value};
@@ -35,6 +36,12 @@ pub(crate) fn install(
     upload::abort_upload(&mut host)?;
     body::abort_body(&mut host)?;
     Ok(())
+}
+/// Expose only the nominal v0.3 resource owner required by a v0.4 WIT `use`.
+/// No legacy operation or provider authority is installed by this type import.
+pub(crate) fn install_resource_owner(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
+    let mut owner = linker.instance(STREAMING_HTTP_CAPABILITY)?;
+    resources(&mut owner)
 }
 pub(super) fn resources(
     host: &mut wasmtime::component::LinkerInstance<'_, HostState>,
