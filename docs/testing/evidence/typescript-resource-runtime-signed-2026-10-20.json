@@ -1,0 +1,232 @@
+{
+  "activeProviderCountersPerSample": 18,
+  "artifact": {
+    "bytes": 8704501,
+    "id": 12274960586,
+    "members": 312,
+    "sha256": "sha256:d5383b7b3c70bd4f1f5143da4e4d551688d83da003453c850631346467f2fd99"
+  },
+  "artifactUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39439210885/artifacts/12274960586",
+  "cleanNodeShutdown": true,
+  "compilerRecipeRowsCheckedAgainstGit": 111,
+  "component": {
+    "bytes": 12159053,
+    "sha256": "sha256:05164af2f1cd91ddd21bd3c4796c9c9986eb329a6561cc2c901be1b12520c141"
+  },
+  "credentialIsolation": true,
+  "crossTenantPublicationsIndependent": true,
+  "fullTicketQualification": false,
+  "historicalProducer": {
+    "materialsCheckedAgainstGit": 114,
+    "nativeBuildRepeated": false,
+    "products": {
+      "examples/capsule_authoring": {
+        "bytes": 24005328,
+        "sha256": "sha256:6e9bc1afdd65e41adf6a954ec8dc8045e9777017a54c287066ae533a22d410b7"
+      },
+      "examples/capsule_contracts": {
+        "bytes": 7239064,
+        "sha256": "sha256:6a2e8fe3a02586092f0a59760106edc8b7613eae1e8286baa769c04a755e0152"
+      },
+      "examples/package": {
+        "bytes": 17739624,
+        "sha256": "sha256:a4d61582a2afc62ffe7bda584741d8782d1986da90db5f6464c980495bdc00f7"
+      },
+      "latent": {
+        "bytes": 68817496,
+        "sha256": "sha256:09115a0fade44cbdb07b24e620113b4d60df024699637debf6abaf71a46c22ef"
+      },
+      "latentd": {
+        "bytes": 185124376,
+        "sha256": "sha256:a3eea6329a38bcb6039aad1ad8f33f43bc5e358a28778d6b0d7093ac1b67e33c"
+      }
+    },
+    "source": "77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
+  },
+  "job": 118684299853,
+  "lateWakeAttemptObserved": false,
+  "nativeThreadsQualified": false,
+  "nodeReceipt": {
+    "bytes": 273164,
+    "sha256": "sha256:07fce37e549e32581cfe769f39fd3b5f07bdc892f7f2516689078fcdcda53405"
+  },
+  "outcomes": [
+    {
+      "decoded": [
+        "resource-runtime|parallel=first:2aff80410d0a+second:00ff80410d0a|callbacks=2|fresh=1"
+      ],
+      "error": null,
+      "known": true,
+      "mode": "parallel",
+      "reaped": true,
+      "tenant": "examples"
+    },
+    {
+      "decoded": [
+        "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+      ],
+      "error": null,
+      "known": true,
+      "mode": "fresh",
+      "reaped": true,
+      "tenant": "foreign"
+    },
+    {
+      "decoded": [
+        "resource-runtime|clear=00ff80410d0a|empty=0|fresh=1"
+      ],
+      "error": null,
+      "known": true,
+      "mode": "clear",
+      "reaped": true,
+      "tenant": "examples"
+    },
+    {
+      "decoded": null,
+      "error": "guest-trap",
+      "known": true,
+      "mode": "trap",
+      "reaped": true,
+      "tenant": "examples"
+    },
+    {
+      "decoded": [
+        "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+      ],
+      "error": null,
+      "known": true,
+      "mode": "fresh",
+      "reaped": true,
+      "tenant": "foreign"
+    },
+    {
+      "decoded": null,
+      "error": "cancelled",
+      "known": true,
+      "mode": "cancel",
+      "reaped": true,
+      "tenant": "examples"
+    },
+    {
+      "decoded": [
+        "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+      ],
+      "error": null,
+      "known": true,
+      "mode": "fresh",
+      "reaped": true,
+      "tenant": "foreign"
+    },
+    {
+      "decoded": null,
+      "error": "deadline-exceeded",
+      "known": true,
+      "mode": "deadline",
+      "reaped": true,
+      "tenant": "examples"
+    },
+    {
+      "decoded": [
+        "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+      ],
+      "error": null,
+      "known": true,
+      "mode": "fresh",
+      "reaped": true,
+      "tenant": "foreign"
+    },
+    {
+      "decoded": null,
+      "error": "guest-trap",
+      "known": true,
+      "mode": "callback-error",
+      "reaped": true,
+      "tenant": "foreign"
+    },
+    {
+      "decoded": [
+        "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+      ],
+      "error": null,
+      "known": true,
+      "mode": "fresh",
+      "reaped": true,
+      "tenant": "examples"
+    }
+  ],
+  "pending": [
+    {
+      "auditDroppedObservations": [
+        1155
+      ],
+      "auditReadRefusal": null,
+      "mode": "cancel",
+      "positivePair": [
+        {
+          "event": "start-accepted",
+          "mode": "pending",
+          "sequence": 1,
+          "tasks": 4,
+          "timers": 1,
+          "waits": 0
+        },
+        {
+          "event": "next-entered",
+          "mode": "pending",
+          "sequence": 2,
+          "tasks": 4,
+          "timers": 1,
+          "waits": 1
+        }
+      ]
+    },
+    {
+      "auditDroppedObservations": null,
+      "auditReadRefusal": {
+        "barrierEvidence": false,
+        "kind": "refused-observation",
+        "operation": "audit query",
+        "outcomeKnown": true,
+        "publicCode": "resource-exhausted",
+        "requestDispatched": true,
+        "retryable": false
+      },
+      "mode": "deadline",
+      "positivePair": [
+        {
+          "event": "start-accepted",
+          "mode": "drain",
+          "sequence": 3,
+          "tasks": 4,
+          "timers": 1,
+          "waits": 0
+        },
+        {
+          "event": "next-entered",
+          "mode": "drain",
+          "sequence": 4,
+          "tasks": 4,
+          "timers": 1,
+          "waits": 1
+        }
+      ]
+    }
+  ],
+  "pendingAsyncFlushQualified": false,
+  "physicalSamples": 16,
+  "qualificationReceipt": {
+    "bytes": 13973,
+    "sha256": "sha256:a19abe47b4c1b3f0204d47ba3dcdc282bfe9c786ceb5d11116b3c9423116fa10"
+  },
+  "recordedHelpersCheckedAgainstGit": 27,
+  "run": 39439210885,
+  "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39439210885/job/118684299853",
+  "runtimeGrantDenials": 2,
+  "schemaVersion": "latent.sdk.typescript-resource-runtime-observation.v1",
+  "source": "00deb2a75f57ebeeeaa501f2c846c894245420ce",
+  "sourceAttribution": "Actual execution is frozen00deb; subsequent development integration and CI registry/documentation edits are not a new native or guest execution.",
+  "status": "passed",
+  "totalKnownAndReaped": 13,
+  "zeroActiveProviderSamples": 13,
+  "zeroContactPeerReaped": true
+}
