@@ -53,3 +53,13 @@ The source and real-wire reference controls pass. Signed execution is pending;
 no whole #691/#745 criterion is credited to preparing this programme. It supplies
 no Fetch connect/read timeout extension, TLS/HTTP2 reason fabrication or new
 stream grant.
+
+Normal package compatibility now selects and captures the frozen V7 manifest
+from the authoritative declared phase interface, while legacy declarations keep
+their original profiles. Phase HTTP combined with transactional state refuses
+until a combined profile is qualified. This supplies no provider or grant.
+The first emitted component at `1e2bf27881` compiled successfully but its old
+selector inspected the phase import under V5 and refused before packaging.
+That failed run remains retained; re-inspection of its exact component/graph
+under the declared V7 profile has no link blocker, and actual signed execution
+still requires the focused lane.

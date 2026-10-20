@@ -18,6 +18,41 @@ from tools.typescript_guest.project import validate
 
 
 class PhaseExecutionTests(unittest.TestCase):
+    def test_declared_phase_profile_captures_its_manifest_without_changing_legacy_or_transaction_authority(self):
+        from tools import guest_compatibility_build as compatibility
+        from tools.dev_workflow.common import DevError
+        from tools.rust_capsule_project import inventory, read_file
+
+        phase = {'imports': [fixture.HTTP, original.ACTIVATION]}
+        self.assertEqual(compatibility.declared_host_abi(phase), 'lsf-host-abi-phase3-v7')
+        self.assertEqual(compatibility.declared_host_abi({'imports': {fixture.HTTP: {}}}),
+                         'lsf-host-abi-phase3-v7')
+        for imports, expected in (([], 'lsf-host-abi-phase3-v4'),
+                ([original.HTTP], 'lsf-host-abi-phase3-v4'),
+                ([original.ACTIVATION], 'lsf-host-abi-phase3-v5'),
+                (['latent:http/phase-timing@0.5.0', original.ACTIVATION], 'lsf-host-abi-phase3-v5'),
+                (['latent:state/key-value@0.2.0'], 'lsf-host-abi-phase4-v1')):
+            self.assertEqual(compatibility.declared_host_abi({'imports': imports}), expected)
+        for transaction in compatibility.TRANSACTION_INTERFACES:
+            with self.assertRaisesRegex(DevError, 'phase-transaction-profile-unsupported'):
+                compatibility.declared_host_abi({'imports': [fixture.HTTP, transaction]})
+        original_files = {name: read_file(compatibility.ROOT/name) for name in compatibility.RECIPE}
+        original_record = inventory(original_files)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary)
+            captured = dict(original_files)
+            updated = compatibility.capture_host_recipe(path, captured, original_record, phase)
+            selected = 'wit/host-abi-phase3-v7.json'
+            self.assertEqual(set(captured)-set(original_files), {selected})
+            self.assertTrue(all(captured[name] == raw for name, raw in original_files.items()))
+            self.assertEqual(captured[selected], read_file(compatibility.ROOT/selected))
+            self.assertEqual(updated, inventory(captured))
+            self.assertEqual((path/'recipe-inputs.json').read_bytes(), updated)
+            stale = dict(original_files)
+            stale['tools/guest_compatibility_build.py'] += b'\n# changed after capture\n'
+            with self.assertRaisesRegex(DevError, 'compatibility-stale-recipe'):
+                compatibility.capture_host_recipe(path, stale, inventory(stale), phase)
+
     def test_real_peer_writes_exact_empty_and_latin1_without_changing_body(self):
         authorization = b'Bearer '+b'0'*64
         with closing(fixture.PhasePeer(authorization, maximum_seconds=10)) as peer:

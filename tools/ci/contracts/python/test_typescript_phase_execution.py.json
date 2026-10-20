@@ -1,5 +1,6 @@
 {
   "cases": [
+    "PhaseExecutionTests.test_declared_phase_profile_captures_its_manifest_without_changing_legacy_or_transaction_authority",
     "PhaseExecutionTests.test_grants_require_the_actual_phase_provider_and_never_authorize_legacy_calls",
     "PhaseExecutionTests.test_phase_project_keeps_public_package_sources_and_immutable_sdk_capture",
     "PhaseExecutionTests.test_real_peer_writes_exact_empty_and_latin1_without_changing_body",
@@ -7,6 +8,18 @@
     "PhaseExecutionTests.test_wire_rewrite_is_closed_to_exact_fixed_status_preimages"
   ],
   "guards": {
+    "PhaseExecutionTests.test_declared_phase_profile_captures_its_manifest_without_changing_legacy_or_transaction_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d218a78060d6abcfacb59f7de5f2a28a4398b4d709ca804e76bf6ae1275943",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PhaseExecutionTests.test_grants_require_the_actual_phase_provider_and_never_authorize_legacy_calls": {
       "bases": [
         "unittest.TestCase"
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_phase_execution.py",
-  "reviewReason": "Add focused V7 standard Fetch signed consumer and exact native acquisition; preserve all historical commands and cases.",
+  "reviewReason": "Preserve all five existing source controls and guards; add declared V7 manifest capture/stale-recipe/transaction-refusal regression. No native/default profile change.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
