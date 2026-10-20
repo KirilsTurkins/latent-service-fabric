@@ -334,3 +334,9 @@ history belong to [the contributor validation reference](../development/standalo
 The separately gated [development outbound TCP installation](standalone-streams.md)
 requires an explicit build feature and retains its architecture/security and
 qualification gates.
+
+
+The [activation alias native controls](../testing/evidence/activation-runtime-aliases-native-2026-10-20.json)
+passed exact binding-scope/configuration refusal checks and two repeated node
+startup/shutdown cycles with both tenant descriptors. All 456 previous native
+cases remain registered. These controls do not claim guest cross-tenant execution.

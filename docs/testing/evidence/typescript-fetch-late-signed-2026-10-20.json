@@ -1,0 +1,55 @@
+{
+  "run": 39391258904,
+  "job": 118523056126,
+  "head": "c5ad00505bb4bb44d7a2e4c3a2ff1a4c2cdc60d4",
+  "artifact": 12250591883,
+  "archiveBytes": 8620829,
+  "archiveDigest": "sha256:91009a02060350ddd867a96f5cfdef02ef6b39c2c18f56f89b7e9a23688dc098",
+  "cases": [
+    {
+      "name": "bootstrap",
+      "result": [
+        "ready|fresh=1"
+      ],
+      "outbound": 0
+    },
+    {
+      "name": "pending-headers",
+      "result": [
+        "late:aborted:one-rejection:zero-resolution|fresh=1"
+      ],
+      "outbound": 1
+    },
+    {
+      "name": "partial-body",
+      "result": [
+        "late:aborted:one-rejection:zero-resolution|fresh=1"
+      ],
+      "outbound": 1
+    },
+    {
+      "name": "fresh",
+      "result": [
+        "ready|fresh=1"
+      ],
+      "outbound": 0
+    }
+  ],
+  "knownReapedInvocations": 4,
+  "physicalRetirements": 4,
+  "zeroOwnerControls": 4,
+  "realPeerContacts": 2,
+  "completedPeerResponses": 2,
+  "realReleasedGates": [
+    "headers",
+    "body"
+  ],
+  "cleanNodeAndPeer": true,
+  "component": {
+    "sha256": "sha256:7e46d805f8b070006e317e1cb8c469b503f5413b5467f06f8332b36d60662144",
+    "bytes": 12411959
+  },
+  "historicalNative": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "fullTicketQualification": false,
+  "crossTenantQualified": false
+}
