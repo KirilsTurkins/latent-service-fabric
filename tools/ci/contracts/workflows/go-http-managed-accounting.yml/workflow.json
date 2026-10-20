@@ -1,0 +1,28 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-http-managed-accounting-${{ github.ref }}"
+    },
+    "name": "Go managed HTTP pending timer and accounting qualification",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-http-managed-accounting-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "tenants"
+  ],
+  "reviewReason": "Explicit managed-v5 HTTP programme retains8charged maintenance plus8application TASK slots, requires real pending HTTP/timer/Store ownership and two context deadlines plus fresh reuse; default v4 nineteen outcomes remain unchanged, actual new signed gate pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-http-managed-accounting.yml"
+}

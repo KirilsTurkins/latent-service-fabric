@@ -11,6 +11,8 @@ from tools.rust_capsule_project import ROOT, digest, read_file
 LIBRARY_SOURCE = 'sdk/go-guest/runtime/http-library-conformance/main.go'
 CONTROL_SOURCE = 'tools/fixtures/go-http-tenants/control.go'
 ANCHOR = b'\tlibrary, mode := which/100, which%100\n'
+DEADLINE = b'context.WithTimeout(ctx,20*time.Millisecond)'
+MANAGED_DEADLINE = b'context.WithTimeout(ctx,1000*time.Millisecond)'
 DISPATCH = b'\tif which >= 300 && which <= 302 { return tenantControl(which,address) }\n'
 
 
@@ -20,12 +22,21 @@ def derive(original: bytes) -> bytes:
     return original.replace(ANCHOR, DISPATCH + ANCHOR)
 
 
+def managed_deadline(source: bytes) -> bytes:
+    if source.count(DEADLINE) != 1 or MANAGED_DEADLINE in source:
+        raise ValueError('go-http-managed-original-context-deadline-drift')
+    # This owned proof window stays inside the original 5-second grant and
+    # 120-second root; no runtime/provider/guest budget is enlarged.
+    return source.replace(DEADLINE,MANAGED_DEADLINE)
+
+
 def project(directory: Path, outside: Path, identity: str, *, runtime_profile=INITIALIZER_PROFILE):
     if type(runtime_profile) is not str or runtime_profile not in {INITIALIZER_PROFILE,MANAGED_PROFILE}:
         raise ValueError('go-http-tenant-closed-runtime-profile')
     app, library = capture_source(directory, outside, identity)
     original = read_file(app/'src/main.go')
     source = derive(original)
+    if runtime_profile == MANAGED_PROFILE:source = managed_deadline(source)
     (app/'src/main.go').write_bytes(source)
     (app/'src/tenant.go').write_bytes(read_file(ROOT/CONTROL_SOURCE))
     descriptor = json.loads(read_file(app/'capsule-project.json'))

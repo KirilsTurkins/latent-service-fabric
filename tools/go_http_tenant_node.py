@@ -13,6 +13,7 @@ from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
 from tools import go_standard_http_node as original
+from tools import go_http_managed_pending as managed
 from tools.go_http_adversarial import CEILING, OPERATIONS, outcome
 from tools.guest_runtime_profiles import RUNTIME
 from tools.go_guest.activation import INITIALIZER_PROFILE, MANAGED_PROFILE
@@ -219,6 +220,7 @@ def run(artifact, native, output, deadline, *, runtime_profile=INITIALIZER_PROFI
             clients['examples'] = RecordingClient(native['latent'],work/'examples',cancellation,deadline,
                 evidence=output/'examples-controls',invocation_timeout_millis=120000)
             client = clients['examples'];startups = {};credentials = {}
+            if runtime_profile == MANAGED_PROFILE:client.environment[managed.ENVIRONMENT] = '1'
             for tenant in TENANTS:
                 credentials[tenant] = work/('peer-'+tenant)/'authorization'
                 credentials[tenant].write_bytes(('Bearer '+secrets.token_hex(32)).encode())
@@ -260,28 +262,39 @@ def run(artifact, native, output, deadline, *, runtime_profile=INITIALIZER_PROFI
             require(publications['examples'] != publications['foreign'],'go-http-tenant-distinct-publications')
             result['credentialDenial'] = credential_denial(clients['foreign'],targets['foreign'])
             stage = 'ordinary-clients-extension-and-cross-tenant-retirement'
-            for index,(tenant,name,which,path,expected,contacts) in enumerate(cases()):
+            programme = managed.cases(DOMAIN) if runtime_profile == MANAGED_PROFILE else cases()
+            for index,(tenant,name,which,path,expected,contacts) in enumerate(programme):
                 selected,target = clients[tenant],targets[tenant]
                 address = urls[path]+'/conformance/json' if path in TENANTS else urls[tenant]+path
                 revision = selected_revision(selected,target)
                 label = 'go-http-tenant-'+str(index)+'-'+tenant
-                row = invoke(selected,target,which,address,label)
+                pending_observation = None
+                if runtime_profile == MANAGED_PROFILE and which in (4,104):
+                    label = 'node-stop-pending' if which == 4 else 'node-stop-drain'
+                    row,pending_observation = managed.invoke(selected,target,which,address,label,output)
+                else:row = invoke(selected,target,which,address,label)
                 outcome(row,expected,contacts,revision,target['budget'])
                 idle = provider_idle(selected,target)
                 physical = sample(client,probe,label+'-retired',2)
                 write_json(output/(label+'-physical.json'),physical)
                 result['cases'].append({'tenant':tenant,'name':name,'mode':which,'expected':expected,
-                    'outboundRequests':contacts,'invocation':row,'physicalReceipt':label+'-physical.json','providerIdle':idle})
+                    'outboundRequests':contacts,'invocation':row,'physicalReceipt':label+'-physical.json','providerIdle':idle,
+                    **({'positivePending':pending_observation} if pending_observation is not None else {})})
             for tenant in TENANTS:delete_all(clients[tenant],[targets[tenant]['name']])
             clients['foreign'].node = None;stop(client,node)
             result['shutdown'] = stopped_record(node)
             require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'],'go-http-tenant-clean-stop')
+            if runtime_profile == MANAGED_PROFILE:
+                stderr = bytes(node.buffers[1]);managed.observe(stderr)
+                (output/'native-timer-observer.stderr.log').write_bytes(stderr)
             node = None;result['peers'] = {}
             for tenant,peer in peers.items():
                 peer.stop()
                 lines = bytes(peer.buffers[0]).splitlines()
                 require(len(lines) == 1,'go-http-tenant-one-terminal-peer-record')
-                observation = json.loads(lines[0]);peer_outcome(observation,tenant)
+                observation = json.loads(lines[0])
+                if runtime_profile == MANAGED_PROFILE:managed.peer_outcome(observation,tenant,DOMAIN)
+                else:peer_outcome(observation,tenant)
                 require(peer.owner.finished and peer.owner.process.returncode == 0,'go-http-tenant-peer-reaped')
                 result['peers'][tenant] = observation
         result['status'] = 'passed'

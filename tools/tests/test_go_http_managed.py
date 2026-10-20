@@ -43,13 +43,21 @@ class ManagedGoHttpSourceControls(unittest.TestCase):
             for name,profile in (('old',INITIALIZER_PROFILE),('managed',MANAGED_PROFILE)):
                 app,library = fixture.project(root/name,root/(name+'-private'),
                     'outside.example.test/http-library/managed-control',runtime_profile=profile)
-                apps.append(({str(p.relative_to(app)):p.read_bytes() for p in app.rglob('*') if p.is_file()},
-                    {str(p.relative_to(library)):p.read_bytes() for p in library.rglob('*') if p.is_file()}))
+                apps.append(({p.relative_to(app).as_posix():p.read_bytes() for p in app.rglob('*') if p.is_file()},
+                    {p.relative_to(library).as_posix():p.read_bytes() for p in library.rglob('*') if p.is_file()}))
             (old,old_private),(managed,managed_private) = apps
             first = json.loads(old.pop('capsule-project.json'));second = json.loads(managed.pop('capsule-project.json'))
             self.assertEqual(first.pop('runtimeProfile'),INITIALIZER_PROFILE)
             self.assertEqual(second.pop('runtimeProfile'),MANAGED_PROFILE)
             self.assertEqual(first,second)
+            main = managed['src/main.go']
+            self.assertEqual(main.count(fixture.MANAGED_DEADLINE),1)
+            managed['src/main.go'] = main.replace(fixture.MANAGED_DEADLINE,fixture.DEADLINE)
+            # The normal capture lock binds this owned source derivation.
+            before_lock=json.loads(old.pop('sdk-lock.json'));after_lock=json.loads(managed.pop('sdk-lock.json'))
+            self.assertNotEqual(before_lock['template']['sourceDigest'],after_lock['template']['sourceDigest'])
+            after_lock['template']['sourceDigest']=before_lock['template']['sourceDigest']
+            self.assertEqual(before_lock,after_lock)
             self.assertEqual(old,managed)
             self.assertEqual(old_private,managed_private)
 

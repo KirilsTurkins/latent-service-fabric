@@ -40,7 +40,8 @@ MATERIALS = ('tools/qualify_go_http_tenants.py','tools/go_http_tenant_fixture.py
     'tools/phase3_resource_os.py','tools/phase3_resource_profile.py','tools/guest_runtime_profiles.py',
     'tools/standard_http/peer.py','tools/standard_http/protocol.py','tools/standard_http/vectors.py',
     'tools/standard_http/observations.py','tools/java_standard_http_peer.py','tools/static_api/node.py',
-    LIBRARY_SOURCE,CONTROL_SOURCE)
+    LIBRARY_SOURCE,CONTROL_SOURCE,'tools/go_http_managed_pending.py',
+    'tools/go_node_stop_timer_observer.py','tools/go_node_stop_probe.py')
 BUILD_FILES = ('BUILD-COMPLETE.json','component.wasm','capsule.json','deployment.json','build-observation.json',
     'source-inputs.json','recipe-inputs.json','go-runtime-transformations.json','bindings.json')
 
@@ -156,7 +157,7 @@ def qualify(prepared: Path,output: Path, *, managed_runtime=False):
         stage = 'signed-same-cell-two-tenant-ordinary-http'
         record['node'] = run(output/'build',{name:native[name] for name in ('latent','latentd','capsule_authoring')},
             output/'node',min(deadline,time.monotonic()+300),runtime_profile=runtime_profile)
-        require(record['node']['status'] == 'passed' and len(record['node']['cases']) == 19
+        require(record['node']['status'] == 'passed' and len(record['node']['cases']) == (3 if managed_runtime else 19)
             and before == {name:file_identity(ROOT/name) for name in MATERIALS}
             and original_native == future_native_compatibility(prepared) and original_go == file_identity(go)
             and record['build'] == {name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}

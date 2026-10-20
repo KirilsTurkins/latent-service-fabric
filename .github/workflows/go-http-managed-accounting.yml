@@ -1,0 +1,89 @@
+name: Go managed HTTP pending timer and accounting qualification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/go-http-managed-accounting-20261020']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: go-http-managed-accounting-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tenants:
+    name: Managed Go ordinary clients with positive pending timer and task owners
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install pinned source controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Install captured Go compiler namespace
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Check source capture catalogue absence tenant authority and strict peer oracles
+        run: python3 -B -m unittest tools.tests.test_go_http_managed tools.tests.test_go_http_managed_pending tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products tools.tests.test_sdk_native_products_reader -v
+      - name: Authenticate the fixed native source revision
+        run: |
+          git fetch --no-tags origin 6f5f180136d140ac670561695260f71514781015
+          git fetch --no-tags origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
+      - name: Acquire five exact independently installed HTTP products without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/go-http-tenant-native"
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Authenticate the maintained Go compiler and official generator
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/go-http-tenant-tools"
+          test ! -e "$out"
+          mkdir "$out"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$out/go.tar.gz" -C "$out"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/componentize-go.tar.gz" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz
+          echo "1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$out/componentize-go.tar.gz" -C "$out" componentize-go
+          echo "b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go" | sha256sum --check --strict
+          chmod 755 "$out/componentize-go"
+          test "$("$out/componentize-go" --version)" = 'componentize-go 0.4.3'
+          test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
+          python3 -B tools/go_guest/runtime.py --prepare-compiler "$out/go" --output "$out/go-async"
+          echo "$out" >> "$GITHUB_PATH"
+          echo "$out/go-async/bin" >> "$GITHUB_PATH"
+      - name: Compile one v5 component and require three real signed pending and fresh outcomes
+        run: python3 -B tools/qualify_go_http_tenants.py --prepared "$RUNNER_TEMP/go-http-tenant-native" --output "$RUNNER_TEMP/go-http-tenant-catalogue" --managed-runtime
+      - name: Retain bounded actual construction authority and retirement evidence including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-http-managed-accounting-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/go-http-tenant-native/*.json
+            ${{ runner.temp }}/go-http-tenant-catalogue/*.json
+            ${{ runner.temp }}/go-http-tenant-catalogue/*.log
+            ${{ runner.temp }}/go-http-tenant-catalogue/catalogue-free-compiler/BUILD-SOURCE-INVENTORY.json
+            ${{ runner.temp }}/go-http-tenant-catalogue/build/*.json
+            ${{ runner.temp }}/go-http-tenant-catalogue/build/component.wasm
+            ${{ runner.temp }}/go-http-tenant-catalogue/build/component.wit
+            ${{ runner.temp }}/go-http-tenant-catalogue/build/logs/**
+            ${{ runner.temp }}/go-http-tenant-catalogue/node/*.json
+            ${{ runner.temp }}/go-http-tenant-catalogue/node/*.log
+            ${{ runner.temp }}/go-http-tenant-catalogue/node/examples-controls/*.json
+            ${{ runner.temp }}/go-http-tenant-catalogue/node/foreign-controls/*.json
+          if-no-files-found: warn
+          retention-days: 7
