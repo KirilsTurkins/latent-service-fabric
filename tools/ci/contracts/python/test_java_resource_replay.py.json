@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "JavaResourceReplay.test_archive_identity_refuses_any_unauthenticated_bytes",
+    "JavaResourceReplay.test_manual_fixed_branch_job_fetches_preimages_before_checks_and_never_builds_native",
+    "JavaResourceReplay.test_origin_wrong_source_digest_expiry_and_nonfailure_refuse_before_fetch",
+    "JavaResourceReplay.test_reconstruction_requires_current_application_inventory_before_marker_or_signer_use"
+  ],
+  "guards": {
+    "JavaResourceReplay.test_archive_identity_refuses_any_unauthenticated_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baac149e62b1acbe076ca23be400f34e1b75ac5ca851b0b2a139b361b0a3525c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceReplay.test_manual_fixed_branch_job_fetches_preimages_before_checks_and_never_builds_native": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baac149e62b1acbe076ca23be400f34e1b75ac5ca851b0b2a139b361b0a3525c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceReplay.test_origin_wrong_source_digest_expiry_and_nonfailure_refuse_before_fetch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baac149e62b1acbe076ca23be400f34e1b75ac5ca851b0b2a139b361b0a3525c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceReplay.test_reconstruction_requires_current_application_inventory_before_marker_or_signer_use": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baac149e62b1acbe076ca23be400f34e1b75ac5ca851b0b2a139b361b0a3525c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_resource_replay.py",
+  "reviewReason": "Diagnostic-only fixed-branch/manual20-minute Java resource replay: exact79d four companion components/original41-node and separately authenticated75host/03ahelpers; one fresh offline greeting, all original29 plus10 controls, no native/five-template rebuild or fabricated normal receipt. Preserve original production workflows.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

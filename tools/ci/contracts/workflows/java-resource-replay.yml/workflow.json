@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "java-resource-replay-${{ github.ref }}"
+    },
+    "name": "Focused Java resource conformance replay",
+    "on": {
+      "push": {
+        "branches": [
+          "diagnostic/java-resource-conformance-20261020"
+        ],
+        "paths": [
+          ".github/workflows/java-resource-replay.yml",
+          "tools/replay_java_resources.py",
+          "tools/tests/test_java_resource_replay.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "replay"
+  ],
+  "reviewReason": "Diagnostic-only fixed-branch/manual20-minute Java resource replay: exact79d four companion components/original41-node and separately authenticated75host/03ahelpers; one fresh offline greeting, all original29 plus10 controls, no native/five-template rebuild or fabricated normal receipt. Preserve original production workflows.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-resource-replay.yml"
+}
