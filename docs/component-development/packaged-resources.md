@@ -22,7 +22,7 @@ parameters. Bytes are retained exactly; assembly does not decode text, repair
 invalid text or infer an encoding.
 
 The device-name restriction also covers COM/LPT names containing superscript
-digits Â¹, Â² and Â³, including names with extensions and directory segments.
+digits ¹, ² and ³, including names with extensions and directory segments.
 [Windows reserves these aliases](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
 even though they are normalized Unicode. Other valid Unicode resource names
 remain supported. Undeclared files are not selected or packaged.
