@@ -4,6 +4,8 @@
 //! Replace its actual code accesses with stackless helpers loading/storing a
 //! separately bootstrapped canonical-thread context. All other instructions,
 //! original functions, data, imports and original custom sections are retained.
+//! The separate `c_context` module is an explicit, independently unqualified C
+//! compiler mechanism; it does not select this Rust profile.
 //! This is never selected by a builder until bootstrap/lifecycle/ledger and
 //! the rebuilt standard runtime are qualified. It does not create a thread.
 #![forbid(unsafe_code)]
@@ -22,6 +24,7 @@ mod admission;
 pub use admission::{AdmissionReceipt, transform_owned_thread_admission};
 mod root;
 pub use root::{RootReceipt, transform_owned_root_bootstrap};
+pub mod c_context;
 mod component;
 pub use component::{ComponentRoutingReceipt, verify_component_routing};
 
