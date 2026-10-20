@@ -153,6 +153,21 @@ class GoHttpTenantControls(unittest.TestCase):
         self.assertNotIn('time.',source)
         self.assertNotIn('cancel()',source)
 
+    def test_captured_build_preserves_normal_go_bubblewrap_namespace_prerequisite(self):
+        from tools.ci_lane_inventory import workflow_model
+        original = workflow_model((ROOT/'.github/workflows/go-guest.yml').read_text())
+        maintained = next(step['run'] for job in original['jobs'].values() for step in job['steps']
+            if step.get('name') == 'Install captured Go compiler namespace')
+        selected = workflow_model((ROOT/'.github/workflows/go-http-tenant-catalogue.yml').read_text())
+        steps = selected['jobs']['tenants']['steps']
+        namespace = [(index,step) for index,step in enumerate(steps)
+            if step.get('name') == 'Install captured Go compiler namespace']
+        self.assertEqual(len(namespace),1)
+        index,step = namespace[0]
+        self.assertEqual(step['run'],maintained)
+        compile_index = next(i for i,row in enumerate(steps) if 'tools/qualify_go_http_tenants.py' in row.get('run',''))
+        self.assertLess(index,compile_index)
+
     def test_real_controlled_peer_oracle_requires_exact_contacts_authority_and_unreleased_body_gates(self):
         token = b'Bearer '+b'0'*64
         for tenant in node.TENANTS:
