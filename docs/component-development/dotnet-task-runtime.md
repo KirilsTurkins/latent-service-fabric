@@ -29,7 +29,7 @@ the programme rejects a task represented as already completed. It installs no
 SynchronizationContext, scheduler, executor, HTTP handler or task implementation.
 The original source and local feed are removed before offline NativeAOT build.
 
-The signed programme keeps all 27 original node cases and adds a distinct
+The signed programme keeps all 27 original node cases and adds distinct
 activation/entropy setup refusals, four isolated single-missing-grant refusals
 and 12 managed task cases. Every successful case
 requires the actual expected return value, known and reaped invocation, original
@@ -39,19 +39,25 @@ remain mandatory. Provider limits are eight tasks, two executors, eight queued
 records, sixteen waits, eight timers, eight results and eight native owners.
 These are existing bounded provider settings, not measured CLR heap costs.
 
-All 12 cases passed a separate reference CLR control using SDK 10.0.303. The
-20 focused selection, authority and observation controls also pass. These results
-do not qualify guest execution: actual fresh NativeAOT compilation and signed
-execution are pending until a source-bound passing receipt is retained. The
-first signed programme compiled and admitted successfully but trapped in its
-first Task.Run case. Pinned ThreadPoolWorkQueueThreadLocals initializes a
-Random.XoshiroImpl; its constructor calls the native non-cryptographic entropy
-entrypoint. The original fixture omitted RANDOM, leaving that entrypoint on
-the closed path. The explicit declaration selects the existing exact-preimage
-entropy adapter. The entropy correction passed all six initial task cases in actual
-run39346280817, then trapped at the first timer in the context case. The
-TimerQueue source exposed the additional WALL dependency. A fresh run must
-still pass every original task assertion.
+All 12 managed cases passed the actual fresh NativeAOT and signed-node
+[run39348130572](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39348130572/job/118385603833).
+The [source-bound receipt](../testing/evidence/dotnet-ordinary-tasks-signed-2026-10-20.json)
+records the captured package, sole derived CoreLib binding, component identity,
+44 known/reaped invocations, four isolated grant refusals, 18 provider-idle
+observations, 36 physical samples and clean node/peer shutdown. The original
+historical helper binaries and companion builds remain explicitly identified;
+this fresh application execution does not claim a rebuilt current native host.
+The integration preserves all exercised compiler/runtime inputs. Its shared
+runner differs only by the separately qualified, default-off TypeScript clock
+programme; whole-module AST projection confirms unchanged task execution.
+
+All 12 cases also passed a separate reference CLR control using SDK 10.0.303.
+The focused selection, authority and observation controls remain distinct from
+actual guest execution. Two actual failures are retained: the first Task.Run
+exposed the original ThreadPoolWorkQueue selector's RANDOM dependency; after
+that explicit grant, six initial cases passed before the first timer exposed
+TimerQueue's WALL dependency. The final passing run includes both declarations
+and independently refuses each of the four missing grants before guest entry.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU
