@@ -34,6 +34,10 @@
           "tools/dotnet_standard_http*.py",
           "tools/dotnet_internal_io_port.py",
           "tools/qualify_dotnet_standard_http.py",
+          "tools/dotnet_standard_entropy*.py",
+          "tools/qualify_dotnet_standard_entropy.py",
+          "tools/tests/test_dotnet_secure_entropy.py",
+          "tools/tests/test_dotnet_managed_entropy.py",
           "tools/dotnet_standard_console*.py",
           "tools/qualify_dotnet_standard_console.py",
           "tools/tests/test_dotnet_standard_console.py",
@@ -95,7 +99,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Preserve both current .NET Console and catalogue-free reflection boundary source selection",
+  "reviewReason": "Restore only exact unsupported RNG entrypoints through pinned upstream algorithms and privately bind both managed inputs; retain every prior command and case.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

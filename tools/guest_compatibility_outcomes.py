@@ -151,7 +151,8 @@ def validate(value, *, report=None, selected_context=None):
         members(row, {'case', 'errorCodeState', 'activationDiagnostic', 'cause', 'resourceDimension',
             'libraryReachability', 'physicalRetirement', 'clientProcess'},
             {'malformed', 'category', 'outcomeKnown', 'consumption', 'invalidConsumptionFields',
-             'guestTrapCode', 'trapDetailsUnavailable', 'admissionCurrentnessReason', 'errorCode', 'targetMatches'})
+             'guestTrapCode', 'trapDetailsUnavailable', 'admissionCurrentnessReason', 'errorCode', 'targetMatches',
+             'guestTrapKind', 'guestRuntimePhase', 'trapKindUnavailable'})
         require(isinstance(row['case'], str)
                 and re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', row['case']) is not None,
                 'compatibility-outcomes-case-name')
@@ -175,6 +176,16 @@ def validate(value, *, report=None, selected_context=None):
         require((row['libraryReachability'], row['physicalRetirement']) == ('unknown', 'unproven')
                 and isinstance(row['clientProcess'], str) and row['clientProcess'] in {'reaped', 'not-confirmed'},
                 'compatibility-outcomes-retirement-evidence')
+        if 'guestTrapKind' in row:
+            require(node_diagnostics.valid_trap_kind(row['guestTrapKind'], row.get('guestTrapCode'),
+                    row.get('guestRuntimePhase')) and 'trapKindUnavailable' not in row
+                    and ('guestRuntimePhase' not in row or isinstance(row['guestRuntimePhase'], str)),
+                    'compatibility-outcomes-trap-kind-evidence')
+        else:
+            require('guestRuntimePhase' not in row, 'compatibility-outcomes-trap-kind-evidence')
+        if 'trapKindUnavailable' in row:
+            require(row['trapKindUnavailable'] is True and 'guestTrapCode' in row,
+                    'compatibility-outcomes-trap-kind-evidence')
         for key in ('outcomeKnown', 'targetMatches'):
             if key in row:
                 require(type(row[key]) is bool, 'compatibility-outcomes-boolean')
@@ -238,6 +249,10 @@ def present(value):
         lines.append(f"{row['case']}: cause {row['cause']}{dimension}; code {code}; client {row['clientProcess']}.")
         if 'guestTrapCode' in row:
             lines.append(f"Observed runtime disposition {row['guestTrapCode']}.")
+        if 'guestTrapKind' in row:
+            lines.append(f"Observed engine trap kind {row['guestTrapKind']}.")
+        if 'guestRuntimePhase' in row:
+            lines.append(f"Observed runtime phase {row['guestRuntimePhase']}.")
         observed = row['activationDiagnostic']
         if observed['state'] == 'observed':
             fields = observed['fields']

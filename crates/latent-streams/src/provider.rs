@@ -38,6 +38,33 @@ pub(crate) struct Inner {
     pub connections: Mutex<[Weak<Connection>; 32]>,
     _configuration: ProviderMetadata,
 }
+#[cfg(any(test, feature = "development-outbound"))]
+pub(crate) type ProviderInstaller = fn(
+    Arc<ProviderPools>,
+    &str,
+    u64,
+    u64,
+    StreamProviderConfig,
+) -> Result<StreamProvider, StreamError>;
+
+#[cfg(any(test, feature = "development-outbound"))]
+#[derive(Clone, Copy)]
+enum TlsInstallMode {
+    Qualified,
+    #[cfg(test)]
+    AccountingReference,
+}
+#[cfg(any(test, feature = "development-outbound"))]
+impl TlsInstallMode {
+    fn is_reference(self) -> bool {
+        match self {
+            Self::Qualified => false,
+            #[cfg(test)]
+            Self::AccountingReference => true,
+        }
+    }
+}
+
 impl StreamProvider {
     /// Explicit nonproduction qualification entry. Removing this feature gate
     /// requires the architecture/security and real-component profile gates.
@@ -48,6 +75,45 @@ impl StreamProvider {
         epoch: u64,
         expected_epoch: u64,
         config: StreamProviderConfig,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_tls_mode(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+        )
+    }
+
+    // Only unit-test code can select this reference experiment. It does not
+    // exist in a normal or development-outbound provider binary.
+    #[cfg(test)]
+    pub(crate) fn install_tls_for_accounting_reference(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_tls_mode(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::AccountingReference,
+        )
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    fn install_with_tls_mode(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        tls_mode: TlsInstallMode,
     ) -> Result<Self, StreamError> {
         config.validate()?;
         let limits = pools.limits()?;
@@ -84,7 +150,7 @@ impl StreamProvider {
         for destination in &config.destinations {
             tls.push(match &destination.tls {
                 Some(input) => {
-                    if !crate::tls::ACCOUNTING_QUALIFIED {
+                    if !crate::tls::ACCOUNTING_QUALIFIED && !tls_mode.is_reference() {
                         return Err(error(StreamErrorCode::Unsupported));
                     }
                     let metadata = pools.reserve_protocol_metadata(crate::tls::ROOT_ALLOWANCE)?;

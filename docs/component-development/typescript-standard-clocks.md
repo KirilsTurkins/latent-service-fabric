@@ -30,7 +30,9 @@ separate. This does not defer every top-level clock-using library initializer or
 permit mutable request identity in a shared snapshot. Engine core bytes and
 their original source/input receipt are not rewritten by this compiler guard.
 
-The finite component campaign is **pending**. Its default-false
+The finite component campaign passed at source
+`e63b31cb0670ef97b614c65c8dbd7f9672b879d8` in
+[run39346830485/job118381347093](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39346830485/job/118381347093). Its default-false
 `qualify-standard-clocks` manual selection has a separate 20-minute job. It
 authenticates the original clock-engine core/receipt and all 31 SDK inputs, plus
 the historical native five and three unchanged companion packages. It builds
@@ -39,12 +41,14 @@ compiler. An ordinary outside library and transitive UTF-8/binary resources are
 captured through normal npm authoring, exactly reviewed, then their original
 source directory is removed before compilation.
 
-The required programme retains original27 and adds three before-guest
+The passed programme retains the original 27 and adds three before-guest
 missing-grant denials, seven unselected Date/performance values, six selected
-clock/resource values and two trap/fuel cases followed by fresh success. All47
-outcomes must retain their original budgets, zero outbound/child/log effects,
-physical provider retirement and clean/reaped node shutdown. Two separate
-actual compiler attempts must refuse direct and captured-reference clock reads
+clock/resource values and two trap/fuel cases followed by fresh success. All 47
+outcomes were known/reaped and retained their original budgets and cleanup
+checks. The 20 new clock outcomes had zero outbound/child/log effects. All 26
+provider-idle samples had zero active owners, 41 physical samples were retained,
+and node shutdown was clean/reaped. Two separate
+actual compiler attempts refused direct and captured-reference clock reads
 at snapshot creation. Mocked source/protocol checks are not evidence that these
 components have executed.
 
@@ -83,5 +87,10 @@ the native engine. Its unchanged async cancellation builtin is rejected when
 that owner/profile is absent. The corrected campaign installs the same bounded
 owner and eight-operation explicit runtime-support grant used by the maintained
 Fetch programme before testing the three missing-clock cases. No global engine
-feature or limit is relaxed. These are fixture corrections; all47 signed outcomes
-still require a successful new invocation receipt.
+feature or limit was relaxed. The corrected run passed all 47 signed outcomes.
+The [compact source-bound observation](../testing/evidence/typescript-standard-clocks-signed-2026-10-20.json)
+retains exact results, component/recipe identities, two snapshot refusals and
+explicit historical native/engine ancestry. Its original native normal receipt
+has 30 outcomes and remains unchanged; this separate campaign repeats the
+original 27 plus its 20 clock outcomes. These finite results do not qualify
+scratch storage, concurrent/cross-tenant lifecycle or the full issue.

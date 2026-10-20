@@ -11,5 +11,15 @@
   "memberDigest": "sha256:5012866cd28f6e0e7eb173cf764d77b7fdefc4b4198eeb7fd26a9db716fa0093",
   "memberSize": 2325,
   "entrypoint": "SystemNative_GetNonCryptographicallySecureRandomBytes",
-  "profile": "dotnet-hash-entropy-v1"
+  "profile": "dotnet-native-entropy-v2",
+  "secureEntrypoint": "SystemNative_GetCryptographicallySecureRandomBytes",
+  "secureAbi": {
+    "returnSuccess": 0,
+    "returnFailure": -1,
+    "maximumLength": 65536,
+    "interface": "latent:random/random@0.1.0",
+    "operation": "u64-value",
+    "resultBytes": 16,
+    "payloadOffset": 8
+  }
 }

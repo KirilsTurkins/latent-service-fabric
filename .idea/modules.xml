@@ -62,6 +62,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.host-stream-tls.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.host-stream-tls.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.java-client.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.java-client.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.java-guest.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.java-guest.iml" group="LSF/sdk" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.node-worker-stacks.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.node-worker-stacks.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.profile.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.profile.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.rust.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.rust.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-guest.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.rust-guest.iml" group="LSF/sdk" />

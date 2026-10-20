@@ -49,6 +49,17 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     };
     let http = super::http::derive(config, capacity.reservations as usize)?;
     let providers = super::providers::derive(config)?;
+    let rollouts = super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?;
+    let capability_policies = super::capability_policies::derive(config.capability_policies)?;
+    let control_blocking = 1 + usize::from(
+        rollouts.is_some() && (capability_policies.is_some() || providers.is_some()),
+    );
+    let worker_stacks = crate::worker_stacks::NodeWorkerStacks::checked(
+        config.workers.runtime,
+        config.workers.control,
+        control_blocking,
+    )
+    .ok_or_else(|| invalid("workers.stackProfile"))?;
     let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
     let mut artifacts = artifact_limits(config, management.max_page_size);
     artifacts.manifest_profile = manifest_profile;
@@ -70,14 +81,15 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         supply_chain: super::supply_chain::derive(&config.supply_chain)?,
         isolated_aot,
         audit: super::audit::derive(config.audit.as_ref())?,
-        rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
-        capability_policies: super::capability_policies::derive(config.capability_policies)?,
+        rollouts,
+        capability_policies,
         providers,
         state,
         manifest_profile,
         node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,
+        worker_stacks,
         artifacts,
         deployments: deployment_limits(config, management.max_page_size, manifest_profile),
         admission,

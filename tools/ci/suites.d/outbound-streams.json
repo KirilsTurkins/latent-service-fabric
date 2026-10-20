@@ -18,8 +18,14 @@
         "tests::sockets::retained_chunks_keep_original_charges_after_socket_close",
         "tests::sockets::revoking_policy_prevents_application_write_on_existing_socket",
         "tests::sockets::wrong_endpoint_is_denied_before_network_dispatch",
+        "tests::tls::current_maximum_valid_chain_roots_and_stapled_extension_retire_actual_owners",
+        "tests::tls::direct_host_tls_validates_peer_transfers_and_retires_original_charges",
         "tests::tls::protected_root_replacement_digest_and_link_denials_precede_contact",
+        "tests::tls::retained_trust_configuration_refunds_only_after_the_last_physical_owner",
+        "tests::tls::stalled_tls_handshake_uses_original_deadline_and_physical_owner",
+        "tests::tls::tls_rotation_preserves_pending_original_owner_until_peer_socket_retires",
         "tests::tls::unqualified_tls_installation_fails_before_contact_and_leaves_no_owner",
+        "tests::tls::wrong_tls_hostname_fails_closed_without_cleartext_fallback",
         "tests::uncertainty::lost_mutation_reply_preserves_typed_uncertainty_and_never_replays",
         "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp",
         "transport::tests::repeated_handshake_reads_share_one_original_encrypted_input_ceiling"
@@ -29,7 +35,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 19,
+      "minimumCases": 25,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [

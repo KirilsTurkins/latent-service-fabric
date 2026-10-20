@@ -651,17 +651,36 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                 for package in metadata['packages'] if digest(package['id'].encode()) == row['metadata']['nativeIdDigest']))
             target = Path('Cargo.toml') if row['id'] == root_id else Path(row['mount']) / 'Cargo.toml'
             transformed = selected_manifest(raw_manifest, original_root, target, mappings)
+            changes, runtime_port = {}, None
+            files = None
+            from tools import rust_standard_entropy_profile as entropy
+            from tools.rust_standard_logging_inputs import has_entropy
+            if has_entropy(runtime_profile) and entropy.runtime_package(row):
+                files = directory_files(Path(row['source']['path']))
+                changes, runtime_port = entropy.captured_changes(row, files, runtime_profile)
             if transformed != raw_manifest:
-                files = ({'Cargo.toml': raw_manifest} if row['format'] == 'file' else directory_files(Path(row['source']['path'])))
+                changes['Cargo.toml'] = transformed
+            if changes:
+                if files is None:
+                    files = ({'Cargo.toml': raw_manifest} if row['format'] == 'file'
+                             else directory_files(Path(row['source']['path'])))
+                if runtime_port is not None and 'Cargo.toml' in changes:
+                    checksum = json.loads(changes['.cargo-checksum.json'])
+                    checksum['files']['Cargo.toml'] = digest(transformed)[7:]
+                    changes['.cargo-checksum.json'] = canonical(checksum) + b'\n'
                 original_rows = [{'path': name, 'digest': digest(data), 'size': len(data)} for name, data in sorted(files.items())]
-                files['Cargo.toml'] = transformed
-                output_rows = [{'path': name, 'digest': digest(data), 'size': len(data)} for name, data in sorted(files.items())]
-                transformed_object = store.put(transformed)
+                output_files = {**files, **changes}
+                output_rows = [{'path': name, 'digest': digest(data), 'size': len(data)} for name, data in sorted(output_files.items())]
+                changed_rows = []
+                for name, data in sorted(changes.items()):
+                    transformed_object = store.put(data)
+                    changed_rows.append({'path': name, 'inputDigest': digest(files[name]),
+                        'source': str(store.path(transformed_object['digest'])), 'outputDigest': transformed_object['digest']})
                 transforms.append({'id': 'cargo-path-relocation/' + digest(row['id'].encode())[7:31], 'artifact': row['id'],
                     'inputDigest': tree_identity(original_rows), 'outputDigest': tree_identity(output_rows),
-                    'files': [{'path': 'Cargo.toml', 'inputDigest': digest(raw_manifest),
-                               'source': str(store.path(transformed_object['digest'])), 'outputDigest': transformed_object['digest']}],
-                    'tool': file_identity(Path(__file__), 'cargo-selected-path-relocator'), 'selection': selected})
+                    'files': changed_rows,
+                    'tool': file_identity(Path(__file__), 'cargo-selected-path-relocator'),
+                    'selection': {**selected, **({'runtimeEntropyPort': runtime_port} if runtime_port is not None else {})}})
         # Native vendor replacement is captured input, not ambient Cargo config.
         config = tomllib.loads(configuration.decode())
         for source in config.get('source', {}).values():

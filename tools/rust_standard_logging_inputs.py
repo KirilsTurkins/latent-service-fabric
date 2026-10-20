@@ -1,4 +1,4 @@
-"""Bind explicit standard logging to current, bounded owned std build inputs.
+"""Bind explicit standard facility profiles to bounded owned std build inputs.
 
 The retained build receipt is a builder assertion, not a publisher signature.
 Normal tool/executable approval and final signed component admission still apply.
@@ -19,6 +19,9 @@ from tools.rust_capsule_project import ROOT, checked_path, digest, inventory, re
 DEFAULT = 'wasm32-unknown-unknown-panic-abort-v1'
 CLOSED = 'rust-standard-closed-v1'
 PROFILE = 'rust-standard-logging-v1'
+ENTROPY = 'rust-standard-entropy-v1'
+LOGGING_ENTROPY = 'rust-standard-logging-entropy-v1'
+PREPARED = frozenset({CLOSED, PROFILE, ENTROPY, LOGGING_ENTROPY})
 LOG = 'latent:log/log@0.1.0'
 # Workspace metadata authenticates the explicit std source build. It is not
 # a required input to the normal compiler recipe or its minimal offline CLI.
@@ -32,13 +35,21 @@ RECIPE = ('tools/rust_standard_logging_inputs.py',
 
 def selection(project: dict) -> str:
     value = project.get('runtimeProfile', DEFAULT)
-    require(isinstance(value, str) and value in {DEFAULT, CLOSED, PROFILE}, 'rust-standard-runtime-profile')
+    require(isinstance(value, str) and value in {DEFAULT, *PREPARED}, 'rust-standard-runtime-profile')
     return value
+
+
+def has_logging(profile):
+    return profile in {PROFILE, LOGGING_ENTROPY}
+
+
+def has_entropy(profile):
+    return profile in {ENTROPY, LOGGING_ENTROPY}
 
 
 def source_build_inputs(profile):
     selection({'runtimeProfile': profile})
-    return SOURCE_BUILD_METADATA if profile in {CLOSED, PROFILE} else ()
+    return SOURCE_BUILD_METADATA if profile in PREPARED else ()
 
 
 class Prepared:
@@ -46,13 +57,16 @@ class Prepared:
         # Late import avoids the existing Commands/build-source dependency cycle.
         from tools import rust_standard_sysroot_build as built
         self.path, self.rustc = checked_path(path), checked_path(rustc)
-        require(profile in {CLOSED, PROFILE}, 'rust-standard-runtime-prepared-selection')
+        require(profile in PREPARED, 'rust-standard-runtime-prepared-selection')
         self.profile = profile
         self.raw = read_file(self.path / 'std-sysroot-build.json', 1024 * 1024)
         value = read_json(self.path / 'std-sysroot-build.json', 1024 * 1024)
         require(isinstance(value, dict) and value.get('schemaVersion') == 'latent.rust.std-built-source.v1'
-                and value.get('profile') == (built.LOGGING_PROFILE if profile == PROFILE else built.PROFILE)
-                and value.get('standardStdio') == ('typed-log-v1' if profile == PROFILE else 'explicit-unsupported-v1')
+                and value.get('profile') == ((built.LOGGING_ENTROPY_PROFILE if has_logging(profile) else built.ENTROPY_PROFILE)
+                    if has_entropy(profile) else (built.LOGGING_PROFILE if has_logging(profile) else built.PROFILE))
+                and value.get('standardStdio') == ('typed-log-v1' if has_logging(profile) else 'explicit-unsupported-v1')
+                and value.get('standardEntropy', 'original-unsupported-v1') ==
+                    ('typed-random-u64-v1' if has_entropy(profile) else 'original-unsupported-v1')
                 and value.get('target') == clock.TARGET and value.get('rust') == clock.RUST
                 and value.get('rustCommit') == clock.RUST_COMMIT
                 and value.get('archiveDigest') == 'sha256:' + clock.SOURCE_ARCHIVE_SHA256,

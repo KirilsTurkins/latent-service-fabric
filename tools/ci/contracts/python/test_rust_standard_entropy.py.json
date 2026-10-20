@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "StandardEntropy.test_capture_reproduces_current_backend_bytes_from_original_cas",
+    "StandardEntropy.test_changed_or_missing_std_preimages_fail_before_derivation",
+    "StandardEntropy.test_exact_std_overlay_retains_unselected_platforms_and_original_unsupported_source",
+    "StandardEntropy.test_explicit_creators_declare_random_and_preserve_logging_without_grants",
+    "StandardEntropy.test_local_same_name_and_unselected_profile_never_acquire_runtime_patch",
+    "StandardEntropy.test_native_core_lengths_lowering_failures_clearing_and_fresh_source_calls",
+    "StandardEntropy.test_runtime_backend_preserves_explicit_choices_and_authenticates_derived_vendor_checksums",
+    "StandardEntropy.test_runtime_source_or_original_vendor_identity_cannot_be_substituted",
+    "StandardEntropy.test_stale_recipe_missing_port_or_substituted_selected_backend_refuses"
+  ],
+  "guards": {
+    "StandardEntropy.test_capture_reproduces_current_backend_bytes_from_original_cas": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_changed_or_missing_std_preimages_fail_before_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_exact_std_overlay_retains_unselected_platforms_and_original_unsupported_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_explicit_creators_declare_random_and_preserve_logging_without_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_local_same_name_and_unselected_profile_never_acquire_runtime_patch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_native_core_lengths_lowering_failures_clearing_and_fresh_source_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_runtime_backend_preserves_explicit_choices_and_authenticates_derived_vendor_checksums": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_runtime_source_or_original_vendor_identity_cannot_be_substituted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    },
+    "StandardEntropy.test_stale_recipe_missing_port_or_substituted_selected_backend_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d76ba982627e0c2a164b5e44b495d112b9f3715978da43531ba60de14d5ddf67",
+        "class:setup-sha256:c2edace89fae25b052ed9f77d65c3f9e4c492944164a33127b9aeab47e9124a7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_standard_entropy.py",
+  "reviewReason": "Explicit Rust entropy profiles use current authenticated std and getrandom source derivations; preserve default profiles, all prior commands, isolation and executable-input approval.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

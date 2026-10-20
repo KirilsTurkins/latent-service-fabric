@@ -45,7 +45,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, standard_typescript_clocks=False):
+        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, standard_typescript_clocks=False):
     require(type(standard_typescript_clocks) is bool and (not standard_typescript_clocks or language == 'typescript')
             and not (standard_typescript_clocks and (standard_typescript_entropy or standard_typescript_console
                 or captured_npm_private or approved_typescript_generator or captured_dependency_recovery)),
@@ -56,6 +56,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(standard_typescript_console) is bool and (not standard_typescript_console or language == 'typescript'),
             'authoring-typescript-console-language')
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
+    require(type(dotnet_standard_entropy) is bool
+            and (not dotnet_standard_entropy or (language == "dotnet" and noncrypto_entropy
+                 and not (dotnet_standard_logging or dotnet_reflection or captured_dotnet_private))),
+            "authoring-dotnet-secure-entropy-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
     require(type(c_standard_facilities) is bool and (not c_standard_facilities or language == "c"),
@@ -103,6 +107,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(rust_standard_stdio) is bool and (not rust_standard_stdio or language == 'rust')
             and not (rust_standard_stdio and (captured_rust_matrix or rust_compatibility or captured_git_component
                                              or captured_dependency_recovery)), 'authoring-Rust-stdio-language')
+    require(type(rust_standard_entropy) is bool and (not rust_standard_entropy or language == 'rust')
+            and not (rust_standard_entropy and (rust_standard_stdio or captured_rust_matrix or rust_compatibility
+                or captured_git_component or captured_dependency_recovery)), 'authoring-Rust-entropy-language')
     require(type(approved_typescript_generator) is bool and (not approved_typescript_generator or language == 'typescript'),
             'authoring-TypeScript-generator-language')
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
@@ -174,6 +181,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     from tools.typescript_standard_clock_probe import configure as configure_clocks
                     configure_clocks(settings)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if rust_standard_entropy:
+                    from tools.rust_standard_entropy_probe import configure as configure_rust_entropy
+                    configure_rust_entropy(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -205,6 +216,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if rust_standard_stdio:
                         from tools.rust_standard_logging_probe import grant as grant_rust_stdio
                         grant_rust_stdio(client, node, fixture, targets, publications, result)
+                    if rust_standard_entropy:
+                        from tools.rust_standard_entropy_probe import grant as grant_rust_entropy
+                        grant_rust_entropy(client, node, fixture, targets, publications, result)
                     if language in {"go", "dotnet", "java"}:
                         from tools.guest_runtime_grants import grant
                         grant(client, node, fixture, targets, publications, result, language=language)
@@ -241,6 +255,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
+                    if dotnet_standard_entropy:
+                        from tools.dotnet_standard_entropy_probe import grant as grant_secure_entropy
+                        grant_secure_entropy(client, node, fixture, targets, publications, result)
                     if dotnet_standard_logging:
                         from tools.dotnet_standard_console_probe import grant as grant_console
                         grant_console(client, node, fixture, targets, publications, result)
@@ -263,6 +280,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import probe as entropy_probe
                         entropy_probe(client, targets['greeting'], probe, result, len(names))
+                    if dotnet_standard_entropy:
+                        from tools.dotnet_standard_entropy_probe import probe as probe_secure_entropy
+                        probe_secure_entropy(client, targets['greeting'], probe, result, len(names))
                     if dotnet_standard_logging:
                         from tools.dotnet_standard_console_probe import probe as probe_console
                         probe_console(client, targets['greeting'], probe, result, len(names))
@@ -303,6 +323,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if rust_standard_stdio:
                         from tools.rust_standard_logging_probe import probe as probe_rust_stdio
                         probe_rust_stdio(client, targets['greeting'], fixture, probe, result, len(names))
+                    if rust_standard_entropy:
+                        from tools.rust_standard_entropy_probe import probe as probe_rust_entropy
+                        probe_rust_entropy(client, fixture, targets, publications, probe, result, len(names))
                     if captured_dependency_recovery:
                         if language == "dotnet":
                             from tools.dotnet_dependency_recovery import recover
