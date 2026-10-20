@@ -45,6 +45,9 @@
         }
       },
       {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
         "name": "Authenticate all original members and run only fresh signing and joined cases",
         "run": "python3 -B tools/replay_java_resource_runtime.py \\\n  --native \"$RUNNER_TEMP/java-resource-native\" \\\n  --retained \"$RUNNER_TEMP/java-resource-original\" \\\n  --output \"$RUNNER_TEMP/java-resource-replay\"\n"
       },
@@ -64,7 +67,7 @@
   },
   "jobId": "retained-component",
   "kind": "job",
-  "reviewReason": "One20min fresh signing/runtime replay around immutable actual Java component; no repeated compiler/native baseline",
+  "reviewReason": "Repair actual replay39472789123 official-origin ghAPI exit4 by scoped explicit GitHub token environment; commands/originalcompilation/manualguards/20min deadline/artifactpreimages/node13 unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-resource-runtime.yml"
 }
