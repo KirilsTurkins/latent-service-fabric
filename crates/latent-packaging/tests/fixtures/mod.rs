@@ -319,3 +319,77 @@ pub fn mutate_json(input: &mut PackageInput, path: &str, change: impl FnOnce(&mu
     change(&mut value);
     layer.bytes = serde_json::to_vec(&value).unwrap();
 }
+
+/// Source-authoritative phase imports over the unchanged clock-only binary.
+/// Both HTTP interfaces are deliberately compiler-pruned; source authority must
+/// still require the phase provider and every actual legacy operation.
+pub fn phase_type_owner_capsule(legacy_operations: bool) -> PackageInput {
+    let old = latent_core::PHASE3_HOST_ABI_V3
+        .interface("latent:http/streaming@0.3.0")
+        .unwrap()
+        .wit;
+    assert_eq!(
+        old.lines()
+            .filter(|line| line.contains(": async func"))
+            .count(),
+        8
+    );
+    let selected = if legacy_operations {
+        old.to_owned()
+    } else {
+        old.lines()
+            .filter(|line| !line.contains(": async func"))
+            .map(|line| format!("{line}\n"))
+            .collect()
+    };
+    let phase = latent_core::PHASE3_HOST_ABI_V7
+        .interface("latent:http/phase-timing@0.4.0")
+        .unwrap()
+        .wit;
+    let service = std::str::from_utf8(component::SERVICE_WIT)
+        .unwrap()
+        .replace(
+            "    export api;",
+            "    import latent:http/phase-timing@0.4.0;\n    export api;",
+        );
+    let files = std::collections::BTreeMap::from([
+        ("wit/clock.wit".into(), component::CLOCK_WIT),
+        ("wit/service.wit".into(), service.as_bytes()),
+        ("wit/http-v3.wit".into(), selected.as_bytes()),
+        ("wit/http-phases.wit".into(), phase.as_bytes()),
+    ]);
+    let derived = latent_packaging::derive_capsule_contracts(
+        "tests:packaging/service@1.0.0",
+        &files,
+        latent_packaging::SemanticLimits::default(),
+    )
+    .unwrap();
+    let mut input = capsule(component::Options::default());
+    for layer in &mut input.layers {
+        match layer.path.as_str() {
+            "contracts.json" => layer.bytes = derived.contracts().to_vec(),
+            "wit-lock.json" => {
+                layer.bytes =
+                    encode_wit_lock(derived.wit_lock(), PackageLimits::default()).unwrap();
+            }
+            "wit/service.wit" => layer.bytes = service.as_bytes().to_vec(),
+            _ => (),
+        }
+    }
+    for path in ["wit/http-v3.wit", "wit/http-phases.wit"] {
+        input.layers.push(layer(
+            path,
+            LayerRole::Asset,
+            "text/plain",
+            files[path].to_vec(),
+        ));
+    }
+    mutate_json(&mut input, "capsule.json", |manifest| {
+        manifest["imports"] = json!(derived
+            .imports()
+            .iter()
+            .map(|name| { json!({"contract":name,"optional":false}) })
+            .collect::<Vec<_>>());
+    });
+    input
+}

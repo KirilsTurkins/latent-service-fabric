@@ -52,6 +52,7 @@ pub struct CheckedSurface {
     exports: Box<[Box<str>]>,
     source_packages: Box<[(Box<str>, ArtifactBlobDigest)]>,
     counts: SurfaceCounts,
+    phase_type_owner: bool,
 }
 
 impl CheckedSurface {
@@ -69,15 +70,16 @@ impl CheckedSurface {
     pub fn imports(&self) -> &[Box<str>] {
         &self.imports
     }
-    /// Checked source imports that require capability/provider bindings. All
-    /// other imports were validated as resource-free value definitions; they
-    /// remain in `imports()` and grant no host or provider authority.
+    /// Checked source imports that require capability/provider bindings.
+    /// Resource-free values and the exact validated nominal HTTP phase owner
+    /// remain in `imports()` but confer no operational provider authority.
+    /// Compiler pruning never removes an otherwise operational source import.
     #[must_use]
     pub fn capability_imports(&self) -> impl Iterator<Item = &str> {
-        self.imports
-            .iter()
-            .map(AsRef::as_ref)
-            .filter(|name| host::recognizes(name))
+        self.imports.iter().map(AsRef::as_ref).filter(move |name| {
+            host::recognizes(name)
+                && !(self.phase_type_owner && *name == "latent:http/streaming@0.3.0")
+        })
     }
     #[must_use]
     pub fn exports(&self) -> &[Box<str>] {
@@ -165,6 +167,7 @@ pub fn validate_capsule_with_profile(
     compare_manifest(manifest, &declared)?;
     let type_nodes = compare::worlds(&source, &declared, &actual, &compiled, limits)?;
     host::validate(&source, &declared.imports, limits)?;
+    let phase_type_owner = host::phase_type_owner(&source, &declared.imports);
     projection::validate(&source, world, contracts, limits)?;
     let functions = declared
         .exports
@@ -209,6 +212,7 @@ pub fn validate_capsule_with_profile(
             .map(|entry| (entry.id.clone().into_boxed_str(), entry.digest.clone()))
             .collect(),
         counts,
+        phase_type_owner,
     })
 }
 
