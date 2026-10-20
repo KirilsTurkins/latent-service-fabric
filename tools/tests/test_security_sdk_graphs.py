@@ -380,7 +380,7 @@ class SdkGraphTests(unittest.TestCase):
             "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj":
                 "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
             "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj":
-                "e9660b62e72a76feccc61175892d46eadfd7afdd2196a2ef9356f8df9e7bec40",
+                "37fcd5568bf7f56ac4f3d1a02c03d2d24c8e3efd329c2d6e0803c1aa08cf51c4",
         }
         for path, checksum in expected.items():
             with self.subTest(path=path):
@@ -397,7 +397,7 @@ class SdkGraphTests(unittest.TestCase):
         packages, records = inventory(root)
         helper = xml.fromstring(read_file(root, "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"))
         self.assertEqual([item.attrib for item in helper.iter("Compile")],
-                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}])
+                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}])
         references = [item.attrib for item in helper.iter("Reference")]
         self.assertEqual(references, [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
