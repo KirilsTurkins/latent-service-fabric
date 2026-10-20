@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}",
+    "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks }}",
     "name": "Source-owned asynchronous import compiler",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -72,7 +72,7 @@
   },
   "jobId": "source-splicer",
   "kind": "job",
-  "reviewReason": "Reviewed default-false fixed-artifact replay; original full jobs/commands/budgets remain mandatory for normal PR/push and ordinary dispatch.",
+  "reviewReason": "Add bounded ordinary standard clock source/authority/snapshot/fresh controls and a default-false20-minute same-products campaign; preserve every original job command, deadline and prior obligation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

@@ -1,0 +1,1078 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "run": 39342399881,
+  "job": 118366843169,
+  "artifact": 12228759989,
+  "source": "e61134ed5e075b898e1385abe785663884787f72",
+  "qualification": "failed-before-signing-final-type-comparison",
+  "selectedWorld": "examples:lsf-typescript-activation/selected@1.0.0",
+  "engineInput": {
+    "schemaVersion": "latent.typescript.native-engine-input.v1",
+    "profile": "spidermonkey-activation-promises-clocks-v1",
+    "coreDigest": "sha256:c2394ccbcb7f39bf6264fd6b2208349a7d072a82d61074629b14c51ad9e88fa7",
+    "coreBytes": 10146325,
+    "sdkInputs": [
+      {
+        "path": "sdk/typescript-guest/activation/broker_accounting.h",
+        "digest": "sha256:5771507a3bf4905b3707d31426675ad0bcd699a1fa96799541c98b7755eddc33",
+        "size": 9391
+      },
+      {
+        "path": "sdk/typescript-guest/activation/broker_import_accounting.h",
+        "digest": "sha256:d06c3a53bc789ac68b87475ac83543da37f42b6ac61c5a96f63c21c99b4f3ec1",
+        "size": 3204
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock-globals.d.ts",
+        "digest": "sha256:200c8e3d6be9c33a56101b8c5ce9b2d7e252b27c7fb8631884b4654fbb227cc7",
+        "size": 159
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock_globals.js",
+        "digest": "sha256:883fb57b1266b9643f3f61e817cf2f4c0e51fdbde80d2edbf3acb95f3d9badbd",
+        "size": 984
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock_values.h",
+        "digest": "sha256:8e85831a0817eda3a1375fda790df22a6b343277ee102e64ef7b2be37df0bb42",
+        "size": 1238
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_cancel.h",
+        "digest": "sha256:59397ab2badf02d292e517157c9686a730cd7ebe582ea1d5a7b4c81be57b7438",
+        "size": 479
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_clock_engine.cpp",
+        "digest": "sha256:897d1611ac4e9d4557756447355d0aad7110b02f863c378df48ca28a755e1885",
+        "size": 1859
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_clocks.h",
+        "digest": "sha256:2a318536a65272343a7c7579c0baecdac42a0a22e307e30ec7146a2df288659a",
+        "size": 1584
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_engine.cpp",
+        "digest": "sha256:7dd1b56450d6e0af4c874e7a73fee01a59968095ddc452093cc2b9a1dcf85a6f",
+        "size": 12438
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_engine.h",
+        "digest": "sha256:f87f03ba595f1ec17bf368400156892f3c6c4678105be0aaa32176448ece0a38",
+        "size": 1813
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_lifecycle.h",
+        "digest": "sha256:c17bbf0f1c3f3de8353741ac4f9cdbde40f232198377a467fec6560ef55d6537",
+        "size": 5845
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_values.h",
+        "digest": "sha256:5b98e85df356d7005ab6a3085fc9c12ad4e5f6cc8d00ddf33095f4683fc0ea24",
+        "size": 2390
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_imports.h",
+        "digest": "sha256:40b5737a75a9c8c06511a2ea36df14110b3577fb7f7098b202940e5abc839dd7",
+        "size": 9865
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_job_queue.h",
+        "digest": "sha256:f7498c93b6240e5965101eabd62775f229fdff06b08a8629bf2e68a58800845c",
+        "size": 8857
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_objects.h",
+        "digest": "sha256:081afe123537c0555d0d29d20a85181dcb7feb62ce85251d4de7e2932427d039",
+        "size": 1028
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_ownership.h",
+        "digest": "sha256:476b5db1f88bf96637221e199e0dbbd44deb3d924d7f3389ef4b7f3bccf472ed",
+        "size": 615
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_readiness.h",
+        "digest": "sha256:d38d7d66ed3b16d25c3e1705f2858923ed47ef1a374c88ee9049a98ce04801f3",
+        "size": 8450
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_retirement.h",
+        "digest": "sha256:5921cccf4dd2cd6a11ad070383247a4e186cbd15e21f955a56069149297d24b6",
+        "size": 4294
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_timeout.h",
+        "digest": "sha256:f5b1e996dc1e7fa9a535760a13d00829854773eb11b0676727365582cfaad2d9",
+        "size": 1416
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_timers.h",
+        "digest": "sha256:5413bb498d1c0ca713d87eb171c4e4ca19e330831de3db069cf96d5b5a5b32a3",
+        "size": 11314
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_accounting.h",
+        "digest": "sha256:1451f4d6d53a300e378a0a371810021ded638d683bf0b3dc145671ec0d5060b9",
+        "size": 2406
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_hooks.h",
+        "digest": "sha256:c533f19bc2010c9df736ef4ce9585620aca9ef7c0b8a27d9987e4602b99a10eb",
+        "size": 2147
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_records.h",
+        "digest": "sha256:9bbe75a1f2e7475ae5cbbaf0bf5e3b39d405a69127fd8839edd5be77b39911c0",
+        "size": 4590
+      },
+      {
+        "path": "sdk/typescript-guest/activation/reaction_records.h",
+        "digest": "sha256:a7b6372c234af5ef87ad3619c991775381e63c7861426fb30995d8e043675a3f",
+        "size": 5052
+      },
+      {
+        "path": "tools/typescript_guest/abort_engine.py",
+        "digest": "sha256:1ca796a7c902c99e186baa10df6a19df23626d464972773a242e4f7eedd3ec4b",
+        "size": 4020
+      },
+      {
+        "path": "tools/typescript_guest/activation_engine.py",
+        "digest": "sha256:449242586e04b173f152745d80928ef7953bfb5f2a80cc14ed2fc25a96c050b0",
+        "size": 14930
+      },
+      {
+        "path": "tools/typescript_guest/clock_engine.py",
+        "digest": "sha256:c9d75ae50b8290e380f1b5d9d33729df931767ca2efb59dcd556c05df96af669",
+        "size": 7780
+      },
+      {
+        "path": "tools/typescript_guest/event_engine.py",
+        "digest": "sha256:30264b9718c0d02e2f2a79897334b3f088ef62590983ceb0c211922c87169b63",
+        "size": 18823
+      },
+      {
+        "path": "tools/typescript_guest/promise_engine.py",
+        "digest": "sha256:e10298e8916272c1ca53d99ba195150ca678707ac75d6ab9cf1afd0d53fbd5af",
+        "size": 10598
+      },
+      {
+        "path": "tools/typescript_guest/timer_engine.py",
+        "digest": "sha256:d24094ced9bb6ec3e11b80308bddc569d0daefa8449892d3d22a058bd9702277",
+        "size": 4996
+      },
+      {
+        "path": "wit/platform/clock/package.wit",
+        "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "size": 139
+      }
+    ],
+    "runtimeWitDigest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+    "upstream": {
+      "componentizeTree": "4b8d6eb465b5cded6b97c67aaf6fdaa8b62001e2",
+      "starlingCommit": "9dda8ba7fcda2e17c6795d402f0478cf4c1f7f37",
+      "firefoxCommit": "9dab3d6f643e926a340c391ea30968e940390dec",
+      "publicSpiderMonkeyArchiveDigest": "sha256:c57dc83d93dc04198882b44fea49cd3cb01e0b267bf99fae3b058cb158da684b",
+      "publicSDK30ArchiveDigest": "sha256:0507679dff16814b74516cd969a9b16d2ced1347388024bc7966264648c78bfb"
+    },
+    "sourceDerivationDigest": "sha256:29f78545d1ad7c579b1690230e072dd3552b1818777088a3d87fce688921e9a7",
+    "buildReceiptDigest": "sha256:a2d3405b25480e85bffff3e7bc527fe140a34f9898a6378f5e8d94eaa78b86bc",
+    "qualification": "unknown",
+    "apiSupport": "not-evaluated",
+    "inputTrust": "operator-asserted"
+  },
+  "canonicalEngineInputDigest": "sha256:4cdd6eba211801cadf004786959694db855d40e44dd84c8a1553f041818faaf6",
+  "selected": {
+    "worlds": [
+      {
+        "name": "service",
+        "imports": {},
+        "exports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "selected",
+        "imports": {
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          },
+          "interface-2": {
+            "interface": {
+              "id": 2
+            }
+          },
+          "interface-3": {
+            "interface": {
+              "id": 3
+            }
+          }
+        },
+        "exports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "package": 3
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "api",
+        "types": {},
+        "functions": {
+          "greet": {
+            "name": "greet",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "name",
+                "type": "string"
+              }
+            ],
+            "result": 0
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "activation",
+        "types": {
+          "owner-kind": 1,
+          "token": 2,
+          "error": 3,
+          "phase": 4,
+          "observation": 5
+        },
+        "functions": {
+          "register": {
+            "name": "register",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": 1
+              },
+              {
+                "name": "continuation",
+                "type": 6
+              }
+            ],
+            "result": 7
+          },
+          "park": {
+            "name": "park",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 2
+              }
+            ],
+            "result": 8
+          },
+          "wake": {
+            "name": "wake",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 2
+              }
+            ],
+            "result": 8
+          },
+          "settle": {
+            "name": "settle",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 2
+              }
+            ],
+            "result": 8
+          },
+          "close": {
+            "name": "close",
+            "kind": "freestanding",
+            "params": [],
+            "result": 8
+          },
+          "observe": {
+            "name": "observe",
+            "kind": "freestanding",
+            "params": [],
+            "result": 9
+          },
+          "wait-for": {
+            "name": "wait-for",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "nanos",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 6
+              }
+            ],
+            "result": 8
+          },
+          "wait-until": {
+            "name": "wait-until",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "unix-millis",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 6
+              }
+            ],
+            "result": 8
+          },
+          "timer-start": {
+            "name": "timer-start",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": 10
+              },
+              {
+                "name": "continuation",
+                "type": 6
+              }
+            ],
+            "result": 7
+          },
+          "timer-next": {
+            "name": "timer-next",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 2
+              }
+            ],
+            "result": 11
+          },
+          "timer-stop": {
+            "name": "timer-stop",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 2
+              }
+            ],
+            "result": 8
+          }
+        },
+        "package": 1
+      },
+      {
+        "name": "monotonic",
+        "types": {},
+        "functions": {
+          "now-nanos": {
+            "name": "now-nanos",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 2
+      },
+      {
+        "name": "wall",
+        "types": {},
+        "functions": {
+          "now-unix-millis": {
+            "name": "now-unix-millis",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 2
+      }
+    ],
+    "types": [
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "string",
+            "err": "string"
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "owner-kind",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "task"
+              },
+              {
+                "name": "managed-idle-worker"
+              },
+              {
+                "name": "executor"
+              },
+              {
+                "name": "queued-work"
+              },
+              {
+                "name": "wait"
+              },
+              {
+                "name": "timer"
+              },
+              {
+                "name": "result"
+              },
+              {
+                "name": "native"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": "token",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": "error",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "unavailable"
+              },
+              {
+                "name": "permission-denied"
+              },
+              {
+                "name": "resource-exhausted"
+              },
+              {
+                "name": "cancelled"
+              },
+              {
+                "name": "deadline"
+              },
+              {
+                "name": "invalid-state"
+              },
+              {
+                "name": "invalid-token"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": "phase",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "running"
+              },
+              {
+                "name": "waiting"
+              },
+              {
+                "name": "closing"
+              },
+              {
+                "name": "draining"
+              },
+              {
+                "name": "cancelling"
+              },
+              {
+                "name": "retired"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": "observation",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "phase",
+                "type": 4
+              },
+              {
+                "name": "tasks",
+                "type": "u32"
+              },
+              {
+                "name": "executors",
+                "type": "u32"
+              },
+              {
+                "name": "queued-work",
+                "type": "u32"
+              },
+              {
+                "name": "waits",
+                "type": "u32"
+              },
+              {
+                "name": "timers",
+                "type": "u32"
+              },
+              {
+                "name": "results",
+                "type": "u32"
+              },
+              {
+                "name": "native-owners",
+                "type": "u32"
+              },
+              {
+                "name": "parked-tasks",
+                "type": "u32"
+              },
+              {
+                "name": "managed-idle-workers",
+                "type": "u32"
+              },
+              {
+                "name": "native-memory-bytes",
+                "type": "u64"
+              },
+              {
+                "name": "admission-failures",
+                "type": "u64"
+              },
+              {
+                "name": "stale-wakes",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 2
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 2,
+            "err": 3
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 3
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 5,
+            "err": 3
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 3
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "examples:greeting@1.0.0",
+        "interfaces": {
+          "api": 0
+        },
+        "worlds": {
+          "service": 0
+        }
+      },
+      {
+        "name": "latent:runtime@0.1.0",
+        "interfaces": {
+          "activation": 1
+        },
+        "worlds": {}
+      },
+      {
+        "name": "latent:clock@0.1.0",
+        "interfaces": {
+          "monotonic": 2,
+          "wall": 3
+        },
+        "worlds": {}
+      },
+      {
+        "name": "examples:lsf-typescript-activation@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "selected": 1
+        }
+      }
+    ]
+  },
+  "component": {
+    "worlds": [
+      {
+        "name": "root",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          },
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          },
+          "interface-2": {
+            "interface": {
+              "id": 2
+            }
+          }
+        },
+        "exports": {
+          "interface-3": {
+            "interface": {
+              "id": 3
+            }
+          }
+        },
+        "package": 3
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "activation",
+        "types": {
+          "owner-kind": 0,
+          "token": 1,
+          "error": 2
+        },
+        "functions": {
+          "register": {
+            "name": "register",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": 0
+              },
+              {
+                "name": "continuation",
+                "type": 3
+              }
+            ],
+            "result": 4
+          },
+          "park": {
+            "name": "park",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 5
+          },
+          "wake": {
+            "name": "wake",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 5
+          },
+          "settle": {
+            "name": "settle",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 5
+          },
+          "close": {
+            "name": "close",
+            "kind": "freestanding",
+            "params": [],
+            "result": 5
+          },
+          "timer-start": {
+            "name": "timer-start",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": 6
+              },
+              {
+                "name": "continuation",
+                "type": 3
+              }
+            ],
+            "result": 4
+          },
+          "timer-next": {
+            "name": "timer-next",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "timer-stop": {
+            "name": "timer-stop",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 5
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "monotonic",
+        "types": {},
+        "functions": {
+          "now-nanos": {
+            "name": "now-nanos",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 1
+      },
+      {
+        "name": "wall",
+        "types": {},
+        "functions": {
+          "now-unix-millis": {
+            "name": "now-unix-millis",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 1
+      },
+      {
+        "name": "api",
+        "types": {},
+        "functions": {
+          "greet": {
+            "name": "greet",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "name",
+                "type": "string"
+              }
+            ],
+            "result": 8
+          }
+        },
+        "package": 2
+      }
+    ],
+    "types": [
+      {
+        "name": "owner-kind",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "task"
+              },
+              {
+                "name": "managed-idle-worker"
+              },
+              {
+                "name": "executor"
+              },
+              {
+                "name": "queued-work"
+              },
+              {
+                "name": "wait"
+              },
+              {
+                "name": "timer"
+              },
+              {
+                "name": "result"
+              },
+              {
+                "name": "native"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "token",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "error",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "unavailable"
+              },
+              {
+                "name": "permission-denied"
+              },
+              {
+                "name": "resource-exhausted"
+              },
+              {
+                "name": "cancelled"
+              },
+              {
+                "name": "deadline"
+              },
+              {
+                "name": "invalid-state"
+              },
+              {
+                "name": "invalid-token"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 1,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "string",
+            "err": "string"
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:runtime@0.1.0",
+        "interfaces": {
+          "activation": 0
+        },
+        "worlds": {}
+      },
+      {
+        "name": "latent:clock@0.1.0",
+        "interfaces": {
+          "monotonic": 1,
+          "wall": 2
+        },
+        "worlds": {}
+      },
+      {
+        "name": "examples:greeting@1.0.0",
+        "interfaces": {
+          "api": 3
+        },
+        "worlds": {}
+      },
+      {
+        "name": "root:component",
+        "interfaces": {},
+        "worlds": {
+          "root": 0
+        }
+      }
+    ]
+  },
+  "parserOutputs": {
+    "06-selected-runtime-types.stdout.txt": {
+      "sha256": "sha256:ba9ebeb28ffdb4b7f2035379a48dfb86e3982f42e9c91f94a43d3a74ba524d79",
+      "bytes": 11112
+    },
+    "21-final-runtime-types.stdout.txt": {
+      "sha256": "sha256:faa56bfe41953d66503c9915215977a09d92c18c448a6fbd77bb09c7f42bf615",
+      "bytes": 6639
+    }
+  },
+  "engineEnvelope": {
+    "sha256": "sha256:385624cf28f1b700bd8364c77549a5dda34dbe6735fcf21ac86f140f8b24715c",
+    "bytes": 6936,
+    "originalRun": 39319524998,
+    "originalArtifact": 12223506878
+  }
+}

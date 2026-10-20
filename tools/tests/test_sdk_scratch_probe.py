@@ -85,7 +85,8 @@ class ScratchProbe(unittest.TestCase):
             output = Path(temporary)/'not-written'
             for kwargs in ({'language': 'typescript', 'standard_scratch_refusal': True},
                     {'language': 'rust', 'standard_scratch_refusal': 1},
-                    {'language': 'rust', 'standard_scratch_refusal': True, 'rust_standard_entropy': True}):
+                    {'language': 'rust', 'standard_scratch_refusal': True, 'rust_standard_entropy': True},
+                    {'language': 'rust', 'standard_scratch_refusal': True, 'standard_typescript_clocks': True}):
                 with self.subTest(kwargs=kwargs):
                     with self.assertRaisesRegex(RuntimeError, 'authoring-scratch-refusal-selection'):
                         run(Path('cli'), Path('node'), Path('fixture'), output, **kwargs)

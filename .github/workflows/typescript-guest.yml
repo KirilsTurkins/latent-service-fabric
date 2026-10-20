@@ -42,6 +42,10 @@ on:
       - 'tools/tests/test_typescript_native_build.py'
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
+      - 'tools/qualify_typescript_standard_clocks.py'
+      - 'tools/typescript_standard_clock*.py'
+      - 'tools/tests/test_typescript*clock*.py'
+      - 'docs/component-development/typescript-standard-clocks.md'
       - tools/qualify_typescript_standard_entropy.py
       - tools/typescript_entropy_probe.py
       - tools/tests/test_typescript_entropy.py
@@ -110,6 +114,10 @@ on:
       - 'tools/tests/test_typescript_native_build.py'
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
+      - 'tools/qualify_typescript_standard_clocks.py'
+      - 'tools/typescript_standard_clock*.py'
+      - 'tools/tests/test_typescript*clock*.py'
+      - 'docs/component-development/typescript-standard-clocks.md'
       - tools/qualify_typescript_standard_entropy.py
       - tools/typescript_entropy_probe.py
       - tools/tests/test_typescript_entropy.py
@@ -150,6 +158,10 @@ on:
         description: Re-sign unchanged02f components and qualify the explicit zero-input policy ceiling
         type: boolean
         default: false
+      qualify-standard-clocks:
+        description: Build two ordinary clock probes using original engine and native products
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -171,7 +183,7 @@ env:
 
 jobs:
   source-splicer:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks }}
     name: Source-owned asynchronous import compiler
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -369,7 +381,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   boundary:
-    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy }}
+    if: ${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks }}
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -841,5 +853,63 @@ jobs:
             ${{ runner.temp }}/typescript-entropy-policy-replay/*.json
             ${{ runner.temp }}/typescript-entropy-policy-replay/node/*.json
             ${{ runner.temp }}/typescript-entropy-policy-replay/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7
+  standard-clocks:
+    name: Ordinary Date and performance signed authority and fresh-state programme
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.qualify-standard-clocks }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+      - name: Install original isolated compiler prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install -r tools/requirements.lock
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Check ordinary clock semantics and bounded qualification controls
+        run: python3 -B -m unittest tools.tests.test_typescript_standard_clocks tools.tests.test_typescript_clock_fixture tools.tests.test_typescript_clock_campaign tools.tests.test_typescript_clock_qualification -v
+      - name: Install normal pinned TypeScript compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-clock-tools"
+      - name: Acquire only authenticated public layers original native products and clock engine
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs "$RUNNER_TEMP/typescript-clock-original-inputs"
+          python3 -B tools/qualify_typescript_standard_clocks.py --acquire-engine --engine "$RUNNER_TEMP/typescript-clock-original-engine"
+      - name: Compile two clock components refuse snapshot observations and execute all47 signed outcomes
+        run: python3 -B tools/qualify_typescript_standard_clocks.py --acquired "$RUNNER_TEMP/typescript-clock-original-inputs" --engine "$RUNNER_TEMP/typescript-clock-original-engine" --tools "$RUNNER_TEMP/typescript-clock-tools" --output "$RUNNER_TEMP/typescript-standard-clocks"
+      - name: Retain source-bound compiler refusals authority results and physical cleanup
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-standard-clocks-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-clock-original-inputs/acquisition.json
+            ${{ runner.temp }}/typescript-clock-original-engine/acquisition.json
+            ${{ runner.temp }}/typescript-standard-clocks/*.json
+            ${{ runner.temp }}/typescript-standard-clocks/build-*/*.json
+            ${{ runner.temp }}/typescript-standard-clocks/build-*/component.wasm
+            ${{ runner.temp }}/typescript-standard-clocks/build-*/logs/**
+            ${{ runner.temp }}/typescript-standard-clocks/snapshot-*/*.json
+            ${{ runner.temp }}/typescript-standard-clocks/snapshot-*/logs/**
+            ${{ runner.temp }}/typescript-standard-clocks/node/*.json
+            ${{ runner.temp }}/typescript-standard-clocks/node/controls/*.json
           if-no-files-found: warn
           retention-days: 7
