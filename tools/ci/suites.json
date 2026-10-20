@@ -7356,7 +7356,10 @@
         "host::runtime::positive_timer_observer::tests::repeated_tables_share_the_process_bound_including_one_overflow_record",
         "bindings::compatibility_tests::phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes",
         "config::tests::explicit_http_phase_profile_changes_preparation_identity_without_installing_authority",
-        "surface::tests::phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_calls"
+        "surface::tests::phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_calls",
+        "host::runtime::positive_timer_observer::tests::ready_wait_never_produces_a_pending_observation",
+        "host::runtime::positive_timer_observer::tests::original_wait_is_polled_and_only_first_pending_is_observed",
+        "host::runtime::positive_timer_observer::tests::wait_pending_record_retains_original_closed_format_and_owner_counts"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7369,7 +7372,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 387,
+      "minimumCases": 390,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
