@@ -126,18 +126,14 @@
     "strategy": {
       "fail-fast": false,
       "matrix": {
-        "language": [
-          "c",
-          "java",
-          "rust"
-        ]
+        "language": "${{ fromJSON(inputs.rust-only && '[\"rust\"]' || '[\"c\",\"java\",\"rust\"]') }}"
       }
     },
     "timeout-minutes": 20
   },
   "jobId": "tenants",
   "kind": "job",
-  "reviewReason": "Preserve every original C/Java command while adding exact retained Rust33 original restoration and its independent seven-call two-tenant execution; twenty-minute bounds, fixed a4 native ancestry and no native/old baseline rerun remain. Retain actual new C component and compiler observations.",
+  "reviewReason": "Retain every C/Java/Rust step, command and twenty-minute limit; default original matrix unchanged, optional explicit manual Rust-only list prevents duplicate successful siblings. No guest/native build is added.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/resource-tenant-six-language-reference.yml"
 }

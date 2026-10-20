@@ -44,6 +44,31 @@ class ResourceTenantFreshC(unittest.TestCase):
                         self.assertTrue(proof['capture']['originalsRemoved'])
                 self.assertEqual(len(seen),1)
 
+    def test_real_cli_accepts_only_registered_rust_origin_and_refuses_foreign_or_unknown(self):
+        import subprocess
+        import sys
+        from tools import resource_tenant_originals as originals
+        from tools.resource_tenant_inputs import REPOSITORY_ID
+        row=originals.ORIGINALS['rust']
+        value={'id':row['artifact'],'name':row['name'],'size_in_bytes':row['bytes'],
+            'digest':row['digest'],'expired':False,'workflow_run':{'id':row['run'],
+                'head_sha':row['head'],'repository_id':REPOSITORY_ID,'head_repository_id':REPOSITORY_ID}}
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'producer.json';path.write_bytes(json.dumps(value).encode())
+            command=[sys.executable,'-B',str(fresh_c.ROOT/'tools/qualify_resource_tenants.py'),
+                '--language','rust','--verify-original-producer',str(path)]
+            observed=subprocess.run(command,cwd=fresh_c.ROOT,capture_output=True,timeout=30)
+            self.assertEqual(observed.returncode,0,observed.stderr.decode())
+            self.assertEqual(observed.stdout.strip(),b'passed')
+            value['workflow_run']['head_sha']='0'*40;path.write_bytes(json.dumps(value).encode())
+            observed=subprocess.run(command,cwd=fresh_c.ROOT,capture_output=True,timeout=30)
+            self.assertNotEqual(observed.returncode,0)
+            self.assertIn(b'resource-tenant-original-exact-producer',observed.stderr)
+            command[command.index('rust')]='unregistered'
+            observed=subprocess.run(command,cwd=fresh_c.ROOT,capture_output=True,timeout=30)
+            self.assertEqual(observed.returncode,2)
+            self.assertIn(b'invalid choice',observed.stderr)
+
     def test_missing_pinned_c_tool_refuses_before_fresh_compile(self):
         with tempfile.TemporaryDirectory() as temp, \
                 patch.object(fresh_c.shutil,'which',return_value=None), \

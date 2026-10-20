@@ -1,7 +1,8 @@
 {
   "cases": [
     "ResourceTenantFreshC.test_missing_pinned_c_tool_refuses_before_fresh_compile",
-    "ResourceTenantFreshC.test_normal_c_capture_removes_originals_then_one_fresh_build_has_truthful_new_records"
+    "ResourceTenantFreshC.test_normal_c_capture_removes_originals_then_one_fresh_build_has_truthful_new_records",
+    "ResourceTenantFreshC.test_real_cli_accepts_only_registered_rust_origin_and_refuses_foreign_or_unknown"
   ],
   "guards": {
     "ResourceTenantFreshC.test_missing_pinned_c_tool_refuses_before_fresh_compile": {
@@ -27,10 +28,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "ResourceTenantFreshC.test_real_cli_accepts_only_registered_rust_origin_and_refuses_foreign_or_unknown": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:af8d43c1d7c944f08e0f4a8c28004e5ab3de2ab42418570da6bd97b5b92985fc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_resource_tenant_fresh_c.py",
-  "reviewReason": "One fresh normal captured C guest build because the historical original observation was not retained; source seam enforces unchanged closure/source and no old-record backfill.",
+  "reviewReason": "Keep both original C fixture guards unchanged; add real subprocess registered Rust producer success, foreign-source refusal and unknown-language refusal. Original source reproduces argparse exit2 before any component invocation.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

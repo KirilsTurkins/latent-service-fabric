@@ -2,8 +2,11 @@ name: C Rust and Java resource tenant reference
 
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/sdk-resource-six-tenant-extension-20261020]
+    inputs:
+      rust-only:
+        description: Retry only the registered Rust component without repeating successful siblings
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [c, java, rust]
+        language: ${{ fromJSON(inputs.rust-only && '["rust"]' || '["c","java","rust"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

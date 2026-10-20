@@ -7,12 +7,15 @@
     },
     "name": "C Rust and Java resource tenant reference",
     "on": {
-      "push": {
-        "branches": [
-          "feat/sdk-resource-six-tenant-extension-20261020"
-        ]
-      },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "rust-only": {
+            "default": false,
+            "description": "Retry only the registered Rust component without repeating successful siblings",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "actions": "read",
@@ -22,7 +25,7 @@
   "requiredJobs": [
     "tenants"
   ],
-  "reviewReason": "Separate explicit manual/owned-branch C Java Rust extension with immutable a4 native products; one fresh C guest only, or unchanged qualified Java39/Rust33 originals; no Go/TypeScript replay or host build.",
+  "reviewReason": "Indexing push completed; retain manual qualification with default original three-language matrix and a default-false Rust-only retry selector so successful C/Java siblings are not repeated after an argparse-only preflight fix.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/resource-tenant-six-language-reference.yml"
 }
