@@ -1,0 +1,85 @@
+name: TypeScript resource callback lifecycle
+
+on:
+  push:
+    branches: ['feat/typescript-resource-runtime-20261020']
+    paths: ['.github/workflows/typescript-resource-runtime.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: typescript-resource-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resource-runtime:
+    name: Signed transitive resources timers cancellation and tenant reuse
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Fetch the immutable compiled source before any producer verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+      - name: Install locked requirements and check actual positive timer boundaries
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_typescript_resource_runtime tools.tests.test_typescript_resource_runtime_fixture tools.tests.test_go_node_stop_timer_observer -v
+      - name: Install the normal compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install only normal pinned public TypeScript compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/resource-runtime-tools"
+      - name: Authenticate and acquire exact V7 native products without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/java_phase_native_products.py --output "$RUNNER_TEMP/resource-runtime-native"
+      - name: Acquire only the original source-bound import engine and splicer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_resource_runtime_inputs.py --output "$RUNNER_TEMP/resource-runtime-compiler"
+      - name: Capture compile sign and execute one ordinary resource callback component
+        run: |
+          python3 -B tools/qualify_typescript_resource_runtime.py \
+            --native "$RUNNER_TEMP/resource-runtime-native" --compiler "$RUNNER_TEMP/resource-runtime-compiler" \
+            --tools "$RUNNER_TEMP/resource-runtime-tools" --output "$RUNNER_TEMP/resource-runtime"
+      - name: Retain public source identities raw outcomes positive waits and physical retirement
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-resource-runtime-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/resource-runtime-native/*.json
+            ${{ runner.temp }}/resource-runtime-compiler/acquisition.json
+            ${{ runner.temp }}/resource-runtime/*.json
+            ${{ runner.temp }}/resource-runtime/build/*.json
+            ${{ runner.temp }}/resource-runtime/build/component.wasm
+            ${{ runner.temp }}/resource-runtime/build/*.wit
+            ${{ runner.temp }}/resource-runtime/build/package/**
+            ${{ runner.temp }}/resource-runtime/build/logs/**
+            ${{ runner.temp }}/resource-runtime/node/*.json
+            ${{ runner.temp }}/resource-runtime/node/node-stderr.txt
+            ${{ runner.temp }}/resource-runtime/node/commands/logs/**
+            ${{ runner.temp }}/resource-runtime/node/examples-controls/*.json
+            ${{ runner.temp }}/resource-runtime/node/foreign-controls/*.json
+            ${{ runner.temp }}/resource-runtime/node/signed/my-greeting/build-observation.json

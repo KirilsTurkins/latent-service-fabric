@@ -1,0 +1,89 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed transitive resources timers cancellation and tenant reuse",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Fetch the immutable compiled source before any producer verification",
+        "run": "git -c http.extraheader=\"AUTHORIZATION: bearer $GH_TOKEN\" fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\n"
+      },
+      {
+        "name": "Install locked requirements and check actual positive timer boundaries",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -B -m unittest tools.tests.test_typescript_resource_runtime tools.tests.test_typescript_resource_runtime_fixture tools.tests.test_go_node_stop_timer_observer -v\n"
+      },
+      {
+        "name": "Install the normal compiler isolation boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install only normal pinned public TypeScript compiler tools",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/resource-runtime-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate and acquire exact V7 native products without rebuilding",
+        "run": "python3 -B tools/java_phase_native_products.py --output \"$RUNNER_TEMP/resource-runtime-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire only the original source-bound import engine and splicer",
+        "run": "python3 -B tools/typescript_resource_runtime_inputs.py --output \"$RUNNER_TEMP/resource-runtime-compiler\""
+      },
+      {
+        "name": "Capture compile sign and execute one ordinary resource callback component",
+        "run": "python3 -B tools/qualify_typescript_resource_runtime.py \\\n  --native \"$RUNNER_TEMP/resource-runtime-native\" --compiler \"$RUNNER_TEMP/resource-runtime-compiler\" \\\n  --tools \"$RUNNER_TEMP/resource-runtime-tools\" --output \"$RUNNER_TEMP/resource-runtime\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain public source identities raw outcomes positive waits and physical retirement",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-resource-runtime-${{ github.sha }}",
+          "path": "${{ runner.temp }}/resource-runtime-native/*.json\n${{ runner.temp }}/resource-runtime-compiler/acquisition.json\n${{ runner.temp }}/resource-runtime/*.json\n${{ runner.temp }}/resource-runtime/build/*.json\n${{ runner.temp }}/resource-runtime/build/component.wasm\n${{ runner.temp }}/resource-runtime/build/*.wit\n${{ runner.temp }}/resource-runtime/build/package/**\n${{ runner.temp }}/resource-runtime/build/logs/**\n${{ runner.temp }}/resource-runtime/node/*.json\n${{ runner.temp }}/resource-runtime/node/node-stderr.txt\n${{ runner.temp }}/resource-runtime/node/commands/logs/**\n${{ runner.temp }}/resource-runtime/node/examples-controls/*.json\n${{ runner.temp }}/resource-runtime/node/foreign-controls/*.json\n${{ runner.temp }}/resource-runtime/node/signed/my-greeting/build-observation.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "resource-runtime",
+  "kind": "job",
+  "reviewReason": "Add finite actual resource/callback lifecycle with unchanged native products and explicit positive timer witnesses; retain all historical programmes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-resource-runtime.yml"
+}

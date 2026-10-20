@@ -58,11 +58,13 @@ export async function resourceRuntime(mode) {
     return 'resource-runtime|parallel=' + values.join('+') + '|callbacks=2|fresh=1';
   }
   if (mode === 'pending') {
-    console.info('resource-pending:owned');
-    return await new Promise(resolve => setTimeout(() => {
-      console.error('resource-late-callback-must-not-run');
-      resolve(hex(first.bytes));
-    }, 3600000));
+    return await new Promise(resolve => {
+      setTimeout(() => {
+        console.error('resource-late-callback-must-not-run');
+        resolve(hex(first.bytes));
+      }, 3600000);
+      console.info('resource-pending:timer-accepted');
+    });
   }
   if (mode === 'trap') {
     setTimeout(() => { console.error(hex(first.bytes)); throw new Error('resource-late-trap-timer'); }, 3600000);
@@ -95,9 +97,9 @@ def project(directory: Path, outside: Path):
     require(outside.parent.resolve(strict=True) == directory.parent.resolve(strict=True)
             and outside.parent.resolve(strict=True) != ROOT and ROOT not in outside.parents,
             'resource-runtime-independent-outside-project')
-    app = create(directory, 'greeting', 'resource-runtime', runtime_profile=IMPORT_PROFILE)
+    app = create(directory, 'greeting', 'my-greeting', runtime_profile=IMPORT_PROFILE)
     config = json.loads(read_file(app/'capsule-project.json'))
-    config.update(world='examples:resource-runtime/service@1.0.0', service='examples/resource-runtime')
+    config.update(world='examples:resource-runtime/service@1.0.0')
     config['limits']['logBytes'] = 16384
     (app/'capsule-project.json').write_bytes((json.dumps(config, indent=2)+'\n').encode())
     (app/'wit/world.wit').write_bytes(WORLD)
