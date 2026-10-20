@@ -73,6 +73,12 @@ jobs:
           commands.run('normal-host-build','cargo','--config',root/'.cargo/managed-guest.toml',
               'build','--locked','-p','latent','-p','latentd','--bins','-p','latent-packaging',
               '--example','package','--example','capsule_contracts','-p','latent-policy','--example','capsule_authoring')
+          commands.run('closed-http-refusal-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-capabilities','--lib','broker::http::refusal::tests::',
+              '--','--test-threads=1')
+          commands.run('neutral-resource-signing-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-policy','--example','capsule_authoring',
+              'authoring::resource_neutral::tests::','--','--test-threads=1')
           require(before==source_identity(root) and materials=={p:file_identity(root/p) for p in selected},
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)
