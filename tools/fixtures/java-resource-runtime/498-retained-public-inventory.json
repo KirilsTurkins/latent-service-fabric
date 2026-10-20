@@ -1,0 +1,1062 @@
+{
+  "schemaVersion": "latent.java.resource-runtime-retained.v1",
+  "source": "4980cec862e28a785c1088469978868c4c3452b8",
+  "checkoutSource": "7c50aa12f251567eff90b410bf5362a5ace7b7ff",
+  "event": "pull_request",
+  "stage": "fresh-sign-admit-two-tenant-joined-programme",
+  "run": 39476833569,
+  "job": 118814857687,
+  "memberCount": 209,
+  "artifact": {
+    "id": 12289617423,
+    "size_in_bytes": 1497617,
+    "digest": "sha256:2ea500f2bf80fa63afbc34a7df0966151b4219283a1430b3a9f0b9b278abb055"
+  },
+  "members": [
+    {
+      "path": "java-resource-native/native-products.json",
+      "bytes": 21390,
+      "sha256": "sha256:05254405868cb99025cd1f59a0ae13b406fb201371aa1c7c4a6938ee34a1f719"
+    },
+    {
+      "path": "java-resource-native/source-inputs.json",
+      "bytes": 18937,
+      "sha256": "sha256:aeba42c6b06725317f75726e8f60bdc4da1f6d6120c121fd5ee8039f2f28a8ca"
+    },
+    {
+      "path": "java-resource-native/retrieval.json",
+      "bytes": 2530,
+      "sha256": "sha256:4e25ec33977ac68f231b09128824a28ee2d2241dbaf8c468f157166b2cc1192b"
+    },
+    {
+      "path": "java-resource-runtime/FAILED.json",
+      "bytes": 25428,
+      "sha256": "sha256:f83d2f1d8b489a3a3b932c151fe9563577d5aacb24a18ec3f63ae78eae5eaf85"
+    },
+    {
+      "path": "java-resource-runtime/build/BUILD-COMPLETE.json",
+      "bytes": 29234,
+      "sha256": "sha256:4fe6aab25e8de9081451dfe7a9aff30f02d8cb6049686d0c59bc6014daa9e498"
+    },
+    {
+      "path": "java-resource-runtime/build/application-dependencies.json",
+      "bytes": 6584,
+      "sha256": "sha256:896832d900e565e1ea61e621e7fe78801d9b9c2e601469a96daf0cf0800f5dde"
+    },
+    {
+      "path": "java-resource-runtime/build/bindings.json",
+      "bytes": 22538,
+      "sha256": "sha256:0839129837746d1fa43289d97a0884109ff3050725bd57fd0d4313bc9c551a5a"
+    },
+    {
+      "path": "java-resource-runtime/build/build-observation.json",
+      "bytes": 3789,
+      "sha256": "sha256:f68590a2e2679a8c090c1582a7a03d7c3a2c043db81fed1d7b522e11ab0a4d20"
+    },
+    {
+      "path": "java-resource-runtime/build/capsule.json",
+      "bytes": 1467,
+      "sha256": "sha256:509d0cba9573258a4b88dc7a6d112e6f1a968d796dc2d9b82555822ba5827312"
+    },
+    {
+      "path": "java-resource-runtime/build/compatibility-context.json",
+      "bytes": 3861,
+      "sha256": "sha256:195898ccfb40744c1c7fc1280080254b7e0c5bbb60fbea6ad51b32708ed3c9bb"
+    },
+    {
+      "path": "java-resource-runtime/build/compatibility-inspection.json",
+      "bytes": 569,
+      "sha256": "sha256:9c6736492fd7baafb3b6b3aeb058778d08033850d5344f2aed02fa4e58d49036"
+    },
+    {
+      "path": "java-resource-runtime/build/compatibility-reachability.json",
+      "bytes": 19275,
+      "sha256": "sha256:6d3e84ee8a76dd8893f2c6504e3bdaa24678594ae6be62382df4b2f175288255"
+    },
+    {
+      "path": "java-resource-runtime/build/compatibility-report.json",
+      "bytes": 1252,
+      "sha256": "sha256:9dd6ce03b20d9b18a0ec9ccecfab505f026eb0aed722e54b1de5037bbe1dc4f9"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-inputs.json",
+      "bytes": 2952146,
+      "sha256": "sha256:71fe14b979ebe3b673167bfec96bb7af2143087f5c168673a7e7495b95412e87"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/0-java-version.command.json",
+      "bytes": 188,
+      "sha256": "sha256:e2bdf341e4bf968b6495fffc3befc2c06c722758e03765c17d504c64545beef5"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/0-java-version.log",
+      "bytes": 201,
+      "sha256": "sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/1-gradle-version.command.json",
+      "bytes": 163,
+      "sha256": "sha256:0fa360c6b790f3f67a58bade13b37acd216371a6db10d5b01ddfe26ff3ca4b85"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/1-gradle-version.log",
+      "bytes": 806,
+      "sha256": "sha256:23dbdfcf47bece482ed891afa796d00ff6c97ea7b8ffebe27bb26c989dbb0a93"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/10-wit-bindings.command.json",
+      "bytes": 571,
+      "sha256": "sha256:cc72a8e9bbed003ef636c960456b8645ab7b4d0c9656f3d3fc30a5f09e723a35"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/10-wit-bindings.log",
+      "bytes": 226,
+      "sha256": "sha256:af4b7f96529458fc4dec3b86f7a36a37e563c53cbc0fc344566a4c7a6b188ca0"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/11-bindings-metadata.command.json",
+      "bytes": 247,
+      "sha256": "sha256:f078f92c64a0d3968cc8e439dc51c5b607f4f6f3cc6c9cb0ede4592b049e2d9a"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/11-bindings-metadata.log",
+      "bytes": 3124,
+      "sha256": "sha256:ae2238857d0274eb72c5ad5e7819a70f119078c50f2a2bd3f1875c2b16f7ed47"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/12-wit-graph.command.json",
+      "bytes": 225,
+      "sha256": "sha256:7cd3044199dc70decc6715e169ed778f9d2773324193d1128e5739c75ed5bad4"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/12-wit-graph.log",
+      "bytes": 15039,
+      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/13-wit-bindings.command.json",
+      "bytes": 576,
+      "sha256": "sha256:c5726c90253eb1ccbec01cf1a9746f0494b856a7c2cc175cdd47c82e91641278"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/13-wit-bindings.log",
+      "bytes": 244,
+      "sha256": "sha256:cb60cc894325514914081c0b346c433f3e0b09b25760f20cbde2b4759a38eb62"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/14-bindings-metadata.command.json",
+      "bytes": 253,
+      "sha256": "sha256:5890aa9ed5ec54a986f9037052ebe0ca455166ddf88f7aae0eea6634d72e2b7e"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/15-java-source-origins.command.json",
+      "bytes": 336,
+      "sha256": "sha256:f43ea489bd25156a08c0cced56e66e4d0ab7c07e6175fc1506171fba48a786c8"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/14-bindings-metadata.log",
+      "bytes": 3124,
+      "sha256": "sha256:ae2238857d0274eb72c5ad5e7819a70f119078c50f2a2bd3f1875c2b16f7ed47"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/16-java-owned-classes.command.json",
+      "bytes": 202,
+      "sha256": "sha256:1836edb016b8de589d43e0ef92be1a9c97d36f379d38322c0a6672035ef40ab9"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/15-java-source-origins.log",
+      "bytes": 128,
+      "sha256": "sha256:c45dded9c54f641572c0e8337f110667e8cdcf3e99ac9fca2a04fe496a33ec26"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/16-java-owned-classes.log",
+      "bytes": 595,
+      "sha256": "sha256:a78e8c28d81ba2286edccfa38724e09dffabbd2b9a40d7d0314fb714678ad6d1"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/17-java-coroutine-patch.command.json",
+      "bytes": 6444,
+      "sha256": "sha256:8080ec28219a596254c99717928d615247c1536cad502af6a034bd8acf281b94"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/17-java-coroutine-patch.log",
+      "bytes": 1,
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/18-java-coroutine-original-control.command.json",
+      "bytes": 6240,
+      "sha256": "sha256:fa53b8549f68bb9db252bfae80b03f7fcbc30995c03540075cfe3a65504d1bca"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/18-java-coroutine-original-control.log",
+      "bytes": 90,
+      "sha256": "sha256:01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/19-java-coroutine-corrected-control.command.json",
+      "bytes": 6121,
+      "sha256": "sha256:aafed76d46e98d8d1c69c4bb018af34c748144855a386bb9a40a89886efb2342"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/19-java-coroutine-corrected-control.log",
+      "bytes": 91,
+      "sha256": "sha256:4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/2-clang-version.command.json",
+      "bytes": 178,
+      "sha256": "sha256:817aa46164ab5adb04774a21f9975ff4826f363cd7e61df146e9903ed565da9d"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/2-clang-version.log",
+      "bytes": 313,
+      "sha256": "sha256:d3fa6f2e2ec1f904a494f0913372a855747f86af3961bcf5360dadf05b5eb488"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/20-java-to-c.command.json",
+      "bytes": 195,
+      "sha256": "sha256:ce019c0cc2d4bc68a7654b468aaf7af4bba72e91463c2947ecac2f10f893b80d"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/20-java-to-c.log",
+      "bytes": 981,
+      "sha256": "sha256:e02612f90609bcc1245a6aba8e1d1d6f14031c3de62fba9afb6ec74992de1cc3"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/21-c-to-wasm.command.json",
+      "bytes": 1351,
+      "sha256": "sha256:7ef7f938ecebc6ab8137336f21a999816ab7d273365cd74686920ed1cc3d2f13"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/21-c-to-wasm.log",
+      "bytes": 230578,
+      "sha256": "sha256:e0e6482b09029c1b3ec2a9fca0c2c6881bcf2195bcc8d4b462daec5306988633"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/22-closed-runtime.command.json",
+      "bytes": 436,
+      "sha256": "sha256:32650afe608331650aa252e592860798e3043be6c9658109e30aee4b66b1d66f"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/22-closed-runtime.log",
+      "bytes": 1,
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/23-component-new.command.json",
+      "bytes": 398,
+      "sha256": "sha256:d95f8678fe430735cd7992460031c9d8921b723646e04e389afbaf3f74d348b5"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/23-component-new.log",
+      "bytes": 1,
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/24-component-validate.command.json",
+      "bytes": 267,
+      "sha256": "sha256:14baabd5818e49b8ed55ae6ba8e6e842078a9bf6c1002ebfc4e5fc386dc468fe"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/24-component-validate.log",
+      "bytes": 1,
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/25-component-surface.command.json",
+      "bytes": 230,
+      "sha256": "sha256:b45089c99d0638bda31f91aa642709cb10aa26ab10f83e2467de99e3f285c4da"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/25-component-surface.log",
+      "bytes": 2897,
+      "sha256": "sha256:7962a9e184e9d4c53f1dcdf85077540228b5928d1042c808a13bd0f999797a97"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/26-expected-wit.command.json",
+      "bytes": 228,
+      "sha256": "sha256:f00b8c1101f6de9255b222793b943e0cc8b83ed80936ca44313c9d47bd3b59a3"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/26-expected-wit.log",
+      "bytes": 15039,
+      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/27-compiled-wit.command.json",
+      "bytes": 239,
+      "sha256": "sha256:62cd17f925c89bde88bbe251bad641a8572a7555b153b25eef0ab1fec1618d75"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/27-compiled-wit.log",
+      "bytes": 13533,
+      "sha256": "sha256:1fab19d2337319350279abbd65ba73e96dece19e878139919879ee92eb30cafb"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/3-wit-bindgen-version.command.json",
+      "bytes": 178,
+      "sha256": "sha256:a61f605379d57c8e714e0d71b5d7913a08a68cf3b9b91c8e34015431b0fce47d"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/3-wit-bindgen-version.log",
+      "bytes": 24,
+      "sha256": "sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/4-wasm-tools-version.command.json",
+      "bytes": 158,
+      "sha256": "sha256:cc06e7f763909b56d35eb5ef2cfd99452819bc9e5e62001e86408e0dfc762863"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/4-wasm-tools-version.log",
+      "bytes": 43,
+      "sha256": "sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/5-wit-graph.command.json",
+      "bytes": 239,
+      "sha256": "sha256:397ea2ecb8da108f873a77d730a90a9fdcf69919da75be577caf8bfc9fcc0494"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/5-wit-graph.log",
+      "bytes": 41883,
+      "sha256": "sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/6-wit-bindings.command.json",
+      "bytes": 447,
+      "sha256": "sha256:f1c3096f454e8d99ebe3c696c7555a3a54cb72880725671efc1830331f28b6ab"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/6-wit-bindings.log",
+      "bytes": 268,
+      "sha256": "sha256:7d847cdcbcd83a8c50d85c59852f4fbe2d92b0265987ea994752f016bda8a726"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/7-bindings-metadata.command.json",
+      "bytes": 261,
+      "sha256": "sha256:0bdbadbf67fecf870f983b3c7281f92f5d39d56e10890170689e2d651b334c90"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/7-bindings-metadata.log",
+      "bytes": 8431,
+      "sha256": "sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/8-activation-profile-wit.command.json",
+      "bytes": 238,
+      "sha256": "sha256:63894d405c6468c86b6427e5488ce80ea3bdfb2aa4cb2986ae1e987d7d57b2a6"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/8-activation-profile-wit.log",
+      "bytes": 15039,
+      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/9-wit-graph.command.json",
+      "bytes": 225,
+      "sha256": "sha256:d66ea6cefd156e67d909f706895ff77843c62adbfdb57bec054d83af2d62801e"
+    },
+    {
+      "path": "java-resource-runtime/build/compiler-logs/9-wit-graph.log",
+      "bytes": 15039,
+      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+    },
+    {
+      "path": "java-resource-runtime/build/component.wasm",
+      "bytes": 1953856,
+      "sha256": "sha256:66789c46532189d5506714ddc2f83169279cb1fd4c77a153cf40ce888bb307c7"
+    },
+    {
+      "path": "java-resource-runtime/build/contracts.json",
+      "bytes": 674,
+      "sha256": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+    },
+    {
+      "path": "java-resource-runtime/build/coroutine-compiler-preparation.json",
+      "bytes": 9157,
+      "sha256": "sha256:e2e44c0dc5494aeed9a2a9a62c462481e2bab30b2c68a66ca4144a896255d834"
+    },
+    {
+      "path": "java-resource-runtime/build/deployment.json",
+      "bytes": 887,
+      "sha256": "sha256:3e54665ed4fd6491735dbe0076537e167f7d4cf494a7fb04f29ebc3a00247a38"
+    },
+    {
+      "path": "java-resource-runtime/build/diagnostic-source.json",
+      "bytes": 182,
+      "sha256": "sha256:78041f6206b9c2aa2879b9c0773b6f17cca75c701623db310270b08c728403d7"
+    },
+    {
+      "path": "java-resource-runtime/build/java-classpath.json",
+      "bytes": 3843,
+      "sha256": "sha256:f491b7f2c3f1bb9c0489ca03605715b752c507863e9b12c78013cd717c5318f7"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/capsule.json",
+      "bytes": 1103,
+      "sha256": "sha256:1359534078bce78f8bdf3bfd9bfd5aac7d48e94d521e05fa6928455456799dac"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/compatibility-report.json",
+      "bytes": 1252,
+      "sha256": "sha256:9dd6ce03b20d9b18a0ec9ccecfab505f026eb0aed722e54b1de5037bbe1dc4f9"
+    },
+    {
+      "path": "java-resource-runtime/build/package/config.json",
+      "bytes": 3168,
+      "sha256": "sha256:df502313fad5c5121e1709f805a820699a8af0679e5068f89f3683bcbeaf464a"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/component.wasm",
+      "bytes": 1953856,
+      "sha256": "sha256:66789c46532189d5506714ddc2f83169279cb1fd4c77a153cf40ce888bb307c7"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/contracts.json",
+      "bytes": 674,
+      "sha256": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/package/build-inputs.json",
+      "bytes": 3955,
+      "sha256": "sha256:01a8472d0d7834ff1cd499830787de503634a3d97518539d4cdbafb0e4f344f6"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/resource-index.json",
+      "bytes": 1804,
+      "sha256": "sha256:029622cad3b104e5c788d62e7f9197555886eed02dca43225dfb6b4e160b0fee"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/resources/objects/1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b",
+      "bytes": 6,
+      "sha256": "sha256:1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/resources/objects/bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd",
+      "bytes": 12,
+      "sha256": "sha256:bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/resources/objects/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/wit/deps/activation-runtime/package.wit",
+      "bytes": 2539,
+      "sha256": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/wit/deps/log/package.wit",
+      "bytes": 418,
+      "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/wit/world.wit",
+      "bytes": 443,
+      "sha256": "sha256:7a500a2d85ac80b2a58f3c3af3850197693f8374c95634d1db4e43e7332ab221"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/wit/deps/random/package.wit",
+      "bytes": 272,
+      "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+    },
+    {
+      "path": "java-resource-runtime/build/package/layers/wit-lock.json",
+      "bytes": 1110,
+      "sha256": "sha256:72b4ba08c751f65b4a15c51c9aaa5028d6618703a6176feaa54c1c5e2b4e0016"
+    },
+    {
+      "path": "java-resource-runtime/build/package/manifest.json",
+      "bytes": 4149,
+      "sha256": "sha256:0872da077a5a300819613b4d0de2b053c126a2a87bae80c827818be4db1467cc"
+    },
+    {
+      "path": "java-resource-runtime/build/package-inputs.json",
+      "bytes": 1982,
+      "sha256": "sha256:8f5e1dab4ac45da61a9a32fdea4f7baa4b6a41224e6b2f4c55764edc1a104ba1"
+    },
+    {
+      "path": "java-resource-runtime/build/recipe-inputs.json",
+      "bytes": 9540,
+      "sha256": "sha256:c98dfd4374276f8e7d94cd13523ae527b11b92467d31c24f3621c48c890fc44b"
+    },
+    {
+      "path": "java-resource-runtime/build/package-source.json",
+      "bytes": 2839,
+      "sha256": "sha256:a7213d22b95eacfb7cf8bdf3962c4a2347e6187cfc2f98df85c10a729a974bb4"
+    },
+    {
+      "path": "java-resource-runtime/build/resource-index.json",
+      "bytes": 1804,
+      "sha256": "sha256:029622cad3b104e5c788d62e7f9197555886eed02dca43225dfb6b4e160b0fee"
+    },
+    {
+      "path": "java-resource-runtime/build/runtime-profile.json",
+      "bytes": 974,
+      "sha256": "sha256:13793367ee003886c8941b30a95339e6387ddca3c8d502401137aa8d08860525"
+    },
+    {
+      "path": "java-resource-runtime/build/source-inputs.json",
+      "bytes": 35497,
+      "sha256": "sha256:0c1f7387184ea28afe7c17fc183599e3277dd77656ca2901b8c7f10ee9e99a17"
+    },
+    {
+      "path": "java-resource-runtime/build/source-origins.json",
+      "bytes": 165,
+      "sha256": "sha256:6197dd42b13806c1a07bd708c44ed91c22933f94076c5a86c087c156e42e495b"
+    },
+    {
+      "path": "java-resource-runtime/build/surface.json",
+      "bytes": 289,
+      "sha256": "sha256:252a6bc1e6cab4686ad870a330776ebc8916753633bc18a8426da173773ffaf2"
+    },
+    {
+      "path": "java-resource-runtime/build/wit-lock.json",
+      "bytes": 1110,
+      "sha256": "sha256:72b4ba08c751f65b4a15c51c9aaa5028d6618703a6176feaa54c1c5e2b4e0016"
+    },
+    {
+      "path": "java-resource-runtime/commands/logs/00-outside-resource-runtime-javac.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "java-resource-runtime/commands/logs/00-outside-resource-runtime-javac.stdout.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "java-resource-runtime/compiler/compiler-cache-selection.json",
+      "bytes": 215,
+      "sha256": "sha256:aa70e212227d97622f4afa3a02a234b2af9ee23fea96d57fb6ef309e36091b60"
+    },
+    {
+      "path": "java-resource-runtime/node/FAILED.json",
+      "bytes": 28566,
+      "sha256": "sha256:a0f10b1b54682d565dceab9e3eb58f8b54ba330187bb4b16e4abead20f51ac4b"
+    },
+    {
+      "path": "java-resource-runtime/node/commands/logs/00-normal-neutral-package-signing.stdout.txt",
+      "bytes": 938,
+      "sha256": "sha256:e6633e7903672bd02a7a6abe36114352b84ba49213393e2e1a081c09d6f66258"
+    },
+    {
+      "path": "java-resource-runtime/node/commands/logs/00-normal-neutral-package-signing.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/001.json",
+      "bytes": 7243,
+      "sha256": "sha256:23096dd9336e49d24b06a922baf99219cbbdc7aa066488f1ae553ce29d1247b7"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/002.json",
+      "bytes": 2737,
+      "sha256": "sha256:4c9ba113586d104208691607915ed693ed4f009970374ff1b5b95810aae449b9"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/003.json",
+      "bytes": 241,
+      "sha256": "sha256:8fc6f763c0b5c35a9d2c0466ad2eac2691826af5261fef98b29dfa9d6d98e80f"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/004.json",
+      "bytes": 2260,
+      "sha256": "sha256:55405dfb9984f5f7467be7dd4fbc2ab784dab6c80ba50a9cea5ceb2b631386b4"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/005.json",
+      "bytes": 1165,
+      "sha256": "sha256:c4226ff63f55412e76fe0b09f4ed91926d6fa4d9676c3fbf5495399d138efe76"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/006.json",
+      "bytes": 1320,
+      "sha256": "sha256:037b194a4f7c8357254df0e84aee5722d847c76b4e55bf65807f2a6324695bec"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/007.json",
+      "bytes": 1136,
+      "sha256": "sha256:c101d7a25260d8e1f72f26afdc6db9748d3b63d1bbcee8557da7d48593ca09d5"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/008.json",
+      "bytes": 1296,
+      "sha256": "sha256:096c42e050f319534596632113ef6f59d9659c867666e17253fd7c53d24ec804"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/009.json",
+      "bytes": 1092,
+      "sha256": "sha256:2cdde546d6e35f286e53ae1f4e4e5ca8146acc73d51245eb70f18d7c564f6bb8"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/010.json",
+      "bytes": 1275,
+      "sha256": "sha256:e8f1ffc074584ff87d79d43b46f77f9a956eb1cd1ce50d7367a835b6dde942a1"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/011.json",
+      "bytes": 1113,
+      "sha256": "sha256:805fd0bc58c904b42005d48c2139e7d20ebb969b6ac56069b12dd9776a051e4e"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/012.json",
+      "bytes": 2503,
+      "sha256": "sha256:eb777c9eb953e192637c1367e2833c5533981660c8e337994102adeb0ec19438"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/013.json",
+      "bytes": 1140,
+      "sha256": "sha256:fad35d1b28f584dfab5252ef86bf74ff4bcb06f34eb9f382b33042d13e9d7b12"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/014.json",
+      "bytes": 1323,
+      "sha256": "sha256:cb955ea6a42639a1f798d2d4707dcc24dc4b8a7e1f6c4fb15ce146e1c4715580"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/016.json",
+      "bytes": 2583,
+      "sha256": "sha256:674e9b305cbc88b6bfcc63a7c4516dd1e830bff703cd568849b3b06573547db9"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/015.json",
+      "bytes": 1356,
+      "sha256": "sha256:fa29a3fd7f5754e48810c67d1f55cfd20c69fe3443fabdf93fd458ba9662a13a"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/017.json",
+      "bytes": 1278,
+      "sha256": "sha256:89520cfe98515e60967c98b187816afc159ea9776fef09238aa05e20797b730a"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/018.json",
+      "bytes": 1457,
+      "sha256": "sha256:8b843237dd4cc52f57603320b06083f85169af030471f974f6068396e006579d"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/019.json",
+      "bytes": 1436,
+      "sha256": "sha256:6833ee87f38d767fa4b4f8ce143f1d1d93e79c62eb18e4760cbd4292f4b73ec0"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/020.json",
+      "bytes": 2673,
+      "sha256": "sha256:7e1056ece0806340dfd132edd96b2b188ca3d709374807ad77dd251babfa0093"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/021.json",
+      "bytes": 5985,
+      "sha256": "sha256:4d0be50da268f07a012da0d84ff871f3932fd5c0853ccbe2ca83b5d1d65866b0"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/022.json",
+      "bytes": 7288,
+      "sha256": "sha256:44f2422b888217eb863b98c1e49cdb0487742725dedde6a6af70dcad86540589"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/023.json",
+      "bytes": 4073,
+      "sha256": "sha256:0e8fa9b0e9be729684a32f774aca938b6c3b760b04a85dd76c68114c0bbbdc99"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/resource-java-examples-without-runtime.json",
+      "bytes": 1085,
+      "sha256": "sha256:aa4a81b4db66e174af2b2cbf1057321fdfaf0e75d3ba213e146a911feaa726f4"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/resource-java-parallel.json",
+      "bytes": 1196,
+      "sha256": "sha256:ec615680fe62d2f6ae3d0577298b6116ada076ec946038cc70b11bf6b43fd3e0"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-001.json",
+      "bytes": 146,
+      "sha256": "sha256:37119568119a04e9fbe8a429b40ca445a95e2a39cd181f101aa91b2351a5443b"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-002.json",
+      "bytes": 148,
+      "sha256": "sha256:a06754220c8cc415db3c8a8172a745d9105356ceee08c5d19e61974b0afa4e89"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-003.json",
+      "bytes": 146,
+      "sha256": "sha256:38462ff4a3f38b836deb0902346c362ede382f5dd36bc98dc02a0b7bbc1999b9"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-004.json",
+      "bytes": 147,
+      "sha256": "sha256:56d20dae303c5b38125cb6bef328f13c52df06ebad82dc06d1decbc92ef953a6"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-005.json",
+      "bytes": 146,
+      "sha256": "sha256:e10494bdb1d0fe0f083bc15ba9b84e2d81f68193c127edefd05ee7c0e394a7e3"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-006.json",
+      "bytes": 146,
+      "sha256": "sha256:2e2c03eef0b487ab3896334e86cdd4662a6486a36ab1c385d96b00f37eb275aa"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-007.json",
+      "bytes": 146,
+      "sha256": "sha256:215d64631d464ec43498019bf50cff27a7783ab0e85cc50a46eb74144b895261"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-008.json",
+      "bytes": 146,
+      "sha256": "sha256:6382744152b63ad33cab2a5e7dfd0a38bb7cd7e87137cb29262516a94424d3c9"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-009.json",
+      "bytes": 146,
+      "sha256": "sha256:b96c003e7de894317faaa3fa558b00909fb30ee68186de5305d04e8bf851904c"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-010.json",
+      "bytes": 147,
+      "sha256": "sha256:4a008fba6a2c31f32a3024751efa3fd0787d7b2e6b9385c8264be11cdeef7ae7"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-011.json",
+      "bytes": 147,
+      "sha256": "sha256:d1c3aa6ceabc4f3002996f43a9fd02c775687a47900b7fcf8a0abf3193ca90f2"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-012.json",
+      "bytes": 148,
+      "sha256": "sha256:e3d9117d6e2b1368d0806cdb6e4f5be9da479fa6f6a1530b88f669dbb89efeef"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-013.json",
+      "bytes": 147,
+      "sha256": "sha256:c0b9758afd957d9779b770c64926eeb0b3223a4f99c20a495a11e45c84a4d72a"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-015.json",
+      "bytes": 147,
+      "sha256": "sha256:c8c302388d61497186560cec6e651f13f190c781ed9acc3114a5e1cdb348d521"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-014.json",
+      "bytes": 147,
+      "sha256": "sha256:e35424a1b5bffb5ce02c151fc654bb7c9875adb665e81951e23b8003e3650d22"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-016.json",
+      "bytes": 148,
+      "sha256": "sha256:4cd33ae93d53dfb10753b2b65ff8b7da7ea63c7431c51bd3e4b0f73162ef3297"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-017.json",
+      "bytes": 147,
+      "sha256": "sha256:ee63a1d8fe3cc694c8bec016e203e455e6ce7b2116955d4373939daffdc0a036"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-018.json",
+      "bytes": 147,
+      "sha256": "sha256:b0a2b9956340f2b67ca05add547074105844919d3fb563adc8edb5d572e9ae92"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-019.json",
+      "bytes": 147,
+      "sha256": "sha256:56ac9986ec2a1cfb5d9adaaa473ceb2ccb7906356aa38e41625e77f8f4d12f47"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-020.json",
+      "bytes": 148,
+      "sha256": "sha256:a410bdcfdea9a7cd07c9ceece06e287682cdbacb69d005e488ec99b85fcce2fe"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-021.json",
+      "bytes": 147,
+      "sha256": "sha256:bdb4bd888c0b933f111ef4ee95d93277e4df3ca1b76cd33bccd5c9b86d0a0b16"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-022.json",
+      "bytes": 147,
+      "sha256": "sha256:6901017b53297cf7899c33cd0dd2a94d6e0252cbea2214ea5c79b6a5c5a7b417"
+    },
+    {
+      "path": "java-resource-runtime/node/examples-controls/timing-023.json",
+      "bytes": 147,
+      "sha256": "sha256:eae19ee02995a631de1c2add299dd793eab1b77017bfda7f6ee5adf97db7a1c3"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/001.json",
+      "bytes": 2744,
+      "sha256": "sha256:9ea6ec84110839b2d04109cbc2402e3d26a2f8c833bd51cbac15268b717d4924"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/002.json",
+      "bytes": 241,
+      "sha256": "sha256:58eaefbd26f2277c2a5e23703498aa812dee956f9c5d92ec9ebeb13ebec326f3"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/003.json",
+      "bytes": 2259,
+      "sha256": "sha256:97ada2c2948ca271a1b3a1bf6def21ccef0feeb00f35267ac26248130e83d485"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/005.json",
+      "bytes": 1321,
+      "sha256": "sha256:2cf17cdf29c715979cb15bba23c643ca5603388df94a491eddc70cb56c7a8b65"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/004.json",
+      "bytes": 1158,
+      "sha256": "sha256:dbce5fd42d59b9a1f57451b90dec1dc23d65758b984053025915d9eee185fe4b"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/006.json",
+      "bytes": 1129,
+      "sha256": "sha256:c9a4d37484123a412fac5e03e1331ec8d3264a023746e442597ed333418efecc"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/007.json",
+      "bytes": 1297,
+      "sha256": "sha256:be170573b823971a91a248646cca953a2be92d483d9558355a589ebb79772a3e"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/008.json",
+      "bytes": 1085,
+      "sha256": "sha256:2c1c736060126b199bc2bfdc196a53a70c30241c60d2ccb3601307b0aed357f0"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/009.json",
+      "bytes": 1276,
+      "sha256": "sha256:a8d394110937f17bafa07838c9d8fed25a060fbb78c735dd4b485e4965ce9fb0"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/010.json",
+      "bytes": 1110,
+      "sha256": "sha256:2509e4dbbb161c8e57a19212c50fa3611f2b7d79c5bd2a86cd464d9e1c364dc2"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/011.json",
+      "bytes": 2499,
+      "sha256": "sha256:ca64dccb31e4b96d1ccbce36398dde06e4bc3b05ccbde90deaad201d6725d826"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/012.json",
+      "bytes": 1133,
+      "sha256": "sha256:7263a996f3fdb6a4583d63c8b6ed90d705ed2555d19fa53df5f542767798f99e"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/013.json",
+      "bytes": 1324,
+      "sha256": "sha256:04c5b2181b55e5eb2b97d78ce6f52f923392a289d14c79aa3608e738d7c9dbb4"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/014.json",
+      "bytes": 1350,
+      "sha256": "sha256:7b0347297e00e5adf06c35c8f1ff5b6c233fe20a0c9c0daa4571d8350dfb4c35"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/015.json",
+      "bytes": 2578,
+      "sha256": "sha256:cd879dad85dd847f079a359689ae2a5bcc56ce0ab8f97aae3dd81c309a87dc4e"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/016.json",
+      "bytes": 1269,
+      "sha256": "sha256:8f520b82779a9faea6853f2f27f5ec4d3fb0ebe7a9378fab53face25b4dc2559"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/017.json",
+      "bytes": 1456,
+      "sha256": "sha256:299ecb1f95e58407a4de3c074e1119db8cd93c3c9e80cec15f6c54b95618b801"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/018.json",
+      "bytes": 1429,
+      "sha256": "sha256:8f22998e2f116e46f25b254ca867c73cf0143ec2bb208fd29e8aca558347113d"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/019.json",
+      "bytes": 2666,
+      "sha256": "sha256:2e586581988292fcd63d67f84b3410880865403147da99d45fb6918e38694ca9"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/020.json",
+      "bytes": 5982,
+      "sha256": "sha256:753910171e9d9073fa5eb6b3cad3214815267e195a24d9841ab86aa508d670f8"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/021.json",
+      "bytes": 7290,
+      "sha256": "sha256:ddd5f02ec2dc60071f606202a513643e9c32fd1c2ea5ea200c778280a3d9faf5"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/022.json",
+      "bytes": 1512,
+      "sha256": "sha256:efa554d686f521b3c2e2e1cc61308e7c1b8bf7b5f61039854e30846c1eb89b19"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/023.json",
+      "bytes": 236,
+      "sha256": "sha256:803693f86800080dfa0e7f54cf70504f5c2f60af93fc7eae0d041701f6af2f7c"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/024.json",
+      "bytes": 1512,
+      "sha256": "sha256:efa554d686f521b3c2e2e1cc61308e7c1b8bf7b5f61039854e30846c1eb89b19"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-001.json",
+      "bytes": 148,
+      "sha256": "sha256:f2c94d48ef728344e41b165be812c2bc5cfdf4cb506ff5bdb3ac9d7873a1a060"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/resource-java-foreign-without-runtime.json",
+      "bytes": 1083,
+      "sha256": "sha256:a1210290c9f395ba04e73b98d6ee8233729e317f04285358d98a363df5453c37"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-002.json",
+      "bytes": 146,
+      "sha256": "sha256:71b077daac6cd367d2b6b4563b9e65fdc69a6486b94ac59ba5f92b2cc339e341"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-003.json",
+      "bytes": 148,
+      "sha256": "sha256:ca870c5e0a6dc2788f3df253e6addfbf7210d707372a23e8e9cd9dbb49bcd2e7"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-004.json",
+      "bytes": 146,
+      "sha256": "sha256:a8ad1f7d9a34abc7d7340839dff6b29ae2ae3cba18152363e320bac0b43478b4"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-005.json",
+      "bytes": 146,
+      "sha256": "sha256:2dba09e5949239005f7c3607c9e9d89ba9bd921382db2f29f9da94e77ad4c586"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-006.json",
+      "bytes": 146,
+      "sha256": "sha256:84e073b4728200b4900123905341c8da271250a631494d4d5d8267db7b191994"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-007.json",
+      "bytes": 146,
+      "sha256": "sha256:7cdc80f505beb380e35fdd8e3d67cbeb438b81e4a8e4cac0e9db264f9fa9fe4f"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-008.json",
+      "bytes": 146,
+      "sha256": "sha256:688d8ce2c4576ed1d8f479a8366f0d8e934ecb3eb99bd4680814f6571904477f"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-009.json",
+      "bytes": 146,
+      "sha256": "sha256:70c37b23a35fd1082fab3f469b7a93d3c4800b39726aafa2b82311024587039b"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-010.json",
+      "bytes": 147,
+      "sha256": "sha256:220bfcd2c3425bb8da665264ceff4d39f01dc643d21f9d693ac550d81f485c08"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-011.json",
+      "bytes": 149,
+      "sha256": "sha256:9c3edfe923012f4adc512ee831d1cbf0003e2c1afd71e724f83ed5d99b83e138"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-012.json",
+      "bytes": 147,
+      "sha256": "sha256:44e6fb8f9e63e16d0f74ae2d95f9b38ccd890c874bafb9fa82ceac6d4765dbcc"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-013.json",
+      "bytes": 147,
+      "sha256": "sha256:f455a86699a08b724b0b76f86d50f9e255c4955a99054484bbe64012512dca0e"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-015.json",
+      "bytes": 149,
+      "sha256": "sha256:355e60326498c0980e33631fb251fd7768b23af40912d163903cd315c4fe9562"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-016.json",
+      "bytes": 147,
+      "sha256": "sha256:6a34eaecbda794d2921ed4f146202c475d564df092117f559956b7fcd46cb03b"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-014.json",
+      "bytes": 147,
+      "sha256": "sha256:8635c381155551b98f443766e07d8ed7ad039ba0334894dbcd65e0c7860eb8fe"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-017.json",
+      "bytes": 147,
+      "sha256": "sha256:f1e3cdc495129d6c5988d02203e88d45509368b7f0f5e164d3d4488a86e3e7e9"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-018.json",
+      "bytes": 147,
+      "sha256": "sha256:ce6614b7e4717799b6f9248b17d303ce9d077ac51a211781a6dad6298c82e251"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-019.json",
+      "bytes": 149,
+      "sha256": "sha256:6ed685cd96c3da6156a0b3dac83cc644fc8466cc6e26ec9770d9734161c23c2c"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-020.json",
+      "bytes": 147,
+      "sha256": "sha256:0b978498b027888ee51f2863ab0794a6c833d70058ce2b8568562e95d32c2c38"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-021.json",
+      "bytes": 147,
+      "sha256": "sha256:8d57d3e99ba387ebc45e95d8789709c54d9b8e132fa2e6c0aeae4b4138af27cd"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-022.json",
+      "bytes": 147,
+      "sha256": "sha256:1cb41e1a227a474e1171de3aa86f5f57cdc61abc7041a579e5d1a2f62cf32077"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-023.json",
+      "bytes": 147,
+      "sha256": "sha256:9d4167f03bb3e71fab92dbfb3e3f6102dabb4f1e91a3a89e7b7779bc23a27697"
+    },
+    {
+      "path": "java-resource-runtime/node/foreign-controls/timing-024.json",
+      "bytes": 147,
+      "sha256": "sha256:4094339a16dce0de92da7512c30400be0e05e815e77dbe65ec2ebddafa6f5873"
+    },
+    {
+      "path": "java-resource-runtime/node/programme-progress.json",
+      "bytes": 1529,
+      "sha256": "sha256:597f922b64b40d572ed0e8ef9c87cc9f3683b397bf582496189fd902d7ca4b53"
+    },
+    {
+      "path": "java-resource-runtime/node/node-stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "java-resource-runtime/node/signed/my-greeting/build-observation.json",
+      "bytes": 3466,
+      "sha256": "sha256:9be9a8fc705841f1a470ee26de47b0728db0a07cea62e7b087f2d298ba74da21"
+    },
+    {
+      "path": "java-resource-runtime/node/signed/release-set.json",
+      "bytes": 1068,
+      "sha256": "sha256:32d858e9dc018b64ac8c775af1029869f00b0dfb9eeb9759854798af547d5d8b"
+    }
+  ]
+}

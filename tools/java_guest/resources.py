@@ -94,7 +94,7 @@ def generated_sources(files: dict[str, bytes]) -> dict[str, bytes]:
             f"final class {data_class} {{\n    private {data_class}() {{}}\n"
             "    static java.io.InputStream open() {\n"
             f"        StringBuilder value = new StringBuilder({len(encoded)});\n" + "\n".join(calls) + "\n"
-            "        return new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(value.toString()));\n"
+            "        return new ImmutableResourceStream(java.util.Base64.getDecoder().decode(value.toString()));\n"
             "    }\n}\n").encode()
         cases.append("            case " + json.dumps(name, ensure_ascii=True) + f": return {data_class}.open();")
     sources["ImmutableResources.java"] = (f"package {PACKAGE};\n"

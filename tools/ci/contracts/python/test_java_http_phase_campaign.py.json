@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "JavaComponentProfileIdentity.test_actual_component_larger_than_source_cap_preserves_exact_profile_and_digest",
+    "JavaComponentProfileIdentity.test_component_above_producer_bound_and_nonregular_input_refuse_before_signing",
+    "JavaHttpPhaseCampaign.test_configuration_selects_only_phase_contract_and_retains_original_limits",
+    "JavaHttpPhaseCampaign.test_connect_observations_stop_at_sixteen_without_replaying_or_claiming_a_witness",
+    "JavaHttpPhaseCampaign.test_every_exact_result_is_source_revision_owned_and_root_errors_cannot_be_phase_errors",
+    "JavaHttpPhaseCampaign.test_full_native_and_auxiliary_source_fence_rejects_extra_wit_before_build",
+    "JavaHttpPhaseCampaign.test_grants_are_explicit_profile_bound_with_original_ceiling_and_no_legacy_authority",
+    "JavaHttpPhaseCampaign.test_public_client_closure_preserves_transitive_edge_and_owned_resources",
+    "JavaPhaseNodeComponentLimit.test_actual_selected_node_limit_admits_retained_component_without_changing_execution_or_provider_caps",
+    "JavaPhaseNodeComponentLimit.test_changed_or_implicit_node_component_profile_cannot_be_reported_as_selected",
+    "JavaPhaseOperatorComponentLimit.test_nonoriginal_or_already_selected_operator_profile_refuses_without_changing_config",
+    "JavaPhaseOperatorComponentLimit.test_selected_control_profile_preserves_private_fields_and_only_projects_bounded_limits"
+  ],
+  "guards": {
+    "JavaComponentProfileIdentity.test_actual_component_larger_than_source_cap_preserves_exact_profile_and_digest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaComponentProfileIdentity.test_component_above_producer_bound_and_nonregular_input_refuse_before_signing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaign.test_configuration_selects_only_phase_contract_and_retains_original_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaign.test_connect_observations_stop_at_sixteen_without_replaying_or_claiming_a_witness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaign.test_every_exact_result_is_source_revision_owned_and_root_errors_cannot_be_phase_errors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaign.test_full_native_and_auxiliary_source_fence_rejects_extra_wit_before_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaign.test_grants_are_explicit_profile_bound_with_original_ceiling_and_no_legacy_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpPhaseCampaign.test_public_client_closure_preserves_transitive_edge_and_owned_resources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhaseNodeComponentLimit.test_actual_selected_node_limit_admits_retained_component_without_changing_execution_or_provider_caps": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhaseNodeComponentLimit.test_changed_or_implicit_node_component_profile_cannot_be_reported_as_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhaseOperatorComponentLimit.test_nonoriginal_or_already_selected_operator_profile_refuses_without_changing_config": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhaseOperatorComponentLimit.test_selected_control_profile_preserves_private_fields_and_only_projects_bounded_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f70c33c4d3c1acdc901092412b80cf478d4179fe693141dbcff5432f2b82375f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_http_phase_campaign.py",
+  "reviewReason": "Preserve every existing replay command and guard; add two closed node-input profile controls for the source-proven16MiB package-layer refusal and authenticate the reviewed64MiB fixture-only input selection.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

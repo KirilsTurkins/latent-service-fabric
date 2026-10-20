@@ -1,6 +1,35 @@
 """Compare authoritative and compiled WIT without unstable parser table IDs."""
 from __future__ import annotations
 
+import hashlib
+import json
+
+
+def matches(expected: dict, actual: dict, *, phase_profile: bool = False) -> bool:
+    if actual == expected:
+        return True
+    if phase_profile is not True:
+        return False
+    legacy_name = 'latent:http/streaming@0.3.0'
+    phase_name = 'latent:http/phase-timing@0.4.0'
+    nominal = expected.get('imports', {}).get(legacy_name)
+    phase = expected.get('imports', {}).get(phase_name)
+    if (not isinstance(nominal, dict) or not isinstance(phase, dict)
+            or nominal.get('functions') != {} or not isinstance(nominal.get('types'), dict)):
+        return False
+    encoded = lambda value: json.dumps(value, sort_keys=True, separators=(',', ':')).encode()
+    # Full declared source semantics, including the unused response, stay pinned.
+    if (hashlib.sha256(encoded(nominal)).hexdigest() !=
+            '644e5f46ecaf961a9d242665cdf3d1a45cf898946f9a10405201b6fe080abbc7'
+            or hashlib.sha256(encoded(phase)).hexdigest() !=
+            'aafabc979dcda4dd99280880f1266de8be366fa5fd6dd275fbe5017d7fd29aef'):
+        return False
+    # wasm-tools prunes this unused legacy record. Every nominal resource,
+    # phase operation, other import and export must still compare exactly.
+    projected = {**nominal, 'types': {name: value for name, value in nominal['types'].items()
+                                    if name != 'response'}}
+    return actual == {**expected, 'imports': {**expected['imports'], legacy_name: projected}}
+
 
 def surface(data: dict, world: str | None = None) -> dict:
     if set(data) != {"worlds", "interfaces", "types", "packages"}:

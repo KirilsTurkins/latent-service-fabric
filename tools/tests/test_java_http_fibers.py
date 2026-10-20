@@ -556,6 +556,8 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         corrected = patch.corrected_source(source)
         expected = source.replace(patch.DOMAIN.encode(), patch.COPIED_DOMAIN.encode()).replace(
             patch.BEFORE.encode(), patch.AFTER.encode())
+        for before, after in patch.LIVENESS_REPLACEMENTS:
+            expected = expected.replace(before.encode(), after.encode())
         for name in patch.RELOCATED_IMPORTS:
             expected = expected.replace(('import com.carrotsearch.hppc.'+name+';').encode(),
                 ('import org.teavm.hppc.'+name+';').encode())
@@ -576,7 +578,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             with zipfile.ZipFile(original,'w') as jar:
                 for name,raw in rows.items():jar.writestr(name,raw)
             original_bytes=original.read_bytes()
-            for name in patch.PATCH_CLASSES|{patch.CONTROL}:
+            for name in patch.PATCH_CLASSES|patch.CONTROLS:
                 path=classes/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'\xca\xfe\xba\xbecompiled-'+name.encode())
             target=root/'replacement.jar'; receipt=patch.replace_jar(original,classes,target)
             self.assertEqual(original.read_bytes(),original_bytes)
@@ -637,9 +639,26 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 'coroutine-control-unreviewed-original', 'coroutine-control-copied-loop-input-lost'):
             self.assertIn(required,text)
         from tools.java_guest import coroutine_patch as patch
-        self.assertEqual(patch.PATCH_CLASSES,frozenset(patch.CLASS_ROOT+name for name in (
+        self.assertEqual(patch.COROUTINE_CLASSES,frozenset(patch.CLASS_ROOT+name for name in (
             'CoroutineTransformation.class','CoroutineTransformation$1.class',
             'CoroutineTransformation$SplittingBackend.class')))
+
+    def test_original_entry_liveness_defect_and_saved_value_are_mandatory_real_ir_controls(self):
+        from tools.java_guest import coroutine_patch as patch
+        text = (campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/Check.java').read_text()
+        for required in ('entryLiveness(args[0]);', 'transform.apply(program,',
+                'new MethodReference("control.Await", "await", ValueType.VOID)',
+                'catch (ArrayIndexOutOfBoundsException failure)',
+                'origin.getClassName().equals("org.teavm.model.util.LivenessAnalyzer")',
+                'origin.getMethodName().equals("liveOut")', 'constant.setConstant(42)',
+                'result.setValueToReturn(value)', 'calls != 1 || pushes != 2',
+                'coroutine-control-original-entry-defect-not-observed'):
+            self.assertIn(required, text)
+        source = read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/CoroutineTransformation.java')
+        corrected = patch.corrected_source(source).decode()
+        self.assertIn('processBlock(program.basicBlockAt(i), i == basicBlockCount ? 0 : i);', corrected)
+        self.assertIn('livenessAnalysis.liveOut(originalIndex);', corrected)
+        self.assertNotIn('livenessAnalysis.liveOut(block.getIndex());', corrected)
 
 
     def test_real_pinned_inventory_and_process_boundary_stage_private_patch_only(self):
@@ -649,7 +668,8 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             root=Path(temporary);sdk=root/'sdk';(sdk/'tools').mkdir(parents=True)
             (sdk/'tools/dependencies.py').write_bytes(read_file(campaign.ROOT/'sdk/java-guest/tools/dependencies.py'))
             sources=sdk/'fibers/compiler-patch';sources.mkdir(parents=True)
-            for name in ('CoroutineTransformation.java','Compile.java','Check.java'):
+            for name in ('CoroutineTransformation.java','Compile.java','Check.java',
+                         'TypeInferer.java','ArrayTypeCheck.java'):
                 (sources/name).write_bytes(read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch'/name))
             cache=root/'files-2.1';base=cache/'org.teavm/teavm-core/0.15.0/pinned';base.mkdir(parents=True)
             core=base/'teavm-core-0.15.0.jar'
@@ -689,7 +709,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 self.assertEqual(tool,'java')
                 if stage=='java-coroutine-patch':
                     classes=Path(args[3]);classes.mkdir()
-                    for name in patch.PATCH_CLASSES|{patch.CONTROL}:
+                    for name in patch.PATCH_CLASSES|patch.CONTROLS:
                         path=classes/name;path.parent.mkdir(parents=True,exist_ok=True)
                         path.write_bytes(b'\xca\xfe\xba\xbecompiled')
                     return ''

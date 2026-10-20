@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "latent.java.resource-runtime.reference.v1",
+  "status": "passed",
+  "javaVersion": "openjdk version \"25.0.3\" 2026-04-21 LTS\r\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)\r\n",
+  "sources": {
+    "examples/java-resource-runtime/parent/Library.java": {
+      "sha256": "fbbc6d3f8121b067b0dcf2fcefc05e327049e240f2978311bef7ca1ba084db36",
+      "bytes": 7147
+    },
+    "examples/java-resource-runtime/child/Data.java": {
+      "sha256": "c28d2ed9a2640ed0392140143e8fd3824e4d76eabf81840ef97551469452234c",
+      "bytes": 2355
+    }
+  },
+  "cases": [
+    {
+      "mode": "parallel",
+      "result": "resource-runtime|parallel=255:255|callbacks=2|fresh=1",
+      "logLines": 2,
+      "status": "passed",
+      "componentModel": false
+    },
+    {
+      "mode": "fresh",
+      "result": "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1",
+      "logLines": 1,
+      "status": "passed",
+      "componentModel": false
+    },
+    {
+      "mode": "clear",
+      "result": "resource-runtime|clear=00ff80410d0a|empty=0|fresh=1",
+      "logLines": 1,
+      "status": "passed",
+      "componentModel": false
+    },
+    {
+      "mode": "callback-error",
+      "result": "resource-runtime|callback-error=IllegalStateException|fresh=1",
+      "logLines": 1,
+      "status": "passed",
+      "componentModel": false
+    }
+  ],
+  "scope": "ordinary JDK only; not TeaVM, native host or signed execution"
+}
