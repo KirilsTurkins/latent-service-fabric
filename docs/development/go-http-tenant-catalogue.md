@@ -97,9 +97,97 @@ helper intact. Its executed observation above remains exactly 1ad/6f5. The
 maintained workflow uses the separately authenticated f919 wait-observer native
 products through the canonical fixed-tuple reader for future builds. It requires
 exact current native source and auxiliary ABI/schema identities; the old 0c313
-historical guard is not broadened. No 19-case execution or new compilation is
-attributed to f919 by this source composition. Guest sources, compiler implementation,
+historical guard is not broadened. At the original source composition, no 19-case execution or new compilation
+was attributed to f919; the separate later observation below records its actual run. Guest sources, compiler implementation,
 node/controller oracles and all limits remain unchanged. Of the 91 actual normal
 recipe inputs, 90 are byte-exact in final composition. The one reviewed
 `guest_compatibility_build.py` delta adds an explicit phase-timing 0.4/v7 branch,
 absent from this Go world; all old selector instructions remain unchanged.
+
+A later automatic [run 39466872357/job 118780445700](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39466872357/job/118780445700)
+passed the same 19 signed outcomes, four denials and 15 contacts on
+`f672a33f09c67d6a4913d0fa0d5fd14197fb9ba7` with the separately authenticated
+f919 native tuple. Independent review checked all 325 archive members, 28 Git
+materials, 91 staged files, 60 captured SDK files and all 19 provider/physical
+retirement observations. This [later v4 observation](../testing/evidence/go-http-tenant-f919-signed-2026-10-20.json)
+keeps the original 1ad/6f5 record intact and gives no managed-v5 credit.
+
+## Separate managed worker selection
+
+`qualify_go_http_tenants.py --managed-runtime` is an explicitly selected,
+actually qualified managed programme. Its fresh project selects
+`go-component-activation-v5`; both the captured module selection and actual build
+observation must name that profile before node execution. A v4 component cannot
+be relabelled as managed. The default command, client sources, private worker,
+SDK, WIT and application budgets remain unchanged.
+
+The maintained v5 overlay reserves eight maintenance TASK slots before package
+initialization and keeps even unused slots charged until real dispatcher idle.
+The separate profile configures 16 total tasks: those eight reservations plus
+the original eight application slots. Queue, wait, executor, timer, result and
+native-owner ceilings remain exact. This uses the existing activation ledger,
+not a refund, hidden allowance or automatic increase for the default profile.
+The separate owning workflow uses one normal compiled v5 component and runs only three
+signed calls: unchanged Sling and Requests deadline paths against held headers,
+then a fresh Sling/domain/private-worker call. It does not repeat the already
+qualified v4 19-case matrix. The owned fixture derives its context deadline from
+20 to 1,000 milliseconds solely to permit bounded live observation; the original
+5-second grants, 120-second root budget and every provider limit are unchanged.
+
+Before either deadline result, the original f919 fixed-ID native observer must
+show the private worker's actual wait-for Poll::Pending, followed by a
+successfully admitted context timer and then an actual timer-next with nine to sixteen charged tasks, at least one wait and
+one remaining timer. Eight tasks are the v5 maintenance reservation; the rest
+are accepted application work. The invocation must still be unfinished, with
+one original Store/cell and live HTTP pool connection/running-request/broker
+owners. Read-only observation is bounded to sixteen attempts/two seconds; audit
+completion, elapsed time and post-retirement zero cannot replace this barrier.
+Only the two original public node-stop IDs select the native observer. Its
+process-global fifteen-event/eight-per-mode bound is retained, with missing,
+unknown, private, overflow or out-of-profile records failing closed.
+
+The real peers must retain exactly three authorized contacts, with one held
+header request per tenant, no response bytes and no gate release. Both ordinary
+client results must report context cancellation, followed by provider and physical
+zero before fresh reuse and a clean node stop. Source controls and the earlier
+v4 result cannot satisfy that managed execution gate. The first actual run
+compiled, validated and signed the component, but
+failed its reader because it incorrectly demanded two timer-start records. The
+actual v5 worker uses wait-for, then context timer-start/next; that failure remains
+retained. The corrected default replay authenticates the fixed 182-member build
+artifact, all original successful construction metadata, 91 unchanged compiler
+recipe files, 60 captured SDK inputs and five original WIT assets before signing.
+It keeps the failed original programme record and reports zero new component
+compilations. A fresh build remains available through explicit manual selection.
+No native producer, engine build, HTTP policy or guest accounting code
+changes, and no raw socket/kernel/HTTPS qualification, are part of this slice.
+
+### Actual managed pending HTTP result
+
+[Run39476760545/job118814611561](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39476760545/job/118814611561)
+passed on b8933155cec72572d462d15e958745c45f44f08d. Independent review
+authenticated all171 archive CRC/hash members,32 executed Git source materials,
+the original31 build-source materials,91 unchanged normal recipe files and60
+captured SDK files. The exact original component remains
+sha256:c12651aa625ec81ec0b30b3bfac210529eac974e27eb05606e0f5ded6b5f1a97
+(10,532,076 bytes); the replay performed no component or native compilation.
+The original failed programme remains failed and byte-exact.
+
+Both ordinary clients returned context cancellation after an actual positive
+pending barrier. Each snapshot retained one original Store/cell, one active HTTP
+connection and running request, two broker calls, and an unfinished CLI. The
+private worker's wait-pending recorded TASK10; the context timer then admitted
+and entered its real next wait with TASK9/wait1/timer1. The selected total
+TASK16 still includes all eight maintained runtime reservations. Each accepted
+root subsequently closed; all three calls reaped and reached physical/provider
+zero. Four pre-entry denials, three exact peer contacts, the fresh parsed-domain
+result and clean node stop passed.
+
+The [source-bound observation](../testing/evidence/go-http-managed-pending-signed-2026-10-20.json)
+joins the earlier v4 HTTP and unchanged-library matrices. Final composition
+retains every executed source/SDK/recipe input. A separately reviewed optional
+TLS CLI addition in the shared peer leaves its default plaintext run AST exact;
+that file is outside the frozen construction/native input sets, so no historical
+guard or receipt is relaxed. This evidence supplies the finite typed-HTTP
+managed-progress requirement, not whole Go runtime, raw-stream, kernel or HTTPS
+qualification.

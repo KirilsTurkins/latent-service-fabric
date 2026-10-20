@@ -17,6 +17,7 @@ from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools import go_catalogue_free_build as catalogue
 from tools.go_http_tenant_fixture import CONTROL_SOURCE, LIBRARY_SOURCE, project
+from tools.go_guest.activation import INITIALIZER_PROFILE, MANAGED_PROFILE
 from tools.go_http_tenant_node import run
 from tools.go_http_tenant_native_products import SOURCE, _git_materials, native_products, verify_prepared
 from tools.java_replay_materials import git_source_identity
@@ -39,7 +40,8 @@ MATERIALS = ('tools/qualify_go_http_tenants.py','tools/go_http_tenant_fixture.py
     'tools/phase3_resource_os.py','tools/phase3_resource_profile.py','tools/guest_runtime_profiles.py',
     'tools/standard_http/peer.py','tools/standard_http/protocol.py','tools/standard_http/vectors.py',
     'tools/standard_http/observations.py','tools/java_standard_http_peer.py','tools/static_api/node.py',
-    LIBRARY_SOURCE,CONTROL_SOURCE)
+    LIBRARY_SOURCE,CONTROL_SOURCE,'tools/go_http_managed_pending.py',
+    'tools/go_node_stop_timer_observer.py','tools/go_node_stop_probe.py')
 BUILD_FILES = ('BUILD-COMPLETE.json','component.wasm','capsule.json','deployment.json','build-observation.json',
     'source-inputs.json','recipe-inputs.json','go-runtime-transformations.json','bindings.json')
 
@@ -87,7 +89,9 @@ def future_native_compatibility(prepared):
         'auxiliaryCompileInputs':auxiliary,'currentNativeCompilationClaimed':False}
 
 
-def qualify(prepared: Path,output: Path):
+def qualify(prepared: Path,output: Path, *, managed_runtime=False):
+    require(type(managed_runtime) is bool,'go-http-tenant-runtime-selector-must-be-boolean')
+    runtime_profile = MANAGED_PROFILE if managed_runtime else INITIALIZER_PROFILE
     require(sys.platform == 'linux','go-http-tenant-linux-required')
     output = fresh(output)
     require(ROOT not in output.parents and output not in ROOT.parents,'go-http-tenant-owned-output-outside-checkout')
@@ -97,7 +101,7 @@ def qualify(prepared: Path,output: Path):
         'scope':'ordinary-sling-requests-private-worker-catalogue-free-build-and-two-tenant-http',
         'limits':{'overallSeconds':1200,'captureSeconds':300,'compilerSeconds':300,'nodeSeconds':300},
         'sourceMaterials':before,'fullTicketQualification':False,'normalKernelStreamEnabled':False,
-        'httpsTransportSupported':False,'commands':[]}
+        'httpsTransportSupported':False,'runtimeProfile':runtime_profile,'commands':[]}
     stage = 'authenticate-five-native-products'
     try:
         original_native = future_native_compatibility(prepared)
@@ -111,7 +115,7 @@ def qualify(prepared: Path,output: Path):
         original_go = file_identity(go)
         stage = 'fresh-client-source-and-private-worker'
         identity = 'outside.example.test/http-library/tenant-catalogue-free'
-        app,library = project(output/'application',output/'private-original',identity)
+        app,library = project(output/'application',output/'private-original',identity,runtime_profile=runtime_profile)
 
         def command(label,argv,cwd,seconds):
             remaining = min(seconds,deadline-time.monotonic())
@@ -133,6 +137,8 @@ def qualify(prepared: Path,output: Path):
         require(captured['privateOriginUnavailable'] is True and captured['privateModule'] == identity
             and captured['originalLibrarySourcesChanged'] is False and not library.exists(),
             'go-http-tenant-native-capture-and-unavailable-private-origin')
+        require(captured['selection']['runtimeProfile'] == runtime_profile,
+            'go-http-tenant-captured-module-runtime-profile')
         record['capture'] = captured
         stage = 'remove-all-optional-reference-and-catalogue-data'
         compiler = output/'catalogue-free-compiler'
@@ -146,10 +152,12 @@ def qualify(prepared: Path,output: Path):
             '--expect-source-digest',staged['inventoryDigest']],output,300)
         require(catalogue.verify(compiler) == staged,'go-http-tenant-staged-compiler-mutated')
         record['build'] = {name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}
+        require(read_json(output/'build/build-observation.json')['parameters']['runtime'] == runtime_profile,
+            'go-http-tenant-actual-compiler-profile')
         stage = 'signed-same-cell-two-tenant-ordinary-http'
         record['node'] = run(output/'build',{name:native[name] for name in ('latent','latentd','capsule_authoring')},
-            output/'node',min(deadline,time.monotonic()+300))
-        require(record['node']['status'] == 'passed' and len(record['node']['cases']) == 19
+            output/'node',min(deadline,time.monotonic()+300),runtime_profile=runtime_profile)
+        require(record['node']['status'] == 'passed' and len(record['node']['cases']) == (3 if managed_runtime else 19)
             and before == {name:file_identity(ROOT/name) for name in MATERIALS}
             and original_native == future_native_compatibility(prepared) and original_go == file_identity(go)
             and record['build'] == {name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}
@@ -164,9 +172,48 @@ def qualify(prepared: Path,output: Path):
         raise
 
 
+def qualify_managed_replay(prepared: Path,output: Path):
+    from tools.go_http_managed_component import restore
+    from tools.wait_runtime_native_products import native_products as future_products
+    require(sys.platform=='linux','go-http-managed-replay-linux-required')
+    output=fresh(output)
+    require(ROOT not in output.parents and output not in ROOT.parents,'go-http-managed-replay-owned-output')
+    deadline=time.monotonic()+360
+    names=(*MATERIALS,'tools/go_http_managed_component.py')
+    before={name:file_identity(ROOT/name) for name in names}
+    record={'schemaVersion':'latent.go.managed-http-replay.v1','status':'incomplete',
+        'runtimeProfile':MANAGED_PROFILE,'sourceMaterials':before,'guestComponentsCompiled':0,
+        'fullTicketQualification':False,'normalKernelStreamEnabled':False,'httpsTransportSupported':False}
+    stage='authenticate-original-component-and-exact-current-native-products'
+    try:
+        native=future_native_compatibility(prepared);products=future_products(prepared)
+        for path in products.values():path.chmod(0o700)
+        record['native']=native
+        record['construction']=restore(output/'build')
+        build={name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}
+        record['build']=build
+        stage='same-original-v5-component-positive-pending-and-fresh-signed-gate'
+        record['node']=run(output/'build',{name:products[name] for name in ('latent','latentd','capsule_authoring')},
+            output/'node',min(deadline,time.monotonic()+300),runtime_profile=MANAGED_PROFILE)
+        require(record['node']['status']=='passed' and len(record['node']['cases'])==3
+            and before=={name:file_identity(ROOT/name) for name in names}
+            and native==future_native_compatibility(prepared)
+            and build=={name:file_identity(output/'build'/name,64*1024**2) for name in BUILD_FILES}
+            and time.monotonic()<deadline,'go-http-managed-replay-final-identity-and-deadline')
+        record['status']='passed';write_workflow_receipt(output/'qualified.json',record);return record
+    except BaseException as error:
+        record.update(status='failed',stage=stage,errorCategory=type(error).__name__)
+        write_workflow_receipt(output/'FAILED.json',record);raise
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prepared',required=True,type=Path)
     parser.add_argument('--output',required=True,type=Path)
+    parser.add_argument('--managed-runtime',action='store_true')
+    parser.add_argument('--reuse-reviewed-component',action='store_true')
     args = parser.parse_args()
-    print(qualify(args.prepared.resolve(strict=True),args.output.resolve())['status'])
+    require(not args.reuse_reviewed_component or args.managed_runtime,'go-http-managed-replay-requires-explicit-v5')
+    if args.reuse_reviewed_component:
+        print(qualify_managed_replay(args.prepared.resolve(strict=True),args.output.resolve())['status'])
+    else:print(qualify(args.prepared.resolve(strict=True),args.output.resolve(),managed_runtime=args.managed_runtime)['status'])
