@@ -132,6 +132,9 @@ python tools/generate_node_rpc.py --protoc /path/to/locked/protoc --check
 
 Use the repository's locked `protoc-bin-vendored` 3.2.0 compiler
 (`libprotoc 31.1`); omit `--check` only to regenerate. Source identities normalize
-checkout line endings, and tests verify all eight service/method/message
-signatures. The pinned Protobuf runtime consumes compiled descriptors without
-runtime file loading or protocol compilation.
+checkout line endings, and tests verify every selected service/method/message
+signature. The additive release-preparation descriptor also retains exact
+publication/tenant fields and all lifecycle-generation bits; release management
+remains the CLI/generated Rust RPC boundary described in the SDK overview.
+The pinned Protobuf runtime consumes compiled descriptors without runtime file
+loading or protocol compilation.

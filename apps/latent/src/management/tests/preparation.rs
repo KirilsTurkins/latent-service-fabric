@@ -256,3 +256,55 @@ fn one_page_preserves_cursor_and_zero_default_without_followup() {
     assert_eq!(page.page_size, 0);
     assert_eq!(page.page_token.as_deref(), Some("opaque-cursor"));
 }
+
+#[test]
+fn release_prepare_requires_exact_publication_generation_and_finite_setup_wait() {
+    let publication = format!("publication:sha256:{}", "a".repeat(64));
+    let cli = crate::args::Cli::try_parse_from([
+        "latent",
+        "release",
+        "prepare",
+        "--publication",
+        &publication,
+        "--lifecycle-generation",
+        "7",
+        "--maximum-wait-ms",
+        "300000",
+    ])
+    .unwrap();
+    cli.validate().unwrap();
+    let Operation::PrepareRelease(request) = prepare(&cli.command, &config()).unwrap() else {
+        panic!("expected setup operation, not invocation");
+    };
+    assert_eq!(
+        request.publication.unwrap(),
+        latent_wire::management::proto::PublicationRef {
+            id: publication.clone(),
+            tenant: "examples".into(),
+        }
+    );
+    assert_eq!(request.lifecycle_generation, 7);
+    assert_eq!(request.maximum_wait_millis, 300_000);
+    for (generation, wait) in [("0", "1"), ("1", "0"), ("1", "300001")] {
+        assert!(crate::args::Cli::try_parse_from([
+            "latent",
+            "release",
+            "prepare",
+            "--publication",
+            &publication,
+            "--lifecycle-generation",
+            generation,
+            "--maximum-wait-ms",
+            wait,
+        ])
+        .is_err());
+    }
+    assert!(crate::args::Cli::try_parse_from([
+        "latent",
+        "release",
+        "prepare",
+        "--lifecycle-generation",
+        "1",
+    ])
+    .is_err());
+}

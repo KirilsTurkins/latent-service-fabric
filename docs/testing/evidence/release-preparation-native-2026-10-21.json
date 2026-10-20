@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "latent.sdk.release-preparation-native-evidence.v1",
+  "sourceRevision": "21b2c84c74881701149115dd8511063c85800b47",
+  "run": 39509107706,
+  "job": 118925373342,
+  "artifact": {
+    "id": 12305592299,
+    "bytes": 66195901,
+    "sha256": "sha256:35ce77454a17df4706e26a84582b8aa86de26ec03f2b95b5af24513e04e3b672"
+  },
+  "verifiedArchiveMembers": 47,
+  "verifiedExpandedBytes": 303639978,
+  "nativeSource": {
+    "sha256": "sha256:13a58b87edfe43c08823ad449fa422577c9d3c09022cea54e5f31bff8c78308b",
+    "files": 3318,
+    "bytes": 26116246
+  },
+  "auxiliaryMaterials": {"files": 134, "bytes": 862315},
+  "authoritativeProtocol": {"files": 20, "bytes": 361396},
+  "receipts": {
+    "native-products.json": {"sha256": "sha256:5137cb0c20a481f3cf81b7125a76b1dcff4cfbd959f2dc801810c1784dc548fd", "bytes": 25662},
+    "source-inputs.json": {"sha256": "sha256:04b943b830a3fc29e598d23268f58f27095ed695a839c81beb0bb530413c40c4", "bytes": 22275}
+  },
+  "normalNativeProducts": 5,
+  "rustControlsPassed": 49,
+  "pythonControlsPassed": 15,
+  "ignoredOrSkipped": 0,
+  "guestComponentsCompiled": false,
+  "signedGuestQualification": false,
+  "twelveCaseTenantProgramme": "pending",
+  "priorFailedSource": "ab18e653b9211769cde82281b03b614271eb5def",
+  "priorFailedNativeRun": 39506518464,
+  "priorFailedDeveloperJob": 118916689311,
+  "priorFailure": "missing exhaustive public command-name arm; retained as actual failure"
+}

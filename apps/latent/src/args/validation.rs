@@ -105,6 +105,13 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
             single_stdin(&[&args.manifest, &args.component, &args.contracts])
         }
         ReleaseCommand::Get(args) | ReleaseCommand::Lifecycle(args) => release_selector(args),
+        ReleaseCommand::Prepare(args) => {
+            release_selector(&args.selector)?;
+            if args.lifecycle_generation == 0 || !(1..=300_000).contains(&args.maximum_wait_ms) {
+                return Err(invalid());
+            }
+            Ok(())
+        }
         ReleaseCommand::List(args) => page(args),
         ReleaseCommand::Operation(args) => identifier(&args.operation_id, 128),
         ReleaseCommand::Revoke(args) | ReleaseCommand::Retire(args) => {

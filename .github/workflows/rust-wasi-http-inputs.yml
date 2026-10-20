@@ -1,0 +1,86 @@
+name: Rust default WASI HTTP compiler inputs
+
+on:
+  push:
+    branches: ['feat/rust-wasi-http-inputs-20261021']
+    paths: ['.github/workflows/rust-wasi-http-inputs.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rust-wasi-http-inputs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compiler-inputs:
+    name: Capture two ordinary clients and observe actual compiler imports
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Prepare only the normal captured compiler boundary and pinned binding tool
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/rust-http-tools"
+          echo "$RUNNER_TEMP/rust-http-tools" >> "$GITHUB_PATH"
+      - name: Fetch the frozen native producer source for exact verification
+        run: git fetch --no-tags --depth=1 origin fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12
+      - name: Check unchanged clients and exact source and executable-input refusal controls
+        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_inputs -q
+      - name: Authenticate existing Wasmtime48.0.7 products without building a host
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wasmtime_48_0_7_native_products.py --output "$RUNNER_TEMP/rust-http-native"
+      - name: Capture and compile one developer-owned crate and retain actual imports without HTTP pass credit
+        run: >-
+          python3 -B tools/qualify_rust_wasi_http_inputs.py
+          --native-products "$RUNNER_TEMP/rust-http-native"
+          --output "$RUNNER_TEMP/rust-http-inputs"
+      - name: Retain bounded public input and original build observations including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-wasi-http-inputs-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-http-inputs/observation.json
+            ${{ runner.temp }}/rust-http-inputs/FAILED.json
+            ${{ runner.temp }}/rust-http-inputs/capture.json
+            ${{ runner.temp }}/rust-http-inputs/component-wit.json
+            ${{ runner.temp }}/rust-http-inputs/logs/**
+            ${{ runner.temp }}/rust-http-inputs/source/candidate.json
+            ${{ runner.temp }}/rust-http-inputs/source/application/Cargo.toml
+            ${{ runner.temp }}/rust-http-inputs/source/application/Cargo.lock
+            ${{ runner.temp }}/rust-http-inputs/source/application/latent.dependencies*.json
+            ${{ runner.temp }}/rust-http-inputs/source/application/cargo-resolved.lock.json
+            ${{ runner.temp }}/rust-http-inputs/approval-required/*.json
+            ${{ runner.temp }}/rust-http-inputs/approval-required/logs/**
+            ${{ runner.temp }}/rust-http-inputs/build/*.json
+            ${{ runner.temp }}/rust-http-inputs/build/logs/**
+            ${{ runner.temp }}/rust-http-inputs/build/raw-core.wasm
+            ${{ runner.temp }}/rust-http-inputs/build/component.wasm
+            ${{ runner.temp }}/rust-http-native/*.json
+          if-no-files-found: warn
+          retention-days: 3

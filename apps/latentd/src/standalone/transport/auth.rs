@@ -48,6 +48,9 @@ pub(super) fn authenticate(
         .ok_or_else(unauthenticated)?;
     let mut timeouts = request.headers().get_all("grpc-timeout").iter();
     let maximum = match request.uri().path() {
+        latent_wire::management::RELEASE_PREPARATION_RPC_PATH => {
+            Duration::from_millis(latent_wire::management::MAX_RELEASE_PREPARATION_WAIT_MILLIS)
+        }
         latent_wire::management::WEB_PREPARATION_RPC_PATH => {
             Duration::from_millis(latent_wire::management::MAX_WEB_PREPARATION_WAIT_MILLIS)
         }

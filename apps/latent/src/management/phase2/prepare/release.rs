@@ -16,6 +16,18 @@ pub(in crate::management) fn release(
         return Err(invalid_input());
     };
     match command {
+        ReleaseCommand::Prepare(args) => {
+            let publication =
+                crate::management::prepare::publication_selector(&args.selector, config)?;
+            if args.lifecycle_generation == 0 || !(1..=300_000).contains(&args.maximum_wait_ms) {
+                return Err(invalid_input());
+            }
+            Ok(Operation::PrepareRelease(proto::PrepareReleaseRequest {
+                publication: Some(publication),
+                lifecycle_generation: args.lifecycle_generation,
+                maximum_wait_millis: args.maximum_wait_ms,
+            }))
+        }
         ReleaseCommand::Lifecycle(args) => {
             let publication = crate::management::prepare::publication_selector(args, config)?;
             Ok(Operation::GetReleaseLifecycle(
