@@ -3,6 +3,7 @@
 
 mod config;
 mod connection;
+mod kernel;
 mod lifecycle;
 mod maintenance;
 mod provider;

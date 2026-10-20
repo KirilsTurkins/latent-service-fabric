@@ -131,6 +131,12 @@ impl Fixture {
     pub fn new(config: StreamProviderConfig) -> Self {
         Self::with_installer(config, StreamProvider::install_for_qualification)
     }
+    pub fn for_kernel_accounting(config: StreamProviderConfig) -> Self {
+        Self::with_installer(
+            config,
+            StreamProvider::install_kernel_for_accounting_reference,
+        )
+    }
     pub fn for_tls_accounting(config: StreamProviderConfig) -> Self {
         Self::with_installer(config, StreamProvider::install_tls_for_accounting_reference)
     }

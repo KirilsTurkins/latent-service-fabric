@@ -2,7 +2,7 @@
   "schemaVersion": "latent.typescript.scratch-refusal-observation.v1",
   "status": "passed",
   "executionSource": "99eaccd694604c2218d48639e648d5691c6d40c0",
-  "integrationBase": "000b4fdeff9b9c736c03d5ad5447c5bee67918e3",
+  "integrationBase": "5bf2f3d72d05d04a52ad0ccfdbb22ea26584d0bd",
   "run": 39350623578,
   "job": 118393691728,
   "artifact": 12233067378,
