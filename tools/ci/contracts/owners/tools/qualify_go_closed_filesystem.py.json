@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_closed_filesystem.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Closed Go path_open returns pinned ENOSYS52, preserving every other adapter byte/preopen8 and all existing gates; actual fixture checks errors.Is Unsupported and strict52, retain old/current adapter plus mandatorynormal27+six signed programme; native evidence pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "31841d8e747aaa4a8f14b910a3c7ace18dd360f6684d317239e7b54535c7e049"
+}

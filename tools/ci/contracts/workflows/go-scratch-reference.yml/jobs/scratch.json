@@ -1,0 +1,103 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Exact closed adapter and ordinary Go signed filesystem Unsupported",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Install pinned repository source controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-bin": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install the existing compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the exact maintained Go compiler and generator",
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-scratch-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-scratch-tools/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-scratch-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-scratch-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-scratch-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-scratch-tools/go\" --output \"$RUNNER_TEMP/go-scratch-tools/go-async\"\necho \"$RUNNER_TEMP/go-scratch-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Check exact source error categories and original programme retention",
+        "run": "python3 -m unittest tools.tests.test_go_closed_filesystem tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification -v"
+      },
+      {
+        "name": "Execute both authenticated adapter versions without filesystem authority",
+        "run": "python3 tools/qualify_go_closed_filesystem.py --adapter-only --output \"$RUNNER_TEMP/go-closed-adapter\""
+      },
+      {
+        "name": "Qualify fresh normal Go products and original twenty-seven signed calls",
+        "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-scratch-normal\""
+      },
+      {
+        "name": "Export only the authenticated public normal products",
+        "run": "python3 tools/qualify_sdk_scratch.py --export-bundle --language go --native-qualification \"$RUNNER_TEMP/go-scratch-normal\" --output \"$RUNNER_TEMP/go-scratch-prepared\""
+      },
+      {
+        "name": "Require the original programme and six real signed Go filesystem cases",
+        "run": "python3 tools/qualify_go_closed_filesystem.py --native-qualification \"$RUNNER_TEMP/go-scratch-prepared\" --output \"$RUNNER_TEMP/go-scratch-refusals\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded actual diagnostics and source identities including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-scratch-reference-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-closed-adapter/*.json\n${{ runner.temp }}/go-closed-adapter/logs/**\n${{ runner.temp }}/go-scratch-normal/qualification.json\n${{ runner.temp }}/go-scratch-normal/FAILED.json\n${{ runner.temp }}/go-scratch-normal/source-inputs.json\n${{ runner.temp }}/go-scratch-normal/logs/**\n${{ runner.temp }}/go-scratch-normal/node/workflow.json\n${{ runner.temp }}/go-scratch-normal/node/FAILED.json\n${{ runner.temp }}/go-scratch-refusals/*.json\n${{ runner.temp }}/go-scratch-refusals/logs/**\n${{ runner.temp }}/go-scratch-refusals/build/*.json\n${{ runner.temp }}/go-scratch-refusals/build/logs/**\n${{ runner.temp }}/go-scratch-refusals/build/component.wasm\n${{ runner.temp }}/go-scratch-refusals/node/workflow.json\n${{ runner.temp }}/go-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/go-scratch-refusals/node/controls/*.json\n",
+          "retention-days": 7
+        }
+      },
+      {
+        "if": "always()",
+        "name": "Retain the public normal-products tuple for source-bound reuse",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-scratch-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-scratch-prepared/**",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "scratch",
+  "kind": "job",
+  "reviewReason": "Closed Go path_open returns pinned ENOSYS52, preserving every other adapter byte/preopen8 and all existing gates; actual fixture checks errors.Is Unsupported and strict52, retain old/current adapter plus mandatorynormal27+six signed programme; native evidence pending.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-scratch-reference.yml"
+}
