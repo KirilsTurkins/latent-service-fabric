@@ -1,0 +1,83 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Signed ordinary timeout abort clear and interval races",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check scheduling evidence refusal controls",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_timer_races -v"
+      },
+      {
+        "name": "Install normal compiler isolation boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install normal pinned public compiler tools",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/timer-races-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire exact historical import engine and original native tools",
+        "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/timer-races-original\""
+      },
+      {
+        "name": "Build sign and execute new ordinary timer and AbortSignal cases",
+        "run": "python3 -B tools/qualify_typescript_timer_races.py --acquired \"$RUNNER_TEMP/timer-races-original\" --tools \"$RUNNER_TEMP/timer-races-tools\" --output \"$RUNNER_TEMP/timer-races\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain exact source compiler results real contacts and physical ownership",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-timer-races-${{ github.sha }}",
+          "path": "${{ runner.temp }}/timer-races-original/acquisition.json\n${{ runner.temp }}/timer-races/*.json\n${{ runner.temp }}/timer-races/build/*.json\n${{ runner.temp }}/timer-races/build/*.wit\n${{ runner.temp }}/timer-races/build/component.wasm\n${{ runner.temp }}/timer-races/build/package/**\n${{ runner.temp }}/timer-races/build/logs/\n${{ runner.temp }}/timer-races/node/*.json\n${{ runner.temp }}/timer-races/node/controls/\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "fetch-conformance",
+  "kind": "job",
+  "reviewReason": "Add a separate eleven-call ordinary timer and AbortSignal campaign on authenticated historical tools; keep original profiles/limits/semantics programmes and no native rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-timer-races.yml"
+}
