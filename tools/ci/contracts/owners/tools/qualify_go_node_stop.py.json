@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_node_stop.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain the historical audit path and all original programme bounds; add only a default-false explicit positive-timer readiness selection, enable the existing closed native observer only for that selection, and retain its closed failure records. Actual SIGTERM remains gated on accepted native waits plus current original physical/provider owners. No source or receipt from94d is relabelled as V7.",
+  "reviewReason": "Retain only the existing bounded producer-owned startup-failure enum report on the original node exit; reject unknown, extra, duplicate or private fields. Keep failure/cleanup/startup deadlines and timer readiness unchanged; execute six focused redaction and reader controls.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f87b24a8d442dd98049625081c490669e9a2a93f6d4db25679c2e28f36cf14c0"
+  "sha256": "f245c7e4b7acd5552d23147a8ea142d693831f645073f3a2a064b97ffa51dc6b"
 }

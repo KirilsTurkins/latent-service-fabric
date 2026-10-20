@@ -330,8 +330,10 @@ def programme(native, signed, output, *, positive_timers=False):
                 record['status'] = 'passed'
                 write_json(selected / 'result.json', record)
                 result['modes'].append(record)
-            except BaseException:
+            except BaseException as error:
                 record['status'] = 'failed'
+                if hasattr(error, 'startup_failure'):
+                    record['failedNodeStartup'] = error.startup_failure
                 if node is not None:
                     record['controlRefusals'] = control_refusal.observe(bytes(node.buffers[1]))
                     if positive_timers:

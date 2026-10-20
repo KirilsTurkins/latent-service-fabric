@@ -28,7 +28,7 @@
       },
       {
         "name": "Reject false timer admission source drift and incomplete producer evidence",
-        "run": "python3 -m unittest tools.tests.test_go_node_stop tools.tests.test_go_node_stop_positive tools.tests.test_go_node_stop_v7 tools.tests.test_go_node_stop_timer_observer tools.tests.test_java_phase_native_products -v"
+        "run": "python3 -m unittest tools.tests.test_go_node_stop tools.tests.test_go_node_stop_positive tools.tests.test_go_node_stop_v7 tools.tests.test_go_node_stop_timer_observer tools.tests.test_java_phase_native_products tools.tests.test_node_startup_observation -v"
       },
       {
         "env": {
@@ -71,7 +71,7 @@
   },
   "jobId": "live-stop",
   "kind": "job",
-  "reviewReason": "One branch/manual25minute exact V7 consumer: source controls, authenticated direct acquisition CLI with fixed product pins, pinned compiler/generator, one fresh Go build/sign and actual positive timer wait before SIGTERM; original16attempt/10second barrier and physical shutdown/fresh state remain mandatory. No kernel/full-ticket success is implied.",
+  "reviewReason": "Retain only the existing bounded producer-owned startup-failure enum report on the original node exit; reject unknown, extra, duplicate or private fields. Keep failure/cleanup/startup deadlines and timer readiness unchanged; execute six focused redaction and reader controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-node-stop-positive.yml"
 }
