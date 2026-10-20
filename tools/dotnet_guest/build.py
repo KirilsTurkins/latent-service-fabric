@@ -187,6 +187,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})
         return output
     except BaseException as error:
+        if stage == "capture" and isinstance(error, guest_resources.ResourceError):
+            stage = "resource-inputs"
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else []})
