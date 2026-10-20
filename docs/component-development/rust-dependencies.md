@@ -230,7 +230,7 @@ controls alone, establishes execution for the recorded inputs.
 The cancellation-only loop requests zero additional Wasm memory pages through
 stable `memory_grow::<0>`, with both its zero operand and result passed through
 `black_box`. It adds no pages, capability or compiler feature flag. In the
-pinned Wasmtime 48.0.6, bulk copying is charged per byte; the earlier copy loop
+pinned Wasmtime 48.0.7, bulk copying is charged per byte; the earlier copy loop
 exhausted its original fuel before the running-state observer could cancel it.
 The replacement retains the original fuel, memory, wall-clock, observation and
 single-cancellation bounds. Current hosted evidence must still show an actually

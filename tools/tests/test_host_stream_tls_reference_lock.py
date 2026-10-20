@@ -17,6 +17,7 @@ class CurrentParserReferenceLock(unittest.TestCase):
         self.assertEqual(len(packages), 26)
         self.assertEqual(sum("source" in row for row in packages), 24)
         self.assertEqual([row["version"] for row in packages if row["name"] == "zeroize"], ["1.9.1"])
+        self.assertEqual([row["version"] for row in packages if row["name"] == "rustls-webpki"], ["0.103.16"])
         self.assertEqual(reference.OLD_CASE, "tls13-five-thousand-tiny-certificates-old")
         self.assertEqual(len(reference.CASES), 8)
 

@@ -1,0 +1,479 @@
+{
+  "schemaVersion": "latent.guest.runtime-capabilities.v1",
+  "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+  "informationalOnly": true,
+  "usedByResolutionBuildAdmission": false,
+  "qualifiedStatusMeaning": "Only the exact finite original programme linked in evidence; source-bound historical receipts are not current-host rebuild claims.",
+  "statuses": {
+    "qualified-finite-programme": "A retained actual signed or explicitly identified finite programme exists; limitations stay mandatory.",
+    "implemented-source": "Maintained source exists; no joined/general runtime execution is inferred.",
+    "proposed": "Required ordinary runtime/API remains incomplete or unqualified; mechanisms and references do not complete it."
+  },
+  "entries": [
+    {
+      "language": "java",
+      "api": "ClassLoader resources; immutable per-open streams",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 681,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/java_guest/resources.py": {
+          "sha256": "sha256:77389b62f5f820e03a81ef852105ab122087c381954d06283f79b7da394918c1",
+          "bytes": 7846
+        },
+        "sdk/java-guest/resources/compiler/dev/latent/guest/resources/ImmutableResourceStream.java": {
+          "sha256": "sha256:f6ab5ac031328027ca4588866e5594bcd525d3fe6f78dea6fa9635b9faa6ef1d",
+          "bytes": 764
+        }
+      },
+      "evidence": [
+        "docs/testing/java-resource-runtime.md"
+      ],
+      "finiteBounds": "Captured immutable classpath assets; no ambient filesystem.",
+      "remaining": "Thirteen joined resource/timer outcomes are source-specific; later shared compiler fixes are separately reviewed and are not a new resource compilation claim."
+    },
+    {
+      "language": "java",
+      "api": "Ordinary HTTP constructors, body parsing and explicit phase deadlines",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 688,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/java_http_client.py": {
+          "sha256": "sha256:c05dcb7a76db093ff101f0e9f130b6c93bbc44dc3e3c771ee60565df8f3a9b17",
+          "bytes": 7637
+        },
+        "tools/java_http_phase_node.py": {
+          "sha256": "sha256:3842a061ebcbbb44f06ef7092dcc5650a6f3b1071da7dd9800e99110a6173044",
+          "bytes": 19679
+        }
+      },
+      "evidence": [
+        "docs/testing/evidence/java-http-phase-signed-2026-10-20.json"
+      ],
+      "finiteBounds": "Explicit 64MiB component-input profile; original guest/provider execution budgets. Sixteen outcomes and two authority denials.",
+      "remaining": "Tenant programme remains failed before observed HTTP activity; optional extension, complete streaming/lifecycle and full client matrix remain open."
+    },
+    {
+      "language": "java",
+      "api": "Activation fibers and asynchronous host imports",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 741,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/java_guest/async_imports.py": {
+          "sha256": "sha256:f84c40987c2bd71e4662281ceb07eb70e6082b9be19b409522db83dedaa8dbe1",
+          "bytes": 10776
+        },
+        "tools/java_guest/coroutine_patch.py": {
+          "sha256": "sha256:c435c88676c81d51cd4a08e3f80cf0a70a71753d5f8bc831f7eea6772af13f36",
+          "bytes": 23909
+        }
+      },
+      "evidence": [
+        "docs/testing/java-fiber-host-io.md"
+      ],
+      "finiteBounds": "Explicit teavm-activation-fibers-io-v1 profile and declared activation/clock imports; owner-retained per-profile bounds.",
+      "remaining": "No general native-thread, compiler-safe CPU fairness or complete standard executor/monitor claim."
+    },
+    {
+      "language": "java",
+      "api": "Standard socket/DNS/TLS networking",
+      "status": "proposed",
+      "ownerIssue": 741,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/java_guest/surface.py": {
+          "sha256": "sha256:3952a3f65038661ab8121d7b81312c99df5de26407355f39593a1eed7186d530",
+          "bytes": 4906
+        }
+      },
+      "evidence": [
+        "docs/testing/java-http-phase-timing.md"
+      ],
+      "finiteBounds": "No stream authority follows from a typed HTTP grant.",
+      "remaining": "Requires separate approved stream provider, runtime port and actual-component qualification; typed HTTP success supplies none."
+    },
+    {
+      "language": "go",
+      "api": "go:embed and captured dependency resources",
+      "status": "implemented-source",
+      "ownerIssue": 681,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/go_capsule_build.py": {
+          "sha256": "sha256:a0a8cc659e7820235840a485620d35369d71a0392df280b2b9e3ac14e96938a2",
+          "bytes": 12579
+        }
+      },
+      "evidence": [
+        "docs/component-development/library-compatibility.md"
+      ],
+      "finiteBounds": "Normal captured-source and package identity boundaries; no ambient host path.",
+      "remaining": "The joined resource/runtime programme is separate from the completed HTTP ticket and must retain its own execution evidence."
+    },
+    {
+      "language": "go",
+      "api": "Ordinary net/http clients and middleware",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 692,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/qualify_go_http_tenants.py": {
+          "sha256": "sha256:f5238720c4f03e12d99c66cf15a4d7acb766eeb8bdebb1d539c3de95650f027a",
+          "bytes": 14086
+        },
+        "tools/go_http_managed_pending.py": {
+          "sha256": "sha256:6114ca57dae0c5391d143aa4fbb299b53620d536509947d4e0ae1109099ef3d8",
+          "bytes": 9778
+        }
+      },
+      "evidence": [
+        "docs/development/go-http-tenant-catalogue.md"
+      ],
+      "finiteBounds": "Owner-defined per-activation/provider budgets; pending maintenance is observed before cancellation and retirement.",
+      "remaining": "Does not qualify every net socket, runtime or arbitrary middleware retry policy."
+    },
+    {
+      "language": "go",
+      "api": "Managed goroutines, waits, timers and shared-cell admission",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 742,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/go_guest/runtime.py": {
+          "sha256": "sha256:8b81c82303cec5a017cde5b65392e9a32acd335a0ea0b3b6a44e7eee61ddb861",
+          "bytes": 13660
+        }
+      },
+      "evidence": [
+        "docs/development/go-runtime-admission.md",
+        "docs/development/go-runtime-costs.md"
+      ],
+      "finiteBounds": "Original activation limits; one total shared cell in the admission campaign, fresh tenant budgets and measured owners.",
+      "remaining": "Complete accounting and standard-net integration remain open; these are finite source-specific programmes."
+    },
+    {
+      "language": "go",
+      "api": "Standard raw net/DNS/TLS profile",
+      "status": "proposed",
+      "ownerIssue": 742,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/go_guest/network_context.py": {
+          "sha256": "sha256:23582121281735581d98225169d4f9ed2ab575200d0b70552a9e7d686e68c8c4",
+          "bytes": 4987
+        }
+      },
+      "evidence": [
+        "docs/testing/evidence/go-network-runtime-2026-10-20.json"
+      ],
+      "finiteBounds": "Distinct endpoint/port/transport authority and bounded stream owners required.",
+      "remaining": "A retained finite socket experiment does not install or fully qualify the ordinary standard-net port."
+    },
+    {
+      "language": "rust",
+      "api": "include_bytes!/include_str!, std clocks and entropy",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 743,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/rust_standard_entropy_profile.py": {
+          "sha256": "sha256:aeb72ddbbd5cd894ba00413c576d34a1d62a1e5725ec841a6feb9648fbde97ef",
+          "bytes": 7712
+        },
+        "tools/rust_standard_clock_profile.py": {
+          "sha256": "sha256:c6990912703d9057446781654cf775961c60f4618f0baddb903e4bb028c300b2",
+          "bytes": 6194
+        }
+      },
+      "evidence": [
+        "docs/component-development/rust-standard-entropy.md",
+        "docs/testing/evidence/rust-embedded-resources-signed-2026-10-20.json"
+      ],
+      "finiteBounds": "Entropy canonical request at most65536 bytes; empty request makes no provider call; caller/provider limits remain separate.",
+      "remaining": "No stable std::random API or ambient OS fallback; these sources do not implement the complete standard runtime."
+    },
+    {
+      "language": "rust",
+      "api": "Ordinary published HTTP clients",
+      "status": "proposed",
+      "ownerIssue": 689,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/rust_standard_sysroot_build.py": {
+          "sha256": "sha256:a2ad9f2540babf6b3f10530547583d0dee81f05d160ccd8d8f8106998528d6db",
+          "bytes": 10999
+        }
+      },
+      "evidence": [
+        "docs/component-development/rust-library-authoring.md"
+      ],
+      "finiteBounds": "Normal captured dependencies and explicit authority only.",
+      "remaining": "Two required unchanged default clients and their supported executor/socket/runtime path are not qualified."
+    },
+    {
+      "language": "rust",
+      "api": "std::thread, synchronization and executor progress",
+      "status": "proposed",
+      "ownerIssue": 743,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/qualify_c_context_lowering.py": {
+          "sha256": "sha256:97275ac340ee064218b6f3e2d3a48011be90c6b9c3667b4e1dc2068893aa6105",
+          "bytes": 11076
+        }
+      },
+      "evidence": [
+        "docs/testing/evidence/rust-owned-canonical-children-2026-10-16.json"
+      ],
+      "finiteBounds": "Owned canonical-child and compiled-core experiments retain their original finite bounds.",
+      "remaining": "Mechanisms are not a selected complete std::thread/executor port; ordinary start/join, TLS, CPU fairness and physical costs remain required."
+    },
+    {
+      "language": "rust",
+      "api": "Standard raw sockets and TLS",
+      "status": "proposed",
+      "ownerIssue": 743,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/rust_standard_sysroot_build.py": {
+          "sha256": "sha256:a2ad9f2540babf6b3f10530547583d0dee81f05d160ccd8d8f8106998528d6db",
+          "bytes": 10999
+        }
+      },
+      "evidence": [
+        "docs/testing/evidence/outbound-standard-rust-socket-negative-2026-10-12.json"
+      ],
+      "finiteBounds": "Typed HTTP permissions never authorize opaque stream bytes.",
+      "remaining": "Negative/source/reference evidence is separate from the gated standard socket provider and actual runtime qualification."
+    },
+    {
+      "language": "c",
+      "api": "Captured immutable resource inputs",
+      "status": "implemented-source",
+      "ownerIssue": 681,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/c_resource_inputs.py": {
+          "sha256": "sha256:25619af0548fb5c88793ceef11aa4562df61124c9fbe171709dcf9cbe136932f",
+          "bytes": 4570
+        }
+      },
+      "evidence": [
+        "docs/component-development/library-compatibility.md"
+      ],
+      "finiteBounds": "Explicit captured resource identities and source-bound generated inputs; no ambient host filesystem.",
+      "remaining": "Resource source capture is separate from a joined signed resource/runtime/HTTP programme; this row makes no libc thread or ordinary networking claim."
+    },
+    {
+      "language": "c",
+      "api": "Ordinary unchanged HTTP libraries",
+      "status": "proposed",
+      "ownerIssue": 690,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/c_capsule_build.py": {
+          "sha256": "sha256:7e92acff53c63d106c886814b492277e499560ce8771efeb84f8e1b64f9c2612",
+          "bytes": 16148
+        }
+      },
+      "evidence": [
+        "docs/component-development/library-compatibility.md"
+      ],
+      "finiteBounds": "Final import/profile validation and explicit grants remain mandatory.",
+      "remaining": "Two required unchanged default clients and their libc/socket/TLS runtime path remain unqualified."
+    },
+    {
+      "language": "c",
+      "api": "pthread/C11 threads, waits and compiler checkpoints",
+      "status": "proposed",
+      "ownerIssue": 744,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "sdk/c-guest/runtime/tls-keys.c": {
+          "sha256": "sha256:6805afa7653f165c161ef3e3f499f61d39ab4394c0c2bab11f1deac68b29e1c3",
+          "bytes": 5108
+        },
+        "tools/qualify_c_context_lowering.py": {
+          "sha256": "sha256:97275ac340ee064218b6f3e2d3a48011be90c6b9c3667b4e1dc2068893aa6105",
+          "bytes": 11076
+        }
+      },
+      "evidence": [
+        "docs/testing/evidence/c11-tss-core-2026-10-20.json"
+      ],
+      "finiteBounds": "Core control uses4MiB maximum memory and64KiB stack; these are mechanism test bounds.",
+      "remaining": "Compiled C11 tss_* success does not supply an installed pthread/C11 threading profile, canonical child lifecycle or safe non-yielding sibling progress."
+    },
+    {
+      "language": "c",
+      "api": "Standard socket/DNS/TLS networking",
+      "status": "proposed",
+      "ownerIssue": 744,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/c_capsule_build.py": {
+          "sha256": "sha256:7e92acff53c63d106c886814b492277e499560ce8771efeb84f8e1b64f9c2612",
+          "bytes": 16148
+        }
+      },
+      "evidence": [
+        "docs/development/c-runtime-context.md"
+      ],
+      "finiteBounds": "Separate endpoint/port grants and approved stream profile required.",
+      "remaining": "No general libc networking or native ABI fallback is installed by a declared import."
+    },
+    {
+      "language": "typescript",
+      "api": "Imported immutable resources",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 681,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/typescript_resource_runtime_fixture.py": {
+          "sha256": "sha256:6ecf179337adf9f270043d2014ef81c16f79dbca9a2329a59da808ba5c943aa3",
+          "bytes": 8787
+        }
+      },
+      "evidence": [
+        "docs/testing/typescript-resource-runtime.md"
+      ],
+      "finiteBounds": "Captured resource identities; bounded invocation-local runtime owners and original budgets.",
+      "remaining": "Resource success does not qualify arbitrary Node filesystem modules or native packages."
+    },
+    {
+      "language": "typescript",
+      "api": "Ordinary Fetch-based clients",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 691,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/qualify_typescript_catalogue_free.py": {
+          "sha256": "sha256:963fafb4c7ec40ec786d0bc7a273b36a86dac19f12443999a7cf60a3e1bf2c71",
+          "bytes": 13000
+        }
+      },
+      "evidence": [
+        "docs/compatibility-catalogue/v3/evidence/ts-node.json"
+      ],
+      "finiteBounds": "Catalogue-free captured build; original explicit HTTP authority and per-invocation/provider limits.",
+      "remaining": "No package-wide certification, implicit credential forwarding, stream permission or arbitrary retry guarantee."
+    },
+    {
+      "language": "typescript",
+      "api": "Promise/microtasks, timeout/interval and bounded owner queues",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 745,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/typescript_guest/runtime_profile.py": {
+          "sha256": "sha256:f769e4591ebeb3f2289fa417cbf6ac7d43344297323a3fb93c2353c7ba7d81dc",
+          "bytes": 23222
+        }
+      },
+      "evidence": [
+        "docs/testing/typescript-runtime-semantics.md",
+        "docs/testing/typescript-runtime-limits.md",
+        "docs/testing/typescript-runtime-retirement.md"
+      ],
+      "finiteBounds": "Fetch profile:16 tasks,2 executors,16 queued records,8 waits/timers/results,64 native owners; separate limit campaigns are explicitly labelled.",
+      "remaining": "Preserves synchronous run-to-completion. Complete native accounting and standard-net integration remain open; no synchronous realm callback interleaving claim."
+    },
+    {
+      "language": "typescript",
+      "api": "Node-style standard socket/TLS modules",
+      "status": "proposed",
+      "ownerIssue": 745,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/typescript_guest/runtime_profile.py": {
+          "sha256": "sha256:f769e4591ebeb3f2289fa417cbf6ac7d43344297323a3fb93c2353c7ba7d81dc",
+          "bytes": 23222
+        }
+      },
+      "evidence": [
+        "docs/testing/typescript-runtime-semantics.md"
+      ],
+      "finiteBounds": "No raw stream authority from Fetch grants; package imports alone install no module.",
+      "remaining": "Requires the separately approved stream/runtime/module implementation and actual-component matrix."
+    },
+    {
+      "language": "dotnet",
+      "api": "Manifest resources and ordinary Stream readers",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 681,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/dotnet_resource_runtime_fixture.py": {
+          "sha256": "sha256:661d6a0251d4834dc4efd268c72cdb36d51b371dde0c5dbbf43d9dbf194e6f58",
+          "bytes": 15984
+        }
+      },
+      "evidence": [
+        "docs/testing/dotnet-resource-runtime.md"
+      ],
+      "finiteBounds": "Captured immutable assets; joined15 signed resource/runtime outcomes with original limits.",
+      "remaining": "No general host filesystem, full CLR or asynchronous flush qualification."
+    },
+    {
+      "language": "dotnet",
+      "api": "new HttpClient() and ordinary generated factories",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 693,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/dotnet_guest/http_errors.py": {
+          "sha256": "sha256:7d9eae7b4c470e0811a90a5d48126965ec377bb9a4557b1e61771bd80d97e89e",
+          "bytes": 21129
+        },
+        "tools/dotnet_published_http_fixture.py": {
+          "sha256": "sha256:f9fa4b614ebebcdfdb8d9921670de8637cde639633f08f38931d7bbaaca97936",
+          "bytes": 7216
+        }
+      },
+      "evidence": [
+        "docs/development/dotnet-published-http.md",
+        "docs/testing/dotnet-https-libraries.md"
+      ],
+      "finiteBounds": "Original20 HTTP and15 HTTPS outcomes are source-specific; explicit grants and default factories remain required.",
+      "remaining": "Additional malformed/truncated boundary programme is separate; full streaming, task/lifecycle and cross-tenant matrix remains open."
+    },
+    {
+      "language": "dotnet",
+      "api": "Task.Run/default queue, infinite task joins and Timer callbacks",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 746,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "sdk/dotnet-guest/tools/http-errors/TaskWait.cs": {
+          "sha256": "sha256:c9b5baaffaee03e86dd9d50e81d0d2db6beb8aa58b4010984d3d7cce5aabdfe4",
+          "bytes": 20718
+        }
+      },
+      "evidence": [
+        "docs/component-development/dotnet-task-runtime.md"
+      ],
+      "finiteBounds": "Selected infinite noncancellable task-join pump has depth32; sixteen timer/task cases retain original48-call campaign ceiling.",
+      "remaining": "Finite/cancellable unsupported wait path remains unchanged. No Monitor.Wait/Thread port, compiler-safe CPU fairness or complete queue/GC/stack qualification."
+    },
+    {
+      "language": "dotnet",
+      "api": "SocketsHttpHandler, sockets/DNS and standard TLS",
+      "status": "proposed",
+      "ownerIssue": 746,
+      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sources": {
+        "tools/dotnet_guest/runtime.py": {
+          "sha256": "sha256:f9798f66e8c0e611cc300b2a4c41ea7aa40b22ad2308cf1b87228d5cc8c0cd65",
+          "bytes": 6014
+        }
+      },
+      "evidence": [
+        "docs/component-development/dotnet-task-runtime.md"
+      ],
+      "finiteBounds": "Typed HTTP backend is distinct from hardwired sockets and stream endpoint/port authority.",
+      "remaining": "Requires the approved provider/runtime integration; successful typed HTTPS does not qualify standard sockets."
+    }
+  ]
+}

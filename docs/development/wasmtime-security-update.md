@@ -2,7 +2,7 @@
 
 ## Current Development selection
 
-The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.6**.
+The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.7**.
 Use [the toolchain table](toolchain.md#selected-versions) and committed Cargo locks
 for the complete compiler/runtime selection. The records below describe their
 original sources and advisory databases; they are not a current scan or approval
@@ -13,6 +13,70 @@ new compiler digest, and regenerate native/renderer artifacts whose compatibilit
 identity changed. Preserve failed attempts and original receipts. Exact current
 source, advisory scans and the affected runtime/containment checks determine
 acceptance; neither this page nor a passing historical scan grants it.
+
+## October 20, 2026 security update
+
+The selected same-line patch is
+[Wasmtime 48.0.7](https://github.com/bytecodealliance/wasmtime/releases/tag/v48.0.7),
+upstream commit c6846e13f64b07b7912d372db141397058b55f99. It fixes
+[RUSTSEC-2026-0378](https://rustsec.org/advisories/RUSTSEC-2026-0378.html)
+([typed component Stream/Future payload confusion](https://github.com/bytecodealliance/wasmtime/security/advisories/GHSA-9pvw-hwfg-92h5))
+and [RUSTSEC-2026-0379](https://rustsec.org/advisories/RUSTSEC-2026-0379.html)
+([AArch64 large branch-table code generation](https://github.com/bytecodealliance/wasmtime/security/advisories/GHSA-mghf-wjfp-p5xm)).
+The ordinary external native profile remains Linux x86_64; that architecture
+boundary does not exempt the selected dependency from current advisory checks.
+
+Cargo-generated workspace and standalone authoring locks advance exactly the
+14 Wasmtime/Pulley packages to 48.0.7 and 13 Cranelift packages to 0.135.7.
+The workspace feature list, disabled default features, Rust minimum 1.95.0 and
+ordinary compiler 1.97.1 remain unchanged. The patch also rejects a WebAssembly
+branch table with more than 65,520 targets on every target architecture, including
+unreachable code. This is a new validation bound, not additional guest authority.
+
+Current engine/layout, renderer and transaction-preparation compatibility
+identities advance together. Current v5/v6/v7 host descriptors and phase4
+metadata identify the new engine; superseded descriptors and dated execution
+evidence retain their original versions. Exact Rust standard-runtime source
+checks bind the new published Wasmtime and environ archive checksums.
+
+The authenticated published Wasmtime archive and environ archive both identify
+the same c6846e13 revision. The root license remains byte-identical with SHA-256
+268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5.
+A separate exact-revision shared-license policy entry covers the 14 current
+children; original donor records remain historical. The copying
+Component::deserialize to Engine::load_code_bytes path remains selected.
+No unsafe guard, advisory exception, host capability or qualification limit is
+relaxed.
+
+The existing f919 native products and earlier SDK observations remain historical
+48.0.6 evidence. They are not native qualification of this patch. Rebuild the
+runtime and isolated compiler from the new lock and approve their new executable
+and preparation identities. Fresh RustSec, minimum-Rust, strict Clippy, runtime
+and containment results must be recorded separately; this source change and its
+data-only controls do not claim those hosted results.
+
+### Current trust-store repair
+
+The later fresh RustSec database `e6f94f3760d5e6c54c1b05f204002263bc025524`
+reported five findings across the workspace and authenticated provider locks:
+[RUSTSEC-2026-0381](https://rustsec.org/advisories/RUSTSEC-2026-0381.html),
+[RUSTSEC-2026-0382](https://rustsec.org/advisories/RUSTSEC-2026-0382.html), and
+[RUSTSEC-2026-0383](https://rustsec.org/advisories/RUSTSEC-2026-0383.html).
+The patched same-line selections are webpki-roots and webpki-root-certs
+**1.0.10**, and rustls-webpki **0.103.16**. They remove the affected emSign root
+and reject the distrusted intermediate keys. Their minimum Rust version is
+1.71, below the existing workspace minimum. The root lock changes only these
+three version/checksum records; all dependency edges remain unchanged.
+
+The private bounded rustls package remains 0.23.46, the latest published stable
+rustls at this repair. Its original archive, complete source preimages and
+upstream lock text remain authenticated. Its separately maintained lock derives
+exactly the two affected leaf updates and the already-declared private package
+name from that original text. The [provider derivation](../../sdk/host-stream-tls/rustls-0.23.46-bounds/README.md#distinct-provider-dependency)
+records the original and maintained identities. Every tracked Cargo lock and
+the upstream advisory coordinate remain scanned. Neither the earlier zero-finding
+scan nor an earlier native tuple qualifies this repaired dependency closure;
+fresh advisory checks and newly built native products are required.
 
 ## Historical October 3 and 4, 2026 update
 

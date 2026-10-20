@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_http_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain the existing final source/five-product equality guard and publish its bounded public identities after it succeeds.",
+  "reviewReason": "Use one exact canonical Java HTTP WIT owner and derive only the historical activation import; retain all old guards and add exact-byte/tamper controls.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ce7e5ac821f02b559b1ec5fa0bd7c13729dbb300ab8c4abf5550943eb5bcbc9e"
+  "sha256": "38f9364c58b5c1ed1b77b58d9872b9b7bbd89e634647ae204e13485f4ff7c1ed"
 }

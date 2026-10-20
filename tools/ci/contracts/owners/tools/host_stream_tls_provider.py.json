@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/host_stream_tls_provider.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact bounded TLS source/selection and also refuse Cargo global replacement overrides",
+  "reviewReason": "Authenticate the retained upstream lock and exact maintained Cargo security derivation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3aed9ddae94813db0cb3e8b4e3f2f5caa651c59d577384fa126e8ab72058b28a"
+  "sha256": "ba14ace3ff6c3dea1946790268535f70762ce47b7dc302319651400058c06830"
 }

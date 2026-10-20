@@ -6,24 +6,26 @@ surface or an import outside the recognized host ABI stops packaging. The
 retained `compatibility-inspection.json` identifies the component and ABI inputs.
 The existing package validator additionally checks the complete WIT types.
 
-Recipes select the frozen V5 manifest only when the authoritative declared WIT
-surface explicitly imports `latent:runtime/activation@0.1.0` or
-`latent:network/streams@0.1.0`; other surfaces keep the frozen V4 manifest.
-The profile selector accepts only those two manifest identities. It neither
-falls back after a missing manifest nor derives authority from emitted imports.
-V5 inspections record the selected profile and its exact manifest digest;
-packaging and failure reporting recheck that digest. Existing V4 inspection
-records retain their original shape. Provider installation, exact grants,
-runtime support and normal node admission still require their own evidence.
+Recipes select from four frozen manifest identities using the authoritative
+declared WIT surface. `latent:http/phase-timing@0.4.0` selects V7.
+`latent:state/key-value@0.2.0` or `latent:intents/staging@0.1.0` selects Phase 4;
+combining either transaction interface with phase-timing is refused. Otherwise,
+`latent:runtime/activation@0.1.0` or `latent:network/streams@0.1.0` selects V5,
+and other surfaces keep V4. The selector accepts only these known manifests;
+it neither falls back after a missing manifest nor derives authority from
+emitted imports, provider installation or grants. Non-default inspections record
+the selected profile and its exact manifest digest; packaging and failure
+reporting recheck that digest. Existing V4 inspection records retain their
+original shape. Runtime support and normal node admission still require their
+own evidence.
 
-V4 recipes require only their existing V4 manifest. A declared V5 surface adds
-the exact V5 manifest to the retained recipe inventory before its first use;
-the final recipe recheck includes that input. .NET and TypeScript derive the
-surface before compilation. Adapters that derive staged WIT afterward capture
-the additional observation input before inspecting and packaging the result.
-Adding that input cannot hide a changed original recipe. A missing or changed
-V5 manifest fails the build. A compiler bundle retains the manifest for its
-explicitly advertised ABI profile, while V4 bundles need no V5 material.
+Recipes retain the exact selected manifest before its first use, and the final
+recipe recheck includes that input. .NET and TypeScript derive the surface before
+compilation. Adapters that derive staged WIT afterward capture the additional
+observation input before inspecting and packaging the result. Adding that input
+cannot hide a changed original recipe. A missing or changed selected manifest
+fails the build. A compiler bundle retains the manifest for its explicitly
+advertised ABI profile; V4 bundles need no unselected profile materials.
 
 Each package contains `compatibility-report.json`, a source-bound observation
 using `lsf.guest.compatibility.v1`. Its identity binds the source inventory,
@@ -214,3 +216,8 @@ indexes retained package observations separately from these API diagnostics. Its
 content keys bind exact package graphs, configurations, compiler/runtime/backend
 inputs and original evidence. Catalogue membership grants no authority and is not
 a dependency resolution, build or admission input.
+
+The separate [six-language API/runtime matrix](runtime-capabilities.md) identifies
+finite implemented and qualified surfaces, explicit profile limits and proposed
+ports without using sample package names as API eligibility. Its versioned data
+binds source files and original evidence; it installs no runtime or authority.
