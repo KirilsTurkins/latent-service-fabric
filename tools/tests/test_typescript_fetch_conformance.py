@@ -20,17 +20,36 @@ class FetchConformanceTests(unittest.TestCase):
                 directory=Path(temporary)
                 calls=0
                 def call(self,*arguments):
+                    self.calls+=1
+                    if 'get' in arguments:
+                        return {'outcomeKnown':True,'category':'success','data':{'policy':{
+                            'id':'http-allow','tenant':'examples','recordKind':'policy','revoked':False,
+                            'generation':'9','document':{'rules':[{'capability':cases.base.HTTP,
+                                'publications':['publication'],'services':[cases.base.SERVICE],
+                                'resources':{'kind':'http','origins':[{}],'methods':['GET'],
+                                    'paths':['/conformance/json','/conformance/status/404'],'pathPrefixes':[]}}]}}}}
                     expected=arguments[arguments.index('--expected-generation')+1]
-                    if expected != 1:raise WorkflowError('stale-policy-generation')
+                    if expected != 9:raise WorkflowError('stale-policy-generation')
                     document=json.loads(Path(arguments[arguments.index('--file')+1]).read_bytes())
                     self.document=document
                     operation=arguments[arguments.index('--operation-id')+1]
-                    return {'outcomeKnown':True,'data':{'receipt':{'operationId':operation,'generation':2}}}
+                    return {'outcomeKnown':True,'data':{'receipt':{'operationId':operation,'generation':'10'}}}
             client=Client()
             with patch.object(cases.base,'grants',return_value=(['runtime'],['authorized'])) as original:
                 self.assertEqual(cases.grants(client,None,'publication',{'primary':{},'secondary':{}}),(['runtime'],['authorized']))
             original.assert_called_once()
+            self.assertEqual(client.calls,2)
             self.assertEqual(client.document['rules'][0]['resources']['pathPrefixes'],[])
+            class Foreign(Client):
+                def call(self,*arguments):
+                    row=super().call(*arguments)
+                    if 'get' in arguments:row['data']['policy']['document']['rules'][0]['publications']=['foreign']
+                    return row
+            foreign=Foreign()
+            with patch.object(cases.base,'grants',return_value=(['runtime'],['authorized'])):
+                with self.assertRaisesRegex(WorkflowError,'original-policy-document'):
+                    cases.grants(foreign,None,'publication',{'primary':{},'secondary':{}})
+            self.assertEqual(foreign.calls,1)
 
     def test_cold_admission_preserves_the_existing_invocation_watchdog(self):
         client=SimpleNamespace(deadline=1000,invocation_timeout_millis=120000)

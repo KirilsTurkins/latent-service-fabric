@@ -47,6 +47,20 @@ def configuration(directory, releases, startup, credential):
 
 def grants(client, node, publication, origins):
     runtime, authorized = base.grants(client, node, publication, origins['primary'])
+    observed = client.call('policy', '--kind', 'policy', 'get', '--id', 'http-allow')
+    record = observed['data']['policy']
+    require(observed['outcomeKnown'] is True and observed['category']=='success'
+        and record['id']=='http-allow' and record['tenant']=='examples'
+        and record['recordKind']=='policy' and record['revoked'] is False
+        and len(record['document']['rules'])==1, 'fetch-conformance-original-policy')
+    rule = record['document']['rules'][0]
+    require(rule['capability']==base.HTTP and rule['publications']==[publication]
+        and rule['services']==[base.SERVICE] and rule['resources']=={'kind':'http',
+            'origins':[origins['primary']], 'methods':['GET'],
+            'paths':['/conformance/json','/conformance/status/404'], 'pathPrefixes':[]},
+        'fetch-conformance-original-policy-document')
+    generation = int(record['generation'])
+    require(generation>0, 'fetch-conformance-policy-generation')
     policy(client, 'policy', 'http-allow', {'formatVersion':1, 'tenant':'examples', 'rules':[{
         'id':'fetch-conformance', 'effect':'allow',
         'principals':[{'kind':'administrator','subject':'workflow-operator'}],
@@ -55,7 +69,7 @@ def grants(client, node, publication, origins):
         'resources':{'kind':'http', 'origins':[origins['primary'],origins['secondary']],
             'methods':['GET','HEAD','POST','PUT','PATCH','DELETE','OPTIONS'],
             'paths':PATHS, 'pathPrefixes':[]},
-        'ceiling':{'operations':64,'inputBytes':65536,'outputBytes':262144,'wallTimeMillis':5000}}]},generation=1)
+        'ceiling':{'operations':64,'inputBytes':65536,'outputBytes':262144,'wallTimeMillis':5000}}]},generation=generation)
     return runtime, authorized
 
 

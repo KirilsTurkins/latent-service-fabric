@@ -41,10 +41,14 @@ requires cold admission lasting20 seconds to remain inside that existing bound;
 application deadlines, guest budgets and pending-owner assertions are unchanged.
 The next6719 attempt passed that admission but refused the fixture policy
 replacement's stale creation generation, before any guest case. Its authenticated
-artifact12241812650 remains failed. The replacement now requires generation1,
-which the preceding verified base-policy creation established; no conflict retry
-or policy precondition is bypassed. The real policy writer is covered by an
-old-source failure/new-source pass control. Eight focused controls now pass.
+artifact12241812650 remains failed. Attempt18d7 also failed because assuming
+creation generation1 was incorrect: the retained creation receipt has catalog
+generation9. Artifact12241879012 preserves this second setup failure. The helper
+now reads the existing policy, verifies its tenant, identity, publication and
+original resource scope, and passes its observed generation into the existing
+policy writer. No conflict retry or precondition is bypassed. The regression
+requires generation9 and refuses a foreign publication before any mutation.
+Eight focused controls pass; no actual guest case has passed this lane yet.
 This does not qualify network streaming/backpressure, every runtime resource
 limit, provider absence or cross-tenant reuse. Those literal whole-ticket
 requirements remain open rather than being inferred from these narrower rows.
