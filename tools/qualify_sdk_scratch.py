@@ -17,7 +17,7 @@ from tools.phase3_resource_identity import file_identity
 from tools.run_rust_capsule_workflow import run
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_file, read_json, snapshot, write_json
-from tools.sdk_scratch_fixture import LANGUAGES, project
+from tools.sdk_scratch_fixture import CASES, LANGUAGES, project
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 HELPERS = ('tools/qualify_sdk_scratch.py', 'tools/sdk_scratch_fixture.py',
@@ -148,6 +148,38 @@ def build_component(language, app, destination, binaries, *, tools=None, wasi_sd
     return build(*args, tools=tools, offline=True)
 
 
+def execution_report(language, artifact, node):
+    from tools import guest_compatibility as compatibility
+    from tools.sdk_scratch_probe import refusal
+    original = compatibility.read(read_file(artifact/'compatibility-report.json'))
+    releases = [row for row in node['releaseSet']['releases'] if row['name'] == 'my-greeting']
+    require(original['language'] == language and len(releases) == 1
+            and releases[0]['componentDigest'] == original['componentDigest'], 'scratch-report-signed-component-mismatch')
+    observed = node.get('standardScratchRefusal', {})
+    require(observed.get('status') == 'passed' and observed.get('language') == language
+            and [row['mode'] for row in observed['cases']] == list(CASES[language]),
+            'scratch-report-actual-cases-required')
+    operations = {'rust': ('std::fs::File::open', 'std::fs::OpenOptions::open', 'std::fs::create_dir'),
+        'c': ('fopen(read)', 'fopen(create)', 'tmpfile'), 'go': ('os.Open', 'os.OpenFile', 'os.CreateTemp'),
+        'java': ('java.io.FileInputStream', 'java.io.FileOutputStream', 'java.io.File.createTempFile'),
+        'dotnet': ('System.IO.File.OpenRead', 'System.IO.File.Open', 'System.IO.Path.GetTempFileName')}
+    findings = list(original['findings'])
+    for row, operation in zip(observed['cases'], operations[language]):
+        call = row['invocation']
+        require(call['processReaped'] and call['exitCode'] == 0 and call['response']['outcomeKnown'] is True,
+                'scratch-report-caught-component-result-required')
+        result = refusal(language, call['decoded'])
+        require(row['observation'] == result, 'scratch-report-category-recheck')
+        findings.append(compatibility.finding('unsupported-reached' if result['unsupported'] else 'unresolved-behavior',
+            'invocation', 'actual-component', operation=operation, owner_issue=681,
+            source_digest=original['sourceDigest'], symbol='greet'))
+    # The deliberate fixture trap is not evidence for a standard API's cause.
+    findings.append(compatibility.finding('unresolved-behavior', 'invocation', 'actual-component',
+        operation='explicit-scratch-fixture-trap', owner_issue=681, source_digest=original['sourceDigest'], symbol='greet'))
+    return compatibility.report(language, original['sourceDigest'], original['componentDigest'],
+        original['runtimeProfile'], original['inputs'], findings, omitted=original['omittedFindings'])
+
+
 def qualify(language, output, native_qualification, *, native_directory=None, tools=None, wasi_sdk=None):
     require(language in LANGUAGES and sys.platform == 'linux' and sys.version_info >= (3, 13)
             and os.geteuid() != 0, 'scratch-owning-unprivileged-linux-python313-required')
@@ -165,6 +197,10 @@ def qualify(language, output, native_qualification, *, native_directory=None, to
     try:
         binaries, companions, inherited = prepared(native_qualification, language, native_directory)
         record['inherited'] = inherited
+        if os.name == 'posix':
+            # Artifact restoration drops executable modes. Only the five files
+            # already checked against the original normal receipt are enabled.
+            for binary in binaries.values(): binary.chmod(0o700)
         stage = 'ordinary-standard-source'
         app, fixture = project(language, output/'application')
         record['fixture'] = fixture
@@ -186,12 +222,15 @@ def qualify(language, output, native_qualification, *, native_directory=None, to
                 and len(node['standardScratchRefusal']['cases']) == 3
                 and node['nodeShutdown']['reaped'] and node['nodeShutdown']['record']['clean'],
                 'scratch-original-and-six-new-signed-outcomes-required')
+        report = execution_report(language, artifact, node)
+        write_json(output/'compatibility-execution-report.json', report)
         stage = 'final-integrity'
         require(prepared(native_qualification, language, native_directory)[2] == inherited
                 and materials == {name: file_identity(ROOT/name) for name in HELPERS}
                 and inventory(snapshot(app)) == before, 'scratch-observed-inputs-changed')
         record.update(status='passed', workflow=file_identity(output/'node/workflow.json'),
             invocations=len(node['invocations']), scratch=node['standardScratchRefusal'],
+            compatibilityReportIdentity=report['identity'],
             component=file_identity(artifact/'component.wasm', 64*1024*1024), commands=commands.records)
         write_json(output/'qualification.json', record)
         return record

@@ -158,7 +158,13 @@ retained as failure and cannot be counted as a caught runtime Unsupported error.
 `NotFound`, access denial and general I/O categories remain distinct from concrete
 Unsupported; neither a generic trap nor a successful compiler build proves API
 support or refusal. Source controls currently pass; signed five-language results
-are pending and no whole criterion is complete.
+are pending and no whole criterion is complete. The Rust workflow has a separate
+20-minute child consuming an exact normal public bundle; the original 35-minute
+parent and all its commands remain mandatory. Other language execution wiring
+retains its own pending boundary. Actual results also project into the existing
+source/component-bound compatibility report: only precise Unsupported is
+`unsupported-reached`; NotFound, other errors and the deliberate fixture trap
+remain unresolved observations.
 
 ECMAScript has no standard filesystem API. The corresponding TypeScript packet
 (`tools/qualify_typescript_scratch_refusals.py`) captures an outside npm module,

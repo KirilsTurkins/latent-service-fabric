@@ -123,5 +123,53 @@ class ScratchQualification(unittest.TestCase):
             self.assertFalse(any('private' in name or 'cache' in name for name in selected))
             self.assertEqual(sum(name.startswith('native-binaries/') for name in selected), 5)
 
+    def test_owning_rust_child_reuses_normal_products_without_another_native_build_or_longer_parent(self):
+        from tools.ci_lane_inventory import workflow_model
+        jobs = workflow_model((qualifier.ROOT/'.github/workflows/rust-capsule-authoring.yml').read_text(encoding='utf-8'))['jobs']
+        selected = jobs['scratch-refusals']
+        self.assertEqual(selected['needs'], 'authoring')
+        self.assertEqual(selected['timeout-minutes'], 20)
+        self.assertEqual(jobs['authoring']['timeout-minutes'], 35)
+        commands = '\n'.join(step.get('run', '') for step in selected['steps'])
+        self.assertIn('tools/qualify_sdk_scratch.py --language rust', commands)
+        self.assertIn('--native-qualification "$RUNNER_TEMP/rust-scratch-prepared"', commands)
+        self.assertNotIn('cargo build', commands)
+        self.assertNotIn('cargo test', commands)
+        export = next(step['run'] for step in jobs['authoring']['steps']
+            if step.get('name') == 'Export exact normal public prerequisites for the separate scratch packet')
+        self.assertIn('--export-bundle --language rust', export)
+        self.assertIn('--native-qualification "$RUNNER_TEMP/rust-capsule-authoring"', export)
+        self.assertNotIn('rust-capsule-dependencies', export)
+        download = next(step['with'] for step in selected['steps'] if 'download-artifact@' in step.get('uses', ''))
+        self.assertEqual(download['name'], 'rust-scratch-prepared-${{ github.sha }}')
+
+    def test_existing_compatibility_report_keeps_unknown_and_trap_separate_from_actual_unsupported(self):
+        from tools import guest_compatibility as compatibility
+        from tools.sdk_scratch_probe import refusal
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = compatibility.report('rust', digest(b'actual source'), digest(b'signed component'),
+                'lsf-host-abi-phase3-v4', [], [compatibility.finding('lifecycle-unproven', 'retirement', 'not-evaluated', owner_issue=736)])
+            write_json(root/'compatibility-report.json', original)
+            rows = []
+            for mode, category in zip(qualifier.CASES['rust'], ('unsupported', 'not-found', 'unsupported')):
+                decoded = [{'ok': 'scratch|rust|io-error|kind='+category+'|fresh=1'}]
+                rows.append({'mode': mode, 'observation': refusal('rust', decoded), 'invocation': {
+                    'processReaped': True, 'exitCode': 0, 'response': {'outcomeKnown': True}, 'decoded': decoded}})
+            node = {'releaseSet': {'releases': [{'name': 'my-greeting', 'componentDigest': original['componentDigest']}]},
+                'standardScratchRefusal': {'status': 'passed', 'language': 'rust', 'cases': rows}}
+            report = qualifier.execution_report('rust', root, node)
+            self.assertEqual([row['classification'] for row in report['findings']],
+                ['lifecycle-unproven', 'unsupported-reached', 'unresolved-behavior', 'unsupported-reached', 'unresolved-behavior'])
+            self.assertEqual(report['componentDigest'], original['componentDigest'])
+            self.assertEqual(report['status'], 'blocked')
+            rows[1]['observation']['unsupported'] = True
+            with self.assertRaisesRegex(RuntimeError, 'scratch-report-category-recheck'):
+                qualifier.execution_report('rust', root, node)
+            rows[1]['observation']['unsupported'] = False
+            node['releaseSet']['releases'][0]['componentDigest'] = digest(b'foreign component')
+            with self.assertRaisesRegex(RuntimeError, 'scratch-report-signed-component-mismatch'):
+                qualifier.execution_report('rust', root, node)
+
 
 if __name__ == '__main__': unittest.main()
