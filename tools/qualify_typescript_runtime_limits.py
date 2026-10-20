@@ -82,7 +82,7 @@ def execute(artifact,native,output):
                         if phase=='bootstrap':bootstrap=row
                     base.retire(client,probe,target,observations,phase)
                     result['cases'].append({'profile':name,'phase':phase,'decoded':row['decoded'],
-                        'terminal':row['response'].get('error',{}).get('code')})
+                        'terminal':(row['response'].get('error') or {}).get('code')})
                 shutdown=shutdown_owned_node(client,node)
                 peer.close();empty=peer_evidence(peer.observation())
                 result['profiles'].append({'name':name,'limits':cases.limits(profile),
