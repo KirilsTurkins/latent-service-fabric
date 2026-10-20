@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_node_stop_v7.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain only the existing bounded producer-owned startup-failure enum report on the original node exit; reject unknown, extra, duplicate or private fields. Keep failure/cleanup/startup deadlines and timer readiness unchanged; execute six focused redaction and reader controls.",
+  "reviewReason": "Respect the stopped original authority durable anti-rollback clock floor before exactly one replacement start. Consume the existing startup watchdog/client deadline, retain scalar floor evidence, fail on malformed/regressed/changed state, and preserve original timer/signal/native limits and default programme.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b9ac51e4e88fc106dffb8715371ef5d993d4ce2bf1f971a59816e62e97a76cad"
+  "sha256": "9c419a17e971f5d3657015e5638357179bbb2ec8417f1f768627b523cfbe9b5b"
 }

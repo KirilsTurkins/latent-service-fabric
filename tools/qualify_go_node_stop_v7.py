@@ -27,7 +27,8 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 
 HELPERS = (*stop.HELPERS, 'tools/qualify_go_node_stop_v7.py', 'tools/go_node_stop_positive.py',
            'tools/go_node_stop_timer_observer.py', 'tools/java_phase_native_products.py',
-           'tools/java_replay_materials.py', 'tools/node_startup_observation.py')
+           'tools/java_replay_materials.py', 'tools/node_startup_observation.py',
+           'tools/go_node_stop_restart.py')
 COMPILE_TREES = {'wit': (2048, 8 * 1024 * 1024), 'schemas': (256, 4 * 1024 * 1024),
                  'examples/echo-contract/wit': (128, 1024 * 1024)}
 

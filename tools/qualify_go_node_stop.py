@@ -17,6 +17,7 @@ if __package__ in (None, ''):
 from tools import go_node_stop_fixture as fixture, go_node_stop_probe as oracle
 from tools import go_node_stop_positive as positive
 from tools import go_node_stop_timer_observer as timer_observer
+from tools import go_node_stop_restart as restart
 from tools import java_control_refusal_diagnostic as control_refusal
 from tools.build_observation import build_environment
 from tools.build_process_signals import owned_cancellation
@@ -317,8 +318,12 @@ def programme(native, signed, output, *, positive_timers=False):
                 pending = None
                 record['interruptedInvocation'] = interrupted
                 record['transportDisposition'] = oracle.interrupted(interrupted)
-                node = connect(client, native['latentd'], work / 'node', path, 'examples', index * 2 + 2,
-                               control_refusal_diagnostic=True)
+                if positive_timers:
+                    node, record['restartFloor'] = restart.restart(client, native['latentd'], work / 'node',
+                        path, 'examples', index * 2 + 2, selected / 'restart-clock-floor.json')
+                else:
+                    node = connect(client, native['latentd'], work / 'node', path, 'examples', index * 2 + 2,
+                                   control_refusal_diagnostic=True)
                 record['restart'] = node.startup_record
                 record['freshAfterRestart'] = fresh_call(client, target, 'node-stop-' + mode + '-after')
                 stop(client, node)

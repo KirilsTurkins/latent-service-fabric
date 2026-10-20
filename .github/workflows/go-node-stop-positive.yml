@@ -30,7 +30,7 @@ jobs:
       - name: Install pinned source controls
         run: python3 -m pip install -r tools/requirements.lock
       - name: Reject false timer admission source drift and incomplete producer evidence
-        run: python3 -m unittest tools.tests.test_go_node_stop tools.tests.test_go_node_stop_positive tools.tests.test_go_node_stop_v7 tools.tests.test_go_node_stop_timer_observer tools.tests.test_java_phase_native_products tools.tests.test_node_startup_observation -v
+        run: python3 -m unittest tools.tests.test_go_node_stop tools.tests.test_go_node_stop_positive tools.tests.test_go_node_stop_v7 tools.tests.test_go_node_stop_timer_observer tools.tests.test_java_phase_native_products tools.tests.test_node_startup_observation tools.tests.test_go_node_stop_restart -v
       - name: Authenticate and restore the distinct V7 native products
         env:
           GH_TOKEN: ${{ github.token }}
