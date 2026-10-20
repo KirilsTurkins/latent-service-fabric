@@ -35,6 +35,10 @@ checks that closure before creating output, optionally fetches only the locked
 closure, then builds both references offline and locked with two build jobs.
 It checks that neither build changes its lockfile.
 
+The current reference lock also selects patched rustls-webpki 0.103.16. Its
+single version/checksum update retains all 26 packages and 24 registry inputs;
+the original eight parser cases and the historical 0.23.45 inputs are unchanged.
+
 The original 5,000-certificate case must still exceed the 64 KiB parser ceiling
 and fail its reference process; the bounded source must pass all eight existing
 vectors with zero live parser allocations after Drop. The workflow retains the
