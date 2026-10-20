@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_fetch_conformance.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all 25 passed standard cases and strict no-gate/early-return refusals; pending-abort fixture requests one second verified by guest monotonic clock while real gate is held two seconds, with production limits unchanged.",
+  "reviewReason": "Preserve all31 actual passed guest cases and original physical ownership checks; terminate the real node with deployment installed and require clean/reaped process status instead of an unrelated post-programme delete mutation refused by the finite audit ledger.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d1efeeeb227a758d78e2adb6849105703b7cf2b274d381fbd2f351de66576890"
+  "sha256": "893333399918607e3daeae6ac7baec0f8e5029e37ba5edee1435a354e3c613d9"
 }

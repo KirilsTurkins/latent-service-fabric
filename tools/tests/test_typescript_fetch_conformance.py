@@ -14,6 +14,20 @@ from tools.rust_capsule_project import digest
 
 
 class FetchConformanceTests(unittest.TestCase):
+    def test_installed_deployment_shutdown_requires_real_reap_and_clean_report_without_new_mutation(self):
+        client=SimpleNamespace(call=unittest.mock.Mock(side_effect=AssertionError('teardown performed an unrelated control mutation')))
+        node=object()
+        for reaped,clean in [(True,True),(False,True),(True,False)]:
+            record={'reaped':reaped,'record':{'clean':clean}}
+            with self.subTest(reaped=reaped,clean=clean),patch.object(qualification,'stop') as stop, \
+                    patch.object(qualification,'stopped_record',return_value=record):
+                if reaped and clean:self.assertEqual(qualification.shutdown_owned_node(client,node),record)
+                else:
+                    with self.assertRaisesRegex(WorkflowError,'clean-shutdown'):
+                        qualification.shutdown_owned_node(client,node)
+                stop.assert_called_once_with(client,node)
+        client.call.assert_not_called()
+
     def test_broader_fixture_policy_replaces_only_its_verified_first_generation(self):
         with tempfile.TemporaryDirectory() as temporary:
             class Client:

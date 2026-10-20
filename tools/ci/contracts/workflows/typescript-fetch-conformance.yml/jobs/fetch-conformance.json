@@ -68,7 +68,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-fetch-conformance-${{ github.sha }}",
-          "path": "${{ runner.temp }}/fetch-conformance-original/acquisition.json\n${{ runner.temp }}/fetch-conformance/*.json\n${{ runner.temp }}/fetch-conformance/build/*.json\n${{ runner.temp }}/fetch-conformance/build/*.wit\n${{ runner.temp }}/fetch-conformance/build/logs/\n${{ runner.temp }}/fetch-conformance/node/*.json\n${{ runner.temp }}/fetch-conformance/node/controls/\n",
+          "path": "${{ runner.temp }}/fetch-conformance-original/acquisition.json\n${{ runner.temp }}/fetch-conformance/*.json\n${{ runner.temp }}/fetch-conformance/build/*.json\n${{ runner.temp }}/fetch-conformance/build/*.wit\n${{ runner.temp }}/fetch-conformance/build/component.wasm\n${{ runner.temp }}/fetch-conformance/build/package/**\n${{ runner.temp }}/fetch-conformance/build/logs/\n${{ runner.temp }}/fetch-conformance/node/*.json\n${{ runner.temp }}/fetch-conformance/node/controls/\n",
           "retention-days": 7
         }
       }
@@ -77,7 +77,7 @@
   },
   "jobId": "fetch-conformance",
   "kind": "job",
-  "reviewReason": "Add the independent signed standard Fetch provider campaign, preserving the original one-request and published-library campaigns and every original command.",
+  "reviewReason": "Retain all owning commands and additionally retain actual component and package bytes for source-bound reuse.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-conformance.yml"
 }

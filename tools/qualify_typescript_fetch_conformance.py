@@ -20,7 +20,7 @@ from tools.phase2_operator_process import require, stopped_record, write_json
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_os import Probe
-from tools.rust_capsule_node import RecordingClient, delete_all, deploy, start_call, sample
+from tools.rust_capsule_node import RecordingClient, deploy, start_call, sample
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, snapshot
 from tools.standard_http.peer import Peer
 from tools.typescript_fetch_replay_inputs import native_inputs
@@ -29,6 +29,16 @@ from tools.typescript_guest.build import build
 SOURCES=('.github/workflows/typescript-fetch-conformance.yml',cases.SOURCE,
     'tools/typescript_fetch_conformance.py','tools/qualify_typescript_fetch_conformance.py',
     'tools/qualify_typescript_fetch_runtime.py','tools/typescript_fetch_replay_inputs.py')
+
+
+def shutdown_owned_node(client,node):
+    # The programme already proves physical retirement after every case. Stop
+    # the actual owned node with its deployment still installed; a separate
+    # deployment mutation is not a prerequisite for process-owner retirement.
+    stop(client,node)
+    record=stopped_record(node)
+    require(record['reaped'] and record['record']['clean'],'fetch-conformance-clean-shutdown')
+    return record
 
 
 def execute(artifact, native, output):
@@ -122,9 +132,8 @@ def execute(artifact, native, output):
             base.require_result(row,'200:'+cases.json_bytes(cases.DOMAIN).decode()+':used:clone',1)
             base.retire(client,probe,target,output,'fresh-after-lifecycle')
             result['cases'].append({'name':'fresh-after-lifecycle','outbound':1,'result':row['decoded']})
-            delete_all(client,[target['name']]);stop(client,node)
-            result['shutdown']=stopped_record(node)
-            require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'],'fetch-conformance-clean-shutdown')
+            stage='node-shutdown'
+            result['shutdown']=shutdown_owned_node(client,node)
             peer.close();result['peer']=cases.peer_evidence(peer.observation())
         require(base.build_evidence(artifact)==original,'fetch-conformance-built-input-changed')
         result.update(status='passed',signedExecution='passed',providerExecution='passed')

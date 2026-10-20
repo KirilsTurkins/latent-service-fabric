@@ -62,6 +62,8 @@ jobs:
             ${{ runner.temp }}/fetch-conformance/*.json
             ${{ runner.temp }}/fetch-conformance/build/*.json
             ${{ runner.temp }}/fetch-conformance/build/*.wit
+            ${{ runner.temp }}/fetch-conformance/build/component.wasm
+            ${{ runner.temp }}/fetch-conformance/build/package/**
             ${{ runner.temp }}/fetch-conformance/build/logs/
             ${{ runner.temp }}/fetch-conformance/node/*.json
             ${{ runner.temp }}/fetch-conformance/node/controls/

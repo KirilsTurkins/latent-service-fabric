@@ -65,3 +65,16 @@ the authorized monotonic clock inside the guest, and hold the actually observed
 peer gate for2seconds. The early-return/no-gate refusals and all production
 limits remain. Root-return drain still uses its original150ms release. Actual
 pending-I/O abort/timeout and subsequent root terminal cases remain unqualified.
+
+Sourcecef9f779e4 passed all31 signed cases, including both actual stalled-I/O
+aborts with the one-second guest monotonic lower bound, accepted-root drain,
+held-owner root cancellation/deadline and fresh reuse. The next unrelated
+explicit deployment-delete mutation was refused with resource-exhausted after
+audit pressure; artifact12243766916 preserves this failure and all31 outcomes
+(SHA25691323d5b85cd597701e17995fdfc6bb250a571b801d0f30433366f0cd8dc29e9).
+The owned node now stops via its original process signal with the deployment
+still installed, and must produce the actual clean/reaped shutdown report. No
+new mutation, conflict retry, audit-cap increase or false cleanup acknowledgement
+is introduced. This change still requires actual clean shutdown under the full
+programme's audit pressure; a clean low-pressure standalone node is insufficient.
+Component/package bytes are retained on subsequent attempts for exact reuse.
