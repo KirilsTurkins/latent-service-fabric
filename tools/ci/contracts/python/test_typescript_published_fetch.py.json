@@ -7,7 +7,8 @@
     "PublishedFetchTests.test_native_inputs_reject_fabricated_current_receipts_before_using_binaries",
     "PublishedFetchTests.test_outside_identity_cannot_escape_its_owned_directory",
     "PublishedFetchTests.test_peer_requires_all_six_exact_authorized_contacts",
-    "PublishedFetchTests.test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ"
+    "PublishedFetchTests.test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ",
+    "PublishedFetchTests.test_reader_probes_and_closed_diagnostics_cannot_replace_client_success"
   ],
   "guards": {
     "PublishedFetchTests.test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge": {
@@ -105,10 +106,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "PublishedFetchTests.test_reader_probes_and_closed_diagnostics_cannot_replace_client_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_published_fetch.py",
-  "reviewReason": "Review the actual ofetch declaration failure and replace only the new unmerged Fetch fixture with unchanged browser Wretch; retain all existing Fetch, archive and authority controls.",
+  "reviewReason": "Preserve the actual nineteen-f failure; add two zero-outbound reader probes and closed diagnostic labels without changing any original client success, error or contact requirement.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

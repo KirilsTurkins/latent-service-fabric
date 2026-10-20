@@ -61,6 +61,16 @@ bind every new caller and backend byte.
 The replacement Ky/Wretch normal capture, pinned typecheck and Node reference
 controls pass. Signed execution remains pending until the owning workflow
 produces retained results.
+
+Run39369743834 at19f5c2d207 completed a normal build, package, signing and
+admission. Both pre-guest grant denials passed; the first Ky JSON invocation
+then trapped after exactly one outbound request. The authenticated131-member
+artifact12240944275 retains that failure and the actual component identity.
+No trap cause is inferred. Two additive zero-outbound buffered-reader/JSON
+probes and a closed diagnostic projection now distinguish supported reader
+execution from rejected library calls; all six original library outcomes and
+the exact peer-contact gate remain required. Unknown diagnostics reveal only
+a static error-kind/unknown label, never arbitrary exception text.
 Full #691 acceptance still requires default HTTP-error compatibility, streaming
 and abandonment, Abort/timeout races, uncertainty, limit exhaustion and
 cross-tenant lifecycle qualification.

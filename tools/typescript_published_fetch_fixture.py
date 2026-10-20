@@ -25,10 +25,39 @@ MAIN = b'''import type * as Contract from '../generated/interfaces/examples-type
 import {request, initialized} from './default-client.js';
 if (!initialized) throw new Error('published-fetch-default-globals-unavailable');
 let calls = 0;
+function diagnostic(error: unknown): string {
+  const kind = error instanceof TypeError ? 'TypeError' : error instanceof RangeError ? 'RangeError' :
+    error instanceof ReferenceError ? 'ReferenceError' : error instanceof SyntaxError ? 'SyntaxError' :
+    error instanceof Error ? 'Error' : 'other';
+  const labels = new Map([
+    ['lsf-fetch-buffered-v1:unsupported:streaming-body', 'streaming-body-unavailable'],
+    ['body-already-used', 'body-already-used'],
+    ['lsf-fetch-buffered-v1:unsupported:response-status-text', 'status-text-unavailable'],
+  ]);
+  const label = error instanceof Error ? labels.get(error.message) ?? 'unknown' : 'unknown';
+  return `diagnostic:${kind}:${label}`;
+}
 export const api: typeof Contract = {
   async run(mode, url) {
     if (++calls !== 1) throw new Error('published-fetch-activation-state-reused');
-    return `1|${await request(mode, url)}`;
+    try {
+      if (mode === 5) {
+        const response = new Response('reader');
+        const reader = response.body!.getReader();
+        const first = await reader.read(), second = await reader.read();
+        if (first.done || first.value.length !== 6 || !second.done || !response.bodyUsed)
+          throw new Error('published-fetch-buffered-reader-probe');
+        reader.releaseLock();
+        return '1|buffered-reader-ready';
+      }
+      if (mode === 6) {
+        const response = new Response('{"value":42}');
+        if ((await response.json()).value !== 42 || !response.bodyUsed)
+          throw new Error('published-fetch-buffered-json-probe');
+        return '1|buffered-json-ready';
+      }
+      return `1|${await request(mode, url)}`;
+    } catch (error) { return diagnostic(error); }
   },
 };
 '''

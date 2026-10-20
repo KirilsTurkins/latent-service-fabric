@@ -104,6 +104,15 @@ def execute(artifact, native, output):
                 base.retire(client, probe, target, output, phase)
             target = deploy(client, source/'deployment.json', publication,
                 generation=str(target['generation']), grants=authorized)
+            for name, mode, expected in [('buffered-reader-probe',5,'1|buffered-reader-ready'),
+                                         ('buffered-json-probe',6,'1|buffered-json-ready')]:
+                stage = name
+                row = call(client, target, 'typescript-fetch', 'run', [mode,address+'/conformance/json'],
+                    'published-fetch-'+name)
+                write_json(output/(name+'.json'), row)
+                base.require_result(row,expected,0)
+                base.retire(client,probe,target,output,name)
+                record['cases'].append(name)
             for name, mode, path, expected in VECTORS:
                 stage = name
                 row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'published-fetch-'+name)

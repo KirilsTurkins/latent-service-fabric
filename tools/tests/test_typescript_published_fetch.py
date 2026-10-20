@@ -17,6 +17,14 @@ from tools.standard_http.peer import Peer
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_reader_probes_and_closed_diagnostics_cannot_replace_client_success(self):
+        self.assertIn(b"mode === 5",fixture.MAIN)
+        self.assertIn(b"mode === 6",fixture.MAIN)
+        self.assertIn(b"catch (error) { return diagnostic(error); }",fixture.MAIN)
+        self.assertIn(b"labels.get(error.message) ?? 'unknown'",fixture.MAIN)
+        self.assertNotIn(b'${error.message}',fixture.MAIN)
+        self.assertEqual(qualify.VECTORS[0],('ky-json',0,'/conformance/json','ky:'))
+
     def test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge(self):
         identity,size,sha=inputs.ARTIFACTS['engine']
         metadata={'id':identity,'size_in_bytes':size,'digest':'sha256:'+sha,'expired':False,
