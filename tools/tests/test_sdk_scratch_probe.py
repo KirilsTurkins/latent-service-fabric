@@ -86,7 +86,8 @@ class ScratchProbe(unittest.TestCase):
             for kwargs in ({'language': 'typescript', 'standard_scratch_refusal': True},
                     {'language': 'rust', 'standard_scratch_refusal': 1},
                     {'language': 'rust', 'standard_scratch_refusal': True, 'rust_standard_entropy': True},
-                    {'language': 'rust', 'standard_scratch_refusal': True, 'standard_typescript_clocks': True}):
+                    {'language': 'rust', 'standard_scratch_refusal': True, 'standard_typescript_clocks': True},
+                    {'language': 'dotnet', 'standard_scratch_refusal': True, 'dotnet_task_runtime': True}):
                 with self.subTest(kwargs=kwargs):
                     with self.assertRaisesRegex(RuntimeError, 'authoring-scratch-refusal-selection'):
                         run(Path('cli'), Path('node'), Path('fixture'), output, **kwargs)

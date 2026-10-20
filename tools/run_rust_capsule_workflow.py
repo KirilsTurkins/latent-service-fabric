@@ -45,7 +45,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, standard_typescript_clocks=False, standard_scratch_refusal=False):
+        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, dotnet_task_runtime=False, standard_typescript_clocks=False, standard_scratch_refusal=False):
     require(type(standard_scratch_refusal) is bool and (not standard_scratch_refusal or language in {'rust', 'c', 'go', 'java', 'dotnet'})
             and not (standard_scratch_refusal and (c_standard_facilities or c_standard_logging or c_standard_combined
                 or c_compiled_resources or captured_dependency_recovery or captured_git_component or rust_compatibility
@@ -53,7 +53,11 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                 or approved_typescript_generator or standard_typescript_console or go_standard_logging
                 or rust_standard_stdio or rust_standard_entropy or dotnet_standard_logging or captured_go_private
                 or approved_go_generator or go_standard_entropy or dotnet_standard_entropy
-                or dotnet_reflection_boundaries or standard_typescript_entropy or standard_typescript_clocks)), 'authoring-scratch-refusal-selection')
+                or dotnet_reflection_boundaries or standard_typescript_entropy or standard_typescript_clocks or dotnet_task_runtime)), 'authoring-scratch-refusal-selection')
+    require(type(dotnet_task_runtime) is bool and (not dotnet_task_runtime or (
+        language == 'dotnet' and not (noncrypto_entropy or dotnet_standard_entropy or dotnet_standard_logging
+            or dotnet_reflection or dotnet_reflection_boundaries or captured_dotnet_private
+            or captured_dependency_recovery))), 'authoring-dotnet-task-runtime-language')
     require(type(standard_typescript_clocks) is bool and (not standard_typescript_clocks or language == 'typescript')
             and not (standard_typescript_clocks and (standard_typescript_entropy or standard_typescript_console
                 or captured_npm_private or approved_typescript_generator or captured_dependency_recovery)),
@@ -185,6 +189,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     from tools.rust_standard_logging_probe import configure as configure_rust_stdio
                     configure_rust_stdio(settings, fixture)
                     config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
+                if dotnet_task_runtime:
+                    from tools.dotnet_task_runtime_probe import configure as configure_managed_tasks
+                    configure_managed_tasks(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 if standard_typescript_clocks:
                     from tools.typescript_standard_clock_probe import configure as configure_clocks
                     configure_clocks(settings)
@@ -230,6 +238,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if language in {"go", "dotnet", "java"}:
                         from tools.guest_runtime_grants import grant
                         grant(client, node, fixture, targets, publications, result, language=language)
+                    if dotnet_task_runtime:
+                        from tools.dotnet_task_runtime_probe import grant as grant_managed_tasks
+                        grant_managed_tasks(client, node, fixture, targets, publications, result)
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import admission as entropy_admission
                         entropy_admission(client, fixture, targets, publications, result)
@@ -291,6 +302,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if go_standard_entropy:
                         from tools.go_standard_entropy_probe import probe as entropy_probe
                         entropy_probe(client, targets['greeting'], probe, result, len(names))
+                    if dotnet_task_runtime:
+                        from tools.dotnet_task_runtime_probe import probe as probe_managed_tasks
+                        probe_managed_tasks(client, targets['greeting'], probe, result, len(names))
                     if dotnet_standard_entropy:
                         from tools.dotnet_standard_entropy_probe import probe as probe_secure_entropy
                         probe_secure_entropy(client, targets['greeting'], probe, result, len(names))

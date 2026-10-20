@@ -37,7 +37,11 @@ def original(path: Path) -> dict:
 
 
 def selected(declared: list[str], bridge: dict | None) -> bool:
-    if not {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared) or bridge is None:
+    # The activation adapter owns Task/timer progress independently of HTTP.
+    # Requiring a network declaration here would turn ordinary Task.Run joins
+    # into an unnecessary application effect. The authenticated async root and
+    # explicit clock/activation authorities remain mandatory.
+    if not {runtime.CLOCK, runtime.ACTIVATION} <= set(declared) or bridge is None:
         return False
     if (bridge.get('profile') != async_exports.PROFILE or type(bridge.get('exports')) is not int
             or not 1 <= bridge['exports'] <= 64):
@@ -162,6 +166,6 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
     (project / 'Capsule.csproj').write_bytes(XML.tostring(document, encoding='utf-8', xml_declaration=True))
     record = {**result, 'profile': PROFILE, 'frameworkInput': source_identity, 'tool': tool, 'derived': identity,
         'sourceCaptureDigest': digest(captured), 'targetsDigest': digest(target), 'nativeAotReferenceBinding': None,
-        'selection': {'requiredDeclarations': sorted((runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION)), 'asyncExportBridge': bridge}}
+        'selection': {'requiredDeclarations': sorted((runtime.CLOCK, runtime.ACTIVATION)), 'asyncExportBridge': bridge}}
     write_json(evidence / 'task-wait-port-preparation.json', record)
     return Port(sdk / 'tools/http-errors', source, assembly, retained, targets, references, identity, captured, target, record)
