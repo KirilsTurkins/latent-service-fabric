@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_published_tasks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain strict original normal-native authentication and every published graph/task/grant/retirement assertion; restore executable modes only on the five authenticated artifact binaries.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0dadc2b5cb965e61e43dc81d7e414ca97e7a4251821e482c595b7a54368e9501"
+}

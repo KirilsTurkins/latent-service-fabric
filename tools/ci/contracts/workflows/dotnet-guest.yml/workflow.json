@@ -100,10 +100,11 @@
     }
   },
   "requiredJobs": [
+    "published-tasks",
     "scratch-refusals",
     "toolchain"
   ],
-  "reviewReason": "Preserve every original75-minute parent step and workflow property; add public normal-bundle export and separate20-minute ordinary.NET scratch child without native host rebuild, filesystem or entropy grants.",
+  "reviewReason": "Compose the unchanged normal parent and both separately budgeted published and scratch children without removing commands",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
