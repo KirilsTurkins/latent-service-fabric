@@ -2,6 +2,8 @@ name: Same-node resource tenant isolation
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feat/sdk-resource-tenant-isolation-20261020]
 
 permissions:
   contents: read

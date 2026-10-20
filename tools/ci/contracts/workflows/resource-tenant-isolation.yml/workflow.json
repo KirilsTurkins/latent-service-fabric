@@ -7,6 +7,11 @@
     },
     "name": "Same-node resource tenant isolation",
     "on": {
+      "push": {
+        "branches": [
+          "feat/sdk-resource-tenant-isolation-20261020"
+        ]
+      },
       "workflow_dispatch": null
     },
     "permissions": {
@@ -17,7 +22,7 @@
   "requiredJobs": [
     "tenants"
   ],
-  "reviewReason": "Add separate manual20min retained-product tenant-isolation lane; all original workflows/jobs/commands remain unchanged.",
+  "reviewReason": "Index the new bounded workflow through only its exact owned feature-branch push plus manual dispatch; no original PR/push job or budget changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/resource-tenant-isolation.yml"
 }

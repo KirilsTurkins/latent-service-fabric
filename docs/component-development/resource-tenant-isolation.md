@@ -2,7 +2,7 @@
 
 This finite programme reuses immutable qualified resource components with fresh
 normal packaging and ephemeral demo signatures for two real tenant scopes. The
-first manual lane selects Go and TypeScript; Java public-input restoration is
+first bounded lane selects Go and TypeScript; Java public-input restoration is
 source-verified but not selected by that lane. C, Rust and .NET require their
 separately authenticated original-component acquisition before execution here.
 No component or native tool is compiled by the consumer.
@@ -52,7 +52,7 @@ this service receives no HTTP grant and makes no HTTP request.
 Focused controls cover producer identity drift, five product substitutions,
 closed import/alias shape, unchanged cell limits, independent tenant grants,
 foreign credentials, original public-input restoration, exact seven-call order
-and unavailable/live owner refusals. The Go/TypeScript signed cross-tenant
+and unavailable/live owner refusals. The feature-branch push/manual Go/TypeScript signed cross-tenant
 programme is **pending**. This is a partial #681 AC8/mandatory lifecycle slice
 and supporting #679 evidence; neither whole ticket is complete. Concurrent
 readers/callbacks, pending flush, cancellation, late completion and a public
