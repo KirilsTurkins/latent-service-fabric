@@ -46,6 +46,10 @@
         }
       },
       {
+        "name": "Install the same namespace prerequisite on this separate child host",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
         "name": "Check exact source preservation and concrete error categories",
         "run": "python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification tools.tests.test_java_scratch_wiring"
       },
@@ -73,7 +77,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Add exact closed Java source controls; keep all original parent/dependency/child commands and limits.",
+  "reviewReason": "Give the separate child the unchanged normal namespace prerequisite on its own fresh VM; preserve all old commands and deadlines.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
