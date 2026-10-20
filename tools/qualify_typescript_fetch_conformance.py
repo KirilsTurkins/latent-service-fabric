@@ -41,10 +41,12 @@ def shutdown_owned_node(client,node):
     return record
 
 
-def execute(artifact, native, output):
+def execute(artifact, native, output, *, buffered_only=False):
+    from tools import typescript_fetch_buffered as buffered
     output=fresh(output)
     result={'schemaVersion':'latent.typescript.fetch-conformance.v1','status':'in-progress',
-        'fullTicketQualification':False,'networkStreamingQualified':False,'crossTenantQualified':False,'cases':[]}
+        'fullTicketQualification':False,'networkStreamingQualified':False,'crossTenantQualified':False,
+        'bufferedOnly':buffered_only,'cases':[]}
     stage='sign';expires=time.monotonic()+300
     try:
         original=base.build_evidence(artifact);result['artifact']=original
@@ -62,7 +64,7 @@ def execute(artifact, native, output):
             peer=Peer(authorization,maximum_seconds=300);cleanup.callback(peer.close)
             startup={'destinations':peer.provider_destinations(),
                 'origins':{role:peer.origin(role) for role in ('primary','secondary')}}
-            config=cases.configuration(work/'node',signed,startup,credential)
+            config=(base.configuration if buffered_only else cases.configuration)(work/'node',signed,startup,credential)
             result['configurationIdentity']=file_identity(config)
             client=RecordingClient(native['latent'],work/'client',cancellation,expires,
                 evidence=output/'controls',invocation_timeout_millis=120000,control_timeout_millis=125000)
@@ -77,7 +79,8 @@ def execute(artifact, native, output):
             for phase,selected in (('runtime-denied',None),('http-denied','runtime')):
                 stage=phase
                 if selected is not None:
-                    runtime,authorized=cases.grants(client,node,publication,startup['origins'])
+                    runtime,authorized=(base.grants(client,node,publication,startup['origins']['primary'])
+                        if buffered_only else cases.grants(client,node,publication,startup['origins']))
                     target=deploy(client,source/'deployment.json',publication,
                         generation=str(target['generation']),grants=runtime)
                 row=cases.invoke(client,target,peer,0,'domain-json','conformance-'+phase)
@@ -86,25 +89,27 @@ def execute(artifact, native, output):
                 base.retire(client,probe,target,output,phase)
             target=deploy(client,source/'deployment.json',publication,
                 generation=str(target['generation']),grants=authorized)
-            for name,mode,vector,expected,outbound in cases.vectors():
+            for name,mode,vector,expected,outbound in (buffered.vectors() if buffered_only else cases.vectors()):
                 stage=name;before=peer.observation()['startedRequests']
                 row=cases.invoke(client,target,peer,mode,vector,'conformance-'+name)
+                write_json(output/('invocation-'+name+'.json'),row)
                 base.require_result(row,expected,outbound)
                 peer.poll(0)
                 require(peer.observation()['startedRequests']-before==outbound,'fetch-conformance-exact-contact-delta')
                 result['cases'].append({'name':name,'outbound':outbound,'result':row['decoded']})
                 base.retire(client,probe,target,output,name)
-            for name,mode,vector,expected,release_after in [
+            for name,mode,vector,expected,release_after in ([] if buffered_only else [
                 ('explicit-abort',30,'pending-headers','explicit-abort',2.0),
                 ('operation-timeout',31,'partial-body','operation-timeout',2.0),
-                ('root-return-drains-accepted',32,'pending-headers','accepted-fetch-root-return',.15)]:
+                ('root-return-drains-accepted',32,'pending-headers','accepted-fetch-root-return',.15)]):
                 stage=name
                 row=cases.invoke(client,target,peer,mode,vector,'conformance-'+name,release_after=release_after)
+                write_json(output/('invocation-'+name+'.json'),row)
                 base.require_result(row,expected,1)
                 result['cases'].append({'name':name,'outbound':1,'result':row['decoded'],'realGateReleased':True})
                 base.retire(client,probe,target,output,name)
-            for name,vector,wall,code in [('root-cancel','pending-headers',5000,'cancelled'),
-                                         ('root-deadline','partial-body',3000,'deadline-exceeded')]:
+            for name,vector,wall,code in ([] if buffered_only else [('root-cancel','pending-headers',5000,'cancelled'),
+                                         ('root-deadline','partial-body',3000,'deadline-exceeded')]):
                 stage=name;activation='conformance-'+name
                 process=start_call(client,target,'typescript-fetch','run',[34,peer.url(vector)],activation,wall=wall)
                 try:
@@ -119,6 +124,7 @@ def execute(artifact, native, output):
                         require(canceled['outcomeKnown'] and canceled['data']['disposition']=='accepted',
                             'fetch-conformance-root-cancel-acknowledgement')
                     row=cases.drive(client,process,peer)
+                    write_json(output/('invocation-'+name+'.json'),row)
                     require(row['exitCode']==4 and row['response']['error']['code']==code
                         and row['response']['outcomeKnown'] and row['processReaped'],'fetch-conformance-root-terminal')
                     require(row['response']['data']['consumption']['outboundRequests']==1,'fetch-conformance-root-charge')
@@ -129,12 +135,15 @@ def execute(artifact, native, output):
                 finally: process.close()
             stage='fresh-after-lifecycle'
             row=cases.invoke(client,target,peer,0,'domain-json','conformance-fresh')
-            base.require_result(row,'200:'+cases.json_bytes(cases.DOMAIN).decode()+':used:clone',1)
+            write_json(output/'invocation-fresh-after-lifecycle.json',row)
+            fresh_expected=buffered.vectors()[0][3] if buffered_only else '200:'+cases.json_bytes(cases.DOMAIN).decode()+':used:clone'
+            fresh_outbound=0 if buffered_only else 1
+            base.require_result(row,fresh_expected,fresh_outbound)
             base.retire(client,probe,target,output,'fresh-after-lifecycle')
-            result['cases'].append({'name':'fresh-after-lifecycle','outbound':1,'result':row['decoded']})
+            result['cases'].append({'name':'fresh-after-lifecycle','outbound':fresh_outbound,'result':row['decoded']})
             stage='node-shutdown'
             result['shutdown']=shutdown_owned_node(client,node)
-            peer.close();result['peer']=cases.peer_evidence(peer.observation())
+            peer.close();result['peer']=(buffered.peer_evidence if buffered_only else cases.peer_evidence)(peer.observation())
         require(base.build_evidence(artifact)==original,'fetch-conformance-built-input-changed')
         result.update(status='passed',signedExecution='passed',providerExecution='passed')
         write_json(output/'qualification.json',result);return result
@@ -142,22 +151,25 @@ def execute(artifact, native, output):
         result.update(status='failed',stage=stage);write_json(output/'FAILED.json',result);raise
 
 
-def qualify(acquired, tools, output):
+def qualify(acquired, tools, output, *, buffered_only=False):
+    from tools import typescript_fetch_buffered as buffered
     acquired,tools,output=(Path(p).resolve() for p in (acquired,tools,output))
     require(output!=ROOT and ROOT not in output.parents and all(output!=p and output not in p.parents
         and p not in output.parents for p in (acquired,tools)),'fetch-conformance-separated-inputs')
     native,identity=native_inputs(acquired/'native');output=fresh(output)
-    source_before={name:file_identity(ROOT/name,2*1024**2) for name in SOURCES}
+    sources=(*SOURCES,buffered.SOURCE,'tools/typescript_fetch_buffered.py',
+        '.github/workflows/typescript-fetch-buffered.yml') if buffered_only else SOURCES
+    source_before={name:file_identity(ROOT/name,2*1024**2) for name in sources}
     write_json(output/'qualification-source-inputs.json',source_before)
     before_native={name:file_identity(path,192*1024**2) for name,path in native.items()}
-    app=cases.project(output/'application');before=inventory(snapshot(app))
+    app=(buffered.project if buffered_only else cases.project)(output/'application');before=inventory(snapshot(app))
     artifact=build(app,output/'build',native['capsule_contracts'],native['package'],
         'https://github.com/KirilsTurkins/latent-service-fabric',tools=tools,
         runtime_engine=acquired/'engine/engine.wasm',runtime_engine_receipt=acquired/'engine/engine-input.json',
         runtime_splicer=acquired/'splicer/splicer',runtime_splicer_receipt=acquired/'splicer/splicer-input.json')
-    observed=execute(artifact,native,output/'node')
+    observed=execute(artifact,native,output/'node',buffered_only=buffered_only)
     require(before==inventory(snapshot(app)),'fetch-conformance-source-changed')
-    require(source_before=={name:file_identity(ROOT/name,2*1024**2) for name in SOURCES},
+    require(source_before=={name:file_identity(ROOT/name,2*1024**2) for name in sources},
         'fetch-conformance-qualification-source-changed')
     require(native_inputs(acquired/'native')[1]==identity
         and before_native=={name:file_identity(path,192*1024**2) for name,path in native.items()},
@@ -171,4 +183,5 @@ def qualify(acquired, tools, output):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('acquired','tools','output'):parser.add_argument('--'+name,type=Path,required=True)
-    args=parser.parse_args();print(json.dumps(qualify(args.acquired,args.tools,args.output)))
+    parser.add_argument('--buffered-only',action='store_true')
+    args=parser.parse_args();print(json.dumps(qualify(args.acquired,args.tools,args.output,buffered_only=args.buffered_only)))
