@@ -1,0 +1,39 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-fetch-phases-${{ github.ref }}"
+    },
+    "name": "TypeScript phase Fetch execution",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-phase-execution-20261020"
+        ],
+        "paths": [
+          ".github/workflows/typescript-fetch-phases.yml",
+          "sdk/typescript-guest/probes/fetch-phases/**",
+          "tools/typescript_fetch_phase_fixture.py",
+          "tools/typescript_fetch_tenant_programme.py",
+          "tools/qualify_typescript_fetch_phases.py",
+          "tools/java_phase_native_products.py",
+          "tools/http_phase_native_products.py",
+          "tools/http_tenant_native_products.py",
+          "tools/http_phase_wit.py",
+          "tools/tests/test_typescript_phase_execution.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "phases"
+  ],
+  "reviewReason": "Use independently authenticated8f authority-correct products after actual1522 pre-entry nominal-owner denial. Add only immutable8f fetch before unchanged native-auth commands; removing that one step restores entire old job exactly, including all controls, deadlines, permissions and budgets. Retain77/36/6f5 source fetches and old helper receipts.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-fetch-phases.yml"
+}
