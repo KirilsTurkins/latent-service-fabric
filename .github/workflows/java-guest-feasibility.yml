@@ -27,6 +27,10 @@ on:
         description: Run the unchanged normal Java prerequisite and separate filesystem refusal packet
         type: boolean
         default: false
+      java_http_spi:
+        description: Separate optional Java public ConnectionFactory programme
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -48,6 +52,7 @@ env:
 
 jobs:
   compiler-component:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}
     name: Actual Java sources, SDK ownership and enforced node
     runs-on: ubuntu-24.04
     timeout-minutes: 55
@@ -566,7 +571,7 @@ jobs:
           retention-days: 3
 
   dependency-ingestion:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}
     name: Captured Java dependency native programme (${{ matrix.mode }})
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -811,5 +816,109 @@ jobs:
           ${{ runner.temp }}/java-resource-conformance/node/FAILED.json
 
           ${{ runner.temp }}/java-resource-conformance/node/controls/*.json'
+        if-no-files-found: warn
+        retention-days: 3
+
+  http-public-spi:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi }}
+    name: Optional Java public ConnectionFactory with isolated default calls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: 3.13.5
+    - name: Fetch the one exact V7 native producer source before any helper verification
+      run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+    - name: Fetch the exact nominal HTTP native producer source before new helper controls
+      run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
+    - name: Fetch the exact independent-tenant HTTP producer before its helper verification
+      run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
+    - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+      with:
+        distribution: temurin
+        java-version: 25.0.4+101.0.LTS
+    - name: Fetch the exact operational-authority native producer before SPI helper controls
+      run: git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c
+    - name: Fetch the exact current native producer before optional SPI controls
+      run: git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
+    - name: Check shared strict fixed-tuple acquisition for optional SPI products
+      run: python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v
+    - name: Check the captured standard socket timeout exception identity
+      run: python3 -B -m unittest tools.tests.test_java_timeout_exception -v
+    - name: Check exact selected phase emission before optional SPI compilation
+      run: python3 -B -m unittest tools.tests.test_java_phase_surface -v
+    - name: Check optional SPI authority, original exception and native receipt controls
+      run: 'python3 -m pip install --requirement tools/requirements.lock
+
+        python3 -B -m unittest tools.tests.test_java_http_spi tools.tests.test_http_tenant_native_products -v
+
+        '
+    - name: Retrieve exactly the five authenticated V7 products without a native rebuild
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/java-http-spi-prepared"
+    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
+      with:
+        version: 1.254.0
+    - name: Install the same pinned Java compiler tools without any native Cargo build
+      shell: bash
+      run: "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806\
+        \  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ntimeout --signal=KILL 180s curl\
+        \ --fail --location \\\n  --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\
+        \n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\
+        \ -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n"
+    - name: Build one fresh optional public SPI component and execute its isolated programme
+      run: python3 -B tools/qualify_java_http_spi.py --prepared "$RUNNER_TEMP/java-http-spi-prepared" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/java-http-spi"
+    - name: Retain bounded source-specific replay evidence without credentials or keys
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: java-http-spi-${{ github.sha }}
+        path: '${{ runner.temp }}/java-http-spi-prepared/retrieval.json
+
+          ${{ runner.temp }}/java-http-spi-prepared/native-products.json
+
+          ${{ runner.temp }}/java-http-spi-prepared/source-inputs.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/qualification.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/FAILED.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/final-materials.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/*.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/component.wasm
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/package/**
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-to-c.log
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-owned-classes.log
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-coroutine-*.log
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm.log
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm-context.command.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-expected-wit.log
+
+          ${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-compiled-wit.log
+
+          ${{ runner.temp }}/java-http-spi/campaign/node/qualification.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/node/FAILED.json
+
+          ${{ runner.temp }}/java-http-spi/campaign/node/controls/*.json'
         if-no-files-found: warn
         retention-days: 3

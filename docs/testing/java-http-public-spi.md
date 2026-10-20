@@ -56,3 +56,11 @@ the default phase programme, under the existing 64 MiB Java component producer
 bound. Its owned public component/package and bounded WIT diagnostics are
 retained for source-bound reader repairs. These source controls are not signed
 SPI qualification; the six real calls and two authority denials remain pending.
+
+The optional manual entry is also available through the existing Java authoring
+workflow, because development-only focused workflow names cannot be dispatched
+from the default branch. Its selector defaults to false; only an explicit SPI
+dispatch skips normal baseline jobs. Removing the selector, exact two exclusions
+and copied job restores the entire old workflow. Both entries use the same
+programme, authority, component operator ceiling and budgets; neither runs
+automatically as a substitute for default-client qualification.

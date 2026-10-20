@@ -139,3 +139,24 @@ class JavaSpiComponentIdentityFence(unittest.TestCase):
             failed = read_json(root/'output/FAILED.json')
             self.assertEqual(failed['stage'], 'offline-optional-spi-component')
             self.assertFalse(failed['defaultClientQualification'])
+
+
+class JavaSpiManualWorkflow(unittest.TestCase):
+    def test_explicit_false_selector_restores_entire_baseline_and_duplicates_only_same_spi_job(self):
+        import subprocess
+        import yaml
+        name = '.github/workflows/java-guest-feasibility.yml'
+        old = yaml.safe_load(subprocess.check_output(['git', 'show',
+            'aa56bdebad8c12f20acce4ec4ecfeca73cf554be:'+name], cwd=ROOT, text=True))
+        selected = yaml.safe_load((ROOT/name).read_text())
+        flag = selected[True]['workflow_dispatch']['inputs'].pop('java_http_spi')
+        self.assertEqual(flag['type'], 'boolean');self.assertIs(flag['default'], False)
+        job = selected['jobs'].pop('http-public-spi')
+        focused = yaml.safe_load((ROOT/'.github/workflows/java-http-fiber-lifecycle.yml').read_text())
+        self.assertEqual(job, focused['jobs']['http-public-spi'])
+        self.assertEqual(selected['jobs']['compiler-component'].pop('if'),
+            "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
+        self.assertEqual(selected['jobs']['dependency-ingestion']['if'],
+            "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
+        selected['jobs']['dependency-ingestion']['if'] = old['jobs']['dependency-ingestion']['if']
+        self.assertEqual(selected, old)
