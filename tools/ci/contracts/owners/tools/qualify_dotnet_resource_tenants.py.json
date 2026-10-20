@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_resource_tenants.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit fixed original public CLR cores and AOT records, closed-only production graph/type derivation with all cores unchanged, honest metadata-only observation and normal package/sign/admission; no NativeAOT/native build or schema allowance.",
+  "reviewReason": "Create owned command output parent before real bounded runner; original public provenance, metadata derivation and node gates unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e13ec9d41929a0a0552363f8ed496a1f589a4f1a9ab18ffaddfd9dafd1b43072"
+  "sha256": "4f183527a997a01793657aaeb195270c6944cd15a5b2193c1534a04759d48881"
 }

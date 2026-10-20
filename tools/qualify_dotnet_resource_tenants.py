@@ -43,7 +43,7 @@ def run(native, producer, output):
  stage='fixed-public-original-acquisition'
  try:
   original,record['originalAcquisition']=originals.acquire(output/'originals')
-  commands=Commands(ROOT,output/'commands',build_environment(output),deadline_seconds=1000,command_seconds=180)
+  commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=1000,command_seconds=180)
   wasm=shutil.which('wasm-tools');require(wasm is not None,'dotnet-resource-pinned-codec-required')
   wasm=Path(wasm).resolve(strict=True)
   require(commands.run('metadata-codec-version',wasm,'--version').strip() in VERSIONS,'dotnet-resource-pinned-codec-version')

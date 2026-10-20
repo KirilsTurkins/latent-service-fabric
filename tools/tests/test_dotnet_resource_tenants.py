@@ -133,6 +133,22 @@ class DotnetResourceTenants(unittest.TestCase):
    with self.assertRaisesRegex(RuntimeError,'original-material'):metadata.recover_components(raw,changed)
    with self.assertRaisesRegex(RuntimeError,'original-component'):metadata.recover_components(raw+b'changed',observed)
 
+ def test_real_command_runner_creates_owned_parent_before_codec_selection(self):
+  from tools import qualify_dotnet_resource_tenants as campaign
+  with tempfile.TemporaryDirectory() as t:
+   root=Path(t);binary=root/'never-executed';binary.write_bytes(b'owned-source-control')
+   with patch.object(campaign.sys,'platform','linux'),patch.object(campaign.sys,'version_info',(3,13)), \
+    patch.object(campaign,'native_products',return_value=({'latent':binary},{})), \
+    patch.object(campaign.subprocess,'check_output',return_value=b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'), \
+    patch.object(campaign.originals,'acquire',return_value=(root/'original',{})), \
+    patch.object(campaign.shutil,'which',return_value=None), \
+    self.assertRaisesRegex(RuntimeError,'dotnet-resource-pinned-codec-required'):
+    campaign.run(root/'native',{},root/'output')
+   self.assertTrue((root/'output/commands/logs').is_dir())
+   failure=json.loads((root/'output/FAILED.json').read_bytes())
+   self.assertEqual(failure['guard'],'dotnet-resource-pinned-codec-required')
+   self.assertEqual(binary.read_bytes(),b'owned-source-control')
+
  def test_new_observation_refuses_missing_derivation_witnesses_before_mutation(self):
   for flag in ('nativeAotCompilation','allCoreModulesByteIdentical','publicGraphEquivalent','actualProductionComposition','selectedComponent'):
    with self.subTest(flag=flag),tempfile.TemporaryDirectory() as t:
