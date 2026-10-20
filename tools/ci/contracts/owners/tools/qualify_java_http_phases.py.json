@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_http_phases.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fix observed17MiB component hashing after successful normal assembly: use existing streaming regular-file identity reader with the unchanged producer64MiB ceiling, exact profile and digest; source reader default/runtime/budgets unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "67770520d517310591aa0b38ea57be883a05d8f0f1b4dca7d40e72f8520e92ae"
+}

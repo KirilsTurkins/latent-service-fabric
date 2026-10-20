@@ -26,7 +26,14 @@ and removal of the phase grant denies the plan until the grant is restored.
 
 The native-products workflow retains the original five-product build, 25 Rust
 controls and four Python graph controls, then adds the two exact-count cases
-within the original 25-minute job and command deadlines. Hosted execution and
-fresh signed Java/TypeScript programme results remain pending. Earlier 6f5
+within the original 25-minute job and command deadlines. The exact source
+`8f7780dd0a35e3375524d72e7dfaddf847deaa5c` passed all 27 Rust controls and four
+Python controls in [run 39453477174/job 118734133231](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39453477174/job/118734133231).
+Artifact `12280886264` was independently authenticated: all 31 members and CRCs,
+five product identities, 3,315 native source files and 114 auxiliary material
+rows match the exact Git inputs. The compact retained evidence is
+[http-operational-native-products-2026-10-20.json](evidence/http-operational-native-products-2026-10-20.json).
+
+Fresh signed Java/TypeScript programme results remain pending. Earlier 6f5
 products and failed consumer receipts retain their original source attribution;
-this source fix does not convert them into a passing qualification.
+this native proof does not convert them into a passing guest qualification.

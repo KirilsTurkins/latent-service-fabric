@@ -8,7 +8,7 @@ import org.teavm.extension.spi.substitution.SubstitutionSink;
 public final class HttpSubstitution implements SubstitutionPolicy {
     static final String STANDARD = "java.net.";
     static final String SDK = "dev.latent.guest.client.net.";
-    static final Set<String> API = Set.of("Proxy", "Proxy$Type", "SocketAddress", "InetSocketAddress");
+    static final Set<String> API = Set.of("Proxy", "Proxy$Type", "SocketAddress", "InetSocketAddress", "SocketTimeoutException");
 
     @Override public void contribute(SubstitutionSink sink) {
         sink.selectClasses(name -> name.startsWith(STANDARD) && API.contains(name.substring(STANDARD.length())))

@@ -84,6 +84,11 @@ public final class ImmutableResourceModelControl {
             require(first.read() == 0 && second.read() == 0 && first.read() == 255 && second.read() == 255,
                 "fresh-position-and-opaque-encoding");
             require(java.util.Arrays.equals(first.readAllBytes(), new byte[]{10, 42}), "exact-remaining-bytes");
+            require(first.read() == -1 && first.available() == 0 && first.readAllBytes().length == 0,
+                "bulk-read-advances-through-eof");
+            require(java.util.Arrays.equals(second.readNBytes(1), new byte[]{10}) && second.read() == 42
+                && second.readNBytes(Integer.MAX_VALUE).length == 0 && second.read() == -1,
+                "bounded-bulk-read-advances-only-selected-bytes");
         }
         require(dev.latent.guest.resources.ImmutableResources.open("OUTSIDE/owner/badge.txt") == null
             && dev.latent.guest.resources.ImmutableResources.open("/outside/owner/badge.txt") == null

@@ -14,7 +14,7 @@ import tomllib
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import BuildProcessError, run_bounded_result
 from tools.java_guest.bindings import generate
-from tools.java_guest.surface import surface as wit_surface
+from tools.java_guest.surface import surface as wit_surface, matches as matching_wit_surface
 from tools.java_guest.sdk import install as install_sdk
 from tools.java_guest import c_failure_context, coroutine_patch
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
@@ -220,6 +220,7 @@ class Compiler:
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
                 activation_profile: bool = False, server_profile: bool = False, fiber_io_profile: bool = False,
                 server_bridge: bytes | None = None, http_client_profile: bool = False,
+                http_client_phase_profile: bool = False,
                 processor_stage=None, failure_contexts: tuple[str, ...] = ()) -> tuple[Path, dict]:
         c_failure_context.selection(failure_contexts)
         if type(activation_profile) is not bool:
@@ -230,6 +231,9 @@ class Compiler:
             raise ValueError("automatic server bridge requires an explicitly selected profile")
         if type(http_client_profile) is not bool:
             raise ValueError("Java standard HTTP requires an explicitly selected profile")
+        if (type(http_client_phase_profile) is not bool
+                or http_client_phase_profile and not (http_client_profile and fiber_io_profile)):
+            raise ValueError("Java HTTP phase adapter requires an explicit fiber I/O profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -240,6 +244,8 @@ class Compiler:
             required_imports = {"latent:runtime/activation@0.1.0", "latent:clock/monotonic@0.1.0"}
             if not required_imports <= set(declared["imports"]):
                 raise ValueError("Java activation profile requires explicit runtime and monotonic clock WIT imports")
+            if http_client_phase_profile and "latent:http/phase-timing@0.4.0" not in declared['imports']:
+                raise ValueError('Java HTTP phase profile requires explicit phase-timing@0.4.0 WIT')
         binding_selection = {"activation_profile": True} if activation_profile else {}
         if fiber_io_profile: binding_selection['fiber_io_profile'] = True
         bindings = generate(self.run, staged, world, destination / "bindings", **binding_selection)
@@ -321,6 +327,7 @@ class Compiler:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 if activation_profile:
                     build.write("dependencies { compileOnly 'org.teavm:teavm-platform:0.15.0' }\n")
+        http_phase_record = None
         if http_client_profile:
             for folder in ("client/dev", "client/compiler/dev"):
                 for relative, data in snapshot(self.sdk / folder).items():
@@ -333,6 +340,10 @@ class Compiler:
             # either service list or accepting an application-owned plugin.
             for relative, data in snapshot(self.sdk / "client/services").items():
                 stage_sdk_service(project / "src/main/resources" / relative, relative, data)
+            if http_client_phase_profile:
+                from tools.java_http_client import stage_phase
+                http_phase_record = stage_phase(self.sdk, java_root)
+                write_json(destination / 'http-phase-source-profile.json', http_phase_record)
         application_source_names = set()
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
@@ -393,7 +404,7 @@ class Compiler:
                 "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
             })
             coroutine_profile = coroutine_patch.stage(self, project, destination)
-        self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
+        c_failure_context.teavm(self, project, failure_contexts)
         if coroutine_profile is not None:
             coroutine_profile = coroutine_patch.loaded(project, coroutine_profile, compiler=self)
             write_json(destination / 'coroutine-compiler-profile.json', coroutine_profile)
@@ -422,11 +433,14 @@ class Compiler:
         if "import wasi:" in surface: raise ValueError("ambient WASI survived the closed Java runtime")
         expected = wit_surface(json.loads(self.run("expected-wit", "wasm-tools", "component", "wit", staged, "--json")), world)
         actual = wit_surface(json.loads(self.run("compiled-wit", "wasm-tools", "component", "wit", component, "--json")))
-        if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
+        if not matching_wit_surface(expected, actual, phase_profile=http_client_phase_profile):
+            raise ValueError("compiled Java component changed authoritative WIT semantics")
         details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
                    "semanticSurfaceDigest": digest(canonical(actual)), "closedFilesystem": filesystem_profile}
         if coroutine_profile is not None:
             details['coroutineCompiler'] = coroutine_profile
+        if http_phase_record is not None:
+            details['httpPhaseAdapter'] = http_phase_record
         if resource_profile is not None:
             resources.recheck(application_resources, resource_profile)
             details["immutableResources"] = resource_profile

@@ -17,11 +17,38 @@ on:
       - 'tools/java_guest/**'
       - 'tools/standard_http/**'
       - 'tools/tests/test_java_http_fibers.py'
+      - 'tools/java_http_phase_fixture.py'
+      - 'tools/java_http_phase_node.py'
+      - 'tools/java_phase_native_products.py'
+      - 'tools/http_phase_native_products.py'
+      - 'tools/http_tenant_native_products.py'
+      - 'tools/sdk_native_products_reader.py'
+      - 'tools/wait_runtime_native_products.py'
+      - 'tools/tests/test_sdk_native_products_reader.py'
+      - 'tools/java_http_tenant_node.py'
+      - 'tools/tests/test_http_tenant_native_products.py'
+      - 'tools/tests/test_java_http_tenants.py'
+      - 'tools/qualify_java_http_phases.py'
+      - 'tools/fixtures/java-http-phases/**'
+      - 'tools/tests/test_java_http_phase_campaign.py'
+      - 'tools/tests/test_java_phase_native_products.py'
+      - 'tools/tests/test_http_phase_native_products.py'
+      - 'tools/tests/test_java_http_phases.py'
+      - 'tools/tests/test_java_timeout_exception.py'
+      - 'tools/tests/test_java_teavm_failure_trace.py'
+      - 'tools/tests/test_java_phase_c_context.py'
+      - 'tools/tests/test_java_array_gc_roots.py'
+      - 'tools/tests/test_java_phase_surface.py'
+      - 'tools/tests/fixtures/java_phase_surface_0bdb.json'
       - '.github/workflows/java-http-fiber-lifecycle.yml'
   workflow_dispatch:
     inputs:
       java_http_fibers:
         description: Fresh ordinary Java HTTP/fiber component with authenticated native products
+        type: boolean
+        default: false
+      java_http_phases:
+        description: Fresh ordinary default clients and explicit V7 phase deadlines
         type: boolean
         default: false
 
@@ -121,5 +148,133 @@ jobs:
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/compiler-cache-selection.json
+          if-no-files-found: warn
+          retention-days: 3
+  http-phase-clients:
+    if: ${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/java-http-phase-consumer-20261020') || (github.event_name == 'workflow_dispatch' && inputs.java_http_phases) }}
+    name: Ordinary Java default clients and V7 operation deadlines
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch the one exact V7 native producer source before any helper verification
+        run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+      - name: Fetch the exact nominal HTTP native producer source before new helper controls
+        run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
+      - name: Fetch the exact independent-tenant HTTP producer before its helper verification
+        run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Fetch the exact operational-authority native producer before updated helper controls
+        run: git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c
+      - name: Fetch the exact current native producer with bounded pending-wait observation
+        run: git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
+      - name: Check the shared strict frozen-tuple native authenticator
+        run: python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v
+      - name: Check bounded public compiler traces and original default command identity
+        run: python3 -B -m unittest tools.tests.test_java_teavm_failure_trace -v
+      - name: Check pinned coroutine repairs and mandatory original-entry liveness regression
+        run: python3 -B -m unittest tools.tests.test_java_http_fibers.PinnedCoroutinePhiRepair -v
+      - name: Check bounded public TimeZone failure context without changing compiler acceptance
+        run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
+      - name: Check pinned array type propagation and real GC-root regression requirements
+        run: python3 -B -m unittest tools.tests.test_java_array_gc_roots -v
+      - name: Check exact selected phase graph emission and all other semantic refusals
+        run: python3 -B -m unittest tools.tests.test_java_phase_surface -v
+      - name: Check standard socket timeout identity and captured-source registration
+        run: python3 -B -m unittest tools.tests.test_java_timeout_exception -v
+      - name: Check actual host JDK phase mapping and strict source and receipt controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_http_phases tools.tests.test_java_phase_native_products tools.tests.test_java_http_phase_campaign -v
+      - name: Check canonical indirect async records and nominal-only phase resources
+        run: python3 -B -m unittest tools.tests.test_java_async_indirect -v
+      - name: Check the independent nominal native authenticator
+        run: python3 -B -m unittest tools.tests.test_http_phase_native_products -v
+      - name: Check the independent-tenant native authenticator and Java tenant boundaries
+        run: python3 -B -m unittest tools.tests.test_http_tenant_native_products tools.tests.test_java_http_tenants -v
+      - name: Retrieve exactly the five authenticated V7 products without a native rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/java-http-phase-prepared"
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install the same pinned Java compiler tools without any native Cargo build
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          timeout --signal=KILL 180s curl --fail --location \
+            --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Build one fresh offline two-client phase component and execute real deadlines
+        run: >-
+          python3 -B tools/qualify_java_http_phases.py
+          --prepared "$RUNNER_TEMP/java-http-phase-prepared"
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+          --output "$RUNNER_TEMP/java-http-phases"
+      - name: Retain bounded source-specific replay evidence without credentials or keys
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-http-phases-${{ github.sha }}
+          path: |-
+            ${{ runner.temp }}/java-http-phase-prepared/retrieval.json
+            ${{ runner.temp }}/java-http-phase-prepared/native-products.json
+            ${{ runner.temp }}/java-http-phase-prepared/source-inputs.json
+            ${{ runner.temp }}/java-http-phases/qualification.json
+            ${{ runner.temp }}/java-http-phases/campaign/qualification.json
+            ${{ runner.temp }}/java-http-phases/campaign/FAILED.json
+            ${{ runner.temp }}/java-http-phases/campaign/build/*.json
+            ${{ runner.temp }}/java-http-phases/campaign/build/component.wasm
+            ${{ runner.temp }}/java-http-phases/campaign/build/package/**
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-to-c.log
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-owned-classes.log
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm.log
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm-context.command.json
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-expected-wit.log
+            ${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-compiled-wit.log
+            ${{ runner.temp }}/java-http-phases/campaign/node/qualification.json
+            ${{ runner.temp }}/java-http-phases/campaign/node/FAILED.json
+            ${{ runner.temp }}/java-http-phases/campaign/node/controls/*.json
+            ${{ runner.temp }}/java-http-phases/campaign/compiler-cache-selection.json
+            ${{ runner.temp }}/java-http-phases/campaign/final-materials.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/qualification.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/FAILED.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/*-case.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/*-retired.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/foreign-grants-not-inherited.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/final-owner.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/node-stopped.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/*-peer-stopped.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/final-products.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/examples-controls/*.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/foreign-controls/*.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/releases/release-set.json
+            ${{ runner.temp }}/java-http-phases/campaign/tenants/releases/java-standard-http/build-observation.json
           if-no-files-found: warn
           retention-days: 3

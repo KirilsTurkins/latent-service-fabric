@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "JavaPhaseCContext.test_failed_compiler_is_never_replayed_or_accepted_and_all_byte_limits_stay_fixed",
+    "JavaPhaseCContext.test_old_selection_refuses_and_phase_selection_retains_actual_declaration_and_uses",
+    "JavaPhaseCContext.test_phase_selection_is_closed_and_never_reads_unselected_source"
+  ],
+  "guards": {
+    "JavaPhaseCContext.test_failed_compiler_is_never_replayed_or_accepted_and_all_byte_limits_stay_fixed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f053eb9fa5fa2bcb5d48908cdaf3b09f66370c228fceba1d913111e8cf39af92",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhaseCContext.test_old_selection_refuses_and_phase_selection_retains_actual_declaration_and_uses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f053eb9fa5fa2bcb5d48908cdaf3b09f66370c228fceba1d913111e8cf39af92",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaPhaseCContext.test_phase_selection_is_closed_and_never_reads_unselected_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f053eb9fa5fa2bcb5d48908cdaf3b09f66370c228fceba1d913111e8cf39af92",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_phase_c_context.py",
+  "reviewReason": "Retain exact clang TimeZone integer-to-pointer failure and unchanged acceptance: add phase-only fixed public TimeZone context tuple, preserve original Capsule/GZIP tuple, defaults, anchored reads,128KiB context/4MiB file/16MiB total and original failure. Add only3 scoped reader controls and one workflow command; no cast or guest runtime change.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

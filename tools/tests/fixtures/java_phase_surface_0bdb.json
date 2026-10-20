@@ -1,0 +1,4123 @@
+{
+  "provenance": {
+    "feature": "0bdb06fd6e910585c61d2e48966a3ccf91fa6147",
+    "tested": "39cf9a802cfe5a1bdfeead34511f8eda7941245a",
+    "run": 39477502762,
+    "job": 118817154924,
+    "artifact": 12291420311,
+    "artifactSha256": "b4c1f0de62941bd4ad66a8241c61026af284690c3d0c5d9b08efaafc0753e4d2"
+  },
+  "expected": {
+    "imports": {
+      "latent:http/streaming@0.3.0": {
+        "types": {
+          "method": {
+            "enum": [
+              "get",
+              "head",
+              "post",
+              "put",
+              "patch",
+              "delete",
+              "options"
+            ]
+          },
+          "header": {
+            "record": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          },
+          "request": {
+            "record": [
+              {
+                "name": "method",
+                "type": {
+                  "enum": [
+                    "get",
+                    "head",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "options"
+                  ]
+                }
+              },
+              {
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "name": "headers",
+                "type": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "body-length",
+                "type": {
+                  "option": "u64"
+                }
+              },
+              {
+                "name": "body-media-type",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "idempotency-key",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "timeout-millis",
+                "type": {
+                  "option": "u64"
+                }
+              }
+            ]
+          },
+          "upload": {
+            "resource": "latent:http/streaming@0.3.0/upload"
+          },
+          "body": {
+            "resource": "latent:http/streaming@0.3.0/body"
+          },
+          "chunk": {
+            "resource": "latent:http/streaming@0.3.0/chunk"
+          },
+          "response": {
+            "record": [
+              {
+                "name": "status",
+                "type": "u16"
+              },
+              {
+                "name": "headers",
+                "type": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "body-media-type",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "body",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "http-error": {
+            "variant": [
+              {
+                "name": "invalid-url",
+                "type": null
+              },
+              {
+                "name": "invalid-request",
+                "type": null
+              },
+              {
+                "name": "permission-denied",
+                "type": null
+              },
+              {
+                "name": "request-too-large",
+                "type": null
+              },
+              {
+                "name": "response-too-large",
+                "type": null
+              },
+              {
+                "name": "deadline-exceeded",
+                "type": null
+              },
+              {
+                "name": "cancelled",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "dns-failed",
+                "type": null
+              },
+              {
+                "name": "tls-failed",
+                "type": null
+              },
+              {
+                "name": "connection-failed",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              },
+              {
+                "name": "uncertain",
+                "type": null
+              },
+              {
+                "name": "invalid-state",
+                "type": null
+              },
+              {
+                "name": "unexpected-eof",
+                "type": null
+              },
+              {
+                "name": "unsupported-encoding",
+                "type": null
+              }
+            ]
+          }
+        },
+        "functions": {}
+      },
+      "latent:http/phase-timing@0.4.0": {
+        "types": {
+          "request": {
+            "record": [
+              {
+                "name": "method",
+                "type": {
+                  "enum": [
+                    "get",
+                    "head",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "options"
+                  ]
+                }
+              },
+              {
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "name": "headers",
+                "type": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "body-length",
+                "type": {
+                  "option": "u64"
+                }
+              },
+              {
+                "name": "body-media-type",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "idempotency-key",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "timeout-millis",
+                "type": {
+                  "option": "u64"
+                }
+              }
+            ]
+          },
+          "upload": {
+            "resource": "latent:http/streaming@0.3.0/upload"
+          },
+          "body": {
+            "resource": "latent:http/streaming@0.3.0/body"
+          },
+          "chunk": {
+            "resource": "latent:http/streaming@0.3.0/chunk"
+          },
+          "header": {
+            "record": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          },
+          "http-error": {
+            "variant": [
+              {
+                "name": "invalid-url",
+                "type": null
+              },
+              {
+                "name": "invalid-request",
+                "type": null
+              },
+              {
+                "name": "permission-denied",
+                "type": null
+              },
+              {
+                "name": "request-too-large",
+                "type": null
+              },
+              {
+                "name": "response-too-large",
+                "type": null
+              },
+              {
+                "name": "deadline-exceeded",
+                "type": null
+              },
+              {
+                "name": "cancelled",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "dns-failed",
+                "type": null
+              },
+              {
+                "name": "tls-failed",
+                "type": null
+              },
+              {
+                "name": "connection-failed",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              },
+              {
+                "name": "uncertain",
+                "type": null
+              },
+              {
+                "name": "invalid-state",
+                "type": null
+              },
+              {
+                "name": "unexpected-eof",
+                "type": null
+              },
+              {
+                "name": "unsupported-encoding",
+                "type": null
+              }
+            ]
+          },
+          "response": {
+            "record": [
+              {
+                "name": "status",
+                "type": "u16"
+              },
+              {
+                "name": "reason-phrase",
+                "type": {
+                  "option": {
+                    "list": "u8"
+                  }
+                }
+              },
+              {
+                "name": "headers",
+                "type": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "body-media-type",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "body",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "phase-error": {
+            "variant": [
+              {
+                "name": "http",
+                "type": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "connect-timeout",
+                "type": null
+              },
+              {
+                "name": "read-timeout",
+                "type": "bool"
+              },
+              {
+                "name": "unsupported-phase-timing",
+                "type": null
+              }
+            ]
+          }
+        },
+        "functions": {
+          "open": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "request",
+                "type": {
+                  "record": [
+                    {
+                      "name": "method",
+                      "type": {
+                        "enum": [
+                          "get",
+                          "head",
+                          "post",
+                          "put",
+                          "patch",
+                          "delete",
+                          "options"
+                        ]
+                      }
+                    },
+                    {
+                      "name": "url",
+                      "type": "string"
+                    },
+                    {
+                      "name": "headers",
+                      "type": {
+                        "list": {
+                          "record": [
+                            {
+                              "name": "name",
+                              "type": "string"
+                            },
+                            {
+                              "name": "value",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "body-length",
+                      "type": {
+                        "option": "u64"
+                      }
+                    },
+                    {
+                      "name": "body-media-type",
+                      "type": {
+                        "option": "string"
+                      }
+                    },
+                    {
+                      "name": "idempotency-key",
+                      "type": {
+                        "option": "string"
+                      }
+                    },
+                    {
+                      "name": "timeout-millis",
+                      "type": {
+                        "option": "u64"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "connect-timeout-millis",
+                "type": {
+                  "option": "u32"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "http",
+                      "type": {
+                        "variant": [
+                          {
+                            "name": "invalid-url",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-request",
+                            "type": null
+                          },
+                          {
+                            "name": "permission-denied",
+                            "type": null
+                          },
+                          {
+                            "name": "request-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "response-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "deadline-exceeded",
+                            "type": null
+                          },
+                          {
+                            "name": "cancelled",
+                            "type": null
+                          },
+                          {
+                            "name": "budget-exhausted",
+                            "type": null
+                          },
+                          {
+                            "name": "dns-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "tls-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "connection-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "unavailable",
+                            "type": null
+                          },
+                          {
+                            "name": "uncertain",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-state",
+                            "type": null
+                          },
+                          {
+                            "name": "unexpected-eof",
+                            "type": null
+                          },
+                          {
+                            "name": "unsupported-encoding",
+                            "type": null
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "connect-timeout",
+                      "type": null
+                    },
+                    {
+                      "name": "read-timeout",
+                      "type": "bool"
+                    },
+                    {
+                      "name": "unsupported-phase-timing",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "write": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "bytes",
+                "type": {
+                  "list": "u8"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "finish": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "read-timeout-millis",
+                "type": {
+                  "option": "u32"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "status",
+                      "type": "u16"
+                    },
+                    {
+                      "name": "reason-phrase",
+                      "type": {
+                        "option": {
+                          "list": "u8"
+                        }
+                      }
+                    },
+                    {
+                      "name": "headers",
+                      "type": {
+                        "list": {
+                          "record": [
+                            {
+                              "name": "name",
+                              "type": "string"
+                            },
+                            {
+                              "name": "value",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "body-media-type",
+                      "type": {
+                        "option": "string"
+                      }
+                    },
+                    {
+                      "name": "body",
+                      "type": {
+                        "handle": {
+                          "own": {
+                            "resource": "latent:http/streaming@0.3.0/body"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "http",
+                      "type": {
+                        "variant": [
+                          {
+                            "name": "invalid-url",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-request",
+                            "type": null
+                          },
+                          {
+                            "name": "permission-denied",
+                            "type": null
+                          },
+                          {
+                            "name": "request-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "response-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "deadline-exceeded",
+                            "type": null
+                          },
+                          {
+                            "name": "cancelled",
+                            "type": null
+                          },
+                          {
+                            "name": "budget-exhausted",
+                            "type": null
+                          },
+                          {
+                            "name": "dns-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "tls-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "connection-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "unavailable",
+                            "type": null
+                          },
+                          {
+                            "name": "uncertain",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-state",
+                            "type": null
+                          },
+                          {
+                            "name": "unexpected-eof",
+                            "type": null
+                          },
+                          {
+                            "name": "unsupported-encoding",
+                            "type": null
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "connect-timeout",
+                      "type": null
+                    },
+                    {
+                      "name": "read-timeout",
+                      "type": "bool"
+                    },
+                    {
+                      "name": "unsupported-phase-timing",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "read": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "maximum-bytes",
+                "type": "u32"
+              },
+              {
+                "name": "read-timeout-millis",
+                "type": {
+                  "option": "u32"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "option": {
+                    "handle": {
+                      "own": {
+                        "resource": "latent:http/streaming@0.3.0/chunk"
+                      }
+                    }
+                  }
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "http",
+                      "type": {
+                        "variant": [
+                          {
+                            "name": "invalid-url",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-request",
+                            "type": null
+                          },
+                          {
+                            "name": "permission-denied",
+                            "type": null
+                          },
+                          {
+                            "name": "request-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "response-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "deadline-exceeded",
+                            "type": null
+                          },
+                          {
+                            "name": "cancelled",
+                            "type": null
+                          },
+                          {
+                            "name": "budget-exhausted",
+                            "type": null
+                          },
+                          {
+                            "name": "dns-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "tls-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "connection-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "unavailable",
+                            "type": null
+                          },
+                          {
+                            "name": "uncertain",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-state",
+                            "type": null
+                          },
+                          {
+                            "name": "unexpected-eof",
+                            "type": null
+                          },
+                          {
+                            "name": "unsupported-encoding",
+                            "type": null
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "connect-timeout",
+                      "type": null
+                    },
+                    {
+                      "name": "read-timeout",
+                      "type": "bool"
+                    },
+                    {
+                      "name": "unsupported-phase-timing",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "chunk-bytes": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/chunk"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "list": "u8"
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "trailers": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "abort-upload": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "abort-body": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "latent:clock/monotonic@0.1.0": {
+        "types": {},
+        "functions": {
+          "now-nanos": {
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        }
+      },
+      "latent:clock/wall@0.1.0": {
+        "types": {},
+        "functions": {
+          "now-unix-millis": {
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        }
+      },
+      "latent:runtime/activation@0.1.0": {
+        "types": {
+          "owner-kind": {
+            "enum": [
+              "task",
+              "managed-idle-worker",
+              "executor",
+              "queued-work",
+              "wait",
+              "timer",
+              "result",
+              "native"
+            ]
+          },
+          "token": {
+            "record": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          },
+          "error": {
+            "enum": [
+              "unavailable",
+              "permission-denied",
+              "resource-exhausted",
+              "cancelled",
+              "deadline",
+              "invalid-state",
+              "invalid-token"
+            ]
+          },
+          "phase": {
+            "enum": [
+              "running",
+              "waiting",
+              "closing",
+              "draining",
+              "cancelling",
+              "retired"
+            ]
+          },
+          "observation": {
+            "record": [
+              {
+                "name": "phase",
+                "type": {
+                  "enum": [
+                    "running",
+                    "waiting",
+                    "closing",
+                    "draining",
+                    "cancelling",
+                    "retired"
+                  ]
+                }
+              },
+              {
+                "name": "tasks",
+                "type": "u32"
+              },
+              {
+                "name": "executors",
+                "type": "u32"
+              },
+              {
+                "name": "queued-work",
+                "type": "u32"
+              },
+              {
+                "name": "waits",
+                "type": "u32"
+              },
+              {
+                "name": "timers",
+                "type": "u32"
+              },
+              {
+                "name": "results",
+                "type": "u32"
+              },
+              {
+                "name": "native-owners",
+                "type": "u32"
+              },
+              {
+                "name": "parked-tasks",
+                "type": "u32"
+              },
+              {
+                "name": "managed-idle-workers",
+                "type": "u32"
+              },
+              {
+                "name": "native-memory-bytes",
+                "type": "u64"
+              },
+              {
+                "name": "admission-failures",
+                "type": "u64"
+              },
+              {
+                "name": "stale-wakes",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "functions": {
+          "register": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": {
+                  "enum": [
+                    "task",
+                    "managed-idle-worker",
+                    "executor",
+                    "queued-work",
+                    "wait",
+                    "timer",
+                    "result",
+                    "native"
+                  ]
+                }
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                },
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "park": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "wake": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "settle": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "close": {
+            "kind": "freestanding",
+            "params": [],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "observe": {
+            "kind": "freestanding",
+            "params": [],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "phase",
+                      "type": {
+                        "enum": [
+                          "running",
+                          "waiting",
+                          "closing",
+                          "draining",
+                          "cancelling",
+                          "retired"
+                        ]
+                      }
+                    },
+                    {
+                      "name": "tasks",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "executors",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "queued-work",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "waits",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "timers",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "results",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "native-owners",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "parked-tasks",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "managed-idle-workers",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "native-memory-bytes",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "admission-failures",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "stale-wakes",
+                      "type": "u64"
+                    }
+                  ]
+                },
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "wait-for": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "nanos",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "wait-until": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "unix-millis",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "timer-start": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": {
+                  "option": "u64"
+                }
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                },
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "timer-next": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": "u64",
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "timer-stop": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "exports": {
+      "examples:java-standard-http/api@1.0.0": {
+        "types": {},
+        "functions": {
+          "run": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "which",
+                "type": "u32"
+              },
+              {
+                "name": "endpoint",
+                "type": "string"
+              }
+            ],
+            "result": "string"
+          }
+        }
+      }
+    }
+  },
+  "actual": {
+    "imports": {
+      "latent:http/streaming@0.3.0": {
+        "types": {
+          "upload": {
+            "resource": "latent:http/streaming@0.3.0/upload"
+          },
+          "body": {
+            "resource": "latent:http/streaming@0.3.0/body"
+          },
+          "chunk": {
+            "resource": "latent:http/streaming@0.3.0/chunk"
+          },
+          "method": {
+            "enum": [
+              "get",
+              "head",
+              "post",
+              "put",
+              "patch",
+              "delete",
+              "options"
+            ]
+          },
+          "header": {
+            "record": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          },
+          "request": {
+            "record": [
+              {
+                "name": "method",
+                "type": {
+                  "enum": [
+                    "get",
+                    "head",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "options"
+                  ]
+                }
+              },
+              {
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "name": "headers",
+                "type": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "body-length",
+                "type": {
+                  "option": "u64"
+                }
+              },
+              {
+                "name": "body-media-type",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "idempotency-key",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "timeout-millis",
+                "type": {
+                  "option": "u64"
+                }
+              }
+            ]
+          },
+          "http-error": {
+            "variant": [
+              {
+                "name": "invalid-url",
+                "type": null
+              },
+              {
+                "name": "invalid-request",
+                "type": null
+              },
+              {
+                "name": "permission-denied",
+                "type": null
+              },
+              {
+                "name": "request-too-large",
+                "type": null
+              },
+              {
+                "name": "response-too-large",
+                "type": null
+              },
+              {
+                "name": "deadline-exceeded",
+                "type": null
+              },
+              {
+                "name": "cancelled",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "dns-failed",
+                "type": null
+              },
+              {
+                "name": "tls-failed",
+                "type": null
+              },
+              {
+                "name": "connection-failed",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              },
+              {
+                "name": "uncertain",
+                "type": null
+              },
+              {
+                "name": "invalid-state",
+                "type": null
+              },
+              {
+                "name": "unexpected-eof",
+                "type": null
+              },
+              {
+                "name": "unsupported-encoding",
+                "type": null
+              }
+            ]
+          }
+        },
+        "functions": {}
+      },
+      "latent:http/phase-timing@0.4.0": {
+        "types": {
+          "request": {
+            "record": [
+              {
+                "name": "method",
+                "type": {
+                  "enum": [
+                    "get",
+                    "head",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "options"
+                  ]
+                }
+              },
+              {
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "name": "headers",
+                "type": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "body-length",
+                "type": {
+                  "option": "u64"
+                }
+              },
+              {
+                "name": "body-media-type",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "idempotency-key",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "timeout-millis",
+                "type": {
+                  "option": "u64"
+                }
+              }
+            ]
+          },
+          "upload": {
+            "resource": "latent:http/streaming@0.3.0/upload"
+          },
+          "http-error": {
+            "variant": [
+              {
+                "name": "invalid-url",
+                "type": null
+              },
+              {
+                "name": "invalid-request",
+                "type": null
+              },
+              {
+                "name": "permission-denied",
+                "type": null
+              },
+              {
+                "name": "request-too-large",
+                "type": null
+              },
+              {
+                "name": "response-too-large",
+                "type": null
+              },
+              {
+                "name": "deadline-exceeded",
+                "type": null
+              },
+              {
+                "name": "cancelled",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "dns-failed",
+                "type": null
+              },
+              {
+                "name": "tls-failed",
+                "type": null
+              },
+              {
+                "name": "connection-failed",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              },
+              {
+                "name": "uncertain",
+                "type": null
+              },
+              {
+                "name": "invalid-state",
+                "type": null
+              },
+              {
+                "name": "unexpected-eof",
+                "type": null
+              },
+              {
+                "name": "unsupported-encoding",
+                "type": null
+              }
+            ]
+          },
+          "phase-error": {
+            "variant": [
+              {
+                "name": "http",
+                "type": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "connect-timeout",
+                "type": null
+              },
+              {
+                "name": "read-timeout",
+                "type": "bool"
+              },
+              {
+                "name": "unsupported-phase-timing",
+                "type": null
+              }
+            ]
+          },
+          "header": {
+            "record": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          },
+          "body": {
+            "resource": "latent:http/streaming@0.3.0/body"
+          },
+          "response": {
+            "record": [
+              {
+                "name": "status",
+                "type": "u16"
+              },
+              {
+                "name": "reason-phrase",
+                "type": {
+                  "option": {
+                    "list": "u8"
+                  }
+                }
+              },
+              {
+                "name": "headers",
+                "type": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "body-media-type",
+                "type": {
+                  "option": "string"
+                }
+              },
+              {
+                "name": "body",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "chunk": {
+            "resource": "latent:http/streaming@0.3.0/chunk"
+          }
+        },
+        "functions": {
+          "open": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "request",
+                "type": {
+                  "record": [
+                    {
+                      "name": "method",
+                      "type": {
+                        "enum": [
+                          "get",
+                          "head",
+                          "post",
+                          "put",
+                          "patch",
+                          "delete",
+                          "options"
+                        ]
+                      }
+                    },
+                    {
+                      "name": "url",
+                      "type": "string"
+                    },
+                    {
+                      "name": "headers",
+                      "type": {
+                        "list": {
+                          "record": [
+                            {
+                              "name": "name",
+                              "type": "string"
+                            },
+                            {
+                              "name": "value",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "body-length",
+                      "type": {
+                        "option": "u64"
+                      }
+                    },
+                    {
+                      "name": "body-media-type",
+                      "type": {
+                        "option": "string"
+                      }
+                    },
+                    {
+                      "name": "idempotency-key",
+                      "type": {
+                        "option": "string"
+                      }
+                    },
+                    {
+                      "name": "timeout-millis",
+                      "type": {
+                        "option": "u64"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "connect-timeout-millis",
+                "type": {
+                  "option": "u32"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "http",
+                      "type": {
+                        "variant": [
+                          {
+                            "name": "invalid-url",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-request",
+                            "type": null
+                          },
+                          {
+                            "name": "permission-denied",
+                            "type": null
+                          },
+                          {
+                            "name": "request-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "response-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "deadline-exceeded",
+                            "type": null
+                          },
+                          {
+                            "name": "cancelled",
+                            "type": null
+                          },
+                          {
+                            "name": "budget-exhausted",
+                            "type": null
+                          },
+                          {
+                            "name": "dns-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "tls-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "connection-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "unavailable",
+                            "type": null
+                          },
+                          {
+                            "name": "uncertain",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-state",
+                            "type": null
+                          },
+                          {
+                            "name": "unexpected-eof",
+                            "type": null
+                          },
+                          {
+                            "name": "unsupported-encoding",
+                            "type": null
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "connect-timeout",
+                      "type": null
+                    },
+                    {
+                      "name": "read-timeout",
+                      "type": "bool"
+                    },
+                    {
+                      "name": "unsupported-phase-timing",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "write": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "bytes",
+                "type": {
+                  "list": "u8"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "finish": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "read-timeout-millis",
+                "type": {
+                  "option": "u32"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "status",
+                      "type": "u16"
+                    },
+                    {
+                      "name": "reason-phrase",
+                      "type": {
+                        "option": {
+                          "list": "u8"
+                        }
+                      }
+                    },
+                    {
+                      "name": "headers",
+                      "type": {
+                        "list": {
+                          "record": [
+                            {
+                              "name": "name",
+                              "type": "string"
+                            },
+                            {
+                              "name": "value",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "body-media-type",
+                      "type": {
+                        "option": "string"
+                      }
+                    },
+                    {
+                      "name": "body",
+                      "type": {
+                        "handle": {
+                          "own": {
+                            "resource": "latent:http/streaming@0.3.0/body"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "http",
+                      "type": {
+                        "variant": [
+                          {
+                            "name": "invalid-url",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-request",
+                            "type": null
+                          },
+                          {
+                            "name": "permission-denied",
+                            "type": null
+                          },
+                          {
+                            "name": "request-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "response-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "deadline-exceeded",
+                            "type": null
+                          },
+                          {
+                            "name": "cancelled",
+                            "type": null
+                          },
+                          {
+                            "name": "budget-exhausted",
+                            "type": null
+                          },
+                          {
+                            "name": "dns-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "tls-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "connection-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "unavailable",
+                            "type": null
+                          },
+                          {
+                            "name": "uncertain",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-state",
+                            "type": null
+                          },
+                          {
+                            "name": "unexpected-eof",
+                            "type": null
+                          },
+                          {
+                            "name": "unsupported-encoding",
+                            "type": null
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "connect-timeout",
+                      "type": null
+                    },
+                    {
+                      "name": "read-timeout",
+                      "type": "bool"
+                    },
+                    {
+                      "name": "unsupported-phase-timing",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "read": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "maximum-bytes",
+                "type": "u32"
+              },
+              {
+                "name": "read-timeout-millis",
+                "type": {
+                  "option": "u32"
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "option": {
+                    "handle": {
+                      "own": {
+                        "resource": "latent:http/streaming@0.3.0/chunk"
+                      }
+                    }
+                  }
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "http",
+                      "type": {
+                        "variant": [
+                          {
+                            "name": "invalid-url",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-request",
+                            "type": null
+                          },
+                          {
+                            "name": "permission-denied",
+                            "type": null
+                          },
+                          {
+                            "name": "request-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "response-too-large",
+                            "type": null
+                          },
+                          {
+                            "name": "deadline-exceeded",
+                            "type": null
+                          },
+                          {
+                            "name": "cancelled",
+                            "type": null
+                          },
+                          {
+                            "name": "budget-exhausted",
+                            "type": null
+                          },
+                          {
+                            "name": "dns-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "tls-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "connection-failed",
+                            "type": null
+                          },
+                          {
+                            "name": "unavailable",
+                            "type": null
+                          },
+                          {
+                            "name": "uncertain",
+                            "type": null
+                          },
+                          {
+                            "name": "invalid-state",
+                            "type": null
+                          },
+                          {
+                            "name": "unexpected-eof",
+                            "type": null
+                          },
+                          {
+                            "name": "unsupported-encoding",
+                            "type": null
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "connect-timeout",
+                      "type": null
+                    },
+                    {
+                      "name": "read-timeout",
+                      "type": "bool"
+                    },
+                    {
+                      "name": "unsupported-phase-timing",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "chunk-bytes": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/chunk"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "list": "u8"
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "trailers": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": {
+                  "handle": {
+                    "borrow": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "list": {
+                    "record": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "value",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "abort-upload": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/upload"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "abort-body": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": {
+                  "handle": {
+                    "own": {
+                      "resource": "latent:http/streaming@0.3.0/body"
+                    }
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "variant": [
+                    {
+                      "name": "invalid-url",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-request",
+                      "type": null
+                    },
+                    {
+                      "name": "permission-denied",
+                      "type": null
+                    },
+                    {
+                      "name": "request-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "response-too-large",
+                      "type": null
+                    },
+                    {
+                      "name": "deadline-exceeded",
+                      "type": null
+                    },
+                    {
+                      "name": "cancelled",
+                      "type": null
+                    },
+                    {
+                      "name": "budget-exhausted",
+                      "type": null
+                    },
+                    {
+                      "name": "dns-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "tls-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "connection-failed",
+                      "type": null
+                    },
+                    {
+                      "name": "unavailable",
+                      "type": null
+                    },
+                    {
+                      "name": "uncertain",
+                      "type": null
+                    },
+                    {
+                      "name": "invalid-state",
+                      "type": null
+                    },
+                    {
+                      "name": "unexpected-eof",
+                      "type": null
+                    },
+                    {
+                      "name": "unsupported-encoding",
+                      "type": null
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "latent:clock/monotonic@0.1.0": {
+        "types": {},
+        "functions": {
+          "now-nanos": {
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        }
+      },
+      "latent:clock/wall@0.1.0": {
+        "types": {},
+        "functions": {
+          "now-unix-millis": {
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        }
+      },
+      "latent:runtime/activation@0.1.0": {
+        "types": {
+          "owner-kind": {
+            "enum": [
+              "task",
+              "managed-idle-worker",
+              "executor",
+              "queued-work",
+              "wait",
+              "timer",
+              "result",
+              "native"
+            ]
+          },
+          "token": {
+            "record": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          },
+          "error": {
+            "enum": [
+              "unavailable",
+              "permission-denied",
+              "resource-exhausted",
+              "cancelled",
+              "deadline",
+              "invalid-state",
+              "invalid-token"
+            ]
+          },
+          "phase": {
+            "enum": [
+              "running",
+              "waiting",
+              "closing",
+              "draining",
+              "cancelling",
+              "retired"
+            ]
+          },
+          "observation": {
+            "record": [
+              {
+                "name": "phase",
+                "type": {
+                  "enum": [
+                    "running",
+                    "waiting",
+                    "closing",
+                    "draining",
+                    "cancelling",
+                    "retired"
+                  ]
+                }
+              },
+              {
+                "name": "tasks",
+                "type": "u32"
+              },
+              {
+                "name": "executors",
+                "type": "u32"
+              },
+              {
+                "name": "queued-work",
+                "type": "u32"
+              },
+              {
+                "name": "waits",
+                "type": "u32"
+              },
+              {
+                "name": "timers",
+                "type": "u32"
+              },
+              {
+                "name": "results",
+                "type": "u32"
+              },
+              {
+                "name": "native-owners",
+                "type": "u32"
+              },
+              {
+                "name": "parked-tasks",
+                "type": "u32"
+              },
+              {
+                "name": "managed-idle-workers",
+                "type": "u32"
+              },
+              {
+                "name": "native-memory-bytes",
+                "type": "u64"
+              },
+              {
+                "name": "admission-failures",
+                "type": "u64"
+              },
+              {
+                "name": "stale-wakes",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "functions": {
+          "register": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": {
+                  "enum": [
+                    "task",
+                    "managed-idle-worker",
+                    "executor",
+                    "queued-work",
+                    "wait",
+                    "timer",
+                    "result",
+                    "native"
+                  ]
+                }
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                },
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "park": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "wake": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "settle": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "close": {
+            "kind": "freestanding",
+            "params": [],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "observe": {
+            "kind": "freestanding",
+            "params": [],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "phase",
+                      "type": {
+                        "enum": [
+                          "running",
+                          "waiting",
+                          "closing",
+                          "draining",
+                          "cancelling",
+                          "retired"
+                        ]
+                      }
+                    },
+                    {
+                      "name": "tasks",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "executors",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "queued-work",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "waits",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "timers",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "results",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "native-owners",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "parked-tasks",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "managed-idle-workers",
+                      "type": "u32"
+                    },
+                    {
+                      "name": "native-memory-bytes",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "admission-failures",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "stale-wakes",
+                      "type": "u64"
+                    }
+                  ]
+                },
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "wait-for": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "nanos",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "wait-until": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "unix-millis",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "timer-start": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": {
+                  "option": "u64"
+                }
+              },
+              {
+                "name": "continuation",
+                "type": {
+                  "option": {
+                    "record": [
+                      {
+                        "name": "generation",
+                        "type": "u64"
+                      },
+                      {
+                        "name": "id",
+                        "type": "u64"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                },
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "timer-next": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": "u64",
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          },
+          "timer-stop": {
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": {
+                  "record": [
+                    {
+                      "name": "generation",
+                      "type": "u64"
+                    },
+                    {
+                      "name": "id",
+                      "type": "u64"
+                    }
+                  ]
+                }
+              }
+            ],
+            "result": {
+              "result": {
+                "ok": null,
+                "err": {
+                  "enum": [
+                    "unavailable",
+                    "permission-denied",
+                    "resource-exhausted",
+                    "cancelled",
+                    "deadline",
+                    "invalid-state",
+                    "invalid-token"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "exports": {
+      "examples:java-standard-http/api@1.0.0": {
+        "types": {},
+        "functions": {
+          "run": {
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "which",
+                "type": "u32"
+              },
+              {
+                "name": "endpoint",
+                "type": "string"
+              }
+            ],
+            "result": "string"
+          }
+        }
+      }
+    }
+  }
+}

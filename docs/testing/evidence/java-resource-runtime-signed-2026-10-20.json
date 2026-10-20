@@ -1,0 +1,329 @@
+{
+  "schemaVersion": "latent.java.resource-runtime.signed-observation.v1",
+  "status": "passed",
+  "featureHead": "2475c56cc6e21c5f407d88a2661473de133ad033",
+  "checkoutSource": "34993882cc2741180cc79b8fc8bde404a70f03e2",
+  "run": 39494267034,
+  "job": 118875086584,
+  "artifact": {
+    "id": 12297542636,
+    "size_in_bytes": 1736531,
+    "digest": "sha256:d5aaede172b113c3cc19f17ca6ebdbf3b79bb9b60ace1b606fdf66fd97ad46b8"
+  },
+  "archiveMembers": 329,
+  "materialRows": 98,
+  "component": {
+    "sha256": "sha256:5b80c6679f9f9ebeeede6f6ef28c3d4acd685005a79b9041e87ffcb1720862de",
+    "bytes": 1954666
+  },
+  "compiledNativeSource": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+  "nativeProducts": {
+    "latent": {
+      "sha256": "sha256:91fde4e00730a4fd87d401974261fbd0e4d3d10376227faf2c137ace89edd14f",
+      "bytes": 68829688
+    },
+    "latentd": {
+      "sha256": "sha256:68a1c75d777ee43dff59a2be6a9d820b7d49ad8e29153881cefdef3c20521a76",
+      "bytes": 185284824
+    },
+    "examples/package": {
+      "sha256": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+      "bytes": 17750192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:1118e6a628e40d9c7b228756f767cf7ebf18b02acdfdf4d9c7d749d87410a56b",
+      "bytes": 24017528
+    }
+  },
+  "originalJars": {
+    "outside-resource-runtime-data/2026.10.20": {
+      "digest": "sha256:1130ef65ec7e7d1d73489a87b9e8a1fcec246e45ea55a0932f30f41297303772",
+      "size": 3019
+    },
+    "outside-resource-runtime/2026.10.20": {
+      "digest": "sha256:f95092bdcd4c049ebdcf7c5e75295294055625d4d71ac7a77d58d5e17afd647d",
+      "size": 12512
+    }
+  },
+  "runtimeGrantDenials": 2,
+  "joinedCalls": 11,
+  "totalOutcomes": 13,
+  "allKnownReaped": true,
+  "physicalSamples": 16,
+  "idleProviderSamples": 13,
+  "zeroActiveProviderCounters": 18,
+  "nativePositiveTimerRecords": [
+    {
+      "mode": "pending",
+      "event": "root-close",
+      "sequence": 1,
+      "tasks": 2,
+      "waits": 0,
+      "timers": 0
+    },
+    {
+      "mode": "pending",
+      "event": "start-accepted",
+      "sequence": 2,
+      "tasks": 2,
+      "waits": 1,
+      "timers": 1
+    },
+    {
+      "mode": "pending",
+      "event": "next-entered",
+      "sequence": 3,
+      "tasks": 2,
+      "waits": 2,
+      "timers": 1
+    },
+    {
+      "mode": "drain",
+      "event": "root-close",
+      "sequence": 4,
+      "tasks": 2,
+      "waits": 0,
+      "timers": 0
+    },
+    {
+      "mode": "drain",
+      "event": "start-accepted",
+      "sequence": 5,
+      "tasks": 2,
+      "waits": 1,
+      "timers": 1
+    },
+    {
+      "mode": "drain",
+      "event": "next-entered",
+      "sequence": 6,
+      "tasks": 2,
+      "waits": 2,
+      "timers": 1
+    }
+  ],
+  "clearSleepPendingObserved": false,
+  "componentByteCounterfactual": [
+    {
+      "offset": 1950992,
+      "old": 64,
+      "new": 67
+    },
+    {
+      "offset": 1951124,
+      "old": 64,
+      "new": 67
+    },
+    {
+      "offset": 1951166,
+      "old": 64,
+      "new": 67
+    }
+  ],
+  "unchangedBindingOutputs": {
+    "Bindings.java": {
+      "digest": "sha256:8c17feef8e6f140640139bce370224652e57478eeb3d62f042cfcd4e83cbe680",
+      "size": 22782
+    },
+    "bridge.c": {
+      "digest": "sha256:337924df387d5692d10fdecae57b45d8c6a8ff279d2c8a83106ee4ef07bd567e",
+      "size": 22003
+    },
+    "probe.c": {
+      "digest": "sha256:af73a8d875ecc2cf5f54b8878507680bb2e009e175214efa130acb31c15f328b",
+      "size": 24097
+    },
+    "probe.h": {
+      "digest": "sha256:f2a2186831dc2dc06279dc7ce305c69297052bd92182837ddfc039a0c4e6c55a",
+      "size": 12522
+    }
+  },
+  "cases": [
+    {
+      "tenant": "examples",
+      "mode": "parallel",
+      "result": [
+        {
+          "ok": "resource-runtime|parallel=255:255|callbacks=2|logs=accepted:sticky-error|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5737345",
+      "logBytes": "219"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5260271",
+      "logBytes": "229"
+    },
+    {
+      "tenant": "examples",
+      "mode": "clear",
+      "result": [
+        {
+          "ok": "resource-runtime|clear=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5420946",
+      "logBytes": "213"
+    },
+    {
+      "tenant": "examples",
+      "mode": "trap",
+      "result": null,
+      "terminal": "guest-trap",
+      "fuel": "5193176",
+      "logBytes": "0"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5260271",
+      "logBytes": "239"
+    },
+    {
+      "tenant": "examples",
+      "mode": "cancel",
+      "result": null,
+      "terminal": "cancelled",
+      "fuel": "5340052",
+      "logBytes": "209"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5260271",
+      "logBytes": "243"
+    },
+    {
+      "tenant": "examples",
+      "mode": "deadline",
+      "result": null,
+      "terminal": "deadline-exceeded",
+      "fuel": "5340052",
+      "logBytes": "205"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5260271",
+      "logBytes": "247"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "callback-error",
+      "result": [
+        {
+          "ok": "resource-runtime|callback-error=IllegalStateException|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5431995",
+      "logBytes": "231"
+    },
+    {
+      "tenant": "examples",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null,
+      "fuel": "5260271",
+      "logBytes": "255"
+    }
+  ],
+  "nodeCleanShutdown": true,
+  "peerZeroContactReaped": true,
+  "guestComponentsCompiled": 2,
+  "joinedGuestComponentsCompiled": 1,
+  "unsignedCompilerCacheControls": 1,
+  "nativeProductsBuilt": 0,
+  "engineRebuilt": false,
+  "nativeThreadsQualified": false,
+  "nativeThreadLocalQualified": false,
+  "asyncFlushQueuePresent": false,
+  "lateWakeQualified": false,
+  "fullTicketQualification": false,
+  "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39494267034",
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39494267034/job/118875086584",
+  "sourceSnapshotDigest": "sha256:5dfe2236bcec3249c2586d2b392fd0d8deddd68931390884ff4f910409ecd6d4",
+  "historicalPublicFailures": [
+    {
+      "run": 39482057326,
+      "component": "sha256:e97797bacbb32208804c74be12f776018ac25a775da4e2b6d8b5423e5d9e57c8",
+      "stage": "clear-after-parallel-and-foreign-fresh",
+      "conclusion": "failure"
+    },
+    {
+      "run": 39492072865,
+      "component": "sha256:e97797bacbb32208804c74be12f776018ac25a775da4e2b6d8b5423e5d9e57c8",
+      "stage": "same-component-same-order-clear",
+      "conclusion": "failure"
+    }
+  ],
+  "privateObservation": {
+    "run": 39488740435,
+    "exactSuccesses": [
+      "fresh",
+      "clear",
+      "parallel"
+    ],
+    "trapObserved": false,
+    "trapRequiredOuterConclusion": "failure",
+    "productionQualification": false
+  },
+  "limits": {
+    "memoryBytes": 67108864,
+    "cpuFuel": 1000000000,
+    "logBytes": 256,
+    "tasks": 8,
+    "executors": 2,
+    "queue": 8,
+    "waits": 16,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 8
+  },
+  "scope": {
+    "qualifiedProfile": "teavm-activation-fibers-io-v1",
+    "fixtureEntryAsync": true,
+    "defaultTemplateEntryChanged": false,
+    "callbackLogChecksSerialized": true,
+    "resourceAndCallbackWorkConcurrent": true,
+    "closedTrapVariantObserved": false,
+    "whole681Complete": false,
+    "wholeJavaRuntimeComplete": false
+  }
+}
