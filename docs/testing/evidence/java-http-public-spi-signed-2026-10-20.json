@@ -1,0 +1,414 @@
+{
+  "schemaVersion": "latent.java.http.public-spi-source-specific-evidence.v1",
+  "status": "passed",
+  "run": 39499576837,
+  "job": 118893355381,
+  "artifact": {
+    "id": 12300055737,
+    "bytes": 136464,
+    "sha256": "sha256:6b46c8ff132f79f12eafa95fc091a9bf6f5776bb49df8834d443ea0c600f9853"
+  },
+  "allMembersCrcShaVerified": 110,
+  "compiledFeature": "e1c33adb2414a8371026d479600e08d48b6df88a",
+  "nodeFixture": "afe80e8322b1899c37d9f0f8240721d1c097c64d",
+  "nativeCompiledSource": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+  "actualCases": [
+    {
+      "case": "public-spi-get",
+      "mode": 0,
+      "decoded": [
+        "1:spi:200:7:1"
+      ],
+      "revision": {
+        "publicationId": "publication:sha256:114e099b116901c2638bb41125560dab7127eb802ca30eff1205db8f2cf4758f",
+        "routeGeneration": "5",
+        "releaseDigest": "sha256:07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25",
+        "revisionId": "revision-v1:sha256:f440b4cd8ffcf50fcdb5087faf53f7f2cbb3870204fa2895e9df1f3c3418246c"
+      },
+      "receipt": {
+        "path": "controls/public-spi-get-spi.json",
+        "sha256": "sha256:5225a25c027da0a5ce4f9c4cc0e3978744d0591ae857127edea744a9d6446c24",
+        "bytes": 12511
+      }
+    },
+    {
+      "case": "fresh-default-after-spi",
+      "mode": 1,
+      "decoded": [
+        "1:spi:200:7:0"
+      ],
+      "revision": {
+        "publicationId": "publication:sha256:114e099b116901c2638bb41125560dab7127eb802ca30eff1205db8f2cf4758f",
+        "routeGeneration": "5",
+        "releaseDigest": "sha256:07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25",
+        "revisionId": "revision-v1:sha256:f440b4cd8ffcf50fcdb5087faf53f7f2cbb3870204fa2895e9df1f3c3418246c"
+      },
+      "receipt": {
+        "path": "controls/fresh-default-after-spi-spi.json",
+        "sha256": "sha256:f4b18b34f1af02e39543f12ddde156fbeca6b62d9cacbf9adc9072108d091bdf",
+        "bytes": 13386
+      }
+    },
+    {
+      "case": "spi-denied-target",
+      "mode": 2,
+      "decoded": [
+        "1:spi-error:permission-denied:1"
+      ],
+      "revision": {
+        "publicationId": "publication:sha256:114e099b116901c2638bb41125560dab7127eb802ca30eff1205db8f2cf4758f",
+        "routeGeneration": "5",
+        "releaseDigest": "sha256:07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25",
+        "revisionId": "revision-v1:sha256:f440b4cd8ffcf50fcdb5087faf53f7f2cbb3870204fa2895e9df1f3c3418246c"
+      },
+      "receipt": {
+        "path": "controls/spi-denied-target-spi.json",
+        "sha256": "sha256:206798021aa5a82f88ebacc7302a36a76c712c94fb7e004118a3bc58293f9e5b",
+        "bytes": 13402
+      }
+    },
+    {
+      "case": "spi-reserved-credential-header",
+      "mode": 3,
+      "decoded": [
+        "1:spi-error:invalid-request:1"
+      ],
+      "revision": {
+        "publicationId": "publication:sha256:114e099b116901c2638bb41125560dab7127eb802ca30eff1205db8f2cf4758f",
+        "routeGeneration": "5",
+        "releaseDigest": "sha256:07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25",
+        "revisionId": "revision-v1:sha256:f440b4cd8ffcf50fcdb5087faf53f7f2cbb3870204fa2895e9df1f3c3418246c"
+      },
+      "receipt": {
+        "path": "controls/spi-reserved-credential-header-spi.json",
+        "sha256": "sha256:1859b3a10c8b5c1e37c8738206613108ecb4e1293db2160a7a2c60665498bfe5",
+        "bytes": 13449
+      }
+    },
+    {
+      "case": "public-spi-reset",
+      "mode": 4,
+      "decoded": [
+        "1:spi:200:7:0"
+      ],
+      "revision": {
+        "publicationId": "publication:sha256:114e099b116901c2638bb41125560dab7127eb802ca30eff1205db8f2cf4758f",
+        "routeGeneration": "5",
+        "releaseDigest": "sha256:07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25",
+        "revisionId": "revision-v1:sha256:f440b4cd8ffcf50fcdb5087faf53f7f2cbb3870204fa2895e9df1f3c3418246c"
+      },
+      "receipt": {
+        "path": "controls/public-spi-reset-spi.json",
+        "sha256": "sha256:231058458c219e7af1d2a2dc7ccbf8287c56657c1891c6609604b0b5b2ed3eff",
+        "bytes": 14199
+      }
+    },
+    {
+      "case": "fresh-default-after-errors",
+      "mode": 1,
+      "decoded": [
+        "1:spi:200:7:0"
+      ],
+      "revision": {
+        "publicationId": "publication:sha256:114e099b116901c2638bb41125560dab7127eb802ca30eff1205db8f2cf4758f",
+        "routeGeneration": "5",
+        "releaseDigest": "sha256:07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25",
+        "revisionId": "revision-v1:sha256:f440b4cd8ffcf50fcdb5087faf53f7f2cbb3870204fa2895e9df1f3c3418246c"
+      },
+      "receipt": {
+        "path": "controls/fresh-default-after-errors-spi.json",
+        "sha256": "sha256:441987c992d2132284bfac20211368c03a86aed760547b28f19c58b952c64d48",
+        "bytes": 15081
+      }
+    }
+  ],
+  "authorityDenials": 2,
+  "httpContacts": 4,
+  "perCasePhysicalRetirement": true,
+  "rawCleanReapedNode": true,
+  "rawClosedPeer": true,
+  "nativeBeforeAfterExact": true,
+  "guestCompilationsByReplay": 0,
+  "nativeCompilationsByReplay": 0,
+  "defaultClientQualification": false,
+  "crossTenantQualification": false,
+  "full688": false,
+  "full741": false,
+  "scope": "optional public guest ConnectionFactory; separate from default-client qualification",
+  "component": {
+    "sha256": "sha256:07012456a9e874e13f639dfff7f93fc5823cfebffb79a35585548e663d12da25",
+    "bytes": 6410239
+  },
+  "originalBuild": {
+    "artifact": {
+      "id": 12296844781,
+      "size_in_bytes": 2003357,
+      "digest": "sha256:cc7bc2b4aa07072943925f3a8aea098f338f9c3b44724a2f97fdad8e33bea9c4"
+    },
+    "run": 39494971018,
+    "job": 118877563609,
+    "originalOutcome": "failure-after-first-guest-success",
+    "allMembersCrcAndShaVerified": 105,
+    "restoredBuildPackageMembers": 55,
+    "historicalReceiptRewritten": false
+  },
+  "replaySourceProof": {
+    "compiledSource": "e1c33adb2414a8371026d479600e08d48b6df88a",
+    "sdkFilesExact": 199,
+    "recipeFilesExact": 73,
+    "materialFilesCompared": 110,
+    "reviewedReaderCorrection": {
+      "tools/java_http_spi_node.py": {
+        "compiled": {
+          "sha256": "sha256:d121a968ecd9d5ab68c0e0a12cc61f4c0630566ead17731108ed1094f1e5c81c",
+          "bytes": 9917
+        },
+        "reader": {
+          "sha256": "sha256:f6ce9ebcbb7ccae0ff0fd94226d3e41b0f17b50cdc61c6292a98a1e9104010cd",
+          "bytes": 9927
+        }
+      }
+    }
+  },
+  "sourceComposition": {
+    "base": "f2749ebe9b08447052f47a09077b24f8488116e5",
+    "SDKFilesCompared": 199,
+    "recipeFilesCompared": 73,
+    "materialFilesCompared": 110,
+    "groupDeltas": {
+      "SDK": [
+        {
+          "path": "Cargo.toml",
+          "compiled": {
+            "sha256": "sha256:0670f74a80d1e5e95b082bf8152da8260f634147957fe10add32336a59d5fea9",
+            "bytes": 3779
+          },
+          "current": {
+            "sha256": "sha256:4ee28537862de19fe3141bebdbe5a9890bcea53ff55cce33e9c31687dbbfe199",
+            "bytes": 3779
+          }
+        },
+        {
+          "path": "sdk/java-guest/resources/conformance/ImmutableResourceModelControl.java",
+          "compiled": {
+            "sha256": "sha256:09951194e7172b32c4f9a2226ca63985618d341942a5826ed62a1ece5730b59b",
+            "bytes": 6413
+          },
+          "current": {
+            "sha256": "sha256:6cf730ea3b53acd619fd6b1db58a908616607cdd820cf8e43067833082b9c51c",
+            "bytes": 6830
+          }
+        },
+        {
+          "path": "tools/toolchain.toml",
+          "compiled": {
+            "sha256": "sha256:83574cfd769a6c26613e3e3f5be36f302d34270a7d61aaa4a80ccbea9a4df19d",
+            "bytes": 1044
+          },
+          "current": {
+            "sha256": "sha256:c1687cb481790783cca91b8423a676754ff8c3432e34b436c23df4f605a7f236",
+            "bytes": 1044
+          }
+        }
+      ],
+      "recipe": [
+        {
+          "path": "sdk/profile/transaction-requirements-v1.json",
+          "compiled": {
+            "sha256": "sha256:b9885e4948b4a6b23bc9fd256f23b89075fa138a5150ecae53cb6d81f879b5b4",
+            "bytes": 9418
+          },
+          "current": {
+            "sha256": "sha256:9bb389824b6a2d3015727b5c17de25a51505339d0a4f6cf46199ffe520881cd5",
+            "bytes": 9418
+          }
+        },
+        {
+          "path": "tools/java_guest/resources.py",
+          "compiled": {
+            "sha256": "sha256:89ddbd21475232c3562242009825506693f417cbdc17882692615a7dfbf9c666",
+            "bytes": 7851
+          },
+          "current": {
+            "sha256": "sha256:77389b62f5f820e03a81ef852105ab122087c381954d06283f79b7da394918c1",
+            "bytes": 7846
+          }
+        },
+        {
+          "path": "tools/toolchain.toml",
+          "compiled": {
+            "sha256": "sha256:83574cfd769a6c26613e3e3f5be36f302d34270a7d61aaa4a80ccbea9a4df19d",
+            "bytes": 1044
+          },
+          "current": {
+            "sha256": "sha256:c1687cb481790783cca91b8423a676754ff8c3432e34b436c23df4f605a7f236",
+            "bytes": 1044
+          }
+        },
+        {
+          "path": "wit/host-abi-phase3-v7.json",
+          "compiled": {
+            "sha256": "sha256:e4f5211dbb2ced0c32ad112ed8ca589df2e3f107149e20a588549157e680a7b0",
+            "bytes": 5882
+          },
+          "current": {
+            "sha256": "sha256:c9c88ebe54f6a3e931c15943b87b01fe553a5420f403ed8bc15fe41c137687cf",
+            "bytes": 5882
+          }
+        },
+        {
+          "path": "wit/host-abi-phase4-v1.json",
+          "compiled": {
+            "sha256": "sha256:bcd825ff31de472c8b09dc9901cd04c9e98771034bf3d6ff99e8d96fb09fcc74",
+            "bytes": 2559
+          },
+          "current": {
+            "sha256": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+            "bytes": 2559
+          }
+        }
+      ]
+    },
+    "materialDeltas": [
+      {
+        "path": "sdk/profile/transaction-requirements-v1.json",
+        "compiled": {
+          "sha256": "sha256:b9885e4948b4a6b23bc9fd256f23b89075fa138a5150ecae53cb6d81f879b5b4",
+          "bytes": 9418
+        },
+        "current": {
+          "sha256": "sha256:9bb389824b6a2d3015727b5c17de25a51505339d0a4f6cf46199ffe520881cd5",
+          "bytes": 9418
+        }
+      },
+      {
+        "path": "tools/java_guest/resources.py",
+        "compiled": {
+          "sha256": "sha256:89ddbd21475232c3562242009825506693f417cbdc17882692615a7dfbf9c666",
+          "bytes": 7851
+        },
+        "current": {
+          "sha256": "sha256:77389b62f5f820e03a81ef852105ab122087c381954d06283f79b7da394918c1",
+          "bytes": 7846
+        }
+      },
+      {
+        "path": "tools/java_http_spi_node.py",
+        "compiled": {
+          "sha256": "sha256:d121a968ecd9d5ab68c0e0a12cc61f4c0630566ead17731108ed1094f1e5c81c",
+          "bytes": 9917
+        },
+        "current": {
+          "sha256": "sha256:f6ce9ebcbb7ccae0ff0fd94226d3e41b0f17b50cdc61c6292a98a1e9104010cd",
+          "bytes": 9927
+        }
+      },
+      {
+        "path": "tools/toolchain.toml",
+        "compiled": {
+          "sha256": "sha256:83574cfd769a6c26613e3e3f5be36f302d34270a7d61aaa4a80ccbea9a4df19d",
+          "bytes": 1044
+        },
+        "current": {
+          "sha256": "sha256:c1687cb481790783cca91b8423a676754ff8c3432e34b436c23df4f605a7f236",
+          "bytes": 1044
+        }
+      },
+      {
+        "path": "wit/host-abi-phase4-v1.json",
+        "compiled": {
+          "sha256": "sha256:bcd825ff31de472c8b09dc9901cd04c9e98771034bf3d6ff99e8d96fb09fcc74",
+          "bytes": 2559
+        },
+        "current": {
+          "sha256": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+          "bytes": 2559
+        }
+      }
+    ],
+    "sourceSets": {
+      "sdk": {
+        "currentFiles": 201,
+        "added": [
+          "sdk/java-guest/resources/compiler/dev/latent/guest/resources/ImmutableResourceStream.java",
+          "sdk/java-guest/resources/conformance/ImmutableResourceStreamControl.java"
+        ],
+        "removed": [],
+        "addedIdentities": {
+          "sdk/java-guest/resources/compiler/dev/latent/guest/resources/ImmutableResourceStream.java": {
+            "sha256": "sha256:f6ab5ac031328027ca4588866e5594bcd525d3fe6f78dea6fa9635b9faa6ef1d",
+            "bytes": 764
+          },
+          "sdk/java-guest/resources/conformance/ImmutableResourceStreamControl.java": {
+            "sha256": "sha256:b0d63cc78da246a6cb3a7836f7165304e775d2f1e72543674dd11c5f8935074b",
+            "bytes": 4595
+          }
+        }
+      },
+      "recipe": {
+        "currentFiles": 73,
+        "added": [],
+        "removed": []
+      }
+    },
+    "currentNativeCompilationClaim": false,
+    "currentWasmtime48_0_7ExecutionClaim": false,
+    "currentQualificationRunnable": false,
+    "currentQualificationBoundary": "normal qualifier retains f919 full source equality and refuses later production source until a separately authenticated current tuple is selected"
+  },
+  "nativeProducts": {
+    "latent": {
+      "sha256": "sha256:91fde4e00730a4fd87d401974261fbd0e4d3d10376227faf2c137ace89edd14f",
+      "bytes": 68829688
+    },
+    "latentd": {
+      "sha256": "sha256:68a1c75d777ee43dff59a2be6a9d820b7d49ad8e29153881cefdef3c20521a76",
+      "bytes": 185284824
+    },
+    "examples/package": {
+      "sha256": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+      "bytes": 17750192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:1118e6a628e40d9c7b228756f767cf7ebf18b02acdfdf4d9c7d749d87410a56b",
+      "bytes": 24017528
+    }
+  },
+  "nodeComponentInputProfile": {
+    "schemaVersion": "latent.java.http.node-component-input-profile.v1",
+    "maximumComponentBytes": 67108864,
+    "defaultComponentBytes": 16777216,
+    "derivedManagementRequestBytes": 71303168,
+    "guestAndProviderBudgetsChanged": false
+  },
+  "operatorComponentInputMaximumBytes": 67108864,
+  "finalRecords": {
+    "shutdown": {
+      "path": "controls/node-stopped.json",
+      "sha256": "sha256:193d67ca387d8425296f2bd114e9dd034f870fc80a5ab50da467106025020bf6",
+      "bytes": 2568
+    },
+    "peer": {
+      "path": "controls/final-peer.json",
+      "sha256": "sha256:93a44fc7d38f42f89cc1ed2b0a2b89917dad58f2c1e67131d96ccc7a4a19b075",
+      "bytes": 4029
+    },
+    "qualification": {
+      "sha256": "sha256:89476e1a5b2e6f6385dc4d200b3720a44719da22e9c11195cb4faa7efe0e46d8",
+      "bytes": 44747
+    },
+    "nodeQualification": {
+      "sha256": "sha256:dfa1bd52a092529d568c11186c06097dab00d16f27ead8ae28e34378fb02d3f9",
+      "bytes": 1940
+    }
+  },
+  "remaining": [
+    "same-node cross-tenant twelve-case programme; bounded cold preparation remains unresolved",
+    "mixed full HTTP/body/framing/cancellation/limit and runtime requirements remain independently open",
+    "maintained current-source qualification must explicitly select and validate a current native tuple"
+  ]
+}

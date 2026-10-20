@@ -62,6 +62,11 @@
             "default": false,
             "description": "Fresh ordinary default clients and explicit V7 phase deadlines",
             "type": "boolean"
+          },
+          "java_http_spi": {
+            "default": false,
+            "description": "Separate optional public HttpRequest ConnectionFactory SPI campaign",
+            "type": "boolean"
           }
         }
       }
@@ -72,9 +77,10 @@
   },
   "requiredJobs": [
     "http-fiber-lifecycle",
-    "http-phase-clients"
+    "http-phase-clients",
+    "http-public-spi"
   ],
-  "reviewReason": "Reviewed source-hashed selected HTTP0.4 nominal-owner emission: only unused legacy response omission allowed after full pinned source pair, all other graphs/default0.3 strict; four actual-pair/adversarial controls added, old commands/cases/guards/bounds retained.",
+  "reviewReason": "Compose existing fully preserved Java fiber/phase jobs with separate optional public SPI job; no original step/guard/command/timeout removal.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
