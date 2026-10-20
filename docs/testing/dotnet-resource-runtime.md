@@ -43,8 +43,20 @@ conflict. The 30eb exact-component replay passed both tenants' authority setup
 and the first five joined calls, then failed its pending reader: the .NET PAL
 uses `wait-for`, not the original observer's `timer-start`/`timer-next` path.
 [Native producer f919](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39458247294/job/118750640204)
-passed all eight bounded observer controls. The corrected signed replay with 15 outcomes is
-pending; the original failures remain failures. This campaign does not
+passed all eight bounded observer controls.
+[The corrected signed replay](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39466265217/job/118778369144)
+passed all 15 outcomes on exact source2d18: two pre-guest runtime denials,
+two caught secure-operation denials and eleven joined lifecycle calls. The
+[compact observation](evidence/dotnet-resource-runtime-signed-2026-10-20.json)
+binds the original b168 AOT component and f919 native products separately.
+Artifact12284633689 was authenticated in full:8,533,100 bytes,431 CRC/hash
+members and41 exercised Git material rows. Both pending activations produced
+one real Task0/Wait1/Timer1 record. Fifteen node-scope idle observations have
+all18 active provider counters zero;18 physical samples, clean node shutdown
+and a zero-contact reaped observation peer were verified. No AOT or native
+build was repeated. The earlier c720 acquisition failed externally with an
+HTTP503 account-egress limit before any node/guest ran; every original failure
+remains a failure. This campaign does not
 qualify native threads, `ThreadLocal` isolation, CPU preemption, asynchronous
 console flushing, a separately observed late wake, or whole-ticket completion.
 
