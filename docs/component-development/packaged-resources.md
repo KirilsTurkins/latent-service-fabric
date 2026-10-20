@@ -109,29 +109,45 @@ logical name, staged source, media type, digest and captured artifact owner. Its
 bytes and size must occur in that owner's reviewed dependency file inventory.
 A package name alone cannot make an unobserved file a trusted resource.
 
-| Language | Compile-time data path | Standard runtime lookup qualification |
-| --- | --- | --- |
-| Rust | Captured data selected by `include_bytes!` / `include_str!` | No general runtime filesystem lookup advertised |
-| C | Captured constant data; explicit [C23 `#embed`](c-compiled-resources.md) and declared dependency resource objects | Signed C23 exact bytes/aliases/empty/missing and trap/fuel fresh-state controls; no runtime filesystem lookup |
-| TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
-| Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
-| Java | Captured selected classpath resource bytes | Selected `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` signed-node cases; broader lookup APIs pending |
-| .NET | One verified selection supplies package layers and embedded compiler inputs | `Assembly.GetManifestResourceStream` runs in the focused signed resource fixture; broader library/distribution acceptance remains open |
+| Language | Selected standard data path | Actual finite component evidence | Remaining API boundary |
+| --- | --- | --- | --- |
+| Rust | Captured `include_bytes!` / `include_str!` data, including transitive UTF-8/binary inputs | [Signed outside/transitive resource and entropy programme](../testing/evidence/rust-standard-entropy-signed-2026-10-20.json) | Compile-time inclusion does not provide runtime filesystem lookup |
+| C | Captured constants and explicit [C23 `#embed`](c-compiled-resources.md) with declared dependency resource objects | [C23 exact UTF-8/binary/empty/alias/missing and trap/fuel/fresh controls](../testing/evidence/c23-resources-passed-2026-10-19.json) | No general runtime filesystem or resource-stream facade |
+| TypeScript | Static ESM imports of captured `.txt` and `.bin` assets through a transitive package | [Signed clock library's exact text/binary data checks](../testing/evidence/typescript-standard-clocks-signed-2026-10-20.json) | Dynamic asset lookup, arbitrary extensions and a Node filesystem are outside these observations |
+| Go | Captured `//go:embed` string data in a transitive module | [Signed outside entropy library's exact embedded UTF-8 checks](../testing/evidence/go-standard-entropy-signed-2026-10-19.json) | This string path does not qualify every `embed.FS` lookup, missing file or independent stream handle |
+| Java | Selected immutable classpath bytes through `Class.getResourceAsStream` and direct `ClassLoader.getResourceAsStream` | [Signed two-library class resource observation](../testing/evidence/java-two-library-resource-node-2026-10-02.json) and [direct ClassLoader owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39174038239/job/117813178316) | Other resource APIs and general filesystem lookup need separate evidence |
+| .NET | One verified selection supplies package layers and embedded compiler inputs; `Assembly.GetManifestResourceStream` | [Signed binary/empty/literal/missing/position/disposal controls](../testing/evidence/dotnet-utc-resource-control-2026-10-12.json) | Broader resource APIs, NuGet distribution and concurrent stream lifecycle need their own qualification |
 
 The [.NET resource and explicit wall-clock reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-12/pr856-reconciliation.md)
 records fresh signed-node checks for binary/empty resources, literal names,
 independent stream positions, absent lookup and disposal. Those checks do not
-qualify every NuGet library or a new packaged toolkit. Java's selected class and
-classloader lookup cases require current-head emitted-component qualification;
-other Java lookup APIs remain outside that finite evidence.
+qualify every NuGet library or a new packaged toolkit. Java's direct ClassLoader
+selection also has an [exact-head post-merge reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/issues/681#issuecomment-6256601737).
+Other Java lookup APIs remain outside that finite evidence.
+
+Each linked observation keeps its tested source, component, compiler and native
+identities. Publishing this matrix does not reclassify an old host as a build of
+current development. The TypeScript and Go rows now name the exact executed
+static-import/embedded-string paths instead of treating those paths as wholly
+unexecuted; neither row advertises a general dynamic lookup API.
 
 This table identifies the ingestion paths and their runtime acceptance boundaries;
 package assembly alone does not prove those APIs execute. The index records
 `runtimeLookup: language-profile-qualification-required`. Each language owner
 must qualify the unchanged standard API in a signed admitted component, including
 transitive data, outside-checkout/offline and lifecycle cases, before advertising
-that path as supported. A runtime lookup cannot resolve dependencies or fall
-back to the host filesystem.
+that path as supported. The linked finite observations supply the named paths'
+existing execution evidence; they do not complete the whole six-language matrix.
+A runtime lookup cannot resolve dependencies or fall back to the host filesystem.
+
+The remaining [#681](https://github.com/KirilsTurkins/latent-service-fabric/issues/681)
+matrix includes every selected API's missing/denied/malformed/exhausted outcomes,
+all-six compiler collision/traversal/limit/tamper controls, and resource/log
+callbacks under each corresponding runtime's concurrent reads, root cancellation,
+pending flush, trap, late completion and fresh cross-tenant reuse. The scalar
+resource, logging, clock and entropy observations retain their separate scopes;
+stream close/disposal alone is not evidence that a host owner retired. These
+remaining rows feed [#694](https://github.com/KirilsTurkins/latent-service-fabric/issues/694).
 
 Scratch storage is separate and currently unsupported by this resource profile.
 It grants no writable filesystem, temporary directory, durable state, ambient
