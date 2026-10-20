@@ -1372,6 +1372,9 @@
         "broker::clock::window::tests::one_checked_window_never_extends_the_original_deadline",
         "broker::clock::window::tests::only_the_exact_busy_constructor_can_wait",
         "broker::currentness::tests::only_exact_authority_bookkeeping_contention_is_waitable",
+        "broker::http::refusal::tests::disabled_unrelated_and_overbound_observations_cannot_leak_or_expand_capture",
+        "broker::http::refusal::tests::exact_busy_capacity_and_active_dial_are_closed_static_witnesses",
+        "broker::http::refusal::tests::writer_failure_preserves_the_original_typed_error_and_borrowed_source",
         "broker::io::tests::all_limit_dimensions_have_finite_hard_ceilings",
         "broker::io::tests::an_unbounded_store_deadline_cannot_admit_host_io",
         "broker::io::tests::bounded_ring_backpressures_without_spawning_and_preserves_order",
@@ -1548,7 +1551,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 173,
+      "minimumCases": 176,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [

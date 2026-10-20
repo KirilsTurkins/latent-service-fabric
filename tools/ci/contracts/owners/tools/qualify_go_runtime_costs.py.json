@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_runtime_costs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual38f65/run39390120215 compiler-only reference failed before components: Go ignores go.mod directly in TMPDIR. Put the identical exact function/module under owned project child, retain parent temporary/output/deadline bounds and exact pinned compiler/stack diagnostics. Actual-source old RED/new GREEN environment-root control; all47 focused PASS. No guest or compiler-placement qualification from the failed run, no native rebuild or limit change.",
+  "reviewReason": "Actual205 default async-v1 capsule has no activation import; preserve three runtime grants without adding invalid activation grant; explicitv5 still installs exact original activation provider/policy. Originalsix cases/source/budgets/native unchanged. Programme-path oldsource RED,19 focused PASS; new signed result pending.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7409a6af495cfa0cd6767cfcce75196f48b11362cb733e228980e88085827315"
+  "sha256": "d06809de6ee6361f4142ef19b968e25a764f99ff760d7ec3f578408964dfe469"
 }

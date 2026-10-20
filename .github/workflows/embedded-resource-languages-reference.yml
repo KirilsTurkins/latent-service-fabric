@@ -2,6 +2,13 @@ name: Actual Rust and TypeScript embedded resource references
 
 on:
   workflow_dispatch:
+    inputs:
+      language:
+        description: Select one corrected resource reference or both
+        type: choice
+        required: false
+        default: both
+        options: [both, rust, typescript]
   push:
     branches: ['diagnostic/rust-typescript-embedded-resources-20261020']
 
@@ -26,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [rust, typescript]
+        language: ${{ fromJSON(inputs.language == 'rust' && '["rust"]' || inputs.language == 'typescript' && '["typescript"]' || '["rust","typescript"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

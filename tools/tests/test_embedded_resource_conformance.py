@@ -69,6 +69,42 @@ class EmbeddedResources(unittest.TestCase):
                     original = original.replace(b"\n    if (name.startsWith('resources:')) return resourceCase(name.slice(10));",b'',1)
                 self.assertEqual(digest(original),record['originalSource'])
 
+    def test_rust_capture_uses_the_maintained_pinned_toolchain_resolver_instead_of_path_shim(self):
+        with patch.object(qualification.shutil,'which',return_value='/shim/cargo') as located:
+            self.assertIsNone(qualification.capture_compiler('rust'))
+        located.assert_not_called()
+        with patch.object(qualification.shutil,'which',return_value='/tools/go') as located:
+            self.assertEqual(qualification.capture_compiler('go'),Path('/tools/go'))
+        located.assert_called_once_with('go')
+        with self.assertRaisesRegex(RuntimeError,'embedded-resource-language'):
+            qualification.capture_compiler('foreign')
+
+    def test_captured_rust_build_uses_reviewed_offline_projection_without_original_manifest_fetch(self):
+        arguments = tuple(Path(name) for name in ('application','build','contracts','package','repository'))
+        verified = SimpleNamespace(identity='sha256:'+'1'*64)
+        with patch.object(qualification,'verify_inputs',return_value=verified), \
+                patch('tools.rust_capsule_build.build',return_value=Path('artifact')) as build, \
+                patch.object(qualification,'read_json',return_value={
+                    'networkResolution':False,'inputIdentity':verified.identity}), \
+                patch('tools.qualify_sdk_scratch.locked_dependencies',side_effect=AssertionError('original paths removed')):
+            artifact,record = qualification.captured_rust_component(arguments[0],arguments)
+            self.assertEqual(artifact,Path('artifact'))
+            self.assertFalse(record['originalManifestFetchPerformed'])
+            self.assertTrue(record['subsequentBuildOffline'])
+            build.assert_called_once_with(*arguments,offline=True)
+        for selected in ({'networkResolution':True,'inputIdentity':verified.identity},
+                         {'networkResolution':False,'inputIdentity':'foreign'}):
+            with patch.object(qualification,'verify_inputs',return_value=verified), \
+                    patch('tools.rust_capsule_build.build',return_value=Path('artifact')), \
+                    patch.object(qualification,'read_json',return_value=selected), \
+                    self.assertRaisesRegex(RuntimeError,'network-resolution-or-closure'):
+                qualification.captured_rust_component(arguments[0],arguments)
+        with patch.object(qualification,'verify_inputs',return_value=None), \
+                patch('tools.rust_capsule_build.build') as build, \
+                self.assertRaisesRegex(RuntimeError,'reviewed-closure-required'):
+            qualification.captured_rust_component(arguments[0],arguments)
+        build.assert_not_called()
+
     def test_missing_transitive_edge_cannot_be_called_a_captured_resource_closure(self):
         for language,key in (('go','module'),('rust','package')):
             first,second = fixture.PACKAGES[language]

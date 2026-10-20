@@ -1,0 +1,2887 @@
+{
+  "source": {
+    "head": "88ae593d2e64acc711b90b61c4eed2ce0b5c051e",
+    "run": 39394141753,
+    "job": 118532569106,
+    "artifact": 12252293537,
+    "files": {
+      "018.json": "47e52f380eabadb88096189bdabc9dcde5ec050a9d70bae04bfc96e72ee71517",
+      "019.json": "b8d25646451cf44dd4c361e224e48a5d47da22669623766ea892cc27193fbe37",
+      "020.json": "3311740171f1753b5d8a61973a03d483e311f7a352242f049e0d052fb2d94d15",
+      "021.json": "68315c2e896423f646d03ba250771f3f4e983e995f5ff6502f0398df33e786fc",
+      "022.json": "ca2a8fcbd9d1e79fc2c0a9ade507c3ff897c8b7ed5378cb69fbf5c8b70ec8f7d"
+    }
+  },
+  "inventory": {
+    "cacheEntries": [],
+    "cacheSummary": {
+      "available": true,
+      "compiledImageBytes": "7082288",
+      "entries": "1",
+      "evictions": "0",
+      "hits": "2",
+      "invalidations": "0",
+      "maximumCompiledImageBytes": "134217728",
+      "maximumConcurrentPreparations": "1",
+      "maximumEntries": "2",
+      "maximumMetadataBytes": "8388608",
+      "maximumSourceBytes": "67108864",
+      "metadataBytes": "29444",
+      "misses": "1",
+      "preparing": "0",
+      "preparingMetadataBytes": "0",
+      "preparingSourceBytes": "0",
+      "sourceBytes": "2722900"
+    },
+    "cellCapacity": [
+      {
+        "accepting": true,
+        "active": 1,
+        "available": 0,
+        "cancellations": "0",
+        "class": "standard",
+        "expired": "0",
+        "granted": "3",
+        "maxWaitMicros": "120",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "119081",
+        "quarantined": 0,
+        "queueCapacity": 2,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "278"
+      }
+    ],
+    "health": {
+      "healthy": true,
+      "observedAtUnixMillis": "1792487095739",
+      "ready": true,
+      "reasons": [],
+      "status": "healthy"
+    },
+    "memoryPressureMilli": 0,
+    "node": {
+      "architecture": "x86_64",
+      "attributes": {
+        "lsf.host-abi": "lsf-host-abi-phase3-v5",
+        "lsf.security.admission": "enforced",
+        "lsf.security.compiler": "in-process",
+        "lsf.security.guest-boundary": "in-process-wasmtime",
+        "lsf.security.profile": "local-experimental-v1"
+      },
+      "cpuFeatures": [
+        "x86_64.avx",
+        "x86_64.avx2",
+        "x86_64.bmi1",
+        "x86_64.bmi2",
+        "x86_64.cmpxchg16b",
+        "x86_64.fma",
+        "x86_64.lzcnt",
+        "x86_64.popcnt",
+        "x86_64.sse2",
+        "x86_64.sse3",
+        "x86_64.sse4.1",
+        "x86_64.sse4.2",
+        "x86_64.ssse3"
+      ],
+      "endpoint": "http://127.0.0.1:37599",
+      "id": "operator-workflow-test",
+      "identity": "operator-workflow-test",
+      "operatingSystem": "linux",
+      "region": null,
+      "trustClasses": [
+        "internal"
+      ],
+      "zone": null
+    },
+    "observedAtUnixMillis": "1792487095739",
+    "pressure": {
+      "cachePressureMilli": 500,
+      "cpuPressureMilli": 83,
+      "loadAvailable": true,
+      "loadSampleAgeMillis": "188",
+      "memoryPressureMilli": 0,
+      "queuePressureMilli": 0
+    },
+    "queueDepth": "0",
+    "quotas": {
+      "limits": {
+        "maximumConcurrentActivations": 3,
+        "maximumQueuedActivations": 3,
+        "maximumReservedCpuFuel": "30000000000",
+        "maximumReservedMemoryBytes": "201326592"
+      },
+      "retainedTenants": "1",
+      "usage": {
+        "activeActivations": 1,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "1000000000",
+        "reservedMemoryBytes": "67108864"
+      }
+    },
+    "retainedBytes": "69555",
+    "routeGeneration": "4",
+    "topology": {
+      "available": true,
+      "complete": true,
+      "entries": [
+        {
+          "activeCount": "1",
+          "attributes": {
+            "chargedStorageBytes": "5511252",
+            "contentIndexBytes": "52359",
+            "incompleteFileBytes": "0",
+            "indexedPublications": "1",
+            "maximumContentIndexBytes": "67108864",
+            "maximumFilesPerPublication": "1024",
+            "maximumPublications": "8",
+            "maximumRecoveryDirectories": "24",
+            "maximumReleaseIndexBytes": "67108864",
+            "maximumSharedBlobs": "1000000",
+            "maximumStorageBytes": "4294967296",
+            "measurementStatus": "available",
+            "publicationLinkBytes": "2756151",
+            "releaseDirectories": "1",
+            "releaseIndexBytes": "40734",
+            "sharedBlobBytes": "2755101",
+            "sharedBlobs": "22",
+            "webControlBytes": "0"
+          },
+          "configuredCount": "1",
+          "kind": "store",
+          "name": "publication-catalog",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "process",
+          "name": "standalone-node",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "2",
+          "kind": "thread",
+          "name": "invocation-runtime",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "3",
+          "attributes": {},
+          "configuredCount": "3",
+          "kind": "thread",
+          "name": "control-runtime",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "2162688",
+          "attributes": {},
+          "configuredCount": "4325376",
+          "kind": "byte",
+          "name": "invocation-runtime-stack",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "6488064",
+          "attributes": {},
+          "configuredCount": "6488064",
+          "kind": "byte",
+          "name": "control-runtime-stack",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": null,
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "thread",
+          "name": "wasmtime-epoch",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "thread",
+          "name": "wasmtime-compiler",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": null,
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "listener",
+          "name": "grpc-listener",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "2",
+          "attributes": {},
+          "configuredCount": "32",
+          "kind": "connection",
+          "name": "accepted-connections",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "2",
+          "attributes": {},
+          "configuredCount": "8",
+          "kind": "rpc",
+          "name": "in-flight-rpcs",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "job",
+          "name": "control-jobs",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "task",
+          "name": "invocation-cleanup-driver",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "4",
+          "kind": "continuation",
+          "name": "invocation-cleanup-slots",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "cell",
+          "name": "execution-cell-leases",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "reservation",
+          "name": "prepared-instance-reservations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "invocation",
+          "name": "guest-invocations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "store",
+          "name": "guest-stores",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "host-state",
+          "name": "guest-host-states",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "component-instance",
+          "name": "guest-component-instances",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "buffer-group",
+          "name": "guest-value-buffers",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "probe",
+          "name": "guest-cancellation-probes",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "0",
+          "kind": "process",
+          "name": "resident-service-processes",
+          "ownership": "service-resident"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "0",
+          "kind": "thread",
+          "name": "resident-service-threads",
+          "ownership": "service-resident"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "0",
+          "kind": "listener",
+          "name": "resident-service-listeners",
+          "ownership": "service-resident"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "2",
+          "kind": "command",
+          "name": "capability-policy-control-jobs",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "4",
+          "attributes": {},
+          "configuredCount": "68",
+          "kind": "response-or-snapshot",
+          "name": "capability-policy-read-owners",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "1",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "blocking-task",
+          "name": "rollout-coordinator",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "3",
+          "kind": "command",
+          "name": "rollout-control-commands",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "4",
+          "kind": "window",
+          "name": "canary-observation-windows",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "128",
+          "kind": "sample",
+          "name": "canary-retained-samples",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "8",
+          "kind": "sample",
+          "name": "canary-live-samples",
+          "ownership": "node-fixed"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "4",
+          "kind": "snapshot",
+          "name": "canary-snapshot-owners",
+          "ownership": "node-fixed"
+        }
+      ]
+    }
+  },
+  "providerUsage": {
+    "capabilities": [
+      {
+        "contract": "latent:clock/monotonic@0.1.0",
+        "id": "latent:clock/monotonic@0.1.0",
+        "inspection": {
+          "definitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+          "policies": [
+            {
+              "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+              "id": "clockMonotonic-allow",
+              "revision": "3"
+            }
+          ],
+          "providerBinding": {
+            "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+            "id": "clockMonotonic-installed",
+            "revision": "2"
+          },
+          "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+          "providerConfigurationEpoch": "1",
+          "providerProfile": "activation-monotonic-v1",
+          "state": "configured-current"
+        },
+        "operations": [
+          "now-nanos"
+        ],
+        "provider": "activation-monotonic-v1"
+      },
+      {
+        "contract": "latent:clock/wall@0.1.0",
+        "id": "latent:clock/wall@0.1.0",
+        "inspection": {
+          "definitionDigest": "sha256:ec78c745b4b40875c62d7cb3f71e8f17ba698c918affeb524c855c0db929b20b",
+          "policies": [
+            {
+              "digest": "sha256:568a0c01c0b158c453f48c4b8d4dcb12ad31f43e60b27c60d5420f72be9b3d4d",
+              "id": "clockWall-allow",
+              "revision": "5"
+            }
+          ],
+          "providerBinding": {
+            "digest": "sha256:d6905f0957622b125c47271491f10c6346d41f61b7f92ba91ff02b354512909e",
+            "id": "clockWall-installed",
+            "revision": "4"
+          },
+          "providerConfigurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+          "providerConfigurationEpoch": "1",
+          "providerProfile": "activation-wall-v1",
+          "state": "configured-current"
+        },
+        "operations": [
+          "now-unix-millis"
+        ],
+        "provider": "activation-wall-v1"
+      },
+      {
+        "contract": "latent:random/random@0.1.0",
+        "id": "latent:random/random@0.1.0",
+        "inspection": {
+          "definitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+          "policies": [
+            {
+              "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+              "id": "random-allow",
+              "revision": "7"
+            }
+          ],
+          "providerBinding": {
+            "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+            "id": "random-installed",
+            "revision": "6"
+          },
+          "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+          "providerConfigurationEpoch": "1",
+          "providerProfile": "system-random-v1",
+          "state": "configured-current"
+        },
+        "operations": [
+          "bytes",
+          "u64-value"
+        ],
+        "provider": "system-random-v1"
+      },
+      {
+        "contract": "latent:runtime/activation@0.1.0",
+        "id": "latent:runtime/activation@0.1.0",
+        "inspection": {
+          "definitionDigest": "sha256:2ab044aa13de911a5864bddffa7335c96d163f772bc3e366914844420299411f",
+          "policies": [
+            {
+              "digest": "sha256:9b243fe5ff9a556e5f7e67ba6f3e200fc7a014e797cf7b63065d9c2592736236",
+              "id": "activation-allow",
+              "revision": "9"
+            }
+          ],
+          "providerBinding": {
+            "digest": "sha256:ecbe7abc16e7aa1a5193c3f0cbbf6829d7cd0bfee20708001f36027d4effa4e1",
+            "id": "activation-installed",
+            "revision": "8"
+          },
+          "providerConfigurationDigest": "sha256:63218d5ae363c1df684c95ef73d9ac48a522b7ffd8c653f9051763a6f53bb73c",
+          "providerConfigurationEpoch": "1",
+          "providerProfile": "activation-owned-v1",
+          "state": "configured-current"
+        },
+        "operations": [
+          "register",
+          "park",
+          "wake",
+          "settle",
+          "close",
+          "observe",
+          "wait-for",
+          "wait-until",
+          "timer-start",
+          "timer-next",
+          "timer-stop"
+        ],
+        "provider": "activation-owned-v1"
+      }
+    ],
+    "executionPermission": false,
+    "nextPageToken": null,
+    "nodeUsage": {
+      "counters": {
+        "audit_capture_dropped": "0",
+        "audit_closed": "0",
+        "audit_dropped_observations": "156",
+        "audit_pending_attempts": "0",
+        "audit_query_bytes": "0",
+        "audit_query_owners": "0",
+        "audit_queued_bytes": "0",
+        "audit_queued_operations": "0",
+        "audit_recovery_pending": "0",
+        "audit_reserved_bytes": "0",
+        "audit_reserved_records": "0",
+        "audit_stage_bytes": "0",
+        "audit_unavailable_events": "0",
+        "broker_buffer_bytes": "128",
+        "broker_calls": "1",
+        "broker_handles": "1",
+        "broker_metadata_bytes": "80216",
+        "broker_plans": "1",
+        "broker_providers": "4",
+        "broker_results": "1",
+        "broker_sessions": "1",
+        "io_buffers": "0",
+        "io_calls": "0",
+        "io_metadata_bytes": "0",
+        "io_occupied_running_slots": "0",
+        "io_queued_calls": "0",
+        "io_result_bytes": "0",
+        "io_staged_bytes": "0",
+        "io_streams": "0",
+        "pool_active_connections": "0",
+        "pool_cleanup_jobs": "0",
+        "pool_clients": "0",
+        "pool_closed": "0",
+        "pool_configurations": "0",
+        "pool_connecting_connections": "0",
+        "pool_connections": "0",
+        "pool_control_failed": "0",
+        "pool_control_owners": "1",
+        "pool_failed_cleanup": "0",
+        "pool_idle_connections": "0",
+        "pool_metadata_bytes": "53248",
+        "pool_pending_requests": "0",
+        "pool_retained_configurations": "0",
+        "pool_retired_connections": "0",
+        "pool_running_requests": "0",
+        "pool_workers": "0"
+      },
+      "scope": "node",
+      "unavailable": []
+    },
+    "revision": {
+      "catalogTransaction": "4",
+      "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+      "deploymentId": "my-greeting",
+      "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+      "revisionId": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+      "routeGeneration": "4"
+    },
+    "state": "compiled-plan",
+    "tenantUsage": {
+      "counters": {
+        "calls": "1",
+        "delegated_memory_bytes": "0",
+        "handles": "1",
+        "ledgers_without_delegation": "0",
+        "live_children": "0",
+        "reserved_buffer_bytes": "128",
+        "results": "0",
+        "retired_sessions_with_resources": "0",
+        "sessions": "1",
+        "waiting": "0"
+      },
+      "scope": "tenant",
+      "unavailable": []
+    }
+  },
+  "pages": [
+    {
+      "category": "success",
+      "command": "audit query",
+      "data": {
+        "coverage": {
+          "droppedObservations": "156",
+          "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+          "highWatermark": "33",
+          "previousSessionLossUnknown": false,
+          "retainedFloor": "1",
+          "scanned": "19",
+          "stop": "AUDIT_PAGE_STOP_BYTE_LIMIT",
+          "unknownOutcomes": "0"
+        },
+        "page": {
+          "nextPageToken": "1:29a808c0260f0a8ead5fbdf3bb7bab82:ee442e2563717ea8578c05d952e486b52bf7a560101b18804faf6b1647526107:0000000000000013:0000000000000021"
+        },
+        "records": [
+          {
+            "acceptedAtUnixMillis": "1792487094805",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "attempt": {
+                "action": "AUDIT_CONTROL_ACTION_DEPLOYMENT_APPLY",
+                "expectedDeploymentGeneration": "2",
+                "expectedGeneration": null,
+                "expectedRollbackTargetGeneration": null,
+                "expectedRolloutRevision": null,
+                "expectedStateVersion": "2",
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": null,
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": "3",
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": null,
+                  "packageDigest": null,
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": null,
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "3",
+                  "state": null,
+                  "stateVersion": "3",
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "occurredAtUnixMillis": "1792487094805",
+                "operationId": "apply-my-greeting-2",
+                "previewReceiptDigest": "sha256:71e96377b5958beedebcebf33648ffc530e4ef58864250f7f0ce50031f1e01c8",
+                "replay": false,
+                "requestDigest": "sha256:4bf6d817481a2a4e63cff6ab7d20030f8080558adf1debb01561da0b6092b7f6"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "a7ad414853c90c31c5c408924d88654e82fce2ae8fc62c587460387399572258",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "6"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487094810",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "outcome": {
+                "attemptSequence": "6",
+                "canaryDecision": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": null,
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": "3",
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": null,
+                  "packageDigest": null,
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": null,
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "3",
+                  "state": null,
+                  "stateVersion": "3",
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "occurredAtUnixMillis": "1792487094810",
+                "reason": "committed",
+                "receiptDigest": "sha256:71e96377b5958beedebcebf33648ffc530e4ef58864250f7f0ce50031f1e01c8",
+                "replay": false,
+                "result": "AUDIT_OPERATION_RESULT_COMMITTED"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "f95e1d1856c0d73e668cdcedebfcb944b5b4d11ac59e4e4dfd24c55af6f18553",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "7"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095515",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "attempt": {
+                "action": "AUDIT_CONTROL_ACTION_DEPLOYMENT_APPLY",
+                "expectedDeploymentGeneration": "3",
+                "expectedGeneration": null,
+                "expectedRollbackTargetGeneration": null,
+                "expectedRolloutRevision": null,
+                "expectedStateVersion": "3",
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": null,
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": "4",
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": null,
+                  "packageDigest": null,
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": null,
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": "4",
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "occurredAtUnixMillis": "1792487095515",
+                "operationId": "apply-my-greeting-3",
+                "previewReceiptDigest": "sha256:388146cfe0b5938ca295e69459087334c666466baaf9584386c9ac155a4cc206",
+                "replay": false,
+                "requestDigest": "sha256:b1ccbe158727b1c33641874dead26561b41705aaa999861e8905a82396ba7a0d"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "6cea52630989337027a55f12d921a3d9bc824eacef9f5f831615e5e8d2ffda9a",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "8"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095521",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "outcome": {
+                "attemptSequence": "8",
+                "canaryDecision": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": null,
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": "4",
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": null,
+                  "packageDigest": null,
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": null,
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": "4",
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "occurredAtUnixMillis": "1792487095520",
+                "reason": "committed",
+                "receiptDigest": "sha256:388146cfe0b5938ca295e69459087334c666466baaf9584386c9ac155a4cc206",
+                "replay": false,
+                "result": "AUDIT_OPERATION_RESULT_COMMITTED"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "cfbe08353e9a552d2c999bb1eec9120e8daab6aa216444a056b4693a607aabb1",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "9"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095563",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095562",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "1d0dc78b542fcfa10cf447ba1d574b89e7730ef22e48b512bf7f28daf231dba6",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "10"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095570",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095563",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "0a55a9f76806108a1d7e5a381c347c0e9be2f20db29e4903c87e652ff708eca7",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "11"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095573",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095564",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "cba04e3f62ab0fb2687994ed3a095c99c6192409521b7ab31d211a58787edb5e",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "12"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095575",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095564",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "90ed6fee70d9069dc01c7e83f699f8fee5b0a6aed8a81ac492694fdcc196be0a",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "13"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095578",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:d2a08062eb8b43539ba42e883a606f4227e330def1d546b35e7afe5b7ca3e9f8",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095565",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "03fd6c836fb0a5e113db3f4a544f134ee88b38d221741f9d2b7cf0142a00715e",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "14"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095581",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:bdfec503799e79c428fabb343934687351ecbd7ef8937c4aec4064e08f195b24",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095566",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "d30083238a93e1f1fa08e8d49db27d4236ee38decbaa0d63c72d8851e7ffdc91",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "15"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095584",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:d2a08062eb8b43539ba42e883a606f4227e330def1d546b35e7afe5b7ca3e9f8",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095566",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "623fea01ea7e0b97ddf907dbcbec268aff11937b2b66e2e9471eb27e128cf122",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "16"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095587",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:bdfec503799e79c428fabb343934687351ecbd7ef8937c4aec4064e08f195b24",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095567",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "e342e5362abf69bd4eb0b7622cd929de9c550adb129809b8f1f16e651ab99d1a",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "17"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095589",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:d2a08062eb8b43539ba42e883a606f4227e330def1d546b35e7afe5b7ca3e9f8",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095567",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "5c4d05e3f5b70bd80d746f7b0ebf831a18d6e956bb2a8e5ce32f11b48a4c31b0",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "18"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095592",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:bdfec503799e79c428fabb343934687351ecbd7ef8937c4aec4064e08f195b24",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095567",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "835da342e71dab8c96b3916804e61f0427706489a11efd123ee9b32da78213b3",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "19"
+          }
+        ]
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    {
+      "category": "success",
+      "command": "audit query",
+      "data": {
+        "coverage": {
+          "droppedObservations": "156",
+          "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+          "highWatermark": "33",
+          "previousSessionLossUnknown": false,
+          "retainedFloor": "1",
+          "scanned": "12",
+          "stop": "AUDIT_PAGE_STOP_BYTE_LIMIT",
+          "unknownOutcomes": "0"
+        },
+        "page": {
+          "nextPageToken": "1:29a808c0260f0a8ead5fbdf3bb7bab82:ee442e2563717ea8578c05d952e486b52bf7a560101b18804faf6b1647526107:000000000000001f:0000000000000021"
+        },
+        "records": [
+          {
+            "acceptedAtUnixMillis": "1792487095597",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:d2a08062eb8b43539ba42e883a606f4227e330def1d546b35e7afe5b7ca3e9f8",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095568",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "35cf33a0571c7bee71953ac5e8eaf44701f456f583cde04b7dac9a63d5a48616",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "20"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095599",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:9e048c9768863fad23dc8cf24a0684313a7f935dd56696f395f17572f63a14e5",
+                      "id": "random-installed",
+                      "revision": "6"
+                    },
+                    "bindingDefinitionDigest": "sha256:85332ccef8d2709c5e9cce54bdd616312f2c48356cac02f0e0d8e4252d847973",
+                    "capability": "latent:random/random@0.1.0",
+                    "operation": "u64-value",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:b1065e0bfd05a3c2218e83f499da2d6a3f5e53eb186a6a17206eb34ef78a9609",
+                        "id": "random-allow",
+                        "revision": "7"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "system-random-v1",
+                    "request": {
+                      "digest": "sha256:bdfec503799e79c428fabb343934687351ecbd7ef8937c4aec4064e08f195b24",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_RANDOM",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095569",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "55cf495f05ececd83a20fe03ee71bb1c006f2284e09452933275916c995b1a40",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "21"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095604",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095570",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "36f2c5c03224b9b7c3c4d8161e935bf5e596a5941c549ca707ecdc16b7d84eda",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "22"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095607",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095571",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "3faa7cfc7c417f7c7c21e93547729155bb4edeff398a25b456013aeb8d4e53f6",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "23"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095610",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095572",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "d1359e651e0797bb80a808f2d0712229afe8452e34206a4671540e7a899a7455",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "24"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095614",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095572",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "d06afda046e44dcdfe4e13fd61338ca2e0bcd5decf00d5cb8eb68f98695e4600",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "25"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095619",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095573",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "5086d601660778ddb660032f418816cec3ad3b9fd0677d18930c5d3f0b16a66d",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "26"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095622",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095574",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "690d8cd20f7581bacc59c26ae676683d8aa2c1e48fdd451f13409a4e8a9ca95e",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "27"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095627",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:ecbe7abc16e7aa1a5193c3f0cbbf6829d7cd0bfee20708001f36027d4effa4e1",
+                      "id": "activation-installed",
+                      "revision": "8"
+                    },
+                    "bindingDefinitionDigest": "sha256:2ab044aa13de911a5864bddffa7335c96d163f772bc3e366914844420299411f",
+                    "capability": "latent:runtime/activation@0.1.0",
+                    "operation": "register",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:9b243fe5ff9a556e5f7e67ba6f3e200fc7a014e797cf7b63065d9c2592736236",
+                        "id": "activation-allow",
+                        "revision": "9"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:63218d5ae363c1df684c95ef73d9ac48a522b7ffd8c653f9051763a6f53bb73c",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-owned-v1",
+                    "request": {
+                      "digest": "sha256:75bdf31592f151498a9af068aef2f0736dc05f82c2123ff2306ce2764a5264b0",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095575",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "1a62578563f4cbb480e212a83978b1a594c3551fe6740c3dc0910213d0cef5d2",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "28"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095629",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095578",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "06afe7e2c1cff889eac998291564c6dd81668f966dff6558b24421b257934613",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "29"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095634",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095582",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "900dd7de88f4ea6e70d8bc5dcc7160bb1776c6c6683d642c8cc9f8ac5e2d861b",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "30"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095637",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                      "id": "clockMonotonic-installed",
+                      "revision": "2"
+                    },
+                    "bindingDefinitionDigest": "sha256:b783f5a1e433fab6f93959796c96df79fbd46e1b09225d5130e79da781e5515f",
+                    "capability": "latent:clock/monotonic@0.1.0",
+                    "operation": "now-nanos",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:72b8426839242d9b4352cfe05d7bd1ebeed5ea66b6ee10f866949043f0209d67",
+                        "id": "clockMonotonic-allow",
+                        "revision": "3"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-monotonic-v1",
+                    "request": {
+                      "digest": "sha256:335fee063ce0a5343d9e83ff4de275b8339ee3bc2c59e38566007ac2059e54ee",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095584",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "2b27804d2151ca0060af7e0b5c3f6d1c923c95f42ebd436161f9e2218bac9ba4",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "31"
+          }
+        ]
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    {
+      "category": "success",
+      "command": "audit query",
+      "data": {
+        "coverage": {
+          "droppedObservations": "156",
+          "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+          "highWatermark": "33",
+          "previousSessionLossUnknown": false,
+          "retainedFloor": "1",
+          "scanned": "2",
+          "stop": "AUDIT_PAGE_STOP_END",
+          "unknownOutcomes": "0"
+        },
+        "page": {
+          "nextPageToken": null
+        },
+        "records": [
+          {
+            "acceptedAtUnixMillis": "1792487095641",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:ecbe7abc16e7aa1a5193c3f0cbbf6829d7cd0bfee20708001f36027d4effa4e1",
+                      "id": "activation-installed",
+                      "revision": "8"
+                    },
+                    "bindingDefinitionDigest": "sha256:2ab044aa13de911a5864bddffa7335c96d163f772bc3e366914844420299411f",
+                    "capability": "latent:runtime/activation@0.1.0",
+                    "operation": "wake",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:9b243fe5ff9a556e5f7e67ba6f3e200fc7a014e797cf7b63065d9c2592736236",
+                        "id": "activation-allow",
+                        "revision": "9"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:63218d5ae363c1df684c95ef73d9ac48a522b7ffd8c653f9051763a6f53bb73c",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+                    "providerProfile": "activation-owned-v1",
+                    "request": {
+                      "digest": "sha256:6e81bbbfd55c8d8fe09e3d936967fdf58a7ee67c9a7a49910336b5fce4637ecc",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_PROVIDER_REQUEST"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+                "occurredAtUnixMillis": "1792487095587",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "committed"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "dc355c2d0ba52d085e8b13a0352d9cd6d969d3e3c902bc095c83a48ae84b9f49",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "32"
+          },
+          {
+            "acceptedAtUnixMillis": "1792487095648",
+            "actor": {
+              "kind": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "data": {
+              "observation": {
+                "cacheKind": null,
+                "identities": {
+                  "basePublicationId": null,
+                  "canaryEvidenceDigest": null,
+                  "canaryWindowEpoch": null,
+                  "candidatePublicationId": null,
+                  "capability": {
+                    "activation": "node-stop-pending-before",
+                    "binding": {
+                      "digest": "sha256:ecbe7abc16e7aa1a5193c3f0cbbf6829d7cd0bfee20708001f36027d4effa4e1",
+                      "id": "activation-installed",
+                      "revision": "8"
+                    },
+                    "bindingDefinitionDigest": "sha256:2ab044aa13de911a5864bddffa7335c96d163f772bc3e366914844420299411f",
+                    "capability": "latent:runtime/activation@0.1.0",
+                    "operation": "settle",
+                    "parentActivation": null,
+                    "policies": [
+                      {
+                        "digest": "sha256:9b243fe5ff9a556e5f7e67ba6f3e200fc7a014e797cf7b63065d9c2592736236",
+                        "id": "activation-allow",
+                        "revision": "9"
+                      }
+                    ],
+                    "providerConfigurationDigest": "sha256:63218d5ae363c1df684c95ef73d9ac48a522b7ffd8c653f9051763a6f53bb73c",
+                    "providerConfigurationEpoch": "1",
+                    "providerOutcome": null,
+                    "providerProfile": "activation-owned-v1",
+                    "request": {
+                      "digest": "sha256:ca7ba3bed633ec6c3cb79791853b2fdbf88afe0b91e6f50ca65caf38905bebff",
+                      "scope": "AUDIT_CAPABILITY_DIGEST_SCOPE_RESOURCE_SELECTION"
+                    },
+                    "required": false,
+                    "resourceClass": "AUDIT_CAPABILITY_RESOURCE_CLASS_CLOCK",
+                    "rootActivation": "node-stop-pending-before",
+                    "service": "examples/my-greeting"
+                  },
+                  "componentDigest": "sha256:b0211cf39c46e5a2930b417f526df30af220b45ff85641ddecdb123799ca84e3",
+                  "deployment": "my-greeting",
+                  "deploymentGeneration": null,
+                  "dispatcher": null,
+                  "evidenceRevisionDigest": null,
+                  "lifecycleGeneration": "1",
+                  "packageDigest": "sha256:516b20377fd07eb995f9f329636b625ff574239d40ac20b09341b4a26da605ec",
+                  "policies": [],
+                  "publicationId": "publication:sha256:9869da66a9faf1c4309e6c55db0118f04d5729b99dfa4453928bdbb635e932ae",
+                  "receivedManifestDigest": null,
+                  "revision": "revision-v1:sha256:3ad9617b63313be408a40ae81a49fe1a6b963291da3162f23855626e979f392e",
+                  "rollbackTargetGeneration": null,
+                  "rollout": null,
+                  "rolloutRevision": null,
+                  "rolloutStep": null,
+                  "routeGeneration": "4",
+                  "state": null,
+                  "stateVersion": null,
+                  "staticWeb": null,
+                  "trigger": null,
+                  "triggerGeneration": null
+                },
+                "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+                "occurredAtUnixMillis": "1792487095590",
+                "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+                "reason": "admitted"
+              }
+            },
+            "epoch": "29a808c0260f0a8ead5fbdf3bb7bab82",
+            "formatVersion": 1,
+            "previousDigest": "d1e4bf18482d32cb4661e41e24fcb9491a69da0febb8f87d40fbd8f583e9d433",
+            "scope": {
+              "kind": "AUDIT_SCOPE_KIND_TENANT",
+              "tenant": "examples"
+            },
+            "sequence": "33"
+          }
+        ]
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    }
+  ]
+}

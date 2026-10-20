@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_runtime_semantics.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add a separate additive normal-compiler signed programme for ordinary thenable/microtask/rejection/finally/interval/timer ordering, bounded failure attempts and exact caller fuel containment under original16/16/64 owner limits. Three controls reject false success, guard normal profile/source, and forbid compiler failures from reaching execution; seven unchanged-source fresh Node references and strict TypeScript pass, but actual signed results remain pending and generic traps do not prove callback cause. Preserve all existing programmes and no runtime patch or native rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0ef006af9dc2625ed0933e85a4fcf4ad9000008f95916853f8b23c002398262b"
+}

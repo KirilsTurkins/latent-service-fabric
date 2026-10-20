@@ -26,8 +26,10 @@ existing maintained builder, normally signs/admit it with four authenticated
 companions, and retains every original named normal-programme activation.
 The default-false `embedded_resource_conformance` runner selector adds one
 post-tutorial probe without changing old paths or limits. Original grants and
-provider bindings stay intact. Rust's locked data-only fetch precedes the
-offline build; Go's compiler network must be denied. TypeScript consumes the
+provider bindings stay intact. Rust's reviewed CAS and complete native-vendor
+graph are projected by the normal offline compiler into a fresh Cargo home;
+there is no fetch against removed original path dependencies. Go's compiler
+network must be denied. TypeScript consumes the
 existing authenticated ordinary compiler tools and public engine, with no
 native engine rebuild or new runtime selection.
 
@@ -41,8 +43,7 @@ package inputs, materials, outputs, owner samples and shutdown.
 Nine focused source/capture/protocol controls pass, including old text-only
 Go embedding rejected by the broader asset-selection gate, missing transitive
 edges, unselected npm data, removed NUL, false fresh output, live owners and
-changed normal activation names. These are source controls. **The Go35
-programme passed; the Rust and TypeScript signed programmes are pending.** Existing compiler-level
+changed normal activation names. These are source controls. **The Go35 and TypeScript33 node programmes passed; the corrected Rust reference remains pending.** Existing compiler-level
 missing/traversal/collision/limit/tamper controls and their shared production
 paths remain distinct from runtime data observations.
 
@@ -85,7 +86,7 @@ TypeScript.
 
 ## Targeted Rust and TypeScript reference lanes
 
-The separate input-free20-minute matrix in
+The separate 20-minute reference matrix in
 `embedded-resource-languages-reference.yml` builds one greeting per language;
 it preserves all existing authoring jobs. It reuses the same authenticated94d
 native products through the maintained closed source-compatibility predicate.
@@ -105,11 +106,49 @@ archive is not downloaded or independently rehashed; the API archive digest
 is recorded as metadata, separately from verified selected bytes.
 
 Actual authenticated original receipts contain Rust27 invocations/24 physical
-samples/six idle samples and TypeScript30/27/nine. The new programme therefore
-requires Rust33/30/12 and TypeScript36/33/15, retaining the complete original
-named activation sequence in each case. Five additional focused controls
-reject producer substitution, private/arbitrary member selection, changed or
-rehashed normal counts/names, unknown outcomes and companion marker drift.
-These signed results remain pending. Original component ancestry, selected
-native ancestry and fresh current compiler/fixture source remain separate;
-neither historical normal receipt is relabelled as current compilation.
+samples/six idle samples and TypeScript30/27/nine. Rust requires33/30/12. The
+TypeScript original30 includes exactly three generator calls belonging to the
+greeting that this resource fixture replaces. The replay preserves that full30
+ancestry separately and projects only those exact calls at activation positions
+12-14, physical positions10-12 and idle positions0-2. Every common27 call remains
+required in its original order; the six fresh resource calls produce33/30/12.
+Unknown, missing, reordered or extra calls fail. No historical receipt is edited.
+Original component ancestry, selected native ancestry and fresh current
+compiler/fixture source remain separate.
+
+The first Rust-only reference at source `192c7b92` failed before compilation in
+[job 118533625598](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39394464486/job/118533625598):
+the qualifier supplied the PATH `cargo` shim and the maintained regular-file
+check returned `dependency-link-denied`. The correction supplies no explicit
+Cargo path, selecting the existing captured-toolchain `rustup which` resolver.
+The original refusal remains in the retained log and
+[artifact 12254395006](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39394464486/artifacts/12254395006).
+The reference workflow now permits a manual `language=rust` retry; its default
+and push selections still include both languages. This source correction is not
+signed Rust execution evidence.
+
+The next Rust reference at source `85db2200` passed native capture and removed
+both original outside trees, then failed in the qualifier's extra data-only
+`cargo fetch`: it reopened the original declaration's now-absent path. The
+[failure artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39400521205/artifacts/12256023093)
+retains that exact refusal before compilation. The correction requires the
+reviewed closure and uses only the normal compiler's CAS/selected-manifest/
+vendor projection with a fresh offline Cargo home. It checks the resulting
+input identity and network-denied receipt; it does not restore old paths or
+relax native dependency policy. Actual signed Rust execution remains pending.
+
+The TypeScript node at source `192c7b92` completed all33 known/reaped calls,
+30 physical samples and12 zero-active-owner samples with clean shutdown in
+[job 118533626060](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39394464486/job/118533626060).
+Its outer job remains **failed**: the old report incorrectly expected the three
+replaced-greeting generator calls, producing the superseded36-call expectation.
+The [source-bound observation](../testing/evidence/typescript-embedded-resources-signed-2026-10-20.json)
+records a separate exact report reprojection after authenticating the published
+archive digest and all350 members. Exact UTF-8/NUL, binary, empty data, independent
+copies, guest trap and fresh binary recovery passed with zero network/log/effects.
+All10 exercised helper bytes match the original tested source; the fresh
+component and61-row source inventory match their actual build observation.
+The node's own source/binary before-after checks passed. The outer comparator
+failed before its final integrity block, so this record claims neither that block
+ran nor a new complete qualifier marker. No guest calls, native products or
+historical qualification were rebuilt or relabelled for the report correction.
