@@ -1,5 +1,5 @@
-use super::{SemanticLimits, compare::Comparison, incompatible};
-use latent_core::{HostInterfaceSpec, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1, PlatformError};
+use super::{compare::Comparison, incompatible, SemanticLimits};
+use latent_core::{HostInterfaceSpec, PlatformError, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1};
 use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::{InterfaceId, Resolve};
 
@@ -17,6 +17,15 @@ pub(super) fn specification(name: &str) -> Option<&'static HostInterfaceSpec> {
         // installation remain unchanged; the native host profile is explicit.
         .or_else(|| latent_core::PHASE3_HOST_ABI_V6.interface(name))
         .or_else(|| latent_core::PHASE3_HOST_ABI_V7.interface(name))
+}
+
+/// Classify only the exact phase dependency after the caller validates its
+/// complete declared source graph. This predicate supplies no provider authority.
+pub(super) fn phase_type_owner(resolve: &Resolve, imports: &BTreeMap<String, InterfaceId>) -> bool {
+    imports.contains_key("latent:http/phase-timing@0.4.0")
+        && imports
+            .get("latent:http/streaming@0.3.0")
+            .is_some_and(|id| resolve.interfaces[*id].functions.is_empty())
 }
 
 pub(super) fn validate(
@@ -99,10 +108,7 @@ pub(super) fn validate(
         // interface. Component emission may prune the unused legacy response;
         // every retained type is pinned and no legacy operation is supplied.
         // Validate it in this same comparison budget; no provider is installed.
-        if name == "latent:http/streaming@0.3.0"
-            && imports.contains_key("latent:http/phase-timing@0.4.0")
-            && resolve.interfaces[*id].functions.is_empty()
-        {
+        if name == "latent:http/streaming@0.3.0" && phase_type_owner(resolve, imports) {
             comparison.host_type_owner(
                 *id,
                 interface,

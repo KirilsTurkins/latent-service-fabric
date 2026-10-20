@@ -162,3 +162,84 @@ fn host_capsule(
     });
     input
 }
+
+#[test]
+fn phase_nominal_owner_metadata_requires_only_operational_source_bindings() {
+    const OLD: &str = "latent:http/streaming@0.3.0";
+    const PHASE: &str = "latent:http/phase-timing@0.4.0";
+    let nominal = build_package(
+        fixtures::phase_type_owner_capsule(false),
+        Default::default(),
+    )
+    .unwrap();
+    let callable =
+        build_package(fixtures::phase_type_owner_capsule(true), Default::default()).unwrap();
+    // Identical compiled bytes prune both HTTP imports. Only validated declared
+    // source distinguishes a type owner from operational legacy authority.
+    assert_eq!(
+        nominal.blob("component.wasm"),
+        callable.blob("component.wasm")
+    );
+    let declared = [component::CLOCK, PHASE, OLD];
+    for bundle in [&nominal, &callable] {
+        let surface = bundle.surface().unwrap();
+        assert_eq!(
+            surface
+                .imports()
+                .iter()
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+            declared
+        );
+        assert_eq!(surface.counts().imports, 3);
+        assert_eq!(surface.source_packages().len(), 4);
+        assert_eq!(
+            surface
+                .capability_imports()
+                .filter(|name| *name == PHASE)
+                .count(),
+            1
+        );
+    }
+    assert_eq!(
+        nominal
+            .surface()
+            .unwrap()
+            .capability_imports()
+            .collect::<Vec<_>>(),
+        [component::CLOCK, PHASE]
+    );
+    assert_eq!(
+        callable
+            .surface()
+            .unwrap()
+            .capability_imports()
+            .collect::<Vec<_>>(),
+        declared
+    );
+    // An unrecognized function is never classified by a broad zero-grant rule.
+    let mut invalid = fixtures::phase_type_owner_capsule(false);
+    let source = invalid
+        .layers
+        .iter_mut()
+        .find(|layer| layer.path == "wit/http-v3.wit")
+        .unwrap();
+    source.bytes = String::from_utf8(source.bytes.clone())
+        .unwrap()
+        .replace(
+            "resource upload;",
+            "resource upload; invented: async func();",
+        )
+        .into_bytes();
+    let digest = artifact_blob_digest(&source.bytes);
+    mutate_json(&mut invalid, "wit-lock.json", |lock| {
+        let package = lock["packages"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|row| row["sourcePath"] == "wit/http-v3.wit")
+            .unwrap();
+        package["digest"] = json!(digest.as_str());
+    });
+    assert!(build_package(invalid, Default::default()).is_err());
+}
