@@ -37,20 +37,47 @@ PRODUCER_RUN, PRODUCER_JOB, PRODUCER_ARTIFACT = 39373374237, 118465965449, 12242
 WORKFLOW_HELPER = 'run_rust_capsule_workflow.py'
 ORIGINAL_HELPER = {'sha256': 'sha256:c0e042d4c7c354246121125950ad96e430f26052fae59fad533c5dec4f0059cd', 'bytes': 32387}
 DOTNET_ONLY_HELPER = {'sha256': 'sha256:528266f02ff5346dc7345ca47005183b592cc7aee2cb2994869cee6a1ea6cad9', 'bytes': 33227}
+JAVA_ONLY_HELPER = {'sha256': 'sha256:42ad89492f745d5da1904d9341ec6baa15b8eeb09192830dc17c2931ebcf9e5a', 'bytes': 33706}
+RESOURCE_ONLY_HELPER = {'sha256': 'sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7', 'bytes': 34233}
+ORIGINAL_RUNTIME = {'sha256': 'sha256:d1d1507dc96ad0477edb06ec12af301e44c6a63d28abf9cb3c6e839d65b35738',
+    'files': 3299, 'bytes': 25834970,
+    'scope': 'explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs',
+    'hermetic': False, 'implicitCompilerInputs': 'not-attested'}
+TEST_ONLY_RUNTIME = {'sha256': 'sha256:410f3bea073b8a650b7539c28e3ec1ff2a766b6c2e1ecdd43d41cad459f76c4f',
+    'files': 3299, 'bytes': 25835711,
+    'scope': 'explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs',
+    'hermetic': False, 'implicitCompilerInputs': 'not-attested'}
+STARTUP_TEST = {'path': 'apps/latentd/tests/standalone_node/startup.rs',
+    'original': {'sha256': 'sha256:342724783f48ee39f53d62e0173e7ad6b3e0080972a4b80107dab94319f8389f', 'bytes': 6115},
+    'current': {'sha256': 'sha256:d6b134b615c3ff39c9de975e6a12a3108a0598a249109ea1e236e2565db71854', 'bytes': 6856}}
 
 
 def compatible_normal_source(original, current):
-    """Allow one exact unused .NET workflow extension, never runtime/Go drift."""
+    """Reconcile enumerated unused-helper/test-only inputs, never production drift."""
     require(type(original) is dict and type(current) is dict and original.keys() == current.keys(),
             'Go-node-stop-original-source-shape')
     require(original['helpers'][WORKFLOW_HELPER] == ORIGINAL_HELPER
-            and current['helpers'][WORKFLOW_HELPER] in (ORIGINAL_HELPER, DOTNET_ONLY_HELPER),
+            and current['helpers'][WORKFLOW_HELPER] in
+                (ORIGINAL_HELPER, DOTNET_ONLY_HELPER, JAVA_ONLY_HELPER, RESOURCE_ONLY_HELPER),
             'Go-node-stop-reviewed-unused-helper-required')
     selected = copy.deepcopy(current)
     selected['helpers'][WORKFLOW_HELPER] = ORIGINAL_HELPER
+    native_equal = original['runtime'] == current['runtime']
+    test_composition = None
+    if not native_equal:
+        require(original['runtime'] == ORIGINAL_RUNTIME and current['runtime'] == TEST_ONLY_RUNTIME,
+                'Go-node-stop-reviewed-native-test-only-source-must-match')
+        # Both whole inventories are pinned. Their only Git-source delta is this
+        # integration test, which is not compiled into any restored executable.
+        selected['runtime'] = copy.deepcopy(original['runtime'])
+        test_composition = {'originalInventory': original['runtime'],
+            'currentInventory': current['runtime'], 'soleChangedSource': copy.deepcopy(STARTUP_TEST),
+            'restoredExecutablesRebuilt': False}
     require(selected == original, 'Go-node-stop-native-Go-and-used-helpers-must-match')
     return {'originalNormalSource': PRODUCER_HEAD, 'normalInvocations': 27,
-        'nativeSdkWitSchemasAndUsedHelpersEqual': True,
+        'nativeSdkWitSchemasAndUsedHelpersEqual': native_equal,
+        'nativeProductionSdkWitSchemasAndUsedHelpersEqual': True,
+        'nativeTestOnlyComposition': test_composition,
         'unusedNormalWorkflowHelper': {'original': ORIGINAL_HELPER, 'current': current['helpers'][WORKFLOW_HELPER]},
         'originalNormalProgrammeRelabelledAsCurrent': False}
 
