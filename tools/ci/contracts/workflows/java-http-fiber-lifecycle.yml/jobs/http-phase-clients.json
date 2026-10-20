@@ -46,6 +46,14 @@
         }
       },
       {
+        "name": "Fetch the exact operational-authority native producer before updated helper controls",
+        "run": "git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c"
+      },
+      {
+        "name": "Check standard socket timeout identity and captured-source registration",
+        "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
+      },
+      {
         "name": "Check actual host JDK phase mapping and strict source and receipt controls",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_phases tools.tests.test_java_phase_native_products tools.tests.test_java_http_phase_campaign -v\n"
       },
@@ -99,7 +107,7 @@
   },
   "jobId": "http-phase-clients",
   "kind": "job",
-  "reviewReason": "Reviewed immutable native acquisition replacement36ea to independently verified6f5: same authenticator algorithms, five-product profile and1320s producer bounds; new ten-stage/native25 controls. Retain both historical helper test commands exactly; add new seven-helper/eight-tenant controls, exact6f5 source fetch and fixed secret-free tenant receipt paths. Restoring only these additions and the one CLI replacement reproduces the complete old job; no old step, guard, permission, command argument, compiler setup or55min job limit changes.",
+  "reviewReason": "Retain every original Java fibre/default/tenant command, guard and deadline; add exact successful8f source fetch before helper controls and three standard SocketTimeoutException identity/source controls. Version only authenticated tuple/mandatory stages; no legacy grant.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

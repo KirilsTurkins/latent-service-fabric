@@ -39,6 +39,7 @@
           "tools/tests/test_java_phase_native_products.py",
           "tools/tests/test_http_phase_native_products.py",
           "tools/tests/test_java_http_phases.py",
+          "tools/tests/test_java_timeout_exception.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -65,7 +66,7 @@
     "http-fiber-lifecycle",
     "http-phase-clients"
   ],
-  "reviewReason": "Add exact Java tenant/helper source and test paths; preserve all old workflow jobs, triggers, bounds and default behavior.",
+  "reviewReason": "Retain every original Java fibre/default/tenant command, guard and deadline; add exact successful8f source fetch before helper controls and three standard SocketTimeoutException identity/source controls. Version only authenticated tuple/mandatory stages; no legacy grant.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
