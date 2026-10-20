@@ -5,7 +5,8 @@ whole cost matrix. It compiles identical ordinary application source with the
 existing default asynchronous profile and managed activation-v5 profile. It
 uses the authenticated source94d normal27/native5 products and the node-stop
 consumer's exact historical-source guard, with no host rebuild or normal27
-repeat. Its execution remains pending until the dedicated actual lane passes.
+repeat. The exact f54b862fa9ad592832909c28e337223698222e9c lane passed all six
+real signed cases; its scope and measurements are recorded below.
 
 The default-profile baseline and the managed-profile baseline expose bounded
 `runtime.MemStats` and goroutine counts from actual fresh invocations. The
@@ -72,4 +73,39 @@ The programme now retains the ordinary runtime-granted target for async-v1 and
 installs the additional activation grant only for the explicitly selected v5
 component. The actual programme-path control fails on the prior source and checks
 both profiles without changing the six cases, their source, limits or host.
-Corrected signed execution remains pending; these controls do not qualify costs.
+The corrected f54b862fa9ad592832909c28e337223698222e9c execution then passed
+the finite six-case programme; the controls alone are not runtime evidence.
+
+
+## Actual signed observations
+
+[Run 39400337326, job 118553168961](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39400337326/job/118553168961)
+completed successfully on the exact correction source above. The
+[bounded observation](../testing/evidence/go-runtime-costs-signed-2026-10-20.json)
+binds artifact 12256585356, all 213 ZIP member digests, both components, the
+pinned compiler reference, six raw typed results and their physical retirement.
+Independent replay of the readers verified all six known/reaped successes,
+zero external effects and zero activation owners/quotas/cell leases after each
+call, plus both clean reaped node shutdowns. Regenerated application snapshots
+match all 95 default-profile and 96 managed-profile source rows; ordinary Go
+application code is identical across the profiles. Native products remain
+attributed to their actual historical 94d producer.
+
+| Profile / case | HeapAlloc bytes | StackInuse bytes | NumGC | CPU fuel | Reported peak bytes |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| async-v1 baseline | 21,672 | 131,072 | 0 | 1,121,795 | 3,014,656 |
+| activation-v5 baseline | 22,656 | 163,840 | 0 | 1,223,545 | 3,147,360 |
+| activation-v5 live stack / GC | 25,104 | 2,260,992 | 1 | 119,741,899 | 6,358,624 |
+| activation-v5 fresh after stack / GC | 22,656 | 163,840 | 0 | 1,223,248 | 3,147,360 |
+| activation-v5 live heap / GC | 12,606,416 | 163,840 | 2 | 5,261,996 | 16,123,488 |
+| activation-v5 fresh after heap / GC | 22,656 | 163,840 | 0 | 1,223,248 | 3,147,360 |
+
+The live-stack sample grew from 163,840 to 2,260,992 StackInuse bytes while
+retaining both recursive goroutines across GC; checksums passed after release.
+The live-heap sample retained its 12 MiB allocation through two collections.
+Each following fresh invocation returned its initial call count and baseline
+memory/GC state. These are individual observed guest/runtime costs under the
+original admission, not minimum costs or a complete physical/native memory
+account. No native physical-cost measurement, independent hard bound, fairness,
+or Task/Queue/Result/Native exhaustion claim is made. The remaining #742/#736
+requirements and low-level networking gates remain open.
