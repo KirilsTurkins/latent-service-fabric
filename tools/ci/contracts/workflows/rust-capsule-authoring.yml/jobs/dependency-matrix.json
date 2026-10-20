@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}",
     "name": "Varied captured Cargo graphs without optional catalogues",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
@@ -73,7 +74,7 @@
   },
   "jobId": "dependency-matrix",
   "kind": "job",
-  "reviewReason": "Add one 30 minute Linux job: exact compiler setup, existing prepared artifact, focused source controls and four normal minimal-recipe offline signed graph selections; preserve original job commands and bounds.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

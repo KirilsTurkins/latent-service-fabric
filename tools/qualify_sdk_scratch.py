@@ -148,6 +148,18 @@ def build_component(language, app, destination, binaries, *, tools=None, wasi_sd
     return build(*args, tools=tools, offline=True)
 
 
+def locked_dependencies(language, app, commands):
+    """Seed only the owned fixture lock; a workspace fetch can select other versions."""
+    if language != 'rust':
+        return None
+    before = inventory(snapshot(app))
+    commands.run('scratch-locked-dependency-download', 'cargo', 'fetch', '--locked',
+                 '--target', 'wasm32-unknown-unknown', '--manifest-path', app/'Cargo.toml')
+    require(inventory(snapshot(app)) == before, 'scratch-locked-download-mutated-source')
+    return {'lock': file_identity(app/'Cargo.lock'), 'compilerExecution': False,
+            'subsequentBuildOffline': True, 'sourceUnchanged': True}
+
+
 def execution_report(language, artifact, node):
     from tools import guest_compatibility as compatibility
     from tools.sdk_scratch_probe import refusal
@@ -205,6 +217,8 @@ def qualify(language, output, native_qualification, *, native_directory=None, to
         app, fixture = project(language, output/'application')
         record['fixture'] = fixture
         before = inventory(snapshot(app))
+        stage = 'locked-fixture-dependency-download'
+        record['dependencyPreparation'] = locked_dependencies(language, app, commands)
         stage = 'normal-component-build'
         artifact = build_component(language, app, output/'build', binaries, tools=tools, wasi_sdk=wasi_sdk)
         require(read_file(artifact/'source-inputs.json') == before, 'scratch-actual-compiled-source-mismatch')

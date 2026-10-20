@@ -3,11 +3,14 @@
     "ScratchQualification.test_builder_uses_normal_default_runtime_and_only_rust_dotnet_offline_flags",
     "ScratchQualification.test_c_child_reuses_exact_normal_bundle_and_pinned_compiler_without_native_build",
     "ScratchQualification.test_c_componentization_refusal_cannot_become_runtime_unsupported_or_signed_success",
+    "ScratchQualification.test_changed_lock_or_manifest_during_fetch_is_not_build_input",
     "ScratchQualification.test_exact_normal_native_companions_and_node_are_required_before_new_compile",
     "ScratchQualification.test_existing_compatibility_report_keeps_unknown_and_trap_separate_from_actual_unsupported",
+    "ScratchQualification.test_other_languages_do_not_acquire_cargo_dependencies",
     "ScratchQualification.test_owning_rust_child_reuses_normal_products_without_another_native_build_or_longer_parent",
     "ScratchQualification.test_public_bundle_contains_observed_products_and_no_keys_caches_or_original_library_source",
-    "ScratchQualification.test_rehashed_normal_receipt_cannot_hide_foreign_source_native_or_signer_payload"
+    "ScratchQualification.test_rehashed_normal_receipt_cannot_hide_foreign_source_native_or_signer_payload",
+    "ScratchQualification.test_rust_download_uses_owned_lock_not_workspace_and_keeps_compilation_offline"
   ],
   "guards": {
     "ScratchQualification.test_builder_uses_normal_default_runtime_and_only_rust_dotnet_offline_flags": {
@@ -46,6 +49,18 @@
       ],
       "skipSites": []
     },
+    "ScratchQualification.test_changed_lock_or_manifest_during_fetch_is_not_build_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "ScratchQualification.test_exact_normal_native_companions_and_node_are_required_before_new_compile": {
       "bases": [
         "unittest.TestCase"
@@ -59,6 +74,18 @@
       "skipSites": []
     },
     "ScratchQualification.test_existing_compatibility_report_keeps_unknown_and_trap_separate_from_actual_unsupported": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScratchQualification.test_other_languages_do_not_acquire_cargo_dependencies": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -105,10 +132,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "ScratchQualification.test_rust_download_uses_owned_lock_not_workspace_and_keeps_compilation_offline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_sdk_scratch_qualification.py",
-  "reviewReason": "Add explicit default-false manual scratch selection retaining mandatory original runtime35 and new same-products child20; skip only unchanged extra standards25 on that manual selection, with all PR/push/default jobs and commands preserved.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

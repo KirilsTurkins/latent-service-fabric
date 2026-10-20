@@ -178,6 +178,20 @@ source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.
 
+The corrected Rust parent passed at source38fedd53bb in
+[job118418832964](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39358494292/job/118418832964).
+Its scratch child then failed during offline compilation: the workspace fetch
+had not downloaded the owned fixture lock's `cpufeatures0.2.17`. No scratch guest
+ran. The qualifier now performs a bounded data-only `cargo fetch --locked`
+against that fixture's manifest, verifies its complete source inventory is
+unchanged, and retains the subsequent build's offline requirement. The separate
+default-false `replay-scratch-refusals` lane authenticates the passed38 public
+bundle, native five and four companions, then builds/signs one fresh component
+and requires the original27 plus six calls. Its 20-minute limit and the original
+nine job bodies are preserved. The original native source stays historical38;
+no normal receipt is rebound to later host changes. Actual scratch Unsupported
+results remain pending until this child passes.
+
 ECMAScript has no standard filesystem API. The corresponding TypeScript packet
 (`tools/qualify_typescript_scratch_refusals.py`) captures an outside npm module,
 removes its originals and invokes the real isolated compiler for reachable
