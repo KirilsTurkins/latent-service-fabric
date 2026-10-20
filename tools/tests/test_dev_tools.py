@@ -15,6 +15,100 @@ from tools.dev_guest_tools import stage_registry
 from tools.tests.test_dev_contracts import descriptor
 
 
+class AttemptInventoryRetention(unittest.TestCase):
+    def prepared(self, parent, *, inventory=True):
+        from tools.dev_workflow import snapshot
+        root, source, tool_root = (parent / name for name in ('controller', 'source', 'tools'))
+        for selected in (root, source, tool_root):
+            paths.new_directory(selected)
+        paths.new_directory(source / 'src')
+        paths.write_new(source / 'src/main.txt', b'public fixture source')
+        paths.new_directory(tool_root / 'bin')
+        compiler = b'non-executable compiler identity fixture'
+        paths.write_new(tool_root / 'bin/compiler', compiler)
+        cli = parent / 'cli'
+        paths.write_new(cli, b'non-executable packager identity fixture')
+        value = descriptor()
+        value.update(language='dotnet')
+        value['template']['ownerIssue'] = 549
+        value['build'].update(argv=['compiler'], hostTargets=['windows-x86_64', 'linux-x86_64'],
+            tools=[{'name': 'compiler', 'path': 'bin/compiler', 'version': '1',
+                    'sha256': common.digest(compiler)}])
+        host = ('windows' if os.name == 'nt' else 'linux') + '-' + (
+            'x86_64' if build.platform.machine().lower() == 'amd64' else build.platform.machine())
+        document = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': 'dotnet',
+            'ownerIssue': 549, 'sourceCommit': value['template']['revision'],
+            'hostAbi': value['hostAbi'], 'host': host,
+            'files': [{'path': 'bin/compiler', 'sha256': common.digest(compiler), 'size': len(compiler)}]}
+        document['identity'] = common.digest(common.encode(document))
+        raw = common.encode(document)
+        if inventory:
+            paths.write_new(tool_root / 'guest-tools.json', raw)
+            value['build']['inventory'] = {'path': 'guest-tools.json', 'sha256': common.digest(raw)}
+        record, _ = snapshot.observe(source, value['inputRoots'])
+        paths.write_new(source / 'snapshot.json', common.encode(record))
+        return root, source, tool_root, value, cli, raw
+
+    def test_authenticated_dotnet_inventory_precedes_compiler_and_preserves_uncertainty(self):
+        from tools.dev_workflow import build_cache, state
+        from tools.dev_workflow.executable_approval import maintained
+        with tempfile.TemporaryDirectory() as temporary:
+            root, source, tools, value, cli, raw = self.prepared(Path(temporary))
+            self.assertFalse(maintained(value))
+            original = common.DevError('language-adapter-result-invalid', uncertain=True)
+            accepted = {'sourceDirectory': 'earlier', 'receipt': {'source': 'earlier'}}
+            state.atomic(root, 'last-build.json', accepted)
+            def boundary(controller, working, *args, **kwargs):
+                self.assertEqual(controller, root)
+                self.assertEqual(paths.read(working.parent, 'tool-inventory.json'), raw)
+                self.assertEqual(build_cache.owner(working.parent)['state'], 'running')
+                raise original
+            with patch.object(build, 'compile_recipe', side_effect=boundary) as compile_recipe:
+                with self.assertRaises(common.DevError) as observed:
+                    build.execute(root, source, value, tools, trusted=project.trust_identity(value), cli=cli)
+            self.assertIs(observed.exception, original)
+            compile_recipe.assert_called_once()
+            attempt, = (root / 'builds').iterdir()
+            self.assertEqual(build_cache.owner(attempt)['state'], 'uncertain')
+            self.assertEqual(state.load(root, 'last-build.json'), accepted)
+
+    def test_custom_recipe_without_inventory_does_not_invent_a_snapshot(self):
+        from tools.dev_workflow import build_cache
+        with tempfile.TemporaryDirectory() as temporary:
+            root, source, tools, value, cli, _ = self.prepared(Path(temporary), inventory=False)
+            original = common.DevError('fixture-compiler-failed')
+            def boundary(controller, working, *args, **kwargs):
+                self.assertFalse((working.parent / 'tool-inventory.json').exists())
+                raise original
+            with patch.object(build, 'compile_recipe', side_effect=boundary) as compile_recipe:
+                with self.assertRaises(common.DevError) as observed:
+                    build.execute(root, source, value, tools, trusted=project.trust_identity(value), cli=cli)
+            self.assertIs(observed.exception, original)
+            compile_recipe.assert_called_once()
+            attempt, = (root / 'builds').iterdir()
+            self.assertEqual(build_cache.owner(attempt)['state'], 'failed')
+
+    def test_changed_inventory_companion_refuses_before_attempt_or_compiler(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root, source, tools, value, cli, _ = self.prepared(Path(temporary))
+            (tools / 'bin/compiler').write_bytes(b'changed compiler')
+            with patch.object(build, 'compile_recipe') as compile_recipe:
+                with self.assertRaisesRegex(common.DevError, 'guest-tool-companion-modified'):
+                    build.execute(root, source, value, tools, trusted=project.trust_identity(value), cli=cli)
+            compile_recipe.assert_not_called()
+            self.assertFalse((root / 'builds').exists())
+
+    def test_inventory_retention_does_not_authorize_dotnet_executable_approval(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root, source, tools, value, cli, _ = self.prepared(Path(temporary))
+            with patch.object(build, 'compile_recipe') as compile_recipe:
+                with self.assertRaisesRegex(common.DevError, 'executable-approval-requires-maintained-rust-adapter'):
+                    build.execute(root, source, value, tools, trusted=project.trust_identity(value), cli=cli,
+                                  executable_approval='sha256:' + 'a' * 64)
+            compile_recipe.assert_not_called()
+            self.assertFalse((root / 'builds').exists())
+
+
 class ProjectNotices(unittest.TestCase):
     def test_bundle_notice_bytes_are_in_the_archive_and_hashed_inventory(self):
         import zipfile
