@@ -35,6 +35,10 @@
         "run": "git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f"
       },
       {
+        "name": "Fetch the exact independent-tenant HTTP producer before its helper verification",
+        "run": "git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015"
+      },
+      {
         "uses": "actions/setup-java",
         "with": {
           "distribution": "temurin",
@@ -54,11 +58,15 @@
         "run": "python3 -B -m unittest tools.tests.test_http_phase_native_products -v"
       },
       {
+        "name": "Check the independent-tenant native authenticator and Java tenant boundaries",
+        "run": "python3 -B -m unittest tools.tests.test_http_tenant_native_products tools.tests.test_java_http_tenants -v"
+      },
+      {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Retrieve exactly the five authenticated V7 products without a native rebuild",
-        "run": "python3 -B tools/http_phase_native_products.py --output \"$RUNNER_TEMP/java-http-phase-prepared\""
+        "run": "python3 -B tools/http_tenant_native_products.py --output \"$RUNNER_TEMP/java-http-phase-prepared\""
       },
       {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
@@ -82,7 +90,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-http-phases-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-http-phase-prepared/retrieval.json\n${{ runner.temp }}/java-http-phase-prepared/native-products.json\n${{ runner.temp }}/java-http-phase-prepared/source-inputs.json\n${{ runner.temp }}/java-http-phases/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/build/*.json\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-phases/campaign/node/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-phases/campaign/compiler-cache-selection.json\n${{ runner.temp }}/java-http-phases/campaign/final-materials.json",
+          "path": "${{ runner.temp }}/java-http-phase-prepared/retrieval.json\n${{ runner.temp }}/java-http-phase-prepared/native-products.json\n${{ runner.temp }}/java-http-phase-prepared/source-inputs.json\n${{ runner.temp }}/java-http-phases/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/build/*.json\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-phases/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-phases/campaign/node/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-phases/campaign/compiler-cache-selection.json\n${{ runner.temp }}/java-http-phases/campaign/final-materials.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/qualification.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/FAILED.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/*-case.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/*-retired.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/foreign-grants-not-inherited.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/final-owner.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/node-stopped.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/*-peer-stopped.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/final-products.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/examples-controls/*.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/foreign-controls/*.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/releases/release-set.json\n${{ runner.temp }}/java-http-phases/campaign/tenants/releases/java-standard-http/build-observation.json",
           "retention-days": 3
         }
       }
@@ -91,7 +99,7 @@
   },
   "jobId": "http-phase-clients",
   "kind": "job",
-  "reviewReason": "Retain only the actual failed public-fixture java-owned-classes compiler log under its unchanged 4MiB producer bound, using the existing always-upload. No command, step, limit, authority, fixture or failure outcome changes.",
+  "reviewReason": "Reviewed immutable native acquisition replacement36ea to independently verified6f5: same authenticator algorithms, five-product profile and1320s producer bounds; new ten-stage/native25 controls. Retain both historical helper test commands exactly; add new seven-helper/eight-tenant controls, exact6f5 source fetch and fixed secret-free tenant receipt paths. Restoring only these additions and the one CLI replacement reproduces the complete old job; no old step, guard, permission, command argument, compiler setup or55min job limit changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

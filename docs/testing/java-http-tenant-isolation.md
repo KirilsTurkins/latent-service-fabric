@@ -3,8 +3,8 @@
 This optional controller reuses the single freshly compiled ordinary
 `java-http-phases` application. It does not change the application, published
 Webb/HttpRequest libraries, compiler recipe, default client settings, original
-phase programme, provider limits or native production tuple. It is not yet wired
-into CI or claimed to have executed against a component.
+phase programme, provider limits or native production tuple. The selected Java phase campaign now runs it after the original sixteen
+phase invocations. Signed tenant component execution remains pending.
 
 The maintained neutral-packaging signer first validates the actual normal build
 observation. Its new packaging-only observation retains the original source,
