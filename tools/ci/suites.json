@@ -9704,14 +9704,15 @@
         "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners",
         "error::tests::runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certainty",
         "management::tests::preparation::release_prepare_requires_exact_publication_generation_and_finite_setup_wait",
-        "management::phase2::execute::release::tests::prepared_release_projection_is_bounded_lossless_and_never_execution_authority"
+        "management::phase2::execute::release::tests::prepared_release_projection_is_bounded_lossless_and_never_execution_authority",
+        "command::tests::exact_release_preparation_command_keeps_its_public_result_name"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 169,
+      "minimumCases": 170,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
