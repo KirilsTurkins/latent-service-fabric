@@ -244,3 +244,69 @@ fn phase_semantics_bind_original_resource_owners_and_exact_versioned_extension()
         .interface(cap)
         .is_none());
 }
+
+#[test]
+fn phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase() {
+    let old = latent_core::PHASE3_HOST_ABI_V3
+        .interface(STREAMING)
+        .unwrap()
+        .wit;
+    let phase = "latent:http/phase-timing@0.4.0";
+    let selected = latent_core::PHASE3_HOST_ABI_V7
+        .interface(phase)
+        .unwrap()
+        .wit;
+    let nominal: String = old
+        .lines()
+        .filter(|line| !line.contains(": async func"))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    let check = |old: &str, phase_source: Option<&str>, limits| {
+        let mut resolve = Resolve::default();
+        if resolve.push_source("old.wit", old).is_err() {
+            return false;
+        }
+        if let Some(source) = phase_source {
+            if resolve.push_source("phase.wit", source).is_err() {
+                return false;
+            }
+        }
+        let imports = resolve
+            .interfaces
+            .iter()
+            .filter_map(|(id, _)| {
+                let name = resolve.id_of(id)?;
+                (name == STREAMING || name == phase).then_some((name, id))
+            })
+            .collect();
+        validate(&resolve, &imports, limits).is_ok()
+    };
+    assert!(check(old, None, SemanticLimits::default()));
+    assert!(check(old, Some(selected), SemanticLimits::default()));
+    assert!(check(&nominal, Some(selected), SemanticLimits::default()));
+    assert!(!check(&nominal, None, SemanticLimits::default()));
+    for changed in [
+        nominal.replace("resource upload;", "resource upload; hidden: async func();"),
+        nominal.replace("option<u64>", "option<u32>"),
+        nominal.replace("resource chunk;", "resource chunk; type foreign = u32;"),
+        nominal.replace("resource body;", "type body = u32;"),
+        nominal.replace("record response {", "record renamed-response {"),
+    ] {
+        assert!(!check(&changed, Some(selected), SemanticLimits::default()));
+    }
+    let changed_phase = selected.replace(
+        "reason-phrase: option<list<u8>>",
+        "reason-phrase: option<string>",
+    );
+    assert!(!check(
+        &nominal,
+        Some(&changed_phase),
+        SemanticLimits::default()
+    ));
+    let mut exhausted = SemanticLimits::default();
+    exhausted.max_type_nodes = 1;
+    assert!(!check(&nominal, Some(selected), exhausted));
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(phase)
+        .is_none());
+}
