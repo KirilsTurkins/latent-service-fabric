@@ -9,6 +9,9 @@ on:
       - 'tools/java_http_fiber_node.py'
       - 'tools/qualify_java_http_fibers.py'
       - 'tools/java_replay_materials.py'
+      - 'tools/java_fiber_native_products.py'
+      - 'tools/java_http_refusal_diagnostic.py'
+      - 'tools/phase2_operator_scenario.py'
       - 'tools/java_standard_http*.py'
       - 'tools/java_capsule*.py'
       - 'tools/java_guest/**'
@@ -32,7 +35,7 @@ concurrency:
 jobs:
   http-fiber-lifecycle:
     if: ${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/java-http-fiber-lifecycle-20261020') || (github.event_name == 'workflow_dispatch' && inputs.java_http_fibers) }}
-    name: Ordinary Java HTTP pending fiber lifecycle with historical native products
+    name: Ordinary Java HTTP pending fiber lifecycle with authenticated explicit native products
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     permissions:
@@ -53,11 +56,13 @@ jobs:
           e97d44ddc744c9bd738d9b3b7a7d8b7234133e36
           03a3f74598f2abfd0224169ae2871818f6c8419d
           0e46e59358bb4bae16169690041daacbf113555a
+      - name: Fetch the one exact native producer source commit
+        run: git fetch --no-tags --depth=1 origin a4f05f3f243889cc7ba7a0404bdc76afec32d3c2
       - name: Check pending-witness, authority, source and original-error boundaries
         run: |
           python3 -m pip install --requirement tools/requirements.lock
           python3 -B -m unittest tools.tests.test_java_http_fibers -v
-      - name: Retrieve only the fixed e97 host and four original03a helper binaries
+      - name: Retrieve only the five source-bound a4f native producer products
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/qualify_java_http_fibers.py --prepare --output "$RUNNER_TEMP/java-http-fiber-prepared"
@@ -101,6 +106,8 @@ jobs:
           name: java-http-fiber-lifecycle-${{ github.sha }}
           path: |-
             ${{ runner.temp }}/java-http-fiber-prepared/retrieval.json
+            ${{ runner.temp }}/java-http-fiber-prepared/native-products.json
+            ${{ runner.temp }}/java-http-fiber-prepared/source-inputs.json
             ${{ runner.temp }}/java-http-fiber-prepared/host/host-retrieval.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/qualification.json
             ${{ runner.temp }}/java-http-fiber-lifecycle/campaign/qualification.json

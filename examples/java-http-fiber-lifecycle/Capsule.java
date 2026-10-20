@@ -43,7 +43,6 @@ public final class Capsule implements Bindings.Exports {
         diagnosticChildError = 0;
         diagnosticRootBoundary = diagnosticChildBoundary = 0;
         Thread child = new Thread(() -> {
-            entered = 1;
             try { childStatus = diagnosticGet(endpoint + "/conformance/hold/headers", true); }
             catch (Throwable error) { diagnosticChildError = closedError(error); }
             finally { completed = 1; }
@@ -88,6 +87,7 @@ public final class Capsule implements Bindings.Exports {
             var connection = request.getConnection();
             diagnosticBoundary(child, 2);
             connection.connect();
+            if (child) entered = 1;
             diagnosticBoundary(child, 3);
             int status = request.code();
             diagnosticBoundary(child, 4);
@@ -104,10 +104,16 @@ public final class Capsule implements Bindings.Exports {
     private static Thread pending(String endpoint) {
         return new Thread(() -> {
             context.set("child");
-            entered = 1;
-            childStatus = get(endpoint + "/conformance/hold/headers");
-            childContext = context.get();
-            completed = 1;
+            HttpRequest request = HttpRequest.get(endpoint + "/conformance/hold/headers").followRedirects(false);
+            try {
+                request.getConnection().connect();
+                entered = 1;
+                childStatus = request.code();
+                childContext = context.get();
+                completed = 1;
+            } catch (java.io.IOException error) {
+                throw new IllegalStateException("ordinary-java-http-connect-failed", error);
+            } finally { request.disconnect(); }
         });
     }
 

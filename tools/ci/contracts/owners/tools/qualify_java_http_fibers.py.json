@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_http_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit fixed public HTTP fixture generated-C failure context only; unchanged build flags, signed/lifecycle gates and deadlines.",
+  "reviewReason": "Select exact source-bound a4f native producer build receipts without normal qualification fabrication; retain all original Java compilation and strict lifecycle gates.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ad5cb6c6c9580ed4bfc50f110b50e80b7ed1c4385729f0b54aa9760c65870903"
+  "sha256": "70285afc53f870ad5a2aed8a336e5cd398bab85d27f494aff7dd713b0978fa88"
 }

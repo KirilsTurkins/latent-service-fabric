@@ -164,6 +164,34 @@ class JavaHttpDiagnosticCallBoundary(unittest.TestCase):
         import hashlib
         raw=(campaign.ROOT/campaign.SOURCE).read_bytes().replace(b'\r\n',b'\n')
         unchanged=raw[raw.index(b'    private static int get(String endpoint) {'):]
+        # Normalize only the complete reviewed pending-connect barrier; the old
+        # whole-tail hash still fences get(), run() and every strict assertion.
+        previous_pending = b'''    private static Thread pending(String endpoint) {
+        return new Thread(() -> {
+            context.set("child");
+            entered = 1;
+            childStatus = get(endpoint + "/conformance/hold/headers");
+            childContext = context.get();
+            completed = 1;
+        });
+    }'''
+        selected_pending = b'''    private static Thread pending(String endpoint) {
+        return new Thread(() -> {
+            context.set("child");
+            HttpRequest request = HttpRequest.get(endpoint + "/conformance/hold/headers").followRedirects(false);
+            try {
+                request.getConnection().connect();
+                entered = 1;
+                childStatus = request.code();
+                childContext = context.get();
+                completed = 1;
+            } catch (java.io.IOException error) {
+                throw new IllegalStateException("ordinary-java-http-connect-failed", error);
+            } finally { request.disconnect(); }
+        });
+    }'''
+        self.assertEqual(unchanged.count(selected_pending), 1)
+        unchanged = unchanged.replace(selected_pending, previous_pending, 1)
         self.assertEqual(hashlib.sha256(unchanged).hexdigest(),
             '5cbcfc51dd856d53e2baa217c0a9200edb462e7d82d4f177570584a4857820f1')
         text=raw.decode('utf-8')
@@ -1097,3 +1125,140 @@ class JavaHttpNativeRefusalReader(unittest.TestCase):
                 self.assertIs(raised.exception, original)
                 self.assertEqual(events, ['node-close', 'peer-close', 'retained'])
                 self.assertIs(connect.call_args.kwargs['http_refusal_diagnostic'], True)
+
+
+class JavaPendingConnectBarrier(unittest.TestCase):
+    def test_pending_header_witness_follows_completed_connect_before_response(self):
+        text=(campaign.ROOT/campaign.SOURCE).read_text()
+        pending=text.split('    private static Thread pending(String endpoint) {',1)[1].split('    public String run(',1)[0]
+        self.assertEqual(pending.count('request.getConnection().connect();'),1)
+        self.assertEqual(pending.count('entered = 1;'),1)
+        self.assertEqual(pending.count('request.code();'),1)
+        self.assertLess(pending.index('request.getConnection().connect();'),pending.index('entered = 1;'))
+        self.assertLess(pending.index('entered = 1;'),pending.index('request.code();'))
+        self.assertIn('finally { request.disconnect(); }',pending)
+        self.assertIn('childContext = context.get();',pending)
+        self.assertIn('completed = 1;',pending)
+        self.assertNotIn('Thread.sleep(',pending)
+        self.assertNotIn('Thread.yield(',pending)
+        diagnostic=text.split('    private static int diagnosticGet(',1)[1].split('    private static int get(',1)[0]
+        self.assertLess(diagnostic.index('connection.connect();'),diagnostic.index('if (child) entered = 1;'))
+        self.assertLess(diagnostic.index('if (child) entered = 1;'),diagnostic.index('request.code();'))
+        caught=text.split('    private static String diagnose(',1)[1].split('    private static void diagnosticBoundary(',1)[0]
+        self.assertNotIn('entered = 1;',caught)
+
+
+class JavaExplicitNativeProducer(unittest.TestCase):
+    def setUp(self):
+        from tools import java_fiber_native_products as products
+        self.products=products
+        self.native={'sha256':'sha256:'+'a'*64,'files':1,'bytes':1,'scope':'explicit-native-fixture',
+            'hermetic':False,'implicitCompilerInputs':'not-attested'}
+        self.materials={name:{'sha256':'sha256:'+'b'*64,'bytes':1} for name in products.MATERIALS}
+        self.snapshot={'native':self.native,'materials':self.materials}
+        self.record={'schemaVersion':'latent.sdk.native-products.v1','status':'built',
+            'sourceRevision':products.SOURCE,'source':self.native,'materials':self.materials,
+            'compiler':'rustc 1.97.1 (source-bound fixture)',
+            'products':{name:{'sha256':'sha256:'+'c'*64,'bytes':1} for name in products.PRODUCTS},
+            'commands':[{'stage':stage,'exitCode':0,'seconds':1} for stage in products.STAGES],
+            'profile':'normal-managed-guest-default-features','signedQualification':False,
+            'guestComponentsCompiled':False,'historicalReceiptRewritten':False}
+
+    def test_built_products_do_not_claim_normal_signed_or_guest_qualification(self):
+        before=deepcopy(self.record)
+        self.products.validate_record(self.record,self.snapshot,self.native,self.materials)
+        self.assertEqual(self.record,before)
+        self.assertIs(self.record['signedQualification'],False)
+        self.assertIs(self.record['guestComponentsCompiled'],False)
+        self.assertIs(self.record['historicalReceiptRewritten'],False)
+        self.assertIn('tools/java_fiber_native_products.py',campaign.MATERIALS)
+        self.assertIn('tools/java_http_refusal_diagnostic.py',campaign.MATERIALS)
+        self.assertEqual(len(campaign.MATERIALS),len(set(campaign.MATERIALS)))
+
+    def test_source_profile_and_closed_receipt_fields_cannot_be_relabelled(self):
+        for key,value in [('sourceRevision','0'*40),('status','passed'),('schemaVersion','normal-v1'),
+                ('profile','custom-profile'),('signedQualification',True),('guestComponentsCompiled',True),
+                ('historicalReceiptRewritten',True),('compiler','rustc 1.97.0 (wrong)')]:
+            changed=deepcopy(self.record);changed[key]=value
+            with self.subTest(key=key),self.assertRaises(WorkflowError):
+                self.products.validate_record(changed,self.snapshot,self.native,self.materials)
+        changed=deepcopy(self.record);changed['privatePayload']='private-token'
+        with self.assertRaises(WorkflowError):
+            self.products.validate_record(changed,self.snapshot,self.native,self.materials)
+
+    def test_every_frozen_source_snapshot_and_material_identity_is_required(self):
+        for group in ('source','materials'):
+            changed=deepcopy(self.record);changed[group]={}
+            with self.subTest(group=group),self.assertRaises(WorkflowError):
+                self.products.validate_record(changed,self.snapshot,self.native,self.materials)
+        changed=deepcopy(self.snapshot);changed['materials'][self.products.MATERIALS[0]]['bytes']=2
+        with self.assertRaises(WorkflowError):
+            self.products.validate_record(self.record,changed,self.native,self.materials)
+
+    def test_exact_five_product_hashes_and_finite_regular_sizes_are_required(self):
+        for value in ({'sha256':'SHA256:'+'c'*64,'bytes':1}, {'sha256':'sha256:'+'c'*64,'bytes':True},
+                {'sha256':'sha256:'+'c'*64,'bytes':0}, {'sha256':'sha256:'+'c'*64,'bytes':512*1024**2+1},
+                {'sha256':'sha256:'+'c'*64,'bytes':1,'path':'private/path'}):
+            changed=deepcopy(self.record);changed['products']['latentd']=value
+            with self.subTest(value=value),self.assertRaises(WorkflowError):
+                self.products.validate_record(changed,self.snapshot,self.native,self.materials)
+        for name in ('missing','extra'):
+            changed=deepcopy(self.record)
+            if name=='missing':del changed['products']['latentd']
+            else:changed['products']['unrelated']={'sha256':'sha256:'+'c'*64,'bytes':1}
+            with self.subTest(name=name),self.assertRaises(WorkflowError):
+                self.products.validate_record(changed,self.snapshot,self.native,self.materials)
+
+    def test_original_build_and_both_scoped_control_commands_must_pass(self):
+        for changes in ({'exitCode':1},{'exitCode':False},{'seconds':float('nan')},{'seconds':1321},
+                {'stage':'normal-full-qualification'},{'seconds':True}):
+            changed=deepcopy(self.record);changed['commands'][1].update(changes)
+            with self.subTest(changes=changes),self.assertRaises(WorkflowError):
+                self.products.validate_record(changed,self.snapshot,self.native,self.materials)
+        changed=deepcopy(self.record);changed['commands'].pop()
+        with self.assertRaises(WorkflowError):
+            self.products.validate_record(changed,self.snapshot,self.native,self.materials)
+
+    def test_archive_index_preflights_all_fixed_members_before_extracting_only_allowlist(self):
+        import io,zipfile
+        for missing in (False,True):
+            stream=io.BytesIO()
+            names=list(self.products.ALLOWED)
+            with zipfile.ZipFile(stream,'w') as archive:
+                for name in names[:-1] if missing else names:archive.writestr(name,b'fixed-fixture')
+                archive.writestr('logs/private-raw-output.txt',b'private-secret')
+            stream.seek(0)
+            with zipfile.ZipFile(stream) as archive,tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary)
+                if missing:
+                    with self.assertRaises(KeyError):self.products.preflight(archive)
+                    self.assertEqual(list(root.iterdir()),[])
+                else:
+                    self.assertEqual(set(self.products.preflight(archive)),set(self.products.ALLOWED))
+                    self.products.extract(archive,'native-products.json',root/'record.json')
+                    self.assertEqual((root/'record.json').read_bytes(),b'fixed-fixture')
+                    with self.assertRaises(WorkflowError):
+                        self.products.extract(archive,'logs/private-raw-output.txt',root/'private.txt')
+                    self.assertFalse((root/'private.txt').exists())
+
+    def test_official_exact_source_job_workflow_and_unique_artifact_are_mandatory(self):
+        products=self.products
+        run={'id':products.RUN,'head_sha':products.SOURCE,'path':products.WORKFLOW,'event':'push',
+            'head_branch':'feat/sdk-current-native-products-20261020','status':'completed','conclusion':'success'}
+        job={'id':products.JOB,'head_sha':products.SOURCE,'run_id':products.RUN,
+            'name':'Build and retain five source-bound native products','status':'completed','conclusion':'success'}
+        artifact={'id':1,'name':'sdk-native-products-'+products.SOURCE,'expired':False,'size_in_bytes':100,
+            'digest':'sha256:'+'d'*64,'workflow_run':{'id':products.RUN,'head_sha':products.SOURCE}}
+        listing={'total_count':1,'artifacts':[artifact]}
+        with mock.patch.object(products,'api',side_effect=[run,job,listing]):
+            self.assertEqual(products._official_artifact(),artifact)
+        for kind,key,value in [('run','head_sha','0'*40),('run','event','pull_request'),
+                ('run','path','.github/workflows/unrelated.yml'),('job','conclusion','failure'),
+                ('job','id',products.JOB+1),('artifact','expired',True),('artifact','digest','unknown')]:
+            r,j,a=deepcopy(run),deepcopy(job),deepcopy(artifact)
+            {'run':r,'job':j,'artifact':a}[kind][key]=value
+            with self.subTest(kind=kind,key=key),mock.patch.object(products,'api',
+                    side_effect=[r,j,{'total_count':1,'artifacts':[a]}]),self.assertRaises(WorkflowError):
+                products._official_artifact()
+        with mock.patch.object(products,'api',side_effect=[run,job,{'total_count':2,'artifacts':[artifact]}]), \
+                self.assertRaises(WorkflowError):products._official_artifact()

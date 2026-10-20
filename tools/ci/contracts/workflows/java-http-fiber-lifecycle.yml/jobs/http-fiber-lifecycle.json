@@ -7,7 +7,7 @@
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "if": "${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/java-http-fiber-lifecycle-20261020') || (github.event_name == 'workflow_dispatch' && inputs.java_http_fibers) }}",
-    "name": "Ordinary Java HTTP pending fiber lifecycle with historical native products",
+    "name": "Ordinary Java HTTP pending fiber lifecycle with authenticated explicit native products",
     "permissions": {
       "actions": "read",
       "contents": "read"
@@ -31,6 +31,10 @@
         "run": "git fetch --no-tags --depth=1 origin e97d44ddc744c9bd738d9b3b7a7d8b7234133e36 03a3f74598f2abfd0224169ae2871818f6c8419d 0e46e59358bb4bae16169690041daacbf113555a"
       },
       {
+        "name": "Fetch the one exact native producer source commit",
+        "run": "git fetch --no-tags --depth=1 origin a4f05f3f243889cc7ba7a0404bdc76afec32d3c2"
+      },
+      {
         "name": "Check pending-witness, authority, source and original-error boundaries",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_fibers -v\n"
       },
@@ -38,7 +42,7 @@
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Retrieve only the fixed e97 host and four original03a helper binaries",
+        "name": "Retrieve only the five source-bound a4f native producer products",
         "run": "python3 -B tools/qualify_java_http_fibers.py --prepare --output \"$RUNNER_TEMP/java-http-fiber-prepared\""
       },
       {
@@ -74,7 +78,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-http-fiber-lifecycle-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-http-fiber-prepared/retrieval.json\n${{ runner.temp }}/java-http-fiber-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-http-fiber-lifecycle/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/compiler-cache-selection.json",
+          "path": "${{ runner.temp }}/java-http-fiber-prepared/retrieval.json\n${{ runner.temp }}/java-http-fiber-prepared/native-products.json\n${{ runner.temp }}/java-http-fiber-prepared/source-inputs.json\n${{ runner.temp }}/java-http-fiber-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-http-fiber-lifecycle/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/compiler-cache-selection.json",
           "retention-days": 3
         }
       }
@@ -83,7 +87,7 @@
   },
   "jobId": "http-fiber-lifecycle",
   "kind": "job",
-  "reviewReason": "Retain only bounded fixed SDK coroutine patch and real-IR control compiler logs",
+  "reviewReason": "Explicit root-reviewed name-only prepare-step replacement: original run/jobIf/stepIf/shell/cwd/bounds preserved. Add exact a4f fetch and producer/source receipts; preserve every original before/coverage obligation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

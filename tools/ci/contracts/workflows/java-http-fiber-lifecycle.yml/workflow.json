@@ -17,6 +17,9 @@
           "tools/java_http_fiber_node.py",
           "tools/qualify_java_http_fibers.py",
           "tools/java_replay_materials.py",
+          "tools/java_fiber_native_products.py",
+          "tools/java_http_refusal_diagnostic.py",
+          "tools/phase2_operator_scenario.py",
           "tools/java_standard_http*.py",
           "tools/java_capsule*.py",
           "tools/java_guest/**",
@@ -42,7 +45,7 @@
   "requiredJobs": [
     "http-fiber-lifecycle"
   ],
-  "reviewReason": "Add a distinct focused PR qualification lane and default-false future manual selector, preserving every original workflow and all original language qualifications.",
+  "reviewReason": "Add exact producer/reader trigger paths; original owning job and default execution obligations retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

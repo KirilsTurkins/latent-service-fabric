@@ -17,7 +17,7 @@ from tools.java_guest.c_failure_context import FIXTURE_SOURCES
 from tools.java_standard_http_library import (COORDINATE, ORIGINAL_JAR, CANDIDATE,
     compiler_cache, project as library_project)
 from tools.java_http_fiber_node import run as node_controls, CASES
-from tools.java_replay_materials import prepare, verify_prepared, native_products
+from tools.java_fiber_native_products import prepare, verify_prepared, native_products
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_build import Commands
@@ -29,7 +29,8 @@ MAX_SECONDS = 1800
 MATERIALS = tuple(dict.fromkeys((*RECIPE, SOURCE, WORLD, 'tools/java_standard_http_library.py',
     'tools/java_standard_http_project.py', 'tools/java_standard_http_node.py',
     'tools/java_http_fiber_node.py', 'tools/qualify_java_http_fibers.py',
-    'tools/java_replay_materials.py', 'tools/standard_http/peer.py', 'tools/standard_http/protocol.py',
+    'tools/java_replay_materials.py', 'tools/java_fiber_native_products.py',
+    'tools/java_http_refusal_diagnostic.py', 'tools/standard_http/peer.py', 'tools/standard_http/protocol.py',
     'tools/standard_http/vectors.py', 'tools/standard_http/observations.py',
     'tools/rust_capsule_node.py', 'tools/phase3_resource_profile.py', 'tools/phase3_resource_os.py',
     'tools/phase2_operator_process.py', 'tools/phase2_operator_scenario.py',

@@ -12,6 +12,13 @@
     "JavaClosedPendingDiagnostic.test_pending_diagnostic_samples_two_owner_snapshots_without_replaying_invocation",
     "JavaClosedPendingDiagnostic.test_pending_usage_is_closed_numeric_and_has_no_identity_or_payload_fields",
     "JavaClosedPendingDiagnostic.test_process_result_and_caught_observation_have_distinct_create_only_paths",
+    "JavaExplicitNativeProducer.test_archive_index_preflights_all_fixed_members_before_extracting_only_allowlist",
+    "JavaExplicitNativeProducer.test_built_products_do_not_claim_normal_signed_or_guest_qualification",
+    "JavaExplicitNativeProducer.test_every_frozen_source_snapshot_and_material_identity_is_required",
+    "JavaExplicitNativeProducer.test_exact_five_product_hashes_and_finite_regular_sizes_are_required",
+    "JavaExplicitNativeProducer.test_official_exact_source_job_workflow_and_unique_artifact_are_mandatory",
+    "JavaExplicitNativeProducer.test_original_build_and_both_scoped_control_commands_must_pass",
+    "JavaExplicitNativeProducer.test_source_profile_and_closed_receipt_fields_cannot_be_relabelled",
     "JavaFailedLifecycleObservation.test_failed_actual_result_keeps_pending_peer_and_original_assertion",
     "JavaFailedLifecycleObservation.test_observation_error_never_replaces_original_result_failure",
     "JavaHttpDiagnosticCallBoundary.test_diagnostic_only_explicit_connect_keeps_all_strict_java_callers_byte_exact",
@@ -38,6 +45,7 @@
     "JavaHttpNativeRefusalReader.test_only_owned_node_stderr_can_supply_closed_records",
     "JavaHttpNativeRefusalReader.test_record_and_source_caps_preserve_incomplete_diagnostic_scope",
     "JavaHttpNativeRefusalReader.test_retention_failure_preserves_original_refusal_identity",
+    "JavaPendingConnectBarrier.test_pending_header_witness_follows_completed_connect_before_response",
     "JavaPublicCFailureContext.test_anchored_reader_rejects_hardlinks_and_linked_directories",
     "JavaPublicCFailureContext.test_default_and_success_paths_never_read_or_retain_source",
     "JavaPublicCFailureContext.test_exact_context_retains_real_declarations_control_flow_and_byte_identities",
@@ -198,6 +206,90 @@
       "fixtureGuards": [
         "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaExplicitNativeProducer.test_archive_index_preflights_all_fixed_members_before_extracting_only_allowlist": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:fb9b28ec336882f68469c4e62375181300104556486059a9b151fe7eac79f2d3"
+      ],
+      "skipSites": []
+    },
+    "JavaExplicitNativeProducer.test_built_products_do_not_claim_normal_signed_or_guest_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:fb9b28ec336882f68469c4e62375181300104556486059a9b151fe7eac79f2d3"
+      ],
+      "skipSites": []
+    },
+    "JavaExplicitNativeProducer.test_every_frozen_source_snapshot_and_material_identity_is_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:fb9b28ec336882f68469c4e62375181300104556486059a9b151fe7eac79f2d3"
+      ],
+      "skipSites": []
+    },
+    "JavaExplicitNativeProducer.test_exact_five_product_hashes_and_finite_regular_sizes_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:fb9b28ec336882f68469c4e62375181300104556486059a9b151fe7eac79f2d3"
+      ],
+      "skipSites": []
+    },
+    "JavaExplicitNativeProducer.test_official_exact_source_job_workflow_and_unique_artifact_are_mandatory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:fb9b28ec336882f68469c4e62375181300104556486059a9b151fe7eac79f2d3"
+      ],
+      "skipSites": []
+    },
+    "JavaExplicitNativeProducer.test_original_build_and_both_scoped_control_commands_must_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:fb9b28ec336882f68469c4e62375181300104556486059a9b151fe7eac79f2d3"
+      ],
+      "skipSites": []
+    },
+    "JavaExplicitNativeProducer.test_source_profile_and_closed_receipt_fields_cannot_be_relabelled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:fb9b28ec336882f68469c4e62375181300104556486059a9b151fe7eac79f2d3"
       ],
       "skipSites": []
     },
@@ -513,6 +605,18 @@
       ],
       "skipSites": []
     },
+    "JavaPendingConnectBarrier.test_pending_header_witness_follows_completed_connect_before_response": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaPublicCFailureContext.test_anchored_reader_rejects_hardlinks_and_linked_directories": {
       "bases": [
         "unittest.TestCase"
@@ -720,6 +824,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Retain every existing Java fiber case and guard; add seven closed host HTTP refusal reader and owned-node opt-in controls without execution or retirement credit.",
+  "reviewReason": "Preserve all prior cases and guards, exact pending-body normalization reviewed against immutable tail hash; add explicit native producer and completed-connect witness controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

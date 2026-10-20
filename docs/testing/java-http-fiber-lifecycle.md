@@ -47,13 +47,17 @@ owners afterward. The peer allows fourteen primary contacts, no mutation or
 secondary contact, and must close all sockets/listeners. Node shutdown must
 be clean and reaped.
 
-The focused PR workflow authenticates the same four historical `03a3f745`
-helpers and ordinary-default/features-empty `e97d44dd` host as the two-client
-campaign, before and after execution. It compiles one fresh Java component;
-it neither recreates a production native tuple nor claims current native
-compilation. Its fixed branch PR trigger avoids requiring a new workflow name
-on the default branch. Source/project/peer controls run locally without a
-component; the signed hosted result is **pending**.
+Earlier attempts used the independently authenticated historical `03a3f745`
+helpers and `e97d44dd` host, with their source limits preserved below. The next
+focused lane selects the five products from exact native producer `a4f05f3f`,
+run `39400186766`, job `118552659402`. Its `latent.sdk.native-products.v1`
+receipt is a build record, **not** a normal signed qualification or a guest
+compilation receipt. The lane checks the successful official source/run/job,
+preflights seven fixed artifact members, verifies all frozen Git native and
+recipe material identities, and rechecks the five product hashes before and
+after one fresh Java compilation/execution. No historical receipt is rewritten.
+Source/project/peer controls run locally without a component; the signed hosted
+lifecycle result remains **pending**.
 
 The first real offline build exposed two invalid pointer-to-integer loop copies
 in pinned TeaVM 0.15 output. Bounded generated-C declarations and every use of
@@ -118,3 +122,25 @@ calls the same idempotent `HttpURLConnection.connect()` before the library's
 `code()` call. Every strict caller and lifecycle assertion remains byte-identical.
 The old v1 diagnostic remains readable; malformed v2 fields are unavailable.
 These markers are failure localization, not qualification or a proven cause.
+
+
+Exact head `854f4b5a` passed its fresh HTTP preflight but failed strict mode 0.
+Its caught observation localized root error 107 to standard `connect()` and
+child error 112 to response-header waiting; it did not identify the erased
+provider refusal. Aggregate spare capacity does not rule out the separate
+per-client active-dial gate. The original failure remains a failure.
+
+The child-ready witness now follows successful ordinary `connect()` and
+precedes the same library `code()` call. Source tracing establishes that this
+connect completes physical setup and clears its original dial reservation;
+response headers can still remain genuinely pending. The existing peer gate,
+strict sibling/body results, request disconnect, budgets and retirement checks
+remain mandatory. This corrects the witness premise without asserting that it
+caused the old error. No sleep, retry, increased ceiling or manual pump is added.
+
+The owned node explicitly enables a default-off closed native refusal observer.
+Only sixteen fixed stage/category/reason records may be projected from its
+bounded stderr, after cleanup, into `controls/http-refusals.json`. Raw stderr,
+URLs, identities and exception messages are excluded. Observer retention cannot
+replace the original assertion or cleanup failure, and the projection always
+has `qualification=false`; an absent marker is not evidence of success.
