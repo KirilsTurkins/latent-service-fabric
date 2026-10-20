@@ -1,0 +1,44 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "random-byte-lowering-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Random byte canonical lowering reference",
+    "on": {
+      "push": {
+        "branches": [
+          "fix/random-bytes-lowering-20261020"
+        ],
+        "paths": [
+          "crates/latent-wasmtime/src/host/random*",
+          "crates/latent-wasmtime/src/host/random/**",
+          "crates/latent-wasmtime/tests/random/**",
+          "tools/ci/suites.json",
+          ".github/workflows/random-bytes-lowering-reference.yml"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "bytes"
+  ],
+  "reviewReason": "Exact bounded17-case native random target plus one source-attributed normal host binary, preserving all15 original named cases and concurrent16-call limit; concrete bytes only retire after generated canonical allocation/copy, including failures.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/random-bytes-lowering-reference.yml"
+}
