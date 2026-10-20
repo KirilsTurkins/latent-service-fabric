@@ -98,5 +98,8 @@ maintained workflow uses the separately authenticated f919 wait-observer native
 products through the canonical fixed-tuple reader for future builds. It requires
 exact current native source and auxiliary ABI/schema identities; the old 0c313
 historical guard is not broadened. No 19-case execution or new compilation is
-attributed to f919 by this source composition. Guest sources, compiler inputs,
-node/controller oracles and all limits remain unchanged.
+attributed to f919 by this source composition. Guest sources, compiler implementation,
+node/controller oracles and all limits remain unchanged. Of the 91 actual normal
+recipe inputs, 90 are byte-exact in final composition. The one reviewed
+`guest_compatibility_build.py` delta adds an explicit phase-timing 0.4/v7 branch,
+absent from this Go world; all old selector instructions remain unchanged.
