@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "embedded-resource-languages-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0"
+    },
+    "name": "Actual Rust and TypeScript embedded resource references",
+    "on": {
+      "push": {
+        "branches": [
+          "diagnostic/rust-typescript-embedded-resources-20261020"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "resources"
+  ],
+  "reviewReason": "Add two bounded historical-component resource references with exact separate native/component ancestry; preserve every original workflow and runner path.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/embedded-resource-languages-reference.yml"
+}
