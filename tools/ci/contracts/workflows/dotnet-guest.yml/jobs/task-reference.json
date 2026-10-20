@@ -1,0 +1,108 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.task_runtime_replay }}",
+    "name": "Focused managed Task runtime with authenticated native products",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check managed task authority and retirement controls",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve only exact source-bound native products and companion packages",
+        "run": "git fetch --no-tags --depth=1 origin e97d44ddc744c9bd738d9b3b7a7d8b7234133e36\npython3 tools/replay_dotnet_tasks.py --prepare --output \"$RUNNER_TEMP/task-prepared\"\n"
+      },
+      {
+        "name": "Install captured NativeAOT namespace and loader inputs",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the pinned native compiler and closed runtime",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Build one fresh NativeAOT component, sign and execute ordinary managed Tasks",
+        "run": "python3 tools/replay_dotnet_tasks.py --prepared \"$RUNNER_TEMP/task-prepared\" --host \"$RUNNER_TEMP/task-prepared/selected-host\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-task-runtime\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source, compiler, component and node evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-tasks-focused-${{ github.sha }}",
+          "path": "${{ runner.temp }}/task-prepared/retrieval.json\n${{ runner.temp }}/task-prepared/selected-host/host-retrieval.json\n${{ runner.temp }}/dotnet-task-runtime/qualified.json\n${{ runner.temp }}/dotnet-task-runtime/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/replay-materials.json\n${{ runner.temp }}/dotnet-task-runtime/logs/**\n${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**\n${{ runner.temp }}/dotnet-task-runtime/build/*.json\n${{ runner.temp }}/dotnet-task-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-task-runtime/build/logs/**\n${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 35
+  },
+  "jobId": "task-reference",
+  "kind": "job",
+  "reviewReason": "Add explicit default-off focused managed task/timer replay using authenticated frozen historical native products and fresh current application compilation; preserve normal commands and75-minute bound.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}

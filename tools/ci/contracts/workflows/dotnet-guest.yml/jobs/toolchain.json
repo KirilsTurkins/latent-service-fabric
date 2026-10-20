@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.task_runtime_replay }}",
     "name": "NativeAOT component qualification",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -229,7 +230,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Add ordinary default Task/ThreadPool/timer campaign with explicit clock/activation authority, original limits and owner cleanup; retain all existing qualification commands and case guards.",
+  "reviewReason": "Add explicit default-off focused managed task/timer replay using authenticated frozen historical native products and fresh current application compilation; preserve normal commands and75-minute bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

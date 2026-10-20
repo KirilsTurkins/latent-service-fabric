@@ -874,6 +874,9 @@ class RepositoryMigrationTests(unittest.TestCase):
             self.assertEqual(inputs[name]["type"], "boolean")
             self.assertIs(inputs[name]["default"], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
+        task_input = data['workflowContracts']['.github/workflows/dotnet-guest.yml']['on']['workflow_dispatch']['inputs']['task_runtime_replay']
+        self.assertEqual(task_input['type'], 'boolean')
+        self.assertIs(task_input['default'], False)
         for key, original in legacy["after"].items():
             value = dict(original)
             if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
@@ -893,6 +896,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                 # preserve all original step guards, commands and execution fields.
                 self.assertEqual(value['jobIf'], 'success()')
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only) }}"
+            if value['workflow'] == '.github/workflows/dotnet-guest.yml' and value['job'] == 'toolchain':
+                self.assertEqual(value['jobIf'], 'success()')
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.task_runtime_replay }}"
             if key == reviewed_go_normal_id:
                 # The independent client gate refers to this unchanged normal
                 # qualification by its stable Actions step id. Retain every
