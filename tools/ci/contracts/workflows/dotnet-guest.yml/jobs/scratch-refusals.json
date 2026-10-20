@@ -62,7 +62,7 @@
       },
       {
         "name": "Check exact CoreLib composition and pure joined filesystem controls",
-        "run": "python3 -B -m unittest tools.tests.test_dotnet_closed_filesystem tools.tests.test_dotnet_filesystem_qualification -v"
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_closed_filesystem tools.tests.test_dotnet_filesystem_qualification tools.tests.test_dotnet_filesystem_runtime -v"
       },
       {
         "name": "Require pure and joined signed Unsupported and original argument validation",
@@ -84,7 +84,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Diagnostic-only reviewed exact42e acquisition reuse: default-false20m fresh filesystem lane, unchanged original three job bodies and commands except exact manual guard, no native host compilation/current normal receipt fabrication.",
+  "reviewReason": "Retain all existing child commands and append six focused explicit activation-only setup controls to existing source unittest command Preserve exact diagnostic-only default-false manual guard.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

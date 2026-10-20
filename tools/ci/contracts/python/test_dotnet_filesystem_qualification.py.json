@@ -2,6 +2,7 @@
   "cases": [
     "DotnetFilesystemQualification.test_exact_pure_component_needs_no_activation_but_requires_three_caught_unsupported",
     "DotnetFilesystemQualification.test_joined_phase_binds_original_intermediate_and_same_final_native_response",
+    "DotnetFilesystemQualification.test_joined_requires_separate_zero_entry_activation_denial_and_no_unrelated_authority",
     "DotnetFilesystemQualification.test_pure_and_joined_sources_keep_original_sdk_limits_and_named_argument_calls",
     "DotnetFilesystemQualification.test_pure_cannot_inherit_runtime_authority_or_join_without_explicit_grant",
     "DotnetFilesystemQualification.test_unknown_argument_results_owner_leaks_or_missing_outcomes_never_pass"
@@ -14,8 +15,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1959ea1516ed7d3d7fe36f0652a6e69e84b7b1001349655e8eb0c7f8aa080f93",
-        "class:setup-sha256:187f6b6736ba283147ffcb6b38543279dcbbe9a43f71772e3584e3ad3b84e965"
+        "module:setup-sha256:5214b2d1b3231f985f933a78164367e32ac15aff8fda0560929a6aea9cf13bf2",
+        "class:setup-sha256:77854beb270548013cbabf75955ecdc35e51210426488d3dabc2c2d40d40d849"
       ],
       "skipSites": []
     },
@@ -26,8 +27,20 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1959ea1516ed7d3d7fe36f0652a6e69e84b7b1001349655e8eb0c7f8aa080f93",
-        "class:setup-sha256:187f6b6736ba283147ffcb6b38543279dcbbe9a43f71772e3584e3ad3b84e965"
+        "module:setup-sha256:5214b2d1b3231f985f933a78164367e32ac15aff8fda0560929a6aea9cf13bf2",
+        "class:setup-sha256:77854beb270548013cbabf75955ecdc35e51210426488d3dabc2c2d40d40d849"
+      ],
+      "skipSites": []
+    },
+    "DotnetFilesystemQualification.test_joined_requires_separate_zero_entry_activation_denial_and_no_unrelated_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5214b2d1b3231f985f933a78164367e32ac15aff8fda0560929a6aea9cf13bf2",
+        "class:setup-sha256:77854beb270548013cbabf75955ecdc35e51210426488d3dabc2c2d40d40d849"
       ],
       "skipSites": []
     },
@@ -38,8 +51,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1959ea1516ed7d3d7fe36f0652a6e69e84b7b1001349655e8eb0c7f8aa080f93",
-        "class:setup-sha256:187f6b6736ba283147ffcb6b38543279dcbbe9a43f71772e3584e3ad3b84e965"
+        "module:setup-sha256:5214b2d1b3231f985f933a78164367e32ac15aff8fda0560929a6aea9cf13bf2",
+        "class:setup-sha256:77854beb270548013cbabf75955ecdc35e51210426488d3dabc2c2d40d40d849"
       ],
       "skipSites": []
     },
@@ -50,8 +63,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1959ea1516ed7d3d7fe36f0652a6e69e84b7b1001349655e8eb0c7f8aa080f93",
-        "class:setup-sha256:187f6b6736ba283147ffcb6b38543279dcbbe9a43f71772e3584e3ad3b84e965"
+        "module:setup-sha256:5214b2d1b3231f985f933a78164367e32ac15aff8fda0560929a6aea9cf13bf2",
+        "class:setup-sha256:77854beb270548013cbabf75955ecdc35e51210426488d3dabc2c2d40d40d849"
       ],
       "skipSites": []
     },
@@ -62,14 +75,14 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1959ea1516ed7d3d7fe36f0652a6e69e84b7b1001349655e8eb0c7f8aa080f93",
-        "class:setup-sha256:187f6b6736ba283147ffcb6b38543279dcbbe9a43f71772e3584e3ad3b84e965"
+        "module:setup-sha256:5214b2d1b3231f985f933a78164367e32ac15aff8fda0560929a6aea9cf13bf2",
+        "class:setup-sha256:77854beb270548013cbabf75955ecdc35e51210426488d3dabc2c2d40d40d849"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_filesystem_qualification.py",
-  "reviewReason": "Reviewed additive .NET filesystem qualification: keep original six calls, all other languages, normal75min parent and20min scratch child; add six precise argument cases and explicit joined-CoreLib phase without filesystem grants or native host build.",
+  "reviewReason": "Explicitly reviewed setup-only change: retain all five old cases, bases, decorators and skip sites; joined fixture adds one required zero-entry ACTIVATION denial and a sixth negative case. No skip or obligation removed.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

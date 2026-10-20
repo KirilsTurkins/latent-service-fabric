@@ -10,6 +10,8 @@ if __package__ in {None, ''}:
 from tools.build_observation import build_environment
 from tools.dotnet_closed_filesystem_fixture import project
 from tools.dotnet_guest import closed_filesystem, task_wait
+from tools.dotnet_guest.runtime import CLOCK
+from tools.dotnet_filesystem_runtime import LIMITS
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
@@ -20,6 +22,7 @@ from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, inventory, read_f
 from tools.sdk_scratch_probe import DOTNET_ARGUMENTS
 
 MATERIALS = (*HELPERS, 'tools/qualify_dotnet_closed_filesystem.py', 'tools/dotnet_closed_filesystem_fixture.py',
+    'tools/dotnet_filesystem_runtime.py',
     'tools/dotnet_guest/closed_filesystem.py', 'tools/dotnet_guest/task_wait.py',
     'sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.cs', 'sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.targets')
 
@@ -30,7 +33,8 @@ def inherited(directory):
 
 def observed(directory, *, joined):
     node = read_json(directory / 'node/workflow.json', 4*1024**2)
-    require(node['status'] == 'passed' and node['language'] == 'dotnet' and len(node['invocations']) == 39
+    count = 40 if joined else 39
+    require(node['status'] == 'passed' and node['language'] == 'dotnet' and len(node['invocations']) == count
             and all(row['processReaped'] is True and row['response']['outcomeKnown'] is True for row in node['invocations'])
             and node['standardScratchRefusal']['allErrorsAreUnsupported'] is True
             and node['dotnetFilesystemArguments']['status'] == 'passed'
@@ -61,6 +65,17 @@ def observed(directory, *, joined):
     require(any(row['capability'] == activation for row in grants) is joined,
             'closed-filesystem-independent-runtime-authority')
     if joined:
+        authority = node['dotnetFilesystemRuntimeAuthority']
+        denied = authority['denied']; response = denied['response']; consumed = response['data']['consumption']
+        require(authority['requiredDeclarations'] == [CLOCK, activation]
+                and authority['providerLimits'] == LIMITS
+                and authority['additionalWallEntropyOrHttpAuthority'] is False
+                and denied in node['invocations'] and denied['processReaped'] is True
+                and denied['exitCode'] == 4 and response['outcomeKnown'] is True
+                and response['error']['code'] == 'permission-denied'
+                and all(int(consumed[key]) == 0 for key in ('cpuFuel', 'peakMemoryBytes', 'outboundRequests',
+                                                           'logBytes', 'effectCount')),
+                'closed-filesystem-explicit-activation-denial')
         task = read_json(directory / 'build/task-wait-port.json')
         require(task['profile'] == task_wait.PROFILE and task['derived'] == port['taskWaitIntermediate']
                 and task['derived']['digest'] == port['baseDigest']
@@ -70,7 +85,7 @@ def observed(directory, *, joined):
     marker = read_json(directory / 'build/BUILD-COMPLETE.json')
     package_identity(directory / 'build', marker)
     return {'workflow': file_identity(directory / 'node/workflow.json'), 'component': file_identity(
-        directory / 'build/component.wasm', 64*1024**2), 'port': port, 'invocations': 39,
+        directory / 'build/component.wasm', 64*1024**2), 'port': port, 'invocations': count,
         'argumentCases': node['dotnetFilesystemArguments']['cases'], 'scratch': node['standardScratchRefusal']}
 
 
@@ -109,7 +124,7 @@ def qualify(output, tools, normal, pure=None):
                 *(artifact if name == 'greeting' else companions[name] for name in TEMPLATES))
             stage = label + '-signed-bcl-calls'
             node = run(binaries['latent'], binaries['latentd'], location / 'signed', location / 'node',
-                       language='dotnet', standard_scratch_refusal=True)
+                       language='dotnet', standard_scratch_refusal=True, dotnet_scratch_task_runtime=joined)
             result = observed(location, joined=joined)
             write_json(location / 'compatibility-execution-report.json', execution_report('dotnet', artifact, node))
             return result
@@ -132,7 +147,7 @@ def qualify(output, tools, normal, pure=None):
                 and all(inventory(snapshot(app)) == source for app, source in sources)
                 and materials == {name: file_identity(ROOT / name) for name in MATERIALS},
                 'closed-filesystem-observed-inputs-changed')
-        record.update(status='passed', actualInvocations=78, commands=commands.records)
+        record.update(status='passed', actualInvocations=79, commands=commands.records)
         write_json(output / 'qualified.json', record)
         return record
     except BaseException as error:
