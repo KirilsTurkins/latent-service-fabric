@@ -142,6 +142,10 @@ source; it is not relabelled as execution of this new method.
 
 A follow-up per-fragment close guard also preserves an already acknowledged
 prefix and returns `net.ErrClosed` before any later dispatch after close.
-The ninth exact-method control and the earlier unguarded close counterexample
-are pending actual reference execution; the eight-case observation above retains
-its original source identity. No owner, deadline or fragment bound changes.
+The follow-up [actual reference](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39446468125/job/118709756425)
+passed on source `150969cbce75daf6411677ea863618328721a948`: the pinned
+previous method reproduced close-between-fragments failure; all nine current
+cases passed, alongside the original chunk-boundary counterexample. All seven
+archive members passed CRC/SHA-256 checks, and all seven exercised inputs match
+that source. All eight original Go control bodies remain unchanged; the earlier
+eight-case observation retains its own source identity. No owner, deadline or fragment bound changes.
