@@ -133,6 +133,11 @@ def capture_source(project: Path, language: str, *,
             'sdkLockDigest': digest(read_bytes(app / 'sdk-lock.json', MAX_FILE))}) + b'\n')
     if len(files) > MAX_FILES or sum(map(len, files.values())) > MAX_SOURCE:
         raise DependencyError('dependency-frontend-source-input-limit')
+    # Validate declared immutable application resources before any language
+    # dependency/compiler process can run. Dependency-owned additions still
+    # undergo their separate selection and exact-membership checks later.
+    from tools.guest_resources import select as select_resources
+    select_resources(files)
     return SourceInputs(requested, app, owner, language, dict(sorted(files.items())),
                         descriptor, exclude_when_captured)
 
