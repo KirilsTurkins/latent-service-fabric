@@ -412,6 +412,7 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be
           git fetch --no-tags --depth=1 origin 21b2c84c74881701149115dd8511063c85800b47
+          git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e
       - name: Install only the existing pinned Python recipe dependencies
         run: python3 -m pip install -r tools/requirements.lock
       - name: Check fixed tuple, retained component and original twelve-case setup guards

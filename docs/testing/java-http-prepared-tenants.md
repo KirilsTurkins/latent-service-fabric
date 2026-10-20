@@ -24,9 +24,8 @@ failure. The controller neither retries its mutation nor reuses its node.
 Seven source controls cover the exact setup command, original deadline clipping,
 lossless lifecycle generation, foreign/stale/refused selection, preserved
 failure results and explicit selection. They run alongside the eight existing
-tenant controls. No current native preparation or signed tenant pass is claimed
-until a source-authenticated preparation producer and the actual twelve-case
-programme succeed.
+tenant controls. The source-authenticated native producer is qualified as
+described below; signed preparation and all twelve tenant outcomes remain pending.
 
 The retained-component reader separately authenticates the fixed 2,970,741-byte
 archive from source `aa56bdebad8c12f20acce4ec4ecfeca73cf554be`, run
@@ -43,9 +42,9 @@ sides and explicitly reports that the old recipe differs from the current one.
 It does not synthesize a current compiler observation or change the old package.
 Six additional controls test archive/path/member refusal, original Git object
 hashes and that closed difference set. A local read-only archive preflight passed;
-fresh native preparation, signing and all twelve tenant outcomes remain pending.
+fresh signed publication preparation and all twelve tenant outcomes remain pending.
 
-The separate `release_preparation_native_products.py` configuration now freezes
+The original `release_preparation_native_products.py` configuration froze
 successful source `21b2c84c74881701149115dd8511063c85800b47`, run `39509107706`,
 job `118925373342`, artifact `12305592299`. Its five native products, 49 Rust and
 15 Python controls were independently verified. It explicitly opts into the
@@ -62,3 +61,23 @@ GitHub credential and creates fresh private peer credentials in its owned
 temporary directory. Uploads select bounded public receipts and original source
 identities, never signing keys, raw private credentials or repeated binaries.
 No native, Java or guest compiler is installed or executed by this replay.
+
+### Parsed CLI dispatch correction
+
+The first prepared-tenant run `39514296963` at source
+`e0e9e8377b1cae77d1402e532759cbaf231f3242` failed before dispatch:
+`release prepare` was classified locally as `invalid-operation` / not a
+management operation. Its retained artifact `12307672432` has no tenant
+outcomes or HTTP contacts. The node was retired; the failed mutation is not
+retried on that node.
+
+The corrected CLI producer `6fd19eab2c224fc31481d03de5008de4d3e4429e`
+(run `39516047085`, job `118948325038`, artifact `12308282426`) passed all
+50 Rust and 15 Python controls, including an actual parsed `release prepare`
+dispatch regression. Independent verification checked every one of the 49
+archive members, all five native products, 3,318 native source files and all
+134 materials including the 20 protocol files. Only the CLI product differs
+from the original successful `21b2c84c` producer; the node and three example
+tools are byte-identical. [The new immutable evidence](evidence/release-preparation-cli-native-2026-10-21.json)
+preserves the original producer and failed consumer identities. This is native
+source/dispatch evidence; the fresh twelve-case tenant execution remains pending.

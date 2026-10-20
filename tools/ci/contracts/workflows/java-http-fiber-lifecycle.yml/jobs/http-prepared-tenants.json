@@ -28,7 +28,7 @@
       },
       {
         "name": "Fetch only the exact original component and current native producer Git objects",
-        "run": "git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be\ngit fetch --no-tags --depth=1 origin 21b2c84c74881701149115dd8511063c85800b47\n"
+        "run": "git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be\ngit fetch --no-tags --depth=1 origin 21b2c84c74881701149115dd8511063c85800b47\ngit fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e\n"
       },
       {
         "name": "Install only the existing pinned Python recipe dependencies",
@@ -72,7 +72,7 @@
   },
   "jobId": "http-prepared-tenants",
   "kind": "job",
-  "reviewReason": "Add one default-false node-only prepared tenant campaign; all original workflow jobs, inputs, conditions, commands and timeouts deep-equal after removing only this input/job. Reuse authenticated native and component products without compiling.",
+  "reviewReason": "Select independently authenticated successful6fd CLI-dispatch tuple at a new commit; original21b evidence and failedconsumer remain immutable. Identical frozen authentication algorithm modulo pins/branch and one additional actual parsedCLI stage. Only exact6fd Git fetch is appended to existing manual-only node replay; all original commands, guards, budgets and default jobs restore exactly. No guest/native/compiler rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

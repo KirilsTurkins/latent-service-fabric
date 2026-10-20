@@ -14,13 +14,13 @@ from tools.rust_capsule_project import ROOT
 
 class ReleasePreparationNativeProducts(unittest.TestCase):
     def test_frozen_tuple_agrees_with_independently_verified_public_evidence(self):
-        evidence = json.loads((ROOT/'docs/testing/evidence/release-preparation-native-2026-10-21.json').read_bytes())
+        evidence = json.loads((ROOT/'docs/testing/evidence/release-preparation-cli-native-2026-10-21.json').read_bytes())
         self.assertEqual((native.SOURCE, native.RUN, native.JOB),
             (evidence['sourceRevision'], evidence['run'], evidence['job']))
         self.assertEqual(native.ARTIFACT, {'id': evidence['artifact']['id'],
             'size_in_bytes': evidence['artifact']['bytes'], 'digest': evidence['artifact']['sha256']})
         self.assertEqual(native.RECEIPTS, evidence['receipts'])
-        self.assertEqual(evidence['rustControlsPassed'], 49)
+        self.assertEqual(evidence['rustControlsPassed'], 50)
         self.assertEqual(evidence['pythonControlsPassed'], 15)
         self.assertIs(evidence['signedGuestQualification'], False)
 
@@ -28,11 +28,25 @@ class ReleasePreparationNativeProducts(unittest.TestCase):
         self.assertIs(native.READER.include_protocol, True)
         self.assertEqual(native.READER.event, 'workflow_dispatch')
         self.assertEqual(native.STAGES[:12], historical.STAGES)
-        self.assertEqual(len(native.STAGES), 20)
-        self.assertEqual(native.STAGES[-1], 'release-preparation-command-name-controls')
+        self.assertEqual(len(native.STAGES), 21)
+        self.assertEqual(native.STAGES[19], 'release-preparation-command-name-controls')
+        self.assertEqual(native.STAGES[20], 'release-preparation-dispatch-controls')
         self.assertIs(historical.READER.include_protocol, False)
         self.assertEqual(historical.SOURCE, 'fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12')
         self.assertNotEqual(native.READER.receipts, historical.READER.receipts)
+
+    def test_original_successful_producer_and_failed_consumer_are_not_relabelled(self):
+        original = json.loads((ROOT/'docs/testing/evidence/release-preparation-native-2026-10-21.json').read_bytes())
+        current = json.loads((ROOT/'docs/testing/evidence/release-preparation-cli-native-2026-10-21.json').read_bytes())
+        self.assertEqual(original['sourceRevision'], '21b2c84c74881701149115dd8511063c85800b47')
+        self.assertEqual(original['rustControlsPassed'], 49)
+        self.assertEqual(current['priorSuccessfulNativeSource'], original['sourceRevision'])
+        self.assertEqual(current['priorSuccessfulNativeRun'], original['run'])
+        self.assertEqual(current['priorFailedConsumerRun'], 39514296963)
+        self.assertEqual(current['priorFailedConsumerJob'], 118942636746)
+        self.assertEqual(current['priorFailedConsumerArtifact']['id'], 12307672432)
+        self.assertNotEqual(native.READER.source, original['sourceRevision'])
+        self.assertIs(current['signedGuestQualification'], False)
 
     def test_direct_cli_bootstraps_without_pythonpath_or_output(self):
         with tempfile.TemporaryDirectory() as temporary:
