@@ -3,6 +3,14 @@
 Declare immutable files in `capsule-resources.json`. The six maintained builders
 use the same exact-byte package assembler. It reads captured project files and
 selected dependency resources; it never reads a new host path during assembly.
+Application declarations are validated at source capture, before language
+resolution, contracts tools or compiler execution. The C builder performs the
+same preflight immediately after its separate source capture. Missing bytes,
+unsafe paths, collisions and count/aggregate exhaustion retain their distinct
+static categories. Dependency-owned additions are still checked after their
+reviewed closure is available, and full package/member verification still runs
+before writing resource layers. Source capture may impose stricter file limits
+than the resource profile's upper bounds.
 
 ```json
 {
@@ -193,7 +201,9 @@ passed33 invocations at source488b264e9b with clean retirement, but its open and
 create calls caught `DirectoryNotFoundException` and its temporary-file call
 caught `IOException`. Those results remain unresolved behavior for criterion5,
 not concrete Unsupported. The earlier entropy-specific harness failure remains
-separate. Rust results are recorded below. Actual results also project into the existing
+separate. The compiler-owned [closed CoreLib filesystem boundary](dotnet-closed-filesystem.md)
+now has exact-source derivation and reference-chain controls; its fresh pure/joined
+NativeAOT and signed argument/Unsupported gates remain pending. Rust results are recorded below. Actual results also project into the existing
 source/component-bound compatibility report: only precise Unsupported is
 `unsupported-reached`; NotFound, other errors and the deliberate fixture trap
 remain unresolved observations.

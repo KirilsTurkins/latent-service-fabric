@@ -19,6 +19,14 @@ from tools.test_run import redact
 ROOT = Path(__file__).resolve().parents[1]
 CASE = 'runtime::go::synchronization::signed_condition_once_rwmutex_and_channel_ordering_retire_original_v5_owners'
 ADMISSION_CASE = 'runtime::go::admission::signed_cross_tenant_cell_saturation_keeps_original_owners_until_cancel_and_trap_retire'
+MANAGED_TIMER_CASE = 'runtime::go::managed_timers::signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_owners'
+TIMER_MODES = [0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
+TIMER_NATIVE_MODES = [mode for mode in TIMER_MODES if mode != 4]
+MANAGED_TIMER_ROWS = [('ordinary', iteration, mode, 'success') for iteration in range(2) for mode in TIMER_MODES]
+MANAGED_TIMER_ROWS += [('timer-capacity', 0, 8, 'guest-trap'), ('fresh-after-timer-capacity', 0, 0, 'success'),
+                       ('callback-failure', 0, 10, 'guest-trap'), ('fresh-after-callback-failure', 0, 0, 'success'),
+                       ('cancel-original-root', 0, 7, 'cancelled'), ('deadline-original-root', 0, 7, 'deadline-exceeded'),
+                       ('fresh-after-cancel-deadline', 0, 0, 'success')]
 QUEUED_CASE = 'runtime::go::queued::signed_ordinary_queue_keeps_original_budgets_deadlines_and_tenant_ownership'
 ADMISSION_ROWS = [
     ('warm', 'tenant-a', 'success'), ('warm', 'tenant-b', 'success'),
@@ -118,6 +126,28 @@ def queued_observations(raw: bytes, filtered: int) -> list[dict]:
     return rows
 
 
+def managed_timer_observations(raw: bytes, filtered: int) -> list[dict]:
+    if len(raw) > 2 * 1024 * 1024:
+        raise ValueError('Go-managed-timers-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [MANAGED_TIMER_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-managed-timers-exact-signed-case-required')
+    rows = [json.loads(value) for value in re.findall(rb'^GO_MANAGED_TIMER_CASE (.+)$', raw, re.M)]
+    if len(rows) != len(MANAGED_TIMER_ROWS):
+        raise ValueError('Go-managed-timers-missing-or-extra-invocation')
+    actual = []
+    for row in rows:
+        if (set(row) != {'case', 'iteration', 'mode', 'outcome'}
+                or type(row['iteration']) is not int or type(row['mode']) is not int
+                or type(row['case']) is not str or type(row['outcome']) is not str):
+            raise ValueError('Go-managed-timers-private-or-unknown-field')
+        actual.append((row['case'], row['iteration'], row['mode'], row['outcome']))
+    if actual != MANAGED_TIMER_ROWS:
+        raise ValueError('Go-managed-timers-invocation-contract')
+    return rows
+
+
 def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
     if campaign == 'synchronization' and negative is not None:
         return {'case': CASE, 'fixture': 'synchronization', 'variable': 'LSF_GO_SYNCHRONIZATION_FIXTURE',
@@ -125,6 +155,9 @@ def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
     if campaign in {'admission', 'queued'} and negative is None:
         return {'case': ADMISSION_CASE if campaign == 'admission' else QUEUED_CASE,
                 'fixture': 'managed-idle', 'variable': 'LSF_GO_MANAGED_IDLE_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v5')]}
+    if campaign == 'managed-timers' and negative is None:
+        return {'case': MANAGED_TIMER_CASE, 'fixture': 'timers', 'variable': 'LSF_GO_MANAGED_TIMER_FIXTURE',
                 'inputs': [(fixture, 'go-component-activation-v5')]}
     raise ValueError('Go-runtime-unreviewed-campaign-or-negative')
 
@@ -138,6 +171,7 @@ def source_snapshot(root: Path) -> dict:
               'crates/latent-wasmtime/tests/local_service/runtime/go/synchronization.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/admission.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/queued.rs',
+              'crates/latent-wasmtime/tests/local_service/runtime/go/managed_timers.rs',
               'crates/latent-wasmtime/tests/local_service/fixture.rs',
               'crates/latent-wasmtime/tests/guest_sdk/runtime.rs',
               'crates/latent-wasmtime/tests/local_service/packages.rs',
@@ -158,9 +192,11 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if len(raw) > 512 * 1024:
         raise ValueError('Go-synchronization-compiler-receipt-bound')
     record = json.loads(raw)
-    if fixture not in {'synchronization', 'managed-idle'} or (fixture == 'managed-idle' and profile != 'go-component-activation-v5'):
+    if (fixture not in {'synchronization', 'managed-idle', 'timers'}
+            or (fixture in {'managed-idle', 'timers'} and profile != 'go-component-activation-v5')):
         raise ValueError('Go-runtime-unreviewed-source-profile')
-    folder = {'synchronization': 'synchronization-conformance', 'managed-idle': 'managed-idle-conformance'}[fixture]
+    folder = {'synchronization': 'synchronization-conformance', 'managed-idle': 'managed-idle-conformance',
+              'timers': 'timers-conformance'}[fixture]
     source = (root / 'sdk/go-guest/runtime' / folder / 'main.go').read_bytes()
     if (record['profile'] != profile or record['fixture'] != fixture
             or record['sourceDigest'] != 'sha256:' + digest(source) or record['sourceUnchanged'] is not True
@@ -174,7 +210,8 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
         raise ValueError('Go-synchronization-component-identity')
     if profile == 'go-component-activation-v5':
         native = record['nativeReference']
-        if (native['modes'] != (NATIVE_MODES if fixture == 'synchronization' else [0, 1, 2]) or native['output'] != 42
+        expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES}[fixture]
+        if (native['modes'] != expected_modes or native['output'] != 42
                 or native['freshProcessPerMode'] is not True or native['sourceDigest'] != record['sourceDigest']):
             raise ValueError('Go-synchronization-native-reference')
     return {'receiptSha256': digest(raw), 'profile': profile, 'sourceDigest': record['sourceDigest'],
@@ -221,7 +258,7 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     if result.returncode:
         raise ValueError('Go-synchronization-signed-command-failed')
     parser = {'synchronization': observations, 'admission': admission_observations,
-              'queued': queued_observations}[programme]
+              'queued': queued_observations, 'managed-timers': managed_timer_observations}[programme]
     rows = parser(result.output, len(suite['expectedCases']) - 1)
     after = source_snapshot(root)
     after_material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
@@ -230,15 +267,16 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
         raise ValueError('Go-synchronization-source-or-component-changed')
     receipt = {'schemaVersion': {'synchronization': 'lsf.go-synchronization-reference.v1',
                                  'admission': 'lsf.go-admission-reference.v1',
-                                 'queued': 'lsf.go-queued-reference.v1'}[programme], 'sourceRevision': revision,
+                                 'queued': 'lsf.go-queued-reference.v1',
+                                 'managed-timers': 'lsf.go-managed-timers-reference.v1'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
-               'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20}[programme], 'guestTaskCeiling': 16,
+               'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20, 'managed-timers': len(rows)}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':
         receipt['limitedTaskCeiling'] = 10
-    else:
+    elif programme in {'admission', 'queued'}:
         receipt.update({'signedObservationCount': len(rows), 'admissionRefusals': 2, 'foreignCancellationControls': 2,
                         'physicalCells': 1, 'nodeAdmissionCeiling': 1 if programme == 'admission' else 8,
                         'tenantsShareManagerBackendAndCell': True,
@@ -252,6 +290,10 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                             'queuedCancellationBeforeStore': 2, 'queuedDeadlineBeforeStore': 2,
                             'rootDeadlineIncludesQueueWaiting': True,
                             'aggregateCpuAndMemoryCeilingsUnchanged': True})
+    else:
+        receipt.update({'timerCeiling': 2, 'signedObservationCount': 43,
+                        'nativeReferenceModes': TIMER_NATIVE_MODES,
+                        'relabelsLegacyV3Evidence': False, 'fullTimerRaceMatrixQualified': False})
     raw = (json.dumps(receipt, indent=2) + '\n').encode()
     if len(raw) > 262144:
         raise ValueError('Go-synchronization-receipt-bound')
@@ -263,7 +305,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixture', type=Path, required=True)
     parser.add_argument('--no-checkpoints', type=Path)
-    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued'), default='synchronization')
+    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers'), default='synchronization')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
     args = parser.parse_args()

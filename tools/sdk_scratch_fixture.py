@@ -65,6 +65,9 @@ func scratchCase(mode string) string {
     if !errors.As(err, &pathError) || !errors.As(err, &errno) {
         return "scratch|go|unclassified"
     }
+    if errno == syscall.ENOSYS && !errors.Is(err, errors.ErrUnsupported) {
+        return "scratch|go|unclassified"
+    }
     if mode == "trap" { panic("scratch-explicit-fixture-trap") }
     return "scratch|go|path-error|errno="+strconv.FormatUint(uint64(errno),10)+"|fresh=1"
 }
@@ -123,7 +126,21 @@ DOTNET = r'''
         string label;
         bool opened = false;
         try {
-            if (mode == "open") {
+            if (mode == "argument-null") {
+                using var value = System.IO.File.OpenRead(null!); opened = true;
+            } else if (mode == "argument-empty") {
+                using var value = System.IO.File.OpenRead(""); opened = true;
+            } else if (mode == "argument-nul") {
+                using var value = System.IO.File.OpenRead("invalid\0path"); opened = true;
+            } else if (mode == "argument-mode") {
+                using var value = System.IO.File.Open("lsf-scratch-refusal", (System.IO.FileMode)0); opened = true;
+            } else if (mode == "argument-access") {
+                using var value = System.IO.File.Open("lsf-scratch-refusal", System.IO.FileMode.Open,
+                    (System.IO.FileAccess)0, System.IO.FileShare.None); opened = true;
+            } else if (mode == "argument-combination") {
+                using var value = System.IO.File.Open("lsf-scratch-refusal", System.IO.FileMode.Create,
+                    System.IO.FileAccess.Read, System.IO.FileShare.None); opened = true;
+            } else if (mode == "open") {
                 using var value = System.IO.File.OpenRead("lsf-scratch-refusal"); opened = true;
             } else if (mode is "create" or "trap") {
                 using (var value = System.IO.File.Open("lsf-scratch-refusal", System.IO.FileMode.CreateNew,
@@ -133,6 +150,9 @@ DOTNET = r'''
                 string path = System.IO.Path.GetTempFileName(); opened = true; System.IO.File.Delete(path);
             } else throw new System.ArgumentException("scratch-mode");
             return "scratch|dotnet|unexpected-success";
+        } catch (System.ArgumentNullException) { label = "argument-null";
+        } catch (System.ArgumentOutOfRangeException) { label = "argument-out-of-range";
+        } catch (System.ArgumentException) { label = "argument";
         } catch (System.PlatformNotSupportedException) { label = "platform-not-supported";
         } catch (System.IO.FileNotFoundException) { label = "file-not-found";
         } catch (System.IO.DirectoryNotFoundException) { label = "directory-not-found";

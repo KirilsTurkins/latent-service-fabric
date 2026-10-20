@@ -389,5 +389,62 @@ print('staged-selected-closure-owned-offline')
         self.assertFalse((self.owner / 'target/staged-work/dependencies').exists())
 
 
+class ResourceCapturePreflight(unittest.TestCase):
+    def test_all_six_public_builders_refuse_hostile_resources_before_external_work(self):
+        from tools import guest_resources as resources
+        from tools import rust_capsule_project, c_capsule_project, go_capsule_project, java_capsule_project
+        from tools import rust_capsule_build, c_capsule_build, go_capsule_build, java_capsule_build
+        from tools.typescript_guest import project as ts_project, build as ts_build
+        from tools.dotnet_guest import project as dotnet_project, build as dotnet_build
+        creators={'rust':rust_capsule_project.create,'c':c_capsule_project.create,
+            'go':go_capsule_project.create,'java':java_capsule_project.create,
+            'typescript':ts_project.create,'dotnet':dotnet_project.create}
+        builders={'rust':rust_capsule_build.build,'c':c_capsule_build.build,
+            'go':go_capsule_build.build,'java':java_capsule_build.build,
+            'typescript':ts_build.build,'dotnet':dotnet_build.build}
+        declaration={'path':'data/greeting.bin','source':'assets/data.bin','mediaType':'application/octet-stream'}
+        cases=[('missing',[{**declaration,'source':'assets/absent.bin'}],'missing','resource-source-missing'),
+            ('traversal',[{**declaration,'path':'../host-data'}],'denied','resource-name-alias-or-traversal'),
+            ('collision',[declaration,{**declaration,'path':'DATA/greeting.bin'}],'malformed','resource-name-collision'),
+            ('count',[{**declaration,'path':f'data/{i}.bin'} for i in range(257)],'exhausted','resource-count-limit'),
+            ('aggregate',[{**declaration,'path':f'data/{i}.bin'} for i in range(33)],'exhausted','resource-byte-limit')]
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            tools=root/'uninstalled-tools';tools.mkdir()
+            for language,create in creators.items():
+                app=create(root/language,'greeting','outside-resource-'+language)
+                (app/'assets').mkdir()
+                (app/'assets/data.bin').write_bytes(b'x'*1048576)
+                for label,rows,category,code in cases:
+                    (app/resources.MANIFEST).write_bytes(common.encode({'schemaVersion':resources.PROFILE,'resources':rows}))
+                    arguments={'tools':tools} if language in {'typescript','dotnet'} else {}
+                    if language=='java':arguments['wasi_sdk']=tools
+                    with self.subTest(language=language,case=label), \
+                            patch('subprocess.Popen',side_effect=AssertionError('external process before resource refusal')), \
+                            patch('urllib.request.urlopen',side_effect=AssertionError('network before resource refusal')):
+                        with self.assertRaises(resources.ResourceError) as caught:
+                            builders[language](app,root/(language+'-'+label),tools/'contracts',None,
+                                'https://github.com/KirilsTurkins/latent-service-fabric',**arguments)
+                        self.assertEqual((caught.exception.category,caught.exception.code),(category,code))
+                        self.assertFalse((root/(language+'-'+label)/'component.wasm').exists())
+
+    def test_valid_resource_capture_preserves_exact_inventory_and_creates_no_materialized_assets(self):
+        from tools import guest_resources as resources
+        with tempfile.TemporaryDirectory() as temporary:
+            app=Path(temporary)/'outside';app.mkdir();(app/'assets').mkdir()
+            payload=b'\x00\xff\xc3\xa9exact bytes'
+            (app/'assets/data.bin').write_bytes(payload)
+            (app/resources.MANIFEST).write_bytes(common.encode({'schemaVersion':resources.PROFILE,'resources':[
+                {'path':'data/value.bin','source':'assets/data.bin','mediaType':'application/octet-stream'}]}))
+            before=snapshot(app)
+            for language in ('rust','c','go','java','typescript','dotnet'):
+                with self.subTest(language=language):
+                    captured=inputs.capture_source(app,language)
+                    self.assertEqual(captured.files,before)
+                    captured.check_unchanged()
+                    self.assertEqual(snapshot(app),before)
+                    self.assertFalse((app/'resources').exists())
+
+
 if __name__ == '__main__':
     unittest.main()
