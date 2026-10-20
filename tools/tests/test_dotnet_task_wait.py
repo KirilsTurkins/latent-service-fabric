@@ -73,7 +73,7 @@ class TaskWaitPortTests(unittest.TestCase):
         (self.project / 'obj/compiler.rsp').write_text('-r:' + str(port.assembly) + '\n')
 
     def test_missing_declaration_or_async_root_never_reads_tools_or_starts_rewrite(self):
-        for missing in self.declared:
+        for missing in (runtime.CLOCK, runtime.ACTIVATION):
             imports = [name for name in self.declared if name != missing]
             self.assertIsNone(task_wait.prepare(Path('missing'), Path('missing'), Path('missing'), Path('missing'),
                 imports, self.bridge, self.project, self.output, self.evidence,
@@ -81,6 +81,18 @@ class TaskWaitPortTests(unittest.TestCase):
         self.assertFalse(task_wait.selected(self.declared, None))
         self.assertEqual(self.stages, [])
         self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_clock_and_activation_async_root_rewrites_without_http_authority(self):
+        self.declared = [runtime.CLOCK, runtime.ACTIVATION]
+        port = self.prepare()
+        self.references(port)
+        result = port.finish(self.project, self.evidence)
+        self.assertEqual(result['selection']['requiredDeclarations'], sorted(self.declared))
+        self.assertNotIn(runtime.HTTP, result['selection']['requiredDeclarations'])
+        self.assertEqual(self.stages, ['task-wait-rewrite'])
+        self.assertEqual(runtime.select(self.declared, ['wasi:io/poll@0.2.6']), 'runtime')
+        self.assertEqual(result['completion'], 'actual-task-only')
+        self.assertFalse(result['defaultClientComponentQualified'])
 
     def test_wrong_bridge_and_noninteger_or_excess_export_counts_fail_before_tool(self):
         for bridge in ({'profile': 'other', 'exports': 1}, {'profile': async_exports.PROFILE, 'exports': True},

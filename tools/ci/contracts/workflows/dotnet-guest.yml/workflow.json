@@ -36,6 +36,9 @@
           "tools/qualify_dotnet_standard_http.py",
           "tools/dotnet_standard_entropy*.py",
           "tools/qualify_dotnet_standard_entropy.py",
+          "tools/dotnet_task_runtime*.py",
+          "tools/qualify_dotnet_task_runtime.py",
+          "tools/tests/test_dotnet_task_runtime.py",
           "tools/tests/test_dotnet_secure_entropy.py",
           "tools/tests/test_dotnet_managed_entropy.py",
           "tools/dotnet_standard_console*.py",
@@ -99,7 +102,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Restore only exact unsupported RNG entrypoints through pinned upstream algorithms and privately bind both managed inputs; retain every prior command and case.",
+  "reviewReason": "Add ordinary default Task/ThreadPool/timer campaign with explicit clock/activation authority, original limits and owner cleanup; retain all existing qualification commands and case guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
