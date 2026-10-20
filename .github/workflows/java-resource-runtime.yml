@@ -124,7 +124,7 @@ jobs:
           python-version: 3.13.5
       - name: Fetch exact original Java compiler and native observer sources
         run: |
-          git fetch --no-tags --depth=1 origin 7c50aa12f251567eff90b410bf5362a5ace7b7ff
+          git fetch --no-tags --depth=1 origin 063be0a52eac35d6d0acf836089479437c9ce07b
           git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
       - name: Check public-output, retained-build and pending-owner refusal controls
         run: |
@@ -137,8 +137,8 @@ jobs:
       - name: Restore only the immutable original public Java build artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: java-resource-runtime-7c50aa12f251567eff90b410bf5362a5ace7b7ff
-          run-id: 39476833569
+          name: java-resource-runtime-063be0a52eac35d6d0acf836089479437c9ce07b
+          run-id: 39482057326
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/java-resource-original
       - name: Authenticate all original members and run only fresh signing and joined cases

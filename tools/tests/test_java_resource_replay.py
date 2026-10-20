@@ -28,18 +28,19 @@ class JavaResourceReplay(unittest.TestCase):
             with self.subTest(change=change),self.assertRaises(WorkflowError):replay.verify_origin(spec,r,j,a)
 
     def test_exact_members_refuse_same_size_substitution_missing_and_foreign_files(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary);rows=[]
-            for i in range(105):
-                name=str(i)+'.txt';raw=('owned-'+str(i)).encode();(root/name).write_bytes(raw)
-                rows.append({'path':name,'sha256':digest(raw),'bytes':len(raw)})
-            spec={'members':rows};replay.verify_members(root,spec)
-            (root/'0.txt').write_bytes(b'foreign')
-            with self.assertRaises(WorkflowError):replay.verify_members(root,spec)
-            (root/'0.txt').write_bytes(b'owned-0');(root/'104.txt').unlink()
-            with self.assertRaises(WorkflowError):replay.verify_members(root,spec)
-            (root/'104.txt').write_bytes(b'owned-104');(root/'foreign.txt').write_bytes(b'extra')
-            with self.assertRaises(WorkflowError):replay.verify_members(root,spec)
+        for count in (105,209,225):
+            with tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary);rows=[]
+                for i in range(count):
+                    name=str(i)+'.txt';raw=('owned-'+str(i)).encode();(root/name).write_bytes(raw)
+                    rows.append({'path':name,'sha256':digest(raw),'bytes':len(raw)})
+                spec={'members':rows,'memberCount':count};replay.verify_members(root,spec)
+                (root/'0.txt').write_bytes(b'foreign')
+                with self.assertRaises(WorkflowError):replay.verify_members(root,spec)
+                (root/'0.txt').write_bytes(b'owned-0');(root/(str(count-1)+'.txt')).unlink()
+                with self.assertRaises(WorkflowError):replay.verify_members(root,spec)
+                (root/(str(count-1)+'.txt')).write_bytes(('owned-'+str(count-1)).encode());(root/'foreign.txt').write_bytes(b'extra')
+                with self.assertRaises(WorkflowError):replay.verify_members(root,spec)
 
     def test_only_original_wit_and_resource_layer_bytes_can_be_restored(self):
         for change in ('valid','foreign','tampered'):

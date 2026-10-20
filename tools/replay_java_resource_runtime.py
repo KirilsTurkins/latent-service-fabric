@@ -15,7 +15,7 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity,source_identity
 from tools.rust_capsule_project import ROOT,digest,fresh,read_file,read_json,write_json
 
-SPEC='tools/fixtures/java-resource-runtime/498-retained-public-inventory.json'
+SPEC='tools/fixtures/java-resource-runtime/063-retained-public-inventory.json'
 ALLOWED_DRIFT={'tools/qualify_java_resource_runtime.py','.github/workflows/java-resource-runtime.yml'}
 WIT=('wit/world.wit','wit/deps/clock/package.wit','wit/deps/random/package.wit',
     'wit/deps/log/package.wit','wit/deps/activation-runtime/package.wit')
@@ -33,7 +33,7 @@ def verify_origin(spec,run,job,artifact):
 
 
 def verify_members(directory,spec,restored=()):
-    rows=spec['members'];require(len(rows)==spec.get('memberCount',105) and len(rows) in (105,209),'java-resource-replay-fixed-public-inventory')
+    rows=spec['members'];require(len(rows)==spec.get('memberCount',105) and len(rows) in (105,209,225),'java-resource-replay-fixed-public-inventory')
     expected={row['path']:row for row in rows};require(len(expected)==len(rows),'java-resource-replay-distinct-inventory')
     pending=[directory];found=set();entries=0;total=0
     while pending:

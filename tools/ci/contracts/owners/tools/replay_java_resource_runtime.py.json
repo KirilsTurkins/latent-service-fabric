@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_java_resource_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
+  "reviewReason": "Explicit unchangedpublicf919 node-only original13 replay of authenticated063 e977 guest; exact225 public inventory and artifact pins replace prior498 replay only; original30min build,20min replay, all13 oracles/order/grants/bounds unchanged; no guest/native compilation or ABI change.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3217e5495c9bce423f759bcaa9b4b3aa1b4ef481ce9878f9aa803536f5135c89"
+  "sha256": "556e6aabacb418ead9d16e6aa4b9deca18e76b9d339ffd97b68dae86df741424"
 }
