@@ -13,7 +13,8 @@ class PinnedArrayTypeWorklistTests(unittest.TestCase):
         raw = read_file(ROOT/'sdk/java-guest/fibers/compiler-patch/TypeInferer.java')
         self.assertEqual(hashlib.sha256(raw).hexdigest(), patch.TYPE_INFERER_SHA256)
         corrected = patch.corrected_type_source(raw)
-        self.assertEqual(corrected, raw.replace(patch.TYPE_SEED_BEFORE.encode(), patch.TYPE_SEED_AFTER.encode()))
+        self.assertEqual(corrected, raw.replace(patch.TYPE_SEED_BEFORE.encode(), patch.TYPE_SEED_AFTER.encode()).replace(
+            patch.TYPE_ELEMENT_BEFORE.encode(), patch.TYPE_ELEMENT_AFTER.encode()))
         self.assertIn(b'Licensed under the Apache License, Version 2.0', corrected)
         for changed in (raw+b' ', corrected, raw.replace(b'degree - 1', b'degree + 1'), b'private source'):
             with self.subTest(size=len(changed)), self.assertRaisesRegex(ValueError, 'unreviewed-teavm-type-source'):
@@ -55,6 +56,21 @@ class PinnedArrayTypeWorklistTests(unittest.TestCase):
                 for name in sorted(patch.COROUTINE_CLASSES): jar.writestr(name, b'original class')
             with self.assertRaisesRegex(ValueError, 'class-closure'):
                 patch.jar_entries(root/'missing.jar')
+
+    def test_real_restored_array_control_uses_exact_erased_fiber_return_before_primitive_load(self):
+        text = read_file(ROOT/'sdk/java-guest/fibers/compiler-patch/ArrayTypeCheck.java').decode()
+        for required in ('"org.teavm.runtime.Fiber", "popObject"',
+                'restore.setInstance(fiber); restore.setReceiver(array)',
+                'element(program, array, index, ArrayElementType.INT)',
+                'exit.setValueToReturn(scalar)', 'scalarRoot != original',
+                'array-control-restored-primitive-type-lost', 'restoredArray(mode);'):
+            self.assertIn(required, text)
+        original = read_file(ROOT/'sdk/java-guest/fibers/compiler-patch/TypeInferer.java')
+        seed_only = original.replace(patch.TYPE_SEED_BEFORE.encode(), patch.TYPE_SEED_AFTER.encode())
+        self.assertIn(patch.TYPE_ELEMENT_BEFORE.encode(), seed_only)
+        self.assertNotIn(patch.TYPE_ELEMENT_BEFORE.encode(), patch.corrected_type_source(original))
+        for kind in ('BYTE', 'SHORT', 'CHAR', 'INT', 'LONG', 'FLOAT', 'DOUBLE', 'OBJECT'):
+            self.assertEqual(patch.TYPE_ELEMENT_AFTER.count('case '+kind+':'), 1)
 
 
 if __name__ == '__main__':

@@ -176,12 +176,22 @@ integer array and then incorrectly registered as a GC root. Pinned TeaVM 0.15.0
 element propagation uses a second graph. An array with only element-use edges
 therefore leaves its primitive element classified as an unknown object.
 
-The private compiler repair adds that second graph to the initial worklist
-condition, leaving propagation and GC-root selection unchanged. Before any C
-generation, the existing original/private JVM controls now also run real array
-IR through type inference and `GCShadowStackContributor`. They must observe the
-old primitive-root defect and then preserve the actual object and nested-array
-roots while classifying both integer elements as integers. The original pinned
-source, private JAR, all eight replaced class identities and every unrelated JAR
-entry remain checked. These hosted controls and the signed Java programme are
-pending; local Python source/closure controls do not establish a component pass.
+The first private repair added that graph to the initial worklist condition.
+Source `663ba30a99562d0c8b371d4838a15d48ee6893fa` passed both real original/private
+JVM controls and C generation in run `39473963917`, job `118804988184`, artifact
+`12288736711`. Those controls proved the original primitive-root defect and
+preserved the actual object and nested-array roots. The component still failed
+clang: its integer temporary was now inferred as an array pointer.
+
+The next pinned-source boundary is coroutine restoration: `Fiber.popObject`
+writes back to the original array variable with an erased object result. The
+array-load reader then ignores its declared primitive element type. The repair
+uses that type for primitive results and retains secondary-graph propagation
+for object elements. An additional real IR control restores an array through
+the exact `Fiber.popObject` signature, loads an integer and keeps it live across
+a call. The old compiler must root that scalar; the corrected compiler must
+preserve its integer type without registering it as a reference. The original
+pinned source, private JAR, all eight replaced class identities, actual loaded
+classes and every unrelated JAR entry remain checked. This new hosted control
+and the signed Java programme are pending; no component pass or C warning
+suppression is claimed.

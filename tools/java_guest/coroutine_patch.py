@@ -29,6 +29,35 @@ TYPE_INFERER_SHA256 = 'a1139fea2ab16d6b520e6c975f5fb04f9a54077269c811ee9853bf301
 TYPE_SEED_BEFORE = 'if (types[i] != null && graph.outgoingEdgesCount(i) > 0) {'
 TYPE_SEED_AFTER = ('if (types[i] != null && (graph.outgoingEdgesCount(i) > 0\n'
                    '                    || arrayElemGraph.outgoingEdgesCount(i) > 0)) {')
+TYPE_ELEMENT_BEFORE = '''        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType type) {
+            arrayElemBuilder.addEdge(array.getIndex(), receiver.getIndex());
+        }'''
+TYPE_ELEMENT_AFTER = '''        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType type) {
+            switch (type) {
+                case OBJECT:
+                    arrayElemBuilder.addEdge(array.getIndex(), receiver.getIndex());
+                    break;
+                case BYTE:
+                case SHORT:
+                case CHAR:
+                case INT:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
+                    break;
+                case LONG:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.LONG, 0);
+                    break;
+                case FLOAT:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.FLOAT, 0);
+                    break;
+                case DOUBLE:
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.DOUBLE, 0);
+                    break;
+                default:
+                    throw new AssertionError(type);
+            }
+        }'''
 CLASS_ROOT = 'org/teavm/backend/lowlevel/transform/'
 COROUTINE_CLASSES = frozenset(CLASS_ROOT + name for name in (
     'CoroutineTransformation.class', 'CoroutineTransformation$1.class',
@@ -71,9 +100,10 @@ def corrected_type_source(raw: bytes) -> bytes:
     if hashlib.sha256(raw).hexdigest() != TYPE_INFERER_SHA256:
         raise ValueError('unreviewed-teavm-type-source')
     source = raw.decode('utf-8')
-    if source.count(TYPE_SEED_BEFORE) != 1:
+    if source.count(TYPE_SEED_BEFORE) != 1 or source.count(TYPE_ELEMENT_BEFORE) != 1:
         raise ValueError('unreviewed-teavm-type-seed')
-    return source.replace(TYPE_SEED_BEFORE, TYPE_SEED_AFTER).encode('utf-8')
+    return source.replace(TYPE_SEED_BEFORE, TYPE_SEED_AFTER).replace(
+        TYPE_ELEMENT_BEFORE, TYPE_ELEMENT_AFTER).encode('utf-8')
 
 
 def checked_jars(compiler, project: Path) -> list[Path]:
@@ -345,6 +375,7 @@ tasks.named('generateC') {
         correctedTypeSourceSha256=hashlib.sha256(corrected_types).hexdigest(),
         realOriginalPrimitiveArrayRootDefectObserved=True,
         realCorrectedArrayTypesAndReferenceRootsPreserved=True,
+        realCorrectedRestoredArrayPrimitiveTypePreserved=True,
         originalInputsUnchanged=True, checkedCompilerJars=identities,
         publishedHppcRelocation='org.teavm.hppc',
         originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]

@@ -27,6 +27,49 @@ public final class ArrayTypeCheck {
         return value;
     }
 
+    private static void restoredArray(String mode) {
+        var program = new Program(); var block = program.createBasicBlock();
+        program.createVariable(); var array = program.createVariable();
+        var index = program.createVariable();
+        var zero = new IntegerConstantInstruction(); zero.setReceiver(index); block.add(zero);
+        var fiber = program.createVariable();
+        var current = new InvokeInstruction(); current.setType(InvocationType.SPECIAL);
+        current.setMethod(new MethodReference("org.teavm.runtime.Fiber", "current",
+                ValueType.object("org.teavm.runtime.Fiber")));
+        current.setReceiver(fiber); block.add(current);
+        // This is the real CoroutineTransformation.restoreVariable shape for arrays:
+        // popObject writes back to the original array variable without a typed cast.
+        var restore = new InvokeInstruction(); restore.setType(InvocationType.SPECIAL);
+        restore.setMethod(new MethodReference("org.teavm.runtime.Fiber", "popObject",
+                ValueType.object("java.lang.Object")));
+        restore.setInstance(fiber); restore.setReceiver(array); block.add(restore);
+        var scalar = element(program, array, index, ArrayElementType.INT);
+        var call = new InvokeInstruction(); call.setType(InvocationType.SPECIAL);
+        call.setMethod(new MethodReference("control.ArrayOwner", "safepoint", ValueType.VOID));
+        block.add(call);
+        var exit = new ExitInstruction(); exit.setValueToReturn(scalar); block.add(exit);
+        var method = new MethodHolder("restored", ValueType.arrayOf(ValueType.INTEGER), ValueType.INTEGER);
+        new ClassHolder("control.ArrayOwner").addMethod(method); method.setProgram(program);
+        var inferer = new TypeInferer(); inferer.inferTypes(program, method.getReference());
+        boolean original = mode.equals("original");
+        if (inferer.typeOf(scalar.getIndex()) != (original ? VariableType.OBJECT : VariableType.INT)) {
+            throw new AssertionError("array-control-restored-primitive-type-lost");
+        }
+        new GCShadowStackContributor(new Characteristics(name -> null)).contribute(program, method);
+        boolean scalarRoot = false;
+        for (var instruction : block) {
+            if (instruction instanceof InvokeInstruction) {
+                var invoke = (InvokeInstruction) instruction;
+                if (invoke.getMethod().getClassName().equals("org.teavm.runtime.ShadowStack")
+                        && invoke.getMethod().getName().equals("registerGCRoot")
+                        && invoke.getArguments().get(1) == scalar) {
+                    scalarRoot = true;
+                }
+            }
+        }
+        if (scalarRoot != original) throw new AssertionError("array-control-restored-scalar-root");
+    }
+
     public static void check(String mode) {
         var program = new Program();
         var block = program.createBasicBlock();
@@ -79,5 +122,6 @@ public final class ArrayTypeCheck {
         if (!roots.equals(expected)) {
             throw new AssertionError("array-control-primitive-root-or-reference-root-lost");
         }
+        restoredArray(mode);
     }
 }
