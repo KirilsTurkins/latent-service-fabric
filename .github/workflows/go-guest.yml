@@ -41,6 +41,16 @@ on:
       - tools/go_standard_entropy_probe.py
       - tools/tests/test_go_standard_entropy.py
       - tools/qualify_go_activation.py
+      - tools/qualify_go_synchronization.py
+      - tools/tests/test_go_synchronization.py
+      - tools/tests/test_go_admission.py
+      - tools/tests/test_go_managed_timers.py
+      - docs/development/go-managed-timers.md
+      - tools/tests/test_go_queued.py
+      - docs/development/go-runtime-queued-ownership.md
+      - docs/development/go-runtime-admission.md
+      - docs/development/go-synchronization.md
+      - .github/workflows/go-synchronization-reference.yml
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
       - tools/tests/test_go_managed_idle.py
@@ -133,6 +143,16 @@ on:
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_go_activation.py
+      - tools/qualify_go_synchronization.py
+      - tools/tests/test_go_synchronization.py
+      - tools/tests/test_go_admission.py
+      - tools/tests/test_go_managed_timers.py
+      - docs/development/go-managed-timers.md
+      - tools/tests/test_go_queued.py
+      - docs/development/go-runtime-queued-ownership.md
+      - docs/development/go-runtime-admission.md
+      - docs/development/go-synchronization.md
+      - .github/workflows/go-synchronization-reference.yml
       - tools/qualify_go_standard_entropy.py
       - tools/go_standard_entropy_fixture.py
       - tools/go_standard_entropy_probe.py
@@ -349,6 +369,25 @@ jobs:
         run: |
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-idle" --runtime-profile go-component-activation-v5 --fixture managed-idle
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_MANAGED_IDLE_FIXTURE="$RUNNER_TEMP/go-managed-idle" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::managed_idle::signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain -- --ignored --exact --nocapture
+      - name: Qualify signed Go cross-tenant single-cell original ownership
+        run: |
+          python3 -m unittest tools.tests.test_go_admission
+          python3 tools/qualify_go_synchronization.py --campaign admission --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-idle" --output "$RUNNER_TEMP/go-admission-result"
+      - name: Qualify signed Go ordinary queue reservation and original root deadlines
+        run: |
+          python3 -m unittest tools.tests.test_go_queued
+          python3 tools/qualify_go_synchronization.py --campaign queued --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-idle" --output "$RUNNER_TEMP/go-queued-result"
+      - name: Qualify the full standard timer oracle under current managed-v5 ownership
+        run: |
+          python3 -m unittest tools.tests.test_go_managed_timers
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-timers" --runtime-profile go-component-activation-v5 --fixture timers
+          python3 tools/qualify_go_synchronization.py --campaign managed-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-timers" --output "$RUNNER_TEMP/go-managed-timers-result"
+      - name: Qualify ordinary Go synchronization and original v5 waiter retirement
+        run: |
+          python3 -m unittest tools.tests.test_go_synchronization
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-synchronization" --runtime-profile go-component-activation-v5 --fixture synchronization
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-synchronization-negative" --runtime-profile go-component-activation-v1 --fixture synchronization
+          python3 tools/qualify_go_synchronization.py --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-synchronization" --no-checkpoints "$RUNNER_TEMP/go-synchronization-negative" --output "$RUNNER_TEMP/go-synchronization-result"
       - name: Test captured Go native graphs and namespace
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation
@@ -565,6 +604,34 @@ jobs:
             ${{ runner.temp }}/go-managed-idle/build/component.wasm
             ${{ runner.temp }}/go-managed-idle/build/component.wit
             ${{ runner.temp }}/go-managed-idle/build/runtime-overlay/
+            ${{ runner.temp }}/go-synchronization/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-synchronization/build/component.wasm
+            ${{ runner.temp }}/go-synchronization/src/
+            ${{ runner.temp }}/go-synchronization/wit/
+            ${{ runner.temp }}/go-synchronization/logs/
+            ${{ runner.temp }}/go-synchronization-negative/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-synchronization-negative/build/component.wasm
+            ${{ runner.temp }}/go-synchronization-negative/logs/
+            ${{ runner.temp }}/go-admission-result/receipt.json
+            ${{ runner.temp }}/go-admission-result/signed.stdout.log
+            ${{ runner.temp }}/go-admission-result/signed.stderr.log
+            ${{ runner.temp }}/go-queued-result/receipt.json
+            ${{ runner.temp }}/go-queued-result/signed.stdout.log
+            ${{ runner.temp }}/go-queued-result/signed.stderr.log
+            ${{ runner.temp }}/go-managed-timers/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-managed-timers/src/
+            ${{ runner.temp }}/go-managed-timers/wit/
+            ${{ runner.temp }}/go-managed-timers/logs/
+            ${{ runner.temp }}/go-managed-timers/native-reference/
+            ${{ runner.temp }}/go-managed-timers/build/component.wasm
+            ${{ runner.temp }}/go-managed-timers/build/component.wit
+            ${{ runner.temp }}/go-managed-timers/build/runtime-overlay/
+            ${{ runner.temp }}/go-managed-timers-result/receipt.json
+            ${{ runner.temp }}/go-managed-timers-result/signed.stdout.log
+            ${{ runner.temp }}/go-managed-timers-result/signed.stderr.log
+            ${{ runner.temp }}/go-synchronization-result/receipt.json
+            ${{ runner.temp }}/go-synchronization-result/signed.stdout.log
+            ${{ runner.temp }}/go-synchronization-result/signed.stderr.log
             ${{ runner.temp }}/go-published-runtime/application-dependencies.json
             ${{ runner.temp }}/go-published-runtime/compiler-containment.json
             ${{ runner.temp }}/go-published-runtime/go-module-build-inputs.json

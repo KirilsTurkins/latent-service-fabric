@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}",
     "name": "Captured Cargo Git offline components and signed execution",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
@@ -73,7 +74,7 @@
   },
   "jobId": "git-components",
   "kind": "job",
-  "reviewReason": "Separate bounded signed Git component job consumes this run exact public prepared tuple; no native rebuild, existing authority and resource limits retained.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

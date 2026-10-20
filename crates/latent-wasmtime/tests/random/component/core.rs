@@ -1,5 +1,13 @@
 use wasm_encoder::*;
 pub(super) fn memory() -> Module {
+    memory_with(false)
+}
+
+pub(super) fn trapping_memory() -> Module {
+    memory_with(true)
+}
+
+fn memory_with(trap: bool) -> Module {
     let mut module = Module::new();
     let mut types = TypeSection::new();
     types.ty().function([ValType::I32; 4], [ValType::I32]);
@@ -26,6 +34,9 @@ pub(super) fn memory() -> Module {
     module.section(&exports);
     let mut code = CodeSection::new();
     let mut f = Function::new([(1, ValType::I32)]);
+    if trap {
+        f.instruction(&Instruction::Unreachable);
+    }
     for i in [
         Instruction::GlobalGet(0),
         Instruction::LocalTee(4),
@@ -82,6 +93,7 @@ pub(super) fn caller() -> Module {
     module.section(&exports);
     // locals 3=index, 4=u64 mode, 5=last value.
     let mut f = Function::new([(2, ValType::I32), (1, ValType::I64)]);
+    byte_destination(&mut f);
     // Mode three passes the caller's exact result destination to canonical
     // lowering, exercising destination rejection after an admitted scalar call.
     for i in [
@@ -176,4 +188,22 @@ pub(super) fn caller() -> Module {
     code.function(&f);
     module.section(&code);
     module
+}
+
+fn byte_destination(f: &mut Function) {
+    // Mode four keeps the ordinary byte request and supplies the exact
+    // caller-selected indirect result destination to canonical lowering.
+    for i in [
+        Instruction::LocalGet(0),
+        Instruction::I32Const(4),
+        Instruction::I32Eq,
+        Instruction::If(BlockType::Empty),
+        Instruction::I32Const(8),
+        Instruction::LocalGet(1),
+        Instruction::Call(0),
+        Instruction::Unreachable,
+        Instruction::End,
+    ] {
+        f.instruction(&i);
+    }
 }

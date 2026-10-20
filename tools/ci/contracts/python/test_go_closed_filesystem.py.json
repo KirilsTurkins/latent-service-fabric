@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "GoClosedFilesystem.test_Go_ENOTSUP_is_not_standard_errors_Is_Unsupported_but_ENOSYS_is",
+    "GoClosedFilesystem.test_adapter_requires_both_real_old_current_results_and_unchanged_discovery_authority",
+    "GoClosedFilesystem.test_ignored_other_target_partial_execution_and_oversized_output_are_not_adapter_evidence",
+    "GoClosedFilesystem.test_old_adapter_alias_or_any_unrelated_source_change_fails_before_execution",
+    "GoClosedFilesystem.test_only_path_open_result_changes_from_the_authenticated_closed_preimage",
+    "GoClosedFilesystem.test_original_normal_programme_and_all_six_calls_cannot_be_dropped_or_replaced_by_a_new_grant",
+    "GoClosedFilesystem.test_real_go_fixture_requires_standard_errors_Is_before_publishing_numeric_ENOSYS",
+    "GoClosedFilesystem.test_strict_actual_packet_requires_all_three_exact_numeric_and_standard_Unsupported_results"
+  ],
+  "guards": {
+    "GoClosedFilesystem.test_Go_ENOTSUP_is_not_standard_errors_Is_Unsupported_but_ENOSYS_is": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_adapter_requires_both_real_old_current_results_and_unchanged_discovery_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_ignored_other_target_partial_execution_and_oversized_output_are_not_adapter_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_old_adapter_alias_or_any_unrelated_source_change_fails_before_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_only_path_open_result_changes_from_the_authenticated_closed_preimage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_original_normal_programme_and_all_six_calls_cannot_be_dropped_or_replaced_by_a_new_grant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_real_go_fixture_requires_standard_errors_Is_before_publishing_numeric_ENOSYS": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoClosedFilesystem.test_strict_actual_packet_requires_all_three_exact_numeric_and_standard_Unsupported_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09d06aed5373ceeca0ab5c1e29542155c6ae494d5d6c7f76e7689f7dd18ba8a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_closed_filesystem.py",
+  "reviewReason": "Closed Go path_open returns pinned ENOSYS52, preserving every other adapter byte/preopen8 and all existing gates; actual fixture checks errors.Is Unsupported and strict52, retain old/current adapter plus mandatorynormal27+six signed programme; native evidence pending.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

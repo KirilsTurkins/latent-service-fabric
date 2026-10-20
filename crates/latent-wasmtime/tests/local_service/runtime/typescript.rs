@@ -171,3 +171,155 @@ async fn signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_ru
         f.idle().await;
     }
 }
+
+fn retirement_request(
+    f: &Fixture,
+    identity: &str,
+    mode: u32,
+) -> latent_activation::ActivationRequest {
+    let mut request = f.request(identity, mode);
+    request.target.contract =
+        ContractId("examples:typescript-runtime-retirement/ordinary@1.0.0".into());
+    request
+}
+
+async fn retirement_idle(f: &Fixture) -> serde_json::Value {
+    f.idle().await;
+    let owners = f.backend.resource_snapshot();
+    let broker = f.broker.snapshot();
+    let read_wait = f
+        .read_wait
+        .active
+        .load(std::sync::atomic::Ordering::Acquire);
+    assert_eq!(
+        (
+            owners.active_invocations,
+            owners.live_stores,
+            owners.live_host_states,
+            owners.live_component_instances,
+            owners.live_cancellation_probes,
+            owners.live_temporary_buffers
+        ),
+        (0, 0, 0, 0, 0, 0)
+    );
+    assert_eq!(read_wait, 0);
+    serde_json::json!({
+        "activeInvocations": owners.active_invocations, "stores": owners.live_stores,
+        "hostStates": owners.live_host_states, "componentInstances": owners.live_component_instances,
+        "cancellationProbes": owners.live_cancellation_probes, "temporaryBuffers": owners.live_temporary_buffers,
+        "calls": broker.calls, "sessions": broker.sessions, "handles": broker.handles,
+        "results": broker.results, "bufferBytes": broker.buffer_bytes, "readWaits": read_wait,
+        "quotaActivations": f.quotas.usage().unwrap().active_activations,
+        "instanceReservations": f.backend.active_instance_reservations(),
+        "cancellationRegistrations": f.manager.cancellation_snapshot().active_registrations,
+    })
+}
+
+async fn retirement_success(f: &Fixture, identity: &str, mode: u32) -> serde_json::Value {
+    let mut invocation = Box::pin(
+        f.manager
+            .start(retirement_request(f, identity, mode))
+            .unwrap(),
+    );
+    let pending = if mode == 5 {
+        super::pending_timer(invocation.as_mut(), f).await;
+        Some(retirement_pending(f))
+    } else {
+        None
+    };
+    let success = super::success(invocation.await);
+    let value = serde_json::from_slice::<Vec<u32>>(&success.output).unwrap();
+    assert_eq!(value, [42]);
+    assert!(success.consumption.cpu_fuel > 0);
+    assert!(success.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+    assert_eq!(success.consumption.child_calls, 0);
+    assert_eq!(success.consumption.outbound_requests, 0);
+    let mut row = serde_json::json!({"case": identity, "mode": mode, "outcome": "Succeeded", "decoded": value,
+        "cpuFuel": success.consumption.cpu_fuel, "peakMemoryBytes": success.consumption.peak_memory_bytes});
+    drop(success);
+    row["idle"] = retirement_idle(f).await;
+    if let Some(pending) = pending {
+        row["pending"] = pending;
+    }
+    row
+}
+
+fn retirement_pending(f: &Fixture) -> serde_json::Value {
+    serde_json::json!({
+        "stores": f.backend.resource_snapshot().live_stores,
+        "readWaits": f.read_wait.active.load(std::sync::atomic::Ordering::Acquire),
+        "calls": f.broker.snapshot().calls,
+    })
+}
+
+async fn retirement_interrupt(f: &Fixture, identity: &str, cancel: bool) -> serde_json::Value {
+    let activation = latent_core::ActivationId(identity.into());
+    let mut request = retirement_request(f, identity, 0);
+    if !cancel {
+        request.budget.wall_time_limit_millis = Some(1000);
+    }
+    let mut invocation = Box::pin(f.manager.start(request).unwrap());
+    // The original pending timer barrier proves guest entry before either
+    // cancellation or the original deadline, not merely admission/preparation.
+    super::pending_timer(invocation.as_mut(), f).await;
+    let pending = retirement_pending(f);
+    if cancel {
+        f.manager
+            .cancel_for(
+                &TenantId("examples".into()),
+                &activation,
+                "typescript-promise-cancel",
+            )
+            .unwrap();
+    }
+    let failure = super::failure(invocation.await);
+    assert_eq!(
+        failure.code,
+        if cancel {
+            PlatformErrorCode::Cancelled
+        } else {
+            PlatformErrorCode::DeadlineExceeded
+        }
+    );
+    serde_json::json!({"case": identity, "mode": 0, "outcome": format!("{:?}", failure.code),
+        "pending": pending, "idle": retirement_idle(f).await})
+}
+
+#[tokio::test]
+#[ignore = "requires current maintained TypeScript retirement compiler outputs with actual build observations"]
+async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_before_fresh_state()
+{
+    let root = tempfile::tempdir().unwrap();
+    let f = fixture("typescript-runtime-retirement", root.path()).await;
+    let mut observations = Vec::new();
+    for mode in [1, 3] {
+        observations.push(
+            retirement_success(&f, &format!("typescript-retirement-reference-{mode}"), mode).await,
+        );
+    }
+    observations.push(retirement_success(&f, "typescript-promise-pending-then-resolved", 5).await);
+    observations.push(retirement_success(&f, "typescript-fresh-after-promise-resolution", 1).await);
+    observations.push(retirement_interrupt(&f, "typescript-pending-promise-cancel", true).await);
+    observations.push(retirement_success(&f, "typescript-fresh-after-promise-cancel", 1).await);
+    observations
+        .push(retirement_interrupt(&f, "typescript-promise-original-root-deadline", false).await);
+    observations.push(retirement_success(&f, "typescript-fresh-after-promise-deadline", 1).await);
+    let trapped = super::failure(
+        f.manager
+            .start(retirement_request(&f, "typescript-root-trap-mode", 2))
+            .unwrap()
+            .await,
+    );
+    assert_eq!(trapped.code, PlatformErrorCode::GuestTrap);
+    observations.push(serde_json::json!({"case": "typescript-root-trap-mode", "mode": 2,
+        "outcome": format!("{:?}", trapped.code), "callbackOriginProven": false, "idle": retirement_idle(&f).await}));
+    observations.push(retirement_success(&f, "typescript-fresh-after-root-trap", 1).await);
+    assert_eq!(observations.len(), 10);
+    println!(
+        "TYPESCRIPT_RETIREMENT {}",
+        serde_json::json!({
+            "schemaVersion": "latent.typescript.runtime-retirement.v1", "status": "passed",
+            "cases": observations, "fullTicketQualification": false, "crossTenantQualified": false,
+        })
+    );
+}

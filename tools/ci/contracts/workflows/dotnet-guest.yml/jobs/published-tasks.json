@@ -1,0 +1,102 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Published Polly default retry and timer factories",
+    "needs": "toolchain",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Download this run's exact normal public products",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "dotnet-published-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-published-prepared"
+        }
+      },
+      {
+        "name": "Check captured graph, authority, original budgets and retirement controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_published_tasks -v\n"
+      },
+      {
+        "name": "Install captured NativeAOT namespace and loader inputs",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the pinned native compiler and closed runtime",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Build fresh NativeAOT component and execute unchanged published task factories",
+        "run": "python3 tools/qualify_dotnet_published_tasks.py --native-qualification \"$RUNNER_TEMP/dotnet-published-prepared\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-published-tasks\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded published task observations including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-published-tasks-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-published-tasks/qualified.json\n${{ runner.temp }}/dotnet-published-tasks/FAILED.json\n${{ runner.temp }}/dotnet-published-tasks/outside/evidence/**\n${{ runner.temp }}/dotnet-published-tasks/logs/**\n${{ runner.temp }}/dotnet-published-tasks/build/*.json\n${{ runner.temp }}/dotnet-published-tasks/build/component.wasm\n${{ runner.temp }}/dotnet-published-tasks/build/logs/**\n${{ runner.temp }}/dotnet-published-tasks/node/public-workflow.json\n${{ runner.temp }}/dotnet-published-tasks/node/workflow.json\n${{ runner.temp }}/dotnet-published-tasks/node/FAILED.json\n${{ runner.temp }}/dotnet-published-tasks/node/controls/unexpected-invocation-diagnostics.json\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "published-tasks",
+  "kind": "job",
+  "reviewReason": "Retain the first failed invocation before assertion, without retry or changing original expected results; add low-cardinality managed stage/kind diagnostics and preserve bounded redacted audit evidence.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}

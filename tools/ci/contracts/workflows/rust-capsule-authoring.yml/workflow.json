@@ -59,7 +59,15 @@
           "docs/component-development/rust-dependencies.md"
         ]
       },
-      "workflow_dispatch": {}
+      "workflow_dispatch": {
+        "inputs": {
+          "replay-scratch-refusals": {
+            "default": false,
+            "description": "Fresh offline Rust scratch component with authenticated passed38 normal products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -72,11 +80,12 @@
     "git-closure",
     "git-components",
     "scratch-refusals",
+    "scratch-replay",
     "standard-clocks",
     "standard-entropy",
     "standard-stdio"
   ],
-  "reviewReason": "Add a separately bounded20-minute signed Rust scratch-refusal child using exact normal public products; preserve all original authoring commands/jobs/35-minute limit and source-only other-language scope.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

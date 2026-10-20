@@ -202,9 +202,74 @@ async fn scalar_lowering_destination_errors_and_provider_errors_reclaim_original
 async fn variable_list_results_keep_the_original_store_owned_lowering_limit() {
     let source = Arc::new(Source::default());
     let f = Fixture::new(Some(source.clone()), RandomLimits::default()).await;
-    assert_eq!(invoke(&f, 0, 1, 17).await, EXHAUSTED);
+    let (request, control) = f.request("held-native-byte-results", 0, 1, 0);
+    let s = session(&f, &request, &control);
+    // The unchanged sixteen-call limit applies to actual simultaneously live
+    // native output owners, independently of guest canonical copies.
+    let mut held = Vec::new();
+    for _ in 0..16 {
+        held.push(f.provider.bytes(&s, 1).unwrap().await.unwrap());
+    }
+    assert!(matches!(
+        f.provider.bytes(&s, 1),
+        Err(RandomError::BudgetExhausted)
+    ));
     assert_eq!(source.calls.load(Ordering::Acquire), 16);
+    drop(s);
+    assert!(f.broker.snapshot().buffer_bytes >= 16);
+    drop(held);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
     f.idle();
     assert_eq!(invoke(&f, 1, 0, 33).await, SCALAR);
     assert_eq!(source.calls.load(Ordering::Acquire), 49);
+}
+
+#[tokio::test]
+async fn sequential_byte_copies_retire_after_actual_lowering_without_widening_limits() {
+    let source = Arc::new(Source::default());
+    let f = Fixture::new(Some(source.clone()), RandomLimits::default()).await;
+    assert_eq!(
+        CapabilityBrokerLimits::default().maximum_calls_per_session,
+        16
+    );
+    for _ in 0..2 {
+        assert_eq!(invoke(&f, 0, 8, 33).await, marker(8));
+        f.idle();
+    }
+    assert_eq!(source.calls.load(Ordering::Acquire), 66);
+    assert_eq!(f.provider.snapshot().generated_bytes, 66 * 8);
+    assert_eq!(f.provider.snapshot().budget_exhaustions, 0);
+}
+
+#[tokio::test]
+async fn byte_destination_and_realloc_failures_retire_original_output_before_fresh_use() {
+    let source = Arc::new(Source::default());
+    let f = Fixture::new(Some(source.clone()), RandomLimits::default()).await;
+    for destination in [131_068, 513] {
+        let (request, control) = f.request("bad-byte-destination", 4, destination, 0);
+        let report = f.backend.invoke_contained(request, &control).await;
+        assert!(matches!(report.outcome, Ok(GuestOutcome::Trapped { .. })));
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        assert_eq!(control.budget.outstanding_reservations(), 0);
+        f.idle();
+        assert_eq!(invoke(&f, 0, 8, 33).await, marker(8));
+    }
+    let broken = Fixture::with_component(
+        Some(source.clone()),
+        RandomLimits::default(),
+        None,
+        None,
+        component::realloc_trap(),
+    )
+    .await;
+    let before = source.calls.load(Ordering::Acquire);
+    let (request, control) = broken.request("trapping-byte-realloc", 0, 8, 1);
+    let report = broken.backend.invoke_contained(request, &control).await;
+    assert_eq!(source.calls.load(Ordering::Acquire), before + 1);
+    assert!(matches!(report.outcome, Ok(GuestOutcome::Trapped { .. })));
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
+    broken.idle();
+    assert_eq!(invoke(&broken, 1, 0, 33).await, SCALAR);
+    assert_eq!(invoke(&f, 0, 8, 33).await, marker(8));
 }

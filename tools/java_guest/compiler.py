@@ -284,6 +284,9 @@ class Compiler:
             self.sdk, destination / 'bindings', java_root))
         write_json(destination / 'standard-logging-profile.json', facilities.stage_logging(
             self.sdk, destination / 'bindings', java_root))
+        from tools.java_guest import filesystem
+        filesystem_profile = filesystem.stage(self.sdk)
+        write_json(destination / 'closed-filesystem-profile.json', filesystem_profile)
         with (project / 'build.gradle').open('a', encoding='utf-8') as build:
             build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         resource_profile = None
@@ -421,7 +424,7 @@ class Compiler:
         actual = wit_surface(json.loads(self.run("compiled-wit", "wasm-tools", "component", "wit", component, "--json")))
         if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
         details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
-                   "semanticSurfaceDigest": digest(canonical(actual))}
+                   "semanticSurfaceDigest": digest(canonical(actual)), "closedFilesystem": filesystem_profile}
         if coroutine_profile is not None:
             details['coroutineCompiler'] = coroutine_profile
         if resource_profile is not None:

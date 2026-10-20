@@ -84,6 +84,15 @@ observed production build produced the fixture.
    the bounded `stopped.report`, observe zero exit status, and finish/reap the
    maintained process-group owner. Remove temporary outputs.
 
+The exact inventory includes both fixed runtime-stack rows introduced by the
+shared worker-stack profile. Each byte row must equal its matching configured
+or observed thread count times the reviewed 2 MiB stack plus 64 KiB guard/alignment
+envelope, checked against the source-owned worker profile. Native build/source
+attribution and the original collector list stay unchanged. This is prepaid
+mapping capacity, not measured RSS or a new guest allowance; missing, foreign or
+inconsistent rows fail the same strict validator. Workload and all limits above
+are unchanged.
+
 At every sample, the current node inventory must be complete and available.
 Guest stores, host states, component instances, temporary buffers, cancellation
 probes, cell leases, instance reservations, preparation reservations, queue and

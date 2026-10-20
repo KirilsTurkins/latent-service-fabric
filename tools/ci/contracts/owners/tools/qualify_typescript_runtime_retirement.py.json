@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_runtime_retirement.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Require exactly the anchored selected libtest name and complete registry-bound totals; reject duplicate/spoofed cases and partial totals. Native component/test inputs unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e42d3f81e652e0a9f91d5723ef689b953ac618dbb95ecb2171d53efb0f8bfe47"
+}

@@ -23,7 +23,7 @@ BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
     "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
-    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/task_wait.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/task_wait.py", "tools/dotnet_guest/closed_filesystem.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/dotnet_guest/async_exports.py",
     "tools/dotnet_guest/internal_io.py",
     "tools/dotnet_guest/closed_io.py",

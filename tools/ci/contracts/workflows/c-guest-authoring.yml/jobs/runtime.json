@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}",
     "name": "Admitted C capability ownership",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -112,7 +113,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Add explicit default-false manual scratch selection retaining mandatory original runtime35 and new same-products child20; skip only unchanged extra standards25 on that manual selection, with all PR/push/default jobs and commands preserved.",
+  "reviewReason": "Reviewed closed-file C port: exact libc/overlay preimages and three materials, preserved argument and warning checks, default-off20min historical27 plus fresh33 replay without native rebuild; all original job bodies retained after exact manual guard normalization.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

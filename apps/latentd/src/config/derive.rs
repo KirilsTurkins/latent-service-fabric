@@ -5,7 +5,7 @@ use latent_artifacts::DirectoryArtifactRepositoryConfig;
 use latent_control_store::DirectoryDeploymentRepositoryConfig;
 use latent_core::{NodeId, PlatformError};
 use latent_node::{NodeDescriptor, StandaloneInventoryConfig};
-use latent_scheduler::LocalSchedulerConfig;
+use latent_scheduler::{CellClass, LocalSchedulerConfig};
 use latent_telemetry::{LocalSinkConfig, SharedActivationObserverConfig, TelemetryPipelineConfig};
 
 use crate::standalone::transport::{TransportConfig, TransportCredential};
@@ -95,11 +95,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         admission,
         budget_profile: config.budget_profile.profile(),
         delegation_limits,
-        scheduler: LocalSchedulerConfig {
-            node: NodeId(config.node_id.clone()),
-            queue_capacity_per_class: classes.clone(),
-            starvation_after: Duration::from_millis(100),
-        },
+        scheduler: scheduler(config, &classes),
         wasmtime,
         runtime_profile,
         manager: runtime::manager(config, &capacity),
@@ -114,18 +110,30 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             maximum_active_correlations: maximum_rpcs,
             ..SharedActivationObserverConfig::default()
         },
-        inventory: StandaloneInventoryConfig {
-            cell_classes: classes.into_keys().collect(),
-            maximum_cache_descriptors: 0,
-            maximum_topology_entries: super::topology::MAXIMUM_ENTRIES,
-            maximum_load_age: LOAD_MAXIMUM_AGE,
-            ..StandaloneInventoryConfig::default()
-        },
+        inventory: inventory(classes.into_keys().collect()),
         transport,
         http,
         shutdown_grace: Duration::from_millis(config.shutdown_grace_millis),
         load_sample_interval: Duration::from_millis(250),
     })
+}
+
+fn scheduler(config: &NodeConfig, classes: &BTreeMap<CellClass, u32>) -> LocalSchedulerConfig {
+    LocalSchedulerConfig {
+        node: NodeId(config.node_id.clone()),
+        queue_capacity_per_class: classes.clone(),
+        starvation_after: Duration::from_millis(100),
+    }
+}
+
+fn inventory(cell_classes: Vec<CellClass>) -> StandaloneInventoryConfig {
+    StandaloneInventoryConfig {
+        cell_classes,
+        maximum_cache_descriptors: 0,
+        maximum_topology_entries: super::topology::MAXIMUM_ENTRIES,
+        maximum_load_age: LOAD_MAXIMUM_AGE,
+        ..StandaloneInventoryConfig::default()
+    }
 }
 
 fn deployment_limits(

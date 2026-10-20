@@ -4,19 +4,59 @@ use super::*;
 #[path = "go/managed_idle.rs"]
 mod managed_idle;
 
+#[path = "go/managed_timers.rs"]
+mod managed_timers;
+
+#[path = "go/admission.rs"]
+mod admission;
+
+#[path = "go/queued.rs"]
+mod queued;
+
+#[path = "go/synchronization.rs"]
+mod synchronization;
+
 fn checkpoint_component(
     variable: &str,
     profile: &str,
 ) -> (latent_packaging::PackageBundle, Vec<u8>) {
+    assert!(
+        matches!(
+            (variable, profile),
+            ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2")
+                | ("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1")
+                | ("LSF_GO_TIMER_FIXTURE", "go-component-activation-v3")
+                | ("LSF_GO_MANAGED_TIMER_FIXTURE", "go-component-activation-v5")
+                | ("LSF_GO_INITIALIZER_FIXTURE", "go-component-activation-v4")
+                | ("LSF_GO_PUBLISHED_FIXTURE", "go-component-activation-v4")
+                | ("LSF_GO_MANAGED_IDLE_FIXTURE", "go-component-activation-v5")
+                | (
+                    "LSF_GO_SYNCHRONIZATION_FIXTURE",
+                    "go-component-activation-v5"
+                )
+                | (
+                    "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE",
+                    "go-component-activation-v1"
+                )
+        ),
+        "only reviewed fixture/profile pairs may select captured Go source"
+    );
     let prepared = std::path::PathBuf::from(
         std::env::var_os(variable).expect("compile the Go checkpoint fixture"),
     );
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
-    let timers = profile == "go-component-activation-v3";
+    let synchronization = matches!(
+        variable,
+        "LSF_GO_SYNCHRONIZATION_FIXTURE" | "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE"
+    );
+    let managed_timers = variable == "LSF_GO_MANAGED_TIMER_FIXTURE";
+    let timers = profile == "go-component-activation-v3" || managed_timers;
     let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
-    let managed = profile == "go-component-activation-v5";
+    let managed = profile == "go-component-activation-v5" && !managed_timers;
     let initializers = profile == "go-component-activation-v4" && !published;
-    let expected: &[u8] = if managed {
+    let expected: &[u8] = if synchronization {
+        include_bytes!("../../../../../sdk/go-guest/runtime/synchronization-conformance/main.go")
+    } else if managed {
         include_bytes!("../../../../../sdk/go-guest/runtime/managed-idle-conformance/main.go")
     } else if published {
         include_bytes!("../../../../../sdk/go-guest/runtime/published-conformance/main.go")
@@ -35,7 +75,9 @@ fn checkpoint_component(
     assert_eq!(record["profile"], profile);
     assert_eq!(
         record["fixture"],
-        if managed {
+        if synchronization {
+            "synchronization"
+        } else if managed {
             "managed-idle"
         } else if published {
             "published"
@@ -55,7 +97,9 @@ fn checkpoint_component(
     if profile == "go-component-activation-v2" || timers || initializers || published || managed {
         assert_eq!(
             record["nativeReference"]["modes"],
-            if managed {
+            if synchronization {
+                serde_json::json!([0, 1, 2, 3, 4, 5, 9])
+            } else if managed {
                 serde_json::json!([0, 1, 2])
             } else if published {
                 serde_json::json!([0, 2, 3])

@@ -341,7 +341,10 @@ fn standalone_topology_precharges_exact_selected_vec_capacity() {
     };
     let old = snapshot(32);
     let current = snapshot(capacity::MAXIMUM_ENTRIES);
-    assert!(current.topology.available && current.topology.complete);
+    // The empty source explicitly declines completeness; capacity is prepaid
+    // independently of whether that source can describe the actual topology.
+    assert!(old.topology.available && !old.topology.complete);
+    assert!(current.topology.available && !current.topology.complete);
     assert!(old.topology.entries.is_empty() && current.topology.entries.is_empty());
     assert_eq!(old.topology.entries.capacity(), 32);
     assert_eq!(current.topology.entries.capacity(), 38);

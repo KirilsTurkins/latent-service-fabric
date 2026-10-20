@@ -12,6 +12,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="TaskWait.cs" />
     <Compile Include="IdleTimerDriver.cs" />
+    <Compile Include="ClosedFilesystem.cs" />
     <Reference Include="Mono.Cecil" HintPath="$(LsfCecilPath)" />
   </ItemGroup>
 </Project>

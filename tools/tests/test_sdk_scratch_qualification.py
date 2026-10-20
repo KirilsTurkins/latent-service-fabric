@@ -52,6 +52,46 @@ def ordinary(root):
 
 
 class ScratchQualification(unittest.TestCase):
+    def test_rust_download_uses_owned_lock_not_workspace_and_keeps_compilation_offline(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root/'Cargo.toml').write_bytes(b'[workspace]\n')
+            (root/'Cargo.lock').write_bytes(b'version = 4\n')
+            calls = []
+            class Commands:
+                def run(self, *arguments): calls.append(arguments)
+            before = qualifier.inventory(qualifier.snapshot(root))
+            proof = qualifier.locked_dependencies('rust', root, Commands())
+            self.assertEqual(calls, [('scratch-locked-dependency-download', 'cargo', 'fetch', '--locked',
+                '--manifest-path', root/'Cargo.toml')])
+            self.assertNotIn('--target', calls[0])
+            self.assertEqual(qualifier.inventory(qualifier.snapshot(root)), before)
+            self.assertFalse(proof['compilerExecution'])
+            self.assertTrue(proof['subsequentBuildOffline'])
+            self.assertEqual(proof['lock'], file_identity(root/'Cargo.lock'))
+            with patch('tools.rust_capsule_build.build', return_value=root) as build:
+                qualifier.build_component('rust', root, root/'build', {
+                    'examples/capsule_contracts': root/'contracts', 'examples/package': root/'package'})
+            self.assertEqual(build.call_args.kwargs, {'offline': True})
+
+    def test_changed_lock_or_manifest_during_fetch_is_not_build_input(self):
+        for name in ('Cargo.toml', 'Cargo.lock'):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root/'Cargo.toml').write_bytes(b'[workspace]\n')
+                (root/'Cargo.lock').write_bytes(b'version = 4\n')
+                class Commands:
+                    def run(self, *_arguments): (root/name).write_bytes(b'changed')
+                with self.assertRaisesRegex(RuntimeError, 'locked-download-mutated-source'):
+                    qualifier.locked_dependencies('rust', root, Commands())
+
+    def test_other_languages_do_not_acquire_cargo_dependencies(self):
+        class Commands:
+            def run(self, *_arguments): raise AssertionError('unexpected Cargo')
+        for language in ('c', 'go', 'java', 'dotnet'):
+            with self.subTest(language=language):
+                self.assertIsNone(qualifier.locked_dependencies(language, Path('missing'), Commands()))
+
     def test_exact_normal_native_companions_and_node_are_required_before_new_compile(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -177,10 +217,13 @@ class ScratchQualification(unittest.TestCase):
         jobs = model['jobs']
         selector = model['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
         self.assertEqual((selector['type'], selector['default']), ('boolean', False))
-        self.assertNotIn('if', jobs['runtime'])
+        self.assertEqual(jobs['runtime']['if'],
+            "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}")
+        self.assertEqual(model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']['type'], 'boolean')
+        self.assertIs(model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']['default'], False)
         self.assertEqual(jobs['standard-facilities']['timeout-minutes'], 25)
         self.assertEqual(jobs['standard-facilities']['if'],
-            "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}")
+            "${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}")
         child = jobs['scratch-refusals']
         self.assertEqual(child['needs'], 'runtime')
         self.assertEqual(child['timeout-minutes'], 20)

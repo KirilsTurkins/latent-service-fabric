@@ -680,9 +680,15 @@ class CapturedCompilerSelection(unittest.TestCase):
                 'exports': {}}], 'interfaces': interfaces, 'types': [], 'packages': packages}
 
     def application(self, workspace, *, emitted=None, final=None):
-        from unittest.mock import Mock
+        from unittest.mock import Mock, patch
+        from tools.tests.dotnet_filesystem_fixture import prepare as filesystem_fixture
         from tools.rust_capsule_project import write_json
         compiler = self.compiler_type.__new__(self.compiler_type)
+        compiler.compiler_patches, compiler.generated_materials = [], []
+        compiler.http_error_tools = workspace / 'synthetic-filesystem-tools'
+        filesystem = patch('tools.dotnet_guest.closed_filesystem.prepare', side_effect=filesystem_fixture)
+        filesystem.start()
+        self.addCleanup(filesystem.stop)
         work = create(workspace / 'application', 'greeting')
         project_xml = work / 'Capsule.csproj'
         project_xml.write_bytes(project_xml.read_bytes().replace(b'</Project>',

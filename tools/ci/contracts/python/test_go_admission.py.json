@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "GoAdmission.test_all_twelve_ordered_barriers_include_both_tenants_and_cancel_trap_reuse",
+    "GoAdmission.test_exact_campaigns_cannot_mix_checkpoint_negative_or_managed_source",
+    "GoAdmission.test_existing_managed_fixture_identity_and_native_modes_are_required",
+    "GoAdmission.test_missing_duplicate_reordered_or_wrong_tenant_cannot_substitute_for_retirement",
+    "GoAdmission.test_source_identity_includes_actual_synthetic_callee_constructor_and_contract",
+    "GoAdmission.test_successful_admission_private_fields_or_foreign_cancel_success_are_rejected",
+    "GoAdmission.test_wrapper_success_other_target_ignored_or_incomplete_libtest_is_not_qualification"
+  ],
+  "guards": {
+    "GoAdmission.test_all_twelve_ordered_barriers_include_both_tenants_and_cancel_trap_reuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77240f4d14aa44c29cd0b0b1de730e3b64bb92c919e2fd04cb98195db3d87a4b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoAdmission.test_exact_campaigns_cannot_mix_checkpoint_negative_or_managed_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77240f4d14aa44c29cd0b0b1de730e3b64bb92c919e2fd04cb98195db3d87a4b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoAdmission.test_existing_managed_fixture_identity_and_native_modes_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77240f4d14aa44c29cd0b0b1de730e3b64bb92c919e2fd04cb98195db3d87a4b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoAdmission.test_missing_duplicate_reordered_or_wrong_tenant_cannot_substitute_for_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77240f4d14aa44c29cd0b0b1de730e3b64bb92c919e2fd04cb98195db3d87a4b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoAdmission.test_source_identity_includes_actual_synthetic_callee_constructor_and_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77240f4d14aa44c29cd0b0b1de730e3b64bb92c919e2fd04cb98195db3d87a4b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoAdmission.test_successful_admission_private_fields_or_foreign_cancel_success_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77240f4d14aa44c29cd0b0b1de730e3b64bb92c919e2fd04cb98195db3d87a4b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoAdmission.test_wrapper_success_other_target_ignored_or_incomplete_libtest_is_not_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77240f4d14aa44c29cd0b0b1de730e3b64bb92c919e2fd04cb98195db3d87a4b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_admission.py",
+  "reviewReason": "Authenticate synthetic callee42 to actual packages/component constructor and contract source, separate from Go caller; preserve every prior source/guard/case.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

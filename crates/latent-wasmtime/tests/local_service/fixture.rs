@@ -131,6 +131,11 @@ pub struct RuntimeIdentities {
     pub callee: ServiceId,
 }
 
+enum TwoTenantAdmission {
+    RefuseAtOne,
+    OrdinaryEight,
+}
+
 impl Default for RuntimeIdentities {
     fn default() -> Self {
         Self {
@@ -263,6 +268,72 @@ impl Fixture {
         )
         .await
     }
+    /// Two authenticated tenants share the same node scheduler/backend/cell.
+    /// Existing single-tenant fixtures keep the original construction path.
+    pub async fn with_two_tenant_activation_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+    ) -> Self {
+        Self::with_two_tenant_admission(
+            provided,
+            limits,
+            call_wall_millis,
+            TwoTenantAdmission::RefuseAtOne,
+        )
+        .await
+    }
+    pub async fn with_two_tenant_queued_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+    ) -> Self {
+        Self::with_two_tenant_admission(
+            provided,
+            limits,
+            call_wall_millis,
+            TwoTenantAdmission::OrdinaryEight,
+        )
+        .await
+    }
+    async fn with_two_tenant_admission(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        admission: TwoTenantAdmission,
+    ) -> Self {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(RuntimeIdentities {
+                tenant: TenantId("tenant-b".into()),
+                ..RuntimeIdentities::default()
+            }),
+            Some((limits, call_wall_millis, None)),
+            Some(TenantId("tenant-a".into())),
+            Some(admission),
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
+        )
+        .await
+        .unwrap()
+    }
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub async fn with_owned_native_threads(
         provided: (
@@ -282,6 +353,8 @@ impl Fixture {
             Arc::new(SyntheticFixtureLoad),
             None,
             Some((limits, 5000, Some(grant_native))),
+            None,
+            None,
             None,
         )
         .await
@@ -343,6 +416,8 @@ impl Fixture {
             load,
             identities,
             activation_runtime,
+            None,
+            None,
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             outbound_streams,
         )
@@ -371,6 +446,8 @@ impl Fixture {
             u64,
             Option<bool>,
         )>,
+        additional_runtime_tenant: Option<TenantId>,
+        two_tenant_admission: Option<TwoTenantAdmission>,
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
             Box<latent_streams::StreamProviderConfig>,
         >,
@@ -381,6 +458,15 @@ impl Fixture {
         let stream_enabled = false;
         let root = tempfile::tempdir().unwrap();
         let identities = identities.unwrap_or_default();
+        assert_eq!(
+            additional_runtime_tenant.is_some(),
+            two_tenant_admission.is_some()
+        );
+        if let Some(other) = &additional_runtime_tenant {
+            assert!(activation_runtime.is_some());
+            assert_eq!(identities.tenant.0, "tenant-b");
+            assert_eq!(other.0, "tenant-a");
+        }
         let tenant = identities.tenant.0.as_str();
         let caller_service = identities.caller.0.as_str();
         let callee_service = identities.callee.0.as_str();
@@ -475,27 +561,47 @@ impl Fixture {
             .await
             .unwrap(),
         );
+        // The two-tenant fixture has two scoped publications of identical
+        // executable bytes. Select the authenticated association explicitly.
+        let selected_publication = |bundle: &latent_packaging::PackageBundle| {
+            additional_runtime_tenant.as_ref().map(|_| {
+                latent_artifacts::PublicationRef::package(
+                    latent_artifacts::LifecycleScope::Tenant(identities.tenant.clone()),
+                    bundle.layout().digest(),
+                )
+                .unwrap()
+                .id
+            })
+        };
+        let caller_selector = selected_publication(&caller);
+        let callee_selector = selected_publication(&callee);
         let caller_publication = catalog
-            .execution_eligibility_selected(&packages::release(&caller), None)
+            .execution_eligibility_selected(&packages::release(&caller), caller_selector.as_ref())
             .unwrap()
             .unwrap()
             .publication()
             .clone();
         let callee_publication = catalog
-            .execution_eligibility_selected(&packages::release(&callee), None)
+            .execution_eligibility_selected(&packages::release(&callee), callee_selector.as_ref())
             .unwrap()
             .unwrap()
             .publication()
             .clone();
         let mut consumer = deployment("caller", tenant, &caller, &caller_publication);
         consumer.service = identities.caller.clone();
-        consumer.resources = catalog
-            .fetch(&packages::release(&caller))
-            .await
-            .unwrap()
-            .manifest
-            .execution
-            .resource_budget_ceiling;
+        consumer.resources = if additional_runtime_tenant.is_some() {
+            catalog
+                .fetch_publication(&latent_artifacts::PublicationRef {
+                    scope: latent_artifacts::LifecycleScope::Tenant(identities.tenant.clone()),
+                    id: caller_publication.clone(),
+                })
+                .unwrap()
+        } else {
+            catalog.fetch(&packages::release(&caller)).await.unwrap()
+        }
+        .manifest
+        .execution
+        .resource_budget_ceiling;
         consumer.grants = if activation_runtime.is_some() {
             let mut grants = vec![CapabilityGrantSpec::new(
                 latent_core::CapabilityId(guest_runtime::ACTIVATION.into()),
@@ -579,6 +685,22 @@ impl Fixture {
             .execution
             .resource_budget_ceiling;
         store.apply(target.clone()).await.unwrap();
+        if let Some(other) = &additional_runtime_tenant {
+            let mut other_consumer = consumer.clone();
+            // Deployment IDs are global; tenant-scoped services still need distinct objects.
+            other_consumer.id = DeploymentId(format!("caller-{}", other.0));
+            other_consumer.metadata.name = other_consumer.id.0.clone();
+            other_consumer.metadata.tenant = Some(other.clone());
+            other_consumer.publication = Some(
+                latent_artifacts::PublicationRef::package(
+                    latent_artifacts::LifecycleScope::Tenant(other.clone()),
+                    caller.layout().digest(),
+                )
+                .unwrap()
+                .id,
+            );
+            store.apply(other_consumer).await.unwrap();
+        }
         store.apply(consumer).await.unwrap();
         let policies = Arc::new(
             PolicyStore::open(
@@ -686,6 +808,23 @@ impl Fixture {
         } else {
             guest_runtime::Runtime::scoped(&broker, &policies, tenant, &scopes, false)
         };
+        if let Some(other) = &additional_runtime_tenant {
+            let publication = latent_artifacts::PublicationRef::package(
+                latent_artifacts::LifecycleScope::Tenant(other.clone()),
+                caller.layout().digest(),
+            )
+            .unwrap();
+            guest_runtime.authorize_additional_tenant(
+                &policies,
+                &other.0,
+                &[guest_runtime::Scope {
+                    services: &[caller_service],
+                    publications: std::slice::from_ref(&publication.id),
+                    principal: ("user", "alice"),
+                }],
+                activation_runtime.unwrap().1,
+            );
+        }
         let callee_contract = callee.surface().unwrap().exports()[0].to_string();
         let definition = BindingDefinition { manifest: JsonManifestCodec::default().decode_binding(&serde_json::to_vec(&json!({
             "apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"local-call","tenant":tenant},
@@ -693,6 +832,9 @@ impl Fixture {
             provider_binding_id: "installed".into(), allowed_modes: vec![BindingMode::IsolatedLocal], restriction_json: br#"{"operations":[]}"#.to_vec() };
         let mut definitions = vec![definition];
         definitions.extend(guest_runtime.definitions(tenant, &[caller_service, callee_service]));
+        if let Some(other) = &additional_runtime_tenant {
+            definitions.extend(guest_runtime.definitions(&other.0, &[caller_service]));
+        }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if streams.is_some() {
             definitions.push(streams::Owners::definition());
@@ -704,6 +846,9 @@ impl Fixture {
             local_deployment: Some(DeploymentId("callee".into())),
         }];
         providers.extend(guest_runtime.providers(tenant));
+        if let Some(other) = &additional_runtime_tenant {
+            providers.extend(guest_runtime.providers(&other.0));
+        }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if let Some(streams) = &streams {
             providers.push(streams.provider());
@@ -748,6 +893,25 @@ impl Fixture {
         .unwrap();
         let backend = Arc::new(factory.create_backend_instance());
         let mut admission_policy = node_policy(cells, stream_enabled);
+        match two_tenant_admission {
+            Some(TwoTenantAdmission::RefuseAtOne) => {
+                admission_policy.limits.maximum_concurrent_activations = 1;
+            }
+            Some(TwoTenantAdmission::OrdinaryEight) => {
+                // Assert the original policy instead of expanding any capacity.
+                assert_eq!(admission_policy.limits.maximum_concurrent_activations, 8);
+                assert_eq!(admission_policy.limits.maximum_queued_activations, 8);
+                assert_eq!(
+                    admission_policy.limits.maximum_reserved_cpu_fuel,
+                    packages::budget().cpu_fuel * 8
+                );
+                assert_eq!(
+                    admission_policy.limits.maximum_reserved_memory_bytes,
+                    packages::budget().memory_bytes * 8
+                );
+            }
+            None => {}
+        }
         if tenant != "tenant-a" {
             let mut tenant_policy = admission_policy
                 .tenants
@@ -844,6 +1008,43 @@ impl Fixture {
         request.input = format!("[{which}]").into_bytes();
         request.input_media_type = "application/vnd.latent.wit-values.v1+json".into();
         request
+    }
+    /// A refused sibling cannot borrow or refund the live original cell.
+    pub fn assert_single_cell_occupied_without_queue(&self) {
+        let quota = self.quotas.usage().unwrap();
+        assert_eq!(quota.active_activations, 1);
+        assert_eq!(quota.queued_activations, 0);
+        assert_eq!(quota.reserved_cpu_fuel, packages::budget().cpu_fuel);
+        assert_eq!(quota.reserved_memory_bytes, packages::budget().memory_bytes);
+        let scheduler = self.scheduler.observations(CellClass::Tiny);
+        assert_eq!(scheduler.active_leases, 1);
+        assert_eq!(scheduler.queue_depth, 0);
+        assert_eq!(self.backend.active_instance_reservations(), 1);
+        assert_eq!(self.backend.resource_snapshot().live_stores, 1);
+        assert!(self.read_wait.active.load(Ordering::Acquire) > 0);
+    }
+    pub fn queued_cell_requests(&self) -> u32 {
+        self.scheduler.observations(CellClass::Tiny).queue_depth
+    }
+    pub fn assert_one_occupied_cell_with_queued(&self, queued: u32) {
+        assert!(queued <= 7);
+        let quota = self.quotas.usage().unwrap();
+        assert_eq!(quota.active_activations, queued + 1);
+        assert_eq!(quota.queued_activations, queued);
+        assert_eq!(
+            quota.reserved_cpu_fuel,
+            packages::budget().cpu_fuel * u64::from(queued + 1)
+        );
+        assert_eq!(
+            quota.reserved_memory_bytes,
+            packages::budget().memory_bytes * u64::from(queued + 1)
+        );
+        let scheduler = self.scheduler.observations(CellClass::Tiny);
+        assert_eq!(scheduler.active_leases, 1);
+        assert_eq!(scheduler.queue_depth, queued);
+        assert_eq!(self.backend.active_instance_reservations(), 1);
+        assert_eq!(self.backend.resource_snapshot().live_stores, 1);
+        assert!(self.read_wait.active.load(Ordering::Acquire) > 0);
     }
     pub async fn idle(&self) {
         tokio::time::timeout(Duration::from_secs(2), async {

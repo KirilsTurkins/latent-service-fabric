@@ -100,9 +100,11 @@
     }
   },
   "requiredJobs": [
+    "published-tasks",
+    "scratch-refusals",
     "toolchain"
   ],
-  "reviewReason": "Add ordinary default Task/ThreadPool/timer campaign with explicit clock/activation authority, original limits and owner cleanup; retain all existing qualification commands and case guards.",
+  "reviewReason": "Compose the unchanged normal parent and both separately budgeted published and scratch children without removing commands",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
