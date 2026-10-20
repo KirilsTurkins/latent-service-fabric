@@ -233,7 +233,7 @@ impl ProviderRuntime {
                 if http.phase_timing {
                     owner
                         .runtime
-                        .install_phase_timing_http(Arc::new(provider))?;
+                        .install_phase_http(Arc::new(provider))?;
                 } else {
                     owner.runtime.install_streaming_http(Arc::new(provider))?;
                 }
