@@ -399,6 +399,95 @@ class GoNodeStop(unittest.TestCase):
             self.assertEqual(record['stage'], 'original-normal-products')
             self.assertFalse((root / 'output/qualification.json').exists())
 
+    def test_only_the_exact_known_read_only_audit_refusal_is_a_nonwitness(self):
+        value = {'schemaVersion': 'latent.cli.result.v1', 'category': 'platform-failure',
+            'command': 'audit query', 'data': {}, 'outcomeKnown': True, 'requestDispatched': True,
+            'error': {'code': 'resource-exhausted', 'details': [],
+                      'message': 'The platform reported a failure.', 'retryable': False}}
+        self.assertFalse(probe.refused_observation(value)['barrierEvidence'])
+        for key, selected in [('command', 'deployment apply'), ('outcomeKnown', False),
+                              ('requestDispatched', False), ('data', {'private': 'value'}),
+                              ('extra', 'private'), ('category', 'transport-failure')]:
+            changed = copy.deepcopy(value)
+            changed[key] = selected
+            with self.subTest(key=key), self.assertRaisesRegex(RuntimeError, 'only-known-audit'):
+                probe.refused_observation(changed)
+        for key, selected in [('code', 'permission-denied'), ('details', [{'private': 'text'}]),
+                              ('message', 'raw private text'), ('retryable', True), ('extra', 'private')]:
+            changed = copy.deepcopy(value)
+            changed['error'][key] = selected
+            with self.subTest(error=key), self.assertRaisesRegex(RuntimeError, 'only-known-audit'):
+                probe.refused_observation(changed)
+
+    def test_refused_audit_page_retains_its_actual_bytes_and_context_without_fake_page_success(self):
+        value = {'schemaVersion': 'latent.cli.result.v1', 'category': 'platform-failure',
+            'command': 'audit query', 'data': {}, 'outcomeKnown': True, 'requestDispatched': True,
+            'error': {'code': 'resource-exhausted', 'details': [],
+                      'message': 'The platform reported a failure.', 'retryable': False}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            def execute(*args, **kwargs):
+                self.assertEqual(args[:2], ('audit', 'query'))
+                self.assertEqual(kwargs, {'codes': (0, 4)})
+                client.calls += 1
+                (root / f'{client.calls:03}.json').write_bytes(json.dumps(value).encode())
+                return value
+            client = SimpleNamespace(evidence=root, calls=0, call=execute)
+            actual, refused = reference.audit_pages(client, 1234)
+            self.assertIsNone(actual)
+            self.assertEqual(refused['context'], {'scope': 'tenant', 'fromUnixMillis': '1234',
+                'pageSize': 64, 'pageOrdinal': 1, 'cursorPresent': False})
+            self.assertEqual(refused['queryFiles'][0]['path'], '001.json')
+            self.assertFalse(refused['refusal']['barrierEvidence'])
+            value['error']['code'] = 'permission-denied'
+            with self.assertRaisesRegex(RuntimeError, 'only-known-audit'):
+                reference.audit_pages(client, 1234)
+
+    def test_refused_observation_then_complete_original_witnesses_stays_inside_original_poll_envelope(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            client = SimpleNamespace(deadline=100.0, evidence=root,
+                call=lambda *args: {'data': {'inventory': inventory()}} if args[0] == 'node' else
+                                  {'data': {**provider_usage(), 'nextPageToken': None}})
+            node = SimpleNamespace(drain=lambda: None, buffers=[b'',
+                b'LSF-JAVA-CONTROL-REFUSAL-V1 audit-query-reservation audit-busy\n'])
+            pending = SimpleNamespace(owner=SimpleNamespace(exited=lambda: False),
+                authoring_started_unix_millis=1000, authoring_activation='pending')
+            refusal = {'refusal': {'barrierEvidence': False}, 'queryFiles': [{'path': '001.json'}],
+                       'context': {'scope': 'tenant'}}
+            with patch.object(reference.time, 'monotonic', return_value=10.0), \
+                    patch.object(reference.time, 'sleep') as sleep, \
+                    patch.object(reference, 'audit_pages', side_effect=[(None, refusal), (pages(), [])]), \
+                    patch.object(probe, 'barrier', wraps=probe.barrier) as inspect:
+                result = reference.wait_live(client, node, pending, 'pending')
+            self.assertEqual(result['attempts'], 2)
+            self.assertEqual(inspect.call_count, 1)
+            self.assertEqual(client.deadline, 100.0)
+            sleep.assert_called_once_with(0.01)
+            self.assertEqual(result['refusedAuditObservations'][0]['hostRefusals']['records'],
+                [{'stage': 'audit-query-reservation', 'reason': 'audit-busy'}])
+            self.assertTrue((root / 'refused-audit-1.json').is_file())
+
+    def test_sixteen_refused_reads_never_authorize_stop_or_extend_original_deadline(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            client = SimpleNamespace(deadline=100.0, evidence=root,
+                call=lambda *args: self.fail('refusal cannot authorize an inventory or provider witness'))
+            node = SimpleNamespace(drain=lambda: None, buffers=[b'', b''])
+            pending = SimpleNamespace(owner=SimpleNamespace(exited=lambda: False),
+                authoring_started_unix_millis=1000, authoring_activation='pending')
+            with patch.object(reference.time, 'monotonic', return_value=10.0), \
+                    patch.object(reference.time, 'sleep'), \
+                    patch.object(reference, 'audit_pages', return_value=(None, {'refusal': {'barrierEvidence': False}})) as read, \
+                    patch.object(probe, 'barrier', side_effect=AssertionError('refusal is not evidence')), \
+                    patch.object(reference, 'stop', side_effect=AssertionError('no witnessed work')) as signal, \
+                    self.assertRaisesRegex(RuntimeError, 'live-barrier-attempts'):
+                reference.wait_live(client, node, pending, 'pending')
+            self.assertEqual(read.call_count, 16)
+            self.assertEqual(client.deadline, 100.0)
+            self.assertEqual(len(list(root.glob('refused-audit-*.json'))), 16)
+            signal.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

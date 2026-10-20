@@ -33,6 +33,14 @@ close operation. Every named record must match the exact activation and
 provider. Missing, duplicate, foreign or unpaged positive witnesses cannot
 qualify. HostCompleted alone does not assert a typed success: the authenticated
 runtime must check each start result before its later timer-next dispatch.
+An explicitly retained audit-query ResourceExhausted is a refused observation,
+never a timer witness. Only that exact known read-only refusal can consume a
+polling attempt; all unknown or unrelated errors remain fatal. The original
+sixteen attempts and ten-second total observation deadline are unchanged.
+The existing source-authenticated native control-refusal switch supplies only
+closed host stage/reason labels on stderr. No private error text, new owner,
+queue capacity or guest permission is added. A refused read cannot authorize
+SIGTERM, and every successful barrier still requires the complete named positives.
 A capability inspection must additionally show actual retained tenant and node
 provider calls alongside the live Store/caller. These are original ProviderCall
 owners retained through the pending timer operation, not a guessed elapsed wait.

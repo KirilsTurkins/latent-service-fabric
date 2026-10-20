@@ -15,6 +15,7 @@ import time
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import go_node_stop_fixture as fixture, go_node_stop_probe as oracle
+from tools import java_control_refusal_diagnostic as control_refusal
 from tools.build_observation import build_environment
 from tools.build_process_signals import owned_cancellation
 from tools.guest_runtime_grants import configure as runtime_configuration, grant as runtime_grants
@@ -29,7 +30,7 @@ from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file
 HELPERS = ('tools/qualify_go_node_stop.py', 'tools/go_node_stop_fixture.py', 'tools/go_node_stop_probe.py',
            'tools/qualify_sdk_scratch.py', 'tools/guest_runtime_grants.py',
            'tools/phase2_operator_process.py', 'tools/phase2_operator_scenario.py',
-           'tools/rust_capsule_node.py')
+           'tools/rust_capsule_node.py', 'tools/java_control_refusal_diagnostic.py')
 SERVICE = 'examples/my-greeting'
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 PRODUCER_HEAD = '94d0f8b0c1508df50e2830e6d678661c1e76bc36'
@@ -188,10 +189,15 @@ def audit_pages(client, since):
                    '--from-unix-millis', str(since))
         if token is not None:
             command += ('--page-token', token)
-        page = client.call(*command)
-        pages.append(page)
+        page = client.call(*command, codes=(0, 4))
         path = client.evidence / f'{client.calls:03}.json'
         identities.append({'path': path.name, **file_identity(path, 262144)})
+        if page['category'] != 'success':
+            refused = oracle.refused_observation(page)
+            return None, {'refusal': refused, 'queryFiles': identities,
+                'context': {'scope': 'tenant', 'fromUnixMillis': str(since),
+                    'pageSize': 64, 'pageOrdinal': len(identities), 'cursorPresent': token is not None}}
+        pages.append(page)
         token = page['data']['page']['nextPageToken']
         if token is None:
             return pages, identities
@@ -203,12 +209,23 @@ def audit_pages(client, since):
 def wait_live(client, node, pending, mode):
     original = client.deadline
     client.deadline = min(original, time.monotonic() + 10)
+    refused = []
     try:
         for attempt in range(16):
             require(time.monotonic() < client.deadline, 'Go-node-stop-live-barrier-deadline')
             require(not pending.owner.exited(), 'Go-node-stop-guest-completed-before-signal')
             node.drain()
             pages, identities = audit_pages(client, max(0, pending.authoring_started_unix_millis - 1000))
+            if pages is None:
+                node.drain()
+                item = {'attempt': attempt + 1, **identities,
+                        'hostRefusals': control_refusal.observe(bytes(node.buffers[1]))}
+                refused.append(item)
+                write_json(client.evidence / ('refused-audit-' + str(attempt + 1) + '.json'), item)
+                require(not pending.owner.exited(), 'Go-node-stop-guest-completed-before-signal')
+                require(time.monotonic() < client.deadline, 'Go-node-stop-live-barrier-deadline')
+                time.sleep(0.01)
+                continue
             inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']
             providers = client.call('capability', 'list', '--deployment', 'my-greeting', '--include-node-usage')['data']
             require(providers['nextPageToken'] is None, 'Go-node-stop-provider-page-bound')
@@ -219,6 +236,8 @@ def wait_live(client, node, pending, mode):
             if observed is not None:
                 return {'observation': observed, 'inventory': inventory, 'providerUsage': providers,
                         'auditFiles': identities,
+                        'refusedAuditObservations': refused,
+                        'hostRefusals': control_refusal.observe(bytes(node.buffers[1])),
                         'attempts': attempt + 1}
             time.sleep(0.01)
         raise RuntimeError('Go-node-stop-live-barrier-attempts')
@@ -258,7 +277,8 @@ def programme(native, signed, output):
             record = {'mode': mode, 'actualSignal': 'SIGTERM', 'shutdownGraceMillis': 5000,
                       'ownerLimits': dict(oracle.OWNER_LIMITS)}
             try:
-                node = connect(client, native['latentd'], work / 'node', path, 'examples', index * 2 + 1)
+                node = connect(client, native['latentd'], work / 'node', path, 'examples', index * 2 + 1,
+                               control_refusal_diagnostic=True)
                 record['startup'] = node.startup_record
                 source = signed / 'my-greeting'
                 publication = client.call('release', 'publish-package', source / 'package',
@@ -278,6 +298,7 @@ def programme(native, signed, output):
                 stop(client, node)
                 stopped = stopped_record(node)
                 record['shutdownWhileLive'] = stopped
+                record['liveNodeControlRefusals'] = control_refusal.observe(bytes(node.buffers[1]))
                 oracle.shutdown(stopped)
                 node = None
                 deadline = client.deadline
@@ -289,19 +310,23 @@ def programme(native, signed, output):
                 pending = None
                 record['interruptedInvocation'] = interrupted
                 record['transportDisposition'] = oracle.interrupted(interrupted)
-                node = connect(client, native['latentd'], work / 'node', path, 'examples', index * 2 + 2)
+                node = connect(client, native['latentd'], work / 'node', path, 'examples', index * 2 + 2,
+                               control_refusal_diagnostic=True)
                 record['restart'] = node.startup_record
                 record['freshAfterRestart'] = fresh_call(client, target, 'node-stop-' + mode + '-after')
                 stop(client, node)
                 final = stopped_record(node)
                 oracle.shutdown(final)
                 record['shutdownAfterFresh'] = final
+                record['freshNodeControlRefusals'] = control_refusal.observe(bytes(node.buffers[1]))
                 node = None
                 record['status'] = 'passed'
                 write_json(selected / 'result.json', record)
                 result['modes'].append(record)
             except BaseException:
                 record['status'] = 'failed'
+                if node is not None:
+                    record['controlRefusals'] = control_refusal.observe(bytes(node.buffers[1]))
                 write_json(selected / 'FAILED.json', record)
                 raise
             finally:

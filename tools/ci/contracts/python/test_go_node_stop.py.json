@@ -14,11 +14,15 @@
     "GoNodeStop.test_live_barrier_read_failure_restores_the_original_deadline_and_never_signals_node",
     "GoNodeStop.test_missing_dropped_duplicate_or_partial_audit_is_not_a_live_work_barrier",
     "GoNodeStop.test_named_timer_events_require_real_retained_provider_calls_with_the_store",
+    "GoNodeStop.test_only_the_exact_known_read_only_audit_refusal_is_a_nonwitness",
     "GoNodeStop.test_optional_global_loss_does_not_replace_or_erase_the_required_named_positive_witnesses",
     "GoNodeStop.test_original_limits_are_go_limits_and_readiness_does_not_raise_any_capacity",
     "GoNodeStop.test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer",
+    "GoNodeStop.test_refused_audit_page_retains_its_actual_bytes_and_context_without_fake_page_success",
+    "GoNodeStop.test_refused_observation_then_complete_original_witnesses_stays_inside_original_poll_envelope",
     "GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results",
     "GoNodeStop.test_shutdown_requires_each_original_physical_owner_zero_and_real_joined_reaped_report",
+    "GoNodeStop.test_sixteen_refused_reads_never_authorize_stop_or_extend_original_deadline",
     "GoNodeStop.test_uncertain_transport_is_retained_without_inventing_cancellation_or_retirement"
   ],
   "guards": {
@@ -190,6 +194,18 @@
       ],
       "skipSites": []
     },
+    "GoNodeStop.test_only_the_exact_known_read_only_audit_refusal_is_a_nonwitness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "GoNodeStop.test_optional_global_loss_does_not_replace_or_erase_the_required_named_positive_witnesses": {
       "bases": [
         "unittest.TestCase"
@@ -226,6 +242,30 @@
       ],
       "skipSites": []
     },
+    "GoNodeStop.test_refused_audit_page_retains_its_actual_bytes_and_context_without_fake_page_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_refused_observation_then_complete_original_witnesses_stays_inside_original_poll_envelope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results": {
       "bases": [
         "unittest.TestCase"
@@ -239,6 +279,18 @@
       "skipSites": []
     },
     "GoNodeStop.test_shutdown_requires_each_original_physical_owner_zero_and_real_joined_reaped_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c4deafa32a5fc9411b4755b10fc005f4b1de77198e32160829cf110d63e1b55",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoNodeStop.test_sixteen_refused_reads_never_authorize_stop_or_extend_original_deadline": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -265,6 +317,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_node_stop.py",
-  "reviewReason": "Actual d277/run39386430188 source-preflight refusal before compiler/node: authenticate exact Java and root-reviewed resource default-off unused workflow helpers and original/current full3299-file inventories whose only native delta is the uncompiled startup integration test runtime-stack assertions. Retain original94d normal27/native5 attribution; receipt explicitly reports declared inventory inequality and no native rebuild. Unknown helper/inventory/preimage/used-source drift refused; generic prepared remains current and strict. Original18 tests byte-AST-equal, two new controls, all31 focused PASS. No guest/native run claimed.",
+  "reviewReason": "Actual ad39/run39388790535 audit query018 ResourceExhausted after component/sign/fresh success, before SIGTERM. Explicitly retain only the exact known read-only refused observation inside original 16attempt/10second envelope; refusal never supplies barrier evidence. Complete named timer and actual provider/Store/caller positives still mandatory; all unknown/unrelated errors fatal. Existing 94d native closed control-refusal observer enabled with unchanged native code/limits/authority. All20 old test bodies retained AST-exact, four additive controls;35 focused PASS. No whole live-stop pass or exact refusal cause inferred; scoped actual closed reason remains pending.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

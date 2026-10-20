@@ -17,6 +17,20 @@ LIVE_ROWS = ('execution-cell-leases', 'guest-invocations', 'guest-stores',
              'guest-host-states', 'guest-component-instances')
 
 
+def refused_observation(value):
+    require(type(value) is dict and set(value) == {'schemaVersion', 'category', 'command', 'data',
+        'error', 'outcomeKnown', 'requestDispatched'}
+        and value['schemaVersion'] == 'latent.cli.result.v1'
+        and value['category'] == 'platform-failure' and value['command'] == 'audit query'
+        and value['data'] == {} and value['outcomeKnown'] is True and value['requestDispatched'] is True
+        and value['error'] == {'code': 'resource-exhausted', 'details': [],
+            'message': 'The platform reported a failure.', 'retryable': False},
+        'Go-node-stop-only-known-audit-observation-refusal')
+    return {'kind': 'refused-observation', 'operation': 'audit query',
+            'publicCode': 'resource-exhausted', 'outcomeKnown': True,
+            'requestDispatched': True, 'retryable': False, 'barrierEvidence': False}
+
+
 def integer(value):
     require(type(value) is int and value >= 0 or type(value) is str and value.isascii()
             and value.isdecimal() and len(value) <= 20, 'Go-node-stop-finite-observation')
