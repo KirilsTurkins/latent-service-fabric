@@ -8449,6 +8449,7 @@
         "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
         "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
         "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+        "runtime::go::admission::signed_cross_tenant_cell_saturation_keeps_original_owners_until_cancel_and_trap_retire",
         "runtime::go::managed_idle::signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain",
         "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
@@ -8476,6 +8477,7 @@
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
+        "runtime::go::admission::signed_cross_tenant_cell_saturation_keeps_original_owners_until_cancel_and_trap_retire",
         "runtime::go::managed_idle::signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain",
         "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
@@ -8500,6 +8502,7 @@
         "signed_canonical_children_use_distinct_original_tasks_and_physical_stack_retirement",
         "signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "signed_condition_once_rwmutex_and_channel_ordering_retire_original_v5_owners",
+        "signed_cross_tenant_cell_saturation_keeps_original_owners_until_cancel_and_trap_retire",
         "signed_gc_workers_reserve_original_capacity_and_retire_only_after_application_drain",
         "signed_initializer_goroutines_waits_and_timers_start_inside_original_activation",
         "signed_java_completable_futures_use_default_activation_executor",
@@ -8516,7 +8519,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 48,
+      "minimumCases": 49,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
