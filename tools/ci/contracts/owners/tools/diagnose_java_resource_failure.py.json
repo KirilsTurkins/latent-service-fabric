@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_java_resource_failure.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add only an explicit default-false private enum/numeric-frame observation lane around the immutable063be guest; preserve both old jobs, all commands, limits and historical obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "fb2daedc8a8acba266edce053417858f886f43f716174200e73479e0494cb846"
+}

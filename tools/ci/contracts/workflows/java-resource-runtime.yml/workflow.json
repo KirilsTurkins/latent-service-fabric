@@ -35,6 +35,11 @@
             "description": "Observe only retained fresh, clear and parallel paths; never qualify original13",
             "type": "boolean"
           },
+          "observe_retained_failure": {
+            "default": false,
+            "description": "Private closed trap enum and numeric frames; never qualify original13",
+            "type": "boolean"
+          },
           "replay_retained_component": {
             "default": false,
             "description": "Re-sign the exact retained Java component and run all original13 cases",
@@ -50,9 +55,10 @@
   },
   "requiredJobs": [
     "joined-facilities",
+    "private-observer",
     "retained-component"
   ],
-  "reviewReason": "Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
+  "reviewReason": "Add only an explicit default-false private enum/numeric-frame observation lane around the immutable063be guest; preserve both old jobs, all commands, limits and historical obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-resource-runtime.yml"
 }

@@ -1,0 +1,97 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe_retained_failure && !(inputs.replay_retained_component || inputs.diagnose_retained_component) }}",
+    "name": "Closed private trap enum for unchanged Java clear failure",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch only exact original guest and native sources",
+        "run": "git fetch --no-tags --depth=1 origin 063be0a52eac35d6d0acf836089479437c9ce07b\ngit fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b\n"
+      },
+      {
+        "name": "Check private closed observations and immutable inputs",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_resource_private_observer -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate original five products without compiling them",
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/java-private-native\""
+      },
+      {
+        "name": "Restore fixed public failed guest artifact",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "java-resource-runtime-063be0a52eac35d6d0acf836089479437c9ce07b",
+          "path": "${{ runner.temp }}/java-private-original",
+          "run-id": 39482057326
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Install only the existing private host boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Observe unchanged guest with only two private host overlays",
+        "run": "python3 -B tools/diagnose_java_resource_failure.py \\\n  --native \"$RUNNER_TEMP/java-private-native\" \\\n  --retained \"$RUNNER_TEMP/java-private-original\" \\\n  --output \"$RUNNER_TEMP/java-private-observation\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public identities and private diagnostic host",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-resource-private-trap-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-private-observation/*.json\n${{ runner.temp }}/java-private-observation/private-build.*.txt\n${{ runner.temp }}/java-private-observation/private-fetch.*.txt\n${{ runner.temp }}/java-private-observation/private-latentd\n${{ runner.temp }}/java-private-observation/node/*.json\n${{ runner.temp }}/java-private-observation/node/examples-controls/*.json\n${{ runner.temp }}/java-private-observation/node/foreign-controls/*.json\n",
+          "retention-days": 1
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "private-observer",
+  "kind": "job",
+  "reviewReason": "Add only an explicit default-false private enum/numeric-frame observation lane around the immutable063be guest; preserve both old jobs, all commands, limits and historical obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-resource-runtime.yml"
+}

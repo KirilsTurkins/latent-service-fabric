@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "JavaResourcePrivateObserver.test_closed_variant_and_numeric_frames_are_observed_without_error_text",
+    "JavaResourcePrivateObserver.test_fixed_complete_member_preimages_refuse_missing_changed_or_foreign_data",
+    "JavaResourcePrivateObserver.test_only_two_authenticated_private_overlays_change_before_public_classification",
+    "JavaResourcePrivateObserver.test_original_jobs_steps_commands_and_deadlines_remain_exact",
+    "JavaResourcePrivateObserver.test_unknown_variant_nonnumeric_frame_overflow_and_extra_fields_are_refused"
+  ],
+  "guards": {
+    "JavaResourcePrivateObserver.test_closed_variant_and_numeric_frames_are_observed_without_error_text": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c88a1d787706a3b68fface8aba74dd35720363c6b7bfbb872176b1281639460f",
+        "class:setup-sha256:971750da8bfe1d80264a2d7744248572cf2f009321baef9020c6cd5a672f66bf"
+      ],
+      "skipSites": []
+    },
+    "JavaResourcePrivateObserver.test_fixed_complete_member_preimages_refuse_missing_changed_or_foreign_data": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c88a1d787706a3b68fface8aba74dd35720363c6b7bfbb872176b1281639460f",
+        "class:setup-sha256:971750da8bfe1d80264a2d7744248572cf2f009321baef9020c6cd5a672f66bf"
+      ],
+      "skipSites": []
+    },
+    "JavaResourcePrivateObserver.test_only_two_authenticated_private_overlays_change_before_public_classification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c88a1d787706a3b68fface8aba74dd35720363c6b7bfbb872176b1281639460f",
+        "class:setup-sha256:971750da8bfe1d80264a2d7744248572cf2f009321baef9020c6cd5a672f66bf"
+      ],
+      "skipSites": []
+    },
+    "JavaResourcePrivateObserver.test_original_jobs_steps_commands_and_deadlines_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c88a1d787706a3b68fface8aba74dd35720363c6b7bfbb872176b1281639460f",
+        "class:setup-sha256:971750da8bfe1d80264a2d7744248572cf2f009321baef9020c6cd5a672f66bf"
+      ],
+      "skipSites": []
+    },
+    "JavaResourcePrivateObserver.test_unknown_variant_nonnumeric_frame_overflow_and_extra_fields_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c88a1d787706a3b68fface8aba74dd35720363c6b7bfbb872176b1281639460f",
+        "class:setup-sha256:971750da8bfe1d80264a2d7744248572cf2f009321baef9020c6cd5a672f66bf"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_resource_private_observer.py",
+  "reviewReason": "Add only an explicit default-false private enum/numeric-frame observation lane around the immutable063be guest; preserve both old jobs, all commands, limits and historical obligations.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
