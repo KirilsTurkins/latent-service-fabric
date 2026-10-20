@@ -33,6 +33,9 @@ def complete_inventory(phase="baseline"):
               "configuredCount": "2" if name in FIXED_RUNTIME_ROWS else "1",
               "activeCount": None if name in FIXED_UNKNOWN_ROWS else "1", "attributes": {}}
              for name in FIXED_LIVE_ROWS + FIXED_RUNTIME_ROWS + FIXED_UNKNOWN_ROWS]
+    rows += [{"name": name + "-stack", "kind": "byte", "ownership": "node-fixed",
+              "configuredCount": str(2 * 2162688), "activeCount": str(2162688), "attributes": {}}
+             for name in FIXED_RUNTIME_ROWS]
     warm = phase in ("baseline", "dormant")
     return {
         "queueDepth": "0", "routeGeneration": "2" if phase == "baseline" else
@@ -266,6 +269,30 @@ class Phase2ResourceTests(unittest.TestCase):
         for value in (True, -1, 1.5, "01", str(2**64)):
             with self.subTest(value=value), self.assertRaises(WorkflowError):
                 integer(value)
+
+    def test_stack_mapping_envelope_is_bound_to_the_original_worker_source(self):
+        source = 'apps/latentd/src/worker_stacks.rs'
+        raw = (Path(__file__).resolve().parents[2] / source).read_bytes()
+        self.assertIn(b'const THREAD_STACK_BYTES: usize = 2 * 1024 * 1024;', raw)
+        self.assertIn(b'const THREAD_GUARD_ALLOWANCE: usize = 64 * 1024;', raw)
+        self.assertIn(b'const THREAD_MAPPING_ALLOWANCE: usize = THREAD_STACK_BYTES + THREAD_GUARD_ALLOWANCE;', raw)
+
+    def test_runtime_stack_rows_require_exact_prepaid_thread_envelopes(self):
+        self.assertTrue(quiet(complete_inventory()))
+        for name in ("invocation-runtime-stack", "control-runtime-stack"):
+            for field, bad in (("kind", "thread"), ("ownership", "activation-scoped"),
+                               ("configuredCount", "4325375"), ("activeCount", None),
+                               ("activeCount", "2162687"), ("activeCount", "6488064")):
+                value = complete_inventory()
+                next(row for row in value['topology']['entries'] if row['name'] == name)[field] = bad
+                with self.subTest(name=name, field=field, bad=bad), \
+                        self.assertRaisesRegex(WorkflowError, 'inventory-stack-profile'):
+                    quiet(value)
+            value = complete_inventory()
+            value['topology']['entries'] = [row for row in value['topology']['entries']
+                                            if row['name'] != name]
+            with self.assertRaisesRegex(WorkflowError, 'inventory-fixed-rows'):
+                quiet(value)
 
     def test_consistently_missing_fixed_owner_rows_cannot_fake_complete_topology(self):
         for missing in ("wasmtime-compiler", "publication-catalog"):

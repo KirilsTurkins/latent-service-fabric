@@ -127,7 +127,7 @@ jobs:
       - name: Execute full fixed topology and exact selected Vec precharge
         run: |
           set -o pipefail
-          cargo test --locked -p latentd --lib standalone::observations::topology::tests:: -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/standalone-topology.log"
+          cargo test --locked -p latentd --lib standalone::observations::topology::tests:: -- --show-output --test-threads=1 2>&1 | tee "$RUNNER_TEMP/standalone-topology.log"
           grep -F 'test result: ok. 5 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/standalone-topology.log"
           grep -F 'test standalone::observations::topology::tests::standalone_capacity_covers_every_optional_topology_row ... ok' "$RUNNER_TEMP/standalone-topology.log"
           grep -F 'test standalone::observations::topology::tests::standalone_topology_precharges_exact_selected_vec_capacity ... ok' "$RUNNER_TEMP/standalone-topology.log"
