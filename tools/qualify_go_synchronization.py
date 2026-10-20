@@ -27,6 +27,7 @@ MANAGED_TIMER_ROWS += [('timer-capacity', 0, 8, 'guest-trap'), ('fresh-after-tim
                        ('callback-failure', 0, 10, 'guest-trap'), ('fresh-after-callback-failure', 0, 0, 'success'),
                        ('cancel-original-root', 0, 7, 'cancelled'), ('deadline-original-root', 0, 7, 'deadline-exceeded'),
                        ('fresh-after-cancel-deadline', 0, 0, 'success')]
+QUEUED_CASE = 'runtime::go::queued::signed_ordinary_queue_keeps_original_budgets_deadlines_and_tenant_ownership'
 ADMISSION_ROWS = [
     ('warm', 'tenant-a', 'success'), ('warm', 'tenant-b', 'success'),
     ('saturated', 'tenant-b', 'resource-exhausted'), ('foreign-cancel', 'tenant-b', 'not-found'),
@@ -35,6 +36,18 @@ ADMISSION_ROWS = [
     ('original', 'tenant-b', 'guest-trap'), ('fresh-after-retirement', 'tenant-a', 'success'),
     ('final-fresh', 'tenant-a', 'success'), ('final-fresh', 'tenant-b', 'success'),
 ]
+QUEUED_ROWS = [('warm', tenant, 0, 'success') for tenant in ('tenant-a', 'tenant-b')]
+for _owner, _peer, _terminal in [('tenant-a', 'tenant-b', 'cancelled'), ('tenant-b', 'tenant-a', 'guest-trap')]:
+    QUEUED_ROWS += [('queued-full', _peer, 0, 'pending'),
+                    ('saturated', _owner, 0, 'resource-exhausted'),
+                    ('foreign-cancel', _owner, 0, 'not-found'),
+                    ('queued-cancel', _peer, 0, 'cancelled'),
+                    ('replacement-queued', _peer, 0, 'pending'),
+                    ('queued-deadline', _peer, 0, 'deadline-exceeded'),
+                    ('deadline-replacement', _peer, 0, 'pending'),
+                    ('original', _owner, 0, _terminal)]
+    QUEUED_ROWS += [('queued-fresh', _peer, index, 'success') for index in range(7)]
+QUEUED_ROWS += [('final-fresh', tenant, 0, 'success') for tenant in ('tenant-a', 'tenant-b')]
 NATIVE_MODES = [0, 1, 2, 3, 4, 5, 9]
 ORDINARY_MODES = [0, 1, 2, 3, 4, 5, 6, 9]
 EXTRA = [('blocked-condition', 7, 'guest-trap'), ('fresh-after-blocked', 4, 'success'),
@@ -92,6 +105,27 @@ def admission_observations(raw: bytes, filtered: int) -> list[dict]:
     return rows
 
 
+def queued_observations(raw: bytes, filtered: int) -> list[dict]:
+    if len(raw) > 2 * 1024 * 1024:
+        raise ValueError('Go-queued-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [QUEUED_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-queued-exact-signed-case-required')
+    rows = [json.loads(value) for value in re.findall(rb'^GO_QUEUED_CASE (.+)$', raw, re.M)]
+    if len(rows) != len(QUEUED_ROWS):
+        raise ValueError('Go-queued-missing-or-extra-observation')
+    actual = []
+    for row in rows:
+        if (set(row) != {'case', 'tenant', 'index', 'outcome'} or type(row['index']) is not int
+                or not all(type(row[key]) is str for key in ('case', 'tenant', 'outcome'))):
+            raise ValueError('Go-queued-private-or-unknown-field')
+        actual.append((row['case'], row['tenant'], row['index'], row['outcome']))
+    if actual != QUEUED_ROWS:
+        raise ValueError('Go-queued-observation-contract')
+    return rows
+
+
 def managed_timer_observations(raw: bytes, filtered: int) -> list[dict]:
     if len(raw) > 2 * 1024 * 1024:
         raise ValueError('Go-managed-timers-output-bound')
@@ -118,8 +152,9 @@ def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
     if campaign == 'synchronization' and negative is not None:
         return {'case': CASE, 'fixture': 'synchronization', 'variable': 'LSF_GO_SYNCHRONIZATION_FIXTURE',
                 'inputs': [(fixture, 'go-component-activation-v5'), (negative, 'go-component-activation-v1')]}
-    if campaign == 'admission' and negative is None:
-        return {'case': ADMISSION_CASE, 'fixture': 'managed-idle', 'variable': 'LSF_GO_MANAGED_IDLE_FIXTURE',
+    if campaign in {'admission', 'queued'} and negative is None:
+        return {'case': ADMISSION_CASE if campaign == 'admission' else QUEUED_CASE,
+                'fixture': 'managed-idle', 'variable': 'LSF_GO_MANAGED_IDLE_FIXTURE',
                 'inputs': [(fixture, 'go-component-activation-v5')]}
     if campaign == 'managed-timers' and negative is None:
         return {'case': MANAGED_TIMER_CASE, 'fixture': 'timers', 'variable': 'LSF_GO_MANAGED_TIMER_FIXTURE',
@@ -135,6 +170,7 @@ def source_snapshot(root: Path) -> dict:
               'crates/latent-wasmtime/tests/local_service/runtime/go.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/synchronization.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/admission.rs',
+              'crates/latent-wasmtime/tests/local_service/runtime/go/queued.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/managed_timers.rs',
               'crates/latent-wasmtime/tests/local_service/fixture.rs',
               'crates/latent-wasmtime/tests/guest_sdk/runtime.rs',
@@ -222,7 +258,7 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     if result.returncode:
         raise ValueError('Go-synchronization-signed-command-failed')
     parser = {'synchronization': observations, 'admission': admission_observations,
-              'managed-timers': managed_timer_observations}[programme]
+              'queued': queued_observations, 'managed-timers': managed_timer_observations}[programme]
     rows = parser(result.output, len(suite['expectedCases']) - 1)
     after = source_snapshot(root)
     after_material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
@@ -231,22 +267,29 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
         raise ValueError('Go-synchronization-source-or-component-changed')
     receipt = {'schemaVersion': {'synchronization': 'lsf.go-synchronization-reference.v1',
                                  'admission': 'lsf.go-admission-reference.v1',
+                                 'queued': 'lsf.go-queued-reference.v1',
                                  'managed-timers': 'lsf.go-managed-timers-reference.v1'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
-               'signedInvocations': len(rows) if programme != 'admission' else 8, 'guestTaskCeiling': 16,
+               'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20, 'managed-timers': len(rows)}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':
         receipt['limitedTaskCeiling'] = 10
-    elif programme == 'admission':
-        receipt.update({'signedObservationCount': 12, 'admissionRefusals': 2, 'foreignCancellationControls': 2,
-                        'physicalCells': 1, 'nodeAdmissionCeiling': 1, 'tenantsShareManagerBackendAndCell': True,
+    elif programme in {'admission', 'queued'}:
+        receipt.update({'signedObservationCount': len(rows), 'admissionRefusals': 2, 'foreignCancellationControls': 2,
+                        'physicalCells': 1, 'nodeAdmissionCeiling': 1 if programme == 'admission' else 8,
+                        'tenantsShareManagerBackendAndCell': True,
                         'generalSchedulerFairnessQualified': False,
                         'auxiliaryCallee': {'kind': 'synthetic-handwritten-wasm-encoder',
                                             'constructor': 'packages::callee(42)', 'invoked': False,
                                             'sources': ['crates/latent-wasmtime/tests/local_service/packages.rs',
                                                         'crates/latent-wasmtime/tests/local_service/component.rs']}})
+        if programme == 'queued':
+            receipt.update({'nodeQueueCeiling': 8, 'observedMaximumQueued': 7,
+                            'queuedCancellationBeforeStore': 2, 'queuedDeadlineBeforeStore': 2,
+                            'rootDeadlineIncludesQueueWaiting': True,
+                            'aggregateCpuAndMemoryCeilingsUnchanged': True})
     else:
         receipt.update({'timerCeiling': 2, 'signedObservationCount': 43,
                         'nativeReferenceModes': TIMER_NATIVE_MODES,
@@ -262,7 +305,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixture', type=Path, required=True)
     parser.add_argument('--no-checkpoints', type=Path)
-    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'managed-timers'), default='synchronization')
+    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers'), default='synchronization')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
     args = parser.parse_args()

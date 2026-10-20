@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_synchronization.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Apply unchanged standard timer source/native17 and original43 outcome oracle to current managed v5 with original16/4/2 ownership; retain all legacy v3, synchronization, admission cases, commands, guards and limits; actual hosted qualification pending.",
+  "reviewReason": "Union independently passed ordinary queue34/20 and v5 timer43/native17; retain exact parent oracles, all commands/limits and historical filtered counts; strict composed catalogue52.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "24f2d340f166411d74f8ed84e921588417a15468e8eed88316561b01f7508f04"
+  "sha256": "5b7a0e964e4f911360a157e4cba23a6c46f0af1df08529875246d5574ab8778c"
 }

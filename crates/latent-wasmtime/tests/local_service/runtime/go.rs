@@ -10,6 +10,9 @@ mod managed_timers;
 #[path = "go/admission.rs"]
 mod admission;
 
+#[path = "go/queued.rs"]
+mod queued;
+
 #[path = "go/synchronization.rs"]
 mod synchronization;
 

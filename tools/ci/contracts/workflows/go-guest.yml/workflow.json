@@ -62,6 +62,8 @@
           "tools/tests/test_go_admission.py",
           "tools/tests/test_go_managed_timers.py",
           "docs/development/go-managed-timers.md",
+          "tools/tests/test_go_queued.py",
+          "docs/development/go-runtime-queued-ownership.md",
           "docs/development/go-runtime-admission.md",
           "docs/development/go-synchronization.md",
           ".github/workflows/go-synchronization-reference.yml",
@@ -166,6 +168,8 @@
           "tools/tests/test_go_admission.py",
           "tools/tests/test_go_managed_timers.py",
           "docs/development/go-managed-timers.md",
+          "tools/tests/test_go_queued.py",
+          "docs/development/go-runtime-queued-ownership.md",
           "docs/development/go-runtime-admission.md",
           "docs/development/go-synchronization.md",
           ".github/workflows/go-synchronization-reference.yml",
@@ -261,7 +265,7 @@
     "retained-scalar-ownership",
     "upstream-probe"
   ],
-  "reviewReason": "Apply unchanged standard timer source/native17 and original43 outcome oracle to current managed v5 with original16/4/2 ownership; retain all legacy v3, synchronization, admission cases, commands, guards and limits; actual hosted qualification pending.",
+  "reviewReason": "Union independently passed ordinary queue34/20 and v5 timer43/native17; retain exact parent oracles, all commands/limits and historical filtered counts; strict composed catalogue52.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

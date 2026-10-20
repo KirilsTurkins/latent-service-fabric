@@ -42,7 +42,20 @@ missing/reordered observations, changed outcomes and unknown/private fields.
 Compiler and signed failure stdout/stderr remain bounded and retained.
 
 Local controls verify source selection and strict evidence parsing; they do
-not execute a compiler or guest. Actual native-17 and signed-43 outcomes are
-pending the hosted campaign. Even a pass does not complete arbitrary timer
+not execute a compiler or guest. The actual [37cf run 39369515637](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39369515637),
+job 118453969321, passed all 43 signed outcomes and all 17 fresh native modes.
+Libtest reports one passed, zero failed/ignored and 50 filtered cases (11.72 s).
+Artifact 12241945138 and the [lossless receipt](../testing/evidence/go-managed-timers-signed-2026-10-20.json)
+bind all 104 unchanged selected Git sources and compiler/component identities
+before/after. Every native mode returned 42 with empty stderr. All 36 positive
+component consumptions are retained; the two accepted AfterFunc controls took
+30,412 and 31,583 microseconds, preserving the original 20 ms minimum.
+
+The later additive queue/timer test-runner/YAML/catalogue composition retains
+the exact timer and queue oracle bodies and all existing commands. The full
+production native source, Go SDK/compiler and compiler material inputs remain
+unchanged. Its strict catalogue has 52 cases; the historical actual run keeps
+its original 50 filtered count and tested revision. No repeat guest execution
+is claimed for the later test/documentation composition. Even a pass does not complete arbitrary timer
 races, aggregate cost/fairness, node stop or low-level kernel/TLS qualification.
 Both issues remain open and historical v3 evidence is not relabeled as v5.
