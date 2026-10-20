@@ -9,7 +9,7 @@ use bytes::{Buf, Bytes};
 use http::HeaderMap;
 use http_body_util::BodyExt;
 use latent_capabilities::broker::{
-    http::{HttpHeaderBlock, HttpResponseHead},
+    http::{HttpHeaderBlock, HttpResponseHead, MAXIMUM_HTTP_REASON_BYTES},
     io::IoOutputChunk,
     streaming_http::{HttpBody, StreamingHttpError as Error},
 };
@@ -30,7 +30,7 @@ pub(super) struct Body {
     eof: bool,
     failed: Option<Error>,
 }
-pub(super) fn begin(mut exchange: Exchange) -> Result<Body, Error> {
+pub(super) fn begin(mut exchange: Exchange, capture_reason: bool) -> Result<Body, Error> {
     let reply = exchange.response.take().ok_or(Error::InvalidState)?;
     let limits = exchange.inner.config.limits;
     validate(reply.headers(), limits)?;
@@ -82,7 +82,21 @@ pub(super) fn begin(mut exchange: Exchange) -> Result<Body, Error> {
         .io()
         .buffer(limits.maximum_header_bytes, 512)?;
     copy_headers(reply.headers(), &mut buffer, false)?;
-    let head = HttpResponseHead::new(reply.status().as_u16(), buffer)?;
+    let reason_phrase = if capture_reason {
+        match wire_reason_phrase(&reply)? {
+            Some(bytes) => {
+                let mut reason = exchange.call.io().buffer(MAXIMUM_HTTP_REASON_BYTES, 128)?;
+                reason.spare_mut()?[..bytes.len()].copy_from_slice(bytes);
+                reason.advance_written(bytes.len())?;
+                Some(reason)
+            }
+            None => None,
+        }
+    } else {
+        None
+    };
+    let head =
+        HttpResponseHead::with_reason_phrase(reply.status().as_u16(), buffer, reason_phrase)?;
     Ok(Body {
         pending: Bytes::new(),
         incoming: reply.into_body(),
@@ -96,6 +110,98 @@ pub(super) fn begin(mut exchange: Exchange) -> Result<Body, Error> {
         eof: false,
         failed: None,
     })
+}
+fn wire_reason_phrase<T>(reply: &http::Response<T>) -> Result<Option<&[u8]>, HttpError> {
+    if !matches!(
+        reply.version(),
+        http::Version::HTTP_10 | http::Version::HTTP_11
+    ) {
+        return Ok(None);
+    }
+    // Pinned Hyper1.11.1 stores every noncanonical HTTP/1 phrase, including
+    // empty and obs-text, in this extension. Absence means the wire phrase
+    // exactly equaled canonical_reason(); never infer one for other protocols.
+    let bytes = reply
+        .extensions()
+        .get::<hyper::ext::ReasonPhrase>()
+        .map(hyper::ext::ReasonPhrase::as_bytes)
+        .or_else(|| reply.status().canonical_reason().map(str::as_bytes));
+    if bytes.is_some_and(|value| value.len() > MAXIMUM_HTTP_REASON_BYTES) {
+        return Err(HttpError::ResponseTooLarge);
+    }
+    Ok(bytes)
+}
+
+#[cfg(test)]
+mod reason_tests {
+    use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    async fn parsed(wire: &[u8]) -> http::Response<hyper::body::Incoming> {
+        let (client, mut server) = tokio::io::duplex(4096);
+        let wire = wire.to_vec();
+        let peer = tokio::spawn(async move {
+            let mut input = [0; 4096];
+            server.read(&mut input).await.unwrap();
+            server.write_all(&wire).await.unwrap();
+        });
+        let (mut sender, driver) =
+            hyper::client::conn::http1::handshake(hyper_util::rt::TokioIo::new(client))
+                .await
+                .unwrap();
+        let driver = tokio::spawn(async move { driver.await.unwrap() });
+        let response = sender
+            .send_request(
+                http::Request::builder()
+                    .uri("/")
+                    .header("host", "reason.fixture.invalid")
+                    .body(http_body_util::Empty::<Bytes>::new())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        drop(sender);
+        tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            peer.await.unwrap();
+            driver.await.unwrap();
+        })
+        .await
+        .unwrap();
+        response
+    }
+
+    #[tokio::test]
+    async fn actual_http1_parser_preserves_canonical_custom_empty_and_non_ascii_reason_bytes() {
+        for (status, expected) in [
+            (&b"200 OK"[..], &b"OK"[..]),
+            (&b"200 Custom phrase"[..], &b"Custom phrase"[..]),
+            (&b"299 "[..], &b""[..]),
+            (&b"200 Caf\xc3\xa9"[..], &b"Caf\xc3\xa9"[..]),
+        ] {
+            let mut wire = b"HTTP/1.1 ".to_vec();
+            wire.extend_from_slice(status);
+            wire.extend_from_slice(b"\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            let response = parsed(&wire).await;
+            assert_eq!(wire_reason_phrase(&response).unwrap(), Some(expected));
+        }
+    }
+
+    #[tokio::test]
+    async fn actual_http1_oversize_reason_refuses_and_other_protocol_metadata_stays_unavailable() {
+        let mut wire = b"HTTP/1.1 200 ".to_vec();
+        wire.extend(std::iter::repeat_n(b'x', MAXIMUM_HTTP_REASON_BYTES + 1));
+        wire.extend_from_slice(b"\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        let response = parsed(&wire).await;
+        assert!(matches!(
+            wire_reason_phrase(&response),
+            Err(HttpError::ResponseTooLarge)
+        ));
+        let response = http::Response::builder()
+            .version(http::Version::HTTP_2)
+            .body(())
+            .unwrap();
+        assert_eq!(wire_reason_phrase(&response).unwrap(), None);
+    }
 }
 fn copy_headers(
     headers: &HeaderMap,
