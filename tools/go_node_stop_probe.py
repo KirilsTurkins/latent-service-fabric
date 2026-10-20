@@ -17,12 +17,37 @@ LIVE_ROWS = ('execution-cell-leases', 'guest-invocations', 'guest-stores',
              'guest-host-states', 'guest-component-instances')
 
 
+def refused_observation(value):
+    require(type(value) is dict and set(value) == {'schemaVersion', 'category', 'command', 'data',
+        'error', 'outcomeKnown', 'requestDispatched'}
+        and value['schemaVersion'] == 'latent.cli.result.v1'
+        and value['category'] == 'platform-failure' and value['command'] == 'audit query'
+        and value['data'] == {} and value['outcomeKnown'] is True and value['requestDispatched'] is True
+        and value['error'] == {'code': 'resource-exhausted', 'details': [],
+            'message': 'The platform reported a failure.', 'retryable': False},
+        'Go-node-stop-only-known-audit-observation-refusal')
+    return {'kind': 'refused-observation', 'operation': 'audit query',
+            'publicCode': 'resource-exhausted', 'outcomeKnown': True,
+            'requestDispatched': True, 'retryable': False, 'barrierEvidence': False}
+
+
 def integer(value):
     require(type(value) is int and value >= 0 or type(value) is str and value.isascii()
             and value.isdecimal() and len(value) <= 20, 'Go-node-stop-finite-observation')
     result = int(value)
     require(result < 2**64, 'Go-node-stop-finite-observation')
     return result
+
+
+def audit_identity(row):
+    epoch = row['epoch']
+    require(type(epoch) is str and len(epoch) == 32
+            and all(character in '0123456789abcdef' for character in epoch),
+            'Go-node-stop-canonical-audit-epoch')
+    sequence = integer(row['sequence'])
+    require(sequence > 0 and (type(row['sequence']) is int or str(sequence) == row['sequence']),
+            'Go-node-stop-positive-audit-sequence')
+    return epoch, sequence
 
 
 def barrier(inventory, pages, activation, mode, *, provider_usage):
@@ -56,13 +81,14 @@ def barrier(inventory, pages, activation, mode, *, provider_usage):
         records = page['data']['records']
         require(type(records) is list and len(records) <= 64, 'Go-node-stop-audit-record-bound')
         for row in records:
-            identity = (integer(row['epoch']), integer(row['sequence']))
+            identity = audit_identity(row)
             require(identity not in events, 'Go-node-stop-duplicate-audit')
             events[identity] = row
     require(pages[-1]['data']['page']['nextPageToken'] is None, 'Go-node-stop-incomplete-audit')
     allowed = []
     timer_next_sequences = []
     completed_timers = []
+    witness_epoch = None
     for row in events.values():
         observation = row.get('data', {}).get('observation')
         if not observation:
@@ -72,6 +98,9 @@ def barrier(inventory, pages, activation, mode, *, provider_usage):
             continue
         if capability['capability'] != ACTIVATION:
             continue
+        if witness_epoch is None:
+            witness_epoch = row['epoch']
+        require(row['epoch'] == witness_epoch, 'Go-node-stop-single-witness-epoch')
         require(capability['rootActivation'] == activation and capability['providerProfile'] == PROFILE,
                 'Go-node-stop-exact-activation-provider')
         if observation['kind'] == 'PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED':

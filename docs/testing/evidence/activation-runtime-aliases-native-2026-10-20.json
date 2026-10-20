@@ -1,0 +1,14 @@
+{
+  "run": 39391837002,
+  "job": 118524965154,
+  "artifact": 12251130399,
+  "head": "ff8ad0fd1263a80d3512317d26ccd20e2164ff64",
+  "cases": [
+    "config::tests::providers::scalar_aliases::activation_aliases_cannot_replace_limits_epoch_or_missing_registration",
+    "config::tests::providers::scalar_aliases::activation_aliases_keep_original_configuration_and_exact_binding_scope",
+    "standalone::start::tests::provider_startup::activation_aliases_publish_original_limits_to_two_tenants_and_reap"
+  ],
+  "nativeTestsPassed": 3,
+  "priorTestsPreserved": 456,
+  "crossTenantGuestQualification": false
+}

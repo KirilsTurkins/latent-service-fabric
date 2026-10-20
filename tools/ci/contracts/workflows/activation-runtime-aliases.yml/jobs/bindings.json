@@ -1,0 +1,71 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Exact alias validation and two-tenant provider startup",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Execute all three new controls and require exact successful names",
+        "run": "python3 -B - <<'PY'\nimport json, os, re\nfrom pathlib import Path\nfrom tools.owned_test_process import run_owned, ProcessFailure\noutput=Path(os.environ['RUNNER_TEMP'])/'activation-aliases';output.mkdir()\nnames={\n    'config::tests::providers::scalar_aliases::activation_aliases_cannot_replace_limits_epoch_or_missing_registration',\n    'config::tests::providers::scalar_aliases::activation_aliases_keep_original_configuration_and_exact_binding_scope',\n    'standalone::start::tests::provider_startup::activation_aliases_publish_original_limits_to_two_tenants_and_reap'}\nresult=None\ntry:\n    result=run_owned(['cargo','test','--locked','-p','latentd','--lib','--all-features',\n        'activation_aliases_','--','--nocapture','--test-threads=1'],\n        cwd=Path.cwd(),timeout=1320,maximum=2*1024*1024)\n    (output/'cargo.log').write_bytes(result.output)\n    found=re.findall(rb'^test ([a-zA-Z0-9_:]+) \\.\\.\\. ok$',result.output,re.M)\n    summary=re.findall(rb'^test result: ok\\. 3 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;',result.output,re.M)\n    if result.returncode or not result.cleaned or len(found)!=3 or {n.decode() for n in found}!=names or len(summary)!=1:\n        raise RuntimeError('activation-aliases-exact-cases-required')\n    (output/'receipt.json').write_text(json.dumps({'status':'passed','sourceRevision':os.environ['GITHUB_SHA'],\n        'cases':sorted(names),'processCleaned':result.cleaned,'crossTenantGuestQualification':False},indent=2)+'\\n')\nexcept ProcessFailure as error:\n    if error.result is not None:(output/'cargo.log').write_bytes(error.result.output)\n    raise\nPY\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain actual native controls and bounded compiler failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "activation-runtime-aliases-${{ github.sha }}",
+          "path": "${{ runner.temp }}/activation-aliases/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "bindings",
+  "kind": "job",
+  "reviewReason": "Add separate bounded native controls for explicit activation-runtime aliases, exact tenant/service/contract binding, immutable original limits/epoch, closed inputs and repeatable clean two-tenant provider startup. Exact three nonignored Rust cases are added to the existing all-features suite without removing any prior test. Existing limits and all legacy workflows remain unchanged; SDK cross-tenant calls are not yet qualified.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/activation-runtime-aliases.yml"
+}
