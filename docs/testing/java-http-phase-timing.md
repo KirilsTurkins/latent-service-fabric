@@ -237,3 +237,21 @@ clients use the same explicit ceiling. Only bounded numeric limits are retained
 publicly, never endpoint, tenant, token or the private profile. The original
 failure and authenticated component/package permit a fresh signed node-only
 replay, without recompilation or an invented successful old qualification.
+
+
+The node-only replay at `ebecf53e1e1adc03766f9540859aeaa596391bbf`
+(run `39485657982`, job `118845278485`, artifact `12294061415`) passed source,
+package, native-product and fresh-signing checks, then received gRPC
+`resource-exhausted` at publication. Its result remains uncertain
+(`outcomeKnown=false`, `requestDispatched=true`); the recovery audit query
+returned zero records. No guest ran and that mutation is not retried.
+The fixture inherited the node's 16 MiB component-input default, independently
+of the operator profile. The node package reader applies that bound to every
+uploaded layer, so the retained 17,034,179-byte component exceeds it.
+The selected campaign now also declares the permitted 64 MiB **node** component
+input limit, yielding the existing derived 68 MiB management-request ceiling.
+The separate **operator** limit remains 64 MiB. Public receipts project both
+profiles without private configuration. Execution, provider, cache and cell
+budgets and all ordinary defaults remain unchanged. A fresh owned node and
+fresh ordinary signing can reuse the authenticated component and package;
+signed Java outcomes remain pending.

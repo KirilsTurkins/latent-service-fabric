@@ -288,6 +288,7 @@ def run(artifact, native, output, *, deadline):
             require(credentials['examples'].read_bytes() != credentials['foreign'].read_bytes(),
                     'java-tenants-independent-private-credential-material')
             config = configuration(work/'node', signed, peers, credentials)
+            result['nodeComponentInputProfile'] = phase.component_node_profile(config)
             result['configurationIdentity'] = file_identity(config)
             client = RecordingClient(native['latent'], work/'examples', cancellation,
                 min(deadline, time.monotonic()+300), evidence=output/'examples-controls',
