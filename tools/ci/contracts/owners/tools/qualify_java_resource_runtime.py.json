@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_resource_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bounded Java joined resource/facility campaign; exact current source and frozen native producer with unchanged original capacity and retirement guards",
+  "reviewReason": "Bound exact current Java campaign and honestly count the maintained unsigned compiler-cache control separately from one fresh joined signed component",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "151102334a26b3f5b3903164a280c11b89daa83a1c8c461294a0b7f40632d624"
+  "sha256": "904bd0b4ef12c44796e6b09e87d91f1148d6f40c3bbaff21d5e9f3ce4830e6e7"
 }

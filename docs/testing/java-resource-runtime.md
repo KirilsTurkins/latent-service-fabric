@@ -28,7 +28,9 @@ observer products, installs the existing pinned Java compiler tooling and
 compiles one fresh offline `teavm-activation-fibers-io-v1` component. It performs
 normal neutral-resource signing/admission for two tenants with explicit
 CLOCK/WALL/RANDOM/LOG/ACTIVATION authority. It does not rebuild the native host,
-engine or five-template SDK baseline.
+engine or five-template SDK baseline. The maintained compiler-cache acquisition
+may also emit one unsigned default greeting control; its count and cache mode
+are recorded separately from the one joined component.
 
 The pending programme has eleven joined calls and two missing-runtime denials.
 It includes overlapping callbacks, clear, a root trap, caught callback error,

@@ -189,13 +189,19 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
         stage='normal-pinned-compiler-cache-acquisition'
         cache_root=output/'compiler';cache_root.mkdir()
         cache=compiler_cache(commands,wasi_sdk,cache_root,read_only_cache)
+        record['compilerCacheSelection']=read_json(cache_root/'compiler-cache-selection.json')
+        # The maintained cache-acquisition path compiles one unsigned control;
+        # it is separate from the single fresh joined/signable component.
+        record['unsignedCompilerControlComponents']=int(read_only_cache is None)
+        record['guestComponentsCompiled']=record['unsignedCompilerControlComponents']
         stage='one-fresh-offline-fiber-io-component'
         remaining=min(900,commands.deadline-time.monotonic()-300)
         require(remaining>60,'resource-java-reserved-runtime-deadline')
         artifact=build(app,output/'build',native['capsule_contracts'],native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric',wasi_sdk,timeout=remaining,
             read_only_cache=cache,runtime_profile=FIBER_IO_PROFILE)
-        record['guestComponentsCompiled']=1;record['build']=build_evidence(artifact)
+        record['guestComponentsCompiled']+=1;record['joinedGuestComponentsCompiled']=1
+        record['build']=build_evidence(artifact)
         require(read_file(artifact/'source-inputs.json')==original_source,'resource-java-exact-original-compiled-source')
         classpath=read_json(artifact/'java-classpath.json')
         require({row['id']:row['originalDigest'] for row in classpath['artifacts']}==
