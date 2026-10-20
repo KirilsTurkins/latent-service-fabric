@@ -1,0 +1,78 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Fresh captured clients catalogue-free build and two real HTTP installations",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "fetch-depth": 0,
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install pinned source controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Install captured Go compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Check source capture catalogue absence tenant authority and strict peer oracles",
+        "run": "python3 -B -m unittest tools.tests.test_go_http_tenants tools.tests.test_go_catalogue_free_build tools.tests.test_go_http_tenant_native_products tools.tests.test_sdk_native_products_reader -v"
+      },
+      {
+        "name": "Authenticate the fixed native source revision",
+        "run": "git fetch --no-tags origin 6f5f180136d140ac670561695260f71514781015\ngit fetch --no-tags origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire five exact independently installed HTTP products without rebuilding",
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/go-http-tenant-native\""
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Authenticate the maintained Go compiler and official generator",
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-http-tenant-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/componentize-go.tar.gz\" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz\necho \"1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/componentize-go.tar.gz\" -C \"$out\" componentize-go\necho \"b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go\" | sha256sum --check --strict\nchmod 755 \"$out/componentize-go\"\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Build one fresh catalogue-free component and execute strict same-cell tenant programme",
+        "run": "python3 -B tools/qualify_go_http_tenants.py --prepared \"$RUNNER_TEMP/go-http-tenant-native\" --output \"$RUNNER_TEMP/go-http-tenant-catalogue\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded actual construction authority and retirement evidence including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-http-tenant-catalogue-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-http-tenant-native/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/*.log\n${{ runner.temp }}/go-http-tenant-catalogue/catalogue-free-compiler/BUILD-SOURCE-INVENTORY.json\n${{ runner.temp }}/go-http-tenant-catalogue/build/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/build/component.wasm\n${{ runner.temp }}/go-http-tenant-catalogue/build/component.wit\n${{ runner.temp }}/go-http-tenant-catalogue/build/logs/**\n${{ runner.temp }}/go-http-tenant-catalogue/node/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/node/*.log\n${{ runner.temp }}/go-http-tenant-catalogue/node/examples-controls/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/node/foreign-controls/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "tenants",
+  "kind": "job",
+  "reviewReason": "Preserve actual 1ad/6f5 signed proof and its frozen guards while selecting the independently authenticated current f919 canonical reader for future workflow runs; all guest/controller/original bounds unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-http-tenant-catalogue.yml"
+}

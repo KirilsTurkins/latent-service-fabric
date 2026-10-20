@@ -1,0 +1,38 @@
+{
+  "componentExecution": false,
+  "denialOrRootRetirementQualified": false,
+  "nativeAOT": false,
+  "originalManagedSourceUnchanged": true,
+  "results": [
+    {
+      "decoded": "resource-dotnet|parallel=first:80410d0a+second:00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|entropy=16|wall64=1|fresh=1",
+      "exit": 0,
+      "logLines": 2,
+      "mode": "parallel"
+    },
+    {
+      "decoded": "resource-dotnet|clear=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1",
+      "exit": 0,
+      "logLines": 1,
+      "mode": "clear"
+    },
+    {
+      "decoded": "resource-dotnet|fresh=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1",
+      "exit": 0,
+      "logLines": 1,
+      "mode": "fresh"
+    }
+  ],
+  "schemaVersion": "latent.dotnet.resource-runtime-host-reference.v1",
+  "sdk": "10.0.303",
+  "source": {
+    "Library.cs": {
+      "bytes": 5380,
+      "sha256": "sha256:33db01e68b5635b45364328986f93d3df1aab94ceb5bcd59170a4a0d463eb8e4"
+    },
+    "Resource.cs": {
+      "bytes": 1104,
+      "sha256": "sha256:936e8fec22db471e6cbb19c77a1f553e1a3caad49c88e1786b869f485d5bfb92"
+    }
+  }
+}
