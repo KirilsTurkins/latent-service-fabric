@@ -88,7 +88,12 @@ fn build(
     manifest["metadata"]["name"] = json!(if caller { "caller" } else { "callee" });
     manifest["component"]["world"] = json!(world);
     manifest["exports"] = json!([contract]);
-    manifest["imports"] = if caller {
+    manifest["imports"] = if caller && phase_timing {
+        // WIT retains the original resource-owner interface as a dependency;
+        // the guest imports only the required phase interface's operations.
+        json!([{"contract":capability,"optional":false},
+            {"contract":component::CAP,"optional":true}])
+    } else if caller {
         json!([{"contract":capability,"optional":false}])
     } else {
         json!([])
