@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "latent.compatibility.trap-kind.reader-proof.v1",
+  "scope": "New reader processes two retained actual original CLI results; no new guest execution or six-language qualification claim.",
+  "sourceRun": 39341096377,
+  "sourceJob": 118362565604,
+  "artifact": {
+    "id": 12229626460,
+    "bytes": 2429339,
+    "sha256": "sha256:220eeb916821e75ad1971745a8c1cad09b52cb666b7c5272a4cedc2ea52ae7b4"
+  },
+  "nativeHostSource": "e97d44ddc744c9bd738d9b3b7a7d8b7234133e36",
+  "nativeKindsSource": "sha256:9bcdd0b279754b3ca190cf405af21f82286c3351cb7d2e0a5b1ad2f590d92c77",
+  "nativeKindsSourceMatchesCurrent": true,
+  "readerSources": {
+    "tools/dev_workflow/node_diagnostics.py": "sha256:58a8bbaaa8a81767be5557a19a5c1bc2c71c1c6837f215faca9616d503d3f722",
+    "tools/guest_compatibility_outcomes.py": "sha256:5784b0780f13513c918cc63f15c6a2df0f475f9e0e518fe122acdb2cf74034ae"
+  },
+  "originalResults": {
+    "rust-entropy-std-denied": {
+      "originalResultDigest": "sha256:621dde9919cf00316a9b1a9481943a7a8204bf3f75382fd5e5143e5b06ae0406",
+      "publication": "publication:sha256:7c93238e6e3dbb365e02cd8248a13f3cc4d95abd0817c909eef24d5436359f5c"
+    },
+    "rust-entropy-trap": {
+      "originalResultDigest": "sha256:1938a7c3e49cd7f82f5fa660645c89987e0ab44fbaf27281151121217c52186a",
+      "publication": "publication:sha256:7c93238e6e3dbb365e02cd8248a13f3cc4d95abd0817c909eef24d5436359f5c"
+    }
+  },
+  "projection": {
+    "schemaVersion": "lsf.guest.compatibility.outcomes.v1",
+    "frontendSourceDigest": "sha256:4f61253fc54a4dbb28fb9d003eedc2b45ffae942ed2cc4c95bdf568a387ca826",
+    "componentDigest": "sha256:332def922235048ba1b8613918440f99ffe6300c89fc7e1b1154a579ca371660",
+    "contextState": "absent",
+    "cases": [
+      {
+        "case": "rust-entropy-std-denied",
+        "category": "platform-failure",
+        "outcomeKnown": true,
+        "consumption": {
+          "cpuFuel": "733",
+          "peakMemoryBytes": "1179648",
+          "wallTimeMicros": "1941",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "logBytes": "0",
+          "childCalls": "0",
+          "outboundRequests": "0",
+          "effectCount": "0"
+        },
+        "guestTrapCode": "guest-trap",
+        "guestTrapKind": "unreachable-code",
+        "errorCodeState": "observed",
+        "errorCode": "guest-trap",
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "cause": "unknown",
+        "resourceDimension": "unknown",
+        "libraryReachability": "unknown",
+        "physicalRetirement": "unproven",
+        "clientProcess": "reaped"
+      },
+      {
+        "case": "rust-entropy-trap",
+        "category": "platform-failure",
+        "outcomeKnown": true,
+        "consumption": {
+          "cpuFuel": "1506",
+          "peakMemoryBytes": "1179648",
+          "wallTimeMicros": "2832",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "logBytes": "0",
+          "childCalls": "0",
+          "outboundRequests": "0",
+          "effectCount": "0"
+        },
+        "guestTrapCode": "guest-trap",
+        "guestTrapKind": "unreachable-code",
+        "errorCodeState": "observed",
+        "errorCode": "guest-trap",
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "cause": "unknown",
+        "resourceDimension": "unknown",
+        "libraryReachability": "unknown",
+        "physicalRetirement": "unproven",
+        "clientProcess": "reaped"
+      }
+    ],
+    "omittedCases": 0,
+    "authority": "none",
+    "libraryReachability": "unknown",
+    "initialization": "unknown",
+    "workerDrain": "unproven",
+    "retrySafety": "unknown",
+    "identity": "sha256:7677bbdfca0a28a54f8da716551978e3ca108529f101e4f86ee30df1d217cc09"
+  },
+  "limitations": {
+    "allSixRuntimeMatrixQualified": false,
+    "libraryCauseKnown": false,
+    "physicalRetirementCertified": false,
+    "retrySafetyCertified": false
+  },
+  "oldReader": {
+    "source": "a4b90f2cdd58810e3c4b33a6bee6e01b66ee88a4",
+    "sourceDigest": "sha256:47c890482d0970f0d6c203b7d9fca7ed11a55d614442d873068c3d3e3e5db277",
+    "dropsExistingKinds": [
+      "rust-entropy-std-denied",
+      "rust-entropy-trap"
+    ]
+  }
+}

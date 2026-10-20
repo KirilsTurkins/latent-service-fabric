@@ -38,6 +38,31 @@ def rehash(value):
 
 
 class OutcomeReader(unittest.TestCase):
+    def test_engine_classification_round_trips_without_inventing_cause_or_retirement(self):
+        for language in compatibility.LANGUAGES:
+            report = compatibility.report(language, digest(b'source'), digest(b'component'),
+                'lsf-host-abi-phase3-v4', [], [])
+            selected_context = context.create(report, [], {'state': 'absent'})
+            collector = outcomes.Capture(digest(b'frontend'), report['componentDigest'], selected_context)
+            result = observation(code='guest-trap')
+            result['error']['details'] = [
+                {'kind': 'activation.guest-trap', 'fields': {'code': 'guest-trap'}},
+                {'kind': 'activation.guest-trap-kind', 'fields': {'kind': 'stack-overflow'}}]
+            collector.observe('stack-limit', result, True)
+            value = outcomes.read(encode(collector.snapshot()), report=report, selected_context=selected_context)
+            row = value['cases'][0]
+            self.assertEqual(row['guestTrapKind'], 'stack-overflow')
+            self.assertEqual((row['cause'], row['resourceDimension'], row['physicalRetirement']),
+                ('unknown', 'unknown', 'unproven'))
+            self.assertIn('Observed engine trap kind stack-overflow.', outcomes.present(value))
+            self.assertEqual((value['libraryReachability'], value['retrySafety']), ('unknown', 'unknown'))
+            for changes in ({'guestTrapKind': 'private-token'}, {'guestTrapKind': 'runtime-error'},
+                            {'guestRuntimePhase': 'instantiate'}, {'guestRuntimePhase': None},
+                            {'trapKindUnavailable': True}, {'guestTrapKind': ['stack-overflow']}):
+                changed = copy.deepcopy(value); changed['cases'][0].update(changes); rehash(changed)
+                with self.subTest(language=language, changes=changes), self.assertRaisesRegex(DevError, 'trap-kind-evidence'):
+                    outcomes.read(encode(changed))
+
     def test_observed_lifecycle_disposition_round_trips_for_every_language_without_cause_claims(self):
         for language in compatibility.LANGUAGES:
             with self.subTest(language=language):

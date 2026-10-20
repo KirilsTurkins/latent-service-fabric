@@ -10,6 +10,7 @@
     "OutcomePresentation.test_presentation_names_observed_failures_and_omissions_without_success_claims",
     "OutcomeReader.test_absent_and_invalid_context_remain_visible_without_invented_links",
     "OutcomeReader.test_all_original_projection_shapes_round_trip_without_enriching_results",
+    "OutcomeReader.test_engine_classification_round_trips_without_inventing_cause_or_retirement",
     "OutcomeReader.test_hostile_or_malformed_row_fields_fail_closed",
     "OutcomeReader.test_lifecycle_disposition_cannot_certify_a_cause_or_accept_unknown_tokens",
     "OutcomeReader.test_node_resource_exhaustion_preserves_unknown_dimension_and_retirement",
@@ -141,6 +142,18 @@
       ],
       "skipSites": []
     },
+    "OutcomeReader.test_engine_classification_round_trips_without_inventing_cause_or_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "OutcomeReader.test_hostile_or_malformed_row_fields_fail_closed": {
       "bases": [
         "unittest.TestCase"
@@ -252,6 +265,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility_outcomes.py",
-  "reviewReason": "Add closed node-owned diagnostic labels and bounded measurement presentation controls; preserve all original cases and guards",
+  "reviewReason": "Preserve every prior case and fixture guard; add native thirteen-token vocabulary drift, malformed/contradictory kind refusal and bounded six-language reader/presentation controls without cause/retirement inference.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

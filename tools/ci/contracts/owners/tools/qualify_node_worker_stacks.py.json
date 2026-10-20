@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_node_worker_stacks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual hosted old/new same-name Cargo packages reused the shared-target executable; isolate targets and authenticate both binaries before each use, preserve production stacks and all prior cases/bounds",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b401307611290a689d3ce28f7678128ff26adc52c3486ea19421338cfaa2b555"
+}
