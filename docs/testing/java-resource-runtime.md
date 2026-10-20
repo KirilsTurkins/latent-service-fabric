@@ -1,6 +1,6 @@
 # Java resources retained by ordinary timer callbacks
 
-The new `examples/java-resource-runtime` fixture is a candidate for the existing
+The `examples/java-resource-runtime` fixture qualifies a finite joined path in the existing
 `teavm-activation-fibers-io-v1` profile. It uses the existing scheduler port;
 the compiler-owned immutable resource stream corrects the locked bulk reads.
 An application calls an outside parent JAR, which depends on a second resource
@@ -33,7 +33,7 @@ engine or five-template SDK baseline. The maintained compiler-cache acquisition
 may also emit one unsigned default greeting control; its count and cache mode
 are recorded separately from the one joined component.
 
-The pending programme has eleven joined calls and two missing-runtime denials.
+The programme has eleven joined calls and two missing-runtime denials.
 It includes overlapping callbacks, clear, a root trap, caught callback error,
 accepted-root timer cancellation/deadline and fresh same/foreign-tenant reads.
 An uncaught ordinary TimerTask exception is not asserted to trap the root;
@@ -45,9 +45,17 @@ remain mandatory. Audit loss/refusal is never positive barrier evidence.
 Original 8-task/2-executor/8-queue/16-wait/8-timer/8-result/8-native-owner limits,
 64 MiB memory, one-billion fuel and 256 log-byte budget remain unchanged.
 
-The JDK/capture/source checks are not emitted-component or signed/admitted
-qualification. The owning programme is newly queued only after publication;
-no successful Java joined-runtime receipt is currently claimed.
+The [signed observation](evidence/java-resource-runtime-signed-2026-10-20.json)
+records the [successful owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39494267034/job/118875086584)
+on feature `2475c56cc6e21c5f407d88a2661473de133ad033`, tested at PR checkout
+`34993882cc2741180cc79b8fc8bde404a70f03e2`. All thirteen outcomes are known
+and reaped, including the two denials and eleven joined calls. Sixteen physical
+samples, thirteen idle samples with all eighteen active provider counters at
+zero, both positive native timer pairs and clean node/zero-contact peer shutdown
+were verified against all 329 authenticated artifact members and 98 Git-bound
+materials. Exactly one fresh joined component and one unsigned compiler-cache
+control were compiled; the f919 native products were reused unchanged. The JDK
+reference and source controls retain their separate scope.
 
 No native-thread support, complete Java scheduler acceptance, asynchronous
 console-flush delivery, late-callback proof or complete #681/#741 qualification
@@ -69,7 +77,7 @@ checked; only the current receipt reader and workflow can differ. Current
 helper/fixture/native identities are rechecked after fresh normal signing and
 the unchanged 13-outcome node programme. No Java compiler, JDK, NativeAOT, host
 or engine build runs in this 20-minute replay. The earlier owning failure stays
-failed; no successful joined runtime outcome is claimed until that replay passes.
+failed; it supplied no successful joined-runtime qualification at that stage.
 
 
 The retained-component replay at 7b3 reached the first signed parallel call and
@@ -94,7 +102,7 @@ is RED, corrected parallel/fresh/clear/caught-callback modes are GREEN. It recor
 Windows CRLF separately from the Linux guest LF envelope. That reference sink
 is never compiled into the component and does not qualify guest execution.
 The source change requires one fresh joined guest compilation through the
-original maintained 30-minute lane; the new signed 13 programme remains pending.
+original maintained 30-minute lane; its result was pending at that stage.
 
 
 The fresh corrected guest compiled successfully on PR checkout 7c50 (feature 4980),
@@ -125,7 +133,7 @@ profile bind the exact helper source. Direct controls execute against the real
 pinned TeaVM superclass: five old cases are RED, all eight corrected cases are
 GREEN. They include subsequent reads, bounded/maximum/zero/negative lengths,
 empty streams, mark/reset, close and independent readers. These host controls
-require a fresh signed guest result before any joined-runtime qualification.
+were reference-only until the later signed guest result below.
 
 The corrected e977 guest passed parallel and foreign-fresh on the original f919
 host, then failed clear before logging in both the fresh063 run and the public
@@ -137,7 +145,12 @@ or prove the short clear sleep actually suspended.
 The joined fixture now declares its ordinary greeting export as `async func`,
 matching the maintained fiber conformance world's entry contract. It preserves
 the service name, Java/C ABI, original library code, all13 cases/order, grants
-and budgets. Actual binding generation keeps Java/C/header outputs byte-identical
-and changes only component-type metadata. This is a source-supported contract
-counterfactual until a fresh public-host joined programme establishes the causal
-result; no particular trap variant or joined13 pass is claimed yet.
+and budgets. The successful public-host component is 1,954,666 bytes, digest
+`sha256:5b80c6679f9f9ebeeede6f6ef28c3d4acd685005a79b9041e87ffcb1720862de`.
+Compared with the reproducibly failing e977 component, its entire byte sequence
+changes only three function-type bytes, from `0x40` to `0x43` at offsets
+`0x1dc510`, `0x1dc594` and `0x1dc5be`. Java/C/header binding outputs, backend
+receipts and both original JAR identities are identical. The unchanged public
+13-case programme now passes, establishing the bounded contract counterfactual.
+No particular old trap variant was observed. Cancellation/deadline have positive
+pending evidence; the short clear sleep itself is not claimed to have suspended.
