@@ -1,5 +1,12 @@
 # Emitted buffered-body limits
 
+The [actual signed run](evidence/typescript-fetch-buffered-signed-2026-10-20.json)
+passed all six cases in
+[run39379863502/job118486256487](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39379863502/job/118486256487).
+Artifact12244994066 binds six known/reaped invocation rows, eight original
+physical-retirement observations, zero real network contacts and clean node/peer
+shutdown. Source086030c4 retains its historical engine/native attribution.
+
 This separate #691 programme compiles one ordinary global Response caller and
 executes five signed/admitted cases plus a fresh activation. It does not repeat
 the earlier31-case network/lifecycle programme. Select it explicitly with
@@ -24,5 +31,6 @@ engine/native inputs are retained.
 
 This observes backpressure over already-buffered bytes, not network streaming,
 stream uploads, tee support or engine heap/reaction/timer exhaustion. Source
-controls and typechecking do not qualify emitted execution; actual results
-remain pending until the dedicated workflow passes.
+controls and typechecking do not replace the separately retained emitted results
+above. The default network programme does not import the buffered-only helper;
+the explicit selected programme binds that helper and its source before execution.

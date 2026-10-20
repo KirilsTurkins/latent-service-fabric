@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "latent.typescript.fetch-buffered.observation.v1",
+  "status": "passed",
+  "run": 39379863502,
+  "job": 118486256487,
+  "head": "086030c4a8255579073873f1203bea460a8e94a5",
+  "artifact": 12244994066,
+  "archiveBytes": 8660835,
+  "archiveMembers": 183,
+  "archiveDigest": "sha256:4be37ee988a2db4e52478c93037752645e85b4c95baccb2a8bd2020c75932543",
+  "cases": [
+    {
+      "name": "buffered-three-windows",
+      "outbound": 0,
+      "result": [
+        "windows:65536,65536,1:copied:no-prefetch"
+      ]
+    },
+    {
+      "name": "buffered-cancel-remainder",
+      "outbound": 0,
+      "result": [
+        "cancelled:one-window:remainder-unread"
+      ]
+    },
+    {
+      "name": "buffered-unsupported-stream-members",
+      "outbound": 0,
+      "result": [
+        "tee:pipeTo:pipeThrough:values:unsupported"
+      ]
+    },
+    {
+      "name": "buffered-body-api-limit",
+      "outbound": 0,
+      "result": [
+        "body-limit:1048576"
+      ]
+    },
+    {
+      "name": "buffered-null-versus-empty",
+      "outbound": 0,
+      "result": [
+        "null:absent:empty:disturbed"
+      ]
+    },
+    {
+      "name": "fresh-after-lifecycle",
+      "outbound": 0,
+      "result": [
+        "windows:65536,65536,1:copied:no-prefetch"
+      ]
+    }
+  ],
+  "knownReapedRows": 6,
+  "retirementSamples": 8,
+  "peerContacts": 0,
+  "cleanNodeAndPeer": true,
+  "build": {
+    "component": {
+      "sha256": "sha256:f9e0827b50e982094470a1f5733639faef34cdc9d6888d12e06d1013bf63efaa",
+      "bytes": 12410230
+    },
+    "documents": {
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:7fd98cc9056e3071ca722c9ade936f887fba9160280fcb636ddeacf4760e73fe",
+        "bytes": 2938
+      },
+      "build-observation.json": {
+        "sha256": "sha256:73695d118c9e8b5b3449e6cf40911eed01d1bfcc7189f3a2a60579f76c816137",
+        "bytes": 3708
+      },
+      "source-inputs.json": {
+        "sha256": "sha256:4f9cc4992de7d218e1577bda8932f73ad8469494cd364c3991d6209098ce4628",
+        "bytes": 14423
+      },
+      "recipe-inputs.json": {
+        "sha256": "sha256:f29f8b6beadc1ecd30f188be81923f7554f62361e62dec61df13c2613da2b5c3",
+        "bytes": 15436
+      },
+      "package-inputs.json": {
+        "sha256": "sha256:7f71cef7f8b11dea56e4d1d75cdc07d6733aacebaf0d5997a03a4cd5a88af1c1",
+        "bytes": 1592
+      },
+      "typescript-runtime-selection.json": {
+        "sha256": "sha256:807877c5836a98b6061cddd7a03e337df4dafa0c4993251a7bfca7afff63c252",
+        "bytes": 15274
+      }
+    }
+  },
+  "execution": {
+    "sha256": "sha256:2379faabb720c497235260fa9711382eabe7594a59081fc6227b2deec1634292",
+    "bytes": 5109
+  },
+  "qualificationSources": {
+    ".github/workflows/typescript-fetch-conformance.yml": {
+      "sha256": "sha256:5adcfb3767ec665547348b42baff0fe10dfac4549c6db44bdd19323bf4f7cd11",
+      "bytes": 3422
+    },
+    "sdk/typescript-guest/probes/fetch-conformance/main.ts": {
+      "sha256": "sha256:62d908f32100b6cd6f182e81428c1a9f4fbea7e3309fa38f2b019608a2f53ff6",
+      "bytes": 6343
+    },
+    "tools/typescript_fetch_conformance.py": {
+      "sha256": "sha256:7ed172fde26c59d520e9338c03d78ce0ceffc705de6ab09e1d9da2df299564af",
+      "bytes": 9190
+    },
+    "tools/qualify_typescript_fetch_conformance.py": {
+      "sha256": "sha256:6cd57eb043011dc8ae80bf28a106e10e9b7bc38eef1d69f6bdab623de959baaf",
+      "bytes": 12929
+    },
+    "tools/qualify_typescript_fetch_runtime.py": {
+      "sha256": "sha256:a1ce6d808d87444dbb43cd4eb2652a50785c1a50ea7153457d5c418a9312fccf",
+      "bytes": 22883
+    },
+    "tools/typescript_fetch_replay_inputs.py": {
+      "sha256": "sha256:a3d50006129a8947291e51372ee425c2dba56900ca5676d3fa97a2b8c8c17162",
+      "bytes": 8213
+    },
+    "sdk/typescript-guest/probes/fetch-buffered-limits/main.ts": {
+      "sha256": "sha256:c6969937c0b2a3d120fcbcf6f039f1182ca1f9ef1cd57031fea51997c13e01e4",
+      "bytes": 3880
+    },
+    "tools/typescript_fetch_buffered.py": {
+      "sha256": "sha256:a846581bbabb63c3628ae8e18b0011454c097a5ed886a7646a1056a8c1a7093c",
+      "bytes": 1520
+    },
+    ".github/workflows/typescript-fetch-buffered.yml": {
+      "sha256": "sha256:93bc8f146c798c98e19ff4cf80738e6cc8f4bb5a536dc9464f05cd2348519656",
+      "bytes": 3373
+    }
+  },
+  "historicalNativeSource": "0754391a20027a539f1d5b7c0426719a4bd6c3c1",
+  "ownerLimits": {
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 16,
+    "waits": 8,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 64
+  },
+  "currentComposition": {
+    "recipeDifferences": [
+      "tools/guest_dependency_inputs.py"
+    ],
+    "resourcePreflight": "no-declared-resources",
+    "allOtherRecipeBytesExact": true,
+    "capturedSourceMatchesLinuxJsonWriterProjection": true,
+    "normalizationLimitedToGeneratedJsonNewlines": [
+      "capsule-project.json",
+      "sdk-lock.json"
+    ],
+    "currentWholeRecipeCompilationClaimed": false,
+    "qualificationControllerSelectedTrueAstExactAfterDeferringOptionalImport": true,
+    "normalDefaultDoesNotImportOptionalHelper": true
+  },
+  "networkStreamingQualified": false,
+  "fullTicketQualification": false
+}

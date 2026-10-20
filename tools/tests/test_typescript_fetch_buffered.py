@@ -12,6 +12,19 @@ from tools.standard_http.peer import Peer
 
 
 class BufferedFetchTests(unittest.TestCase):
+    def test_normal_programme_can_enter_without_loading_optional_buffered_helper(self):
+        import builtins
+        from unittest.mock import patch
+        original_import=builtins.__import__
+        def guarded_import(name,globals=None,locals=None,fromlist=(),level=0):
+            if name=='tools' and 'typescript_fetch_buffered' in fromlist:
+                raise AssertionError('normal programme loaded an unselected helper')
+            return original_import(name,globals,locals,fromlist,level)
+        with tempfile.TemporaryDirectory() as temporary,patch('builtins.__import__',side_effect=guarded_import), \
+                patch.object(qualification.base,'build_evidence',side_effect=RuntimeError('normal-build-observation')):
+            with self.assertRaisesRegex(RuntimeError,'normal-build-observation'):
+                qualification.execute(object(),{},Path(temporary)/'run')
+
     def test_original_manifest_and_source_are_preserved_except_exact_probe_source(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)

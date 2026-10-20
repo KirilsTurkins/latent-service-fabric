@@ -1,5 +1,15 @@
 # Published Fetch client experiment
 
+The [normal two-identity signed programme](evidence/typescript-published-fetch-signed-2026-10-20.json)
+passed in
+[run39379234452/job118484260198](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39379234452/job/118484260198)
+at source10bd9cc728. Both outside package names/versions compiled, signed and
+executed independently:16 total probe/client observations,12 exact real contacts,
+20 original physical-retirement samples and clean node/peer shutdown. The explicit
+64/64/256 owner profile applies uniformly; the smaller shared defaults and all
+prior failed results remain unchanged. This finite success does not qualify
+Ky's unavailable statusText/error helper or close the full #691 matrix.
+
 This finite experiment for [#691](https://github.com/KirilsTurkins/latent-service-fabric/issues/691)
 captures unchanged Ky2.2.0 and Wretch3.0.9 through normal npm add, lock,
 resolve and review. A local package imports Wretch transitively. The two
@@ -64,8 +74,7 @@ hashes are checked before use. A new source capture and normal build evidence
 bind every new caller and backend byte.
 
 The replacement Ky/Wretch normal capture, pinned typecheck and Node reference
-controls pass. Signed execution remains pending until the owning workflow
-produces retained results.
+controls pass. Normal signed execution passed with the retained results above.
 
 Run39369743834 at19f5c2d207 completed a normal build, package, signing and
 admission. Both pre-guest grant denials passed; the first Ky JSON invocation

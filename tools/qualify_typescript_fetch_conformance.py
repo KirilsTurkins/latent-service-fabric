@@ -42,7 +42,9 @@ def shutdown_owned_node(client,node):
 
 
 def execute(artifact, native, output, *, buffered_only=False):
-    from tools import typescript_fetch_buffered as buffered
+    buffered=None
+    if buffered_only:
+        from tools import typescript_fetch_buffered as buffered
     output=fresh(output)
     result={'schemaVersion':'latent.typescript.fetch-conformance.v1','status':'in-progress',
         'fullTicketQualification':False,'networkStreamingQualified':False,'crossTenantQualified':False,
@@ -152,7 +154,9 @@ def execute(artifact, native, output, *, buffered_only=False):
 
 
 def qualify(acquired, tools, output, *, buffered_only=False):
-    from tools import typescript_fetch_buffered as buffered
+    buffered=None
+    if buffered_only:
+        from tools import typescript_fetch_buffered as buffered
     acquired,tools,output=(Path(p).resolve() for p in (acquired,tools,output))
     require(output!=ROOT and ROOT not in output.parents and all(output!=p and output not in p.parents
         and p not in output.parents for p in (acquired,tools)),'fetch-conformance-separated-inputs')
