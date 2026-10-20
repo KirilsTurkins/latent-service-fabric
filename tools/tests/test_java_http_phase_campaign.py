@@ -238,3 +238,43 @@ class JavaPhaseOperatorComponentLimit(unittest.TestCase):
                 self.assertEqual(client.config, config);self.assertEqual(config.read_text(), raw)
                 self.assertFalse((root/'phase-component-client.json').exists())
                 self.assertEqual(list(evidence.iterdir()), [])
+
+
+class JavaPhaseNodeComponentLimit(unittest.TestCase):
+    def test_actual_selected_node_limit_admits_retained_component_without_changing_execution_or_provider_caps(self):
+        import json
+        from tools.java_http_fiber_node import configuration as original
+        peer = SimpleNamespace(provider_destinations=lambda: [])
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);signed=root/'signed';signed.mkdir();(signed/'policy.json').write_text('{}')
+            credential=root/'credential';credential.write_bytes(b'public synthetic fixture')
+            old_dir=root/'old';old_dir.mkdir();new_dir=root/'new';new_dir.mkdir()
+            old=json.loads(original(old_dir,signed,peer,credential).read_bytes())
+            config=node.configuration(new_dir,signed,peer,credential,[])
+            selected=json.loads(config.read_bytes())
+            self.assertNotIn('limits',old)
+            self.assertEqual(selected.pop('limits'),{'maximumComponentBytes':64*1024*1024})
+            for name in old.keys()-{'providers'}:
+                self.assertEqual(selected[name],old[name],name)
+            provider=selected['providers']['httpStreaming']
+            self.assertIs(provider.pop('phaseTiming'),True)
+            self.assertEqual(provider,old['providers']['httpStreaming'])
+            public=node.component_node_profile(config)
+            self.assertEqual(public,{'schemaVersion':'latent.java.http.node-component-input-profile.v1',
+                'maximumComponentBytes':67_108_864,'defaultComponentBytes':16_777_216,
+                'derivedManagementRequestBytes':71_303_168,'guestAndProviderBudgetsChanged':False})
+            retained_bytes=17_034_179
+            self.assertGreater(retained_bytes,public['defaultComponentBytes'])
+            self.assertLess(retained_bytes,public['maximumComponentBytes'])
+            self.assertNotIn(str(root),str(public))
+            self.assertNotIn('credential',str(public))
+
+    def test_changed_or_implicit_node_component_profile_cannot_be_reported_as_selected(self):
+        import json
+        for value in ({},{'maximumComponentBytes':16*1024*1024},
+                {'maximumComponentBytes':64*1024*1024+1},
+                {'maximumComponentBytes':64*1024*1024,'maximumPayloadBytes':2*1024*1024}):
+            with self.subTest(value=value),tempfile.TemporaryDirectory() as temporary:
+                config=Path(temporary)/'node.json';config.write_text(json.dumps({'limits':value}))
+                with self.assertRaisesRegex(WorkflowError,'explicit-node-component-input-profile'):
+                    node.component_node_profile(config)

@@ -54,9 +54,22 @@ def component_operator(client):
     return public
 
 
+def component_node_profile(config):
+    value = read_json(config)
+    require(value.get('limits') == {'maximumComponentBytes': 64 * 1024 * 1024},
+        'java-phase-explicit-node-component-input-profile')
+    return {'schemaVersion': 'latent.java.http.node-component-input-profile.v1',
+        'maximumComponentBytes': value['limits']['maximumComponentBytes'],
+        'defaultComponentBytes': 16 * 1024 * 1024,
+        'derivedManagementRequestBytes': value['limits']['maximumComponentBytes'] + 4 * 1024 * 1024,
+        'guestAndProviderBudgetsChanged': False}
+
+
 def configuration(directory, releases, peer, credential, backlogs):
     path = fiber_configuration(directory, releases, peer, credential)
     value = read_json(path)
+    require('limits' not in value, 'java-phase-original-node-component-default')
+    value['limits'] = {'maximumComponentBytes': 64 * 1024 * 1024}
     provider = value['providers']['httpStreaming']
     provider['phaseTiming'] = True
     for backlog in backlogs:
@@ -247,6 +260,7 @@ def run(artifact, binaries, output, *, deadline):
             client = RecordingClient(binaries['latent'], work/'client', cancellation,
                 min(deadline, time.monotonic()+280), evidence=output/'controls', invocation_timeout_millis=120000)
             config = configuration(work/'node', signed, peer, credential, backlogs)
+            result['nodeComponentInputProfile'] = component_node_profile(config)
             stage = 'node'
             node = connect(client, binaries['latentd'], work/'node', config, 'examples', 1)
             component_operator(client)
