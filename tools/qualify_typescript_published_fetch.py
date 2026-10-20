@@ -18,7 +18,7 @@ from tools import typescript_published_fetch_fixture as fixture
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
-from tools.phase2_operator_process import Process, require, stopped_record, write_json
+from tools.phase2_operator_process import Process, WorkflowError, require, stopped_record, write_json
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_os import Probe
@@ -50,6 +50,25 @@ def peer_evidence(value):
             and all(row['role'] == 'primary' for row in value['requests']),
             'published-fetch-exact-peer-contacts')
     return value
+
+
+def checked_client_result(client, row, expected, name):
+    try:
+        base.require_result(row, expected, 1)
+        return True
+    except WorkflowError:
+        # The existing redacted operator projection preserves the original
+        # failed invocation. No error is reclassified and no request is retried.
+        from tools.capsule_invocation_diagnostics import capture
+        capture(client,row)
+        original=client.evidence/'unexpected-invocation-diagnostics.json'
+        if original.is_file():original.rename(client.evidence/('unexpected-'+name+'.json'))
+        return False
+
+
+def require_original_clients(observed, failed):
+    expected=['buffered-reader-probe','buffered-json-probe']+[row[0] for row in VECTORS]
+    require(not failed and observed==expected,'published-fetch-original-client-outcomes-failed')
 
 
 def execute(artifact, native, output):
@@ -113,21 +132,26 @@ def execute(artifact, native, output):
                 base.require_result(row,expected,0)
                 base.retire(client,probe,target,output,name)
                 record['cases'].append(name)
+            failed=[]
             for name, mode, path, expected in VECTORS:
                 stage = name
                 row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'published-fetch-'+name)
                 write_json(output/(name+'.json'), row)
                 if path == '/conformance/json': expected += json_bytes(DOMAIN).decode()
-                base.require_result(row, '1|'+expected, 1)
+                passed=checked_client_result(client,row,'1|'+expected,name)
                 base.retire(client, probe, target, output, name)
-                record['cases'].append(name)
+                if passed:record['cases'].append(name)
+                else:failed.append(name)
+                record['failedClientCases']=list(failed)
             delete_all(client, [target['name']])
             stop(client, node)
             record['shutdown'] = stopped_record(node)
             require(record['shutdown']['reaped'] and record['shutdown']['record']['clean'], 'published-fetch-clean-shutdown')
             peer.stop()
-            record['peer'] = peer_evidence(json.loads(bytes(peer.buffers[0]).splitlines()[0]))
+            record['peer'] = json.loads(bytes(peer.buffers[0]).splitlines()[0])
+            peer_evidence(record['peer'])
             require(peer.owner.finished, 'published-fetch-peer-reaped')
+            require_original_clients(record['cases'],failed)
         require(base.build_evidence(artifact) == original, 'published-fetch-built-artifact-changed')
         record.update(status='passed', signedExecution='passed', providerExecution='passed')
         write_json(output/'qualification.json', record)

@@ -17,6 +17,19 @@ from tools.standard_http.peer import Peer
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_failed_client_is_recorded_as_failure_and_never_relabelled_success(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temporary:
+            client=type('Client',(),{'evidence':Path(temporary)})()
+            row={'exitCode':4,'decoded':None}
+            with patch('tools.capsule_invocation_diagnostics.capture') as capture:
+                self.assertIs(qualify.checked_client_result(client,row,'1|ky:expected','ky-json'),False)
+                capture.assert_called_once_with(client,row)
+            expected=['buffered-reader-probe','buffered-json-probe']+[row[0] for row in qualify.VECTORS]
+            qualify.require_original_clients(expected,[])
+            with self.assertRaises(WorkflowError):qualify.require_original_clients(expected,['ky-json'])
+            with self.assertRaises(WorkflowError):qualify.require_original_clients(expected[:-1],[])
+
     def test_reader_probes_and_closed_diagnostics_cannot_replace_client_success(self):
         self.assertIn(b"mode === 5",fixture.MAIN)
         self.assertIn(b"mode === 6",fixture.MAIN)

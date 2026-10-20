@@ -71,6 +71,16 @@ probes and a closed diagnostic projection now distinguish supported reader
 execution from rejected library calls; all six original library outcomes and
 the exact peer-contact gate remain required. Unknown diagnostics reveal only
 a static error-kind/unknown label, never arbitrary exception text.
+
+The subsequent ab60 run passed both real zero-outbound reader/JSON probes,
+then Ky still trapped after one outbound request. Reader availability is
+therefore observed; the native trap's cause remains unknown. The next run keeps
+every original client outcome mandatory while collecting all six attempts,
+with physical retirement required before each fresh activation. Failed results
+retain their original row and existing redacted audit projection. A failure
+cannot count as a passing case, and the original ordered-case/peer gates still
+refuse the programme. This allows comparison with Wretch and the outside caller
+after the Ky failure instead of ending evidence collection at the first case.
 Full #691 acceptance still requires default HTTP-error compatibility, streaming
 and abandonment, Abort/timeout races, uncertainty, limit exhaustion and
 cross-tenant lifecycle qualification.
