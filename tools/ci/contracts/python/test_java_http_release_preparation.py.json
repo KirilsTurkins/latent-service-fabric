@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "JavaHttpReleasePreparationTests.test_exact_current_lifecycle_setup_is_clipped_to_original_campaign_and_preserves_execution",
+    "JavaHttpReleasePreparationTests.test_generation_is_exact_positive_decimal_u64_before_starting_setup",
+    "JavaHttpReleasePreparationTests.test_mismatched_ready_selection_or_authority_and_extra_fields_are_refused_after_retention",
+    "JavaHttpReleasePreparationTests.test_preparation_failure_is_retained_once_and_never_becomes_ready_or_invocation",
+    "JavaHttpReleasePreparationTests.test_stale_foreign_missing_or_non_admitted_lifecycle_never_starts_preparation",
+    "JavaHttpReleasePreparationTests.test_tenant_preparation_is_explicit_and_non_boolean_selection_is_rejected_before_output",
+    "JavaHttpReleasePreparationTests.test_unknown_lifecycle_or_changed_execution_profile_is_refused_before_setup"
+  ],
+  "guards": {
+    "JavaHttpReleasePreparationTests.test_exact_current_lifecycle_setup_is_clipped_to_original_campaign_and_preserves_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b94cfb63968aa26ff10a1ec2a1f805ecf361dee938ad71675e8fdf18ae00c0a",
+        "class:setup-sha256:1ebe81e91e49fd3f0c4e2f585ded71612ab7d3689a1a28c75dfe9492e3a73b1f"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpReleasePreparationTests.test_generation_is_exact_positive_decimal_u64_before_starting_setup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b94cfb63968aa26ff10a1ec2a1f805ecf361dee938ad71675e8fdf18ae00c0a",
+        "class:setup-sha256:1ebe81e91e49fd3f0c4e2f585ded71612ab7d3689a1a28c75dfe9492e3a73b1f"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpReleasePreparationTests.test_mismatched_ready_selection_or_authority_and_extra_fields_are_refused_after_retention": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b94cfb63968aa26ff10a1ec2a1f805ecf361dee938ad71675e8fdf18ae00c0a",
+        "class:setup-sha256:1ebe81e91e49fd3f0c4e2f585ded71612ab7d3689a1a28c75dfe9492e3a73b1f"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpReleasePreparationTests.test_preparation_failure_is_retained_once_and_never_becomes_ready_or_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b94cfb63968aa26ff10a1ec2a1f805ecf361dee938ad71675e8fdf18ae00c0a",
+        "class:setup-sha256:1ebe81e91e49fd3f0c4e2f585ded71612ab7d3689a1a28c75dfe9492e3a73b1f"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpReleasePreparationTests.test_stale_foreign_missing_or_non_admitted_lifecycle_never_starts_preparation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b94cfb63968aa26ff10a1ec2a1f805ecf361dee938ad71675e8fdf18ae00c0a",
+        "class:setup-sha256:1ebe81e91e49fd3f0c4e2f585ded71612ab7d3689a1a28c75dfe9492e3a73b1f"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpReleasePreparationTests.test_tenant_preparation_is_explicit_and_non_boolean_selection_is_rejected_before_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b94cfb63968aa26ff10a1ec2a1f805ecf361dee938ad71675e8fdf18ae00c0a",
+        "class:setup-sha256:1ebe81e91e49fd3f0c4e2f585ded71612ab7d3689a1a28c75dfe9492e3a73b1f"
+      ],
+      "skipSites": []
+    },
+    "JavaHttpReleasePreparationTests.test_unknown_lifecycle_or_changed_execution_profile_is_refused_before_setup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b94cfb63968aa26ff10a1ec2a1f805ecf361dee938ad71675e8fdf18ae00c0a",
+        "class:setup-sha256:1ebe81e91e49fd3f0c4e2f585ded71612ab7d3689a1a28c75dfe9492e3a73b1f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_http_release_preparation.py",
+  "reviewReason": "Review seven new exact-publication setup controls; all eight existing tenant cases and original default programme remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

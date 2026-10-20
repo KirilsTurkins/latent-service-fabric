@@ -257,7 +257,8 @@ def invoke(client, node, target, peer, peers, probe, mode, label, output, *, den
     return {'label': label, 'mode': mode, 'receipt': {'path': path.name, **file_identity(path, 262144)}}
 
 
-def run(artifact, native, output, *, deadline):
+def run(artifact, native, output, *, deadline, prepare_publications=False):
+    require(type(prepare_publications) is bool, 'java-tenants-preparation-selection')
     output = fresh(output)
     original = {name: file_identity(artifact/name) for name in ORIGINALS}
     products = {name: file_identity(path) for name, path in native.items()}
@@ -308,6 +309,11 @@ def run(artifact, native, output, *, deadline):
                 require(published['outcomeKnown'] and published['data']['release']['digest']
                     == original['component.wasm']['sha256'], 'java-tenants-original-publication-component')
                 publications[tenant] = publication
+                if prepare_publications:
+                    from tools.java_http_release_preparation import prepare
+                    stage = tenant+'-publication-preparation'
+                    result.setdefault('preparation', {})[tenant] = prepare(selected, publication, tenant,
+                        original['component.wasm']['sha256'], output)
                 manifest = selected.directory/'deployment.json'
                 write_json(manifest, scoped_deployment(read_json(source/'deployment.json'), tenant))
                 target = deploy(selected, manifest, publication)
