@@ -32,7 +32,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/https-native"
-      - name: Execute fifteen ordinary library outcomes on three independent TLS nodes
+      - name: Execute fifteen ordinary library outcomes on independent TLS nodes
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/qualify_dotnet_https_libraries.py --native "$RUNNER_TEMP/https-native" --output "$RUNNER_TEMP/https-libraries"

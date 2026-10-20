@@ -41,6 +41,7 @@ CASES = (
 )
 REFUSALS = (('flurl-certificate-refused',0,'/conformance/json','1:transport-error'),
             ('refit-certificate-refused',1,'/conformance/json','1:transport-error'))
+PROFILES = ('trusted','wrong-name-flurl','wrong-name-refit','untrusted-issuer-flurl','untrusted-issuer-refit')
 MATERIALS = ('tools/dotnet_https_node.py','tools/dotnet_published_http_node.py',
     'tools/dotnet_standard_http_node.py','tools/qualify_http_tls_peer.py',
     'tools/standard_http/process_peer.py','tools/standard_http/tls_peer.py',
@@ -68,7 +69,7 @@ def peer_result(value,profile):
     validate_tls(value)
     trusted = profile=='trusted'
     require(value['state']=='stopped' and value['failure'] is None
-        and value['acceptedConnections']==(11 if trusted else 2)
+        and value['acceptedConnections']==(11 if trusted else 1)
         and value['startedRequests']==(11 if trusted else 0)
         and value['completedResponseWrites']==(8 if trusted else 0)
         and value['openConnections']==value['listeningOrigins']==value['rejectedRequests']==value['committedMutations']==0,
@@ -106,7 +107,7 @@ def run(artifact: Path,native: dict,output: Path):
         result=run_bounded_result([str(native['capsule_authoring']),'demo-sign',str(signed),str(artifact)],
             output,environment,timeout_seconds=30,max_output_bytes=65536)
         require(result.returncode==0,'dotnet-https-normal-signing')
-        for profile in ('trusted','wrong-name','untrusted-issuer'):
+        for profile in PROFILES:
             stage=profile;destination=output/profile;destination.mkdir()
             with tempfile.TemporaryDirectory(prefix='lsf-dotnet-https-private-') as temporary, \
                     owned_cancellation() as cancellation, ExitStack() as cleanup:
@@ -115,8 +116,8 @@ def run(artifact: Path,native: dict,output: Path):
                 credential=private/'peer/authorization'
                 secret=('Bearer '+secrets.token_hex(32)).encode('ascii')
                 credential.write_bytes(secret);credential.chmod(0o600)
-                cert,key,der=certificate(private,'server',wrong_name=profile=='wrong-name')
-                if profile=='untrusted-issuer':_,_,root=certificate(private,'foreign-root')
+                cert,key,der=certificate(private,'server',wrong_name=profile.startswith('wrong-name-'))
+                if profile.startswith('untrusted-issuer-'):_,_,root=certificate(private,'foreign-root')
                 else:root=der
                 (destination/'server-certificate.der').write_bytes(der)
                 (destination/'operator-trust.der').write_bytes(root)
@@ -145,7 +146,8 @@ def run(artifact: Path,native: dict,output: Path):
                 pin=selected_revision(client,target)
                 require(pin['releaseDigest']==component['sha256'],'dotnet-https-unchanged-component-revision')
                 observations=[]
-                for label,which,path,expected in (CASES if profile=='trusted' else REFUSALS):
+                selected=CASES if profile=='trusted' else (REFUSALS[int(profile.endswith('-refit'))],)
+                for label,which,path,expected in selected:
                     row=base.invoke(client,target,which,f"https://{origin['host']}:{origin['port']}"+path,'https-'+label)
                     write_json(destination/('invocation-'+label+'.json'),row)
                     require(row['exitCode']==0 and row['decoded']==[expected] and row['processReaped'] is True

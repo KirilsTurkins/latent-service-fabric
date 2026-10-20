@@ -37,7 +37,7 @@ def qualify(native_input,output):
         stage='signed-real-tls-library-programme'
         execution=node.run(artifact,native,output/'node')
         require(execution['status']=='passed' and execution['guestExecutions']==15
-            and [row['profile'] for row in execution['profiles']]==['trusted','wrong-name','untrusted-issuer']
+            and [row['profile'] for row in execution['profiles']]==list(node.PROFILES)
             and retained==verify_prepared(native_input)
             and sources=={name:file_identity(ROOT/name) for name in MATERIALS}
             and head==subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip(),

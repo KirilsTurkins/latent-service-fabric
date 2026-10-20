@@ -8,14 +8,14 @@ signed HTTPS result yet; source availability does not complete #693.
 The `dotnet-https-libraries.yml` owning workflow authenticates the original
 7e3 component archive, generator approval, captured SDK/compiler inputs and
 original package WIT before signing it for these nodes. It runs the existing
-twenty portable provenance/TLS controls, then requires the fifteen real signed
+portable provenance/TLS controls, then requires the fifteen real signed
 outcomes below. The complete original build failure remains separate from
 this qualification; no result is inferred from an earlier direct HTTP case.
 
 The trusted profile requires eleven real signed outcomes: both libraries parse
 the domain body and 404/500 responses, both cancel genuinely held headers, an
 ordinary body stream is disposed early, and fresh invocations use both default
-clients. Two further nodes independently require both libraries to reject a
+clients. Four further independent nodes require each library to reject a
 trusted certificate with the wrong name and a server whose issuer is absent
 from the explicitly installed trust roots. Those four refused handshakes must
 send no HTTP request or credential.
@@ -27,7 +27,9 @@ through the normal typed HTTP provider configuration, with public roots off.
 The original request, root, activation, timer, queue, memory, fuel and cleanup
 bounds remain in force. Each result must be charged, resolve the same signed
 component and complete the original physical/provider retirement checks. All
-three nodes and TLS peers must be reaped.
+five nodes and TLS peers must be reaped. Each refused client gets its own node
+and peer so that its result must include a distinct failed handshake rather
+than inheriting any provider failure state from another call.
 
 This finite typed HTTP profile supplies no raw socket grant, ambient trust,
 retry/redirect guarantee, kernel accounting result or complete .NET runtime

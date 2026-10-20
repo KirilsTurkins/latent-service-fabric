@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_https_libraries.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add real signed15-case ordinary Flurl/Refit TLS trust, held cancellation, body disposal and physical cleanup against authenticated original7e3 component; no original gate replacement and no guest/native rebuild.",
+  "reviewReason": "Use5 independent TLS nodes so each of4 refused clients proves a distinct handshake; keep11 trusted cases, originalcaps and immutableguest/native.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6a784b2f8ec327b6486d8340b0e245516c3ee5361b473f258405f8468535d908"
+  "sha256": "2042e56cd98bcccaa582fc8e7372225bc5583020b9917aa74a83e458dac0a951"
 }
