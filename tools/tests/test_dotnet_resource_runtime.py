@@ -75,8 +75,7 @@ class ManagedResourceRuntime(unittest.TestCase):
             'nodeUsage':{'scope':'node','unavailable':[],'counters':{'broker_calls':'1'}}}
         pages=[{'category':'success','outcomeKnown':True,'data':{'page':{'nextPageToken':None},
             'coverage':{'droppedObservations':'1'},'records':[]}}]
-        stderr=(runtime.observer.PREFIX+b'|pending|start-accepted|1|3|0|1\n'+
-            runtime.observer.PREFIX+b'|pending|next-entered|2|3|1|1\n')
+        stderr=runtime.observer.PREFIX+b'|pending|wait-pending|1|1|1|1\n'
         return inventory,usage,pages,stderr
 
     def test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss(self):
@@ -91,7 +90,7 @@ class ManagedResourceRuntime(unittest.TestCase):
             elif change=='no-store':i['topology']['entries'][2]['activeCount']='0'
             elif change=='no-provider':u['nodeUsage']['counters']['broker_calls']='0'
             elif change=='zero-loss':p[0]['data']['coverage']['droppedObservations']='0'
-            else:s=s.splitlines(keepends=True)[0]
+            else:s=runtime.observer.PREFIX+b'|pending|start-accepted|1|1|0|1\n'
             with self.subTest(change=change):self.assertIsNone(runtime.pending_witness(i,u,p,'node-stop-pending',s))
 
     def test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence(self):

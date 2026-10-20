@@ -15,6 +15,11 @@ class ManagedTimerObserver(unittest.TestCase):
         self.assertFalse(value['qualification']);self.assertFalse(value['goProgrammeExecutionClaimed'])
         self.assertEqual(reader.ENVIRONMENT,original.ENVIRONMENT)
 
+    def test_real_wait_for_pending_label_is_explicit_and_old_reader_refuses_it(self):
+        raw=reader.PREFIX+b'|pending|wait-pending|1|1|1|1\n'
+        self.assertEqual(reader.observe(raw)['records'][0]['event'],'wait-pending')
+        self.assertEqual(original.observe(raw)['status'],'invalid-marker')
+
     def test_unknown_malformed_duplicate_overflow_and_foreign_counts_refuse(self):
         valid=reader.PREFIX+b'|pending|start-accepted|1|1|0|1\n'
         negatives=[valid+valid,valid.replace(b'|1|1|0|1',b'|1|9|0|1'),

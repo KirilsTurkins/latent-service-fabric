@@ -19,19 +19,19 @@
         }
       },
       {
-        "name": "Fetch the two immutable original source objects",
-        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\ngit fetch --no-tags --depth=1 origin b168a7c0f1327b188a07f01be893826f9582d42e\n"
+        "name": "Fetch the exact original compiler and new observer source objects",
+        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\ngit fetch --no-tags --depth=1 origin b168a7c0f1327b188a07f01be893826f9582d42e\ngit fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b\n"
       },
       {
         "name": "Check policy generations and exact retained-build refusal controls",
-        "run": "python3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_dotnet_resource_timer_observer tools.tests.test_dotnet_resource_replay -v\n"
+        "run": "python3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_dotnet_resource_timer_observer tools.tests.test_dotnet_resource_replay tools.tests.test_sdk_native_products_reader -v\n"
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the unchanged V7 native products",
-        "run": "python3 -B tools/java_phase_native_products.py --output \"$RUNNER_TEMP/dotnet-resource-native\""
+        "name": "Authenticate the exact successful actual-Pending observer native products",
+        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/dotnet-resource-native\""
       },
       {
         "env": {
@@ -56,7 +56,7 @@
   },
   "jobId": "exact-component",
   "kind": "job",
-  "reviewReason": "Authenticate the exact b168 fresh AOT build and original failed controller after policy generation repair; no host/engine/SDK/guest build, no historical pass relabel. Keep the original owning workflow byte-identical and add a separate fixed-source20-minute manual node-only replay with unchanged15 cases and budgets.",
+  "reviewReason": "Explicit reviewed replacement: original77 compiler ancestry stays authenticated while exact successfulf919 actual-Pending native producer replaces old observer tuple; same component/cases/20minute limit, add frozen-reader controls only",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-runtime-replay.yml"
 }

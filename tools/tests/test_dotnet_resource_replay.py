@@ -28,6 +28,30 @@ class ManagedResourceReplay(unittest.TestCase):
             with self.subTest(change=change),self.assertRaisesRegex(WorkflowError,'exact-failed-producer'):
                 replay.validate_origin(m,j)
 
+    def test_original_compiler_native_ancestry_cannot_be_relabelled_as_a_new_replay_host(self):
+        from unittest.mock import patch
+        products=replay.products
+        identity={'sha256':'sha256:'+'a'*64,'bytes':1}
+        native={'schemaVersion':'latent.sdk.phase-native-products.v1','compiledSource':products.SOURCE,
+            'compiledTree':'original-tree','producerRun':products.RUN,'producerJob':products.JOB,
+            'producerReceipt':products.RECEIPTS['native-products.json'],
+            'sourceSnapshot':products.RECEIPTS['source-inputs.json'],
+            'origin':{'artifact':products.ARTIFACT['id'],'archiveDigest':products.ARTIFACT['digest']},
+            'signedQualification':False,'guestComponentsCompiledByProducer':False,
+            'historicalNormalReceiptCreated':False,'products':{name:dict(identity) for name in products.PRODUCTS}}
+        original={'compiledNative':native,'consumerNativeSource':{'original':'consumer'}}
+        with patch.object(replay.subprocess,'check_output',return_value=b'original-tree\n'), \
+             patch.object(replay,'git_source_identity',return_value={'original':'consumer'}):
+            self.assertEqual(replay.original_native_ancestry(original),native)
+            for key,value in [('compiledSource','f'*40),('producerJob',1),('producerReceipt',identity),
+                              ('signedQualification',True),('products',{})]:
+                changed=copy.deepcopy(original);changed['compiledNative'][key]=value
+                with self.subTest(key=key),self.assertRaisesRegex(WorkflowError,'original-compiler-native-ancestry'):
+                    replay.original_native_ancestry(changed)
+            changed=copy.deepcopy(original);changed['consumerNativeSource']={}
+            with self.assertRaisesRegex(WorkflowError,'original-compiler-native-ancestry'):
+                replay.original_native_ancestry(changed)
+
     def test_wit_is_copied_verbatim_from_the_normal_package_with_its_original_observed_digest(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);name=replay.WIT[0];raw=b'original exact observed WIT\n'

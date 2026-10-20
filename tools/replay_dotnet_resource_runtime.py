@@ -13,7 +13,8 @@ import zipfile
 
 if __package__ in {None,''}:sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from tools import java_phase_native_products as products
-from tools.java_replay_materials import api, NoRedirect, Ranges, REPOSITORY
+from tools import wait_runtime_native_products as observed_products
+from tools.java_replay_materials import api, git_source_identity, NoRedirect, Ranges, REPOSITORY
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
 from tools.qualify_dotnet_resource_runtime import build_evidence, execute, MATERIALS
@@ -29,6 +30,8 @@ PREFIX='dotnet-resource-runtime/'
 WIT=('wit/deps/activation-runtime/package.wit','wit/deps/clock/package.wit',
      'wit/deps/log/package.wit','wit/deps/random/package.wit','wit/world.wit')
 NODE='tools/dotnet_resource_runtime_node.py'
+OBSERVER='tools/dotnet_resource_timer_observer.py'
+REPLAY_ONLY=(NODE,OBSERVER)
 
 
 def validate_origin(metadata,job):
@@ -108,7 +111,33 @@ def original_materials(record):
     for name,expected in materials.items():
         raw=subprocess.check_output(['git','show',SOURCE+':'+name],cwd=ROOT,timeout=15)
         require({'sha256':digest(raw),'bytes':len(raw)}==expected,'resource-dotnet-replay-original-git-material')
-        if name!=NODE:require(file_identity(ROOT/name)==expected,'resource-dotnet-replay-unchanged-build-input')
+        if name not in REPLAY_ONLY:require(file_identity(ROOT/name)==expected,'resource-dotnet-replay-unchanged-build-input')
+
+
+def original_native_ancestry(original):
+    """Authenticate the retained compiler-native record without relabelling it.
+
+    The complete original failure/archive is already pinned by SHA256. This
+    check retains its exact77 source/tree/receipt/origin separately from any new
+    runtime observer binary used to execute the unchanged component.
+    """
+    native=original['compiledNative']
+    require(native['schemaVersion']=='latent.sdk.phase-native-products.v1'
+        and native['compiledSource']==products.SOURCE and native['producerRun']==products.RUN
+        and native['producerJob']==products.JOB
+        and native['compiledTree']==subprocess.check_output(['git','rev-parse',products.SOURCE+'^{tree}'],
+            cwd=ROOT,timeout=15).decode().strip()
+        and native['producerReceipt']==products.RECEIPTS['native-products.json']
+        and native['sourceSnapshot']==products.RECEIPTS['source-inputs.json']
+        and native['origin']['artifact']==products.ARTIFACT['id']
+        and native['origin']['archiveDigest']==products.ARTIFACT['digest']
+        and native['signedQualification'] is False and native['guestComponentsCompiledByProducer'] is False
+        and native['historicalNormalReceiptCreated'] is False
+        and set(native['products'])==set(products.PRODUCTS)
+        and all(products._identity(row) for row in native['products'].values())
+        and original['consumerNativeSource']==git_source_identity(SOURCE),
+        'resource-dotnet-replay-original-compiler-native-ancestry')
+    return native
 
 
 def replay(native_directory,output):
@@ -118,30 +147,36 @@ def replay(native_directory,output):
         and output!=native_directory and native_directory not in output.parents and output not in native_directory.parents,
         'resource-dotnet-replay-separated-inputs')
     output=fresh(output)
-    compiled=products.verify_prepared(native_directory);native=products.native_products(native_directory)
+    compiled=observed_products.verify_prepared(native_directory);native=observed_products.native_products(native_directory)
     for path in native.values():path.chmod(0o700)
     current_source=source_identity(ROOT);source=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip()
-    current_materials={name:file_identity(ROOT/name) for name in (*MATERIALS,'tools/replay_dotnet_resource_runtime.py')}
+    current_materials={name:file_identity(ROOT/name) for name in (*MATERIALS,'tools/replay_dotnet_resource_runtime.py',
+        'tools/wait_runtime_native_products.py','tools/sdk_native_products_reader.py')}
     record={'schemaVersion':'latent.dotnet.resource-runtime-replay.v1','status':'incomplete',
         'source':source,'compiledGuestSource':SOURCE,'nativeAotCompilationRepeated':False,
         'guestComponentsCompiled':0,'nativeProductsBuilt':0,'engineRebuilt':False,
         'compiledNative':compiled,'consumerNativeSource':current_source,'materials':current_materials,
+        'runtimeNativeInputs':read_json(native_directory/'source-inputs.json')['native'],
         'fullTicketQualification':False,'historicalQualificationRelabelled':False}
     try:
         artifact,original,record['acquisition']=acquire(fresh(output/'retained'))
         original_materials(original)
+        inherited_native=original_native_ancestry(original)
         require(original['source']==SOURCE and original['status']=='failed'
             and original['stage']=='normal-sign-admit-and-joined-runtime-programme'
-            and original['nativeAotCompilationSucceeded'] is True and original['guestComponentsCompiled']==1
-            and original['compiledNative']==compiled and original['consumerNativeSource']==current_source,
+            and original['nativeAotCompilationSucceeded'] is True and original['guestComponentsCompiled']==1,
             'resource-dotnet-replay-genuine-aot-and-original-native-ancestry')
         before=build_evidence(artifact)
         require(before==original['freshBuild'] and before['component']==COMPONENT,
             'resource-dotnet-replay-exact-original-component-and-observations')
         record['freshOriginalBuild']=before
+        record['originalCompilerNativeAncestry']=inherited_native
+        record['originalCompilerConsumerNativeSource']=original['consumerNativeSource']
+        record['nativeProducerCommitMatchesConsumerCheckout']=compiled['compiledSource']==source
+        record['consumerCheckoutMatchesRuntimeInputs']=current_source==record['runtimeNativeInputs']
         observed=execute(artifact,native,output/'node')
         require(observed['status']=='passed' and build_evidence(artifact)==before
-            and source_identity(ROOT)==current_source and products.verify_prepared(native_directory)==compiled
+            and source_identity(ROOT)==current_source and observed_products.verify_prepared(native_directory)==compiled
             and current_materials=={name:file_identity(ROOT/name) for name in current_materials}
             and subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip()==source,
             'resource-dotnet-replay-final-source-build-and-native-identity')

@@ -1,4 +1,4 @@
-"""Decode unchanged native observer records under the original managed limits.
+"""Decode bounded native observer records under the original managed limits.
 
 This is a private qualification reader, not a runtime hook or proof of guest
 completion. Only the native hook's two fixed public activation IDs are used.
@@ -10,7 +10,7 @@ from tools.go_node_stop_timer_observer import ENVIRONMENT, PREFIX, MAXIMUM_STDER
 
 LIMITS = {'tasks':8, 'waits':16, 'timers':8}
 MODES = {'pending','drain'}
-EVENTS = {'start-accepted','next-entered','root-close'}
+EVENTS = {'start-accepted','next-entered','root-close','wait-pending'}
 
 
 def observe(stderr):
@@ -30,7 +30,7 @@ def observe(stderr):
             result['overflow']=True;continue
         fields=line.split(b'|')
         if (len(fields)!=7 or fields[0]!=PREFIX or fields[1] not in {b'pending',b'drain'}
-            or fields[2] not in {b'start-accepted',b'next-entered',b'root-close'}
+            or fields[2] not in {event.encode('ascii') for event in EVENTS}
             or any(re.fullmatch(rb'0|[1-9][0-9]{0,1}',value) is None for value in fields[3:])):
             result['invalidMarkerCount']+=1;continue
         sequence,tasks,waits,timers=map(int,fields[3:]);mode=fields[1].decode('ascii')

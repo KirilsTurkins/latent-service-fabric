@@ -26,17 +26,18 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
-      - name: Fetch the two immutable original source objects
+      - name: Fetch the exact original compiler and new observer source objects
         run: |
           git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
           git fetch --no-tags --depth=1 origin b168a7c0f1327b188a07f01be893826f9582d42e
+          git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
       - name: Check policy generations and exact retained-build refusal controls
         run: |
-          python3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_dotnet_resource_timer_observer tools.tests.test_dotnet_resource_replay -v
-      - name: Authenticate the unchanged V7 native products
+          python3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_dotnet_resource_timer_observer tools.tests.test_dotnet_resource_replay tools.tests.test_sdk_native_products_reader -v
+      - name: Authenticate the exact successful actual-Pending observer native products
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/java_phase_native_products.py --output "$RUNNER_TEMP/dotnet-resource-native"
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/dotnet-resource-native"
       - name: Authenticate the exact fresh component and re-run only its joined programme
         env:
           GH_TOKEN: ${{ github.token }}

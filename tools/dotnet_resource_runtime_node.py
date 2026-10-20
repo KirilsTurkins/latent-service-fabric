@@ -118,14 +118,15 @@ def positive_timer(stderr,activation):
     require(activation in MODES,'resource-dotnet-closed-observer-activation')
     value=observer.observe(stderr)
     require(value['status'] in {'not-observed','observed'},'resource-dotnet-valid-observer')
-    pair=[row for row in value['records'] if row['mode']==MODES[activation]]
-    if len(pair)<2:return None
-    require(len(pair)==2 and [row['event'] for row in pair]==['start-accepted','next-entered']
-        and pair[0]['sequence']<pair[1]['sequence']
-        and pair[0]['timers']==pair[1]['timers']==1 and pair[0]['waits']==0 and pair[1]['waits']==1
-        and all(0<row['tasks']<=LIMITS['tasks'] for row in pair),'resource-dotnet-real-timer-wait')
-    return {'activation':activation,'records':pair,'nativeObserver':value,
-        'positivePoint':'RuntimeTimer::begin_wait after exact returned timer token lookup'}
+    # The genuine .NET Timer PAL owns a Wait plus wait-for's host Timer; it does
+    # not call timer-start/next. Only the original read-wait Poll::Pending is a
+    # positive witness. Earlier table events are never accepted as a substitute.
+    rows=[row for row in value['records'] if row['mode']==MODES[activation] and row['event']=='wait-pending']
+    if not rows:return None
+    require(len(rows)==1 and rows[0]['waits']==1 and rows[0]['timers']==1
+        and 0<rows[0]['tasks']<=LIMITS['tasks'],'resource-dotnet-real-wait-for-pending')
+    return {'activation':activation,'records':rows,'nativeObserver':value,
+        'positivePoint':'original runtime wait-for read-wait future returned Poll::Pending'}
 
 
 def pending_witness(inventory,usage,pages,activation,stderr):
@@ -144,7 +145,7 @@ def pending_witness(inventory,usage,pages,activation,stderr):
         require(len(pages)==1,'resource-dotnet-one-refused-audit-read');audit={'readRefusal':refused_observation(pages[0])}
     else:
         require(pages[-1]['data']['page']['nextPageToken'] is None,'resource-dotnet-complete-audit-page')
-        starts=[];waits=[];identities=set();epochs=set()
+        waits=[];identities=set();epochs=set()
         for page in pages:
             require(page['category']=='success' and page['outcomeKnown'],'resource-dotnet-audit-success')
             for row in page['data']['records']:
@@ -156,15 +157,13 @@ def pending_witness(inventory,usage,pages,activation,stderr):
                 if identity.get('activation')!=activation or identity.get('capability')!=ACTIVATION:continue
                 require(identity['rootActivation']==activation and identity['providerProfile']=='activation-owned-v1',
                     'resource-dotnet-original-activation-provider');epochs.add(row['epoch'])
-                if observed['kind']=='PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME' and identity['operation']=='timer-start' \
-                    and identity.get('providerOutcome')=='AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED':starts.append(key[1])
-                if observed['kind']=='PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED' and identity['operation']=='timer-next' \
+                if observed['kind']=='PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED' and identity['operation']=='wait-for' \
                     and observed['outcome']=='AUDIT_OBSERVATION_OUTCOME_SUCCEEDED':waits.append(key[1])
         dropped=[integer(page['data']['coverage']['droppedObservations']) for page in pages]
-        correlated=bool(starts and waits and max(waits)>max(starts))
+        correlated=bool(waits)
         if not correlated and not any(dropped):return None
         require(len(epochs)<=1 and (not correlated or len(epochs)==1),'resource-dotnet-single-audit-epoch')
-        audit={'timerLabelsCorrelated':correlated,'droppedObservations':dropped,'explicitLoss':not correlated}
+        audit={'waitForGrantCorrelated':correlated,'droppedObservations':dropped,'explicitLoss':not correlated}
     positive=positive_timer(stderr,activation)
     if positive is None:return None
     return {'activation':activation,'physicalOwners':{name:1 for name in LIVE},'providerCallRetained':True,
