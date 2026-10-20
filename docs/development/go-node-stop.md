@@ -132,9 +132,8 @@ missing, extra, malformed, duplicate or overflowed observations never qualify a
 stop. The small per-Table observer field remains covered by the existing
 `size_of<Table>` original host-memory reservation. No owner/authority/grace/wall
 limit or original error/retirement path changes. The reader always reports
-`qualification: false`; it does not replace the strict stop barrier. This source
-requires a new authenticated native producer and actual execution before it can
-supply positive diagnostic evidence. Historical 94d has no such observer.
+`qualification: false`; it does not replace the strict stop barrier. The authenticated V7 producer and actual consumer below supply its first positive
+diagnostic execution. Historical 94d has no such observer.
 
 ## Positive timer consumer with distinct V7 products
 
@@ -178,10 +177,10 @@ cell or shutdown-grace allowance is increased. The real SIGTERM/reap, every
 zero-owner shutdown field, uncertain invocation outcome and fresh-state call
 after the same signed product restarts remain mandatory.
 
-Focused controls validate this source selection and failure handling only.
-The new V7 programme has not executed until its own authenticated receipt says
-otherwise. No successful live node stop, complete runtime-cost bound, kernel
-retirement or whole #742/#736 qualification is claimed by this consumer.
+Focused controls validate source selection and failure handling. The later actual
+V7 observation below additionally proves this finite live-stop programme. Full
+runtime-cost bounds, kernel retirement and whole #742/#736 qualification remain
+open.
 
 The first V7 attempt at `51190a89242b00b634798c366ac32c20dbd82ee0`, run
 `39424278960`/job `118632749476`, remains failed. It compiled and signed the
@@ -191,3 +190,35 @@ entered wait with eleven tasks, one wait and two charged timers. The reader had
 incorrectly required three entered waits. The corrected regression preserves
 the original live-owner, ordering, deadline, attempt and signal requirements;
 the live-stop and restart outcomes still require their own actual execution.
+
+
+The corrected barrier then reached actual clean pending-work SIGTERM and a known
+cancelled/reaped invocation, but immediate restart failed. The closed native
+startup report at source `9838c53939222f7cf1e7bc0d4e3d67d8342abf8c`
+identified `supplyChainCatalog` / `platform` / `unavailable`. The authority
+intentionally persists a future anti-rollback floor even after clean retirement.
+The driver now reads that original stopped authority's bounded floor, waits for
+its exact not-before instant within the original 30-second startup watchdog and
+client deadline, then starts once. It never deletes or mutates the floor,
+renews a lease, retries failed startup or changes the native guard. Unknown,
+regressed, changed or malformed floor data fails closed.
+
+[Actual source-bound observation](../testing/evidence/go-node-stop-positive-2026-10-20.json):
+consumer `41e8084a573eea94f06fc4f527c4bc718fb7e2ed`,
+[run 39433165880/job 118663188069](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39433165880/job/118663188069)
+completed successfully. Both `pending` and `drain` barriers retained successful
+native timer admission, entered waits and current original owners before real
+SIGTERM. Four node processes were cleanly stopped and reaped; six actual Go
+invocations comprised four fresh-state results and two known cancelled/reaped
+in-flight results. Each shutdown had all 23 original owner counters zero,
+telemetry flushed and its epoch helper joined. The two measured durable floors
+were five and four seconds ahead when read; each replacement started exactly
+once at that floor under the unchanged watchdog.
+
+All 168 archive members passed CRC/SHA-256 checks. All 3,310 frozen native Git
+files, 247 SDK/recipe/helper/compile-input rows and 114 producer material rows
+were authenticated. Pure fixture derivation matched its complete retained source
+manifest. The signed 2,723,574-byte component is SHA-256
+`79e808c0760de14b65fff19ae8a3f4007f439e2050f14ee6541356c4ae8470dd`.
+The actual native products remain V7 source `77bf`; this is not qualification of
+later native changes, a repeated normal27 programme or complete #742/#736.
