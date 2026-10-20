@@ -428,3 +428,89 @@ jobs:
             ${{ runner.temp }}/dotnet-http-error-port/
           if-no-files-found: error
           retention-days: 7
+
+      - name: Export exact normal public products for the separate ordinary scratch programme
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --export-bundle --language dotnet
+          --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+          --output "$RUNNER_TEMP/dotnet-scratch-prepared"
+      - name: Retain identity-checked normal task prerequisites
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-scratch-prepared/
+          if-no-files-found: error
+          retention-days: 3
+
+  scratch-refusals:
+    name: Ordinary .NET filesystem refusals and fresh state
+    needs: toolchain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.100'
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Download this run's exact normal public products
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dotnet-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-scratch-prepared
+      - name: Check ordinary source, original budgets and exact outcome controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification -v
+      - name: Install captured NativeAOT namespace and loader inputs
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the pinned native compiler and closed runtime
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Build fresh NativeAOT component and execute six ordinary filesystem calls
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --language dotnet
+          --native-qualification "$RUNNER_TEMP/dotnet-scratch-prepared"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+          --output "$RUNNER_TEMP/dotnet-scratch-refusals"
+      - name: Retain bounded filesystem observations including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-scratch-refusals-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dotnet-scratch-refusals/qualification.json
+            ${{ runner.temp }}/dotnet-scratch-refusals/FAILED.json
+            ${{ runner.temp }}/dotnet-scratch-refusals/compatibility-execution-report.json
+            ${{ runner.temp }}/dotnet-scratch-refusals/logs/**
+            ${{ runner.temp }}/dotnet-scratch-refusals/build/*.json
+            ${{ runner.temp }}/dotnet-scratch-refusals/build/component.wasm
+            ${{ runner.temp }}/dotnet-scratch-refusals/build/logs/**
+            ${{ runner.temp }}/dotnet-scratch-refusals/node/workflow.json
+            ${{ runner.temp }}/dotnet-scratch-refusals/node/FAILED.json
+            ${{ runner.temp }}/dotnet-scratch-refusals/node/controls/*.json
+            ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
+          if-no-files-found: warn
+          retention-days: 3
