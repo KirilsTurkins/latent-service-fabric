@@ -466,8 +466,12 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         from tools.java_guest import coroutine_patch as patch
         source = read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/CoroutineTransformation.java')
         corrected = patch.corrected_source(source)
-        self.assertEqual(corrected, source.replace(patch.DOMAIN.encode(), patch.COPIED_DOMAIN.encode())
-            .replace(patch.BEFORE.encode(), patch.AFTER.encode()))
+        expected = source.replace(patch.DOMAIN.encode(), patch.COPIED_DOMAIN.encode()).replace(
+            patch.BEFORE.encode(), patch.AFTER.encode())
+        for name in patch.RELOCATED_IMPORTS:
+            expected = expected.replace(('import com.carrotsearch.hppc.'+name+';').encode(),
+                ('import org.teavm.hppc.'+name+';').encode())
+        self.assertEqual(corrected, expected)
         self.assertIn(b'Licensed under the Apache License, Version 2.0', corrected)
         self.assertIn(b'phi.getIncomings().removeIf(incoming -> domainSet.contains(incoming.getSource().getIndex()));', corrected)
         for changed in (source+b' ', source.replace(b'0;', b'1;', 1), b'private source'):
@@ -562,16 +566,25 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 for name in sorted(patch.PATCH_CLASSES):jar.writestr(name,b'original class')
                 jar.writestr('unchanged.class',b'original unrelated')
             raw=core.read_bytes();sha=hashlib.sha256(raw).hexdigest()
+            hppc=cache/'org.teavm/teavm-relocated-libs-hppc/0.15.0/pinned/teavm-relocated-libs-hppc-0.15.0.jar'
+            hppc.parent.mkdir(parents=True)
+            with zipfile.ZipFile(hppc,'w') as jar:
+                for name in patch.RELOCATED_IMPORTS:jar.writestr('org/teavm/hppc/'+name+'.class',b'\xca\xfe\xba\xbeactual-fixture')
+            hppc_raw=hppc.read_bytes();hppc_sha=hashlib.sha256(hppc_raw).hexdigest()
             project=root/'project';(project/'gradle').mkdir(parents=True)
             (project/'dependencies.lock.json').write_text(json.dumps({'schemaVersion':1,
                 'maven':'https://repo.maven.apache.org/maven2/','artifacts':[{
                 'path':'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar',
-                'sha256':sha,'size':len(raw),'platform':'any'}]}))
+                'sha256':sha,'size':len(raw),'platform':'any'}, {
+                'path':'org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar',
+                'sha256':hppc_sha,'size':len(hppc_raw),'platform':'any'}]}))
             (project/'gradle/verification-metadata.xml').write_text(
                 '<verification-metadata xmlns="https://schema.gradle.org/dependency-verification">'
                 '<configuration><verify-metadata>true</verify-metadata><verify-signatures>false</verify-signatures></configuration>'
                 '<components><component group="org.teavm" name="teavm-core" version="0.15.0">'
                 '<artifact name="teavm-core-0.15.0.jar"><sha256 value="'+sha+'"/></artifact>'
+                '</component><component group="org.teavm" name="teavm-relocated-libs-hppc" version="0.15.0">'
+                '<artifact name="teavm-relocated-libs-hppc-0.15.0.jar"><sha256 value="'+hppc_sha+'"/></artifact>'
                 '</component></components></verification-metadata>')
             original_script=read_file(campaign.ROOT/'sdk/java-guest/compiler.gradle')
             (project/'build.gradle').write_bytes(original_script)
@@ -597,7 +610,9 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 'java-coroutine-original-control','java-coroutine-corrected-control'])
             self.assertEqual(core.read_bytes(),raw)
             self.assertEqual(receipt['checkedCompilerJars'],[{'coordinate':
-                'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar','sha256':sha,'bytes':len(raw)}])
+                'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar','sha256':sha,'bytes':len(raw)},
+                {'coordinate':'org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar',
+                'sha256':hppc_sha,'bytes':len(hppc_raw)}])
             script=(project/'build.gradle').read_text()
             for guard in ('org.teavm.backend.c.CTarget.class.classLoader','actual.protectionDomain.codeSource',
                     'coroutine-patch-loaded-class-mismatch','coroutine-patch-loaded-jar-mutated'):
@@ -608,3 +623,18 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             patch.loaded(project,receipt,compiler=compiler)
             core.write_bytes(raw+b'changed')
             with self.assertRaises(ValueError):patch.loaded(project,receipt,compiler=compiler)
+
+    def test_published_relocated_classes_are_present_before_any_compiler_execution(self):
+        import zipfile
+        from tools.java_guest import coroutine_patch as patch
+        with tempfile.TemporaryDirectory() as temporary:
+            jar=Path(temporary)/'teavm-relocated-libs-hppc-0.15.0.jar'
+            with self.assertRaisesRegex(ValueError,'relocated-library'):patch.check_relocated_classes([])
+            for invalid in ('missing','unrelocated','malformed'):
+                with self.subTest(invalid=invalid):
+                    with zipfile.ZipFile(jar,'w') as output:
+                        for name in patch.RELOCATED_IMPORTS:
+                            if invalid=='missing' and name=='IntSet':continue
+                            prefix='com/carrotsearch/hppc/' if invalid=='unrelocated' else 'org/teavm/hppc/'
+                            output.writestr(prefix+name+'.class',b'not a class' if invalid=='malformed' else b'\xca\xfe\xba\xbevalid')
+                    with self.assertRaises((ValueError,KeyError)):patch.check_relocated_classes([jar])

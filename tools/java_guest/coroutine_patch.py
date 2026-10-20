@@ -21,6 +21,7 @@ PATCH_CLASSES = frozenset(CLASS_ROOT + name for name in (
     'CoroutineTransformation$SplittingBackend.class'))
 CONTROL = CLASS_ROOT + 'Check.class'
 MAX_JAR_BYTES = 64 * 1024 * 1024
+RELOCATED_IMPORTS = ('IntHashSet', 'IntIntHashMap', 'IntSet')
 
 
 def corrected_source(raw: bytes) -> bytes:
@@ -29,7 +30,14 @@ def corrected_source(raw: bytes) -> bytes:
     source = raw.decode('utf-8')
     if source.count(BEFORE) != 1 or source.count(DOMAIN) != 1:
         raise ValueError('unreviewed-teavm-coroutine-predicate')
-    return source.replace(DOMAIN, COPIED_DOMAIN).replace(BEFORE, AFTER).encode('utf-8')
+    source = source.replace(DOMAIN, COPIED_DOMAIN).replace(BEFORE, AFTER)
+    # The published 0.15.0 artifacts relocate HPPC, unlike the Git source tree.
+    for name in RELOCATED_IMPORTS:
+        before = 'import com.carrotsearch.hppc.' + name + ';'
+        if source.count(before) != 1:
+            raise ValueError('unreviewed-teavm-coroutine-relocation')
+        source = source.replace(before, 'import org.teavm.hppc.' + name + ';')
+    return source.encode('utf-8')
 
 
 def checked_jars(compiler, project: Path) -> list[Path]:
@@ -60,6 +68,21 @@ def jar_identities(cache: Path, jars: list[Path]) -> list[dict]:
         result.append({'coordinate': '/'.join((group.replace('.', '/'), name, version, filename)),
             'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)})
     return sorted(result, key=lambda row: row['coordinate'])
+
+
+def check_relocated_classes(jars: list[Path]) -> None:
+    import io
+    selected = [path for path in jars if path.name == 'teavm-relocated-libs-hppc-0.15.0.jar']
+    if len(selected) != 1:
+        raise ValueError('coroutine-patch-relocated-library')
+    with zipfile.ZipFile(io.BytesIO(read_file(selected[0], MAX_JAR_BYTES))) as jar:
+        entries = jar.infolist()
+        if len(entries) > 32768 or len({entry.filename for entry in entries}) != len(entries):
+            raise ValueError('coroutine-patch-relocated-entries')
+        for name in RELOCATED_IMPORTS:
+            entry = jar.getinfo('org/teavm/hppc/' + name + '.class')
+            if entry.is_dir() or entry.file_size > 1024 * 1024 or not jar.read(entry).startswith(b'\xca\xfe\xba\xbe'):
+                raise ValueError('coroutine-patch-relocated-class')
 
 
 def jar_entries(path: Path) -> dict[str, bytes]:
@@ -114,6 +137,7 @@ def replace_jar(original: Path, classes: Path, target: Path) -> dict:
 def stage(compiler, project: Path, destination: Path) -> dict:
     # The first ordinary classes task has already populated the strictly checked cache.
     jars = checked_jars(compiler, project)
+    check_relocated_classes(jars)
     original = [path for path in jars if path.name == 'teavm-core-0.15.0.jar']
     if len(original) != 1:
         raise ValueError('coroutine-patch-core-selection')
@@ -168,7 +192,8 @@ tasks.named('generateC') {
     receipt.update(schemaVersion='latent.java.coroutine-compiler-patch.v1',
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),
         realOriginalIrDefectObserved=True, realCorrectedIrInputsPreserved=True,
-        originalInputsUnchanged=True, checkedCompilerJars=identities)
+        originalInputsUnchanged=True, checkedCompilerJars=identities,
+        publishedHppcRelocation='org.teavm.hppc')
     return receipt
 
 

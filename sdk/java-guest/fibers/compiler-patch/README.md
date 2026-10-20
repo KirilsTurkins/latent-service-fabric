@@ -6,7 +6,10 @@ SHA-256 `5fb6d1c6e33fb4418239ec4c3cb93435b194bf5b3d36e8350836e2830567ba8c`.
 Its original copyright and license header are retained.
 
 The captured Python compiler helper checks that complete preimage before adding
-the copied-block ID set and changing one copied-phi predicate. Copied phi inputs
+the copied-block ID set and changing one copied-phi predicate. Its three HPPC
+imports receive the exact `com.carrotsearch.hppc` to `org.teavm.hppc` relocation
+used by the pinned release's `settings.gradle.kts`; the already pinned relocated
+JAR's three required classes are checked before compilation. Copied phi inputs
 must retain both redirected original-domain predecessors and internal copied
 predecessors. The original-block phi filter is unchanged. Removing the latter
 inputs can leave an empty used phi and an undefined reference temporary in C.

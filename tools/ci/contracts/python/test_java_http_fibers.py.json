@@ -29,6 +29,7 @@
     "PinnedCoroutinePhiRepair.test_jar_duplicates_unsafe_members_and_missing_class_refuse",
     "PinnedCoroutinePhiRepair.test_loaded_class_receipt_binds_actual_private_jar_and_refuses_mutation",
     "PinnedCoroutinePhiRepair.test_private_jar_replaces_exact_compiled_closure_and_retains_every_other_entry",
+    "PinnedCoroutinePhiRepair.test_published_relocated_classes_are_present_before_any_compiler_execution",
     "PinnedCoroutinePhiRepair.test_real_pinned_inventory_and_process_boundary_stage_private_patch_only"
   ],
   "guards": {
@@ -380,6 +381,18 @@
       ],
       "skipSites": []
     },
+    "PinnedCoroutinePhiRepair.test_published_relocated_classes_are_present_before_any_compiler_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f23b8d8d39913299e4396e6a71a027b049d4c7c80064d93a70628fea588ff2e8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PinnedCoroutinePhiRepair.test_real_pinned_inventory_and_process_boundary_stage_private_patch_only": {
       "bases": [
         "unittest.TestCase"
@@ -395,6 +408,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Six pinned compiler copied-phi private-JAR and strict actual-load controls; all24 old cases and guards unchanged",
+  "reviewReason": "Match three exact pinned published HPPC imports and preflight existing checked classes; preserve all original controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }
