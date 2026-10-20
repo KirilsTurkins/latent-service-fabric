@@ -16,7 +16,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:15ca24fa7e67e79d71d7ad35a5f18444dd3da7a57f35e01c59abd5b06eff91d3",
+        "module:setup-sha256:b2fba062be116d0359b38d38f209ed71187a2fc501d3788143429149063af099",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -28,7 +28,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:15ca24fa7e67e79d71d7ad35a5f18444dd3da7a57f35e01c59abd5b06eff91d3",
+        "module:setup-sha256:b2fba062be116d0359b38d38f209ed71187a2fc501d3788143429149063af099",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -40,7 +40,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:15ca24fa7e67e79d71d7ad35a5f18444dd3da7a57f35e01c59abd5b06eff91d3",
+        "module:setup-sha256:b2fba062be116d0359b38d38f209ed71187a2fc501d3788143429149063af099",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -52,7 +52,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:15ca24fa7e67e79d71d7ad35a5f18444dd3da7a57f35e01c59abd5b06eff91d3",
+        "module:setup-sha256:b2fba062be116d0359b38d38f209ed71187a2fc501d3788143429149063af099",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -64,7 +64,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:15ca24fa7e67e79d71d7ad35a5f18444dd3da7a57f35e01c59abd5b06eff91d3",
+        "module:setup-sha256:b2fba062be116d0359b38d38f209ed71187a2fc501d3788143429149063af099",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -76,7 +76,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:15ca24fa7e67e79d71d7ad35a5f18444dd3da7a57f35e01c59abd5b06eff91d3",
+        "module:setup-sha256:b2fba062be116d0359b38d38f209ed71187a2fc501d3788143429149063af099",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -88,7 +88,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:15ca24fa7e67e79d71d7ad35a5f18444dd3da7a57f35e01c59abd5b06eff91d3",
+        "module:setup-sha256:b2fba062be116d0359b38d38f209ed71187a2fc501d3788143429149063af099",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -96,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_runtime_retirement_qualification.py",
-  "reviewReason": "Add one default-false manual exact signed retirement case with original owner witnesses, authenticated existing compiler/engine, two fresh components and unchanged guest limits; original job bodies remain identical.",
+  "reviewReason": "Explicit review: retained all seven cases and no skips; encoded() now derives the exact filtered count from the registered target instead of hardcoding 47, matching the strengthened anchored native-output reader. Only module helper guard changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
