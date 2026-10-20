@@ -81,6 +81,10 @@ on:
         type: boolean
         default: false
         description: Run only the bounded real Task and timer campaign with authenticated historical native products
+      scratch_only:
+        type: boolean
+        default: false
+        description: Observe only ordinary filesystem errors; skip repeating the separate Task programme
 
 permissions:
   contents: read
@@ -437,7 +441,7 @@ jobs:
 
   task-reference:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.task_runtime_replay }}
-    name: Focused managed Task runtime with authenticated native products
+    name: Focused managed filesystem observations with authenticated native products
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     permissions:
@@ -502,6 +506,7 @@ jobs:
         python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
           --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
     - name: Build one fresh NativeAOT component, sign and execute ordinary managed Tasks
+      if: ${{ !inputs.scratch_only }}
       env:
         GH_TOKEN: ${{ github.token }}
       run: python3 tools/replay_dotnet_tasks.py --prepared "$RUNNER_TEMP/task-prepared" --host "$RUNNER_TEMP/task-prepared/selected-host" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/dotnet-task-runtime"

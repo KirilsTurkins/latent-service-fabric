@@ -7,7 +7,7 @@
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.task_runtime_replay }}",
-    "name": "Focused managed Task runtime with authenticated native products",
+    "name": "Focused managed filesystem observations with authenticated native products",
     "permissions": {
       "actions": "read",
       "contents": "read"
@@ -83,6 +83,7 @@
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "if": "${{ !inputs.scratch_only }}",
         "name": "Build one fresh NativeAOT component, sign and execute ordinary managed Tasks",
         "run": "python3 tools/replay_dotnet_tasks.py --prepared \"$RUNNER_TEMP/task-prepared\" --host \"$RUNNER_TEMP/task-prepared/selected-host\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-task-runtime\""
       },
@@ -110,7 +111,7 @@
   },
   "jobId": "task-reference",
   "kind": "job",
-  "reviewReason": "Add independently failing ordinary .NET filesystem observation using the same fixed authenticated historical native products and current strict scratch programme. Preserve original Task command/assertions, all declarations, budgets and35-minute ceiling; no current-native source claim.",
+  "reviewReason": "Add explicit default-false scratch-only diagnostic selector to skip repeating the separately executing Task programme; preserve its command and default guard behavior, strict historical native authentication, all original bounds and normal75-minute path.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

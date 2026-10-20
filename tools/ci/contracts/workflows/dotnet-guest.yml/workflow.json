@@ -95,6 +95,11 @@
       },
       "workflow_dispatch": {
         "inputs": {
+          "scratch_only": {
+            "default": false,
+            "description": "Observe only ordinary filesystem errors; skip repeating the separate Task programme",
+            "type": "boolean"
+          },
           "task_runtime_replay": {
             "default": false,
             "description": "Run only the bounded real Task and timer campaign with authenticated historical native products",
@@ -111,7 +116,7 @@
     "task-reference",
     "toolchain"
   ],
-  "reviewReason": "Add explicit default-off focused managed task/timer replay using authenticated frozen historical native products and fresh current application compilation; preserve normal commands and75-minute bound.",
+  "reviewReason": "Add explicit default-false scratch-only diagnostic selector to skip repeating the separately executing Task programme; preserve its command and default guard behavior, strict historical native authentication, all original bounds and normal75-minute path.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
