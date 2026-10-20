@@ -136,28 +136,33 @@ def pending_witness(inventory, usage, pages, activation, stderr):
 
 
 def wait_pending(client, pending, probe, target, output, label):
-    deadline = min(client.deadline,time.monotonic()+10)
-    for attempt in range(16):
-        require(time.monotonic() < deadline and not pending.owner.exited(),'resource-runtime-real-pending-before-terminal')
-        client.node.drain()
-        pages=[];token=None
-        for _ in range(4):
-            command=('audit','query','--scope','tenant','--page-size','64',
-                     '--from-unix-millis',str(max(0,pending.authoring_started_unix_millis-1)))
-            if token is not None:command+=('--page-token',token)
-            page=client.call(*command);pages.append(page);token=page['data']['page']['nextPageToken']
-            if token is None:break
-        inventory=client.call('node','get','operator-workflow-test')['data']['inventory']
-        usage=client.call('capability','list','--deployment',target['name'],'--include-node-usage')['data']
-        client.node.drain()
-        witness=pending_witness(inventory,usage,pages,pending.authoring_activation,bytes(client.node.buffers[1]))
-        if witness is not None:
-            require(not pending.owner.exited(),'resource-runtime-pending-ended-before-witness')
-            record={'witness':witness,'inventory':inventory,'providerUsage':usage,'auditPages':pages,
-                    'physical':sample(client,probe,label,2,active=True),'attempts':attempt+1}
-            write_json(output/('pending-'+label+'.json'),record);return record
-        time.sleep(0.01)
-    raise RuntimeError('resource-runtime-pending-witness-attempts')
+    original=client.deadline
+    deadline = min(original,time.monotonic()+10)
+    client.deadline=deadline
+    try:
+        for attempt in range(16):
+            require(time.monotonic() < deadline and not pending.owner.exited(),'resource-runtime-real-pending-before-terminal')
+            client.node.drain()
+            pages=[];token=None
+            for _ in range(4):
+                command=('audit','query','--scope','tenant','--page-size','64',
+                         '--from-unix-millis',str(max(0,pending.authoring_started_unix_millis-1)))
+                if token is not None:command+=('--page-token',token)
+                page=client.call(*command);pages.append(page);token=page['data']['page']['nextPageToken']
+                if token is None:break
+            inventory=client.call('node','get','operator-workflow-test')['data']['inventory']
+            usage=client.call('capability','list','--deployment',target['name'],'--include-node-usage')['data']
+            client.node.drain()
+            witness=pending_witness(inventory,usage,pages,pending.authoring_activation,bytes(client.node.buffers[1]))
+            if witness is not None:
+                require(not pending.owner.exited(),'resource-runtime-pending-ended-before-witness')
+                record={'witness':witness,'inventory':inventory,'providerUsage':usage,'auditPages':pages,
+                        'physical':sample(client,probe,label,2,active=True),'attempts':attempt+1}
+                write_json(output/('pending-'+label+'.json'),record);return record
+            time.sleep(0.01)
+        raise RuntimeError('resource-runtime-pending-witness-attempts')
+    finally:
+        client.deadline=original
 
 
 def retire(client, probe, target, output, label):

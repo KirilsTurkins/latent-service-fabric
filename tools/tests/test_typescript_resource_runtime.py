@@ -17,6 +17,24 @@ from tools.rust_capsule_node import configure
 
 
 class ResourceRuntimeBoundaries(unittest.TestCase):
+    def test_real_normal_derived_world_preserves_original_export_component_and_namespace(self):
+        from tools.qualify_typescript_resource_runtime import checked_release
+        world='examples:lsf-typescript-activation/selected@1.0.0'
+        release={'name':'my-greeting','service':'my-greeting','world':world,'componentDigest':'sha256:'+'a'*64}
+        capsule={'metadata':{'name':'examples/my-greeting','tenant':'examples'},
+            'component':{'world':world,'digest':release['componentDigest']},
+            'exports':['examples:resource-runtime/api@1.0.0']}
+        build={'component':{'sha256':release['componentDigest']}}
+        self.assertEqual(checked_release(release,capsule,build),release)
+        for change in ('source-world','foreign-namespace','changed-export','changed-component','foreign-service'):
+            r,c,b=copy.deepcopy((release,capsule,build))
+            if change=='source-world':r['world']='examples:resource-runtime/service@1.0.0'
+            elif change=='foreign-namespace':r['world']=c['component']['world']='foreign:lsf-typescript-activation/selected@1.0.0'
+            elif change=='changed-export':c['exports']=['examples:other/api@1.0.0']
+            elif change=='changed-component':r['componentDigest']=c['component']['digest']='sha256:'+'b'*64
+            else:r['service']='other'
+            with self.subTest(change=change),self.assertRaises(WorkflowError):checked_release(r,c,b)
+
     @staticmethod
     def capsule():
         return {'execution':{'limits':{'memoryBytes':134217728}},
@@ -126,6 +144,17 @@ class ResourceRuntimeBoundaries(unittest.TestCase):
         with self.assertRaisesRegex(WorkflowError,'real-pending-before-terminal'):
             runtime.wait_pending(client,pending,None,None,None,'closed-source-control')
         client.call.assert_not_called()
+
+    def test_pending_read_budget_is_applied_to_real_cli_deadline_and_restored_on_failure(self):
+        original=time.monotonic()+100
+        def failed_drain():
+            self.assertLessEqual(client.deadline,time.monotonic()+10)
+            raise WorkflowError('owned-drain-control')
+        client=SimpleNamespace(deadline=original,node=SimpleNamespace(drain=failed_drain))
+        pending=SimpleNamespace(owner=SimpleNamespace(exited=lambda:False))
+        with self.assertRaisesRegex(WorkflowError,'owned-drain-control'):
+            runtime.wait_pending(client,pending,None,None,None,'source-control')
+        self.assertEqual(client.deadline,original)
 
     def test_compiler_metadata_refuses_foreign_run_digest_and_native_input_kind(self):
         identity,size,sha=inputs.original.ARTIFACTS['engine']

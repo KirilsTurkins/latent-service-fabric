@@ -80,3 +80,4 @@ jobs:
             ${{ runner.temp }}/resource-runtime/node/examples-controls/*.json
             ${{ runner.temp }}/resource-runtime/node/foreign-controls/*.json
             ${{ runner.temp }}/resource-runtime/node/signed/my-greeting/build-observation.json
+            ${{ runner.temp }}/resource-runtime/node/signed/release-set.json

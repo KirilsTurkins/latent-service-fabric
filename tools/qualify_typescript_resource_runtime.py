@@ -27,6 +27,7 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_json, snapsh
 from tools.run_rust_capsule_workflow import write_workflow_receipt
 from tools.sdk_provider_scenario import close_failed_provider, start_provider
 from tools.typescript_guest.build import build
+from tools.typescript_guest.runtime_profile import scoped_selected_world
 
 MATERIALS = ('tools/qualify_typescript_resource_runtime.py','tools/resource_runtime_node.py',
     'tools/typescript_resource_runtime_fixture.py','tools/typescript_resource_runtime_inputs.py',
@@ -37,7 +38,22 @@ MATERIALS = ('tools/qualify_typescript_resource_runtime.py','tools/resource_runt
     'tools/go_node_stop_timer_observer.py','tools/go_entropy_replay_inputs.py',
     'tools/qualify_typescript_fetch_runtime.py','tools/run_rust_capsule_workflow.py',
     'tools/rust_capsule_build.py','tools/rust_capsule_project.py','tools/build_observation.py',
-    'tools/build_process_signals.py','.github/workflows/typescript-resource-runtime.yml')
+    'tools/build_process_signals.py','tools/typescript_guest/runtime_profile.py',
+    '.github/workflows/typescript-resource-runtime.yml')
+
+
+def checked_release(release, capsule, build_identity):
+    # The normal compiler deliberately derives the activation world in the
+    # original namespace, while preserving the original public export contract.
+    selected=scoped_selected_world('examples:resource-runtime/service@1.0.0')
+    require(capsule['metadata']=={'name':'examples/my-greeting','tenant':'examples'}
+            and capsule['exports']==['examples:resource-runtime/api@1.0.0']
+            and capsule['component']['world']==selected
+            and release['name']==release['service']=='my-greeting'
+            and release['world']==selected
+            and release['componentDigest']==capsule['component']['digest']==build_identity['component']['sha256'],
+            'resource-runtime-original-exports-derived-world-and-component')
+    return release
 
 
 def execute(artifact, native, output):
@@ -58,10 +74,8 @@ def execute(artifact, native, output):
                 and signature['expiresAtUnixSeconds']>time.time()+180 and len(signature['releases'])==1,
                 'resource-runtime-normal-two-tenant-signing')
         release=signature['releases'][0]
-        require(release['name']==release['service']=='my-greeting'
-                and release['world']=='examples:resource-runtime/service@1.0.0'
-                and release['componentDigest']==before['component']['sha256'], 'resource-runtime-original-world-and-component')
         record['signedRelease']=release
+        checked_release(release,read_json(artifact/'capsule.json'),before)
         with owned_cancellation() as cancellation, tempfile.TemporaryDirectory(prefix='lsf-resource-runtime-') as temporary:
             work=Path(temporary)
             for name in ('examples','node','peer'):(work/name).mkdir(mode=0o700)

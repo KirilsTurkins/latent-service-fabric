@@ -71,7 +71,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-resource-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/resource-runtime-native/*.json\n${{ runner.temp }}/resource-runtime-compiler/acquisition.json\n${{ runner.temp }}/resource-runtime/*.json\n${{ runner.temp }}/resource-runtime/build/*.json\n${{ runner.temp }}/resource-runtime/build/component.wasm\n${{ runner.temp }}/resource-runtime/build/*.wit\n${{ runner.temp }}/resource-runtime/build/package/**\n${{ runner.temp }}/resource-runtime/build/logs/**\n${{ runner.temp }}/resource-runtime/node/*.json\n${{ runner.temp }}/resource-runtime/node/node-stderr.txt\n${{ runner.temp }}/resource-runtime/node/commands/logs/**\n${{ runner.temp }}/resource-runtime/node/examples-controls/*.json\n${{ runner.temp }}/resource-runtime/node/foreign-controls/*.json\n${{ runner.temp }}/resource-runtime/node/signed/my-greeting/build-observation.json\n",
+          "path": "${{ runner.temp }}/resource-runtime-native/*.json\n${{ runner.temp }}/resource-runtime-compiler/acquisition.json\n${{ runner.temp }}/resource-runtime/*.json\n${{ runner.temp }}/resource-runtime/build/*.json\n${{ runner.temp }}/resource-runtime/build/component.wasm\n${{ runner.temp }}/resource-runtime/build/*.wit\n${{ runner.temp }}/resource-runtime/build/package/**\n${{ runner.temp }}/resource-runtime/build/logs/**\n${{ runner.temp }}/resource-runtime/node/*.json\n${{ runner.temp }}/resource-runtime/node/node-stderr.txt\n${{ runner.temp }}/resource-runtime/node/commands/logs/**\n${{ runner.temp }}/resource-runtime/node/examples-controls/*.json\n${{ runner.temp }}/resource-runtime/node/foreign-controls/*.json\n${{ runner.temp }}/resource-runtime/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/resource-runtime/node/signed/release-set.json\n",
           "retention-days": 3
         }
       }
@@ -80,7 +80,7 @@
   },
   "jobId": "resource-runtime",
   "kind": "job",
-  "reviewReason": "Correct actual Git HTTPS setup failure using the exact already-passing immutable public-source fetch command from the owning V7 consumer; all guest/compiler/native commands and limits retained.",
+  "reviewReason": "Repair actual signed-release comparator: require exact normal derived activation world and unchanged public export/component; preserve original source namespace, native/guest limits and positive timer witnesses. Retain raw signing summary. Apply the existing ten-second pending-observation budget to the actual CLI deadline, restoring it on exit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-resource-runtime.yml"
 }
