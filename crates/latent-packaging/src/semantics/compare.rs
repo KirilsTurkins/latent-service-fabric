@@ -122,6 +122,35 @@ impl<'a> Comparison<'a> {
         self.interface(left, right)
     }
 
+    pub(super) fn host_type_owner(
+        &mut self,
+        left: InterfaceId,
+        right: InterfaceId,
+        resources: &'static [&'static str],
+    ) -> Result<(), PlatformError> {
+        self.resources = resources;
+        let expected = &self.left.interfaces[left];
+        let actual = &self.right.interfaces[right];
+        if !expected.functions.is_empty() || expected.types.len() != actual.types.len() {
+            return Err(incompatible("component-interface-shape-mismatch"));
+        }
+        self.node(1)?;
+        for (name, expected) in &expected.types {
+            limits::name(name, self.limits)?;
+            let actual = actual
+                .types
+                .get(name)
+                .ok_or_else(|| incompatible("component-named-type-mismatch"))?;
+            self.ty(
+                wit_parser::Type::Id(*expected),
+                wit_parser::Type::Id(*actual),
+                1,
+            )?;
+        }
+        self.resources = &[];
+        Ok(())
+    }
+
     pub(super) fn interface(
         &mut self,
         left: InterfaceId,

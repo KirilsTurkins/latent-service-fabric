@@ -1,0 +1,294 @@
+{
+  "schemaVersion": "latent.go.network-runtime.observation.v1",
+  "source": "bc638ac30bd28bbff492b8cd8ea0e91f5317c845",
+  "tree": "385ff63c2d82a7dbebe905944affdaf7aba35316",
+  "run": 39425642133,
+  "job": 118637383474,
+  "artifact": {
+    "id": 12265458868,
+    "size": 1274715,
+    "sha256": "d1347e774cd2a22107968147a408bb5eebcd0c5379fe1203c9140afa35e03472",
+    "members": 50,
+    "allCrcAndSha256Verified": true
+  },
+  "sourceInputs": {
+    "count": 5415,
+    "bytes": 44996795,
+    "manifestBytes": 899473,
+    "sha256": "24a40ec301831f4279ecd0d183d0c4f0e1802313da95e127f5847987938b9a80",
+    "allGitBlobsMatched": true
+  },
+  "component": {
+    "bytes": 3351500,
+    "sha256": "4ec00509c122ff283c4216d057ac9035b304873d955e488a05e55f65ff8cc00c",
+    "sourceSha256": "d40cd571be6bf96bc2dd43ee52363e66724e70e5acb1017d73454f71f2206769",
+    "profile": "go-component-activation-v5"
+  },
+  "nativeCase": "signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_owner_retirement",
+  "rawResult": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "filtered": 0
+  },
+  "observations": {
+    "cases": [
+      {
+        "case": "unsupported-network",
+        "contacts": 0,
+        "mode": 0,
+        "result": "unsupported-network"
+      },
+      {
+        "case": "standalone-dns",
+        "contacts": 0,
+        "mode": 1,
+        "result": "unsupported-standalone-dns"
+      },
+      {
+        "case": "pre-cancelled",
+        "contacts": 0,
+        "mode": 2,
+        "result": "cancelled-before-connect"
+      },
+      {
+        "case": "expired",
+        "contacts": 0,
+        "mode": 3,
+        "result": "expired-before-connect"
+      },
+      {
+        "case": "resolver-replaced",
+        "contacts": 0,
+        "mode": 5,
+        "result": "unsupported-custom-default-resolver"
+      },
+      {
+        "case": "resolver-prefer-go",
+        "contacts": 0,
+        "mode": 6,
+        "result": "unsupported-custom-default-resolver"
+      },
+      {
+        "case": "resolver-strict",
+        "contacts": 0,
+        "mode": 7,
+        "result": "unsupported-custom-default-resolver"
+      },
+      {
+        "case": "resolver-dial",
+        "contacts": 0,
+        "mode": 8,
+        "result": "unsupported-custom-default-resolver"
+      },
+      {
+        "case": "ordinary-tcp",
+        "contacts": 1,
+        "mode": 4,
+        "result": "ordinary-tcp-exchange"
+      },
+      {
+        "case": "half-close-eof",
+        "contacts": 1,
+        "mode": 9,
+        "result": "ordinary-half-close-eof"
+      },
+      {
+        "case": "cancel-pending-read",
+        "contacts": 1,
+        "mode": 4,
+        "result": "cancelled"
+      },
+      {
+        "case": "fresh-after-cancel",
+        "contacts": 1,
+        "mode": 4,
+        "result": "ordinary-tcp-exchange"
+      }
+    ],
+    "userSpaceOwners": [
+      {
+        "case": "unsupported-network",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "standalone-dns",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "pre-cancelled",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "expired",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "resolver-replaced",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "resolver-prefer-go",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "resolver-strict",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "resolver-dial",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "ordinary-tcp",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "half-close-eof",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "cancel-pending-read",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "fresh-after-cancel",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      }
+    ],
+    "completion": {
+      "cases": 12,
+      "cleanLogicalProviderStop": true,
+      "contacts": 4,
+      "kernelRetirementQualified": false,
+      "normalProviderInstalled": false
+    }
+  },
+  "retainedMembers": {
+    "receipt.json": {
+      "size": 5890,
+      "sha256": "64ff970a27d5a46442f0ae2f7611b414b1a5ee5f40e925c818d72efa1da58ab6"
+    },
+    "native.stdout.log": {
+      "size": 3394,
+      "sha256": "5f419c4b5c956b1ee3db04cec6a6ec559479828c85cae0f1190026e8847f7866"
+    },
+    "native.stderr.log": {
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-inputs.json": {
+      "size": 899473,
+      "sha256": "24a40ec301831f4279ecd0d183d0c4f0e1802313da95e127f5847987938b9a80"
+    },
+    "fixture/GO-NETWORK-COMPILE.json": {
+      "size": 1057,
+      "sha256": "37733c49d6689fbb3e127b06ced61162e790c8e91382eb1316d67651468cccc0"
+    },
+    "fixture/build/component.wasm": {
+      "size": 3351500,
+      "sha256": "4ec00509c122ff283c4216d057ac9035b304873d955e488a05e55f65ff8cc00c"
+    },
+    "fixture/go-runtime-transformations.json": {
+      "size": 9775,
+      "sha256": "678c66a96393133fa92acb8a737de64e45c6df732492c84fd3162fbdc66a4689"
+    }
+  },
+  "tools": {
+    "go": {
+      "name": "go",
+      "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+      "size": 17164055
+    },
+    "componentize-go": {
+      "name": "componentize-go",
+      "digest": "sha256:b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb",
+      "size": 13330416
+    },
+    "wasm-tools": {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    },
+    "go-checkpoints": {
+      "name": "go-checkpoints",
+      "digest": "sha256:d3ae0ebbd803c67f87686470482bbd9774cbd5a8641a3d815a6c0753300b5181",
+      "size": 4812760
+    }
+  },
+  "toolVersions": {
+    "go": "go version go1.27.2 linux/amd64",
+    "componentize-go": "componentize-go 0.4.3",
+    "wasm-tools": "wasm-tools 1.254.0 (bb58fdf91 2026-07-20)"
+  },
+  "nativeExecutableReportedSha256": "sha256:9ef025b93b28b43f5181ac936f653ffabf255f904ccba114630232fef92c5574",
+  "nativeExecutableRetained": false,
+  "compilerUnchangedEvidence": "Producer runs full in-memory check_unchanged before and after; receipt reports sourceUnchanged. Full compiler manifests/executable are not retained.",
+  "signing": "in-process native fixture package construction; Go caller binds ordinary source/WIT/compiler observation; synthetic callee binds handwritten fixture constructor",
+  "qualification": "finite signed declared-TCP guest execution with the explicit logical-reference development provider",
+  "normalProviderInstalled": false,
+  "kernelAccountingQualified": false,
+  "fullGoNetworkingQualified": false,
+  "limitsUnchanged": {
+    "task": 16,
+    "executor": 2,
+    "queue": 2,
+    "wait": 4,
+    "timer": 2,
+    "result": 2,
+    "native": 2
+  },
+  "limitations": [
+    "User-space owner retirement and peer FIN/RST do not prove final kernel free.",
+    "No full net.Conn, standalone DNS, UDP/listener, TLS, unchanged protocol-client or released standalone packager qualification.",
+    "The targeted harness was built from source; no all-SDK or native-five baseline was rebuilt."
+  ]
+}
