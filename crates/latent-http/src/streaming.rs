@@ -239,6 +239,9 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
         let client = inner.client(destination.index)?;
         let admission = inner.pools.admit_until(&client, session, deadline)?;
         let memory = Arc::new(admission.reserve_input(size.retained, 4096)?);
+        // The phase observer is weak. Keep this already-prepaid owner until
+        // its final checkpoint even when opening returns a terminal error.
+        let original_owner = Arc::clone(&memory);
         let deadline = phase::Deadline::new(admission.stop_handle(), timeout_millis)?;
         let opening = exchange::open(
             Arc::clone(inner),
@@ -253,13 +256,14 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
             admission,
         );
         Ok(Box::pin(async move {
-            deadline
+            let result = deadline
                 .wait(
                     opening,
                     latent_capabilities::broker::streaming_http::HttpPhaseError::ConnectTimeout,
                 )
-                .await?
-                .map_err(Into::into)
+                .await;
+            drop(original_owner);
+            result?.map_err(Into::into)
         }))
     }
 }

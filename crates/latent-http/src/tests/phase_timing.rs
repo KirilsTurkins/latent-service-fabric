@@ -277,6 +277,7 @@ async fn original_root_deadline_and_cancellation_are_never_reported_as_phase_tim
         });
         let f = fixture(port);
         let (session, control) = f.session(if cancelled { 5000 } else { 500 });
+        let observer = session.observer();
         let upload = f
             .streaming
             .as_ref()
@@ -298,10 +299,12 @@ async fn original_root_deadline_and_cancellation_are_never_reported_as_phase_tim
         } else {
             HttpError::DeadlineExceeded
         };
-        assert!(
-            matches!(response.await, Err(Phase::Http(Stream::Http(error))) if error == expected)
+        assert_eq!(
+            response.await.err(),
+            Some(Phase::Http(Stream::Http(expected)))
         );
         drop(session);
+        assert!(observer.is_quiescent());
         server.await.unwrap();
         f.clean().await;
     }

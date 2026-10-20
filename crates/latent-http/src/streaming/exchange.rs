@@ -288,17 +288,22 @@ impl HttpUpload for Upload {
                 Err(error) => return Box::pin(async move { Err(error) }),
             };
         let wrote = Arc::clone(&state.wrote);
+        // finish consumes Exchange before returning an error. Its existing
+        // input charge keeps the weak root observer valid through that return;
+        // release it immediately after the wrapper's final checkpoint.
+        let original_owner = state.input.clone();
         let pending = self.finish();
         Box::pin(async move {
-            match deadline
+            let result = deadline
                 .wait(
                     pending,
                     HttpPhaseError::ReadTimeout {
                         external_completion_uncertain: true,
                     },
                 )
-                .await
-            {
+                .await;
+            drop(original_owner);
+            match result {
                 Ok(result) => result.map_err(Into::into),
                 Err(HttpPhaseError::ReadTimeout { .. }) => Err(HttpPhaseError::ReadTimeout {
                     external_completion_uncertain: wrote.load(Ordering::Acquire),

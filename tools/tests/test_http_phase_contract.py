@@ -55,6 +55,13 @@ class HttpPhaseContract(unittest.TestCase):
         supported=policy.split('fn supported_contract(value: &str) -> bool {',1)[1].split('\nfn operation(',1)[0]
         self.assertIn('"latent:http/phase-timing@0.4.0"',supported)
         self.assertIn('latent_core::PHASE3_HOST_ABI_CURRENT',supported)
+        control=(ROOT/'crates/latent-capabilities/src/broker/io.rs').read_text()
+        self.assertIn('operation: Weak<Operation>',control)
+        for name in ('streaming.rs','streaming/exchange.rs'):
+            operation=(ROOT/'crates/latent-http/src'/name).read_text()
+            retained=operation.index('let original_owner =')
+            released=operation.index('drop(original_owner);',retained)
+            self.assertIn('.await;',operation[retained:released])
 
     def test_new_schema_rules_preserve_every_original_constraint(self):
         expected={'capability-policy':'61da651075da1823bd7b3e7b5e4d05485e9269a418cc9a1f712fe2f024ea351c',
