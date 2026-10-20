@@ -50,7 +50,16 @@ python3 tools/qualify_go_synchronization.py --campaign admission \
   --output /tmp/go-admission-result
 ```
 
-Hosted execution is pending. This reference does not establish general scheduler
+The actual [526 run 39364377075](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39364377075),
+job 118437683583, passed all 12 required observations: eight guest executions,
+two exact saturation refusals and two foreign-cancellation controls. Libtest
+reports one passed, zero failed/ignored and 49 filtered cases. All three
+fresh native reference modes returned 42. The bounded artifact 12239228340
+and [lossless receipt](../testing/evidence/go-admission-signed-2026-10-20.json)
+bind that exact source revision, component/compiler inputs and 103 unchanged
+before/after Git source identities. These are source-specific results.
+
+This reference does not establish general scheduler
 fairness, every queue/full-cell profile, late native/provider completion after
 Store destruction, complete aggregate physical costs or low-level net/DNS/TLS.
 It changes no production implementation or global/default quota and does not
