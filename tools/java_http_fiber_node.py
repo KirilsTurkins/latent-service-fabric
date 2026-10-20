@@ -342,6 +342,35 @@ def diagnose_pending(client, node, target, peer, probe):
     return value
 
 
+def bounded_summary(result, output):
+    """Reference the already retained cases without repeating their peer history."""
+    expected = []
+    for mode, name in enumerate(CASES):
+        expected.append((name, mode))
+        if mode in FAILURES:
+            expected.append((name + '-fresh', 7))
+    cases = result['cases']
+    require(type(cases) is list and len(cases) <= len(expected)
+            and result['status'] in {'in-progress', 'failed', 'passed'},
+            'java-http-fiber-summary-cases')
+    require(result['status'] != 'passed' or len(cases) == len(expected),
+            'java-http-fiber-summary-incomplete')
+    controls = output / 'controls'
+    require(controls.is_dir() and not controls.is_symlink(), 'java-http-fiber-summary-controls')
+    rows = []
+    for case, (name, mode) in zip(cases, expected):
+        require(case['case'] == name and type(case['mode']) is int and case['mode'] == mode,
+                'java-http-fiber-summary-order')
+        relative = 'controls/' + name + '-lifecycle.json'
+        path = output / relative
+        identity = file_identity(path, 262144)
+        require(read_json(path) == case and file_identity(path, 262144) == identity,
+                'java-http-fiber-summary-receipt-changed')
+        rows.append({'case': name, 'mode': mode, 'selectedRevision': case['selectedRevision'],
+            'receipt': {'path': relative, **identity}})
+    return {**result, 'schemaVersion': 'latent.java.http-fiber-lifecycle-summary.v1', 'cases': rows}
+
+
 def run(artifact, binaries, output, *, deadline):
     require(time.monotonic() < deadline, 'java-http-fiber-original-deadline-expired')
     output = fresh(output)
@@ -408,6 +437,7 @@ def run(artifact, binaries, output, *, deadline):
             result['shutdown'] = stopped_record(node)
             require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'],
                     'java-http-fiber-unclean-node-shutdown')
+            write_json(client.evidence / 'node-stopped.json', result['shutdown'])
             node = None
             result['peer'] = peer.close()
             validate_peer(result['peer'])
@@ -416,15 +446,18 @@ def run(artifact, binaries, output, *, deadline):
                     and result['peer']['committedMutations'] == 0
                     and all(row['role'] == 'primary' for row in result['peer']['requests']),
                     'java-http-fiber-peer-contact-or-replay')
-            require(before == {name: file_identity(path) for name, path in binaries.items()},
+            write_json(client.evidence / 'final-peer-observation.json', result['peer'])
+            after = {name: file_identity(path) for name, path in binaries.items()}
+            require(before == after,
                     'java-http-fiber-native-product-mutated')
+            write_json(client.evidence / 'native-products-final.json', {'before': before, 'after': after})
             result['status'] = 'passed'
-            write_json(output/'qualification.json', result)
+            write_json(output/'qualification.json', bounded_summary(result, output))
             return result
     except BaseException:
         try:
             result.update(status='failed', stage=stage)
-            write_json(output/'FAILED.json', result)
+            write_json(output/'FAILED.json', bounded_summary(result, output))
         except Exception:
             pass
         raise

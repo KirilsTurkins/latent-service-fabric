@@ -1314,3 +1314,62 @@ class JavaHostImportFairness(unittest.TestCase):
         self.assertIn('async_imports.generate(model) if fiber_io_profile else c.generate(model)', dispatch)
         self.assertIn('lsf_async_count < 64', source)
         self.assertIn('probe_waitable_set_wait(lsf_async_set, &event); lsf_async_event(&event);', source)
+
+
+class JavaBoundedLifecycleSummary(unittest.TestCase):
+    def fixture(self, root, count=11):
+        names = []
+        for mode, name in enumerate(node.CASES):
+            names.append((name, mode))
+            if mode in node.FAILURES: names.append((name + '-fresh', 7))
+        (root/'controls').mkdir()
+        rows = []
+        for name, mode in names[:count]:
+            row = {'case': name, 'mode': mode, 'selectedRevision': {'revisionId': 'fixed-revision'},
+                'peer': {'publicFixturePadding': 'x' * 30000}}
+            node.write_json(root/'controls'/(name+'-lifecycle.json'), row)
+            rows.append(row)
+        return {'schemaVersion': 'latent.java.http-fiber-lifecycle.v1', 'status': 'passed',
+            'cases': rows, 'full688Qualified': False, 'full741Qualified': False}
+
+    def test_actual_writer_bound_is_preserved_by_fixed_receipt_references(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary);result = self.fixture(root)
+            with self.assertRaisesRegex(WorkflowError, 'fixture-size'):
+                node.write_json(root/'oversized.json', result)
+            self.assertFalse((root/'oversized.json').exists())
+            summary = node.bounded_summary(result, root)
+            node.write_json(root/'summary.json', summary)
+            self.assertLess((root/'summary.json').stat().st_size, 16384)
+            self.assertEqual(len(summary['cases']), 11)
+            self.assertEqual(summary['schemaVersion'], 'latent.java.http-fiber-lifecycle-summary.v1')
+            self.assertFalse(summary['full688Qualified'])
+            self.assertFalse(summary['full741Qualified'])
+            for raw, row in zip(result['cases'], summary['cases']):
+                self.assertEqual(set(row), {'case', 'mode', 'selectedRevision', 'receipt'})
+                self.assertEqual(row['case'], raw['case'])
+                self.assertEqual(row['selectedRevision'], raw['selectedRevision'])
+                path = root/row['receipt']['path']
+                self.assertEqual(read_json(path), raw)
+                self.assertEqual({k: v for k, v in row['receipt'].items() if k != 'path'}, node.file_identity(path))
+            self.assertEqual(result['schemaVersion'], 'latent.java.http-fiber-lifecycle.v1')
+            self.assertNotIn('publicFixturePadding', json.dumps(summary))
+
+    def test_missing_changed_reordered_or_unknown_case_never_becomes_passed_summary(self):
+        for change in ('missing', 'changed', 'reordered', 'unknown', 'partial-pass'):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary);result = self.fixture(root)
+                path = root/'controls'/(result['cases'][0]['case']+'-lifecycle.json')
+                if change == 'missing': path.unlink()
+                elif change == 'changed': path.write_text('{}', encoding='utf-8')
+                elif change == 'reordered': result['cases'].reverse()
+                elif change == 'unknown': result['cases'][0]['case'] = '../unowned'
+                else: result['cases'].pop()
+                with self.assertRaises((WorkflowError, KeyError, ValueError)):
+                    node.bounded_summary(result, root)
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);result=self.fixture(root, 3);result['status']='failed'
+            summary=node.bounded_summary(result,root)
+            self.assertEqual(summary['status'],'failed')
+            self.assertEqual(len(summary['cases']),3)

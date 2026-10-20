@@ -87,9 +87,11 @@ def execute(commands, binaries, wasi_sdk, output, *, read_only_cache=None):
                              output/'node', deadline=commands.deadline)
         require(node['status'] == 'passed' and len(node['cases']) == 11,
                 'java-http-fiber-incomplete-lifecycle')
-        require(before == {name: file_identity(ROOT/name) for name in before}
-                and native == {name: file_identity(path) for name, path in binaries.items()}
+        after = {name: file_identity(ROOT/name) for name in before}
+        native_after = {name: file_identity(path) for name, path in binaries.items()}
+        require(before == after and native == native_after
                 and time.monotonic() < commands.deadline, 'java-http-fiber-final-material-drift')
+        write_json(output/'final-materials.json', {'materials': after, 'nativeProducts': native_after})
         result = {'schemaVersion': 'latent.java.http-fiber-campaign.v1', 'status': 'passed',
             'materials': before, 'nativeProducts': native,
             'library': {'coordinate': COORDINATE, 'originalDigest': ORIGINAL_JAR,

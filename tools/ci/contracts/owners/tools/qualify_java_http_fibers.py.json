@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_http_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select exact source-bound a4f native producer build receipts without normal qualification fabrication; retain all original Java compilation and strict lifecycle gates.",
+  "reviewReason": "Retain the existing final source/five-product equality guard and publish its bounded public identities after it succeeds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "70285afc53f870ad5a2aed8a336e5cd398bab85d27f494aff7dd713b0978fa88"
+  "sha256": "ce7e5ac821f02b559b1ec5fa0bd7c13729dbb300ab8c4abf5550943eb5bcbc9e"
 }

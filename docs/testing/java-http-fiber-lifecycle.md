@@ -1,8 +1,9 @@
 # Ordinary Java HTTP with pending fiber work
 
 This finite qualification combines unchanged `http-request:6.0` calls with the
-existing `teavm-activation-fibers-io-v1` compiler profile. It adds no compiler,
-runtime, executor, transport or backend implementation. The authored fixture
+existing `teavm-activation-fibers-io-v1` compiler profile. It adds no new runtime
+profile or transport; the selected compiler bridge repairs below preserve the
+original authority and budgets. The authored fixture
 imports HTTP, clocks and activation explicitly; operators install and grant
 them separately. The original 26 published-client results remain independently
 source-bound in [the two-client report](java-published-http.md).
@@ -164,3 +165,33 @@ a retained set contains a completion not yet consumed. The synchronous bridge
 and its default profile are unchanged. The identical signed lifecycle programme
 must still pass on a newly compiled component; source controls alone do not
 qualify the repair.
+
+On source `116478df8596345fe165a9954137aa950620d92c`, run
+`39408731864`, job `118580955669`, artifact `12259355624`, the fresh component
+`sha256:54d4f8c4307844bf44184a7e6f675376e90b759acc80bd4ba718b2399f270bdc`
+passed its preflight and all eleven strict lifecycle invocations. Retained
+per-case records bind the signed revision, pending peer gates, sibling progress,
+root return/exception draining, cancellation, deadline and fuel outcomes, four
+fresh invocations, zero open peer connections and physical provider retirement.
+The final retained case observes fourteen qualification requests plus the two
+separate diagnostic requests. The compiler recipe and captured SDK inputs are
+bound to the actual tested merge `ad5b6c1b6bc5c6921e462cb019fcec402bb09966`;
+the native products retain their separate `a4f05f3f` producer attribution.
+
+The workflow nevertheless **failed**: the final writer repeated every complete
+peer history inside the aggregate, exceeding its unchanged 262,144-byte limit.
+Neither a raw final shutdown record, final peer aggregate nor product-final
+record was uploaded. Reaching that writer proves the preceding source-bound
+clean/reaped shutdown, final peer and three node-product equality guards ran;
+this inference is distinct from retained raw final-record proof. The outer
+five-product/source recheck was not reached, and no complete campaign receipt
+is claimed for that run.
+
+The summary now references each already retained case by its fixed relative
+path, byte count and SHA-256 after checking its exact content and case order.
+Passed summaries require all eleven cases; missing or changed receipts refuse.
+The full invocation records, caller results and writer limit remain unchanged.
+Future campaigns also retain separate bounded shutdown, final peer and node
+product records before writing the summary. Focused controls reproduce the old
+size refusal and verify the bounded projection; no additional guest execution
+is attributed to this serialization correction. Full #688 and #741 remain open.
