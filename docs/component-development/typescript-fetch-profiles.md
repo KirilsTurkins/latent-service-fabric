@@ -45,7 +45,8 @@ The phase-client programme additionally declares the uniform initial
 `typescript-phase-published-clients-fuel-v1` allowance of two billion fuel units.
 The prior one-billion run completed Ky JSON at944,147,189 units and exhausted
 that allowance while handling Ky's404 response. That failed run remains failed;
-the larger initial allowance is pending signed qualification. It changes no
+the larger initial allowance passed the signed programme. Ky404 used
+1,008,907,090 units, confirming finite completion just above the prior limit. It changes no
 shared default, body/owner/memory limit, deadline, grant or helper budget.
 
 ## Add a dependency and authorize its work
@@ -84,6 +85,14 @@ receipts, source identities and finite limits. The current
 [phase programme](../development/typescript-fetch-phases.md) requires normal
 Ky/Wretch and a captured transitive package, missing grants/provider, exact wire
 metadata, public/root cancellation, optional extensions and fresh same-node
-tenant reuse. Its expanded thirty-one-outcome execution remains pending.
+tenant reuse. Its expanded thirty-one-outcome execution
+[passed run39459627034](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39459627034/job/118755383589):
+27 guest executions, four pre-entry refusals,31 physical-retirement observations,
+14 main-peer and ten tenant-peer contacts. Independent review checked all491
+archive members,193 Git material identities, the exact component and both
+public-abort charged-owner barriers. Three nodes stopped cleanly; the two
+tenants shared one execution cell with separate HTTP credentials and grants.
+The [receipt](../testing/evidence/typescript-phase-fetch-signed-2026-10-20.json)
+retains the source/native tuple, finite limits and original failed runs separately.
 Reference controls and compiler-input `unknown` qualification do not become
 signed execution credit or a release declaration.
