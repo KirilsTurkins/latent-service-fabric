@@ -15,6 +15,8 @@ import time
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import go_node_stop_fixture as fixture, go_node_stop_probe as oracle
+from tools import go_node_stop_positive as positive
+from tools import go_node_stop_timer_observer as timer_observer
 from tools import java_control_refusal_diagnostic as control_refusal
 from tools.build_observation import build_environment
 from tools.build_process_signals import owned_cancellation
@@ -261,7 +263,8 @@ def fresh_call(client, target, name):
     return row
 
 
-def programme(native, signed, output):
+def programme(native, signed, output, *, positive_timers=False):
+    require(type(positive_timers) is bool, 'Go-node-stop-positive-timer-selection')
     result = {'status': 'in-progress', 'modes': []}
     for index, mode in enumerate(('pending', 'drain')):
         selected = output / mode
@@ -272,6 +275,8 @@ def programme(native, signed, output):
                 (work / name).mkdir(mode=0o700)
             client = RecordingClient(native['latent'], work / 'client', cancellation,
                 time.monotonic() + 120, evidence=selected / 'controls', invocation_timeout_millis=120000)
+            if positive_timers:
+                client.environment[timer_observer.ENVIRONMENT] = '1'
             path = configuration(work / 'node', signed)
             node = pending = None
             record = {'mode': mode, 'actualSignal': 'SIGTERM', 'shutdownGraceMillis': 5000,
@@ -290,7 +295,7 @@ def programme(native, signed, output):
                 target = install_activation(client, node, signed, targets['greeting'], publication)
                 record['freshBefore'] = fresh_call(client, target, 'node-stop-' + mode + '-before')
                 pending = start_call(client, target, 'greeting', 'greet', ['node-stop:' + mode], 'node-stop-' + mode)
-                live = wait_live(client, node, pending, mode)
+                live = (positive.wait_live if positive_timers else wait_live)(client, node, pending, mode)
                 write_json(selected / 'accepted-live-work.json', live)
                 record['liveBarrier'] = live['observation']
                 # This is the existing real SIGTERM/reap path. No cancel RPC,
@@ -299,6 +304,8 @@ def programme(native, signed, output):
                 stopped = stopped_record(node)
                 record['shutdownWhileLive'] = stopped
                 record['liveNodeControlRefusals'] = control_refusal.observe(bytes(node.buffers[1]))
+                if positive_timers:
+                    record['liveNodeTimerObserver'] = timer_observer.observe(bytes(node.buffers[1]))
                 oracle.shutdown(stopped)
                 node = None
                 deadline = client.deadline
@@ -327,6 +334,9 @@ def programme(native, signed, output):
                 record['status'] = 'failed'
                 if node is not None:
                     record['controlRefusals'] = control_refusal.observe(bytes(node.buffers[1]))
+                    if positive_timers:
+                        node.drain()
+                        record['timerObserver'] = timer_observer.observe(bytes(node.buffers[1]))
                 write_json(selected / 'FAILED.json', record)
                 raise
             finally:

@@ -1,0 +1,28 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-node-stop-positive-${{ github.ref }}"
+    },
+    "name": "Positive native Go live node-stop reference",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-node-stop-positive-timers-20261020"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "live-stop"
+  ],
+  "reviewReason": "Add one dedicated branch/manual finite Go node-stop consumer using the separately authenticated V7 products and unchanged ordinary fixture. Fetch exact source for Git preimage controls, preserve closed positive readiness and complete real shutdown/fresh restart gates, retain bounded failures; no native rebuild or normal27 repetition.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-node-stop-positive.yml"
+}

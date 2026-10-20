@@ -135,3 +135,47 @@ limit or original error/retirement path changes. The reader always reports
 `qualification: false`; it does not replace the strict stop barrier. This source
 requires a new authenticated native producer and actual execution before it can
 supply positive diagnostic evidence. Historical 94d has no such observer.
+
+## Positive timer consumer with distinct V7 products
+
+The dedicated `go-node-stop-positive.yml` branch/manual lane uses the separate V7 producer
+`77bf0e3f3b68e17342b6146abd6f2de34a3efa00`, run39420914927/job118621322461.
+The producer completed successfully; its fixed artifact12265176239 is bound by
+exact archive metadata, both receipt preimages and all five product hashes.
+Its native products are not a normal27 guest qualification. The shared verifier
+requires the exact completed producer, archive/receipt preimages, five binaries,
+whole native source and every producer recipe/WIT/schema/auxiliary input. Missing
+or substituted completed artifact pins refuse before executing any product. The
+consumer separately compares the native source and complete WIT/schema/echo
+compile trees against its current physical source, binds its current Go
+SDK/compiler/helper recipe, and repeats all
+product/source checks after execution. An unrelated test-only native-source
+change is not silently aliased to the old build.
+The producer's diagnostic workflow remains authenticated as its distinct recipe;
+it need not equal the consumer's older workflow or current Go compiler recipe.
+
+This lane compiles the same ordinary managed-v5 fixture once and signs it with
+the authenticated real authoring product. Only its explicit positive-timer
+programme option enables the merged observer. The historical audit reader and
+old failed067 receipt remain intact; the new path does not query optional audit
+as an admission oracle. Pending work requires successful starts for the short
+initializer and both body timers, actual entry into their timer waits, and a
+latest entered wait retaining two timer owners. Draining work additionally
+requires the actual root-close hook and a live accepted child timer wait. In
+both modes the native record must show actual charged Task/Wait/Timer owners;
+current topology, provider-session/call ownership and the original pending CLI
+must also remain live before SIGTERM. A hook or live Store alone is insufficient.
+
+Only complete fixed records are consumed. A live pipe fragment waits for its
+own trailing newline; an absent sequence, foreign mode, malformed/private field,
+overflow marker or missing positive cannot authorize stop. At most the original
+16 attempts and ten seconds are available, with the original0.01-second pause.
+Every attempt retains its closed observer projection. No request, owner, query,
+cell or shutdown-grace allowance is increased. The real SIGTERM/reap, every
+zero-owner shutdown field, uncertain invocation outcome and fresh-state call
+after the same signed product restarts remain mandatory.
+
+Focused controls validate this source selection and failure handling only.
+The new V7 programme has not executed until its own authenticated receipt says
+otherwise. No successful live node stop, complete runtime-cost bound, kernel
+retirement or whole #742/#736 qualification is claimed by this consumer.
