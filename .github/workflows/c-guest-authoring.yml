@@ -1,6 +1,12 @@
 name: C guest authoring
 
 on:
+  workflow_dispatch:
+    inputs:
+      qualify-scratch-refusals:
+        description: "Run the original normal C qualification and same-products scratch child"
+        type: boolean
+        default: false
   pull_request:
     branches: [development]
     paths:
@@ -162,7 +168,21 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: Export exact normal public prerequisites for separate C scratch packet
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --export-bundle --language c
+          --native-qualification "$RUNNER_TEMP/c-capsule-authoring"
+          --output "$RUNNER_TEMP/c-scratch-prepared"
+      - name: Retain only this run's verified public C normal products
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/c-scratch-prepared/
+          if-no-files-found: error
+          retention-days: 3
+
   standard-facilities:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}
     name: Signed C standard clock and entropy profile
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -280,3 +300,61 @@ jobs:
             ${{ runner.temp }}/c-compiled-resources/node/public-workflow.json
           if-no-files-found: warn
           retention-days: 7
+  scratch-refusals:
+    name: Signed ordinary C scratch refusal and fresh-state packet
+    needs: runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Install the existing bounded compiler namespace and pinned bindings
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Read only this run's identity-checked existing native products
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: c-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/c-scratch-prepared
+      - name: Check captured-source and exact-outcome refusal controls
+        run: python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification
+      - name: Execute original signed programme and six ordinary filesystem refusal calls
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --language c
+          --native-qualification "$RUNNER_TEMP/c-scratch-prepared"
+          --output "$RUNNER_TEMP/c-scratch-refusals"
+      - name: Retain bounded diagnostic evidence including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-scratch-refusals-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/c-scratch-refusals/qualification.json
+            ${{ runner.temp }}/c-scratch-refusals/FAILED.json
+            ${{ runner.temp }}/c-scratch-refusals/compatibility-execution-report.json
+            ${{ runner.temp }}/c-scratch-refusals/logs/**
+            ${{ runner.temp }}/c-scratch-refusals/build/*.json
+            ${{ runner.temp }}/c-scratch-refusals/build/logs/**
+            ${{ runner.temp }}/c-scratch-refusals/build/component.wasm
+            ${{ runner.temp }}/c-scratch-refusals/build/core-componentization-failed.wasm
+            ${{ runner.temp }}/c-scratch-refusals/build/component.wit
+            ${{ runner.temp }}/c-scratch-refusals/node/workflow.json
+            ${{ runner.temp }}/c-scratch-refusals/node/FAILED.json
+            ${{ runner.temp }}/c-scratch-refusals/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 3
