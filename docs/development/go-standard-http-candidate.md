@@ -278,3 +278,9 @@ qualification and the remaining #692/#742 requirements remain separate.
 The [new tenant and catalogue-free programme](go-http-tenant-catalogue.md) owns
 those two next gates and a separately labelled delegating custom RoundTripper.
 Its source controls do not supply signed qualification before actual execution.
+
+The later [catalogue-free tenant programme](go-http-tenant-catalogue.md)
+passed 19 signed outcomes and four pre-entry denials with one fresh captured
+component, two independent HTTP installations, real delegated extensions and
+15 exact contacts. It used the existing v4 profile and frozen native producer;
+managed-v5 HTTP and production kernel accounting remain separate gates.

@@ -1,7 +1,7 @@
 # Catalogue-free Go HTTP and tenant reuse
 
 This finite [#692](https://github.com/KirilsTurkins/latent-service-fabric/issues/692)
-programme adds real qualification gates; its signed result is **pending**. It
+programme passed its finite signed gates on the exact source recorded below. It
 does not change the compiler, HTTP backend, production provider selection or
 authority. Existing [published-client results](go-default-http-libraries.md)
 retain their historical source and native-product identities.
@@ -63,3 +63,28 @@ compiler stdout/stderr and raw node/control outcomes are retained. There is no
 new native build or full SDK baseline replay. Remote late completion, concurrent
 two-tenant execution, HTTPS through typed HTTP, raw socket/kernel accounting and
 whole #692/#742 completion remain unqualified by this finite programme.
+
+## Observed signed result
+
+[Run 39461611124/job 118762220036](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39461611124/job/118762220036)
+passed on `1ad058275522672ccd566d78ab718c5c6485a176` with one freshly compiled
+component. Independent review authenticated all 325 archive members, 26 Git
+source materials, 91 staged builder files and 60 captured Go SDK source files.
+The outer normal builder ran without catalogue/reference data, not merely its
+isolated compiler child. The component is `sha256:366daa0b443cf0f71ccf9d0014764dff3b346e3520c7cca9544c79c236846e75`
+(10,526,491 bytes).
+
+All 19 signed outcomes and four pre-entry grant denials passed. Both tenants
+used the same component, manager and single execution cell. The peers retained
+15 exact contacts in total; each of the 19 accepted cases reaped its CLI and
+reached physical activation/provider zero before reuse. The node stopped
+cleanly. The custom RoundTripper delegated through the real default transport
+and separately refused foreign authority. The outside private origin remained
+unavailable after normal capture. See the [source-bound observation](../testing/evidence/go-http-tenant-catalogue-signed-2026-10-20.json).
+
+Two earlier attempts remain failed: an official Go download timed out before
+its checksum, then the normal compiler refused missing Bubblewrap. The latter
+was corrected by restoring the original namespace-install prerequisite; no
+isolation guard was weakened. The successful result keeps the original v4
+owner limits and frozen native source. It establishes no managed-v5 HTTP,
+HTTPS, concurrent-tenant, late-remote or kernel accounting qualification.

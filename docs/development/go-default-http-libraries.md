@@ -79,3 +79,9 @@ The [catalogue-free tenant programme](go-http-tenant-catalogue.md) separately
 constructs a fresh component and tests two independent HTTP installations in one
 cell. Its new signed result is pending. No complete Go runtime, HTTPS transport,
 kernel allocation bound or full ticket completion follows from either programme.
+
+The later [catalogue-free tenant programme](go-http-tenant-catalogue.md)
+passed 19 signed outcomes and four pre-entry denials with one fresh captured
+component, two independent HTTP installations, real delegated extensions and
+15 exact contacts. It used the existing v4 profile and frozen native producer;
+managed-v5 HTTP and production kernel accounting remain separate gates.
