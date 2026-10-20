@@ -29,6 +29,18 @@ returns TypeError for out-of-range/nonfinite values or nanosecond overflow,
 before timer admission. This explicitly differs from Node's RangeError and
 its delay clamping/unref semantics. The source controls refuse successful,
 cancelled, fuel-exhausted, unknown and unreaped substitutes for the required root
-deadline result. No actual campaign pass is claimed before its exact hosted
-result is authenticated. Full cost, snapshot, published-library, cross-tenant,
+deadline result. The exact signed campaign passed as recorded below. Full cost, snapshot, published-library, cross-tenant,
 networking and broader retirement requirements remain separate ticket work.
+
+
+[Run39416012080/job118605073892](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39416012080/job/118605073892)
+passed at sourceb57dc18c7d78c27c3beeab5290c89a280e116bf0. The [source-bound observation](evidence/typescript-timer-races-signed-2026-10-20.json)
+authenticates artifact12260979552 (8,658,825 bytes), its complete archive digest,
+all198 members,176 exact Git inputs,111 recipe rows and96 captured source rows.
+The12,389,843-byte component passed all11 known/reaped outcomes,11 physical
+retirement and11 available-zero-owner observations, clean node shutdown and
+zero real peer contacts. The one-second caller deadline refused the pending
+ten-second timer as deadline-exceeded; the same-budget bootstrap/fresh passed.
+The blocked-turn interval, signal/clear races and valid timer after rejected
+conversion all returned their exact public outputs. Private host queue lengths
+were not observed. Native0754391 identities remain historical, not rebuilt.
