@@ -8,6 +8,14 @@ pub const CONTRACT: &str = "tests:random/api@1.0.0";
 pub const CAP: &str = latent_capabilities::broker::random::RANDOM_CAPABILITY;
 
 pub fn bytes() -> Vec<u8> {
+    build(core::memory())
+}
+
+pub fn realloc_trap() -> Vec<u8> {
+    build(core::trapping_memory())
+}
+
+fn build(memory: Module) -> Vec<u8> {
     let mut component = Component::new();
     let specification = latent_core::PHASE3_HOST_ABI_CURRENT.interface(CAP).unwrap();
     let mut types = ComponentTypeSection::new();
@@ -33,7 +41,7 @@ pub fn bytes() -> Vec<u8> {
         });
     }
     component.section(&aliases);
-    component.section(&ModuleSection(&core::memory()));
+    component.section(&ModuleSection(&memory));
     let mut instances = InstanceSection::new();
     instances.instantiate(0, [] as [(&str, ModuleArg); 0]);
     component.section(&instances);
