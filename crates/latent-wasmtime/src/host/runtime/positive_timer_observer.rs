@@ -1,8 +1,11 @@
 //! Explicit, bounded positive observations for two public node-stop fixtures.
 //! No record changes a guest result, runtime owner, authority or error path.
 use std::{
+    future::Future,
     io::Write,
+    pin::Pin,
     sync::atomic::{AtomicBool, AtomicU8, Ordering},
+    task::{Context, Poll},
 };
 
 const ENVIRONMENT: &str = "LSF_GO_NODE_STOP_TIMER_OBSERVER";
@@ -31,6 +34,7 @@ pub(super) enum Event {
     StartAccepted,
     NextEntered,
     RootClose,
+    WaitPending,
 }
 impl Event {
     const fn label(self) -> &'static str {
@@ -38,6 +42,7 @@ impl Event {
             Self::StartAccepted => "start-accepted",
             Self::NextEntered => "next-entered",
             Self::RootClose => "root-close",
+            Self::WaitPending => "wait-pending",
         }
     }
 }
@@ -93,6 +98,7 @@ impl Budget {
     }
 }
 
+#[derive(Clone, Copy)]
 pub(super) struct Observer {
     mode: Mode,
 }
@@ -123,6 +129,22 @@ impl Observer {
             owners,
         );
     }
+}
+
+/// Poll the original owned timer registration once. A ready/error path must
+/// never produce a pending witness; repeated wake polls emit at most once.
+pub(super) fn poll_pending<F: Future<Output = ()> + ?Sized>(
+    wait: Pin<&mut F>,
+    context: &mut Context<'_>,
+    observed: &mut bool,
+    record: impl FnOnce(),
+) -> Poll<()> {
+    let result = wait.poll(context);
+    if result.is_pending() && !*observed {
+        *observed = true;
+        record();
+    }
+    result
 }
 
 fn write_record(
@@ -226,6 +248,64 @@ mod tests {
         assert_eq!(
             output,
             b"LSF-GO-NODE-STOP-TIMER-V1|drain|root-close|3|2|1|1\n"
+        );
+        assert!(output.len() <= 128);
+    }
+
+    #[test]
+    fn ready_wait_never_produces_a_pending_observation() {
+        let mut ready = std::future::ready(());
+        let mut context = Context::from_waker(std::task::Waker::noop());
+        let mut observed = false;
+        assert!(
+            poll_pending(Pin::new(&mut ready), &mut context, &mut observed, || {
+                panic!("ready is not a positive pending witness");
+            })
+            .is_ready()
+        );
+        assert!(!observed);
+    }
+
+    #[test]
+    fn original_wait_is_polled_and_only_first_pending_is_observed() {
+        struct PendingWait(usize);
+        impl Future for PendingWait {
+            type Output = ();
+            fn poll(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+                self.0 += 1;
+                Poll::Pending
+            }
+        }
+        let mut wait = PendingWait(0);
+        let mut context = Context::from_waker(std::task::Waker::noop());
+        let mut observed = false;
+        let mut records = 0;
+        for _ in 0..3 {
+            assert!(
+                poll_pending(Pin::new(&mut wait), &mut context, &mut observed, || {
+                    records += 1;
+                })
+                .is_pending()
+            );
+        }
+        assert_eq!(wait.0, 3);
+        assert_eq!(records, 1);
+    }
+
+    #[test]
+    fn wait_pending_record_retains_original_closed_format_and_owner_counts() {
+        let mut output = Vec::new();
+        write_record(
+            &mut output,
+            Claim::Event(1),
+            Mode::Pending,
+            Event::WaitPending,
+            [1, 0, 0, 1, 1, 0, 0],
+        )
+        .unwrap();
+        assert_eq!(
+            output,
+            b"LSF-GO-NODE-STOP-TIMER-V1|pending|wait-pending|1|1|1|1\n"
         );
         assert!(output.len() <= 128);
     }

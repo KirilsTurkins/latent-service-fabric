@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "HttpTenantNativeProducts.test_command_failures_missing_observer_and_nonfinite_or_aggregate_times_refuse",
+    "HttpTenantNativeProducts.test_direct_cli_bootstraps_repository_without_pythonpath_or_network",
+    "HttpTenantNativeProducts.test_extract_refuses_nonallowlisted_traversal_before_any_write",
+    "HttpTenantNativeProducts.test_fixed_member_preflight_rejects_missing_oversize_and_links",
+    "HttpTenantNativeProducts.test_real_fixed_git_materials_bind_v7_and_all_three_auxiliary_trees",
+    "HttpTenantNativeProducts.test_record_requires_every_owned_product_source_material_and_control",
+    "HttpTenantNativeProducts.test_unfrozen_pins_refuse_before_network_or_output"
+  ],
+  "guards": {
+    "HttpTenantNativeProducts.test_command_failures_missing_observer_and_nonfinite_or_aggregate_times_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5acfe2a5728157cadb2aa6edadabfc8cb3e2b1e10594803f4029af263e76d0a9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpTenantNativeProducts.test_direct_cli_bootstraps_repository_without_pythonpath_or_network": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5acfe2a5728157cadb2aa6edadabfc8cb3e2b1e10594803f4029af263e76d0a9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpTenantNativeProducts.test_extract_refuses_nonallowlisted_traversal_before_any_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5acfe2a5728157cadb2aa6edadabfc8cb3e2b1e10594803f4029af263e76d0a9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpTenantNativeProducts.test_fixed_member_preflight_rejects_missing_oversize_and_links": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5acfe2a5728157cadb2aa6edadabfc8cb3e2b1e10594803f4029af263e76d0a9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpTenantNativeProducts.test_real_fixed_git_materials_bind_v7_and_all_three_auxiliary_trees": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5acfe2a5728157cadb2aa6edadabfc8cb3e2b1e10594803f4029af263e76d0a9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpTenantNativeProducts.test_record_requires_every_owned_product_source_material_and_control": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5acfe2a5728157cadb2aa6edadabfc8cb3e2b1e10594803f4029af263e76d0a9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpTenantNativeProducts.test_unfrozen_pins_refuse_before_network_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5acfe2a5728157cadb2aa6edadabfc8cb3e2b1e10594803f4029af263e76d0a9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_http_tenant_native_products.py",
+  "reviewReason": "Keep the signed Go 6f5 native acquisition implementation byte-exact in a distinct module while retaining the current shared 8f TypeScript producer; module-path-only composition, no new execution claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
