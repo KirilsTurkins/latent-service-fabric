@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_http_spi.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reuse normal phase shared exact selected-profile/component guard at unchanged64MiB producer bound; preserve original SPI error, no guest/native qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7583d6d54e3be55511951f18211812f65f046276be9ccba0ce6b77b269779d16"
+}

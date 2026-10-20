@@ -65,7 +65,9 @@ Closed typed counters and real owned peer barriers distinguish each transition.
 No address, port, inode, payload, credential, raw ss output or /proc listing is
 published. Both TLS crates and all selected source/lock identities are bound
 before and after execution. Focused source tests alone are not native execution.
-The corrected actual lane remains pending until its exact receipt is retained.
+The corrected 68f reference and later exact-composition 199 reference both passed
+all 30 cases with zero ignored/filtered cases. Those observations preserve their
+original source and logical-ownership scope; they supply no final-free proof.
 
 A future supported kernel profile must authenticate the actual kernel/image,
 allocator and relevant networking configuration; prove a complete worst-case
@@ -77,6 +79,13 @@ Neither a sampled plateau nor cgroup/socket buffer configuration alone supplies
 that contract. No such profile or final-free producer is claimed by this repair.
 `ACCOUNTING_QUALIFIED` and all kernel/full-TLS/production qualification flags
 remain false. #738/#739/#740 remain open.
+
+The separate [Linux 6.12 lineage source prerequisite](../../research/standard-outbound/linux-6.12-lineage/README.md)
+authenticates three complete upstream preimages and derives copied pre-free
+tokens followed by post-allocator observations. Its bounded private mechanism
+is uninstalled; incomplete SKB/page coverage, missing trusted admission and
+running-kernel/BTF authentication still prevent a supported profile. Neither its
+supplemental C controls nor an empty mechanism can release original quarantine.
 
 The finite ss vocabulary is checked against the [primary iproute2 format source](https://github.com/iproute2/iproute2/blob/v6.17.0/misc/ss.c).
 The actual installed tool digest is retained independently; that format reference
