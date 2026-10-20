@@ -14,6 +14,24 @@ from tools.rust_capsule_project import digest
 
 
 class FetchConformanceTests(unittest.TestCase):
+    def test_broader_fixture_policy_replaces_only_its_verified_first_generation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            class Client:
+                directory=Path(temporary)
+                calls=0
+                def call(self,*arguments):
+                    expected=arguments[arguments.index('--expected-generation')+1]
+                    if expected != 1:raise WorkflowError('stale-policy-generation')
+                    document=json.loads(Path(arguments[arguments.index('--file')+1]).read_bytes())
+                    self.document=document
+                    operation=arguments[arguments.index('--operation-id')+1]
+                    return {'outcomeKnown':True,'data':{'receipt':{'operationId':operation,'generation':2}}}
+            client=Client()
+            with patch.object(cases.base,'grants',return_value=(['runtime'],['authorized'])) as original:
+                self.assertEqual(cases.grants(client,None,'publication',{'primary':{},'secondary':{}}),(['runtime'],['authorized']))
+            original.assert_called_once()
+            self.assertEqual(client.document['rules'][0]['resources']['pathPrefixes'],[])
+
     def test_cold_admission_preserves_the_existing_invocation_watchdog(self):
         client=SimpleNamespace(deadline=1000,invocation_timeout_millis=120000)
         process=SimpleNamespace(owner=SimpleNamespace(exited=unittest.mock.Mock(side_effect=[False,True])),drain=lambda:None)

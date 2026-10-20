@@ -39,6 +39,12 @@ no guest case passed. The supervisor now uses the existing client's120-second
 invocation watchdog, capped by the original campaign deadline. A regression
 requires cold admission lasting20 seconds to remain inside that existing bound;
 application deadlines, guest budgets and pending-owner assertions are unchanged.
+The next6719 attempt passed that admission but refused the fixture policy
+replacement's stale creation generation, before any guest case. Its authenticated
+artifact12241812650 remains failed. The replacement now requires generation1,
+which the preceding verified base-policy creation established; no conflict retry
+or policy precondition is bypassed. The real policy writer is covered by an
+old-source failure/new-source pass control. Eight focused controls now pass.
 This does not qualify network streaming/backpressure, every runtime resource
 limit, provider absence or cross-tenant reuse. Those literal whole-ticket
 requirements remain open rather than being inferred from these narrower rows.
