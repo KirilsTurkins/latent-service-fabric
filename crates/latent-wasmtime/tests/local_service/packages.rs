@@ -108,6 +108,36 @@ pub fn java_activation_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
 pub fn go_activation_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
     managed_activation_runtime(bytes, source, true)
 }
+#[allow(
+    dead_code,
+    reason = "only the dedicated Go stream target selects this exact fixture world"
+)]
+pub fn go_network_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
+    try_build_in_package(
+        "caller",
+        bytes,
+        source,
+        "examples:go-standard-network/api@1.0.0",
+        vec![function(
+            "run",
+            true,
+            vec![
+                json!({"name":"which","value_type":"U32","documentation":null}),
+                json!({"name":"address","value_type":"String","documentation":null}),
+            ],
+            json!("String"),
+        )],
+        &[
+            ACTIVATION,
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:random/random@0.1.0",
+            latent_capabilities::broker::network::STREAM_CAPABILITY,
+        ],
+        "examples:go-standard-network",
+    )
+    .unwrap()
+}
 fn managed_activation_runtime(bytes: Vec<u8>, source: &str, random: bool) -> PackageBundle {
     let mut imports = vec![
         ACTIVATION,
@@ -150,11 +180,6 @@ fn build(
     try_build(name, bytes, source, contract, functions, imports).unwrap()
 }
 
-#[expect(
-    clippy::too_many_lines,
-    clippy::needless_pass_by_value,
-    reason = "assemble one checked immutable package with exact metadata and WIT sources"
-)]
 fn try_build(
     name: &str,
     bytes: Vec<u8>,
@@ -164,6 +189,23 @@ fn try_build(
     imports: &[&str],
 ) -> Result<PackageBundle, latent_core::PlatformError> {
     let package = format!("tests:{name}");
+    try_build_in_package(name, bytes, source, contract, functions, imports, &package)
+}
+
+#[expect(
+    clippy::too_many_lines,
+    clippy::needless_pass_by_value,
+    reason = "assemble one checked immutable package with exact metadata and WIT sources"
+)]
+fn try_build_in_package(
+    name: &str,
+    bytes: Vec<u8>,
+    source: &str,
+    contract: &str,
+    functions: Vec<Value>,
+    imports: &[&str],
+    package: &str,
+) -> Result<PackageBundle, latent_core::PlatformError> {
     let world = format!("{package}/service@1.0.0");
     let mut interface = json!({"id":contract,"functions":functions,"documentation":null});
     interface["digest"] =

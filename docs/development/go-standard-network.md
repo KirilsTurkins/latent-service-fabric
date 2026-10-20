@@ -74,3 +74,28 @@ Both independent formatted binding outputs match. No local Go compiler or
 guest was executed. The full upstream preimages and derivation/refusal controls
 are source evidence; they cannot satisfy the remaining signed workload matrix
 or the maintained-kernel allocation/final-free artifact requirement.
+
+
+The next dedicated runtime lane compiles the current guarded ordinary fixture
+once, then builds only the `go_outbound_streams` native integration target. It
+uses the existing signed catalog, node admission, broker, runtime grants and
+explicit development logical-stream installation. The synthetic callee is
+attributed to its actual handwritten fixture builder; the Go caller additionally
+binds its real source, WIT and compiler observation. This in-process test package
+construction is distinct from released standalone authoring/packager and native
+five-product qualification.
+
+Twelve required observations cover the original unsupported/pre-cancelled/expired
+modes, all four custom global resolvers, ordinary ping/pong, send half-close with
+partial reads through EOF, cancellation of a real pending second read and a
+fresh connection afterward. The cancellation barrier requires one delivered byte,
+a live pending operation and the original I/O call before cancellation. Its
+acknowledgement must retain the original activation, Store and socket owner.
+Each completed observation requires zero original user-space owners; peer close
+and those counters never attest final kernel free. The original managed Task16,
+Executor2, Queue2, Wait4, Timer2, Result2 and Native2 limits remain fixed.
+
+This new lane has no actual result yet. Its strict reader rejects missing or
+reordered cases, private/unknown/duplicate fields, numeric type substitutions,
+retained owners, incomplete stop and any claimed normal/kernel qualification.
+The normal provider and full networking/TLS/accounting gates remain closed.

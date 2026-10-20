@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_owner_retirement"
+      ],
+      "expectedIgnored": [
+        "signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_owner_retirement"
+      ],
+      "id": "latent-wasmtime.test.go_outbound_streams",
+      "ignoredLeaves": [
+        "signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_owner_retirement"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "freshly constructed guarded Go net component and explicit go profile",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/go_outbound_streams.rs",
+      "target": "go_outbound_streams",
+      "timeoutSeconds": 300
+    }
+  ]
+}
