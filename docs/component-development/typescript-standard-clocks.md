@@ -74,3 +74,14 @@ This advances the TypeScript clock portion of [issue #681](https://github.com/Ki
 It does not qualify timers, durable schedules, unsupported filesystem/scratch,
 cross-tenant/concurrent lifecycle behavior or the whole six-language facility
 matrix. See the separate [entropy boundary](typescript-standard-entropy.md).
+
+The first signed clock attempt at source `cfc0e4805bc96b8756d4855d4729cb3d33c447ac`
+compiled both fresh components and passed both snapshot-refusal controls, then
+was rejected as `corrupt-artifact` before guest execution. The fixture had
+installed clocks but omitted the existing activation-runtime owner required by
+the native engine. Its unchanged async cancellation builtin is rejected when
+that owner/profile is absent. The corrected campaign installs the same bounded
+owner and eight-operation explicit runtime-support grant used by the maintained
+Fetch programme before testing the three missing-clock cases. No global engine
+feature or limit is relaxed. These are fixture corrections; all47 signed outcomes
+still require a successful new invocation receipt.

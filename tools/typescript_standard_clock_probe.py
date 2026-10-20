@@ -7,6 +7,11 @@ PROFILES = {
     'clockMonotonic': ('ts-clock-monotonic', 'latent:clock/monotonic@0.1.0', 'activation-monotonic-v1', 'now-nanos'),
     'clockWall': ('ts-clock-wall', 'latent:clock/wall@0.1.0', 'activation-wall-v1', 'now-unix-millis'),
 }
+ACTIVATION = 'latent:runtime/activation@0.1.0'
+ACTIVATION_ID = 'ts-clock-activation'
+ACTIVATION_OPS = ['register', 'park', 'wake', 'settle', 'close', 'timer-start', 'timer-next', 'timer-stop']
+OWNER_LIMITS = {'tasks': 16, 'executors': 2, 'queuedWork': 16, 'waits': 8,
+                'timers': 8, 'results': 8, 'nativeOwners': 64}
 UNDECLARED = ('now', 'function', 'function-args', 'construct', 'monotonic', 'origin')
 SELECTED = ('entry', 'wall', 'explicit', 'monotonic', 'repeated', 'fresh')
 
@@ -17,13 +22,48 @@ def expected(mode):
 
 def configure(settings):
     providers = settings['providers']
-    require(all(key not in providers for key in PROFILES) and len(providers['bindings']) <= 14,
+    require(all(key not in providers for key in (*PROFILES, 'activationRuntime')) and len(providers['bindings']) <= 13,
             'typescript-clock-original-provider-capacity')
     for key, (identity, capability, _profile, _operation) in PROFILES.items():
         providers[key] = {'identity': {'id': identity, 'tenant': 'examples', 'service': 'clock-host', 'epoch': 1}}
         providers['bindings'].append({'name': identity+'-greeting', 'tenant': 'examples',
             'consumerService': 'examples/my-greeting', 'providerService': 'clock-host',
             'contract': capability, 'providerBinding': identity+'-installed'})
+    # The selected native engine contains the original async cancellation and
+    # readiness builtins. Install their existing bounded owner before compiling
+    # a component; the following explicit policy still decides invocation use.
+    providers['activationRuntime'] = {'identity': {'id': ACTIVATION_ID, 'tenant': 'examples',
+        'service': 'clock-runtime-host', 'epoch': 1}, 'limits': dict(OWNER_LIMITS)}
+    providers['bindings'].append({'name': ACTIVATION_ID+'-greeting', 'tenant': 'examples',
+        'consumerService': 'examples/my-greeting', 'providerService': 'clock-runtime-host',
+        'contract': ACTIVATION, 'providerBinding': ACTIVATION_ID+'-installed'})
+
+
+def activation_grant(client, node, fixture, targets, publications):
+    from tools.rust_capsule_node import deploy
+    installed = [row for row in node.startup_record['providers'] if row['id'] == ACTIVATION_ID]
+    require(len(installed) == 1 and installed[0]['capability'] == ACTIVATION
+            and installed[0]['profile'] == 'activation-owned-v1' and installed[0]['tenant'] == 'examples'
+            and installed[0]['service'] == 'clock-runtime-host', 'typescript-clock-installed-runtime-owner')
+    descriptor = installed[0]
+    binding = client.directory/(ACTIVATION_ID+'-binding.json')
+    write_json(binding, {'formatVersion': 1, 'tenant': 'examples', 'capability': ACTIVATION,
+        'providerProfile': 'activation-owned-v1', 'configurationDigest': descriptor['configurationDigest'],
+        'configurationEpoch': 1, 'restriction': {'operations': list(ACTIVATION_OPS)}})
+    client.call('policy', '--kind', 'provider-binding', 'apply', '--id', ACTIVATION_ID+'-installed', '--file', binding,
+        '--operation-id', 'install-'+ACTIVATION_ID, '--expected-generation', '0')
+    policy = client.directory/(ACTIVATION_ID+'-policy.json')
+    write_json(policy, {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
+        'id': 'runtime', 'effect': 'allow', 'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
+        'services': [targets['greeting']['service']], 'publications': [publications['greeting']],
+        'capability': ACTIVATION, 'operations': list(ACTIVATION_OPS), 'resources': {'kind': 'clock'},
+        'ceiling': {'operations': 4096, 'inputBytes': 0, 'outputBytes': 32768, 'wallTimeMillis': 5000}}]})
+    client.call('policy', 'apply', '--id', ACTIVATION_ID+'-allow', '--file', policy,
+        '--operation-id', 'grant-'+ACTIVATION_ID, '--expected-generation', '0')
+    selected = [{'capability': ACTIVATION, 'policy': ACTIVATION_ID+'-allow'}]
+    targets['greeting'] = deploy(client, fixture/'my-greeting/deployment.json', publications['greeting'],
+        generation=str(targets['greeting']['generation']), grants=selected)
+    return selected
 
 
 def grant(client, node, fixture, targets, publications, result):
@@ -31,6 +71,7 @@ def grant(client, node, fixture, targets, publications, result):
     from tools.rust_capsule_node import call, deploy, provider_idle
     original = targets['greeting']['grants']
     require(not original, 'typescript-clock-original-ungranted')
+    runtime = activation_grant(client, node, fixture, targets, publications)
     denied = []
 
     def absent(label):
@@ -66,12 +107,13 @@ def grant(client, node, fixture, targets, publications, result):
         grants.append({'capability': capability, 'policy': identity+'-allow'})
     for present, missing in ((grants[:1], 'wall'), (grants[1:], 'monotonic')):
         targets['greeting'] = deploy(client, fixture/'my-greeting/deployment.json', publications['greeting'],
-            generation=str(targets['greeting']['generation']), grants=present)
+            generation=str(targets['greeting']['generation']), grants=runtime+present)
         absent('ts-clock-missing-'+missing)
     targets['greeting'] = deploy(client, fixture/'my-greeting/deployment.json', publications['greeting'],
-        generation=str(targets['greeting']['generation']), grants=grants)
+        generation=str(targets['greeting']['generation']), grants=runtime+grants)
     result['typescriptClockAuthority'] = {'denials': denied, 'explicitGrants': grants,
-        'providerBindingCount': 2, 'ambientClockGranted': False}
+        'runtimeSupportGrants': runtime, 'runtimeOwnerLimits': dict(OWNER_LIMITS),
+        'providerBindingCount': 3, 'ambientClockGranted': False}
 
 
 def probe(client, targets, accounting, result, population):

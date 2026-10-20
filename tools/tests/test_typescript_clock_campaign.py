@@ -14,7 +14,7 @@ class ClockCampaign(unittest.TestCase):
         settings = {'providers': {'http': {'kept': True}, 'bindings': [{'name': 'old'}]}}
         probe.configure(settings)
         self.assertEqual(settings['providers']['http'], {'kept': True})
-        self.assertEqual(len(settings['providers']['bindings']), 3)
+        self.assertEqual(len(settings['providers']['bindings']), 4)
         self.assertEqual(settings['providers']['bindings'][0], {'name': 'old'})
         self.assertEqual({r['consumerService'] for r in settings['providers']['bindings'][1:]}, {'examples/my-greeting'})
         for providers in ({'clockWall': {}, 'bindings': []}, {'bindings': [{'name': str(i)} for i in range(15)]}):
@@ -22,12 +22,27 @@ class ClockCampaign(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'original-provider-capacity'): probe.configure(source)
             self.assertEqual(source, before)
 
+    def test_native_clock_profile_uses_existing_bounded_runtime_support_without_enabling_engine_features(self):
+        from tools.qualify_typescript_fetch_runtime import OWNER_LIMITS, ACTIVATION_OPS
+        settings = {'providers': {'bindings': []}}
+        probe.configure(settings)
+        selected = settings['providers']['activationRuntime']
+        self.assertEqual(selected['limits'], OWNER_LIMITS)
+        self.assertEqual(probe.ACTIVATION_OPS, ACTIVATION_OPS)
+        self.assertEqual(selected['identity']['id'], probe.ACTIVATION_ID)
+        self.assertNotIn('engine', settings)
+        self.assertEqual(len(settings['providers']['bindings']), 3)
+        self.assertTrue(all(row['consumerService'] == 'examples/my-greeting' for row in settings['providers']['bindings']))
+
     def test_each_missing_clock_is_refused_before_guest_and_only_both_exact_sources_are_granted(self):
         with tempfile.TemporaryDirectory() as temporary:
             client = SimpleNamespace(directory=Path(temporary), call=lambda *a, **k: None)
             installed = [{'id': identity, 'capability': capability, 'profile': profile, 'tenant': 'examples',
                           'service': 'clock-host', 'configurationDigest': 'sha256:'+'a'*64}
                          for identity, capability, profile, _ in probe.PROFILES.values()]
+            installed.append({'id': probe.ACTIVATION_ID, 'capability': probe.ACTIVATION,
+                'profile': 'activation-owned-v1', 'tenant': 'examples', 'service': 'clock-runtime-host',
+                'configurationDigest': 'sha256:'+'b'*64})
             node = SimpleNamespace(startup_record={'providers': installed})
             target = {'service': 'examples/my-greeting', 'generation': '1', 'grants': []}
             targets = {'greeting': target};result = {'invocations': [], 'providerIdle': []}
@@ -39,8 +54,15 @@ class ClockCampaign(unittest.TestCase):
                     patch('tools.rust_capsule_node.deploy', side_effect=lambda *a, **k: {**target, 'grants': k['grants']}) as deployed:
                 probe.grant(client, node, Path('fixture'), targets, {'greeting': 'published'}, result)
             self.assertEqual(len(result['invocations']), 3)
-            self.assertEqual([len(c.kwargs['grants']) for c in deployed.call_args_list], [1, 1, 2])
-            self.assertNotEqual(deployed.call_args_list[0].kwargs['grants'], deployed.call_args_list[1].kwargs['grants'])
+            self.assertEqual([len(c.kwargs['grants']) for c in deployed.call_args_list], [1, 2, 2, 3])
+            runtime = [{'capability': probe.ACTIVATION, 'policy': probe.ACTIVATION_ID+'-allow'}]
+            self.assertTrue(all(call.kwargs['grants'][:1] == runtime for call in deployed.call_args_list))
+            self.assertNotEqual(deployed.call_args_list[1].kwargs['grants'], deployed.call_args_list[2].kwargs['grants'])
+            document = json.loads((client.directory/(probe.ACTIVATION_ID+'-policy.json')).read_bytes())['rules'][0]
+            self.assertEqual(document['capability'], probe.ACTIVATION)
+            self.assertEqual(document['operations'], probe.ACTIVATION_OPS)
+            self.assertEqual(document['services'], ['examples/my-greeting'])
+            self.assertEqual(document['ceiling'], {'operations': 4096, 'inputBytes': 0, 'outputBytes': 32768, 'wallTimeMillis': 5000})
             for identity, capability, _profile, operation in probe.PROFILES.values():
                 document = json.loads((client.directory/(identity+'-policy.json')).read_bytes())['rules'][0]
                 self.assertEqual(document['capability'], capability)
