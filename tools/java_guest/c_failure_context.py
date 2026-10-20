@@ -9,6 +9,7 @@ from tools.dev_workflow import paths
 from tools.rust_capsule_project import digest
 
 FIXTURE_SOURCES = ('c/d/l/a/Capsule.c', 'c/j/u/z/GZIPInputStream.c')
+PHASE_FIXTURE_SOURCES = (*FIXTURE_SOURCES, 'c/j/u/TimeZone.c')
 MAX_FILE = 4 * 1024 * 1024
 MAX_CONTEXT = 128 * 1024
 SCHEMA = 'latent.java.public-fixture-c-context.v1'
@@ -21,7 +22,7 @@ DECLARATION = re.compile(r'\s*(?:(?:volatile|const|unsigned|signed|struct)\s+)*'
 
 
 def selection(selected: tuple[str, ...]) -> None:
-    if type(selected) is not tuple or selected not in ((), FIXTURE_SOURCES):
+    if type(selected) is not tuple or selected not in ((), FIXTURE_SOURCES, PHASE_FIXTURE_SOURCES):
         raise ValueError('java-c-failure-context-selection-invalid')
 
 
@@ -36,7 +37,7 @@ def teavm(compiler, project: Path, selected: tuple[str, ...]) -> str:
 def collect(generated: Path, log: bytes, selected: tuple[str, ...]) -> dict:
     """Read only fixed generated public sources through anchored regular readers."""
     selection(selected)
-    if selected != FIXTURE_SOURCES or len(log) > MAX_FILE:
+    if selected not in (FIXTURE_SOURCES, PHASE_FIXTURE_SOURCES) or len(log) > MAX_FILE:
         raise ValueError('java-c-failure-context-input-invalid')
     paths.absolute(generated)
     rows, files = [], {}

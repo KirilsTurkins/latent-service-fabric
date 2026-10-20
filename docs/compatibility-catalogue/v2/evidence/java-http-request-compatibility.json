@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "lsf.guest.compatibility.v1",
+  "language": "java",
+  "sourceDigest": "sha256:2753e8397c38214e741ec568474634d436c78e1bdb21126edc5c8d8fbec534d8",
+  "componentDigest": "sha256:66d5fb812c59ba0b361667c8d86448fa89d834e2d19ba9102abadccba931d52b",
+  "runtimeProfile": "lsf-host-abi-phase3-v4",
+  "inputs": [
+    {
+      "kind": "sdk",
+      "digest": "sha256:03ac1e5f1d497b2dad885479ba9504a74402c38117f81a91945b314ab0287f03"
+    },
+    {
+      "kind": "runtime",
+      "digest": "sha256:4413194663dea86eb471981cbd8f37e4d7f77c093ef685333457357cc5a1b0b4",
+      "profile": "lsf-host-abi-phase3-v4"
+    }
+  ],
+  "findings": [
+    {
+      "classification": "unresolved-behavior",
+      "phase": "invocation",
+      "evidence": "not-evaluated"
+    },
+    {
+      "classification": "unresolved-behavior",
+      "phase": "initialization",
+      "evidence": "not-evaluated"
+    },
+    {
+      "classification": "lifecycle-unproven",
+      "phase": "retirement",
+      "evidence": "not-evaluated",
+      "ownerIssue": 736
+    }
+  ],
+  "omittedFindings": 0,
+  "status": "incomplete",
+  "authority": "none",
+  "analysisCompleteness": "selected-observations",
+  "identity": "sha256:2c3f2def5717d9b38dd8c9f297092c7f7bbca5fe522a8539c77c3456260feedc"
+}

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "latent.dotnet.resource-runtime.signed-observation.v1",
+  "status": "passed",
+  "source": "2d18287e005a1ab4f612532730011152d34cafc3",
+  "run": 39466265217,
+  "job": 118778369144,
+  "artifact": {
+    "id": 12284633689,
+    "size_in_bytes": 8533100,
+    "digest": "sha256:8e692873d0d60eae82e655cfa3a63c24652f18eb3f484f6ec2741cb6207debc2"
+  },
+  "archiveMembers": 431,
+  "materialRows": 41,
+  "originalCompiledGuestSource": "b168a7c0f1327b188a07f01be893826f9582d42e",
+  "component": {
+    "sha256": "sha256:8b9949a3378ffc450bce9a08b4110f8e1ef30a2a8819fb2cdfc66cd072d288da",
+    "bytes": 2759390
+  },
+  "originalBuildObservation": {
+    "sha256": "sha256:7748a3adf4ff6729262b10ccf17dbc11e95be1e51a21a2303aa257b4f1fb313c",
+    "bytes": 7774
+  },
+  "compiledNativeSource": "f9192fb5785ca7bed8b33dbb869b3d775b72ab4b",
+  "nativeProducts": {
+    "latent": {
+      "sha256": "sha256:91fde4e00730a4fd87d401974261fbd0e4d3d10376227faf2c137ace89edd14f",
+      "bytes": 68829688
+    },
+    "latentd": {
+      "sha256": "sha256:68a1c75d777ee43dff59a2be6a9d820b7d49ad8e29153881cefdef3c20521a76",
+      "bytes": 185284824
+    },
+    "examples/package": {
+      "sha256": "sha256:fd73fe7fc940a6d4a71c7aef2323193cc33825ecfe10e3252cf9c0fa3f21d7a0",
+      "bytes": 17750192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:1118e6a628e40d9c7b228756f767cf7ebf18b02acdfdf4d9c7d749d87410a56b",
+      "bytes": 24017528
+    }
+  },
+  "runtimeDenials": 2,
+  "secureOperationDenials": 2,
+  "joinedCalls": 11,
+  "totalOutcomes": 15,
+  "allKnownReaped": true,
+  "physicalSamples": 18,
+  "idleProviderSamples": 15,
+  "zeroActiveProviderCounters": 18,
+  "positiveWaitPendingRecords": [
+    {
+      "mode": "pending",
+      "event": "wait-pending",
+      "sequence": 1,
+      "tasks": 0,
+      "waits": 1,
+      "timers": 1
+    },
+    {
+      "mode": "drain",
+      "event": "wait-pending",
+      "sequence": 2,
+      "tasks": 0,
+      "waits": 1,
+      "timers": 1
+    }
+  ],
+  "cases": [
+    {
+      "tenant": "examples",
+      "mode": "parallel",
+      "result": [
+        {
+          "ok": "resource-dotnet|parallel=first:80410d0a+second:00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|entropy=16|wall64=1|fresh=1"
+        }
+      ],
+      "terminal": null
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-dotnet|fresh=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null
+    },
+    {
+      "tenant": "examples",
+      "mode": "clear",
+      "result": [
+        {
+          "ok": "resource-dotnet|clear=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null
+    },
+    {
+      "tenant": "examples",
+      "mode": "trap",
+      "result": null,
+      "terminal": "guest-trap"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-dotnet|fresh=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null
+    },
+    {
+      "tenant": "examples",
+      "mode": "cancel",
+      "result": null,
+      "terminal": "cancelled"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-dotnet|fresh=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null
+    },
+    {
+      "tenant": "examples",
+      "mode": "deadline",
+      "result": null,
+      "terminal": "deadline-exceeded"
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-dotnet|fresh=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null
+    },
+    {
+      "tenant": "foreign",
+      "mode": "callback-error",
+      "result": null,
+      "terminal": "guest-trap"
+    },
+    {
+      "tenant": "examples",
+      "mode": "fresh",
+      "result": [
+        {
+          "ok": "resource-dotnet|fresh=00ff80410d0a|text=4772c3bcc39f6500e99baa0a|empty=0|fresh=1"
+        }
+      ],
+      "terminal": null
+    }
+  ],
+  "nodeCleanShutdown": true,
+  "peerZeroContactReaped": true,
+  "nativeAotRepeated": false,
+  "engineRebuilt": false,
+  "managedTaskAccountingQualified": false,
+  "nativeThreadsQualified": false,
+  "asyncFlushQualified": false,
+  "lateWakeQualified": false,
+  "fullTicketQualification": false
+}

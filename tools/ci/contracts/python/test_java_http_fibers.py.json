@@ -889,6 +889,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_http_fibers.py",
-  "reviewReason": "Retain all lifecycle cases and guards; extend the exact pinned-source expectation only for the reviewed original-entry liveness mapping and add a mandatory real IR regression binding.",
+  "reviewReason": "Reviewed exact TeaVM0.15.0 array-element worklist seed repair; retain all prior case IDs/guards/commands and add three pinned-source/closure controls plus mandatory real original/private IR checks.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

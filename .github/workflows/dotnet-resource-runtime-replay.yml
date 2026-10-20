@@ -1,0 +1,65 @@
+name: Managed resource callback exact component replay
+
+on:
+  push:
+    branches: ['feat/dotnet-resource-runtime-20261020']
+    paths: ['.github/workflows/dotnet-resource-runtime-replay.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dotnet-resource-runtime-replay-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-component:
+    name: Re-sign the exact fresh managed component and qualify original joined cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch the exact original compiler and new observer source objects
+        run: |
+          git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+          git fetch --no-tags --depth=1 origin b168a7c0f1327b188a07f01be893826f9582d42e
+          git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b
+      - name: Check policy generations and exact retained-build refusal controls
+        run: |
+          python3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_dotnet_resource_timer_observer tools.tests.test_dotnet_resource_replay tools.tests.test_sdk_native_products_reader -v
+      - name: Authenticate the exact successful actual-Pending observer native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/dotnet-resource-native"
+      - name: Authenticate the exact fresh component and re-run only its joined programme
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B tools/replay_dotnet_resource_runtime.py \
+            --native "$RUNNER_TEMP/dotnet-resource-native" --output "$RUNNER_TEMP/dotnet-resource-replay"
+      - name: Retain public original-build identities and fresh node outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-resource-runtime-replay-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/dotnet-resource-native/*.json
+            ${{ runner.temp }}/dotnet-resource-replay/*.json
+            ${{ runner.temp }}/dotnet-resource-replay/retained/dotnet-resource-runtime/FAILED.json
+            ${{ runner.temp }}/dotnet-resource-replay/retained/dotnet-resource-runtime/build/**
+            ${{ runner.temp }}/dotnet-resource-replay/node/*.json
+            ${{ runner.temp }}/dotnet-resource-replay/node/node-stderr.txt
+            ${{ runner.temp }}/dotnet-resource-replay/node/commands/logs/**
+            ${{ runner.temp }}/dotnet-resource-replay/node/examples-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-replay/node/foreign-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-replay/node/signed/my-greeting/build-observation.json
+            ${{ runner.temp }}/dotnet-resource-replay/node/signed/release-set.json

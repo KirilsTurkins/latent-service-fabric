@@ -140,6 +140,7 @@ public final class Check {
             }
         }
         entryLiveness(args[0]);
+        org.teavm.model.util.ArrayTypeCheck.check(args[0]);
         System.out.println("{\"schemaVersion\":\"latent.java.coroutine-phi-control.v1\",\"mode\":\""
                 + args[0] + "\",\"passed\":true}");
     }

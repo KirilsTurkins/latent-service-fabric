@@ -44,6 +44,8 @@
           "tools/tests/test_java_http_phases.py",
           "tools/tests/test_java_timeout_exception.py",
           "tools/tests/test_java_teavm_failure_trace.py",
+          "tools/tests/test_java_phase_c_context.py",
+          "tools/tests/test_java_array_gc_roots.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -76,7 +78,7 @@
     "http-phase-clients",
     "http-public-spi"
   ],
-  "reviewReason": "Preserve every incoming default/fiber/phase obligation and add only independent optional public-SPI job with explicit false selector; current f919 tuple uses same strict factory, old helpers immutable, no default-client qualification inferred.",
+  "reviewReason": "Additive source union: retain independent default-false public SPI lane and all incoming current compiler controls; original workflow/default commands/guards/bounds preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

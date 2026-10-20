@@ -66,6 +66,14 @@
         "run": "python3 -B -m unittest tools.tests.test_java_http_fibers.PinnedCoroutinePhiRepair -v"
       },
       {
+        "name": "Check bounded public TimeZone failure context without changing compiler acceptance",
+        "run": "python3 -B -m unittest tools.tests.test_java_phase_c_context -v"
+      },
+      {
+        "name": "Check pinned array type propagation and real GC-root regression requirements",
+        "run": "python3 -B -m unittest tools.tests.test_java_array_gc_roots -v"
+      },
+      {
         "name": "Check standard socket timeout identity and captured-source registration",
         "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
       },
@@ -123,7 +131,7 @@
   },
   "jobId": "http-phase-clients",
   "kind": "job",
-  "reviewReason": "Explicit reviewed native tuple update after current pending-wait observer merge: replace only acquisition module8f with shared strict f919 wrapper; identical output/env/bounds, original8f/36/77 receipts and all old controls retained, exact new source fetch and factory controls additive. All current native/107 auxiliary source bytes equal authenticated f919; no historical qualification transfer.",
+  "reviewReason": "Add bounded source/closure controls for reviewed pinned array-only type inference repair; every original command, guard, budget and before/coverage row retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
