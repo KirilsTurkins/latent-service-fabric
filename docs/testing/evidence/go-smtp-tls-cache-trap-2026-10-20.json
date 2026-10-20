@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "latent.go.smtp-tls.cache-trap.v1",
+  "productionFailure": {
+    "source": "ca723d3c693eb1a8d62972ac96ae017b4d38e277",
+    "run": 39437307701,
+    "job": 118677626944,
+    "artifact": 12272663708,
+    "artifactBytes": 2890188,
+    "archiveSha256": "a9cf862dec8839c5180366132fc8844a56a55377ff540b5a673a5c6dd76b5bce",
+    "archiveMembersCrcChecked": 50,
+    "plaintextPassed": true,
+    "firstTLS13": "unreachable-code",
+    "cpuFuel": 24492212,
+    "peakMemoryBytes": 6946728,
+    "outboundCalls": 1
+  },
+  "privateDiagnostic": {
+    "source": "5bd9bc142064ba79e36887291a673039d5b2752d",
+    "run": 39442014902,
+    "job": 118694035525,
+    "artifact": 12274023751,
+    "archiveSha256": "73837ab6d07243c0e0c939b229da77d181f22b7871cb5fb5573b2c5c34552baa",
+    "wrapperSuccessIsQualification": false,
+    "originalTestExitCode": 101,
+    "sameComponentReused": true,
+    "dwarfEnabled": false,
+    "maximumNumericFrames": 32,
+    "sourceRestored": true
+  },
+  "componentSha256": "0e7a4d083d551f230907b7a1438f34a75481fdfe24e83c64f55cbc7c19eb5d9e",
+  "componentBytes": 9457883,
+  "allNineNumericOffsetsMatchUniqueCodeBodies": true,
+  "mappedPublicFunctions": [
+    "runtime.abort",
+    "runtime.AddCleanup_go.shape.eb5c9593356a453fa3d606d0a7b939e5709e67a6354ae0c100932b4968b0aff9_go.shape.interface____",
+    "crypto_tls.__weakCertCache_.newCert",
+    "crypto_tls.__Conn_.verifyServerCertificate",
+    "crypto_tls.__clientHandshakeStateTLS13_.readServerCertificate",
+    "crypto_tls.__clientHandshakeStateTLS13_.handshake",
+    "crypto_tls.__Conn_.clientHandshake",
+    "wasm_pc_f_loop_export",
+    "_callback__async_lift_examples_go_standard_network_api_1.0.0_run"
+  ],
+  "rootCause": "Maintained generic AddCleanup refusal is reached by pinned TLS private weak certificate cache.",
+  "correctionQualification": "pending fresh component and original six-case signed gate",
+  "normalProviderInstalled": false,
+  "hostTlsAccountingQualified": false,
+  "kernelAccountingQualified": false
+}

@@ -1,0 +1,75 @@
+// Compiler-owned bounded Go TLS certificate cache.
+package tls
+
+import (
+	"crypto/x509"
+	_ "runtime" // Preserve the pinned source's dependency/initialization edge.
+	"sync"
+	_ "weak" // Preserve the pinned source's dependency/initialization edge.
+)
+
+const lsfCertCacheMaximumEntries = 8
+const lsfCertCacheMaximumDER = 16 * 1024
+const lsfCertCacheMaximumTotalDER = 64 * 1024
+
+type lsfCertCacheError string
+
+func (e lsfCertCacheError) Error() string { return string(e) }
+
+const lsfCertCacheExhausted = lsfCertCacheError("tls: finite certificate cache exhausted")
+
+type lsfCertCacheEntry struct {
+	der  string
+	cert *x509.Certificate
+}
+
+// The fixed array, key copies, parsed certificates and retained original DER are
+// invocation-local Wasm memory under the unchanged heap/GC limit. Strong entries
+// are never evicted or refunded before Store destruction. No unqualified cleanup
+// callback, hidden task or finalizer is installed. A fresh Store starts empty.
+type weakCertCache struct {
+	mu      sync.Mutex
+	entries [lsfCertCacheMaximumEntries]lsfCertCacheEntry
+	used    int
+	derSize int
+}
+
+func (wcc *weakCertCache) newCert(der []byte) (*x509.Certificate, error) {
+	wcc.mu.Lock()
+	defer wcc.mu.Unlock()
+	// Compare without allocating a string before finite admission. The mutex
+	// serializes parsing and entry reservation, including concurrent handshakes.
+	for i := 0; i < wcc.used; i++ {
+		key := wcc.entries[i].der
+		if len(key) != len(der) {
+			continue
+		}
+		match := true
+		for j := range der {
+			if key[j] != der[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return wcc.entries[i].cert, nil
+		}
+	}
+	if len(der) > lsfCertCacheMaximumDER ||
+		wcc.used == lsfCertCacheMaximumEntries ||
+		len(der) > lsfCertCacheMaximumTotalDER-wcc.derSize {
+		return nil, lsfCertCacheExhausted
+	}
+	// All x509 parsing/authentication semantics stay upstream. A parse failure
+	// publishes no cache entry; its temporary memory stays in the bounded heap.
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		return nil, err
+	}
+	wcc.entries[wcc.used] = lsfCertCacheEntry{der: string(der), cert: cert}
+	wcc.used++
+	wcc.derSize += len(der)
+	return cert, nil
+}
+
+var globalCertCache = new(weakCertCache)

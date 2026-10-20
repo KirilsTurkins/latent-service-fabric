@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "GoSmtpTlsRuntimeTests.test_bounded_owned_peer_checks_protocol_and_guest_uses_original_runtime_limits",
+    "GoSmtpTlsRuntimeTests.test_cache_admission_precedes_allocating_parse_and_key_copy_with_no_cleanup_or_eviction",
+    "GoSmtpTlsRuntimeTests.test_compiled_fixture_environment_and_retained_observation_match_the_actual_consumer",
+    "GoSmtpTlsRuntimeTests.test_exact_smtp_and_guest_tls_paths_do_not_promote_host_tls_or_kernel_accounting",
+    "GoSmtpTlsRuntimeTests.test_missing_reordered_duplicate_or_incorrect_verification_results_fail",
+    "GoSmtpTlsRuntimeTests.test_ordinary_public_smtp_owns_its_connection_and_uses_explicit_verified_trust",
+    "GoSmtpTlsRuntimeTests.test_reference_covers_actual_cache_identity_admission_gc_parse_concurrency_and_fresh_state",
+    "GoSmtpTlsRuntimeTests.test_reference_projects_only_package_declaration_and_requires_all_eight_actual_passes",
+    "GoSmtpTlsRuntimeTests.test_retained_resources_ignored_execution_and_any_host_promotion_fail",
+    "GoSmtpTlsRuntimeTests.test_tls_cache_overlay_authenticates_exact_upstream_and_keeps_generic_cleanup_refused",
+    "GoSmtpTlsRuntimeTests.test_unknown_private_duplicate_and_numeric_aliases_are_not_evidence"
+  ],
+  "guards": {
+    "GoSmtpTlsRuntimeTests.test_bounded_owned_peer_checks_protocol_and_guest_uses_original_runtime_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_cache_admission_precedes_allocating_parse_and_key_copy_with_no_cleanup_or_eviction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_compiled_fixture_environment_and_retained_observation_match_the_actual_consumer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_exact_smtp_and_guest_tls_paths_do_not_promote_host_tls_or_kernel_accounting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_missing_reordered_duplicate_or_incorrect_verification_results_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_ordinary_public_smtp_owns_its_connection_and_uses_explicit_verified_trust": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_reference_covers_actual_cache_identity_admission_gc_parse_concurrency_and_fresh_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_reference_projects_only_package_declaration_and_requires_all_eight_actual_passes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_retained_resources_ignored_execution_and_any_host_promotion_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_tls_cache_overlay_authenticates_exact_upstream_and_keeps_generic_cleanup_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    },
+    "GoSmtpTlsRuntimeTests.test_unknown_private_duplicate_and_numeric_aliases_are_not_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:542196bad66bde94e9150b426a6730f05c9be1fc2f3c298ceedf9607ebdfebb5",
+        "class:setup-sha256:eeaeffb1a033830348b7bee09cb97a68835db71525d205fe0efedf2d856596d0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_smtp_tls_runtime.py",
+  "reviewReason": "Source-backed realTLS AddCleanup trap: derive authenticated private cache ONLY for declaredstream/v5, fixed8entries/16KiBperDER/64KiBtotal beforecopy/parse, retainstrongwithinStore; genericcleanuprefusal/TLSverificationunchanged. Require8actualexactcache refs thenonefresh6caseSMTPguest; no native5/fullGo.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

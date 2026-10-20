@@ -16,3 +16,8 @@ It is test input, not a replacement generator or checked-in application binding.
 helper copies the actual SDK private owner and this test into one isolated,
 dependency-free Go module. Its runtime result is distinct from component
 construction, signing, provider installation and network execution.
+
+`crypto/tls/cache.go` is the exact Go 1.27.2 private certificate-cache source,
+SHA-256 `553ad7a40a9b198bea838833e3e5ed5660ec9b031ad75f58a9ea119e44bd3bfb`.
+Declared-stream selection replaces only this authenticated cache with the
+finite invocation-owned implementation; generic cleanup callbacks remain refused.
