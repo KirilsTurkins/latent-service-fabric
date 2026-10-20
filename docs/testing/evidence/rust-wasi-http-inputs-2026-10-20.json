@@ -1,0 +1,656 @@
+{
+  "status": "verified-compiler-observation",
+  "run": 39511722541,
+  "job": 118934118602,
+  "artifact": {
+    "id": 12305529149,
+    "name": "rust-wasi-http-inputs-a3454f48be8b3908ebf7dbbcc7dba883b4ab7ec7",
+    "size_in_bytes": 4399060,
+    "digest": "sha256:f3ec8cebba3e6c6b45794721e7bd2a5dc977254e986dcc06139051540ba4e57b"
+  },
+  "materialRows": 76,
+  "recipeRows": 69,
+  "component": {
+    "sha256": "sha256:3ba38db9bdb614b397e3759deeb00c2487fd5faf500fdf250c5dcce7dca72c03",
+    "bytes": 480776
+  },
+  "coreModules": 3,
+  "coreImports": 94,
+  "rawImportFamilies": [
+    "",
+    "wasi:clocks/monotonic-clock@0.2.12",
+    "wasi:http/outgoing-handler@0.2.12",
+    "wasi:http/outgoing-handler@0.2.2",
+    "wasi:http/types@0.2.12",
+    "wasi:http/types@0.2.2",
+    "wasi:io/error@0.2.12",
+    "wasi:io/error@0.2.2",
+    "wasi:io/poll@0.2.12",
+    "wasi:io/poll@0.2.2",
+    "wasi:io/streams@0.2.12",
+    "wasi:io/streams@0.2.2"
+  ],
+  "finalExternalImports": [
+    "wasi:clocks/monotonic-clock@0.2.12",
+    "wasi:http/outgoing-handler@0.2.12",
+    "wasi:http/types@0.2.12",
+    "wasi:io/error@0.2.12",
+    "wasi:io/poll@0.2.12",
+    "wasi:io/streams@0.2.12"
+  ],
+  "capturedVersions": {
+    "golem-wasi-http": "0.2.0",
+    "waki": "0.5.1",
+    "waki-macros": "0.5.1",
+    "wasip2": "1.0.4+wasi-0.2.12"
+  },
+  "approvedExecutableInputs": 15,
+  "compileSeconds": 47.874283,
+  "originalNormalBuilderStatus": "failed",
+  "originalNormalBuilderStage": "compatibility",
+  "nativeProductsBuilt": 0,
+  "runtimeBackendInstalled": false,
+  "signedQualification": false,
+  "fullTicketQualification": false,
+  "schemaVersion": "latent.rust.wasi-http.compiler-input-observation.v1",
+  "compiledGuestSource": "a3454f48be8b3908ebf7dbbcc7dba883b4ab7ec7",
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39511722541/job/118934118602",
+  "event": "push",
+  "wholeArchiveMembersAuthenticated": 58,
+  "rawObservation": {
+    "sha256": "sha256:2066c71cfedcbb867acea6f3f313d9683ebcd555f7b3ce8a15f6322af3ab6c64",
+    "bytes": 691163
+  },
+  "rawCapture": {
+    "sha256": "sha256:3d74283300467b2d38e84f0f313cde5daae7943217c836bfc3784bbdd86f80b5",
+    "bytes": 304201
+  },
+  "originalBuildDocuments": {
+    "BUILD-FAILED.json": {
+      "sha256": "sha256:9325a320f1a64c9e26aad878b28d6abee60065a86cbad7cd3a3e758d297c0b43",
+      "bytes": 982
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:5f94a9330db7e5477fa85e70e228ecd56e3be2ef11b910ed97243f748aa600f0",
+      "bytes": 8806
+    },
+    "recipe-inputs.json": {
+      "sha256": "sha256:04cf667dae552bf71d8c56fb1ac29965ccfdcc4aded1684b07444dffc15c0207",
+      "bytes": 9218
+    },
+    "rust-compiler-inputs.json": {
+      "sha256": "sha256:d575424e82c87bdc4eead00883fed601436ac9c56afb26ba3b7f1e968eaaa1c0",
+      "bytes": 3856088
+    },
+    "compatibility-inspection.json": {
+      "sha256": "sha256:065e244a717d28b23f65550fe234091aabcc1aa6741a1ab499ca3c897f611315",
+      "bytes": 1641
+    },
+    "contracts.json": {
+      "sha256": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+      "bytes": 674
+    }
+  },
+  "developerCrate": {
+    "package": "outside-http-bd138d4bcc3e7862",
+    "version": "0.48404.36172"
+  },
+  "developerSource": "sha256:39a27efe5cca80bb564a3a6376c8eb1c060ce583ec6977f74ab25b7c664ca050",
+  "clients": [
+    {
+      "package": "waki",
+      "version": "0.5.1",
+      "artifact": "waki/0.5.1/ac90bfd6cc544efa",
+      "archiveSha256": "sha256:6e2db2daf1dfbadf228fd8b3c22b96a359135fd673b3d2c203274ee6a0df9c77",
+      "capturedOriginal": {
+        "digest": "sha256:e197211d80e8d66faa724fb8e255588a2078f290aa127f04c021cf4cbf3d2158",
+        "size": 7146
+      },
+      "selectedFeatures": []
+    },
+    {
+      "package": "golem-wasi-http",
+      "version": "0.2.0",
+      "artifact": "golem-wasi-http/0.2.0/9cc6ac8d6b6c6b0f",
+      "archiveSha256": "sha256:6e80794383f6d363e1f756c5ec9fa6ca0459824e54f9eef53b6b03491fb9d166",
+      "capturedOriginal": {
+        "digest": "sha256:8aa3f291ea1c35aeb569e08c457b6e7b53946c9af06c59f84e651885ee52feb4",
+        "size": 2593
+      },
+      "selectedFeatures": [
+        "default"
+      ]
+    }
+  ],
+  "implicitExecutableApproval": false,
+  "catalogueRegistration": false,
+  "originalLibraryRemoved": true,
+  "compiledNative": {
+    "schemaVersion": "latent.sdk.phase-native-products.v1",
+    "compiledSource": "fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12",
+    "compiledTree": "fa46e2be3c3fa74e2f0f8b26e27f09d0376fde26",
+    "producerRun": 39495029026,
+    "producerJob": 118877777415,
+    "producerReceipt": {
+      "sha256": "sha256:d3d7b97d078d73291cf6f0c0950e99c92ec9378c0032806c6074fb943b5441b1",
+      "bytes": 21390
+    },
+    "sourceSnapshot": {
+      "sha256": "sha256:fbf3f0f5c678cbbcfc583af714dce7e8388ba8d3f49cfe8a25ef8298f09c503f",
+      "bytes": 18937
+    },
+    "products": {
+      "latent": {
+        "sha256": "sha256:8bec92fc5f8860d1bc38cff1b53aed16944488c065a86460a8142cf75208d132",
+        "bytes": 68831256
+      },
+      "latentd": {
+        "sha256": "sha256:fa2f0d74fc8ef15b2c810f0891b70b6f6808e77c2a8d54ce83c7cfdba417f9c0",
+        "bytes": 185318448
+      },
+      "examples/package": {
+        "sha256": "sha256:5d1c60df2cab630e4bb19e06cc699b6cf0c930eef418822f025ab416220e2314",
+        "bytes": 17750192
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+        "bytes": 7245472
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:5c661ba4e2c67e43e3a7ed07f9d24e8348c4e6d8dbd06e157fd2a46f062880b8",
+        "bytes": 24017536
+      }
+    },
+    "signedQualification": false,
+    "guestComponentsCompiledByProducer": false,
+    "historicalNormalReceiptCreated": false,
+    "wholeArchiveRetained": false,
+    "origin": {
+      "artifact": 12298206858,
+      "archiveDigest": "sha256:c29154ac4c9e44f6c29bf7524104832589152f03cfabfdb9a3f42e01eddb4486",
+      "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+      "fixedMembersPreflighted": {
+        "native-products.json": {
+          "bytes": 21390,
+          "compressedBytes": 6876
+        },
+        "source-inputs.json": {
+          "bytes": 18937,
+          "compressedBytes": 6098
+        },
+        "native-binaries/latent": {
+          "bytes": 68831256,
+          "compressedBytes": 15446896
+        },
+        "native-binaries/latentd": {
+          "bytes": 185318448,
+          "compressedBytes": 38695100
+        },
+        "native-binaries/examples-package": {
+          "bytes": 17750192,
+          "compressedBytes": 4244018
+        },
+        "native-binaries/examples-capsule_contracts": {
+          "bytes": 7245472,
+          "compressedBytes": 1804186
+        },
+        "native-binaries/examples-capsule_authoring": {
+          "bytes": 24017536,
+          "compressedBytes": 5930857
+        }
+      },
+      "rangeBytes": 66137287,
+      "rangeRequests": 269
+    }
+  },
+  "consumerNativeSource": {
+    "sha256": "sha256:ed5a9de2b967ca9d432e638f3aaab91b79dd7c44cc1875b31aa261d9018b9cb5",
+    "files": 3315,
+    "bytes": 26086384,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "materials": {
+    "tools/rust_capsule.py": {
+      "sha256": "sha256:59b4c8c26f88431c5b83966b7f2e2afc0084838a5d61c34d1d59ce927667d27a",
+      "bytes": 12032
+    },
+    "tools/rust_capsule_project.py": {
+      "sha256": "sha256:216da6ad5b821381bde28e42e13b8b6ef47ff3faf93b539e0166c880d6fc2360",
+      "bytes": 14549
+    },
+    "tools/rust_capsule_build.py": {
+      "sha256": "sha256:a00cb2afce425556cc0a9a776c5a23f757c3012f3440eda6c0e1cc709e0a2948",
+      "bytes": 45923
+    },
+    "tools/build_observation.py": {
+      "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+      "bytes": 7868
+    },
+    "tools/build_process.py": {
+      "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+      "bytes": 9063
+    },
+    "tools/build_process_linux.py": {
+      "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+      "bytes": 3853
+    },
+    "tools/build_process_windows.py": {
+      "sha256": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+      "bytes": 7409
+    },
+    "tools/build_process_signals.py": {
+      "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+      "bytes": 3012
+    },
+    "tools/build_snapshot.py": {
+      "sha256": "sha256:172c556c2d8918d09f97d6163b64c3ffe1dda79d2f0fe72675fd223b533f5284",
+      "bytes": 12918
+    },
+    "tools/stage_runtime_wit.py": {
+      "sha256": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+      "bytes": 4194
+    },
+    "tools/transaction_guest_project.py": {
+      "sha256": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+      "bytes": 10287
+    },
+    "tools/dev_workflow/common.py": {
+      "sha256": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+      "bytes": 3129
+    },
+    "tools/dev_workflow/transaction_binding.py": {
+      "sha256": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+      "bytes": 3588
+    },
+    "tools/application_dependencies.py": {
+      "sha256": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+      "bytes": 28732
+    },
+    "tools/application_dependency_store.py": {
+      "sha256": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+      "bytes": 12139
+    },
+    "tools/application_dependency_tools.py": {
+      "sha256": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+      "bytes": 5192
+    },
+    "tools/application_dependency_approval.py": {
+      "sha256": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+      "bytes": 1996
+    },
+    "tools/rust_application_dependencies.py": {
+      "sha256": "sha256:2cf6faf43345a1369f26a0894b3ea30900c72338065b1411501914dc22d83782",
+      "bytes": 49622
+    },
+    "tools/captured_compiler_isolation.py": {
+      "sha256": "sha256:061f3e31f567871e7f3b0d8e8a402077d036b3327ccd2d7455294ec7bf28af15",
+      "bytes": 14529
+    },
+    "tools/rust_dependency_authoring.py": {
+      "sha256": "sha256:932d87618c1d392144518cf7aeacaedba7afd428bf577f6d21c2164a64963d2c",
+      "bytes": 13496
+    },
+    "tools/cargo_native_authoring.py": {
+      "sha256": "sha256:1e88209b9e9bcb13d874862d988697c0e869bc172ba652d4a93efb64a2a2b5dd",
+      "bytes": 24842
+    },
+    "tools/rust_capsule.lock": {
+      "sha256": "sha256:d03a56a04619a5b4374aa2187200f3031fbc0f0b75218c2fbc55f4d032469e72",
+      "bytes": 33219
+    },
+    "tools/guest_authoring_frontend.py": {
+      "sha256": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+      "bytes": 9578
+    },
+    "tools/dev_workflow/__init__.py": {
+      "sha256": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+      "bytes": 98
+    },
+    "tools/dev_workflow/paths.py": {
+      "sha256": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+      "bytes": 6758
+    },
+    "tools/dev_workflow/windows.py": {
+      "sha256": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+      "bytes": 6584
+    },
+    "tools/guest_dependency_inputs.py": {
+      "sha256": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+      "bytes": 10044
+    },
+    "tools/dev_workflow/project.py": {
+      "sha256": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+      "bytes": 7395
+    },
+    "tools/dev_workflow/dependencies.py": {
+      "sha256": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+      "bytes": 6022
+    },
+    "tools/dev_workflow/resource_inputs.py": {
+      "sha256": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+      "bytes": 2645
+    },
+    "tools/dev_workflow/snapshot.py": {
+      "sha256": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+      "bytes": 7519
+    },
+    "tools/dev_workflow/state.py": {
+      "sha256": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+      "bytes": 3683
+    },
+    "tools/guest_compatibility.py": {
+      "sha256": "sha256:e861984bb3c4697204151bc2c165cc3100d5fa00a1e884090a442ca57f8884cd",
+      "bytes": 13718
+    },
+    "tools/guest_compatibility_build.py": {
+      "sha256": "sha256:67339aedb2de99b7de7675ac51e69aa6d7de4c5f1f26e0d773ca315cfca24840",
+      "bytes": 18286
+    },
+    "wit/host-abi-phase3-v4.json": {
+      "sha256": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+      "bytes": 4523
+    },
+    "wit/host-abi-phase4-v1.json": {
+      "sha256": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+      "bytes": 2559
+    },
+    "sdk/profile/transaction-requirements-v1.json": {
+      "sha256": "sha256:9bb389824b6a2d3015727b5c17de25a51505339d0a4f6cf46199ffe520881cd5",
+      "bytes": 9418
+    },
+    "tools/guest_compatibility_context.py": {
+      "sha256": "sha256:4e0563408f8f9283c8b831b8a74b73b3fe6ce5456a39ca1dc689671aa316c657",
+      "bytes": 6687
+    },
+    "tools/guest_compatibility_context_build.py": {
+      "sha256": "sha256:62a413a13f575b489ca1473da25e55b8a24f699b4ac400107a4363bf1b7e1e02",
+      "bytes": 6930
+    },
+    "tools/guest_runtime_receipts.py": {
+      "sha256": "sha256:3ff4a3dc509dd0287972c48e9df1898a6909b314cb3b76b7e5d22d37bfca5a91",
+      "bytes": 12480
+    },
+    "tools/guest_emitted_code.py": {
+      "sha256": "sha256:211c7ef2b359b2ec2e2227cae1e4212b57c020dc4f02649302c976e0eb85dbbd",
+      "bytes": 20181
+    },
+    "tools/dev_workflow/executable_approval.py": {
+      "sha256": "sha256:b17c95c45264e006fce9ad319aacb2c57fb305a9ea12fe92de3b3fa6c64d6a47",
+      "bytes": 1920
+    },
+    "tools/guest_resources.py": {
+      "sha256": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+      "bytes": 18098
+    },
+    "tools/rust_standard_logging_inputs.py": {
+      "sha256": "sha256:3a5b3e00dfcd0dd287705b7e86abf5304853798888c313c0f23616c7480a889e",
+      "bytes": 7783
+    },
+    "tools/rust_standard_sysroot_source.py": {
+      "sha256": "sha256:838ce7b8a6725acc48d7db3db4c0e27f15e3df55d1f986989f54ed8cc15698f1",
+      "bytes": 8060
+    },
+    "tools/rust_standard_clock_profile.py": {
+      "sha256": "sha256:c6990912703d9057446781654cf775961c60f4618f0baddb903e4bb028c300b2",
+      "bytes": 6194
+    },
+    "sdk/rust-standard-runtime/clock.rs": {
+      "sha256": "sha256:12f62eb651f6c7cb653a9a7e0aba635e5b47cf3a2646ef4f57df9d513c62a071",
+      "bytes": 2347
+    },
+    "wit/platform/clock/package.wit": {
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "bytes": 139
+    },
+    "rust-toolchain.toml": {
+      "sha256": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+      "bytes": 140
+    },
+    "tools/rust_standard_tls_profile.py": {
+      "sha256": "sha256:26e59a949f0ce49fc346f7827836bbbc9624584dabe777d4b0db4c2377c212fd",
+      "bytes": 8525
+    },
+    "sdk/rust-standard-runtime/tls.rs": {
+      "sha256": "sha256:b198ed15262ba83c837936955349ebf9faddff71a20e88ae3b4052dbc3dce540",
+      "bytes": 24994
+    },
+    "sdk/rust-standard-runtime/activation-abi.json": {
+      "sha256": "sha256:78daf134676c77bb7a805a251b3344ad9e6358f587d1b0edcb2a0646e0e6ac50",
+      "bytes": 1238
+    },
+    "sdk/rust-standard-runtime/thread-abi.json": {
+      "sha256": "sha256:8bc69e5ad9c3f434fd8b90135e202072dbbaddf549793b841163c3b28693b68b",
+      "bytes": 3540
+    },
+    "wit/platform/activation-runtime/package.wit": {
+      "sha256": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+      "bytes": 2539
+    },
+    "tools/rust_standard_logging_profile.py": {
+      "sha256": "sha256:cb142e8a3abe648293c3ffa0aa23bad842a3c5c730b7e3fe08093c021f04083e",
+      "bytes": 2324
+    },
+    "sdk/rust-standard-runtime/stdio_closed.rs": {
+      "sha256": "sha256:bffe2b477c450098fed9584f34e725232f5dcbdfc655e27851f9b1fd8354f37c",
+      "bytes": 1794
+    },
+    "sdk/rust-standard-runtime/stdio_logging.rs": {
+      "sha256": "sha256:b89538d84aa980c5908a2b7a4d422ceca31deaae00de5fd2fdc82d1d8b89f62e",
+      "bytes": 3493
+    },
+    "wit/platform/log/package.wit": {
+      "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+      "bytes": 418
+    },
+    "sdk/rust-standard-stdio/Cargo.toml": {
+      "sha256": "sha256:78c8851da50565be17c998bec34ff64ee2ac010fc0680257acc98150842afb0f",
+      "bytes": 640
+    },
+    "sdk/rust-standard-stdio/src/lib.rs": {
+      "sha256": "sha256:e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731",
+      "bytes": 1594
+    },
+    "tools/rust_standard_entropy_profile.py": {
+      "sha256": "sha256:aeb72ddbbd5cd894ba00413c576d34a1d62a1e5725ec841a6feb9648fbde97ef",
+      "bytes": 7712
+    },
+    "sdk/rust-standard-runtime/entropy_core.rs": {
+      "sha256": "sha256:d6bac09e9c28fab6a80a7bd16b3ea39153aa12a4ba4fb43d93e7ade8c6b468d4",
+      "bytes": 1600
+    },
+    "sdk/rust-standard-runtime/entropy_std.rs": {
+      "sha256": "sha256:384c39c2a5dd5447fdbebe20fa70cf8f3ef11ddc95a32efe8476776a3330be77",
+      "bytes": 515
+    },
+    "sdk/rust-standard-runtime/entropy_getrandom_03.rs": {
+      "sha256": "sha256:963db4b367321c596a6c79f026787f8995d7f5e4f2d3031627fbd6029654faec",
+      "bytes": 902
+    },
+    "sdk/rust-standard-runtime/entropy-getrandom-03.json": {
+      "sha256": "sha256:6bfc187447ceb857008ed6b20ddc1679ff068a4983b6d2bf2ac7348d2b3cd018",
+      "bytes": 900
+    },
+    "wit/platform/random/package.wit": {
+      "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+      "bytes": 272
+    },
+    "tools/rust_standard_sysroot_build.py": {
+      "sha256": "sha256:a2ad9f2540babf6b3f10530547583d0dee81f05d160ccd8d8f8106998528d6db",
+      "bytes": 10999
+    },
+    "tools/qualify_rust_wasi_http_inputs.py": {
+      "sha256": "sha256:fc6d6873d665fb02d76287491060b67f6761437eeef8d6c99850953bd5248a0e",
+      "bytes": 12365
+    },
+    "tools/rust_wasi_http_fixture.py": {
+      "sha256": "sha256:de70a418cea9667940119b2b15a949cdf80c7680af39abdbb449dd2f2106adfc",
+      "bytes": 6298
+    },
+    "tools/java_replay_materials.py": {
+      "sha256": "sha256:155092d73c3f847d2250076bed86f6694c738d011fab30d7269fb27c5a1e63e3",
+      "bytes": 15714
+    },
+    "tools/wasmtime_48_0_7_native_products.py": {
+      "sha256": "sha256:72e97a38c1aa837963fba896f3b613c08f0fc4d57305d2e2902bc7e88e00f9c0",
+      "bytes": 1731
+    },
+    "tools/sdk_native_products_reader.py": {
+      "sha256": "sha256:3273c1932b7196cf49a343ae4a3f8a9f02ea07539f700b39d4c96d57aafced22",
+      "bytes": 16979
+    },
+    "tools/install_guest_bindgen.py": {
+      "sha256": "sha256:5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1",
+      "bytes": 2641
+    },
+    "tools/toolchain.toml": {
+      "sha256": "sha256:c1687cb481790783cca91b8423a676754ff8c3432e34b436c23df4f605a7f236",
+      "bytes": 1044
+    },
+    "examples/echo-contract/capsule.json": {
+      "sha256": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d",
+      "bytes": 1294
+    },
+    "examples/echo-contract/deployment.json": {
+      "sha256": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a",
+      "bytes": 1104
+    }
+  },
+  "normalBuilderFailure": {
+    "formatVersion": 1,
+    "stage": "compatibility",
+    "reason": "final-component-compatibility-failed; inspect compatibility-inspection.json",
+    "commands": [
+      {
+        "stage": "rust-sysroot",
+        "exitCode": 0,
+        "seconds": 0.016071
+      },
+      {
+        "stage": "zig-version",
+        "exitCode": 0,
+        "seconds": 0.015836
+      },
+      {
+        "stage": "bindgen-version",
+        "exitCode": 0,
+        "seconds": 0.016155
+      },
+      {
+        "stage": "sdk-bindings",
+        "exitCode": 0,
+        "seconds": 0.015827
+      },
+      {
+        "stage": "compile",
+        "exitCode": 0,
+        "seconds": 47.874283
+      },
+      {
+        "stage": "component",
+        "exitCode": 0,
+        "seconds": 0.025703
+      },
+      {
+        "stage": "validate",
+        "exitCode": 0,
+        "seconds": 0.015578
+      },
+      {
+        "stage": "contracts",
+        "exitCode": 0,
+        "seconds": 0.015592
+      },
+      {
+        "stage": "compatibility-final-wit",
+        "exitCode": 0,
+        "seconds": 0.015563
+      }
+    ]
+  },
+  "libraryCodePatched": false,
+  "applicationTransportInjected": false,
+  "engineRebuilt": false,
+  "finalExport": "examples:greeting/api@1.0.0",
+  "finalWit": {
+    "sha256": "sha256:de5a1ec9f23768bc117cd527c5415fb55d3a69b6f9cb50f95a0633b1d72da328",
+    "bytes": 32699
+  },
+  "originalFinalWitCommandOutput": {
+    "sha256": "sha256:de5a1ec9f23768bc117cd527c5415fb55d3a69b6f9cb50f95a0633b1d72da328",
+    "bytes": 32699
+  },
+  "normalCommands": [
+    {
+      "stage": "rust-sysroot",
+      "exitCode": 0,
+      "seconds": 0.016071
+    },
+    {
+      "stage": "zig-version",
+      "exitCode": 0,
+      "seconds": 0.015836
+    },
+    {
+      "stage": "bindgen-version",
+      "exitCode": 0,
+      "seconds": 0.016155
+    },
+    {
+      "stage": "sdk-bindings",
+      "exitCode": 0,
+      "seconds": 0.015827
+    },
+    {
+      "stage": "compile",
+      "exitCode": 0,
+      "seconds": 47.874283
+    },
+    {
+      "stage": "component",
+      "exitCode": 0,
+      "seconds": 0.025703
+    },
+    {
+      "stage": "validate",
+      "exitCode": 0,
+      "seconds": 0.015578
+    },
+    {
+      "stage": "contracts",
+      "exitCode": 0,
+      "seconds": 0.015592
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.015563
+    }
+  ],
+  "limitations": [
+    "Original normal builder failed at compatibility; there is no BUILD-COMPLETE, package, admission, or invocation receipt.",
+    "Normal validated componentization exposes only the six final 0.2.12 imports; raw modules still contain both 0.2.2 and 0.2.12 identities. No raw resources were manually renamed.",
+    "Import decoding establishes compiler inputs, not reachable effects or a functioning HTTP/runtime implementation.",
+    "Native products remain attributed to fc9b44a6; later development composition is not a new native or guest compilation."
+  ],
+  "compositionReview": {
+    "development": "6133f1cdeb01518b1aa00b447939ec8461e70438",
+    "recipeRowsUnchanged": 69,
+    "materialRowsUnchanged": 75,
+    "changedMaterial": {
+      "path": "tools/sdk_native_products_reader.py",
+      "old": {
+        "sha256": "sha256:3273c1932b7196cf49a343ae4a3f8a9f02ea07539f700b39d4c96d57aafced22",
+        "bytes": 16979
+      },
+      "current": {
+        "sha256": "sha256:3218c285fcaf2e85b8d22758b3c469add5d3c6b0a33571272779caaf848cdfde",
+        "bytes": 17336
+      }
+    },
+    "semanticAssessment": "The shared native reader adds a strict include_protocol=False default; the frozen fc9 wrapper does not opt in. Historical auxiliary trees and pins remain unchanged. Current native code has later API changes and is not attributed to this compiler observation.",
+    "currentNativeCompilationClaimed": false,
+    "newGuestCompilationClaimed": false
+  }
+}
