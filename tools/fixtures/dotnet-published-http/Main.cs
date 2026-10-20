@@ -37,11 +37,15 @@ public class ApiExportsImpl : IApiExports {
                 using var refitClient = RestService.CreateHttpClient(endpoint, settings);
                 var api = RestService.ForGenerated<IDomainApi>(refitClient, settings);
                 using var response = api.Get(cancellation.Token).GetAwaiter().GetResult();
-                if (response.Error is not null) {
-                    using var error = JsonDocument.Parse(response.Error.Content ?? throw new InvalidDataException("missing actual error body"));
-                    return prefix + Parse((int)response.StatusCode, error.RootElement);
+                if (response.Error is ApiRequestException requestError)
+                    return prefix + (requestError.InnerException is OperationCanceledException ? "cancelled" : "transport-error");
+                var status = response.StatusCode ?? throw new InvalidDataException("missing actual response status");
+                if (response.Error is ApiException responseError) {
+                    using var error = JsonDocument.Parse(responseError.Content ?? throw new InvalidDataException("missing actual error body"));
+                    return prefix + Parse((int)status, error.RootElement);
                 }
-                return prefix + Parse((int)response.StatusCode, response.Content);
+                if (response.Error is not null) throw new InvalidDataException("unexpected actual Refit error kind");
+                return prefix + Parse((int)status, response.Content);
             }
             using var client = new FlurlClient();
             var request = client.Request(endpoint).AllowAnyHttpStatus();
