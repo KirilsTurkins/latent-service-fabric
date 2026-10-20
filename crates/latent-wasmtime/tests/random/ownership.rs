@@ -270,5 +270,6 @@ async fn byte_destination_and_realloc_failures_retire_original_output_before_fre
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     assert_eq!(control.budget.outstanding_reservations(), 0);
     broken.idle();
+    assert_eq!(invoke(&broken, 1, 0, 33).await, SCALAR);
     assert_eq!(invoke(&f, 0, 8, 33).await, marker(8));
 }
