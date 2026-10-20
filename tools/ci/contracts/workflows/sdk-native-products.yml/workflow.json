@@ -12,7 +12,8 @@
           "feat/sdk-current-native-products-20261020",
           "diag/sdk-v7-native-products-20261020",
           "feat/http-phase-nominal-semantics-20261020",
-          "fix/http-phase-unused-nominal-type-20261020"
+          "fix/http-phase-unused-nominal-type-20261020",
+          "fix/http-phase-operational-authority-20261020"
         ]
       },
       "workflow_dispatch": null
@@ -24,7 +25,7 @@
   "requiredJobs": [
     "products"
   ],
-  "reviewReason": "Retain original native build and thirteen controls; add exact emitted nominal-response omission control and four source-bound final-graph controls, with unchanged budgets and historical obligations.",
+  "reviewReason": "Reviewed exact nominal HTTP phase authority fix: retain all original native-five build, twenty-five Rust and four Python controls, source/material checks, steps and bounds; append two exact-count declared-source metadata and real binding compiler controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/sdk-native-products.yml"
 }

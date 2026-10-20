@@ -54,7 +54,7 @@ impl Fixture {
         limits: latent_capabilities::broker::CapabilityBrokerLimits,
         structural_values: bool,
     ) -> Self {
-        Self::create_selected(local, limits, false, structural_values)
+        Self::create_selected(local, limits, false, structural_values, None)
     }
     pub fn transactional() -> Self {
         Self::create_selected(
@@ -62,7 +62,11 @@ impl Fixture {
             latent_capabilities::broker::CapabilityBrokerLimits::default(),
             true,
             false,
+            None,
         )
+    }
+    pub fn with_checked_package(bundle: latent_packaging::PackageBundle) -> Self {
+        Self::create_selected(false, Default::default(), false, false, Some(bundle))
     }
     #[expect(
         clippy::too_many_lines,
@@ -73,6 +77,7 @@ impl Fixture {
         limits: latent_capabilities::broker::CapabilityBrokerLimits,
         transactional: bool,
         structural_values: bool,
+        checked_package: Option<latent_packaging::PackageBundle>,
     ) -> Self {
         let roots = [TempRoot::new(), TempRoot::new(), TempRoot::new()];
         let manifest_profile = if transactional {
@@ -80,7 +85,9 @@ impl Fixture {
         } else {
             latent_manifest::ManifestValidationProfile::default()
         };
-        let bundle = if transactional {
+        let bundle = if let Some(bundle) = checked_package {
+            bundle
+        } else if transactional {
             let mut input = package_fixture::transactional_capsule();
             package_fixture::mutate_json(&mut input, "capsule.json", |manifest| {
                 manifest["metadata"]
