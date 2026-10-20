@@ -251,3 +251,157 @@ class JavaHttpFiberControlBoundaries(unittest.TestCase):
                 self.assertRaisesRegex(WorkflowError, 'linux-required'):
             campaign.run(Path('output'), Path('prepared'), Path('sdk'))
         verify.assert_not_called();fresh.assert_not_called()
+
+
+class JavaPublicCFailureContext(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        from tools.java_guest import c_failure_context as context
+        generated = root/'generated'
+        for name in context.FIXTURE_SOURCES:
+            path = generated/name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('void example(void* argument) {\n'
+                '    int32_t teavm_local_6 = 0;\n'
+                '    void* teavm_local_17 = argument;\n'
+                '    if (argument != NULL) {\n'
+                '        goto block_1;\n'
+                '    }\n'
+                'block_1:\n'
+                '    teavm_local_6 = teavm_local_17;\n'
+                '}\n', encoding='utf-8')
+        log = ''.join(f'{(generated/name).as_posix()}:8:19: error: incompatible pointer to integer conversion\n'
+                      for name in context.FIXTURE_SOURCES).encode('utf-8')
+        return generated, log
+
+    def test_exact_context_retains_real_declarations_control_flow_and_byte_identities(self):
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); generated, log = self.fixture(root)
+            value = context.collect(generated, log, context.FIXTURE_SOURCES)
+            self.assertEqual(value['logDigest'], digest(log))
+            self.assertEqual([row['path'] for row in value['errors']], list(context.FIXTURE_SOURCES))
+            for row in value['errors']:
+                self.assertEqual(row['sourceDigest'], digest(read_file(generated/row['path'])))
+                self.assertEqual(row['function']['text'], 'void example(void* argument) {')
+                self.assertEqual([line['text'].strip() for line in row['declarations']],
+                    ['int32_t teavm_local_6 = 0;', 'void* teavm_local_17 = argument;'])
+                self.assertIn('block_1:', [line['text'] for line in row['context']])
+                self.assertEqual(row['errorLine'], 8)
+                self.assertIn('    teavm_local_6 = teavm_local_17;', [line['text'] for line in row['context']])
+            self.assertNotIn(str(root), context.encoded(value).decode())
+            self.assertLessEqual(len(context.encoded(value)), context.MAX_CONTEXT)
+
+    def test_real_failed_compiler_command_preserves_original_command_and_retains_before_cleanup(self):
+        from tools.java_guest import c_failure_context as context
+        from tools.java_guest.compiler import Compiler
+        from tools.java_capsule_build import retain_logs
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); generated, log = self.fixture(root)
+            compiler = Compiler.__new__(Compiler)
+            compiler.directory = root/'compiler';compiler.directory.mkdir()
+            compiler.records = [];compiler.retained_bytes = 0
+            compiler.paths = {};compiler.environment = {};compiler.deadline = time.monotonic()+30
+            arguments = ('-target', 'wasm32-wasip1', '-O2', generated/'all.c')
+            with mock.patch('tools.java_guest.compiler.run_bounded_result',
+                    return_value=SimpleNamespace(returncode=1, stdout=b'', stderr=log)) as command, \
+                    self.assertRaisesRegex(ValueError, 'Java compiler stage failed: c-to-wasm'):
+                context.run(compiler, generated, context.FIXTURE_SOURCES, *arguments)
+            self.assertEqual(command.call_count, 1)
+            self.assertEqual(command.call_args.args[0], ['clang', *map(str, arguments)])
+            self.assertEqual(compiler.records[0]['exitCode'], 1)
+            retained = compiler.directory/'0-c-to-wasm-context.command.json'
+            self.assertEqual(read_json(retained)['status'], 'observed')
+            output = root/'output';output.mkdir();retain_logs(compiler.directory, output)
+            self.assertEqual(read_file(output/'compiler-logs'/retained.name), read_file(retained))
+
+    def test_default_and_success_paths_never_read_or_retain_source(self):
+        from tools.java_guest import c_failure_context as context
+        compiler = SimpleNamespace(run=mock.Mock(return_value='original success'))
+        with mock.patch.object(context, 'collect') as collect, mock.patch.object(context.paths, 'read') as read:
+            for selected in ((), context.FIXTURE_SOURCES):
+                self.assertEqual(context.run(compiler, Path('not-read'), selected, '-O2'), 'original success')
+            failure = RuntimeError('original failed compiler')
+            compiler.run.side_effect = failure
+            with self.assertRaises(RuntimeError) as caught:
+                context.run(compiler, Path('not-read'), (), '-O2')
+            self.assertIs(caught.exception, failure)
+            collect.assert_not_called();read.assert_not_called()
+
+    def test_unknown_selection_or_outside_location_cannot_read_arbitrary_sources(self):
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary);generated, log = self.fixture(root)
+            for selected in (['d/l/a/Capsule.c'], ('other.c',), ('../Capsule.c',), (True,)):
+                with self.subTest(selected=selected), mock.patch.object(context.paths, 'read') as read, \
+                        self.assertRaises(ValueError):
+                    context.collect(generated, log, selected)
+                read.assert_not_called()
+            outside = root/'outside.c';outside.write_bytes(b'private source should not be read')
+            with mock.patch.object(context.paths, 'read') as read, self.assertRaisesRegex(ValueError, 'outside-generated-root'):
+                context.collect(generated, f'{outside.as_posix()}:1:1: error: opaque\n'.encode(), context.FIXTURE_SOURCES)
+            read.assert_not_called()
+            ignored = generated/'unselected.c';ignored.write_bytes(b'private unselected data')
+            value = context.collect(generated, log + f'{ignored.as_posix()}:1:1: error: opaque\n'.encode(), context.FIXTURE_SOURCES)
+            self.assertNotIn('private', context.encoded(value).decode())
+
+    def test_anchored_reader_rejects_hardlinks_and_linked_directories(self):
+        import os
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary);generated, log = self.fixture(root)
+            source = generated/context.FIXTURE_SOURCES[0]
+            alias = root/'alias.c';os.link(source, alias)
+            with self.assertRaises(Exception):
+                context.collect(generated, log, context.FIXTURE_SOURCES)
+            alias.unlink()
+            linked = root/'linked'
+            try:
+                linked.symlink_to(generated, target_is_directory=True)
+            except OSError:
+                return  # Windows without symlink permission; hardlink refusal above remains mandatory.
+            linked_log = log.replace(generated.as_posix().encode(), linked.as_posix().encode())
+            with self.assertRaises(Exception):
+                context.collect(linked, linked_log, context.FIXTURE_SOURCES)
+
+    def test_source_log_error_declaration_and_output_bounds_fail_closed(self):
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary);generated, log = self.fixture(root)
+            for changed in (b'x'*(context.MAX_FILE+1), log*3, log.replace(b':8:19:', b':9999999:19:')):
+                with self.subTest(size=len(changed)), self.assertRaises(ValueError):
+                    context.collect(generated, changed, context.FIXTURE_SOURCES)
+            source = generated/context.FIXTURE_SOURCES[0]
+            for payload in (b'x'*(context.MAX_FILE+1), b'\0', b'x'*4097):
+                source.write_bytes(payload)
+                with self.subTest(size=len(payload)), self.assertRaises(Exception):
+                    context.collect(generated, log, context.FIXTURE_SOURCES)
+            lines = ['void example(void* argument) {', *[f'    int32_t teavm_local_{i} = 0;' for i in range(65)],
+                     '    teavm_local_0 = argument;', '}']
+            source.write_text('\n'.join(lines), encoding='utf-8')
+            changed = f'{source.as_posix()}:67:1: error: incompatible pointer\n'.encode()
+            with self.assertRaisesRegex(ValueError, 'declaration-bound'):
+                context.collect(generated, changed, context.FIXTURE_SOURCES)
+            generated, log = self.fixture(root)
+            with mock.patch.object(context, 'MAX_CONTEXT', 128), self.assertRaisesRegex(ValueError, 'byte-bound'):
+                context.collect(generated, log, context.FIXTURE_SOURCES)
+
+    def test_observation_failure_retains_closed_unavailable_and_original_exception_identity(self):
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            failure = RuntimeError('original compiler hard failure')
+            compiler = SimpleNamespace(run=mock.Mock(side_effect=failure), records=[{'stage': 'c-to-wasm'}],
+                                       directory=root, retained_bytes=0)
+            with self.assertRaises(RuntimeError) as caught:
+                context.run(compiler, root/'missing-generated', context.FIXTURE_SOURCES, '-O2')
+            self.assertIs(caught.exception, failure)
+            value = read_json(root/'0-c-to-wasm-context.command.json')
+            self.assertEqual(value, {'schemaVersion': context.SCHEMA, 'status': 'unavailable', 'stage': 'c-to-wasm',
+                'publicFixtureOnly': True, 'reason': 'bounded-selected-context-unavailable'})
+            (root/'0-c-to-wasm-context.command.json').unlink()
+            with mock.patch.object(context.paths, 'write_new', side_effect=OSError('observer')), \
+                    self.assertRaises(RuntimeError) as caught:
+                context.run(compiler, root/'missing-generated', context.FIXTURE_SOURCES, '-O2')
+            self.assertIs(caught.exception, failure)
+            self.assertEqual(compiler.run.call_count, 2)

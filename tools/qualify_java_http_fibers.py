@@ -13,6 +13,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import build_environment
 from tools.java_capsule_build import RECIPE, FIBER_IO_PROFILE, build
+from tools.java_guest.c_failure_context import FIXTURE_SOURCES
 from tools.java_standard_http_library import (COORDINATE, ORIGINAL_JAR, CANDIDATE,
     compiler_cache, project as library_project)
 from tools.java_http_fiber_node import run as node_controls, CASES
@@ -72,7 +73,8 @@ def execute(commands, binaries, wasi_sdk, output, *, read_only_cache=None):
         require(remaining > 0, 'java-http-fiber-original-deadline-expired')
         artifact = build(app, output/'build', binaries['capsule_contracts'], binaries['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric', wasi_sdk,
-            timeout=remaining, read_only_cache=cache, runtime_profile=FIBER_IO_PROFILE)
+            timeout=remaining, read_only_cache=cache, runtime_profile=FIBER_IO_PROFILE,
+            failure_contexts=FIXTURE_SOURCES)
         classpath = read_json(artifact/'java-classpath.json')
         jars = [row for row in classpath['artifacts'] if row['id'] == COORDINATE]
         require(len(jars) == 1 and jars[0]['originalDigest'] == ORIGINAL_JAR,

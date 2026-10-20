@@ -37,7 +37,8 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/java_registry_tls.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
           "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
-          "tools/java_guest/compiler_diagnostics.py",
+          "tools/java_guest/compiler_diagnostics.py", "tools/java_guest/c_failure_context.py",
+          "tools/dev_workflow/paths.py", "tools/dev_workflow/windows.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/async_imports.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
@@ -70,7 +71,10 @@ def retain_logs(source: Path, output: Path) -> None:
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
           offline_cache: Path | None = None, read_only_cache: Path | None = None,
-          runtime_profile: str | None = None, executable_approval: str | None = None) -> Path:
+          runtime_profile: str | None = None, executable_approval: str | None = None,
+          failure_contexts: tuple[str, ...] = ()) -> Path:
+    from tools.java_guest.c_failure_context import selection
+    selection(failure_contexts)
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
     if runtime_profile is not None and (type(runtime_profile) is not str or runtime_profile not in ACTIVATION_PROFILES):
@@ -169,6 +173,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
                 profile_selection = {"activation_profile": True} if runtime_profile in ACTIVATION_PROFILES else {}
+                if failure_contexts: profile_selection['failure_contexts'] = failure_contexts
                 if runtime_profile == FIBER_IO_PROFILE: profile_selection['fiber_io_profile'] = True
                 if server_plan is not None:
                     profile_selection.update(server_profile=True, server_bridge=automatic_bridge)

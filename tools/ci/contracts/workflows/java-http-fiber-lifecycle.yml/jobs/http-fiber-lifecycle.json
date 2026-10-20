@@ -74,7 +74,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-http-fiber-lifecycle-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-http-fiber-prepared/retrieval.json\n${{ runner.temp }}/java-http-fiber-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-http-fiber-lifecycle/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/compiler-cache-selection.json",
+          "path": "${{ runner.temp }}/java-http-fiber-prepared/retrieval.json\n${{ runner.temp }}/java-http-fiber-prepared/host/host-retrieval.json\n${{ runner.temp }}/java-http-fiber-lifecycle/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/qualification.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-fiber-lifecycle/campaign/compiler-cache-selection.json",
           "retention-days": 3
         }
       }
@@ -83,7 +83,7 @@
   },
   "jobId": "http-fiber-lifecycle",
   "kind": "job",
-  "reviewReason": "Retain only the failed public fiber fixture C-to-Wasm compiler stage under its existing 4 MiB producer bound.",
+  "reviewReason": "Retain only bounded fixed selected C failure context JSON alongside original failed compiler log; preserve all commands and gates.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

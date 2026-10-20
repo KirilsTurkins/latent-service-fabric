@@ -16,6 +16,7 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.java_guest.bindings import generate
 from tools.java_guest.surface import surface as wit_surface
 from tools.java_guest.sdk import install as install_sdk
+from tools.java_guest import c_failure_context
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
@@ -219,7 +220,8 @@ class Compiler:
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
                 activation_profile: bool = False, server_profile: bool = False, fiber_io_profile: bool = False,
                 server_bridge: bytes | None = None, http_client_profile: bool = False,
-                processor_stage=None) -> tuple[Path, dict]:
+                processor_stage=None, failure_contexts: tuple[str, ...] = ()) -> tuple[Path, dict]:
+        c_failure_context.selection(failure_contexts)
         if type(activation_profile) is not bool:
             raise ValueError("Java activation profile requires an explicit boolean selection")
         if type(fiber_io_profile) is not bool or fiber_io_profile and not activation_profile:
@@ -392,7 +394,7 @@ class Compiler:
         adapt = source_module(self.sdk / "tools/teavm_platform.py").adapt
         adaptation = adapt(generated)
         core, component = destination / "core.wasm", destination / "component.wasm"
-        self.run("c-to-wasm", "clang", "-target", "wasm32-wasip1", "-std=c11", "-O2",
+        c_failure_context.run(self, generated, failure_contexts, "-target", "wasm32-wasip1", "-std=c11", "-O2",
                  *(["-DLSF_JAVA_ACTIVATION_PROFILE=1"] if activation_profile else []),
                  "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
                  "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",
