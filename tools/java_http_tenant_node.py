@@ -296,6 +296,7 @@ def run(artifact, native, output, *, deadline):
             node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
             cleanup_owner(cleanup, node, result, 'node')
             clients = {'examples': client, 'foreign': client_for_foreign(client, node, work/'foreign', output/'foreign-controls')}
+            for selected in clients.values(): phase.component_operator(selected)
             probe = Probe(node, products['latentd'])
             source = signed/SERVICE;targets, publications = {}, {}
             for tenant in TENANTS:
