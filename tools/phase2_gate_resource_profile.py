@@ -34,6 +34,9 @@ OBSERVATION_ROWS = ("accepted-connections", "in-flight-rpcs", "control-jobs")
 FIXED_LIVE_ROWS = ("standalone-node", "wasmtime-compiler", "invocation-cleanup-driver",
                    "rollout-coordinator", "publication-catalog")
 FIXED_RUNTIME_ROWS = ("invocation-runtime", "control-runtime")
+FIXED_STACK_ROWS = tuple(name + "-stack" for name in FIXED_RUNTIME_ROWS)
+# Exact reviewed NodeFixed mapping envelope, not sampled RSS or guest capacity.
+THREAD_MAPPING_BYTES = 2 * 1024 * 1024 + 64 * 1024
 FIXED_UNKNOWN_ROWS = ("wasmtime-epoch", "grpc-listener")
 
 
@@ -94,7 +97,7 @@ def quiet(inventory):
     require(all(name in rows and rows[name]["activeCount"] is not None
                 for name in ZERO_ROWS + OBSERVATION_ROWS), "inventory-row-unavailable")
     require(set(rows) == set(ZERO_ROWS + OBSERVATION_ROWS + FIXED_LIVE_ROWS +
-                            FIXED_RUNTIME_ROWS + FIXED_UNKNOWN_ROWS), "inventory-fixed-rows")
+                            FIXED_RUNTIME_ROWS + FIXED_STACK_ROWS + FIXED_UNKNOWN_ROWS), "inventory-fixed-rows")
     for name in FIXED_LIVE_ROWS + FIXED_RUNTIME_ROWS + FIXED_UNKNOWN_ROWS:
         row = rows[name]
         maximum = 2 if name in FIXED_RUNTIME_ROWS else 1
@@ -107,6 +110,13 @@ def quiet(inventory):
         else:
             require(row["activeCount"] is not None
                     and 1 <= integer(row["activeCount"]) <= maximum, "inventory-fixed-unavailable")
+    for runtime, stack in zip(FIXED_RUNTIME_ROWS, FIXED_STACK_ROWS):
+        row, threads = rows[stack], rows[runtime]
+        require(row["kind"] == "byte" and row["ownership"] == "node-fixed"
+                and integer(row["configuredCount"]) == integer(threads["configuredCount"]) * THREAD_MAPPING_BYTES
+                and row["activeCount"] is not None
+                and integer(row["activeCount"]) == integer(threads["activeCount"]) * THREAD_MAPPING_BYTES,
+                "inventory-stack-profile")
     for row in rows.values():
         if row["activeCount"] is not None:
             require(integer(row["activeCount"]) <= integer(row["configuredCount"]),
