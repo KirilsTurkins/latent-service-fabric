@@ -3,8 +3,8 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay_retained_component }}",
-    "name": "Sign unchanged Java component and execute the original joined programme",
+    "if": "${{ github.event_name == 'workflow_dispatch' && (inputs.replay_retained_component || inputs.diagnose_retained_component) }}",
+    "name": "Sign unchanged Java component or diagnose closed modes explicitly",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -21,11 +21,11 @@
       },
       {
         "name": "Fetch exact original Java compiler and native observer sources",
-        "run": "git fetch --no-tags --depth=1 origin c27764d83e1be8b34cfe7351a30d221dec3a6dc8\ngit fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b\n"
+        "run": "git fetch --no-tags --depth=1 origin 7c50aa12f251567eff90b410bf5362a5ace7b7ff\ngit fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b\n"
       },
       {
         "name": "Check public-output, retained-build and pending-owner refusal controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_joined_resources tools.tests.test_java_joined_runtime tools.tests.test_java_joined_owners tools.tests.test_java_resource_replay tools.tests.test_sdk_native_products_reader -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_joined_resources tools.tests.test_java_joined_runtime tools.tests.test_java_joined_owners tools.tests.test_java_resource_replay tools.tests.test_java_resource_diagnostic tools.tests.test_sdk_native_products_reader -v\n"
       },
       {
         "env": {
@@ -39,17 +39,27 @@
         "uses": "actions/download-artifact",
         "with": {
           "github-token": "${{ github.token }}",
-          "name": "java-resource-runtime-c27764d83e1be8b34cfe7351a30d221dec3a6dc8",
+          "name": "java-resource-runtime-7c50aa12f251567eff90b410bf5362a5ace7b7ff",
           "path": "${{ runner.temp }}/java-resource-original",
-          "run-id": 39467964642
+          "run-id": 39476833569
         }
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "if": "${{ !inputs.diagnose_retained_component }}",
         "name": "Authenticate all original members and run only fresh signing and joined cases",
         "run": "python3 -B tools/replay_java_resource_runtime.py \\\n  --native \"$RUNNER_TEMP/java-resource-native\" \\\n  --retained \"$RUNNER_TEMP/java-resource-original\" \\\n  --output \"$RUNNER_TEMP/java-resource-replay\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "id": "diagnose-retained-java",
+        "if": "${{ inputs.diagnose_retained_component }}",
+        "name": "Observe exact fresh, clear and parallel outcomes without qualification",
+        "run": "python3 -B tools/replay_java_resource_runtime.py \\\n  --native \"$RUNNER_TEMP/java-resource-native\" \\\n  --retained \"$RUNNER_TEMP/java-resource-original\" \\\n  --output \"$RUNNER_TEMP/java-resource-replay\" --diagnostic\n"
       },
       {
         "if": "always()",
@@ -67,7 +77,7 @@
   },
   "jobId": "retained-component",
   "kind": "job",
-  "reviewReason": "Repair actual replay39472789123 official-origin ghAPI exit4 by scoped explicit GitHub token environment; commands/originalcompilation/manualguards/20min deadline/artifactpreimages/node13 unchanged",
+  "reviewReason": "Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-resource-runtime.yml"
 }

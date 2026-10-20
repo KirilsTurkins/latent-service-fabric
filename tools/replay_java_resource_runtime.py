@@ -15,7 +15,7 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity,source_identity
 from tools.rust_capsule_project import ROOT,digest,fresh,read_file,read_json,write_json
 
-SPEC='tools/fixtures/java-resource-runtime/c277-retained-public-inventory.json'
+SPEC='tools/fixtures/java-resource-runtime/498-retained-public-inventory.json'
 ALLOWED_DRIFT={'tools/qualify_java_resource_runtime.py','.github/workflows/java-resource-runtime.yml'}
 WIT=('wit/world.wit','wit/deps/clock/package.wit','wit/deps/random/package.wit',
     'wit/deps/log/package.wit','wit/deps/activation-runtime/package.wit')
@@ -24,7 +24,7 @@ WIT=('wit/world.wit','wit/deps/clock/package.wit','wit/deps/random/package.wit',
 def verify_origin(spec,run,job,artifact):
     require(spec['schemaVersion']=='latent.java.resource-runtime-retained.v1'
         and run['id']==spec['run']==job['run_id'] and run['head_sha']==job['head_sha']==spec['source']
-        and run['path']=='.github/workflows/java-resource-runtime.yml' and run['event']=='push'
+        and run['path']=='.github/workflows/java-resource-runtime.yml' and run['event']==spec.get('event','push')
         and run['head_branch']=='feat/java-resource-runtime-20261020'
         and run['conclusion']==job['conclusion']=='failure' and run['status']==job['status']=='completed'
         and job['id']==spec['job'] and artifact['workflow_run']['id']==spec['run']
@@ -33,7 +33,7 @@ def verify_origin(spec,run,job,artifact):
 
 
 def verify_members(directory,spec,restored=()):
-    rows=spec['members'];require(len(rows)==105,'java-resource-replay-fixed-public-inventory')
+    rows=spec['members'];require(len(rows)==spec.get('memberCount',105) and len(rows) in (105,209),'java-resource-replay-fixed-public-inventory')
     expected={row['path']:row for row in rows};require(len(expected)==len(rows),'java-resource-replay-distinct-inventory')
     pending=[directory];found=set();entries=0;total=0
     while pending:
@@ -67,19 +67,20 @@ def restore_original_layers(build):
 
 
 def original_materials(record,spec):
-    require(record['source']==spec['source'] and record['status']=='failed'
-        and record['stage']=='one-fresh-offline-fiber-io-component' and record['errorCategory']=='WorkflowError'
+    require(record['source']==spec.get('checkoutSource',spec['source']) and record['status']=='failed'
+        and record['stage']==spec.get('stage','one-fresh-offline-fiber-io-component') and record['errorCategory']=='WorkflowError'
         and record['guestComponentsCompiled']==2 and record['unsignedCompilerControlComponents']==1
         and record['engineRebuilt'] is False and record['nativeProductsBuilt']==0
         and set(record['materials'])==set(qualification.MATERIALS),'java-resource-replay-genuine-original-build')
     for name,expected in record['materials'].items():
-        raw=subprocess.check_output(['git','show',spec['source']+':'+name],cwd=ROOT,timeout=15)
+        raw=subprocess.check_output(['git','show',spec.get('checkoutSource',spec['source'])+':'+name],cwd=ROOT,timeout=15)
         require({'sha256':digest(raw),'bytes':len(raw)}==expected,'java-resource-replay-original-git-material')
         if name not in ALLOWED_DRIFT:
             require(file_identity(ROOT/name)==expected,'java-resource-replay-unchanged-exercised-source')
 
 
-def replay(native_directory,retained,output):
+def replay(native_directory,retained,output,*,diagnostic=False):
+    require(type(diagnostic) is bool,'java-resource-replay-closed-diagnostic-selector')
     require(sys.platform=='linux' and sys.version_info>=(3,13),'java-resource-replay-linux-python313')
     retained,native_directory=(Path(path).resolve(strict=True) for path in (retained,native_directory))
     output=Path(output).absolute()
@@ -97,25 +98,26 @@ def replay(native_directory,retained,output):
     require(compiled==original['compiledNative'],'java-resource-replay-identical-original-native-producer')
     for path in binaries.values():path.chmod(0o700)
     output=fresh(output);source=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=15).decode().strip()
-    names=(*qualification.MATERIALS,SPEC,'tools/replay_java_resource_runtime.py')
+    names=(*qualification.MATERIALS,SPEC,'tools/replay_java_resource_runtime.py','tools/java_resource_runtime_diagnostic.py')
     materials={name:file_identity(ROOT/name) for name in names};consumer=source_identity(ROOT)
     record={'schemaVersion':'latent.java.resource-runtime-replay.v1','status':'incomplete','source':source,
-        'compiledGuestSource':spec['source'],'originalArtifact':spec['artifact'],'originalMembersVerified':105,
+        'compiledGuestSource':spec.get('checkoutSource',spec['source']),'originalWorkflowHead':spec['source'],'originalArtifact':spec['artifact'],'originalMembersVerified':len(spec['members']),
         'originalCompiledGuestComponents':2,'originalUnsignedCompilerControlComponents':1,
         'guestCompilationRepeated':False,'guestComponentsCompiled':0,'nativeProductsBuilt':0,'engineRebuilt':False,
         'historicalQualificationRelabelled':False,'originalBuild':before,'compiledNative':compiled,
-        'archiveDigestVerification':'official-metadata-and-all105-member-preimages',
+        'archiveDigestVerification':'official-metadata-and-all-fixed-member-preimages',
         'restoredOriginalPublicLayers':restored,'materials':materials,'consumerNativeSource':consumer,
         'fullTicketQualification':False}
     try:
-        record['node']=qualification.execute(build,binaries,output/'node',time.monotonic()+600)
+        record['node']=qualification.execute(build,binaries,output/'node',time.monotonic()+600,diagnostic=diagnostic)
         verify_members(retained,spec,restored_paths)
         require(qualification.build_evidence(build)==before and products.verify_prepared(native_directory)==compiled
             and materials=={name:file_identity(ROOT/name) for name in materials} and source_identity(ROOT)==consumer
             and subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=15).decode().strip()==source,
             'java-resource-replay-final-source-build-products')
-        record.update(status='passed',outcomes=13,signedAndAdmitted=True)
-        write_json(output/'qualified.json',record);return record
+        record.update(status='diagnostic-observed' if diagnostic else 'passed',outcomes=5 if diagnostic else 13,
+            signedAndAdmitted=True,diagnosticOnly=diagnostic,originalProgrammePassed=not diagnostic)
+        write_json(output/('diagnostic.json' if diagnostic else 'qualified.json'),record);return record
     except BaseException as error:
         record.update(status='failed',errorCategory=type(error).__name__)
         write_json(output/'FAILED.json',record);raise
@@ -124,4 +126,5 @@ def replay(native_directory,retained,output):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('native','retained','output'):parser.add_argument('--'+name,type=Path,required=True)
-    args=parser.parse_args();print(replay(args.native,args.retained,args.output)['status'])
+    parser.add_argument('--diagnostic',action='store_true',help='Observe only closed fresh/clear/parallel paths; never qualify original13')
+    args=parser.parse_args();print(replay(args.native,args.retained,args.output,diagnostic=args.diagnostic)['status'])

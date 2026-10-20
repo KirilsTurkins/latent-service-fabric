@@ -97,7 +97,8 @@ def checked_release(release,capsule,before):
         'resource-java-original-world-component-service')
 
 
-def execute(artifact,native,output,deadline):
+def execute(artifact,native,output,deadline,*,diagnostic=False):
+    require(type(diagnostic) is bool,'resource-java-closed-diagnostic-selector')
     output=fresh(output);before=build_evidence(artifact)
     record={'schemaVersion':'latent.java.resource-runtime-node.v1','status':'incomplete',
         'fullTicketQualification':False,'runtimeGrantDenials':[]}
@@ -150,14 +151,19 @@ def execute(artifact,native,output,deadline):
                 require(publications['examples']!=publications['foreign'],'resource-java-independent-publications')
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='ordinary-joined-resource-callback-clock-rng-log-programme'
-                record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'])
+                if diagnostic:
+                    from tools.java_resource_runtime_diagnostic import programme
+                    record['diagnostic']=programme(clients,targets,probe,output,before['component']['sha256'])
+                else:
+                    record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'])
                 for tenant in tenants.TENANTS:delete_all(clients[tenant],[targets[tenant]['name']])
                 record['afterDeletes']=sample(client,probe,'resource-java-after-deletes',0)
                 clients['foreign'].node=None;stop(client,node);record['nodeShutdown']=stopped_record(node)
                 record['peerShutdown']=stop_observation_peer(peer)
                 stderr=bytes(node.buffers[1]);(output/'node-stderr.txt').write_bytes(stderr)
                 record['nativeTimerObservations']=observer.observe(stderr)
-                require(record['nativeTimerObservations']['status']=='observed','resource-java-final-positive-timers')
+                require(record['nativeTimerObservations']['status'] in ({'not-observed','observed'} if diagnostic else {'observed'}),
+                    'resource-java-final-positive-timers')
             finally:
                 for selected in clients.values():selected.node=None
                 if node is not None:node.close();(output/'node-stderr.txt').write_bytes(bytes(node.buffers[1]))
@@ -168,8 +174,9 @@ def execute(artifact,native,output,deadline):
         require(build_evidence(artifact)==before and record['nodeShutdown']['reaped']
             and record['nodeShutdown']['record']['clean'] and time.monotonic()<commands.deadline
             and sum(client.calls for client in clients.values())<=384,'resource-java-final-identity-and-retirement')
-        record.update(status='passed',build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
-        write_workflow_receipt(output/'qualified.json',record);return record
+        record.update(status='diagnostic-observed' if diagnostic else 'passed',diagnosticOnly=diagnostic,
+            originalProgrammePassed=not diagnostic,build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
+        write_workflow_receipt(output/('diagnostic.json' if diagnostic else 'qualified.json'),record);return record
     except BaseException as error:
         record.update(status='failed',stage=stage,errorCategory=type(error).__name__,commands=commands.records)
         write_workflow_receipt(output/'FAILED.json',record);raise

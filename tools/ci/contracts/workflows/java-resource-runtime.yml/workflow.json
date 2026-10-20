@@ -30,9 +30,14 @@
       },
       "workflow_dispatch": {
         "inputs": {
+          "diagnose_retained_component": {
+            "default": false,
+            "description": "Observe only retained fresh, clear and parallel paths; never qualify original13",
+            "type": "boolean"
+          },
           "replay_retained_component": {
             "default": false,
-            "description": "Re-sign the authenticated original c277 Java component without compiling again",
+            "description": "Re-sign the exact retained Java component and run all original13 cases",
             "type": "boolean"
           }
         }
@@ -47,7 +52,7 @@
     "joined-facilities",
     "retained-component"
   ],
-  "reviewReason": "Add explicit defaultfalse node-only original-component replay; preserve all originalpush/PR/default compiler steps/limits",
+  "reviewReason": "Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-resource-runtime.yml"
 }

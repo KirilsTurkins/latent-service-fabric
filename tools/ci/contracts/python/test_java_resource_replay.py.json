@@ -57,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_resource_replay.py",
-  "reviewReason": "Add immutable original Java build/source/layer refusal controls; no old case replacement",
+  "reviewReason": "Explicitly reviewed only2fixturedataassignments selectactual officialevent/checkout/stage; same4case names/assertions/decorators/bases; retained209 diagnostics preservealloriginal source/member refusal controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }

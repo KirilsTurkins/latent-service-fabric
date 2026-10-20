@@ -14,7 +14,7 @@ class JavaResourceReplay(unittest.TestCase):
     def test_original_failed_job_and_exact_immutable_artifact_are_required(self):
         spec=read_json(ROOT/replay.SPEC)
         run={'id':spec['run'],'head_sha':spec['source'],'path':'.github/workflows/java-resource-runtime.yml',
-            'event':'push','head_branch':'feat/java-resource-runtime-20261020','conclusion':'failure','status':'completed'}
+            'event':spec.get('event','push'),'head_branch':'feat/java-resource-runtime-20261020','conclusion':'failure','status':'completed'}
         job={'id':spec['job'],'run_id':spec['run'],'head_sha':spec['source'],'conclusion':'failure','status':'completed'}
         artifact={**spec['artifact'],'workflow_run':{'id':spec['run'],'head_sha':spec['source']},'expired':False}
         replay.verify_origin(spec,run,job,artifact)
@@ -59,7 +59,7 @@ class JavaResourceReplay(unittest.TestCase):
 
     def test_nonreader_current_material_drift_cannot_claim_the_original_build(self):
         spec=read_json(ROOT/replay.SPEC)
-        record={'source':spec['source'],'status':'failed','stage':'one-fresh-offline-fiber-io-component',
+        record={'source':spec.get('checkoutSource',spec['source']),'status':'failed','stage':spec.get('stage','one-fresh-offline-fiber-io-component'),
             'errorCategory':'WorkflowError','guestComponentsCompiled':2,'unsignedCompilerControlComponents':1,
             'engineRebuilt':False,'nativeProductsBuilt':0,'materials':{'owned/fixture.py':{'sha256':digest(b'original'),'bytes':8}}}
         with patch.object(replay.qualification,'MATERIALS',('owned/fixture.py',)),patch.object(replay.subprocess,'check_output',return_value=b'original'),patch.object(replay,'file_identity',return_value={'sha256':digest(b'changed!'),'bytes':8}):

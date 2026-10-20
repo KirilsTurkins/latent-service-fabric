@@ -94,3 +94,14 @@ Windows CRLF separately from the Linux guest LF envelope. That reference sink
 is never compiled into the component and does not qualify guest execution.
 The source change requires one fresh joined guest compilation through the
 original maintained 30-minute lane; the new signed 13 programme remains pending.
+
+
+The fresh corrected guest compiled successfully on PR checkout 7c50 (feature 4980),
+then still trapped on the first parallel call with 219 charged bytes. This is a
+second real failure; the host reference is not promoted to component evidence.
+The retained 209-member artifact binds that new guest and its original compiler
+receipts. The explicit manual diagnostic reuses it without compilation and
+observes only fresh, clear and parallel under the same grants and caps. Exact
+success values and real traps remain separate raw observations; every call must
+still be known/reaped and physically retired. Its `diagnostic.json` explicitly
+sets `originalProgrammePassed:false` and cannot qualify the normal 13 programme.
