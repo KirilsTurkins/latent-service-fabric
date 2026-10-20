@@ -434,6 +434,8 @@ jobs:
             ${{ runner.temp }}/dotnet-capsule-authoring/
             ${{ runner.temp }}/dotnet-capsule-dependencies/
             ${{ runner.temp }}/dotnet-authoring-tools/logs/
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stdout.txt
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stderr.txt
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
             ${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json
             ${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json
@@ -546,6 +548,8 @@ jobs:
             ${{ runner.temp }}/dotnet-closed-filesystem/joined/node/workflow.json
             ${{ runner.temp }}/dotnet-closed-filesystem/joined/node/FAILED.json
             ${{ runner.temp }}/dotnet-closed-filesystem/joined/node/controls/*.json
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stdout.txt
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stderr.txt
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
           if-no-files-found: warn
           retention-days: 3
@@ -635,6 +639,8 @@ jobs:
             ${{ runner.temp }}/dotnet-published-tasks/node/workflow.json
             ${{ runner.temp }}/dotnet-published-tasks/node/FAILED.json
             ${{ runner.temp }}/dotnet-published-tasks/node/controls/unexpected-invocation-diagnostics.json
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stdout.txt
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stderr.txt
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
           if-no-files-found: warn
           retention-days: 3
