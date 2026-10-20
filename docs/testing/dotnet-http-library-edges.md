@@ -30,7 +30,19 @@ template digest. The owning job builds one fresh guest through the original
 catalogue-free recipe and isolated, explicitly approved original generator, then
 requires all12signed cases and both pre-entry denials. No native host is rebuilt.
 
-Fresh guest qualification is pending. The original twenty library calls,
+[Run39497145967/job118885025728](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39497145967/job/118885025728)
+passed all12 signed cases and both pre-entry denials at source2260ef6. The
+[retained original evidence](evidence/dotnet-http-library-edges-signed-2026-10-20.json)
+binds all444 authenticated archive members,18 programme sources,40 runtime
+inputs and126 unchanged captured SDK files. One fresh normal application build
+took113.478 seconds; componentf5892399 is10,579,504 bytes. All14 physical
+retirement and18-counter zero-provider observations passed. The peer observed
+exactly12 authorized GETs,10 completed writes,zero mutations and no open
+connections. The node stopped cleanly/reaped. The original failed a456 run
+remains failed; the correction changes only normal application error handling.
+No host build or whole-ticket qualification is inferred.
+
+The original twenty library calls,
 fifteen HTTPS outcomes and their frozen replay inputs remain untouched and
 independently attributed. This does not complete #693's remaining lifecycle,
 state-isolation and resource-exhaustion requirements.
