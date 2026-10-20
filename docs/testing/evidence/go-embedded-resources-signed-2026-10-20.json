@@ -1,0 +1,283 @@
+{
+  "schemaVersion": "latent.go.embedded-resources.signed-observation.v1",
+  "status": "passed",
+  "source": "ba710b00000d7ea946f85dcf66148a98de19f800",
+  "mergedSource": "2dbb66c48d140f8375901cb2f091eac408cd75f9",
+  "run": 39390308334,
+  "job": 118519971545,
+  "artifact": 12250800303,
+  "artifactDigest": "sha256:e044d506fc8b4444bc665768c1b8b24421dc907c9366700edd3137a0e8de68f5",
+  "artifactBytes": 1562695,
+  "allMembersCrcAndHashVerified": 385,
+  "qualificationDigest": "sha256:6799d670dc4830ed5a345aec5024647ed84503e0de0d54d8593c093caa7e6c34",
+  "workflowDigest": "sha256:b36afaf4d46ae77c6450bc073ae35e9ccbbbaafa2df0cd5395687243d20076dc",
+  "observation": {
+    "originalInvocations": 27,
+    "newInvocations": 8,
+    "totalInvocations": 35,
+    "physicalSamples": 32,
+    "zeroActiveOwnerSamples": 14,
+    "allKnownReaped": true,
+    "cleanShutdown": true,
+    "crossTenantQualification": false
+  },
+  "decodedCases": {
+    "text": [
+      {
+        "ok": "resource|text=Gr\u00fc\u00dfe\u0000\u96ea\n|fresh=1"
+      }
+    ],
+    "binary": [
+      {
+        "ok": "resource|binary=00ff80410d0a|fresh=1"
+      }
+    ],
+    "empty": [
+      {
+        "ok": "resource|empty=0+0|eof=1|fresh=1"
+      }
+    ],
+    "missing": [
+      {
+        "ok": "resource|missing=not-exist|fresh=1"
+      }
+    ],
+    "independent": [
+      {
+        "ok": "resource|independent=2,2|close=other-readable|fresh=1"
+      }
+    ],
+    "copies": [
+      {
+        "ok": "resource|copies=independent|fresh=1"
+      }
+    ]
+  },
+  "component": {
+    "sha256": "sha256:7dd5a28a600109ee552a5fed7883b652b80fe0acd6a84dd265734d0293368adc",
+    "bytes": 2683719
+  },
+  "sourceInventoryDigest": "sha256:1fe4a58ca52c704f6ce045c36e76d3274122cf85f3bce516c6c4461fc1580d18",
+  "sourceInventoryRows": 98,
+  "buildObservationDigest": "sha256:cda7dc65bb203b2a857e984820658f6b3b21042b1d8d1056bcd16d4d62f47772",
+  "materials": {
+    "examples/embedded-resource-conformance/go/library.go": {
+      "sha256": "sha256:ee8eba69b864d58cd12013cc7f150382f3b5276909c0eb5fd5623ab26372f25d",
+      "bytes": 256
+    },
+    "examples/embedded-resource-conformance/go/data.go": {
+      "sha256": "sha256:6996965421e0e7520340291de1464d6ce2dc677ec8aa9e4a309db3e4621c50f9",
+      "bytes": 2600
+    },
+    "examples/embedded-resource-conformance/rust/library.rs": {
+      "sha256": "sha256:f931d893e8369d895f33f3d64bbef10dcfdd7b2f8c8bc2cede6b5312bf6b2747",
+      "bytes": 304
+    },
+    "examples/embedded-resource-conformance/rust/data.rs": {
+      "sha256": "sha256:808551b64b36dad3e39e51bfd50ec5d340fd0f70fd5e966c8e4e91cb2f199718",
+      "bytes": 1459
+    },
+    "examples/embedded-resource-conformance/typescript/library.mjs": {
+      "sha256": "sha256:0cd49d6940aea994d79a132f0b483a221bef7bda3808e97b1db851b7a1e4f96e",
+      "bytes": 219
+    },
+    "examples/embedded-resource-conformance/typescript/data.mjs": {
+      "sha256": "sha256:877209275afd02767e3eeaeb1cb2c1bdef9a1be4f8b1a0965e94db0bc636f9a7",
+      "bytes": 1171
+    },
+    "tools/embedded_resource_fixture.py": {
+      "sha256": "sha256:a1c7d2f9534c7b32ab1ebf92ff4303a582ff3575f91b88401e49eb2f55cec5af",
+      "bytes": 9712
+    },
+    "tools/embedded_resource_probe.py": {
+      "sha256": "sha256:42d32ec70791d4ac5d74c3f189c912887d34537b057dac5386473cb4a1756ed3",
+      "bytes": 2336
+    },
+    "tools/qualify_embedded_resources.py": {
+      "sha256": "sha256:bba379a9e953ef405edf86d648d6b887dae0a879040a39c49ade904a222795ca",
+      "bytes": 11970
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "sha256": "sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7",
+      "bytes": 34233
+    },
+    "tools/replay_go_embedded_resources.py": {
+      "sha256": "sha256:675e0c4ecf8534864d410a9e76a99aeb39ab929d7915a5ad522de46862e7d349",
+      "bytes": 3719
+    },
+    "tools/qualify_go_node_stop.py": {
+      "sha256": "sha256:24f42a5b9875a93f3f62737bcd23f49b0319dc733e60b6c15c849ce89c19d2eb",
+      "bytes": 22394
+    },
+    "tools/qualify_sdk_scratch.py": {
+      "sha256": "sha256:037b59b85d186442f7bafca7ee6292cf00cb1154cd4f8d5774822e2708aed98d",
+      "bytes": 16948
+    },
+    "apps/latentd/tests/standalone_node/startup.rs": {
+      "sha256": "sha256:d6b134b615c3ff39c9de975e6a12a3108a0598a249109ea1e236e2565db71854",
+      "bytes": 6856
+    }
+  },
+  "all14ProductionMaterialBytesEqual": true,
+  "selectedGoPackages": {
+    "importPath": "outside.example.test/embedded-resource-data",
+    "standard": false,
+    "imports": [
+      "bytes",
+      "embed",
+      "encoding/hex",
+      "errors",
+      "io",
+      "io/fs"
+    ],
+    "goFiles": [
+      "data.go"
+    ],
+    "embedFiles": [
+      "binary.bin",
+      "empty.bin",
+      "empty.txt",
+      "text.txt"
+    ],
+    "embedPatterns": [
+      "binary.bin",
+      "empty.bin",
+      "empty.txt",
+      "text.txt"
+    ],
+    "module": {
+      "Path": "outside.example.test/embedded-resource-data",
+      "Version": "v0.0.0",
+      "Sum": null
+    }
+  },
+  "nativeProducts": {
+    "latent": {
+      "sha256": "sha256:89f271237572b4d038c9bc8f750fc5d26b101c1d9ae26d7bbb330cf4492c31cf",
+      "bytes": 68822632
+    },
+    "latentd": {
+      "sha256": "sha256:9edddd5b7c717cc52697da8fe7956f5e72cd272a021f9cd5fefae6dfaec74d79",
+      "bytes": 184372872
+    },
+    "examples/package": {
+      "sha256": "sha256:a651511c18cd47291f4a5c361374146283099b9932747ef546b80aeec50dae14",
+      "bytes": 17727600
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:eced9e7bb21f4ce41d1f7c6cd48755cd6b9b00ff209d1f32b63de9e556489e2f",
+      "bytes": 7224920
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:2f9b3a63d33aa6e890d9559b757dc861d04ae0eaf5376a618ed547a3f65444b0",
+      "bytes": 23848176
+    }
+  },
+  "nativeRebuilt": false,
+  "companionComponentsRecompiled": false,
+  "currentNormalReceiptFabricated": false,
+  "fullTicketQualification": false,
+  "crossTenantQualification": false,
+  "capture": {
+    "packages": [
+      "outside.example.test/embedded-resource-library",
+      "outside.example.test/embedded-resource-data"
+    ],
+    "data": {
+      "binary.bin": {
+        "digest": "sha256:1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b",
+        "size": 6
+      },
+      "empty.bin": {
+        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      },
+      "empty.txt": {
+        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      },
+      "text.txt": {
+        "digest": "sha256:bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd",
+        "size": 12
+      }
+    },
+    "capturedInputIdentity": "sha256:70b00fa758b57667cb819c3085cb1b018ca1dbf4ae315f427c2aacd8c5bbaf08",
+    "candidateDigest": "sha256:ca4d8ad08c56e9ad4cb01ffea0d69ccbcb1e531d4abb38a42e7bdcf0d5ed9acd",
+    "originalsRemoved": true,
+    "catalogueRegistration": false,
+    "applicationResourceBridge": false
+  },
+  "historicalNative": {
+    "qualification": {
+      "sha256": "sha256:3fcb2d0f268854384e313d40f1271e5dbe54d439acc2fcfc2c49a284e043e4e1",
+      "bytes": 14532
+    },
+    "sourceInputs": {
+      "sha256": "sha256:7e304b1e14318155c63693eeebcdf6ac34fd277100d06369dbc7f1406ca4eefc",
+      "bytes": 38555
+    },
+    "node": {
+      "sha256": "sha256:fe21f5914a0a2c41afd66e055da09843482dfb224b4b7194bd7331f2880137c1",
+      "bytes": 259123
+    },
+    "producer": {
+      "run": 39373374237,
+      "job": 118465965449,
+      "head": "94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+      "artifact": 12242839929,
+      "artifactDigest": "sha256:d748d316bec91a06f3856b5f64e18e16ab71dd824d7a16d1fd8f6ec8c39ec4ea",
+      "originalNormalSignedInvocations": 27,
+      "newNativeBuild": false
+    },
+    "compatibility": {
+      "originalNormalSource": "94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+      "normalInvocations": 27,
+      "nativeSdkWitSchemasAndUsedHelpersEqual": false,
+      "nativeProductionSdkWitSchemasAndUsedHelpersEqual": true,
+      "nativeTestOnlyComposition": {
+        "originalInventory": {
+          "sha256": "sha256:d1d1507dc96ad0477edb06ec12af301e44c6a63d28abf9cb3c6e839d65b35738",
+          "files": 3299,
+          "bytes": 25834970,
+          "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+          "hermetic": false,
+          "implicitCompilerInputs": "not-attested"
+        },
+        "currentInventory": {
+          "sha256": "sha256:410f3bea073b8a650b7539c28e3ec1ff2a766b6c2e1ecdd43d41cad459f76c4f",
+          "files": 3299,
+          "bytes": 25835711,
+          "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+          "hermetic": false,
+          "implicitCompilerInputs": "not-attested"
+        },
+        "soleChangedSource": {
+          "path": "apps/latentd/tests/standalone_node/startup.rs",
+          "original": {
+            "sha256": "sha256:342724783f48ee39f53d62e0173e7ad6b3e0080972a4b80107dab94319f8389f",
+            "bytes": 6115
+          },
+          "current": {
+            "sha256": "sha256:d6b134b615c3ff39c9de975e6a12a3108a0598a249109ea1e236e2565db71854",
+            "bytes": 6856
+          }
+        },
+        "restoredExecutablesRebuilt": false
+      },
+      "unusedNormalWorkflowHelper": {
+        "original": {
+          "sha256": "sha256:c0e042d4c7c354246121125950ad96e430f26052fae59fad533c5dec4f0059cd",
+          "bytes": 32387
+        },
+        "current": {
+          "sha256": "sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7",
+          "bytes": 34233
+        }
+      },
+      "originalNormalProgrammeRelabelledAsCurrent": false,
+      "compiledSource": "94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+      "currentNativeCompilationClaimed": false,
+      "normalReceiptRelabelled": false
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Fresh ${{ matrix.language }} transitive data and trap recovery",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "if": "matrix.language == 'rust'",
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "if": "matrix.language == 'rust'",
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "if": "matrix.language == 'typescript'",
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install the original bounded compiler namespace and source controls",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install -r tools/requirements.lock\n"
+      },
+      {
+        "name": "Check fixed artifact selections original programmes and drift refusals",
+        "run": "python3 -B -m unittest tools.tests.test_embedded_resource_conformance tools.tests.test_go_embedded_resource_replay tools.tests.test_embedded_resource_language_replay -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the successful native producer before restoring executables",
+        "run": "python3 -B tools/replay_go_embedded_resources.py --record-producer --output \"$RUNNER_TEMP/embedded-native-producer.json\""
+      },
+      {
+        "name": "Restore only the authenticated native normal bundle",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+          "path": "${{ runner.temp }}/embedded-native-normal",
+          "run-id": 39373374237
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire only pinned public companion components and normal provenance",
+        "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"${{ matrix.language }}\" --acquire --output \"$RUNNER_TEMP/embedded-original\""
+      },
+      {
+        "if": "matrix.language == 'rust'",
+        "name": "Install the existing pinned Rust binding compiler",
+        "run": "python3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/embedded-tools\"\necho \"$RUNNER_TEMP/embedded-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "if": "matrix.language == 'typescript'",
+        "name": "Install the existing pinned public TypeScript compiler",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/embedded-tools\""
+      },
+      {
+        "name": "Build one fresh greeting sign and require the complete original plus six new calls",
+        "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"${{ matrix.language }}\" \\\n  --original \"$RUNNER_TEMP/embedded-original\" --normal-qualification \"$RUNNER_TEMP/embedded-native-normal\" \\\n  --producer-receipt \"$RUNNER_TEMP/embedded-native-producer.json\" --tools \"$RUNNER_TEMP/embedded-tools\" \\\n  --output \"$RUNNER_TEMP/embedded-resources\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public provenance components actual results and failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "embedded-resource-${{ matrix.language }}-${{ github.sha }}",
+          "path": "${{ runner.temp }}/embedded-native-producer.json\n${{ runner.temp }}/embedded-original/acquisition.json\n${{ runner.temp }}/embedded-resources/*.json\n${{ runner.temp }}/embedded-resources/logs/**\n${{ runner.temp }}/embedded-resources/build/*.json\n${{ runner.temp }}/embedded-resources/build/logs/**\n${{ runner.temp }}/embedded-resources/build/component.wasm\n${{ runner.temp }}/embedded-resources/node/workflow.json\n${{ runner.temp }}/embedded-resources/node/FAILED.json\n${{ runner.temp }}/embedded-resources/node/controls/*.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "language": [
+          "rust",
+          "typescript"
+        ]
+      }
+    },
+    "timeout-minutes": 20
+  },
+  "jobId": "resources",
+  "kind": "job",
+  "reviewReason": "Add two bounded historical-component resource references with exact separate native/component ancestry; preserve every original workflow and runner path.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/embedded-resource-languages-reference.yml"
+}

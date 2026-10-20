@@ -41,8 +41,8 @@ package inputs, materials, outputs, owner samples and shutdown.
 Nine focused source/capture/protocol controls pass, including old text-only
 Go embedding rejected by the broader asset-selection gate, missing transitive
 edges, unselected npm data, removed NUL, false fresh output, live owners and
-changed normal activation names. These are source controls. **The new Go,
-Rust and TypeScript signed programmes are pending.** Existing compiler-level
+changed normal activation names. These are source controls. **The Go35
+programme passed; the Rust and TypeScript signed programmes are pending.** Existing compiler-level
 missing/traversal/collision/limit/tamper controls and their shared production
 paths remain distinct from runtime data observations.
 
@@ -63,12 +63,53 @@ producer validator allows only its enumerated unused-runner and native-test
 postimages; this resource lane additionally requires its exact reviewed
 resource selector. The original native producer and normal27 receipt stay
 historical. Only one fresh greeting is built, normally signed/admitted, then
-all original27 plus eight new calls are required. Its actual result is pending.
+all original27 plus eight new calls are required.
+
+Run39390308334/job118519971545 passed on frozen ba710. The
+[source-bound observation](../testing/evidence/go-embedded-resources-signed-2026-10-20.json)
+records35 known/reaped invocations,32 physical samples,14 zero-active-owner
+samples and clean shutdown. All14 exercised material bytes equal merged2dbb
+source; the fresh component and98-row source inventory are bound to their
+actual build observation. Six exact data cases, explicit trap and fresh binary
+recovery retained zero outbound/log/effect counts. Artifact12250800303's385
+members passed CRC/hash verification. Native/companion ancestry remains94d;
+no native rebuild or fabricated current normal qualification is claimed.
 
 The job installs the already pinned componentize-go tool and Go1.27.2 compiler;
 it does not rebuild latentd, the four companions or the original SDK baseline.
 Public metadata/receipts and the fresh component are retained, with no demo
 signing keys, compiler caches or GitHub credentials in the artifact. Twelve
 source controls comprise the nine fixture/protocol cases and three replay
-source/producer/workflow cases. Rust and TypeScript still need their separately
-authenticated retained-product lanes; this Go job supplies no pass for them.
+source/producer/workflow cases. This Go job supplies no pass for Rust or
+TypeScript.
+
+## Targeted Rust and TypeScript reference lanes
+
+The separate input-free20-minute matrix in
+`embedded-resource-languages-reference.yml` builds one greeting per language;
+it preserves all existing authoring jobs. It reuses the same authenticated94d
+native products through the maintained closed source-compatibility predicate.
+Four companion components and their original normal receipt have separate
+producer identities: Rust38 from run39358494292/artifact12236803645 and
+TypeScript02f (compiled merge2cd6) from run39319524998/artifact12222984675.
+The latter is the original captured-dependency normal30 programme, including
+its three generator calls; it is not relabelled as the dependency-free27.
+
+Acquisition checks the exact published artifact metadata, then reads only
+fixed public companion/package layers and provenance through bounded HTTP
+ranges. It excludes native executables, compiler caches, application source
+payloads and signing keys. Each selected member passes ZIP CRC; pinned normal
+qualification/source/node digests bind the four original component markers,
+build observations and complete package-input manifests. The whole remote
+archive is not downloaded or independently rehashed; the API archive digest
+is recorded as metadata, separately from verified selected bytes.
+
+Actual authenticated original receipts contain Rust27 invocations/24 physical
+samples/six idle samples and TypeScript30/27/nine. The new programme therefore
+requires Rust33/30/12 and TypeScript36/33/15, retaining the complete original
+named activation sequence in each case. Five additional focused controls
+reject producer substitution, private/arbitrary member selection, changed or
+rehashed normal counts/names, unknown outcomes and companion marker drift.
+These signed results remain pending. Original component ancestry, selected
+native ancestry and fresh current compiler/fixture source remain separate;
+neither historical normal receipt is relabelled as current compilation.

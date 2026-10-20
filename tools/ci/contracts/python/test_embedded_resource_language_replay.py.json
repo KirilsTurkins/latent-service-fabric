@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "EmbeddedLanguageReplay.test_component_producer_requires_every_exact_published_identity",
+    "EmbeddedLanguageReplay.test_only_four_public_companions_and_fixed_normal_records_are_selected",
+    "EmbeddedLanguageReplay.test_pinned_normal_receipt_binds_original_names_counts_and_all_four_markers",
+    "EmbeddedLanguageReplay.test_rehashed_duplicate_or_wrong_normal_counts_and_changed_marker_are_refused",
+    "EmbeddedLanguageReplay.test_separate_twenty_minute_manual_matrix_keeps_all_existing_jobs_untouched"
+  ],
+  "guards": {
+    "EmbeddedLanguageReplay.test_component_producer_requires_every_exact_published_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
+        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+      ],
+      "skipSites": []
+    },
+    "EmbeddedLanguageReplay.test_only_four_public_companions_and_fixed_normal_records_are_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
+        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+      ],
+      "skipSites": []
+    },
+    "EmbeddedLanguageReplay.test_pinned_normal_receipt_binds_original_names_counts_and_all_four_markers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
+        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+      ],
+      "skipSites": []
+    },
+    "EmbeddedLanguageReplay.test_rehashed_duplicate_or_wrong_normal_counts_and_changed_marker_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
+        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+      ],
+      "skipSites": []
+    },
+    "EmbeddedLanguageReplay.test_separate_twenty_minute_manual_matrix_keeps_all_existing_jobs_untouched": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88a384ded859e17ba8035fddcb84cc4801bec2fe863f9383582925e257867f03",
+        "class:setup-sha256:cf1f698e031c2e790ca2b41eb34367030ab60a47f38e8bf565e815ac0f6948b6"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_embedded_resource_language_replay.py",
+  "reviewReason": "Explicit fixture-only guard review: actual pinned TypeScript normal30 includes captured-dependency observations. Class fixture adds that real shape; all five test names remain, no skips or decorators added.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
