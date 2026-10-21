@@ -141,7 +141,13 @@ class HostStreamKernelOuter(unittest.TestCase):
         self.assertLess(poison.index("lsf_factory_context_current(context)"), poison.index("context->key"))
         self.assertIn("WRITE_ONCE(factory.uncertain, 1)", poison)
         self.assertNotIn("factory.uncertain =", raw)
-        self.assertEqual(raw.count("WRITE_ONCE(factory.uncertain, 1)"), 5)
+        self.assertEqual(raw.count("WRITE_ONCE(factory.uncertain, 1)"), 6)
+        head = raw[raw.index("int lsf_factory_audit_head_current("):raw.index("int lsf_factory_blob_queue(")]
+        self.assertIn("if (result == 1 && (!bytes || bytes > LSF_TCP_BYTES ||", head)
+        self.assertIn("bytes > factory.pool.records[copy->ticket.slot].bytes)", head)
+        self.assertLess(head.index("lsf_factory_blob_lookup_locked(address, LSF_PREPAID_AUDIT_HEAD, copy)"),
+                        head.index("factory.pool.contexts[copy->context->key.slot].poisoned = 1"))
+        self.assertLess(head.index("WRITE_ONCE(factory.uncertain, 1)"), head.index("result = -1;"))
         gate = (OWNED / "factory-private.h").read_text()
         self.assertIn("lsf_factory_selected_consumer(void)\n{\n    return NULL;", gate)
         for field in ("kernelBuilt", "actualOuterExecuted", "productionInstallation"):

@@ -354,3 +354,80 @@ class KernelAuditObjectSelection(unittest.TestCase):
         self.assertIn('/FAILED.json', artifact['path'])
         self.assertEqual(artifact['retention-days'], 3)
         self.assertEqual(workflow['concurrency']['cancel-in-progress'], False)
+
+
+class KernelBindObjectSelection(unittest.TestCase):
+    def test_twenty_two_objects_keep_all_sixty_nine_audit_definitions_and_add_six(self):
+        old = candidate.object_selection(False, False, False, False, True)
+        selected = candidate.object_selection(False, False, False, False, False, True)
+        self.assertEqual(len(selected), 22)
+        self.assertEqual(set(selected)-set(old), {
+            'net/ipv4/inet_hashtables.o', 'net/ipv4/inet_connection_sock.o'})
+        for name, symbols in old.items():self.assertEqual(selected[name], symbols)
+        names = [name for values in selected.values() for name in values]
+        self.assertEqual(len(names), 75)
+        self.assertEqual(len(set(names)), 75)
+        self.assertEqual(sum(name.startswith('lsf_') for name in names), 72)
+        self.assertEqual(selected['net/ipv4/inet_connection_sock.o'], ('inet_csk_get_port',))
+        self.assertEqual(set(selected['net/ipv4/inet_hashtables.o']), {
+            'lsf_prepaid_bind_check', 'lsf_prepaid_bind_owned', 'lsf_prepaid_bind_bucket_create',
+            'lsf_prepaid_bind2_allocate', 'lsf_prepaid_bind_return'})
+
+    def test_unknown_and_mixed_bind_profiles_refuse_before_acquisition(self):
+        for value in ('true', 'false', 0, 1, None, [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'closed-profile-selector'):
+                candidate.object_selection(False, False, False, False, False, value)
+        for index in range(5):
+            modes = [False]*5;modes[index] = True
+            with self.subTest(index=index), patch.object(candidate.maintained, 'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
+                    candidate.run(None, None, netlabel=modes[0], netport=modes[1], sidcache=modes[2],
+                        avc=modes[3], audit=modes[4], bind=True)
+                read.assert_not_called()
+
+    def test_bind_selection_refuses_local_build_before_archive_or_output(self):
+        with patch.dict(candidate.os.environ, {}, clear=True), patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
+                candidate.run(None, None, bind=True)
+            read.assert_not_called()
+
+    def test_dependent_profile_requires_original_audit_netlabel_and_sidcache_configuration(self):
+        before = {**dict.fromkeys(candidate.REQUIRED, 'y'), candidate.SELECTED:'n',
+            **dict.fromkeys(candidate.AUDIT_REQUIRED, 'y'), 'CONFIG_NETLABEL':'y',
+            'CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE':'256'}
+        after = {**before, candidate.SELECTED:'y'}
+        candidate.selected_configuration(before, after)
+        for verify, name, invalid in ((candidate.audit_configuration,'CONFIG_AUDIT','n'),
+            (candidate.audit_configuration,'CONFIG_AUDITSYSCALL','n'),
+            (candidate.netlabel_configuration,'CONFIG_NETLABEL','n'),
+            (candidate.sidcache_configuration,'CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE','512')):
+            verify(before, after)
+            with self.subTest(name=name),self.assertRaises(ValueError):verify({**before,name:invalid},after)
+            with self.subTest(changed=name),self.assertRaises(ValueError):verify(before,{**after,name:invalid})
+
+    def test_exclusive_bind_job_retains_closed_inputs_targets_and_original_bounds(self):
+        import yaml
+        workflow = yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        events = workflow.get('on', workflow.get(True))
+        self.assertEqual(events['workflow_dispatch']['inputs']['bind'], {
+            'description':'Compile the closed bind-bucket source profile with mandatory audit',
+            'type':'boolean','default':False})
+        job = workflow['jobs']['bind-objects']
+        self.assertEqual(job['timeout-minutes'], 20)
+        guard = next(step for step in job['steps'] if 'env' in step)
+        self.assertEqual(set(guard['env']), {'NETLABEL_REQUEST','NETPORT_REQUEST',
+            'SIDCACHE_REQUEST','AVC_REQUEST','AUDIT_REQUEST','BIND_REQUEST'})
+        self.assertIn("assert all(value in ('', 'true', 'false') for value in values)",guard['run'])
+        self.assertIn("assert values.count('true') <= 1",guard['run'])
+        commands = '\n'.join(step.get('run','') for step in job['steps'])
+        self.assertIn('--bind', commands)
+        self.assertNotIn('${{ inputs.', commands)
+        self.assertNotIn('scripts/config', commands)
+        self.assertIn('gcc make flex bison bc libelf-dev libssl-dev', commands)
+        self.assertIn('tools.tests.test_host_stream_kernel_bind -v', commands)
+        artifact = job['steps'][-1]['with']
+        for name in candidate.object_selection(False, False, False, False, False, True):
+            self.assertIn('/objects/'+name, artifact['path'])
+        self.assertIn('/FAILED.json',artifact['path'])
+        self.assertEqual(artifact['retention-days'], 3)
+        self.assertEqual(workflow['concurrency']['cancel-in-progress'], False)

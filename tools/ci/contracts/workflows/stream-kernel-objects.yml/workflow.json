@@ -14,7 +14,8 @@
           "feat/stream-kernel-netport-objects-20261021",
           "feat/stream-kernel-audit-owner-20261021",
           "feat/stream-kernel-avc-consumer-20261021",
-          "feat/stream-kernel-audit-skb-20261021"
+          "feat/stream-kernel-audit-skb-20261021",
+          "feat/stream-kernel-route-owners-20261021"
         ],
         "paths": [
           ".github/workflows/stream-kernel-objects.yml",
@@ -26,6 +27,7 @@
           "tools/host_stream_kernel_avc.py",
           "tools/host_stream_kernel_audit_skb.py",
           "tools/host_stream_kernel_audit.py",
+          "tools/host_stream_kernel_bind.py",
           "research/standard-outbound/linux-6.12-lineage/**"
         ]
       },
@@ -39,6 +41,11 @@
           "avc": {
             "default": false,
             "description": "Compile the closed AVC with SID-cache source profile",
+            "type": "boolean"
+          },
+          "bind": {
+            "default": false,
+            "description": "Compile the closed bind-bucket source profile with mandatory audit",
             "type": "boolean"
           },
           "netlabel": {
@@ -66,12 +73,13 @@
   "requiredJobs": [
     "audit-objects",
     "avc-objects",
+    "bind-objects",
     "netlabel-objects",
     "netport-objects",
     "selected-objects",
     "sidcache-objects"
   ],
-  "reviewReason": "Add one exclusive20-object mandatory audit/SKB source compile lane, preserving5old job bodies except exclusiveif and all25old test guards. Keep61existing globals plus8(6private and2originalNetlink), originalAUDIT/AUDITSYSCALL=y, NETLABEL=y andSIDcache256 withoutoverride; same20min/900s/300s/-j2/-Werror/config/security/archive/process/diagnostic bounds. Source implementation true is separate from actualAuditExecuted=false/fullclosure=false; no link/boot/installation credit.",
+  "reviewReason": "Add the exclusive closed bind-bucket object-only profile over the full mandatory-audit floor; preserve all existing jobs, commands, tests, security config and original runtime/diagnostic limits. No kernel execution or installation qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }
