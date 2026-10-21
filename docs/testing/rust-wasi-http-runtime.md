@@ -116,8 +116,9 @@ retained the closed `cannot-block-sync-task` trap from its first ordinary Waki
 call; the diagnostic is not qualification. The Component Model's
 [concurrency contract](https://github.com/WebAssembly/component-model/blob/main/design/mvp/Concurrency.md)
 distinguishes a function's async effect from its Core ABI. Generator-only controls
-verify the explicit contract and unchanged ordinary source bodies; fresh signed
-execution is still required for the corrected profile.
+verify the explicit contract and unchanged ordinary source bodies. The installed
+finite programme now proves real execution of that contract; the complete signed
+runtime matrix remains pending.
 
 The `8e6ce8d` installed owning attempt compiled one genuine installed-entry
 component with all 32 normal compiler/composition commands passing. Its
