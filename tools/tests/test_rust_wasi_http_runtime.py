@@ -128,6 +128,18 @@ class SourceAndNativeSeparation(unittest.TestCase):
             with self.subTest(mutate=mutate),self.assertRaises(Exception):
                 qualification.catalogue_inputs(source,recipe,altered)
 
+    def test_new_native_tuple_requires_exact_source_even_for_the_old_reviewed_formatter_pair(self):
+        proof=json.loads((qualification.ROOT/'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json').read_text())
+        original=proof['compiledNativeSource']
+        result=qualification.native_source_compatibility(original,copy.deepcopy(original))
+        self.assertTrue(result['compiledSourceByteExact'])
+        self.assertEqual(result['reviewedFormatting'],[])
+        for selected in (proof['formattedConsumerSource'],dict(original,files=original['files']+1),{}):
+            with self.subTest(selected=selected),self.assertRaisesRegex(RuntimeError,'exact-compiled-native-source'):
+                qualification.native_source_compatibility(original,selected)
+        with self.assertRaisesRegex(RuntimeError,'exact-compiled-native-source'):
+            qualification.native_source_compatibility({},{})
+
     def test_only_the_reviewed_unlinked_frontend_pair_may_differ(self):
         # The newer historical C tuple already contains the reviewed frontend.
         # Its entire auxiliary manifest must now match, with no old-pair waiver.

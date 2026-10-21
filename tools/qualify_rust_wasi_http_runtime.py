@@ -21,7 +21,6 @@ if __package__ in {None,''}:
 
 from tools import rust_wasi_http_runtime_fixture as fixture, rust_wasi_http_runtime_node as node
 from tools import rust_wasi_http_inputs as runtime
-from tools.c_thread_native_source import compatibility as native_source_compatibility, REVIEW as FORMAT_REVIEW
 from tools.application_dependencies import verify_inputs
 from tools.build_observation import build_environment, resolve_tools
 from tools.java_replay_materials import git_source_identity
@@ -40,9 +39,16 @@ NATIVE_SOURCE='f0d36b38d39a837cef7f6242b4b4a99aa36b8b75'
 MATERIALS=('tools/qualify_rust_wasi_http_runtime.py','tools/rust_wasi_http_runtime_fixture.py',
     'tools/rust_wasi_http_fixture.py','tools/rust_wasi_http_runtime_node.py','tools/qualify_rust_wasi_http_inputs.py',
     'tools/c_thread_native_products.py','tools/sdk_native_products_reader.py',
-    'tools/c_thread_native_source.py',FORMAT_REVIEW,
     'tools/java_replay_materials.py','tools/qualify_rust_capsules.py',
     'tools/install_guest_bindgen.py','tools/toolchain.toml',*node.MATERIALS)
+
+
+def native_source_compatibility(original,current):
+    require(type(original) is dict and type(current) is dict
+        and set(original)=={'sha256','files','bytes','scope','hermetic','implicitCompilerInputs'}
+        and original==current,'rust-http-exact-compiled-native-source')
+    return {'compiledNativeSource':original,'consumerNativeSource':current,
+        'compiledSourceByteExact':True,'reviewedFormatting':[]}
 
 
 def native_compatibility(original,current):
