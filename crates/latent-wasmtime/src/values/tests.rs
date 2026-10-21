@@ -9,8 +9,8 @@ use super::*;
 mod bounds;
 mod composites;
 mod differential;
-mod host_memory;
 mod dynamic_memory;
+mod host_memory;
 #[cfg(target_os = "linux")]
 mod measurement;
 mod scalars;

@@ -182,11 +182,26 @@ def sdk_files() -> dict[str, bytes]:
     files = {}
     for directory in SDK_DIRECTORIES:
         files.update({directory + "/" + path: data for path, data in snapshot(ROOT / directory).items()})
-    root = tomllib.loads((ROOT / "Cargo.toml").read_text())
     original = (ROOT / "Cargo.toml").read_text()
-    # Keep the authoritative inheritance tables byte-for-byte. Only workspace
-    # membership changes in this isolated, vendored SDK workspace.
+    root = tomllib.loads(original)
+    # Keep inheritance byte-for-byte, except the named host-only Wasmtime fork:
+    # standalone SDK metadata resolves every target, including the bindings'
+    # native target. That target keeps the original authenticated registry crate.
     tables = original[original.index("[workspace.package]"):]
+    selected = root["workspace"]["dependencies"].get("wasmtime")
+    if isinstance(selected, dict) and "path" in selected:
+        from tools import host_codec_wasmtime as codec_wasmtime
+
+        if selected != codec_wasmtime.DEPENDENCY:
+            raise ValueError("host Wasmtime selection not maintained")
+        codec_wasmtime.verify(ROOT)
+        prefix = 'wasmtime = { path = "crates/vendor/wasmtime", '
+        if tables.count(prefix) != 1:
+            raise ValueError("host Wasmtime registry projection drift")
+        tables = tables.replace(prefix, "wasmtime = { ", 1)
+        expected = {key: value for key, value in selected.items() if key != "path"}
+        if tomllib.loads(tables)["workspace"]["dependencies"]["wasmtime"] != expected:
+            raise ValueError("host Wasmtime registry projection drift")
     files["Cargo.toml"] = ("[workspace]\nresolver = \"2\"\nmembers = [\"sdk/rust-guest\", \"sdk/rust-standard-stdio\", \"crates/latent-component-bindings\"]\n\n" + tables).encode()
     for name in ("rust-toolchain.toml", "LICENSE", "NOTICE"):
         files[name] = read_file(ROOT / name)

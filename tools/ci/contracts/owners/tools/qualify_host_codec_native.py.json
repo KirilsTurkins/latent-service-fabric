@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Replace the disproved Store-retention assertion with actual cancellation destruction and same-budget cross-owner refund control; retain all61 mandatory controls.",
+  "reviewReason": "Bind both unchanged C controls to their literal compiled component::c::tests module names; retain exact61 controls,31 stages,five products and strict discovery.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "414f4d666294e458a92f80b50eb1a55d62fe9702a302ddacc4997c6bfd07d063"
+  "sha256": "77f8284310d8362570592f835bcab4ced7de3ad9da5b908f28fc1cc0b9a4b560"
 }
