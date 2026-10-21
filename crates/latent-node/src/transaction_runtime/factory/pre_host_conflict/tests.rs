@@ -58,7 +58,7 @@ async fn failed_opening(fixture: &Fixture, key: &str) -> Opening {
     let observed = seed
         .complete(
             ActivationOutcome::Succeeded(ActivationSuccess {
-                output: b"seed".to_vec(),
+                output: (b"seed".to_vec()).into(),
                 output_media_type: "application/octet-stream".into(),
                 metadata: Metadata::new(),
                 consumption,

@@ -173,6 +173,71 @@ class AuthenticatedUpstreamPlaceholderTests(unittest.TestCase):
             self.assertTrue(all("crates" in error and "owned" in error for error in validator.ERRORS))
 
 
+class AuthenticatedWasmtimePlaceholderTests(unittest.TestCase):
+    def setUp(self) -> None:
+        validator.ERRORS.clear()
+
+    def tearDown(self) -> None:
+        validator.ERRORS.clear()
+
+    @staticmethod
+    def fixture(root: Path) -> None:
+        import shutil
+        from tools import host_codec_wasmtime as provider
+        for name in ("Cargo.toml", "Cargo.lock"):
+            (root / name).write_bytes((provider.ROOT / name).read_bytes())
+        shutil.copytree(provider.ROOT / provider.PROVIDER, root / provider.PROVIDER)
+
+    def test_exact_seven_unchanged_upstream_paths_and_eight_occurrences_are_authenticated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            files = [path for path in validator.iter_source_files(root) if path.suffix == ".rs"]
+            with patch.object(validator, "ROOT", root), patch.object(validator, "files_with_suffix", return_value=files):
+                allowed = validator.authenticated_wasmtime_placeholders()
+                self.assertEqual(len(allowed), 7)
+                self.assertEqual(sum(sum(counts.values()) for counts in allowed.values()), 8)
+                validator.validate_interface_only_policy()
+            self.assertEqual(validator.ERRORS, [])
+
+    def test_wasmtime_source_token_count_or_new_path_drift_cannot_receive_an_allowance(self):
+        for kind in ("source", "token", "count", "new-path"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                self.fixture(root)
+                path = root / "crates/vendor/wasmtime/src/runtime/values.rs"
+                raw = path.read_bytes()
+                if kind == "source":
+                    path.write_bytes(raw + b"\n// unauthenticated source change\n")
+                elif kind == "token":
+                    path.write_bytes(raw.replace(b"unimplemented!", b"todo!", 1))
+                elif kind == "count":
+                    path.write_bytes(raw + b"\nfn added() { unimplemented!(); }\n")
+                else:
+                    (path.parent / "unreviewed.rs").write_bytes(b"fn added() { todo!(); }\n")
+                validator.ERRORS.clear()
+                files = [path for path in validator.iter_source_files(root) if path.suffix == ".rs"]
+                with patch.object(validator, "ROOT", root), patch.object(validator, "files_with_suffix", return_value=files):
+                    self.assertEqual(validator.authenticated_wasmtime_placeholders(), {})
+                    validator.validate_interface_only_policy()
+                self.assertTrue(any("Wasmtime placeholder source authentication failed" in error for error in validator.ERRORS))
+                self.assertTrue(any("implementation placeholder token" in error for error in validator.ERRORS))
+
+    def test_wasmtime_allowance_cannot_hide_owned_or_copied_upstream_placeholders(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            owned = root / "crates/owned/src"
+            owned.mkdir(parents=True)
+            (owned / "lib.rs").write_bytes(b"fn incomplete() { todo!(); }\n")
+            (owned / "values.rs").write_bytes((root / "crates/vendor/wasmtime/src/runtime/values.rs").read_bytes())
+            files = [path for path in validator.iter_source_files(root) if path.suffix == ".rs"]
+            with patch.object(validator, "ROOT", root), patch.object(validator, "files_with_suffix", return_value=files):
+                validator.validate_interface_only_policy()
+            self.assertEqual(len(validator.ERRORS), 2)
+            self.assertTrue(all("owned" in error for error in validator.ERRORS))
+
+
 class SourceTraversalTests(unittest.TestCase):
     def setUp(self) -> None:
         validator.ERRORS.clear()

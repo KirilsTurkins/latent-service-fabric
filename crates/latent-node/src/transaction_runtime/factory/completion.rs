@@ -185,7 +185,7 @@ fn command_observation(
                 error: DeclaredError {
                     code: result.code().unwrap_or("rejected").into(),
                     message: String::new(),
-                    payload: Vec::new(),
+                    payload: (Vec::new()).into(),
                     media_type: String::new(),
                     metadata: Metadata::new(),
                 },
@@ -252,7 +252,7 @@ fn bodyless_observation(outcome: &ActivationOutcome) -> ActivationOutcome {
             error: DeclaredError {
                 code: error.code.clone(),
                 message: String::new(),
-                payload: Vec::new(),
+                payload: (Vec::new()).into(),
                 media_type: String::new(),
                 metadata: Metadata::new(),
             },
@@ -271,7 +271,7 @@ fn bodyless_observation(outcome: &ActivationOutcome) -> ActivationOutcome {
 }
 fn empty_success(consumption: BudgetConsumption) -> ActivationOutcome {
     ActivationOutcome::Succeeded(ActivationSuccess {
-        output: Vec::new(),
+        output: (Vec::new()).into(),
         output_media_type: String::new(),
         consumption,
         committed_state_version: None,

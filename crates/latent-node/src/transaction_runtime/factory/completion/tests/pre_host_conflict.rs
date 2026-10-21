@@ -24,7 +24,7 @@ async fn seed(fixture: &Fixture) {
     host.finish_guest_access();
     let consumed = budget.finalize_at(None, std::time::Instant::now());
     let outcome = ActivationOutcome::Succeeded(ActivationSuccess {
-        output: b"seed".to_vec(),
+        output: (b"seed".to_vec()).into(),
         output_media_type: "application/octet-stream".into(),
         metadata: Metadata::new(),
         consumption: consumed.consumption().clone(),

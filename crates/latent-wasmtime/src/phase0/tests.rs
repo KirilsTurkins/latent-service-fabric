@@ -97,7 +97,7 @@ fn consumption() -> BudgetConsumption {
 
 fn returned(payload: &[u8]) -> GuestOutcome {
     GuestOutcome::Returned {
-        output: payload.to_vec(),
+        output: (payload.to_vec()).into(),
         output_media_type: values::MEDIA_TYPE.to_owned(),
         consumption: consumption(),
     }
@@ -108,7 +108,7 @@ fn declared(payload: &[u8]) -> GuestOutcome {
         error: DeclaredError {
             code: "declared-error".to_owned(),
             message: "component returned a declared error".to_owned(),
-            payload: payload.to_vec(),
+            payload: (payload.to_vec()).into(),
             media_type: values::MEDIA_TYPE.to_owned(),
             metadata: Metadata::new(),
         },
@@ -122,7 +122,7 @@ fn dynamic_results_preserve_legacy_success_domain_errors_and_consumption() {
     assert_eq!(
         adapter::outcome(returned(br#"[{"ok":"line\nquote\""}]"#), limits),
         GuestOutcome::Returned {
-            output: b"line\nquote\"".to_vec(),
+            output: b"line\nquote\"".to_vec().into(),
             output_media_type: ECHO_SUCCESS_MEDIA_TYPE.to_owned(),
             consumption: consumption(),
         }

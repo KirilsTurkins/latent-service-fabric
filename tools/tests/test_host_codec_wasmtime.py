@@ -1,0 +1,118 @@
+"""Exact-source admission for the one pinned Wasmtime allocation-hook fork."""
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import tempfile
+import tomllib
+import unittest
+from unittest.mock import patch
+
+from tools import ci_suite_inventory as registry, host_codec_wasmtime as source
+from tools.native_runtime_build import dependency_inventory
+from tools.native_runtime.common import InstallError
+
+
+class PinnedWasmtimeSource(unittest.TestCase):
+    def fixture(self, root):
+        shutil.copytree(source.ROOT / source.PROVIDER, root / source.PROVIDER)
+        for name in ('Cargo.toml', 'Cargo.lock'):
+            shutil.copyfile(source.ROOT / name, root / name)
+
+    def test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph(self):
+        checked = source.verify()
+        self.assertEqual(len(checked['files']), 255)
+        self.assertEqual(checked['nativeCohort'], source.COHORT)
+        self.assertEqual(checked['licenseFiles'], {'LICENSE': hashlib.sha256(
+            (source.ROOT / source.PROVIDER / 'LICENSE').read_bytes()).hexdigest()})
+        graph = registry.workspace(source.ROOT)
+        self.assertNotIn(source.NAME, graph)
+        self.assertIn('latent-wasmtime', graph)
+        with patch.object(source, 'verify', side_effect=ValueError('tampered-pinned-wasmtime')), \
+                self.assertRaisesRegex(ValueError, 'tampered-pinned-wasmtime'):
+            registry.workspace(source.ROOT)
+
+    def test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            directory = root / source.PROVIDER
+            for name in ('Cargo.toml', 'LICENSE', 'src/runtime/component/values.rs',
+                         'src/runtime/component/dynamic_memory.rs', 'UPSTREAM.latent.json',
+                         'README.latent.md', 'latent-dynamic-memory.patch'):
+                with self.subTest(name=name):
+                    target = directory / name
+                    original = target.read_bytes()
+                    target.write_bytes(original + b'\nchanged\n')
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            extra = directory / 'foreign.rs'
+            extra.write_text('foreign')
+            with self.assertRaisesRegex(ValueError, 'source-identity'):
+                source.verify(root)
+            extra.unlink()
+            target = directory / 'LICENSE'
+            target.unlink()
+            with self.assertRaisesRegex(ValueError, 'source-identity'):
+                source.verify(root)
+
+    def test_workspace_selection_isolation_global_override_and_registry_lock_are_refused(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            target = root / 'Cargo.toml'
+            original = target.read_bytes()
+            document = tomllib.loads(original.decode())
+            excluded = document['workspace']['exclude']
+            needle = ('exclude = ' + json.dumps(excluded)).encode()
+            self.assertEqual(original.count(needle), 1)
+            mutations = (
+                original.replace(needle, ('exclude = ' + json.dumps(
+                    [name for name in excluded if name != source.PROVIDER])).encode(), 1),
+                original.replace(b'path = "crates/vendor/wasmtime"', b'path = "foreign/wasmtime"', 1),
+                original + b'\n[patch.crates-io]\nwasmtime = {path="foreign"}\n',
+                original + b'\n[replace]\n"wasmtime:48.0.7" = {path="foreign"}\n')
+            for raw in mutations:
+                self.assertNotEqual(original, raw)
+                target.write_bytes(raw)
+                with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-'):
+                    source.verify(root)
+            target.write_bytes(original)
+            lock = root / 'Cargo.lock'
+            original = lock.read_bytes()
+            needle = b'name = "wasmtime"\nversion = "48.0.7"\n'
+            self.assertEqual(original.count(needle), 1)
+            lock.write_bytes(original.replace(needle, needle + b'source = "registry+https://github.com/rust-lang/crates.io-index"\n', 1))
+            with self.assertRaisesRegex(ValueError, 'lock-selection'):
+                source.verify(root)
+
+    def test_native_inventory_retains_original_license_and_distinct_fork_provenance(self):
+        package = {'id': 'pinned-local', 'name': source.NAME, 'version': source.VERSION,
+                   'source': None, 'license': 'Apache-2.0 WITH LLVM-exception',
+                   'manifest_path': str(source.ROOT / source.PROVIDER / 'Cargo.toml')}
+        metadata = {'packages': [package], 'resolve': {'nodes': [{'id': package['id'], 'deps': []}]}}
+        lock = tomllib.loads((source.ROOT / 'Cargo.lock').read_text())
+        sbom, licenses = dependency_inventory(metadata, lock, 'a' * 40, 0, {}, root_names=frozenset({source.NAME}))
+        self.assertEqual(licenses, {'licenses/wasmtime-48.0.7/LICENSE': source.ROOT / source.PROVIDER / 'LICENSE'})
+        self.assertIn(source.RECORD_SHA256, sbom['packages'][0]['comment'])
+        self.assertIn(source.COHORT, sbom['packages'][0]['comment'])
+        self.assertNotIn('checksums', sbom['packages'][0])
+        for change in ({'version': '48.0.8'}, {'license': 'MIT'}, {'manifest_path': str(source.ROOT / 'Cargo.toml')}):
+            with self.subTest(change=change), self.assertRaises(InstallError):
+                dependency_inventory({**metadata, 'packages': [{**package, **change}]}, lock,
+                    'a' * 40, 0, {}, root_names=frozenset({source.NAME}))
+
+    def test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'member').mkdir()
+            (root / 'foreign').mkdir()
+            (root / 'Cargo.toml').write_text('[workspace]\nmembers=["member"]\n')
+            (root / 'member/Cargo.toml').write_text('[package]\nname="member"\nversion="0.1.0"\n[dependencies]\nwasmtime={path="../foreign"}\n')
+            with self.assertRaisesRegex(ValueError, 'unregistered-path-dependency'):
+                registry.workspace(root)
+
+
+if __name__ == '__main__':
+    unittest.main()

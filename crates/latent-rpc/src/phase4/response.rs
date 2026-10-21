@@ -483,7 +483,7 @@ fn page(
     Ok(())
 }
 fn success(b: &mut Budget, value: &i::Success) -> Result<(), ValidationError> {
-    b.bytes(&value.payload, 1024 * 1024)?;
+    b.result_payload(&value.payload, 1024 * 1024)?;
     request::media_type(b, &value.media_type)?;
     if let Some(version) = &value.committed_state_version {
         b.id(version)?;
@@ -497,7 +497,7 @@ fn success(b: &mut Budget, value: &i::Success) -> Result<(), ValidationError> {
 fn rejection(b: &mut Budget, value: &i::DeclaredError) -> Result<(), ValidationError> {
     b.id(&value.code)?;
     b.string(&value.message, 4096)?;
-    b.bytes(&value.payload, 1024 * 1024)?;
+    b.result_payload(&value.payload, 1024 * 1024)?;
     request::media_type(b, &value.media_type)?;
     b.metadata(&value.metadata, false)
 }

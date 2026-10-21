@@ -573,3 +573,46 @@ fn retained_completion_keeps_original_cancelled_and_terminal_ancestor_fences() {
         assert_eq!(parent.outstanding_reservations(), 0);
     }
 }
+
+#[test]
+fn host_memory_resize_confirms_parent_peak_and_retains_terminal_child_capacity() {
+    let (parent, _, sample) = root(DelegationLimits::default());
+    parent.observe_peak_memory(100).unwrap();
+    let child = accept(
+        reserve(&parent, &request(100, 600, 0), sample).unwrap(),
+        sample,
+    );
+    let mut memory = child.accounting().reserve_host_memory(100).unwrap();
+    memory.confirm();
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        200
+    );
+    memory.grow(200).unwrap();
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        200
+    );
+    memory.confirm();
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        400
+    );
+    memory.shrink(200);
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        400
+    );
+    assert_eq!(child.accounting().host_memory_bytes(), 200);
+    let terminal = child.finish(None, sample.monotonic());
+    assert_eq!(terminal.consumption().peak_memory_bytes, 300);
+    assert!(memory.grow(1).is_err());
+    assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 1);
+    drop(memory);
+    assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 0);
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        400
+    );
+    assert_eq!(parent.outstanding_reservations(), 0);
+}

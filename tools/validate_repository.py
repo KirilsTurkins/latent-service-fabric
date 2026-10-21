@@ -524,6 +524,46 @@ UPSTREAM_RUSTLS_PLACEHOLDERS = {
 }
 
 
+UPSTREAM_WASMTIME_PLACEHOLDERS = {
+    "src/profiling_agent/jitdump.rs": {"unimplemented!": 1},
+    "src/runtime/debug.rs": {"unimplemented!": 1},
+    "src/runtime/values.rs": {"unimplemented!": 1},
+    "src/runtime/component/bindgen_examples/mod.rs": {"todo!": 2},
+    "src/runtime/externals/global.rs": {"unimplemented!": 1},
+    "src/runtime/gc/disabled/exnref.rs": {"unimplemented!": 1},
+    "src/runtime/vm/memory.rs": {"todo!": 1},
+}
+
+
+def authenticated_wasmtime_placeholders() -> dict[Path, dict[str, int]]:
+    """Recognize eight original occurrences in seven unchanged upstream files."""
+    sys.path.insert(0, str(ROOT))
+    try:
+        from tools import host_codec_wasmtime as provider
+    finally:
+        sys.path.pop(0)
+    if not (ROOT / provider.PROVIDER).exists():
+        return {}
+    try:
+        checked = provider.verify(ROOT)
+        record = json.loads((ROOT / provider.PROVIDER / "UPSTREAM.latent.json").read_bytes())
+        original = {row["path"]: {"sha256": row["sha256"], "bytes": row["bytes"]}
+                    for row in record["originalFiles"]}
+        allowed = {}
+        for name, counts in UPSTREAM_WASMTIME_PLACEHOLDERS.items():
+            if checked["files"][name] != original[name]:
+                raise ValueError("placeholder-source-must-be-unchanged-upstream")
+            relative = Path(provider.PROVIDER) / name
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            if any(text.count(token) != count for token, count in counts.items()):
+                raise ValueError("upstream-placeholder-occurrence-drift")
+            allowed[relative] = counts
+        return allowed
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        fail(f"upstream Wasmtime placeholder source authentication failed: {exc}")
+        return {}
+
+
 def authenticated_upstream_placeholders() -> dict[Path, dict[str, int]]:
     """Recognize only unchanged upstream occurrences in the sealed TLS source."""
     sys.path.insert(0, str(ROOT))
@@ -558,6 +598,7 @@ def authenticated_upstream_placeholders() -> dict[Path, dict[str, int]]:
 def validate_interface_only_policy() -> None:
     forbidden = ("todo!", "unimplemented!", "panic!(\"not implemented", "TODO_IMPLEMENTATION")
     allowed = authenticated_upstream_placeholders()
+    allowed.update(authenticated_wasmtime_placeholders())
     for path in files_with_suffix(".rs"):
         text = path.read_text(encoding="utf-8")
         for token in forbidden:

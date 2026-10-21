@@ -68,7 +68,7 @@ impl Recorder {
         }
         self.seen.lock().expect("observations").push(accounting);
         GuestOutcome::Returned {
-            output: Vec::new(),
+            output: (Vec::new()).into(),
             output_media_type: "test".to_owned(),
             consumption: BudgetConsumption {
                 cpu_fuel: 3,
@@ -167,7 +167,7 @@ impl ActivationManager for Manager {
                     output_media_type,
                     consumption,
                 }) => ActivationOutcome::Succeeded(ActivationSuccess {
-                    output,
+                    output: (output).into(),
                     output_media_type,
                     consumption,
                     committed_state_version: None,

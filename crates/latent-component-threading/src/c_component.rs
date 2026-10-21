@@ -344,6 +344,99 @@ mod tests {
     use std::borrow::Cow;
     use wasm_encoder::{CustomSection, ProducersField, ProducersSection};
 
+    fn public_lift_graph(async_type: bool) -> Graph<'static> {
+        Graph {
+            cores: vec![],
+            main: 0,
+            shim: 0,
+            fixup: 0,
+            raw_import: 0,
+            native_import: 0,
+            c: Some(CBoundary {
+                start_module: 0,
+                start_instances: 1,
+                root: 11,
+                initialize: 12,
+                realloc: 13,
+                post: 14,
+                lifted: false,
+                function_types: vec![Some(async_type)],
+            }),
+            signatures: vec![],
+            funcs: vec![
+                Value::MainFunc(11),
+                Value::MainFunc(13),
+                Value::MainFunc(14),
+            ],
+            tables: vec![],
+            memories: vec![Value::MainMemory(0)],
+            instances: vec![],
+            component_instances: vec![],
+            component_funcs: vec![],
+            native_imports: 0,
+            main_instances: vec![],
+            shim_instances: 0,
+            fixup_instances: vec![],
+            main_imports: vec![],
+            raw_table: None,
+            native_memory: None,
+            denied_uses: vec![],
+            raw_alias: false,
+        }
+    }
+    fn public_lift(options: Vec<CanonicalOption>) -> CanonicalFunction {
+        CanonicalFunction::Lift {
+            core_func_index: 0,
+            type_index: 0,
+            options: options.into(),
+        }
+    }
+    fn sync_abi_options() -> Vec<CanonicalOption> {
+        vec![
+            CanonicalOption::Memory(0),
+            CanonicalOption::Realloc(1),
+            CanonicalOption::PostReturn(2),
+            CanonicalOption::UTF8,
+        ]
+    }
+    #[test]
+    fn c_public_lift_requires_declared_async_type_with_original_sync_core_abi() {
+        let mut sync = public_lift_graph(false);
+        assert_eq!(
+            sync.canonical(public_lift(sync_abi_options())).unwrap_err(),
+            "c-component-single-owned-async-type-sync-abi-lift-after-initialize"
+        );
+        assert!(!sync.c.as_ref().unwrap().lifted);
+        let mut declared_async = public_lift_graph(true);
+        declared_async
+            .canonical(public_lift(sync_abi_options()))
+            .unwrap();
+        assert!(declared_async.c.as_ref().unwrap().lifted);
+        assert_eq!(declared_async.component_funcs, vec![false]);
+        assert!(
+            declared_async
+                .canonical(public_lift(sync_abi_options()))
+                .is_err()
+        );
+    }
+    #[test]
+    fn c_declared_async_effect_does_not_enable_callback_or_async_core_abi() {
+        for forbidden in [CanonicalOption::Async, CanonicalOption::Callback(0)] {
+            let mut graph = public_lift_graph(true);
+            let mut options = sync_abi_options();
+            options.push(forbidden);
+            assert_eq!(
+                graph.canonical(public_lift(options)).unwrap_err(),
+                "c-component-owned-sync-canonical-options"
+            );
+            assert!(!graph.c.as_ref().unwrap().lifted);
+            assert_eq!(
+                graph.options(&[forbidden]).unwrap_err(),
+                "c-component-async-callback-abi-not-selected"
+            );
+        }
+    }
+
     fn metadata(version: &str, name: &str, marker: &[u8]) -> Vec<u8> {
         metadata_with_generator(version, name, marker, false)
     }

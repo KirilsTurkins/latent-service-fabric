@@ -43,6 +43,17 @@ impl RetainedBytes {
         self.charge(value.capacity())
     }
 
+    pub(super) fn result_payload(
+        &mut self,
+        value: &latent_core::ResultPayload,
+        maximum: usize,
+    ) -> Result<(), Status> {
+        if value.capacity() > maximum {
+            return Err(exhausted());
+        }
+        self.charge(value.capacity())
+    }
+
     pub(super) fn metadata(
         &mut self,
         metadata: &Metadata,

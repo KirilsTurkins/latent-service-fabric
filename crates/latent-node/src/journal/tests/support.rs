@@ -51,7 +51,7 @@ pub(super) fn journal(active: usize, terminal: usize) -> (LocalActivationJournal
 
 pub(super) fn outcome() -> ActivationOutcome {
     ActivationOutcome::Succeeded(ActivationSuccess {
-        output: b"done".to_vec(),
+        output: (b"done".to_vec()).into(),
         output_media_type: "test".to_owned(),
         consumption: BudgetConsumption::default(),
         committed_state_version: None,

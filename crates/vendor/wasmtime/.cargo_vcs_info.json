@@ -1,0 +1,6 @@
+{
+  "git": {
+    "sha1": "c6846e13f64b07b7912d372db141397058b55f99"
+  },
+  "path_in_vcs": "crates/wasmtime"
+}

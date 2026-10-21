@@ -25,7 +25,7 @@ fn consumption() -> BudgetConsumption {
 
 fn success() -> ActivationOutcome {
     ActivationOutcome::Succeeded(ActivationSuccess {
-        output: b"binary\0payload".to_vec(),
+        output: (b"binary\0payload".to_vec()).into(),
         output_media_type: "application/octet-stream".into(),
         consumption: consumption(),
         committed_state_version: Some("state-3".into()),
@@ -39,7 +39,7 @@ fn declared() -> ActivationOutcome {
         error: DeclaredError {
             code: "business-rejection".into(),
             message: "component message".into(),
-            payload: b"opaque\0declared".to_vec(),
+            payload: (b"opaque\0declared".to_vec()).into(),
             media_type: "application/octet-stream".into(),
             metadata: Metadata::from([("detail".into(), "kept".into())]),
         },
