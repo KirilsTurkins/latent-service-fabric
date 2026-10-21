@@ -406,7 +406,11 @@ impl Root {
             reject(&mut body);
             body.instruction(&Instruction::I32Const(RECORD))
                 .instruction(&Instruction::I32Const(255))
-                .instruction(&Instruction::I32Store8(address(80)))
+                .instruction(&Instruction::I32Store8(MemArg {
+                    offset: 80,
+                    align: 0,
+                    memory_index: 0,
+                }))
                 .instruction(&Instruction::I32Const(RECORD))
                 .instruction(&Instruction::I64Load(MemArg {
                     offset,
@@ -422,7 +426,11 @@ impl Root {
                 .instruction(&Instruction::I32Const(RECORD + 80))
                 .instruction(&Instruction::Call(self.settle))
                 .instruction(&Instruction::I32Const(RECORD))
-                .instruction(&Instruction::I32Load8U(address(80)));
+                .instruction(&Instruction::I32Load8U(MemArg {
+                    offset: 80,
+                    align: 0,
+                    memory_index: 0,
+                }));
             reject(&mut body);
             // Zero only after the typed result positively returned Ok.
             for at in [offset, offset + 8] {
@@ -959,7 +967,12 @@ pub(crate) mod tests {
             assert!(matches!(ops[position-4],Operator::I64Load{memarg} if memarg.offset==offset));
             assert!(matches!(ops[position-2],Operator::I64Load{memarg} if memarg.offset==offset+8));
             assert!(matches!(ops[position-1],Operator::I32Const{value} if value==RECORD+80));
-            assert!(matches!(ops[position+2],Operator::I32Load8U{memarg} if memarg.offset==80));
+            assert!(
+                matches!(ops[position-6],Operator::I32Store8{memarg} if memarg.offset==80 && memarg.align==0)
+            );
+            assert!(
+                matches!(ops[position+2],Operator::I32Load8U{memarg} if memarg.offset==80 && memarg.align==0)
+            );
         }
     }
 
