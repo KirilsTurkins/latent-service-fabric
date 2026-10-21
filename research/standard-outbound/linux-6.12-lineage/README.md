@@ -272,3 +272,12 @@ through nested permission graphs, policy-preserving replacement and queued RCU
 return. Both owned connect permission checks use the explicit socket source.
 The mandatory audit implementation and remaining active-security/RX/platform
 closure are still unavailable; supplemental C controls do not enable a profile.
+
+The [maintained audit-SKB source prefix](prepaid-audit-skb.md) carries original
+prepaid births through selected header/head allocation, clone, copy, expansion
+and real ordinary/bulk/NAPI/stolen-head free paths. Its supplemental serialized
+controls are separate from Linux compilation or physical final-free evidence.
+The separate [mandatory audit source](prepaid-audit.md) now composes formatter,
+AVC callbacks and original queue handoff with those SKB owners. Actual Linux
+audit delivery and complete physical closure remain unqualified; installation
+is still disabled.

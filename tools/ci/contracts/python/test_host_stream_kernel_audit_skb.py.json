@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "KernelAuditSkb.test_every_observed_function_has_its_exact_original_config_off_projection",
+    "KernelAuditSkb.test_expansion_routes_before_any_original_allocation_or_data_mutation",
+    "KernelAuditSkb.test_missing_changed_duplicate_or_crlf_source_refuses_before_derivation",
+    "KernelAuditSkb.test_private_clone_and_copy_cannot_reach_original_heap_on_failed_birth",
+    "KernelAuditSkb.test_private_returns_route_before_each_normal_allocator_cache",
+    "KernelAuditSkb.test_private_shared_info_requires_original_capacity_and_alignment_before_dereference",
+    "KernelAuditSkb.test_reference_contains_real_clone_and_final_free_cases_without_kernel_claim",
+    "KernelAuditSkb.test_whole_source_and_all_selected_definitions_have_exact_original_preimages"
+  ],
+  "guards": {
+    "KernelAuditSkb.test_every_observed_function_has_its_exact_original_config_off_projection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditSkb.test_expansion_routes_before_any_original_allocation_or_data_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditSkb.test_missing_changed_duplicate_or_crlf_source_refuses_before_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditSkb.test_private_clone_and_copy_cannot_reach_original_heap_on_failed_birth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditSkb.test_private_returns_route_before_each_normal_allocator_cache": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditSkb.test_private_shared_info_requires_original_capacity_and_alignment_before_dereference": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditSkb.test_reference_contains_real_clone_and_final_free_cases_without_kernel_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditSkb.test_whole_source_and_all_selected_definitions_have_exact_original_preimages": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:26f658b5b89379cf7d5225419470f84f2de5d379d5c33c208cc7f89a5858bc1a",
+        "class:setup-sha256:7052bab7164952fb4a649a9713324c26c70db10d3d3e5c813eeec585ba581cbf"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_audit_skb.py",
+  "reviewReason": "Add eight authenticated audit-SKB source and original allocator preservation controls; retain all existing cases and guards",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
