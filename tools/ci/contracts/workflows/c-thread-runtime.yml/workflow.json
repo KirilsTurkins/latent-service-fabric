@@ -20,6 +20,9 @@
           "tools/c_thread_native_source.py",
           "tools/activation_stack_native_products.py",
           "tools/c_thread_package_native_products.py",
+          "tools/c_thread_admission_native_products.py",
+          "tools/tests/test_c_thread_admission_native_products.py",
+          "tools/tests/fixtures/c-thread-admission-f244-records.json",
           "tools/activation_stack_native_source.py",
           "tools/c_guest/threading.py",
           "tools/c_guest/compiler.py",
@@ -46,7 +49,7 @@
   "requiredJobs": [
     "ordinary-c-threads"
   ],
-  "reviewReason": "Reviewed f625 fixed five-product acquisition and exact3325 native plus134 auxiliary current identities before and after execution; original seventeen C lifecycle outcomes and all caps retained.",
+  "reviewReason": "Root approved exact f2443+f6252 acquisition and five current native source files; original17 signed outcomes, fixed budgets,49 owning preflight cases, compile/package/sign/provider/physical/fresh oracles unchanged; no native build.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

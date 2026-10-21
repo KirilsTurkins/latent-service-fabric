@@ -90,11 +90,28 @@ fn protected_c_profile_reaches_normal_node_settings_without_raising_any_limits()
         super::super::NodeConfig::load(&path).unwrap().derive()
     };
     let before = derive(&original).unwrap();
+    let original_models = vec![
+        latent_routing::revision_policy::ThreadingModel::SingleThreaded,
+        latent_routing::revision_policy::ThreadingModel::Reentrant,
+    ];
+    assert!(before
+        .admission
+        .cell_classes
+        .values()
+        .all(|cell| cell.threading_models == original_models));
     let mut selected = original.clone();
     selected["engine"] = json!({"threadingProfile":"c-context144-sync-cooperative-v1"});
     assert!(derive(&selected).is_err());
     selected["providers"]["activationRuntime"]["nativeThreads"] = true.into();
     let settings = derive(&selected).unwrap();
+    let selected_models = vec![latent_routing::revision_policy::ThreadingModel::Cooperative];
+    for (name, cell) in &settings.admission.cell_classes {
+        let old = &before.admission.cell_classes[name];
+        assert_eq!(cell.threading_models, selected_models);
+        assert_eq!(cell.parallelism, old.parallelism);
+        assert_eq!(cell.maximum_memory_bytes, old.maximum_memory_bytes);
+        assert_eq!(cell.features, old.features);
+    }
     assert!(settings.wasmtime.owned_native_threads && settings.wasmtime.owned_native_stacks);
     assert_eq!(
         settings.wasmtime.native_thread_profile,
@@ -120,6 +137,68 @@ fn protected_c_profile_reaches_normal_node_settings_without_raising_any_limits()
     selected.as_object_mut().unwrap().remove("engine");
     assert!(derive(&selected).is_err());
     assert!(!uncreated.exists());
+}
+
+#[test]
+fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_limits() {
+    use latent_routing::revision_policy::ThreadingModel;
+    use latent_wasmtime::{NativeThreadProfile, WasmtimeConfig};
+    let mut value = document();
+    let directory = tempfile::tempdir().unwrap();
+    value["dataDirectory"] = json!(directory.path().join("uncreated-data"));
+    let decode =
+        |value: &Value| super::super::input::decode(&serde_json::to_vec(value).unwrap()).unwrap();
+    let original = decode(&value);
+    let capacity = crate::config::validation::validate(&original).unwrap();
+    let limits = original
+        .providers
+        .as_ref()
+        .unwrap()
+        .activation_runtime
+        .as_ref()
+        .unwrap()
+        .runtime_limits();
+    let mut runtime = WasmtimeConfig {
+        activation_runtime: Some(limits),
+        owned_native_stacks: true,
+        owned_native_threads: true,
+        ..WasmtimeConfig::default()
+    };
+    // The typed Rust profile is not an operator-selected cooperative profile.
+    // Neither its capability nor RootOnly accounting widens ordinary cells.
+    for threads in [true, false] {
+        runtime.owned_native_threads = threads;
+        let policy = crate::config::policy::admission(&original, &capacity, &runtime).unwrap();
+        assert!(policy.cell_classes.values().all(|cell| {
+            cell.threading_models == vec![ThreadingModel::SingleThreaded, ThreadingModel::Reentrant]
+        }));
+    }
+    value["engine"] = json!({"threadingProfile":"c-context144-sync-cooperative-v1"});
+    value["providers"]["activationRuntime"]["nativeThreads"] = true.into();
+    let selected = decode(&value);
+    runtime.owned_native_threads = true;
+    runtime.native_thread_profile = NativeThreadProfile::CContext144SyncCooperativeV1;
+    let policy = crate::config::policy::admission(&selected, &capacity, &runtime).unwrap();
+    assert!(policy
+        .cell_classes
+        .values()
+        .all(|cell| cell.threading_models == vec![ThreadingModel::Cooperative]));
+    for changed in 0..5 {
+        let mut wrong = runtime.clone();
+        match changed {
+            0 => wrong.owned_native_threads = false,
+            1 => wrong.owned_native_stacks = false,
+            2 => {
+                wrong.native_thread_profile =
+                    NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1
+            }
+            3 => wrong.activation_runtime = None,
+            _ => wrong.activation_runtime.as_mut().unwrap().native_owners += 1,
+        }
+        assert!(crate::config::policy::admission(&selected, &capacity, &wrong).is_err());
+    }
+    value["providers"]["activationRuntime"]["nativeThreads"] = false.into();
+    assert!(crate::config::policy::admission(&decode(&value), &capacity, &runtime).is_err());
 }
 
 #[test]

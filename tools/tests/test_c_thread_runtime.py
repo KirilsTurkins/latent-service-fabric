@@ -16,11 +16,11 @@ class CThreadRuntime(unittest.TestCase):
     def test_current_native_source_equality_is_required_before_any_product_use(self):
         from unittest.mock import Mock, patch
         from tools import qualify_c_thread_runtime as qualification
-        from tools import c_thread_package_native_products as guard
+        from tools import c_thread_admission_native_products as guard
         compiled = json.loads((qualification.ROOT /
-            'docs/testing/evidence/c-thread-package-native-2026-10-21.json').read_bytes())['nativeSource']
+            'docs/testing/evidence/c-thread-admission-native-f244-2026-10-21.json').read_bytes())['compiledNativeSource']
         products = Mock(SOURCE=guard.SOURCE)
-        products.verify_prepared.return_value = {'verified': 'frozen receipt'}
+        products.verify_prepared.return_value = {'verified': 'frozen receipt','perProductCompilation':{'actual-frozen-product':'explicit-three-new-two-original-lineage'}}
         products.native_products.return_value = {'latentd': Path('unexecuted')}
         proof = {'compiledSourceRevision': guard.SOURCE,
                  'compiledNativeSource': compiled, 'consumerNativeSource': compiled,
@@ -35,7 +35,8 @@ class CThreadRuntime(unittest.TestCase):
                     self.assertRaisesRegex(RuntimeError, 'must-be-byte-exact'):
                 qualification.assert_current(qualification.ROOT)
         auxiliary = {f'controlled-{i}': {'sha256': 'sha256:'+'0'*64, 'bytes': 1} for i in range(134)}
-        snapshot = {'native': compiled, 'materials': auxiliary}
+        snapshot = {'native': compiled, 'materials': auxiliary,
+                    'perProductCompilation': products.verify_prepared.return_value['perProductCompilation']}
         with patch.object(qualification, 'assert_current', return_value=proof), \
                 patch.object(qualification, 'read_json', return_value=snapshot), \
                 patch.object(qualification, 'file_identity', return_value=next(iter(auxiliary.values()))):

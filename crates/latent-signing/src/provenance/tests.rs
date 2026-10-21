@@ -38,6 +38,7 @@ fn only_the_closed_installed_go_runtime_profiles_decode() {
         "go-component-activation-v3",
         "go-component-activation-v4",
         "go-component-activation-v5",
+        "go-component-activation-v6",
     ] {
         let mut value = observed();
         value["parameters"]["runtime"] = json!(runtime);
@@ -46,7 +47,7 @@ fn only_the_closed_installed_go_runtime_profiles_decode() {
     for runtime in [
         "go-component-async-v2",
         "go-component-activation-v0",
-        "go-component-activation-v6",
+        "go-component-activation-v7",
         "go-component-activation-v4-extra",
         "native-go",
         "",
