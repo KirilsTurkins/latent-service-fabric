@@ -103,6 +103,14 @@ Task, thread, frame, queue, timer, guest-memory and native-memory failures can
 retain their particular resource. A cancellation acknowledgement does not prove
 physical retirement. An uncertain external operation does not become retryable.
 
+Typed engine memory and fuel interruptions retain their public
+`activation.memory-exhausted` or `activation.fuel-exhausted` detail with the
+matching `memory-bytes` or `cpu-fuel` dimension. Wire and CLI readers omit the
+private cell identity and backend reason, and reject mismatched dimensions.
+This identifies the producer's resource class; it does not identify an allocation
+site, prove physical retirement, or classify a generic resource-exhausted error.
+Older hosts can omit this detail, which remains unknown to public readers.
+
 `blocked` means a retained observation identifies a concrete blocker.
 `incomplete` means observations leave unresolved behavior, lifecycle or optional
 extension use. `observed` describes only the retained observations; it is not a
@@ -189,6 +197,15 @@ emitted symbols, followed by the context's selected/original runtime and patch
 identities. Symbols containing host paths or credential-like text are redacted.
 Displaying these observations does not alter their machine report or infer a
 cause, API elimination, qualified runtime or permission from a dependency name.
+
+Generated transformations with both recorded original and transformation digests
+are also displayed, including maintained SDK binding generation. Their selected,
+original and transformation identities stay separate. A generated tool input
+without those records is not presented as a transformation. The
+[six retained context observations](../testing/evidence/compatibility-generated-transform-display-2026-10-21.json)
+show the four previously hidden binding transformations; Java and .NET output
+stays identical. These are reader observations of original compiler contexts,
+with no additional build or execution qualification.
 
 Add `--outcomes output/compatibility-outcomes.json` to include the original
 invocation observations. The reader checks the closed diagnostic fields, numeric

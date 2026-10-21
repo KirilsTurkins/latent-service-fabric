@@ -178,6 +178,8 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("consumed", Unsigned),
             ("requested", Unsigned),
         ],
+        "activation.memory-exhausted" => &[("dimension", Known(&["memory-bytes"]))],
+        "activation.fuel-exhausted" => &[("dimension", Known(&["cpu-fuel"]))],
         "activation.guest-host-failure" => &[("code", Value::PlatformCode)],
         "activation.deadline-exceeded" | "budget.deadline-out-of-range" => &[
             ("deadline_unix_millis", Unsigned),
