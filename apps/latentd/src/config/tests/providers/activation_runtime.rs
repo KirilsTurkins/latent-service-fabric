@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 fn document() -> Value {
     let mut value = super::document();
@@ -68,11 +68,13 @@ fn c_native_opt_in_preserves_the_old_provider_digest_and_requires_its_own_bindin
         .as_array_mut()
         .unwrap()
         .push(native_binding);
-    assert!(decode(&explicit_false)
-        .providers
-        .unwrap()
-        .definitions()
-        .is_err());
+    assert!(
+        decode(&explicit_false)
+            .providers
+            .unwrap()
+            .definitions()
+            .is_err()
+    );
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -154,11 +156,13 @@ fn runtime_bindings_do_not_follow_clock_read_permissions() {
         .remove("activationRuntime");
     clock_only["providers"]["clockMonotonic"] = json!({"identity":{
         "id":"clock","tenant":"examples","service":"runtime-host","epoch":7}});
-    assert!(decode(&clock_only)
-        .providers
-        .unwrap()
-        .definitions()
-        .is_err());
+    assert!(
+        decode(&clock_only)
+            .providers
+            .unwrap()
+            .definitions()
+            .is_err()
+    );
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

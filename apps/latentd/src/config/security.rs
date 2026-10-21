@@ -2,11 +2,11 @@
 
 use std::collections::BTreeMap;
 
-use latent_core::{PlatformError, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1};
+use latent_core::{PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1, PlatformError};
 use latent_wasmtime::ExecutionIsolationProfile;
 use serde::Serialize;
 
-use super::{invalid, NodeConfig, NodeSettings, SupplyChainConfig};
+use super::{NodeConfig, NodeSettings, SupplyChainConfig, invalid};
 
 pub(super) fn validate(config: &NodeConfig) -> Result<(), PlatformError> {
     if config.security_profile == ExecutionIsolationProfile::ExternalCapsule

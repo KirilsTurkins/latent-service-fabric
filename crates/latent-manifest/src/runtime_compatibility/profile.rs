@@ -1,9 +1,9 @@
 use latent_core::PlatformError;
 use sha2::{Digest, Sha256};
 
-use super::{exhausted, incompatible, invalid, model, version, CPU_FEATURES};
+use super::{CPU_FEATURES, exhausted, incompatible, invalid, model, version};
 use crate::{
-    CapsuleManifest, ExecutionBackendKind, StateModel, ThreadingModel, PHASE1_FABRIC_VERSION,
+    CapsuleManifest, ExecutionBackendKind, PHASE1_FABRIC_VERSION, StateModel, ThreadingModel,
 };
 
 /// Immutable facts supplied by a trusted host adapter. Constructing this value
