@@ -16,6 +16,12 @@ class ManagedCapacityTests(unittest.TestCase):
         from tools.ci_lane_inventory import workflow_model
         from tools.rust_capsule_project import ROOT
         value = workflow_model((ROOT/'.github/workflows/dotnet-published-http.yml').read_text(encoding='utf8'))
+        diagnostic = value['on']['workflow_dispatch']['inputs'].pop('periodic_diagnostic')
+        self.assertEqual(diagnostic['type'], 'boolean');self.assertIs(diagnostic['default'], False)
+        value['jobs'].pop('periodic-diagnostic')
+        for original in value['jobs'].values():
+            self.assertTrue(original['if'].endswith(' && !inputs.periodic_diagnostic'))
+            original['if'] = original['if'].removesuffix(' && !inputs.periodic_diagnostic')
         selector = value['on']['workflow_dispatch']['inputs'].pop('owner_capacity')
         self.assertEqual(selector['type'], 'boolean');self.assertIs(selector['default'], False)
         job = value['jobs'].pop('owner-capacity')

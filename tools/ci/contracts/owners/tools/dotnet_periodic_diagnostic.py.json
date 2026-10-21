@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dotnet_periodic_diagnostic.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1f8bdabb0a7f8b9cec73e42fb6e4b66d5ff441c6c86020f0fc5438daea4a0231"
+}

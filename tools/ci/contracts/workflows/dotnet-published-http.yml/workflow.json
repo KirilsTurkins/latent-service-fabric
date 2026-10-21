@@ -31,6 +31,11 @@
             "default": false,
             "description": "One fresh managed owner capacity component on the authenticated native6fd products",
             "type": "boolean"
+          },
+          "periodic_diagnostic": {
+            "default": false,
+            "description": "One diagnostic-only normal AOT with closed original TimerHandler cause projection",
+            "type": "boolean"
           }
         }
       }
@@ -44,9 +49,10 @@
     "exact-component",
     "mixed-content",
     "owner-capacity",
+    "periodic-diagnostic",
     "published-http"
   ],
-  "reviewReason": "Add default-false finite owner capacity lane; deep restoration proves all three previous job bodies and defaults unchanged.",
+  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

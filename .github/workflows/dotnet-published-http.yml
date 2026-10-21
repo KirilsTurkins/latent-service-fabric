@@ -17,6 +17,10 @@ on:
         description: One fresh managed owner capacity component on the authenticated native6fd products
         type: boolean
         default: false
+      periodic_diagnostic:
+        description: One diagnostic-only normal AOT with closed original TimerHandler cause projection
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -25,7 +29,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   mixed-content:
-    if: github.event_name == 'workflow_dispatch' && inputs.mixed_content && !inputs.owner_capacity
+    if: github.event_name == 'workflow_dispatch' && inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic
     name: Default HttpClient streamed content and accepted managed work
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -137,7 +141,7 @@ jobs:
             ${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stdout
             ${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stderr
   published-http:
-    if: github.event_name == 'workflow_dispatch' && inputs.fresh_component && !inputs.mixed_content && !inputs.owner_capacity
+    if: github.event_name == 'workflow_dispatch' && inputs.fresh_component && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic
     name: Signed ordinary Flurl Refit and outside NuGet clients
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -228,7 +232,7 @@ jobs:
             ${{ runner.temp }}/published-http/node/*.json
             ${{ runner.temp }}/published-http/node/controls/*.json
   exact-component:
-    if: (github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity
+    if: (github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic
     name: Original captured Flurl Refit component with corrected progress records
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -271,7 +275,7 @@ jobs:
             ${{ runner.temp }}/published-replay/original/published-http/build/*.json
 
   owner-capacity:
-    if: github.event_name == 'workflow_dispatch' && inputs.owner_capacity
+    if: github.event_name == 'workflow_dispatch' && inputs.owner_capacity && !inputs.periodic_diagnostic
     name: Managed Task queue native and individual Timer capacity
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -375,3 +379,111 @@ jobs:
             ${{ runner.temp }}/managed-capacity/node/native-*/controls/*.json
             ${{ runner.temp }}/managed-capacity/node/native-*/controls/*-partial.stdout
             ${{ runner.temp }}/managed-capacity/node/native-*/controls/*-partial.stderr
+  periodic-diagnostic:
+    if: github.event_name == 'workflow_dispatch' && inputs.periodic_diagnostic && !inputs.owner_capacity && !inputs.mixed_content && !inputs.fresh_component
+    name: Closed periodic TimerHandler diagnostic on native6fd
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Fetch immutable original SDK and native source preimages
+        run: |
+          git fetch --no-tags --depth=1 origin 7d2c0f793cf4a87594eadd2d82d5798f448be34e
+          git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e
+      - name: Check closed source codes exact LOG accounting and bounded stream projection
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_dotnet_periodic_diagnostic -v
+          rustc --edition 2021 --test tools/fixtures/dotnet-periodic-console-control.rs -o "$RUNNER_TEMP/periodic-stream-control"
+          "$RUNNER_TEMP/periodic-stream-control" --test-threads=1
+      - name: Derive only two diagnostic SDK sources in a separate detached checkout
+        run: |
+          test -z "$(git status --porcelain --untracked-files=normal)"
+          git worktree add --detach "$RUNNER_TEMP/periodic-source" "$GITHUB_SHA"
+          python3 -B "$RUNNER_TEMP/periodic-source/tools/dotnet_periodic_diagnostic.py" derive
+      - name: Install the normal captured compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install normal pinned tools against the captured diagnostic SDK
+        working-directory: ${{ runner.temp }}/periodic-source
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/periodic-bindgen"
+          export PATH="$RUNNER_TEMP/periodic-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/periodic-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/periodic-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Authenticate the unchanged five historical products and all 134 native materials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/periodic-native"
+      - name: Compile one normal diagnostic AOT and retain the original failed periodic result
+        working-directory: ${{ runner.temp }}/periodic-source
+        run: python3 -B tools/dotnet_periodic_diagnostic.py qualify --native "$RUNNER_TEMP/periodic-native" --tools "$RUNNER_TEMP/periodic-tools" --output "$RUNNER_TEMP/periodic-diagnostic"
+      - name: Verify the original checkout was never modified
+        if: always()
+        run: test -z "$(git status --porcelain --untracked-files=normal)"
+      - name: Retain only bounded public diagnostic records and original failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-periodic-diagnostic-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/periodic-source/PERIODIC-DIAGNOSTIC-SOURCE.json
+            ${{ runner.temp }}/periodic-native/*.json
+            ${{ runner.temp }}/periodic-tools/INSTALL-COMPLETE.json
+            ${{ runner.temp }}/periodic-tools/runtime-inputs.json
+            ${{ runner.temp }}/periodic-tools/logs/**
+            ${{ runner.temp }}/periodic-diagnostic/*.json
+            ${{ runner.temp }}/periodic-diagnostic/handler-controls/*.json
+            ${{ runner.temp }}/periodic-diagnostic/handler-controls/logs/**
+            ${{ runner.temp }}/periodic-diagnostic/build/*.json
+            ${{ runner.temp }}/periodic-diagnostic/build/compiler.*.txt
+            ${{ runner.temp }}/periodic-diagnostic/build/component.wasm
+            ${{ runner.temp }}/periodic-diagnostic/build/native-aot-raw.wasm
+            ${{ runner.temp }}/periodic-diagnostic/build/native-aot-original.wasm
+            ${{ runner.temp }}/periodic-diagnostic/build/derived-*.dll
+            ${{ runner.temp }}/periodic-diagnostic/build/package/**
+            ${{ runner.temp }}/periodic-diagnostic/build/wit/**
+            ${{ runner.temp }}/periodic-diagnostic/build/logs/**
+            ${{ runner.temp }}/periodic-diagnostic/node/*.json
+            ${{ runner.temp }}/periodic-diagnostic/node/controls/*.json
+            ${{ runner.temp }}/periodic-diagnostic/node/controls/*-partial.stdout
+            ${{ runner.temp }}/periodic-diagnostic/node/controls/*-partial.stderr

@@ -7,7 +7,7 @@
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
-    "if": "github.event_name == 'workflow_dispatch' && inputs.owner_capacity",
+    "if": "github.event_name == 'workflow_dispatch' && inputs.owner_capacity && !inputs.periodic_diagnostic",
     "name": "Managed Task queue native and individual Timer capacity",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -111,7 +111,7 @@
   },
   "jobId": "owner-capacity",
   "kind": "job",
-  "reviewReason": "Add six deferred Timer/Owner source controls before the unchanged one-component seventeen-case campaign and retain bounded control logs; original steps/caps/defaults preserved.",
+  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "(github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity",
+    "if": "(github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic",
     "name": "Original captured Flurl Refit component with corrected progress records",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -61,7 +61,7 @@
   },
   "jobId": "exact-component",
   "kind": "job",
-  "reviewReason": "Explicit review: append only default-false owner_capacity exclusion; unchanged entire old job and original workflow hash restored by strict controls. No command, step, timeout, shell, cwd, permission or default path changes.",
+  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }
