@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ (github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') || inputs.route == true }}",
+    "if": "${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') || inputs.route == true) }}",
     "name": "Twenty-four actual maintained objects with IPv4 routes and original reference owners",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -69,7 +69,7 @@
   },
   "jobId": "route-objects",
   "kind": "job",
-  "reviewReason": "Add one exclusive route object-only lane preserving all seven previous job bodies, 22 objects and75 global oracles, every original case/guard and original config/runtime/diagnostic bounds. No kernel link, boot, execution or installation qualification.",
+  "reviewReason": "Add one closed route-cache object-only profile while preserving every original target, command, configuration, budget and job body; retain previous exact job set after projecting only the separately verified new job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }
