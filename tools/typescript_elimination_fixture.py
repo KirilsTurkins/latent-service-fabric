@@ -19,6 +19,16 @@ export function alternate(seed) { return seed * 5 + 7; }
 ROOT_EDGE = '  if (false) { // selected-root-clock-edge'
 PROBE = r'''
 let eliminationCalls = 0;
+function selectedClockPath(value: string): boolean {
+  if (value.startsWith('uncaught:')) unsupportedClockCallback();
+  try {
+    unsupportedClockCallback();
+    throw new Error('elimination-unexpected-clock-success');
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== 'unsupported:standard-clock-without-approved-profile') throw error;
+    return true;
+  }
+}
 function eliminationCase(value: string) {
   if (++eliminationCalls !== 1) throw new Error('elimination-state-reused');
   const match = /^(catch|uncaught):([0-9]{1,4})$/.exec(value);
@@ -27,14 +37,7 @@ function eliminationCase(value: string) {
   if (!Number.isSafeInteger(seed) || seed > 1000) throw new Error('elimination-seed');
   let refused = false;
   if (false) { // selected-root-clock-edge
-    if (match[1] === 'uncaught') unsupportedClockCallback();
-    try {
-      unsupportedClockCallback();
-      throw new Error('elimination-unexpected-clock-success');
-    } catch (error) {
-      if (!(error instanceof Error) || error.message !== 'unsupported:standard-clock-without-approved-profile') throw error;
-      refused = true;
-    }
+    refused = selectedClockPath(value);
   }
   if (match[1] === 'uncaught') throw new Error('elimination-terminal-after-unselected-edge');
   const result = alternate(seed);
