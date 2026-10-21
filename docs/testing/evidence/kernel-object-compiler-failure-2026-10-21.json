@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "lsf.kernel-object-compiler-failure.v1",
+  "source": "7b5b418a88526f10b76661ecd6c139d412addb34",
+  "run": 39533124438,
+  "job": 119003461303,
+  "artifact": 12315624671,
+  "archiveBytes": 178652,
+  "archiveSha256": "d1c99b77ef93ad48428bf77261ff7bacc1e09305eb11474bfb253a9d2c2a0ac8",
+  "membersVerified": 20,
+  "stage": "six-selected-real-kbuild-objects",
+  "diagnostics": {
+    "bytes": 1887,
+    "sha256": "6fb836a8aebf175379f5088654795209ef15e20a1b56ebe65d10fa1a4210b449",
+    "crc32": "56d52970"
+  },
+  "actualCompiledObjects": {
+    "objects/net/socket.o": {
+      "bytes": 100072,
+      "sha256": "629a62c88f3d8d5e071528c62c82f1afa2fb4051981b5cded147f668a3d63cf0",
+      "crc32": "d94c29e1"
+    },
+    "objects/fs/inode.o": {
+      "bytes": 79984,
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267",
+      "crc32": "f7479fb3"
+    },
+    "objects/net/core/sock.o": {
+      "bytes": 119520,
+      "sha256": "81b0c5374cb4c3b14e629374927d9bf3ecdeb22f5fc5addba7228d2b2666c21f",
+      "crc32": "f808b568"
+    },
+    "objects/net/ipv4/af_inet.o": {
+      "bytes": 53840,
+      "sha256": "c7e53df910c3a33e38bbea7cd6d4da7cd4884cf4f993d0f48d5e218191a6c7c4",
+      "crc32": "711c62a1"
+    }
+  },
+  "baselineConfig": {
+    "bytes": 143203,
+    "sha256": "239e925557d3d349ea4c47c028e14431063f964ce6e7809024b6e4e804c7b659",
+    "crc32": "a2f2320c"
+  },
+  "selectedConfig": {
+    "bytes": 143192,
+    "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3",
+    "crc32": "4bd0d1d0"
+  },
+  "fixes": [
+    "Include existing private outer declaration in actual security translation unit",
+    "Declare private factory registration before its definition",
+    "Use NULL llseek as required by maintained nonseekable VFS contract"
+  ],
+  "warningPolicyChanged": false,
+  "originalConfigChanged": false,
+  "securityDisabled": false,
+  "allSixObjectsCompiled": false,
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "factoryInstalled": false
+}

@@ -194,7 +194,7 @@ def derive(inputs):
         outputs[source] = replace(outputs[source], '#include <net/sock.h>\n', '#include <net/sock.h>\n' + INCLUDE) if source not in ('fs/inode.c',) else replace(
             outputs[source], '#include <linux/security.h>\n', '#include <linux/security.h>\n' + INCLUDE)
     outputs['security/security.c'] = replace(outputs['security/security.c'], INCLUDE,
-        INCLUDE + '#ifdef CONFIG_LSF_STREAM_FACTORY\n#include "../net/factory-private.h"\n#endif\n')
+        INCLUDE + '#include <net/lsf_stream_outer.h>\n#ifdef CONFIG_LSF_STREAM_FACTORY\n#include "../net/factory-private.h"\n#endif\n')
     outputs['security/security.c'] += '\n#ifdef CONFIG_LSF_STREAM_FACTORY\n#include "lsf_security_private.c"\n' + ''.join(
         private(section(original['security/security.c'], name), name)
         for name in ('security_inode_alloc', 'security_sk_alloc')) + '#endif\n'
