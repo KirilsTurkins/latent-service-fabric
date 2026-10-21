@@ -57,6 +57,15 @@ CONTROLS = (('original-host-memory',
    'values::tests::host_memory::host_codec_rejection_oracle_preserves_original_typed_error_precedence',
    'values::tests::host_memory::host_codec_scalar_and_numeric_stack_formatting_keep_original_bytes_and_small_peak',
    'values::tests::host_memory::host_codec_tiny_dynamic_string_and_declared_result_preserve_normal_64mib_profile')),
+ ('actual-dynamic-allocation-hook',
+  'latent-wasmtime',
+  'values::tests::dynamic_memory::',
+  ('values::tests::dynamic_memory::actual_dynamic_declared_tiny_result_fits_original_one_mib_without_maximum_escrow',
+   'values::tests::dynamic_memory::actual_lift_refusal_retains_original_memory_bytes_error_and_does_not_allocate_string',
+   'values::tests::dynamic_memory::actual_nested_names_flags_and_variant_box_hold_original_memory_until_values_die',
+   'values::tests::dynamic_memory::actual_parameter_copy_refunds_before_lift_and_abandoned_post_return_keeps_result_owner',
+   'values::tests::dynamic_memory::actual_partial_failed_lift_reports_only_allocated_tree_and_retires_after_native_unwind',
+   'values::tests::dynamic_memory::actual_utf8_utf16_latin1_prepass_preserves_exact_original_fuel_and_capacity')),
  ('raw-input-lifetime',
   'latent-wasmtime',
   'backend::input::tests::',
@@ -96,6 +105,18 @@ CONTROLS = (('original-host-memory',
   'latent-node',
   'result_transfer_counts_unused_capacity_and_bounds_metadata_traversal',
   ('activation_manager::local_service::result::tests::result_transfer_counts_unused_capacity_and_bounds_metadata_traversal',)),
+ ('c-public-async-type',
+  'latent-component-threading',
+  'c_public_lift_requires_declared_async_type_with_original_sync_core_abi',
+  ('c_component::tests::c_public_lift_requires_declared_async_type_with_original_sync_core_abi',)),
+ ('c-public-sync-abi',
+  'latent-component-threading',
+  'c_declared_async_effect_does_not_enable_callback_or_async_core_abi',
+  ('c_component::tests::c_declared_async_effect_does_not_enable_callback_or_async_core_abi',)),
+ ('journal-result-retirement',
+  'latent-node',
+  'bounded_journal_copy_preserves_declared_error_and_retires_child_only_after_last_source_drop',
+  ('journal::tests::accounted_declared_result::bounded_journal_copy_preserves_declared_error_and_retires_child_only_after_last_source_drop',)),
  ('ordinary-backend',
   'latent-wasmtime',
   'ordinary_backend_codec_reports_original_peak_and_result_outlives_store_cleanup',
@@ -108,6 +129,8 @@ RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml'
     'tools/build_process.py', 'tools/build_process_linux.py', 'tools/build_process_signals.py',
     'tools/phase2_operator_process.py', 'tools/phase3_resource_identity.py',
     'tools/phase3_resource_profile.py', 'tools/rust_capsule_project.py', 'tools/build_snapshot.py',
+    'crates/vendor/wasmtime/UPSTREAM.latent.json', 'crates/vendor/wasmtime/latent-dynamic-memory.patch',
+    'crates/vendor/wasmtime/README.latent.md',
     'examples/echo-contract/capsule.json', 'examples/package-format/capsule/manifest.json',
     'examples/package-format/capsule/config.json')
 
@@ -185,8 +208,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 10 and len({row[0] for row in CONTROLS}) == 10
-            and len(names) == len(set(names)) == 52, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 14 and len({row[0] for row in CONTROLS}) == 14
+            and len(names) == len(set(names)) == 61, 'host-codec-control-inventory')
     output = fresh(output)
     before, inputs = source_identity(ROOT), materials(ROOT)
     write_json(output/'source-inputs.json', {'native':before, 'materials':inputs})
@@ -223,12 +246,12 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':52,
+            'products':products,'commands':stages.records,'controlCount':61,'nativeCohort':'wasmtime-48.0.7-latent-dynamic-value-memory-v1',
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-codec-original-memory-only; legacy framing and serialized transport controller frames excluded'}
+            'scope':'ordinary-host-codec-original-memory-and-selected-c-public-async-type-sync-core-admission; legacy framing and serialized transport controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:

@@ -536,21 +536,6 @@ impl WasmtimeBackend {
                 ));
             }
         }
-        let codec_budget = accounting.budget().clone();
-        let temporary_buffer_guard = self.shared.resources.temporary_buffer();
-        let raw_input = input::RawInvocationInput::new_accounted(
-            std::mem::take(&mut request.activation.input),
-            input_trace,
-            &codec_budget,
-        )?;
-        let input = values::decode_params_accounted(
-            &function.params,
-            raw_input.bytes(),
-            &request.activation.input_media_type,
-            runtime.surface.value_codec_limits,
-            &codec_budget,
-        )?;
-
         let capabilities = match self
             .capability_session(
                 &runtime,
@@ -575,18 +560,28 @@ impl WasmtimeBackend {
             ));
         }
 
-        let output_plan = values::validate_signature(
-            &function.results,
-            runtime.surface.value_codec_limits,
-            runtime.surface.hostcall_fuel,
+        // Current capability authority is established before transferring or
+        // decoding input. A denied request owns no admitted codec allocation.
+        let codec_budget = accounting.budget().clone();
+        let temporary_buffer_guard = self.shared.resources.temporary_buffer();
+        let raw_input = input::RawInvocationInput::new_accounted(
+            std::mem::take(&mut request.activation.input),
+            input_trace,
+            &codec_budget,
         )?;
-        let output_bytes = if output_plan.has_dynamic_values {
-            output_plan.maximum_lift_bytes
-        } else {
-            output_plan.static_lift_bytes
-        };
+        let input = values::decode_params_accounted(
+            &function.params,
+            raw_input.bytes(),
+            &request.activation.input_media_type,
+            runtime.surface.value_codec_limits,
+            &codec_budget,
+        )?;
+
+        // Preparation retains the original signature/fuel ceiling. Actual
+        // native result allocations are admitted at their allocator seam.
         let mut output =
-            values::OwnedValues::output(function.results.len(), output_bytes, &codec_budget)?;
+            values::OwnedValues::output_accounted(function.results.len(), &codec_budget)?;
+        let result_memory = output.lift_memory();
 
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
@@ -621,6 +616,7 @@ impl WasmtimeBackend {
             &mut store,
             input.as_slice(),
             output.as_mut_slice(),
+            result_memory,
             timing,
             setup_started,
             input_trace,
@@ -1118,6 +1114,15 @@ impl ExecutionBackend for WasmtimeBackend {
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
     if error.chain().any(|cause| {
+        if let Some(error) = cause.downcast_ref::<PlatformError>() {
+            if error.code == PlatformErrorCode::ResourceExhausted
+                && error.details.iter().any(|detail| {
+                    detail.fields.get("dimension").map(String::as_str) == Some("memory-bytes")
+                })
+            {
+                return true;
+            }
+        }
         matches!(
             cause.downcast_ref::<latent_core::BudgetError>(),
             Some(latent_core::BudgetError::Exhausted {
@@ -1178,6 +1183,7 @@ async fn call_export(
     store: &mut Store<HostState>,
     input: &[Val],
     output: &mut [Val],
+    result_memory: Option<Arc<dyn wasmtime::component::DynamicValueMemory>>,
     timing: &mut Phase0InvocationTiming,
     setup_started: Instant,
     input_trace: Option<&InputTrace>,
@@ -1198,7 +1204,13 @@ async fn call_export(
                     if let Some(trace) = input_trace {
                         trace.stage(InvocationInputPhase::GuestCallStart);
                     }
-                    func.call_async(&mut *store, input, output).await
+                    match result_memory {
+                        Some(memory) => {
+                            func.call_async_with_memory(&mut *store, input, output, memory)
+                                .await
+                        }
+                        None => func.call_async(&mut *store, input, output).await,
+                    }
                 }
                 None => Err(wasmtime::Error::msg(
                     "validated component function index is absent",

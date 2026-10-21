@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-exclude = ["crates/vendor/rustls-outbound"]
+exclude = ["crates/vendor/rustls-outbound", "crates/vendor/wasmtime"]
 members = [
     "apps/latentd",
     "apps/latent-control",
@@ -93,7 +93,7 @@ tracing = "=0.1.44"
 tracing-subscriber = "=0.3.23"
 wasm-encoder = "=0.261.0"
 wasmparser = "=0.261.0"
-wasmtime = { version = "=48.0.7", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
+wasmtime = { path = "crates/vendor/wasmtime", version = "=48.0.7", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
 wit-bindgen = "=0.62.0"
 
 [workspace.lints.rust]

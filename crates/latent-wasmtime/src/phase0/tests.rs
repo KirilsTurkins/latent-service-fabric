@@ -122,7 +122,7 @@ fn dynamic_results_preserve_legacy_success_domain_errors_and_consumption() {
     assert_eq!(
         adapter::outcome(returned(br#"[{"ok":"line\nquote\""}]"#), limits),
         GuestOutcome::Returned {
-            output: b"line\nquote\"".to_vec(),
+            output: b"line\nquote\"".to_vec().into(),
             output_media_type: ECHO_SUCCESS_MEDIA_TYPE.to_owned(),
             consumption: consumption(),
         }

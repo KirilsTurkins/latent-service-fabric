@@ -6,7 +6,7 @@ use latent_core::{
 };
 use std::time::Instant;
 
-fn original_budget() -> ActivationBudget {
+pub(super) fn original_budget() -> ActivationBudget {
     let limits = ResourceBudget {
         cpu_fuel: 1_000_000_000,
         memory_bytes: 64 * 1024 * 1024,

@@ -54,7 +54,7 @@
         "run": "python3 -B -m unittest tools.tests.test_host_codec_native -v"
       },
       {
-        "name": "Execute fifty-two source-bound controls with the ordinary native host",
+        "name": "Execute sixty-one source-bound controls with the ordinary native host",
         "run": "python3 -B tools/qualify_host_codec_native.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/host-codec-memory\""
       },
       {
@@ -73,7 +73,7 @@
   },
   "jobId": "native",
   "kind": "job",
-  "reviewReason": "Execute all 52 exact listed host/codec/lifetime/accounting controls and retain five unchanged-shape normal native products with bounded logs and no guest engine build.",
+  "reviewReason": "Execute original52 plus six actual allocation, one linked-child/journal and two selected C async-type/sync-Core controls; one new native cohort, same five products, no guest engine build.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

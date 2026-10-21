@@ -1,6 +1,7 @@
 //! Original activation memory capacity retained with actual host values.
 use latent_core::{ActivationBudget, BudgetProfile, HostMemoryReservation, PlatformError};
-use wasmtime::component::Val;
+use std::sync::{Arc, Mutex};
+use wasmtime::component::{DynamicValueMemory, Val};
 
 use super::{failure, limit};
 
@@ -97,10 +98,15 @@ pub(crate) struct OwnedValues {
     // Actual values are destroyed before the reservation, on every return path.
     pub(super) values: Vec<Val>,
     memory: Escrow,
+    lift_memory: Option<Arc<LiftMemory>>,
 }
 impl OwnedValues {
     pub(super) fn finish(values: Vec<Val>, memory: Escrow) -> Result<Self, PlatformError> {
-        let mut owner = Self { values, memory };
+        let mut owner = Self {
+            values,
+            memory,
+            lift_memory: None,
+        };
         owner.memory.confirm();
         owner.tighten()?;
         Ok(owner)
@@ -127,12 +133,33 @@ impl OwnedValues {
             }
             reservation.confirm_bytes(retained);
         }
-        Ok(Self { values, memory })
+        Ok(Self {
+            values,
+            memory,
+            lift_memory: None,
+        })
+    }
+    /// Original slots plus actual native lifting allocations; no signature maximum escrow.
+    pub(crate) fn output_accounted(
+        count: usize,
+        budget: &ActivationBudget,
+    ) -> Result<Self, PlatformError> {
+        let mut owner = Self::output(count, allocation(count, size_of::<Val>())?, budget)?;
+        owner.lift_memory = Some(LiftMemory::new(budget)?);
+        Ok(owner)
+    }
+    pub(crate) fn lift_memory(&self) -> Option<Arc<dyn DynamicValueMemory>> {
+        self.lift_memory
+            .as_ref()
+            .map(|memory| Arc::clone(memory) as Arc<dyn DynamicValueMemory>)
     }
     pub(crate) fn begin_lift(&mut self) {
-        self.memory.conservative_on_drop = true;
+        self.memory.conservative_on_drop = self.lift_memory.is_none();
     }
     pub(crate) fn finish_lift(&mut self, succeeded: bool) -> Result<(), PlatformError> {
+        if self.lift_memory.is_some() {
+            return Ok(());
+        }
         if !succeeded {
             self.memory.confirm();
         }
@@ -141,6 +168,9 @@ impl OwnedValues {
         Ok(())
     }
     pub(crate) fn tighten(&mut self) -> Result<(), PlatformError> {
+        if self.lift_memory.is_some() {
+            return Ok(());
+        }
         if self.memory.active() {
             self.memory
                 .confirm_retained(retained_values(&self.values, 0)?)?;
@@ -249,5 +279,69 @@ fn boxed(value: Option<&Val>, depth: usize) -> Result<usize, PlatformError> {
             .checked_add(size_of::<Val>() + ALLOCATION_METADATA)
             .ok_or_else(limit),
         None => Ok(0),
+    }
+}
+
+// Arc header, Mutex/Escrow/budget and allocation bookkeeping. This owner is
+// admitted before Arc::new; it never allocates a collection of reservation guards.
+const LIFT_SCOPE_BYTES: usize = 256;
+const _: () = assert!(
+    size_of::<LiftMemory>() + 2 * size_of::<usize>() + ALLOCATION_METADATA <= LIFT_SCOPE_BYTES
+);
+struct LiftMemory {
+    memory: Mutex<Escrow>,
+    budget: ActivationBudget,
+}
+impl LiftMemory {
+    fn new(budget: &ActivationBudget) -> Result<Arc<Self>, PlatformError> {
+        let mut memory = Escrow::new(Some(budget));
+        memory.add(LIFT_SCOPE_BYTES)?;
+        let owner = Arc::new(Self {
+            memory: Mutex::new(memory),
+            budget: budget.clone(),
+        });
+        owner
+            .memory
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .confirm();
+        Ok(owner)
+    }
+}
+impl DynamicValueMemory for LiftMemory {
+    fn reserve(&self, bytes: usize) -> wasmtime::Result<()> {
+        self.memory
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .add(bytes)
+            .map_err(wasmtime::Error::new)
+    }
+    fn confirm(&self) {
+        self.memory
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .confirm();
+    }
+    fn release(&self, bytes: usize) {
+        let mut memory = self
+            .memory
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(reservation) = &mut memory.reservation {
+            let retained = reservation
+                .bytes()
+                .checked_sub(bytes as u64)
+                .expect("exact native allocation retirement");
+            assert!(
+                retained >= LIFT_SCOPE_BYTES as u64,
+                "scope metadata remains owned"
+            );
+            reservation.shrink(retained);
+        }
+    }
+    fn fork(&self) -> wasmtime::Result<Arc<dyn DynamicValueMemory>> {
+        Self::new(&self.budget)
+            .map(|memory| memory as Arc<dyn DynamicValueMemory>)
+            .map_err(wasmtime::Error::new)
     }
 }

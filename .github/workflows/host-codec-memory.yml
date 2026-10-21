@@ -45,7 +45,7 @@ jobs:
         run: python3 -m pip install -r tools/requirements.lock
       - name: Refuse missing, ignored or changed control evidence
         run: python3 -B -m unittest tools.tests.test_host_codec_native -v
-      - name: Execute fifty-two source-bound controls with the ordinary native host
+      - name: Execute sixty-one source-bound controls with the ordinary native host
         run: >-
           python3 -B tools/qualify_host_codec_native.py
           --source-commit "${{ github.sha }}"

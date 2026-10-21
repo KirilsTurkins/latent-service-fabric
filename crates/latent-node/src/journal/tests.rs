@@ -5,6 +5,8 @@ use latent_core::{ActivationPhase, ActivationTerminalState, BudgetConsumption, M
 
 use super::*;
 
+#[path = "tests/accounted_declared_result.rs"]
+mod accounted_declared_result;
 #[path = "tests/broker_lineage.rs"]
 mod broker_lineage;
 #[path = "tests/staging.rs"]
