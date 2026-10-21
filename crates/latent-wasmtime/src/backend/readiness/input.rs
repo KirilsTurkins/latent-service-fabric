@@ -5,14 +5,14 @@ use latent_core::PlatformError;
 use latent_executor::PreparationKey;
 
 use super::worker_wait::WorkerWindow;
+use crate::PreparationStage;
 use crate::backend::preparation::{
-    counters, retained_metadata_bytes, Compilation, ComponentIntegrity, SourceAuthority,
+    Compilation, ComponentIntegrity, SourceAuthority, counters, retained_metadata_bytes,
 };
-use crate::backend::{prepared_handle, PreparationContext, PreparedRuntime};
+use crate::backend::{PreparationContext, PreparedRuntime, prepared_handle};
 use crate::cache::{PrepareAccess, PrepareReservation};
 use crate::compiler::{CompilationResult, QueueWindow};
 use crate::preparation_metadata::MetadataIdentity;
-use crate::PreparationStage;
 
 pub(in crate::backend) enum ArtifactInput {
     Native(Option<crate::aot::AotCompilationJob>),

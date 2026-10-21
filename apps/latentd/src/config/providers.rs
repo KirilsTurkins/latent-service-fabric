@@ -5,7 +5,7 @@ use latent_core::{BudgetProfile, PlatformError};
 use latent_manifest::{BindingMode, JsonManifestCodec, ManifestCodec};
 use serde::{Deserialize, Deserializer};
 
-use super::{invalid, NodeConfig};
+use super::{NodeConfig, invalid};
 
 #[path = "providers/secrets.rs"]
 mod secrets;

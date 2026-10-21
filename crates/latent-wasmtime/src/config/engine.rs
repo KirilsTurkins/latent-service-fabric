@@ -4,7 +4,7 @@ use super::layout::{
     ASYNC_STACK_ZEROING, POOL_DECOMMIT_BATCH_SIZE, POOL_KEEP_RESIDENT_BYTES, POOL_UNUSED_WARM_SLOTS,
 };
 use super::{CompilerOptimization, InstanceAllocator, WasmtimeConfig};
-use crate::containment::{bounded_text, platform_error, MAX_DIAGNOSTIC_BYTES};
+use crate::containment::{MAX_DIAGNOSTIC_BYTES, bounded_text, platform_error};
 use latent_core::{PlatformError, PlatformErrorCode};
 
 /// Closed code-generation settings shared by the runtime and compiler bootstrap.
@@ -193,10 +193,12 @@ mod tests {
         selected.validate_compiler().unwrap();
         assert!(selected.owned_native_threads());
         document["javaGuest"] = true.into();
-        assert!(serde_json::from_value::<CompilerEngineSettings>(document)
-            .unwrap()
-            .validate_compiler()
-            .is_err());
+        assert!(
+            serde_json::from_value::<CompilerEngineSettings>(document)
+                .unwrap()
+                .validate_compiler()
+                .is_err()
+        );
     }
 }
 

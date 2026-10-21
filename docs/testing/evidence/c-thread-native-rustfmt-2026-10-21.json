@@ -1,0 +1,404 @@
+{
+  "schemaVersion": "latent.c.native-rustfmt-source.v1",
+  "producer": "f0d36b38d39a837cef7f6242b4b4a99aa36b8b75",
+  "formatter": "rustfmt 1.9.0-stable (8bab26f4f6 2026-07-14)",
+  "edition": "2024",
+  "configuration": "edition = \"2021\"\nmax_width = 100\nuse_field_init_shorthand = true\nuse_try_shorthand = true\nnewline_style = \"Unix\"\n",
+  "files": [
+    {
+      "path": "apps/latentd/src/config/engine.rs",
+      "original": {
+        "sha256": "sha256:86990c3d5aed7653291453f9e86ded7c4d7ba938752c55b312c32fe6bb821f3a",
+        "bytes": 1926
+      },
+      "formatted": {
+        "sha256": "sha256:cb31a59e16b04521f37b9848f4f68b681d5be3ec532dc73766aa8c3ad6e7dcd5",
+        "bytes": 1926
+      }
+    },
+    {
+      "path": "apps/latentd/src/config/providers.rs",
+      "original": {
+        "sha256": "sha256:046f4db8ac19171e371036d31930165b29a138c0793dd8f9a3bb2e50d9e59478",
+        "bytes": 16337
+      },
+      "formatted": {
+        "sha256": "sha256:91edab87b8011e2fa2a041179fe4500a8416594ed6c42261c4bc9502f6f33a55",
+        "bytes": 16337
+      }
+    },
+    {
+      "path": "apps/latentd/src/config/providers/activation_runtime.rs",
+      "original": {
+        "sha256": "sha256:d1f1ade6cb2b951e445125614fdbcdf4c81b2df1eb3dbbf18962bd8014314ab6",
+        "bytes": 4896
+      },
+      "formatted": {
+        "sha256": "sha256:c9952016f5d0900744c79f8a5ab480d12e8265888115ccae2b66dfad500671df",
+        "bytes": 4896
+      }
+    },
+    {
+      "path": "apps/latentd/src/config/runtime.rs",
+      "original": {
+        "sha256": "sha256:afb01d90bba9bbbecf641bc8467075c67fa3b83696e7f37004c25a3cc71d38a6",
+        "bytes": 9601
+      },
+      "formatted": {
+        "sha256": "sha256:3cc7eea5e8a3127ab083b07dae3fa16b88dfa4f6d01a8f765d50cf3c9b0527df",
+        "bytes": 9601
+      }
+    },
+    {
+      "path": "apps/latentd/src/config/security.rs",
+      "original": {
+        "sha256": "sha256:5630402ab965f35f958e4abb5163cfd64669ebf3695f7db3daf3871903be82d4",
+        "bytes": 8269
+      },
+      "formatted": {
+        "sha256": "sha256:1c53ba2b376eb4f606d350e9362dbd9692d00548f6fd3d6c7c1daae13b9782a4",
+        "bytes": 8269
+      }
+    },
+    {
+      "path": "apps/latentd/src/config/tests/engine.rs",
+      "original": {
+        "sha256": "sha256:c640fd38d4702aeadc919269086f0653374720ff2db3b22d7f60cab4c27e4e33",
+        "bytes": 7524
+      },
+      "formatted": {
+        "sha256": "sha256:bc3da9ed5c29cb8d9756f52d6a949c37fd0a4ccd2de3c2a106150e382f051dba",
+        "bytes": 7524
+      }
+    },
+    {
+      "path": "apps/latentd/src/config/tests/providers/activation_runtime.rs",
+      "original": {
+        "sha256": "sha256:0ddb20f0bcdf82558aeda6c93e138f48a4464494e7f984fa7cbf52e0f522daa4",
+        "bytes": 14592
+      },
+      "formatted": {
+        "sha256": "sha256:f5b8e2c5dc8fdda340d08ac7a019c3fd9fb6fd8023b5750c16b5ef706c5a25fd",
+        "bytes": 14652
+      }
+    },
+    {
+      "path": "apps/latentd/src/standalone/providers/runtime.rs",
+      "original": {
+        "sha256": "sha256:08666d0445454114b9deb6fe46d5081bf0ec8c3090c6663c7a45aea8c2a83549",
+        "bytes": 24028
+      },
+      "formatted": {
+        "sha256": "sha256:9209384b6ec01f3c600ab1aa3f7b4ac6790a9c72d352441a047541e4290e9970",
+        "bytes": 24028
+      }
+    },
+    {
+      "path": "crates/latent-component-threading/src/c_preimage.rs",
+      "original": {
+        "sha256": "sha256:d329c594a72efa3442efcc809fce7606c4272735e83df67043350f7af2dda035",
+        "bytes": 35559
+      },
+      "formatted": {
+        "sha256": "sha256:d310322aed1be54f93f638377f7ba1b8fc68be46ae87c2b5ba614624aa8d9cce",
+        "bytes": 35560
+      }
+    },
+    {
+      "path": "crates/latent-component-threading/src/c_root.rs",
+      "original": {
+        "sha256": "sha256:e9f0ced65eec8b644a26d205ec1ab8fce5588831729a258163d71e1bc529846d",
+        "bytes": 41805
+      },
+      "formatted": {
+        "sha256": "sha256:70ddefacc857bbbff4a0b8bfb7a517584fd659ca7541e8a7ab631d807c389788",
+        "bytes": 41835
+      }
+    },
+    {
+      "path": "crates/latent-manifest/src/runtime_compatibility/profile.rs",
+      "original": {
+        "sha256": "sha256:856348fd63076c1499c34fe054750f979e8fb41f2ff9704bbef5a339fb6687f7",
+        "bytes": 8511
+      },
+      "formatted": {
+        "sha256": "sha256:5f071acb5341e157eecb641a3c27f97600254c398471159c4db9c1bb7a571a75",
+        "bytes": 8511
+      }
+    },
+    {
+      "path": "crates/latent-manifest/src/runtime_compatibility/tests.rs",
+      "original": {
+        "sha256": "sha256:23d4416c37fcc140c5a13d17bdd8d9f449416049d5af1203dfeeb35711cb6452",
+        "bytes": 7999
+      },
+      "formatted": {
+        "sha256": "sha256:14a1f8a7015340d87621af9b56afa10345ac5a3acf545ab74d21e6651301ad2a",
+        "bytes": 8105
+      }
+    },
+    {
+      "path": "crates/latent-packaging/examples/capsule_contracts.rs",
+      "original": {
+        "sha256": "sha256:7e69e762a39130826c08a26f0c9dfe720e87ca9b71f22cc5cac0f16e093fa302",
+        "bytes": 5740
+      },
+      "formatted": {
+        "sha256": "sha256:a1413a817f80290788b18d1988a06e5923b07eb5218728bc7a57304eff84257d",
+        "bytes": 5740
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/aot/ownership.rs",
+      "original": {
+        "sha256": "sha256:2fb0cef4dc148232c782012060ef590a1bd06521a820784bafcc0a98de100182",
+        "bytes": 7286
+      },
+      "formatted": {
+        "sha256": "sha256:90ef43cff3481f3fb17287fb12bebd7304c8dae87afd31b62dd90d54b8feb396",
+        "bytes": 7286
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/aot/profile.rs",
+      "original": {
+        "sha256": "sha256:8cf5423a17e4bec289b991999b1459480b316317bd5af758b49b6fc16a36396c",
+        "bytes": 8929
+      },
+      "formatted": {
+        "sha256": "sha256:35d5526558cb6a84214cc1e1037d2b83e2dea8fcc099e0f8315f9eaa269a7831",
+        "bytes": 8929
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/aot/supervisor.rs",
+      "original": {
+        "sha256": "sha256:ee9130f24165910e0bf58780953260ae7164b029f36fedbee0962226d16e579a",
+        "bytes": 15018
+      },
+      "formatted": {
+        "sha256": "sha256:8a4f9455bc347d9dee8fb4c92b846e454fc68ee31d59f62d13490d2576cb91b6",
+        "bytes": 15018
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/aot/supervisor/input.rs",
+      "original": {
+        "sha256": "sha256:5f93bf4f479a1949a6540d73e5cedf08d52cd6669d7d51830a76f84355ea9a23",
+        "bytes": 18938
+      },
+      "formatted": {
+        "sha256": "sha256:25c17b87685e831b251e60311e31ae7bba80410c75adfdb703f06a3acfce3e8b",
+        "bytes": 18938
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/aot/worker.rs",
+      "original": {
+        "sha256": "sha256:a8f36c2645591db7ef2ea34ea06386fb21c3fa6f7439040b3d250002b28c84cd",
+        "bytes": 6456
+      },
+      "formatted": {
+        "sha256": "sha256:affed8b2dc41f65fd3db1935d31464e8f76115cc0b3116b5cc386606ab1c39fb",
+        "bytes": 6456
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend.rs",
+      "original": {
+        "sha256": "sha256:1d2b605fb69ff2a43709573b42d12fb9b7fb4f9f2b373b11f327abd3869a24b9",
+        "bytes": 49402
+      },
+      "formatted": {
+        "sha256": "sha256:caa9a4370d13609284fda00dd4026def9491b5ba62d1eb70d0ec6ec3e28b46e2",
+        "bytes": 49402
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/admission/tests.rs",
+      "original": {
+        "sha256": "sha256:6036c10918699029974d5e3bbe1681fe7bb183cc2097b702d08c5422b473bccc",
+        "bytes": 12134
+      },
+      "formatted": {
+        "sha256": "sha256:1abb890f66927e7dea9c6628da4ca2f6a2539b078202fcec08120e2a61097e0a",
+        "bytes": 12374
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/preparation/compilation.rs",
+      "original": {
+        "sha256": "sha256:076d8b86fd86c7fe88c831fd36498ba90ed728dc171216cd39b4ecd42662df27",
+        "bytes": 11749
+      },
+      "formatted": {
+        "sha256": "sha256:4079dd7bf80ba59a555e3c1049cff8633386b1e8cd615dcb278bc2c4fa3e340e",
+        "bytes": 11749
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/preparation_context.rs",
+      "original": {
+        "sha256": "sha256:de5fa3fcaa9d72ea792708fb83696fe96dde94d8e9c4748cc7aff6a99ff5cdeb",
+        "bytes": 21863
+      },
+      "formatted": {
+        "sha256": "sha256:7ccd799bf81e1fb73376251d1abf54cc8c191a384c9148b576751e57cb40e813",
+        "bytes": 21863
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/readiness.rs",
+      "original": {
+        "sha256": "sha256:bbdf83fe58fc44ea369f3be277583a6beab2b0a226b33f6b7b37a28dbe180176",
+        "bytes": 12317
+      },
+      "formatted": {
+        "sha256": "sha256:95b438cb2ff0390b8ccab55f4f8f48a11bdce1cf9d3a2c5700ecbf30c6e2369f",
+        "bytes": 12317
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/readiness/input.rs",
+      "original": {
+        "sha256": "sha256:d292f7ada96e10f7fb384faf61002a849b4d95c63635e41898176b1c20ef34b0",
+        "bytes": 8062
+      },
+      "formatted": {
+        "sha256": "sha256:bb6b98c7afe6be8f1f987266ec822200d38ab2f95e5f3673509e563309ad821d",
+        "bytes": 8062
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/readiness/tests/owners.rs",
+      "original": {
+        "sha256": "sha256:3c7d6da6ab865a95ccb29030fdd04dd13c1e2fc8d91584c10a5b5003fd0b4625",
+        "bytes": 3667
+      },
+      "formatted": {
+        "sha256": "sha256:211d8e7dcf97b5b4d2e94e6636ca1dd25e97b936540b09accb89c11e44221177",
+        "bytes": 3719
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/readiness/tests/worker.rs",
+      "original": {
+        "sha256": "sha256:e7cebb02c8b5a56480134d05b40387ffc6da011c277c0cc3b4d2122669c64c9c",
+        "bytes": 11685
+      },
+      "formatted": {
+        "sha256": "sha256:a3dcc764f528ba358f4364b4c5d987aff0333652839cda8469bbc1e964f5ffb4",
+        "bytes": 11867
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/cache/tests.rs",
+      "original": {
+        "sha256": "sha256:1cdfeb1866c6d36c133a2e2671d3ed9a83292b9aba290c138fc7617bd5d3e240",
+        "bytes": 11354
+      },
+      "formatted": {
+        "sha256": "sha256:f55e0422c896e93302ee89a75d7f427e6c4a2c1c386a723a0fe3a14c9734e632",
+        "bytes": 11376
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/compiler/acquire.rs",
+      "original": {
+        "sha256": "sha256:f141f2919178f3cd768d06c82f23135628c63c4d77b6e20cf9cbc0b842d7a829",
+        "bytes": 5656
+      },
+      "formatted": {
+        "sha256": "sha256:a1cff296494d6e4ee49070e2450e31841354862cbef1978879fd5fbb15db59be",
+        "bytes": 5656
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/compiler/tests/support.rs",
+      "original": {
+        "sha256": "sha256:41943b7ef10162643385c75f9788350df1d71f540604f1ab01f3603111e15c34",
+        "bytes": 9372
+      },
+      "formatted": {
+        "sha256": "sha256:04ffc26dd80e5f3ee1864ad808662ef026fcc9dc078cb4bae63c7a67964391a6",
+        "bytes": 9394
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/component_threading.rs",
+      "original": {
+        "sha256": "sha256:f594eb85f52141302dc98ce8ae4554a8cfb439b89627f1eb7863dccc73153e2b",
+        "bytes": 9428
+      },
+      "formatted": {
+        "sha256": "sha256:a9b08333e14f04571b0669549babe83e8879cef8f5d602b5554e0750149d3c37",
+        "bytes": 9470
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/config/engine.rs",
+      "original": {
+        "sha256": "sha256:2c61e95ecaf29b78952610f64750688dffe088266bad939dbd9eb1b4464f2001",
+        "bytes": 11817
+      },
+      "formatted": {
+        "sha256": "sha256:c6640b8246c5d5a71a996d8919123384ea38a5d1b7bbf004779981c2629f732e",
+        "bytes": 11851
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/config/profile.rs",
+      "original": {
+        "sha256": "sha256:61890362902278d1dd68fa114f183f6e3aeb1622c0a0f0b0dd1fe87941abcd99",
+        "bytes": 14676
+      },
+      "formatted": {
+        "sha256": "sha256:0ea0c6ba8881ac9c9709a2b3b6a23cb220e1f6b2c0de0dd512d676b9383ed68d",
+        "bytes": 14676
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/config/runtime_compatibility.rs",
+      "original": {
+        "sha256": "sha256:84521938ce51e9083c632d2be02e029bac74fbfaf9fb1121a9a1cccb3768b191",
+        "bytes": 2736
+      },
+      "formatted": {
+        "sha256": "sha256:e69cb32091760b1d9bac6ed211f0c3ee26f8bf57d989b40154aed75dd1adb1cd",
+        "bytes": 2770
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/src/lib.rs",
+      "original": {
+        "sha256": "sha256:c8e3e8601cdb1bf821b762d86a254a36ab61f96f281e321cee276bcafc136647",
+        "bytes": 4570
+      },
+      "formatted": {
+        "sha256": "sha256:c555e15a9941ad015e4fdbf5652cc04a18664c27291b25381469dc1d2e2b85b3",
+        "bytes": 4562
+      }
+    }
+  ],
+  "allOriginalsFromGit": true,
+  "formatterOutputEqualsCurrent": true,
+  "qualification": false,
+  "compiledNativeSource": {
+    "sha256": "sha256:37a714bc32b0ea6af4b3f72226601e84c4f20fb271b9d91abd4968e478db212b",
+    "files": 3324,
+    "bytes": 26365840,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "formattedConsumerSource": {
+    "sha256": "sha256:9d8f78c556b0348dfad09f2a84740b7efc3878b39c5d123c79a34e6cfe164736",
+    "files": 3324,
+    "bytes": 26366657,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "otherNativeFilesByteExact": 3290,
+  "nativeProductsRebuilt": false
+}

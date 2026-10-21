@@ -155,7 +155,7 @@ fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
                 }
             }
             Payload::MemorySection(reader) if reader.count() > 8 => {
-                return Err("c-preimage-finite-memory-count")
+                return Err("c-preimage-finite-memory-count");
             }
             Payload::TagSection(_) => return Err("c-preimage-finite-numeric-control-only"),
             Payload::GlobalSection(reader) => {
