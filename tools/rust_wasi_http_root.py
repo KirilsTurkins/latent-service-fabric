@@ -23,6 +23,27 @@ KEYWORDS = frozenset(('as break const continue crate else enum extern false fn f
     'unsized virtual yield try union').split())
 
 
+def selected_contract(graph: dict) -> list[dict]:
+    """The explicit selected public contract must permit real blocking.
+
+    This checks actual component function types. It never upgrades a user's
+    synchronous contract merely because its implementation makes HTTP calls.
+    """
+    exports = profile.names(graph, 'exports')
+    if not exports or len(exports) > 32:
+        raise ValueError('rust-http-selected-export-count')
+    selected = []
+    for identity, interface in sorted(exports.items()):
+        functions = interface['functions']
+        if not functions or len(functions) > 128 or len(selected) + len(functions) > 128:
+            raise ValueError('rust-http-selected-function-count')
+        for name, function in functions.items():
+            if function.get('name') != name or function['kind'] != 'async-freestanding':
+                raise ValueError('rust-http-selected-explicit-async-export-required')
+            selected.append({'interface': identity, 'function': name, 'kind': function['kind']})
+    return selected
+
+
 def identifier(name: str) -> str:
     if type(name) is not str or not re.fullmatch(r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*', name) or len(name) > 128:
         raise ValueError('rust-http-root-identifier')
@@ -93,7 +114,7 @@ def forwarding_source(graph: dict) -> tuple[bytes, list[dict]]:
         raise ValueError('rust-http-root-export-count')
     lines = [
         '#![cfg(target_arch = "wasm32")]',
-        'wit_bindgen::generate!({ path: "wit", world: "root" });',
+        'wit_bindgen::generate!({ path: "wit", world: "root", async: false });',
         'struct Root;',
     ]
     calls = []
@@ -120,8 +141,11 @@ def forwarding_source(graph: dict) -> tuple[bytes, list[dict]]:
                 arguments.append(argument(graph, param_name, param['type']))
             result = rust_type(graph, function.get('result'))
             symbol = identifier(name)
-            lines.append('    ' + ('async ' if asynchronous else '') + 'fn ' + symbol + '(' + ', '.join(declarations) + ') -> ' + result + ' {')
-            lines.append('        let result = ' + path + '::' + symbol + '(' + ', '.join(arguments) + ')' + ('.await' if asynchronous else '') + ';')
+            # The pinned generator's normal override selects the sync Core ABI
+            # while retaining the explicit async WIT function types. No Rust
+            # executor or future is injected into the ordinary call body.
+            lines.append('    fn ' + symbol + '(' + ', '.join(declarations) + ') -> ' + result + ' {')
+            lines.append('        let result = ' + path + '::' + symbol + '(' + ', '.join(arguments) + ');')
             lines.append('        latent::rust_http_retirement::owner::drain();')
             lines.extend(('        result', '    }'))
             calls.append({'interface': identity, 'function': name, 'asyncPublic': asynchronous,
@@ -129,7 +153,7 @@ def forwarding_source(graph: dict) -> tuple[bytes, list[dict]]:
         lines.append('}')
     mappings = ', '.join(json.dumps(name)+': generate'
         for name in sorted({*exports, profile.RETIREMENT}))
-    lines[1] = 'wit_bindgen::generate!({ path: "wit", world: "root", with: { '+mappings+' } });'
+    lines[1] = 'wit_bindgen::generate!({ path: "wit", world: "root", async: false, with: { '+mappings+' } });'
     lines.append('export!(Root);')
     source = ('\n'.join(lines) + '\n').encode()
     if len(source) > 128*1024:
@@ -333,6 +357,7 @@ def prepare_project(output, canonical: str, graph: dict, lock: bytes):
         'name': name, 'files': json.loads(inventory(files)),
         'originalCapturedCargoLock': digest(lock), 'calls': calls,
         'publicResultPreserved': True, 'applicationSourceRewritten': False,
+        'rustBindingsAsync': False, 'publicContractKindsPreserved': True,
         'privateCallingConvention': 'sync-core-to-async-component-projection',
         'executionQualification': False}
     write_json(output/'source-proof.json', record)

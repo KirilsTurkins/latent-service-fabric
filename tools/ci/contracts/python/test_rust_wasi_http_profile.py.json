@@ -2,9 +2,11 @@
   "cases": [
     "CompilerRoot.test_additional_compiler_outputs_refuse_in_app_target_and_remain_separately_observed",
     "CompilerRoot.test_compiler_lock_keeps_exact_captured_sdk_closure_and_refuses_ambiguity",
+    "CompilerRoot.test_explicit_async_function_type_keeps_sync_abi_forwarding_without_future_or_retag",
     "CompilerRoot.test_normalized_lock_only_prunes_original_edges_and_preserves_captured_identities",
     "CompilerRoot.test_private_projection_never_changes_public_exports_or_unrelated_types",
     "CompilerRoot.test_resources_unknown_abis_and_unbounded_types_refuse",
+    "CompilerRoot.test_root_application_import_must_keep_full_explicit_function_kind_and_nominal_value_shape",
     "CompilerRoot.test_varied_pure_value_api_keeps_actual_result_until_drain",
     "OriginalSourceAndAuthority.test_emission_never_grants_authority_or_aliases_versions",
     "OriginalSourceAndAuthority.test_encoder_can_only_process_exact_pinned_metadata_and_keeps_code_and_other_sections",
@@ -27,6 +29,18 @@
       "skipSites": []
     },
     "CompilerRoot.test_compiler_lock_keeps_exact_captured_sdk_closure_and_refuses_ambiguity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:687d2ccd06fc5f1099580d61d3935ebb2a5a75de84b78b28171dfd5d68be005e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompilerRoot.test_explicit_async_function_type_keeps_sync_abi_forwarding_without_future_or_retag": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -63,6 +77,18 @@
       "skipSites": []
     },
     "CompilerRoot.test_resources_unknown_abis_and_unbounded_types_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:687d2ccd06fc5f1099580d61d3935ebb2a5a75de84b78b28171dfd5d68be005e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompilerRoot.test_root_application_import_must_keep_full_explicit_function_kind_and_nominal_value_shape": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -161,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_profile.py",
-  "reviewReason": "Review separate compiler-target output guard causal control; all existing cases retained",
+  "reviewReason": "Explicit review: preserve all old cases/skip bounds and add selected async-effect/sync-Core-ABI/whole forwarding graph controls; unselected sync template preserved.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

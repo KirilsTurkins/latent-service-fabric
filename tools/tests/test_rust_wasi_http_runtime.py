@@ -161,10 +161,14 @@ class SourceAndNativeSeparation(unittest.TestCase):
             'publicGraphUnchanged':True,'librarySourceRewritten':False,'signedExecutionQualification':False,
             'selectedComponentDigest':digest(component),'imports':sorted(qualification.AUTHORITY),
             'exports':['examples:greeting/api@1.0.0'],'originalCoreModulesRetained':1,
+            'explicitAsyncPublicContract':[{'interface':'examples:greeting/api@1.0.0',
+                'function':'greet','kind':'async-freestanding'}],
+            'compilerRootRustBindingsAsync':False,'forwardingRootApplicationImportsExact':True,
             'internalIo':projection,'privateDrain':{**projection,'root':True}}
         adapter={'cores':[{'digest':digest(core),'size':len(core)}]}
         qualification.verify_composition(record,component,adapter)
-        for mutate in ('private-leak','new-core','public-graph','duplicate-missing','claim-runtime'):
+        for mutate in ('private-leak','new-core','public-graph','duplicate-missing','claim-runtime',
+                       'sync-contract','injected-executor','root-import-drift'):
             changed=copy.deepcopy(record)
             if mutate=='private-leak':changed['imports'].append('latent:rust-http-retirement/owner@0.1.0')
             if mutate=='new-core':changed['internalIo']['cores'][0]['sha256']='sha256:'+'0'*64
@@ -172,6 +176,9 @@ class SourceAndNativeSeparation(unittest.TestCase):
             if mutate=='duplicate-missing':
                 changed['internalIo']['cores']*=2;changed['originalCoreModulesRetained']=2
             if mutate=='claim-runtime':changed['privateDrain']['runtimeQualification']=True
+            if mutate=='sync-contract':changed['explicitAsyncPublicContract'][0]['kind']='freestanding'
+            if mutate=='injected-executor':changed['compilerRootRustBindingsAsync']=True
+            if mutate=='root-import-drift':changed['forwardingRootApplicationImportsExact']=False
             with self.subTest(mutate=mutate),self.assertRaises(Exception):
                 qualification.verify_composition(changed,component,adapter)
 

@@ -44,10 +44,14 @@ class OrdinaryCapturedClients(unittest.TestCase):
         self.assertEqual(project['limits']['wallTimeLimitMillis'],5000)
         self.assertEqual(project['limits']['outboundRequests'],8)
         self.assertEqual(project['limits']['logBytes'],0)
-        world=read_file(self.app/'wit/world.wit').decode()
+        # The normal, unselected template remains synchronous. The separately
+        # selected HTTP fixture now declares its blocking effect explicitly.
+        normal=fixture.create(self.root/'unselected','greeting')
+        world=read_file(normal/'wit/world.wit').decode()
         self.assertIn('greet: func(name: string) -> result<string, string>;',world)
         self.assertNotIn('async func',world)
-        declarations=[line.strip().removeprefix('import ').removesuffix(';') for line in world.splitlines()
+        selected_world=read_file(self.app/'wit/world.wit').decode()
+        declarations=[line.strip().removeprefix('import ').removesuffix(';') for line in selected_world.splitlines()
             if line.strip().startswith('import ')]
         self.assertEqual(set(declarations),fixture.AUTHORITY)
         self.assertEqual(len(declarations),3)
@@ -59,6 +63,18 @@ class OrdinaryCapturedClients(unittest.TestCase):
         for capability in declarations:
             self.assertEqual(code.count('"'+capability+'": generate'),1)
         self.assertNotIn('generate_all',code)
+
+    def test_explicit_async_effect_keeps_ordinary_sync_rust_and_exact_macro_override(self):
+        world=read_file(self.app/'wit/world.wit').decode()
+        self.assertEqual(world.count('greet: async func(name: string) -> result<string, string>;'),1)
+        code=read_file(self.app/'src/lib.rs').decode()
+        self.assertIn('world: "service", async: false, with:',code)
+        self.assertIn('fn greet(',code)
+        self.assertNotIn('async fn',code)
+        self.assertNotIn('.await',code)
+        self.assertEqual(len(self.specs),2)
+        for library in self.outside:
+            self.assertEqual(read_file(library/'src/lib.rs'),fixture.LIBRARY.encode())
 
     def test_nonce_rejects_unbounded_or_path_like_coordinates_before_output(self):
         for value in ('../other','0'*15,'0'*17,'A'*16,True,None):

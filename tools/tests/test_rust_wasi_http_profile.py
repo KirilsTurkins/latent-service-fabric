@@ -163,6 +163,40 @@ class OriginalSourceAndAuthority(unittest.TestCase):
 
 
 class CompilerRoot(unittest.TestCase):
+    def test_explicit_async_function_type_keeps_sync_abi_forwarding_without_future_or_retag(self):
+        graph=value_graph()
+        with self.assertRaisesRegex(ValueError,'explicit-async-export-required'):
+            root.selected_contract(graph)
+        graph['interfaces'][0]['functions']['request']['kind']='async-freestanding'
+        original=copy.deepcopy(graph)
+        selected=root.selected_contract(graph)
+        self.assertEqual(selected,[{'interface':'outside:varied-client/api@1.2.3',
+            'function':'request','kind':'async-freestanding'}])
+        source,calls=root.forwarding_source(graph)
+        self.assertIn(b'world: "root", async: false, with:',source)
+        self.assertIn(b'    fn request(',source)
+        self.assertNotIn(b'async fn',source)
+        self.assertNotIn(b'.await',source)
+        self.assertTrue(calls[0]['asyncPublic'])
+        self.assertEqual(graph,original)
+
+    def test_root_application_import_must_keep_full_explicit_function_kind_and_nominal_value_shape(self):
+        from tools import rust_wasi_http_compose as compose
+        graph=value_graph()
+        graph['interfaces'][0]['functions']['request']['kind']='async-freestanding'
+        same=copy.deepcopy(graph)
+        compose.unchanged_exports(graph,same)
+        for changed in ('kind','parameter','result','owner'):
+            selected=copy.deepcopy(same)
+            function=selected['interfaces'][0]['functions']['request']
+            if changed=='kind':function['kind']='freestanding'
+            elif changed=='parameter':function['params'][0]['type']='u64'
+            elif changed=='result':selected['types'][0]['kind']['result']['err']='u32'
+            else:selected['packages'][0]['name']='outside:foreign@1.2.3'
+            with self.subTest(changed=changed),self.assertRaises(ValueError):
+                compose.unchanged_interfaces(graph,selected,profile.names(graph,'exports'),
+                    profile.names(selected,'exports'))
+
     def test_additional_compiler_outputs_refuse_in_app_target_and_remain_separately_observed(self):
         from tools.rust_capsule_build import RustExecutableOutputs, executable_output_inventory
         from tools.application_dependency_store import DependencyError

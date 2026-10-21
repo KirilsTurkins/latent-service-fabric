@@ -1,6 +1,7 @@
 {
   "cases": [
     "OrdinaryCapturedClients.test_capture_preserves_exact_published_code_review_and_removes_originals",
+    "OrdinaryCapturedClients.test_explicit_async_effect_keeps_ordinary_sync_rust_and_exact_macro_override",
     "OrdinaryCapturedClients.test_nonce_rejects_unbounded_or_path_like_coordinates_before_output",
     "OrdinaryCapturedClients.test_original_sync_contract_and_selected_authority_remain_exact",
     "OrdinaryCapturedClients.test_substituted_published_bytes_features_or_executable_closure_refuse_before_removal",
@@ -8,6 +9,18 @@
   ],
   "guards": {
     "OrdinaryCapturedClients.test_capture_preserves_exact_published_code_review_and_removes_originals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a2c6b435f80a029b75998e7cd902665523d66a10d9cdea49a7046d7bd938a1e4",
+        "class:setup-sha256:1b2dcbc03a8551dc8fd59f64e3cd533865e40428c4247b12fed67e201100276d"
+      ],
+      "skipSites": []
+    },
+    "OrdinaryCapturedClients.test_explicit_async_effect_keeps_ordinary_sync_rust_and_exact_macro_override": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime_fixture.py",
-  "reviewReason": "Complete the controlled proc-macro metadata within the two existing source-capture tests; preserve all five case names and execution guards",
+  "reviewReason": "Explicit review: preserve all old cases/skip bounds and add selected async-effect/sync-Core-ABI/whole forwarding graph controls; unselected sync template preserved.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

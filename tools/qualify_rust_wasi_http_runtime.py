@@ -74,6 +74,10 @@ def verify_composition(record,component,adapter):
         and record['profile']==PROFILE and record['publicGraphUnchanged'] is True
         and record['librarySourceRewritten'] is False and record['signedExecutionQualification'] is False
         and record['selectedComponentDigest']==digest(component)
+        and record['explicitAsyncPublicContract']==[{'interface':'examples:greeting/api@1.0.0',
+            'function':'greet','kind':'async-freestanding'}]
+        and record['compilerRootRustBindingsAsync'] is False
+        and record['forwardingRootApplicationImportsExact'] is True
         and record['imports']==sorted(AUTHORITY) and record['exports']==['examples:greeting/api@1.0.0'],
         'rust-http-normal-compiler-owned-root-and-private-drain')
     app=record['internalIo'];root=record['privateDrain']

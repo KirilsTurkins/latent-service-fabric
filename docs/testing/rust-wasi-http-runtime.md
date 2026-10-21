@@ -53,11 +53,24 @@ input approval. Its original source WIT must explicitly import
 `--http-runtime /absolute/owned/http-runtime`. Emitted WASI imports confer no
 authority, and no version alias is installed.
 
+This selected profile requires each public entry to declare its blocking effect
+explicitly, for example `greet: async func(name: string) -> result<string, string>`.
+Ordinary synchronous Rust implementations use the pinned normal generator option
+`async: false`; this selects a synchronous Core ABI while retaining the async
+function type in the embedded component metadata. It adds no executor, future or
+transport to the application or either published client. A selected synchronous
+public contract is refused with `rust-http-selected-explicit-async-export-required`.
+The default non-HTTP authoring contract and generator selection are unchanged.
+
 The compiler composes a generated forwarding root around the actual application
-component. Each call retains its actual value or error until the private drain
-returns. The first bridge supports finite unnamed value APIs; named aggregate,
+component. The root's application imports and public exports must exactly match
+the explicitly selected async contract, including function kinds and nominal
+value ownership. Its generated Rust bindings also use `async: false`. Each call
+retains its actual value or error until the private drain returns. The first bridge supports finite unnamed value APIs; named aggregate,
 resource and unsupported borrowed-aggregate exports receive concrete build
-diagnostics. It preserves the application's public graph, uses the captured
+diagnostics. `publicGraphUnchanged` refers to that explicitly declared selected
+contract; it never describes a conversion of an older synchronous component.
+The compiler uses the captured
 offline compiler namespace and wires exact nominal interfaces through the
 pinned composer. Only the internal blocking operations and private drain are
 projected; every original application core byte must survive. Final WASI/private
@@ -68,3 +81,12 @@ calls, real provider errors and denials, partial I/O, cancellation, uncertain
 POST without replay, lifecycle retirement, physical owners and fresh tenant reuse.
 The historical [compiler-only observation](rust-wasi-http-inputs.md) remains
 separately attributable and retains its original compatibility failure.
+
+The original synchronous `ceff0697...` component and private diagnostic remain
+historical failures. [Run 39571821467](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39571821467)
+retained the closed `cannot-block-sync-task` trap from its first ordinary Waki
+call; the diagnostic is not qualification. The Component Model's
+[concurrency contract](https://github.com/WebAssembly/component-model/blob/main/design/mvp/Concurrency.md)
+distinguishes a function's async effect from its Core ABI. Generator-only controls
+verify the explicit contract and unchanged ordinary source bodies; fresh signed
+execution is still required for the corrected profile.

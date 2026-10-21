@@ -24,6 +24,10 @@ def graph(commands, wasm, component, stage):
 
 def unchanged_exports(original: dict, final: dict):
     before, after = profile.names(original, 'exports'), profile.names(final, 'exports')
+    unchanged_interfaces(original, final, before, after)
+
+
+def unchanged_interfaces(original, final, before, after):
     if before.keys() != after.keys():
         raise ValueError('rust-http-composition-public-export-set')
     for name in before:
@@ -49,6 +53,7 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
     imported = profile.names(original, 'imports')
     if not profile.select(list(public_surface['imports']), list(imported)):
         raise ValueError('rust-http-selected-runtime-without-ordinary-client')
+    selected_contract = root.selected_contract(original)
     canonical = commands.run('rust-http-original-canonical-wit', tools['wasm-tools'],
         'component', 'wit', component, '--no-docs').decode()
     if len(canonical.encode()) > MAX_GRAPH:
@@ -128,6 +133,9 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
     unchanged_exports(original, root_graph)
     if set(profile.names(root_graph, 'imports')) != set(profile.names(original, 'exports')) | {profile.RETIREMENT}:
         raise ValueError('rust-http-compiler-root-import-set')
+    unchanged_interfaces(original, root_graph, profile.names(original, 'exports'),
+        {name: interface for name, interface in profile.names(root_graph, 'imports').items()
+         if name != profile.RETIREMENT})
     selected_root, root_io_record = io.prepare(commands, tools['wasm-tools'], raw_root,
         prepared.adapter, directory/'root-io', root_graph, root=True)
     # Each nominal interface is wired by its exact name. WAC must validate all
@@ -177,6 +185,8 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
         'internalIo': io_record, 'privateDrain': root_io_record,
         'source': digest(source), 'originalCoreModulesRetained': len(list(original_cores.elements())),
         'publicGraphUnchanged': True, 'imports': sorted(final_imports),
+        'explicitAsyncPublicContract': selected_contract,
+        'compilerRootRustBindingsAsync': False, 'forwardingRootApplicationImportsExact': True,
         'exports': sorted(profile.names(final, 'exports')), 'runtimeReceipt': digest(prepared.material()),
         'librarySourceRewritten': False, 'signedExecutionQualification': False}
     (output/'rust-http-composition.wac').write_bytes(source)

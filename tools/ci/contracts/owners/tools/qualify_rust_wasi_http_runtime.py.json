@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_wasi_http_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Validate actual producer output receipt shape and successful original compile without invented fields",
+  "reviewReason": "Explicit async selected contract, normal sync-Core bindings and exact root import/export graph review; old compiler/runtime limits retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b7cd9d9d48f18c55fcd4791531f639d7e05cd3447cd315aab5c453c4b6e658f4"
+  "sha256": "86864f37628dee7608c14068ca03ff30d283c0256540f4be4a0586168be62e63"
 }

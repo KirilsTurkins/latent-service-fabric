@@ -252,6 +252,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime.py",
-  "reviewReason": "Authenticate original8f compile and unchanged64 programme with exact empty-list API correction; no compilation",
+  "reviewReason": "Explicit review: preserve all old cases/skip bounds and add selected async-effect/sync-Core-ABI/whole forwarding graph controls; unselected sync template preserved.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

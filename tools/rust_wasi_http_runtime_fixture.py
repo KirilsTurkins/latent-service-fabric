@@ -242,13 +242,18 @@ def prepare(output: Path, nonce: str):
     bindings = b'wit_bindgen::generate!({path: "wit", world: "service"});'
     require(initial['src/lib.rs'].count(bindings) == 1, 'rust-http-runtime-original-binding-generator')
     mappings = b','.join(b'"'+name.encode()+b'": generate' for name in sorted(AUTHORITY))
-    selected = b'wit_bindgen::generate!({path: "wit", world: "service", with: {'+mappings+b'}});'
+    selected = b'wit_bindgen::generate!({path: "wit", world: "service", async: false, with: {'+mappings+b'}});'
     (app/'src/lib.rs').write_bytes(initial['src/lib.rs'].replace(marker, code+marker, 1)
         .replace(bindings, selected, 1))
     # All dependencies are declared; selection grants no authority. The actual
     # normal componentizer must consume these three through the selected port.
     world = initial['wit/world.wit']
     require(world.count(b'world service {') == 1, 'rust-http-runtime-original-world')
+    require(world.count(b'greet: func(') == 1, 'rust-http-runtime-original-sync-entry')
+    # Explicit application contract selection, separate from Rust's Core ABI.
+    # The ordinary Rust implementation and both published client bodies stay
+    # synchronous; the normal pinned macro preserves this async WIT metadata.
+    world = world.replace(b'greet: func(', b'greet: async func(', 1)
     imports = b''.join(b'\n    import '+name.encode()+b';' for name in sorted(AUTHORITY))
     (app/'wit/world.wit').write_bytes(world.replace(b'world service {',b'world service {'+imports,1))
     for name, directory in (('clock-monotonic','clock'),('runtime','activation-runtime'),('http','http-v3')):
@@ -300,4 +305,8 @@ def capture(app: Path, outside: list[Path], specs: list[dict], cargo: Path) -> d
         'clients':clients,'candidateDigest':digest(raw),'sdkLockDigest':digest(sdk),
         'originalLibrariesRemoved':all(not p.exists() for p in outside),
         'executableInputs':executables,'implicitExecutableApproval':False,
-        'catalogueRegistration':False,'applicationTransportInjected':False,'libraryCodePatched':False}
+        'catalogueRegistration':False,'applicationTransportInjected':False,'libraryCodePatched':False,
+        'developerBindingSelection':{'generator':'wit-bindgen 0.62.0','rustBindingsAsync':False,
+            'publicFunctionKind':'async-freestanding','selectedWitDigest':digest(read_file(app/'wit/world.wit')),
+            'applicationRustDigest':digest(read_file(app/'src/lib.rs')),
+            'sourceLanguageExecutorInjected':False}}
