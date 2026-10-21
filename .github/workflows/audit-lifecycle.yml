@@ -13,38 +13,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  source:
-    name: Retain exact bounded lifecycle source
+  prepare:
+    name: Prepare pinned offline audit development inputs
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Archive tracked source without credentials or build products
+      - name: Install the repository-pinned minimal Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --component rustfmt --component clippy
+      - name: Prepare finite low-level source and dependency closure
         shell: bash
         run: |
           set -euo pipefail
-          mkdir "$RUNNER_TEMP/audit-lifecycle-source"
-          git rev-parse HEAD > "$RUNNER_TEMP/audit-lifecycle-source/source-sha.txt"
-          python3 - <<'PY'
-          import os
+          out="$RUNNER_TEMP/audit-offline"
+          mkdir -p "$out/workspace/crates" "$out/evidence"
+          cp -a crates/latent-core crates/latent-audit "$out/workspace/crates/"
+          cp Cargo.toml Cargo.lock "$out/workspace/"
+          python3 - "$out/workspace/Cargo.toml" <<'PY'
           import pathlib
-          import subprocess
-          import tarfile
-          roots = {'.cargo', '.github', 'apps', 'crates', 'tools', 'docs', 'adr', 'sdk', 'wit', 'proto', 'schemas', 'examples', 'tests'}
-          paths = [pathlib.Path(os.fsdecode(p)) for p in subprocess.check_output(['git', 'ls-files', '-z']).split(b'\0') if p]
-          paths = [p for p in paths if len(p.parts) == 1 or p.parts[0] in roots]
-          if len(paths) > 100000 or sum(p.lstat().st_size for p in paths) > 256 * 1024 * 1024:
-              raise SystemExit('source snapshot exceeds its finite allowance')
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'audit-lifecycle-source' / 'source.tar.gz'
-          with tarfile.open(out, 'w:gz') as archive:
-              for path in paths:
-                  archive.add(path, recursive=False)
+          import re
+          import sys
+          p = pathlib.Path(sys.argv[1])
+          text = p.read_text()
+          text = re.sub(r'(?ms)^members = \[.*?^\]', 'members = ["crates/latent-core", "crates/latent-audit"]', text, count=1)
+          text = re.sub(r'(?m)^exclude = .*\n', '', text)
+          p.write_text(text)
           PY
+          cargo +1.97.1 vendor --manifest-path "$out/workspace/Cargo.toml" "$out/vendor" > "$out/evidence/vendor-config.toml"
+          rustc +1.97.1 --version --verbose > "$out/evidence/rustc.txt"
+          git rev-parse HEAD > "$out/evidence/source-sha.txt"
+          test "$(du -sm "$out/vendor" | cut -f1)" -le 256
+          toolchain="$(rustup toolchain list | awk '/^1.97.1-/ {print $1; exit}')"
+          test -n "$toolchain"
+          cp -a "$HOME/.rustup/toolchains/$toolchain" "$out/rust-toolchain"
+          test "$(du -sm "$out/rust-toolchain" | cut -f1)" -le 2048
+          tar -czf "$RUNNER_TEMP/audit-offline.tar.gz" -C "$out" rust-toolchain vendor workspace/Cargo.toml workspace/Cargo.lock evidence
+          git archive --format=tar.gz --output="$RUNNER_TEMP/audit-protocol-source.tar.gz" HEAD api
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: audit-lifecycle-source-${{ github.sha }}
-          path: ${{ runner.temp }}/audit-lifecycle-source/
+          name: audit-offline-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/audit-offline.tar.gz
+            ${{ runner.temp }}/audit-protocol-source.tar.gz
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
