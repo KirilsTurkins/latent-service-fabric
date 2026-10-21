@@ -47,3 +47,24 @@ binds all 52 artifact members, source/configuration identities and object
 digests. Supplemental freestanding controls remain separate mechanism evidence.
 The objects provide no link, boot, active LSM runtime, physical allocation,
 final-free or installation qualification.
+
+## Explicit Netport cache mode
+
+The closed `netport` boolean input and owned Netport branch select one third,
+exclusive job. Both earlier job bodies remain unchanged. Conflicting manual
+Netlabel/Netport requests and unknown input strings fail before source
+acquisition or build; inputs never select arbitrary commands or targets.
+
+This mode authenticates fifteen whole inputs and records digests for all 29
+derived files. The fourteen actual Kbuild targets retain the entire twelve
+Netlabel target/symbol floor and add SELinux `netport.o` and `hooks.o`. All 40
+private globals must be defined. The actual connect call site and cache lifetime
+code are compiled with original kernel headers, SELinux/Netlabel enabled and
+`-Werror`; the original configuration equality, `-j2`, 900/300-second command
+bounds, owned cleanup and bounded failure diagnostics remain.
+
+The new mode has not run yet. The earlier twelve-object receipt remains bound
+to its original source and does not qualify this cache prefix. A successful
+object run will still prove neither real cache/RCU execution nor lazy policy
+SID, AVC/audit, RX/SKB/page closure, kernel linking/boot, final-free retirement
+or an installed provider. Production enablement remains off.
