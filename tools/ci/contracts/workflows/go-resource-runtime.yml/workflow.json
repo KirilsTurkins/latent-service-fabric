@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "go-resource-runtime-${{ github.ref }}"
+    },
+    "name": "Go joined resource and managed runtime qualification",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-resource-joined-current-20261020"
+        ],
+        "paths": [
+          ".github/workflows/go-resource-runtime.yml",
+          "tools/go_resource_runtime_fixture.py",
+          "tools/go_resource_runtime_build.py",
+          "tools/qualify_go_resource_runtime.py",
+          "tools/resource_runtime_node.py",
+          "tools/qualify_typescript_resource_runtime.py"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "joined-resources"
+  ],
+  "reviewReason": "Publish the explicitly approved finite Go joined resource/goroutine programme with one fresh pinned Go1.27.3 v5 component, frozen357e SDK5 products, original13 outcomes and all TypeScript/default owner limits preserved; no native rebuild or qualification claim before actual results.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-resource-runtime.yml"
+}
