@@ -1,0 +1,87 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "One normal TypeScript component and four actual fallback outcomes",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Fetch the immutable existing native source objects",
+        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\n"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check the finite fallback readers and original native product boundaries",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_explicit_fallback tools.tests.test_sdk_explicit_fallback -v"
+      },
+      {
+        "name": "Install the ordinary compiler namespace boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the normal pinned TypeScript tools with their existing engine",
+        "run": "python3 -B tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-fallback-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the existing five native products with original compilation lineage",
+        "run": "python3 -B tools/c_thread_admission_native_products.py --output \"$RUNNER_TEMP/typescript-fallback-native\""
+      },
+      {
+        "name": "Capture transitive callbacks build once sign and observe four actual invocations",
+        "run": "python3 -B tools/qualify_typescript_explicit_fallback.py \\\n  --native-products \"$RUNNER_TEMP/typescript-fallback-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-fallback-tools\" --output \"$RUNNER_TEMP/typescript-fallback\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain source construction outcomes and actual retirement observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-explicit-fallback-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fallback-native/*.json\n${{ runner.temp }}/typescript-fallback/*.json\n${{ runner.temp }}/typescript-fallback/*.log\n${{ runner.temp }}/typescript-fallback/logs/**\n${{ runner.temp }}/typescript-fallback/build/*.json\n${{ runner.temp }}/typescript-fallback/build/*.wit\n${{ runner.temp }}/typescript-fallback/build/wit/**\n${{ runner.temp }}/typescript-fallback/build/component.wasm\n${{ runner.temp }}/typescript-fallback/build/package/**\n${{ runner.temp }}/typescript-fallback/build/logs/**\n${{ runner.temp }}/typescript-fallback/node/*.json\n${{ runner.temp }}/typescript-fallback/node/*.log\n${{ runner.temp }}/typescript-fallback/node/controls/**\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "explicit-fallback",
+  "kind": "job",
+  "reviewReason": "New twenty-minute owning campaign with one normal build and four original-budget explicit fallback uncaught fresh calls; no native or JavaScript engine build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-explicit-fallback.yml"
+}
