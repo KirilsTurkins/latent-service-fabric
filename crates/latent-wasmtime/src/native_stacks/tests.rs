@@ -477,6 +477,13 @@ async fn actual_nested_async_import_needs_an_engine_worker_without_a_c_thread_st
         context.finish_logical().unwrap();
         drop(store);
         context.after_store_dropped().unwrap();
+        assert!(context.physically_retired());
+        assert_eq!(runtime.snapshot().owners[6], 0);
+        // This test's host closure retains a runtime handle to observe real
+        // admission. End that separate lifetime before checking all metadata.
+        drop(linker);
+        drop(code);
+        drop(engine);
         drop(context);
         drop(runtime);
         assert_eq!(budget.host_memory_bytes(), 0);
