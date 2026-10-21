@@ -280,3 +280,77 @@ class KernelAvcObjectSelection(unittest.TestCase):
         self.assertIn('/FAILED.json', artifact['path'])
         self.assertEqual(artifact['retention-days'], 3)
         self.assertEqual(workflow['concurrency']['cancel-in-progress'], False)
+
+
+class KernelAuditObjectSelection(unittest.TestCase):
+    def test_twenty_objects_keep_all_sixty_one_avc_definitions_and_add_eight(self):
+        old = candidate.object_selection(False, False, False, True)
+        selected = candidate.object_selection(False, False, False, False, True)
+        self.assertEqual(len(selected), 20)
+        self.assertEqual(set(selected) - set(old), {
+            'net/core/skbuff.o', 'kernel/audit.o', 'security/lsm_audit.o', 'net/netlink/af_netlink.o'})
+        for name, symbols in old.items():
+            self.assertTrue(set(symbols) <= set(selected[name]))
+        names = [name for values in selected.values() for name in values]
+        self.assertEqual(len(names), 69)
+        self.assertEqual(len(set(names)), 69)
+        self.assertEqual({name for name in names if not name.startswith('lsf_')},
+                         {'netlink_unicast', 'netlink_broadcast_filtered'})
+        self.assertEqual(sum(name.startswith('lsf_') for name in names), 67)
+        self.assertTrue({'lsf_prepaid_avc_audit', 'lsf_prepaid_audit_skb_new',
+            'lsf_prepaid_audit_log_start', 'lsf_prepaid_audit_log_end',
+            'lsf_prepaid_common_lsm_audit', 'lsf_factory_audit_head_current'} <= set(names))
+
+    def test_unknown_and_mixed_audit_profiles_refuse_before_acquisition(self):
+        for value in ('true', 'false', 0, 1, None, [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'closed-profile-selector'):
+                candidate.object_selection(False, False, False, False, value)
+        for modes in ((True, False, False, False), (False, True, False, False),
+                      (False, False, True, False), (False, False, False, True), (True, True, True, True)):
+            with self.subTest(modes=modes), patch.object(candidate.maintained, 'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
+                    candidate.run(None, None, netlabel=modes[0], netport=modes[1], sidcache=modes[2], avc=modes[3], audit=True)
+                read.assert_not_called()
+
+    def test_audit_and_auditsyscall_must_already_be_enabled_without_overrides(self):
+        before = dict.fromkeys(candidate.AUDIT_REQUIRED, 'y')
+        candidate.audit_configuration(before, dict(before))
+        self.assertEqual(candidate.AUDIT_REQUIRED, ('CONFIG_AUDIT', 'CONFIG_AUDITSYSCALL'))
+        for name in candidate.AUDIT_REQUIRED:
+            for value in (None, 'n', 'm', True, 1):
+                with self.subTest(name=name, value=value), self.assertRaisesRegex(ValueError, 'audit-originally-disabled'):
+                    candidate.audit_configuration({**before, name:value}, before)
+                with self.subTest(changed=name, value=value), self.assertRaisesRegex(ValueError, 'audit-originally-disabled'):
+                    candidate.audit_configuration(before, {**before, name:value})
+        self.assertNotIn('CONFIG_AUDIT', candidate.KCONFIG)
+
+    def test_audit_selection_refuses_local_build_before_archive_or_output(self):
+        with patch.dict(candidate.os.environ, {}, clear=True), patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
+                candidate.run(None, None, audit=True)
+            read.assert_not_called()
+
+    def test_exclusive_audit_job_retains_closed_inputs_targets_and_original_bounds(self):
+        import yaml
+        workflow = yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        events = workflow.get('on', workflow.get(True))
+        self.assertEqual(events['workflow_dispatch']['inputs']['audit'], {
+            'description': 'Compile the closed mandatory audit and SKB source profile',
+            'type': 'boolean', 'default': False})
+        job = workflow['jobs']['audit-objects']
+        self.assertEqual(job['timeout-minutes'], 20)
+        guard = next(step for step in job['steps'] if 'env' in step)
+        self.assertEqual(set(guard['env']), {'NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST', 'AVC_REQUEST', 'AUDIT_REQUEST'})
+        self.assertIn("assert all(value in ('', 'true', 'false') for value in values)", guard['run'])
+        self.assertIn("assert values.count('true') <= 1", guard['run'])
+        commands = '\n'.join(step.get('run', '') for step in job['steps'])
+        self.assertIn('--audit', commands)
+        self.assertNotIn('${{ inputs.', commands)
+        self.assertNotIn('scripts/config', commands)
+        self.assertIn('gcc make flex bison bc libelf-dev libssl-dev', commands)
+        artifact = job['steps'][-1]['with']
+        for name in candidate.object_selection(False, False, False, False, True):
+            self.assertIn('/objects/'+name, artifact['path'])
+        self.assertIn('/FAILED.json', artifact['path'])
+        self.assertEqual(artifact['retention-days'], 3)
+        self.assertEqual(workflow['concurrency']['cancel-in-progress'], False)
