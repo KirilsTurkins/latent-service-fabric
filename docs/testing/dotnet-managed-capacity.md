@@ -8,11 +8,11 @@ The extra fixed 32-entry timer table and TimerOwner/Record objects are managed h
 
 The explicit default-false `owner_capacity` workflow selector compiles one ordinary managed component and reuses the authenticated historical `6fd19eab2c224fc31481d03de5008de4d3e4429e` five native products. Its 17 signed invocations cover Task and queue refusals, each individual timer birth/return, original periodic/dispose behavior, a real async timer descendant and finally under Closing, a separately labeled public Native-ledger refusal, production table installation with zero Native capacity, and fresh activations. Task/timer ceilings stay eight; queue/native ceilings only narrow to two. The zero-Native installation refusal is paired with two positive/fresh activations at Native capacity one. The zero-cap terminal is a generic guest trap, not a claim that the original managed exception was transported. Direct Native registration does not qualify NativeMemory allocation semantics.
 
-Each accepted main case is followed by a fresh same-budget activation, all 18 physical counters must return to zero, and all three owned nodes and peers must stop cleanly. Original 120-second invocation and 300-second node/peer windows remain. The one finally marker is the sole permitted HTTP contact. Existing HTTP/private-client and 30-case lifecycle evidence is retained under its original source; this programme does not rerun those baselines. Signed execution is pending. Issue #693 remains open until the literal capacity gate is satisfied; no full #746 or post-retired Store callback claim is made.
+Each accepted main case is followed by a fresh same-budget activation, all 18 physical counters must return to zero, and all three owned nodes and peers must stop cleanly. Original 120-second invocation and 300-second node/peer windows remain. The one finally marker is the sole permitted HTTP contact. Existing HTTP/private-client and 30-case lifecycle evidence is retained under its original source; this programme does not rerun those baselines. All seventeen signed cases now pass at source75e. Issue #693 remains open until the reviewed source is merged and the final literal ledger is accepted; no full #746 or post-retired Store callback claim is made.
 
 The first capacity attempt, source `64102bcc65af07a0a4458c83807e86598f0346a9`, run `39577888602` / job `119147870666`, remains failed. Its first six signed outcomes pass Task and queue refusal/fresh controls and eight individual timer births/returns/refusal/reuse/fresh. The periodic case then returns an unreachable guest trap; this does not identify the original managed cause. The bounded artifact `12335198002` retains the successful component and raw results. A fixture-only diagnostic now converts only callback failures into the existing Task's exception and projects a finite closed code/stage. The original successful periodic body and exact oracle remain required; every diagnostic result is rejected. Failures outside that observable callback/task boundary may remain opaque. No production or native change is inferred from this diagnostic.
 
-The diagnostic attempt `03669e56d0927fb60384e8647c9b2c0a3513990e`, run `39580872537`, also remains failed without an observable callback/await cause. A bounded source control subsequently reproduces a separate precise deferred-parent defect using the actual Rust Timer/Owner sources: the lazy `wait_for` future captures its creator Task token, then validates it only on first poll after that Task can retire. The retained Wait owner now supplies the continuation token through actual future/drop lifetime. Initial admission still validates the original parent; invalid generation/currentness and Closing gates remain enforced. Six actual-source controls cover creator return, Closing, a later ambient Task, early drop and invalid parents with explicit test ledger/clock/pump/quota ports. Their old source has three failures at the original readiness assertion; corrected source passes all six. This is causal source evidence, not a substitute for the pending signed periodic/17-case result. The correction changes the guest adapter only; historical native products remain unchanged.
+The diagnostic attempt `03669e56d0927fb60384e8647c9b2c0a3513990e`, run `39580872537`, also remains failed without an observable callback/await cause. A bounded source control subsequently reproduces a separate precise deferred-parent defect using the actual Rust Timer/Owner sources: the lazy `wait_for` future captures its creator Task token, then validates it only on first poll after that Task can retire. The retained Wait owner now supplies the continuation token through actual future/drop lifetime. Initial admission still validates the original parent; invalid generation/currentness and Closing gates remain enforced. Six actual-source controls cover creator return, Closing, a later ambient Task, early drop and invalid parents with explicit test ledger/clock/pump/quota ports. Their old source has three failures at the original readiness assertion; corrected source passes all six. This is causal source evidence, not a substitute for signed guest evidence; the later75e result separately passes the original periodic/17-case oracle. The correction changes the guest adapter only; historical native products remain unchanged.
 
 
 The periodic failure retained at source `1b19f21db44e137b69a9ccf5aca4d58a7653c51a`
@@ -35,3 +35,21 @@ accept fresh work at the same ceiling. Both success and fault paths are tested
 on both forms. Queue and native imports are explicit test ports; these controls
 give no signed guest qualification. The original seventeen signed outcomes,
 100 ms period and all owner and execution limits remain unchanged.
+
+
+The actual17-case run is
+[39601996612 / job119228554780](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39601996612/job/119228554780)
+at guest/fixture source `75e78789ab3db89979553498a7854ba962ddfb70`.
+[Durable raw public proof](evidence/dotnet-managed-owner-capacity-signed-2026-10-21.json)
+retains all17 exact case objects and three final physical/node/peer records.
+Artifact12346159958 is10,865,026 bytes, SHA-256
+`203d67d510b3611bd74c95c956ebee2d25d789c68e9213fbb5ff35811a1c9b22`;
+all608 ZIP members pass CRC/SHA. Strict validation binds236 Git preimages,
+138 SDK inputs and134 historical native/protocol materials. Component
+`408cb2409edf336f658ebb36fbe612d854b70db8fe5376d9422c1aad979d8797`
+is4,940,067 bytes. There are17 physical retirements, all18 active provider
+counters zero after every call, exactly one authorized closing-finally contact,
+and three clean/reaped nodes. Each individual timer is counted independently:
+births1..8 and disposal returns7..0. Periodic2 passes with its original100 ms
+period and all original limits. One fresh normal AOT guest was compiled; no
+native host or previous HTTP/client programme was rebuilt.
