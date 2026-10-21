@@ -30,6 +30,11 @@
     "KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure",
     "KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build",
     "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols",
+    "KernelRouteObjectSelection.test_actual_route_configuration_keeps_xfrm_and_refuses_allocating_tracker_or_lwt",
+    "KernelRouteObjectSelection.test_all_seven_original_job_bodies_remain_exact_except_exclusive_if",
+    "KernelRouteObjectSelection.test_route_job_retains_seven_closed_inputs_all_targets_and_original_limits",
+    "KernelRouteObjectSelection.test_twenty_four_objects_keep_all_seventy_five_bind_oracles_and_add_six",
+    "KernelRouteObjectSelection.test_unknown_mixed_and_local_route_modes_refuse_before_source_or_build",
     "KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions",
     "KernelSidcacheObjectSelection.test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds",
     "KernelSidcacheObjectSelection.test_only_one_real_boolean_profile_can_reach_source_or_build",
@@ -397,6 +402,66 @@
       ],
       "skipSites": []
     },
+    "KernelRouteObjectSelection.test_actual_route_configuration_keeps_xfrm_and_refuses_allocating_tracker_or_lwt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_all_seven_original_job_bodies_remain_exact_except_exclusive_if": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_route_job_retains_seven_closed_inputs_all_targets_and_original_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_twenty_four_objects_keep_all_seventy_five_bind_oracles_and_add_six": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_unknown_mixed_and_local_route_modes_refuse_before_source_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions": {
       "bases": [
         "unittest.TestCase"
@@ -460,6 +525,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_objects.py",
-  "reviewReason": "Add the exclusive closed bind-bucket object-only profile over the full mandatory-audit floor; preserve all existing jobs, commands, tests, security config and original runtime/diagnostic limits. No kernel execution or installation qualification.",
+  "reviewReason": "Add one exclusive route object-only lane preserving all seven previous job bodies, 22 objects and75 global oracles, every original case/guard and original config/runtime/diagnostic bounds. No kernel link, boot, execution or installation qualification.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
