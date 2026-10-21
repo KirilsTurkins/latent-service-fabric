@@ -1,0 +1,306 @@
+{
+  "schemaVersion": "latent.java.http-mixed-signed.v1",
+  "status": "passed",
+  "source": "ef3d836b670775ad398ffee2895fd725c88f1750",
+  "run": 39528776339,
+  "job": 118989568182,
+  "artifact": {
+    "id": 12315336264,
+    "bytes": 2414608,
+    "sha256": "sha256:de3a2588cfc6ee27ed716edb519794aa56cba54b3245b454588d5f3d559bb8bd",
+    "membersVerified": 237
+  },
+  "component": {
+    "sha256": "sha256:642b2b7038fa79d18f8c75cd3620788365f3c7ac5c967b78ac80849614fc8862",
+    "bytes": 7721494
+  },
+  "compiledGuestSource": "ef3d836b670775ad398ffee2895fd725c88f1750",
+  "fixtureSource": "ef3d836b670775ad398ffee2895fd725c88f1750",
+  "nativeCompiledSource": "6fd19eab2c224fc31481d03de5008de4d3e4429e",
+  "nativeProducerRun": 39516047085,
+  "nativeProducerJob": 118948325038,
+  "nativeSource": {
+    "sha256": "sha256:4a0631c0abb07cfbf4a32d41d6376c2e89861f73c97eb38d7c8d8b8a869aab82",
+    "files": 3318,
+    "bytes": 26118205,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "auxiliaryMaterials": 134,
+  "sourceMaterialsComparedWithExactGit": 238,
+  "products": {
+    "latent": {
+      "sha256": "sha256:1d1ca68fd341f3dfadbc62d17ae7c152d26c4ba79c569dc378f261b24b9cf142",
+      "bytes": 69007584
+    },
+    "latentd": {
+      "sha256": "sha256:1711ac09047a702cbd3fd99aa59b0b67efccb3592533b6d1957ba274d59fb48a",
+      "bytes": 185502152
+    },
+    "package": {
+      "sha256": "sha256:5d1c60df2cab630e4bb19e06cc699b6cf0c930eef418822f025ab416220e2314",
+      "bytes": 17750192
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:5c661ba4e2c67e43e3a7ed07f9d24e8348c4e6d8dbd06e157fd2a46f062880b8",
+      "bytes": 24017536
+    }
+  },
+  "outcomes": [
+    {
+      "mode": 0,
+      "case": "consumed-response-views",
+      "value": [
+        "1:views:57:same:consumed:closed"
+      ],
+      "category": "success",
+      "outboundRequests": 1,
+      "retirement": true
+    },
+    {
+      "mode": 1,
+      "case": "borrowed-caller-output",
+      "value": [
+        "1:borrowed:57:false:false"
+      ],
+      "category": "success",
+      "outboundRequests": 1,
+      "retirement": true
+    },
+    {
+      "mode": 2,
+      "case": "held-body-sibling-and-backpressure",
+      "value": [
+        "1:borrowed:4109:true:false"
+      ],
+      "category": "success",
+      "outboundRequests": 2,
+      "retirement": true
+    },
+    {
+      "mode": 3,
+      "case": "retained-prefix-then-truncation",
+      "value": [
+        "1:partial-error:short:unexpected-eof"
+      ],
+      "category": "success",
+      "outboundRequests": 1,
+      "retirement": true
+    },
+    {
+      "mode": 4,
+      "case": "original-response-limit",
+      "value": [
+        "1:response-limit:response-too-large"
+      ],
+      "category": "success",
+      "outboundRequests": 1,
+      "retirement": true
+    },
+    {
+      "mode": 5,
+      "case": "exact-request-boundary",
+      "value": [
+        "1:request-boundary:4096:200"
+      ],
+      "category": "success",
+      "outboundRequests": 1,
+      "retirement": true
+    },
+    {
+      "mode": 6,
+      "case": "original-request-limit",
+      "value": [
+        "1:request-limit:invalid-request"
+      ],
+      "category": "success",
+      "outboundRequests": 0,
+      "retirement": true
+    },
+    {
+      "mode": 7,
+      "case": "cancel-after-partial-body-and-sibling",
+      "value": null,
+      "category": "platform-failure",
+      "outboundRequests": 2,
+      "retirement": true
+    },
+    {
+      "mode": 8,
+      "case": "fresh-after-cancel",
+      "value": [
+        "1:fresh:200:0:0"
+      ],
+      "category": "success",
+      "outboundRequests": 1,
+      "retirement": true
+    },
+    {
+      "mode": 9,
+      "case": "exact-response-boundary",
+      "value": [
+        "1:response-boundary:8192:200"
+      ],
+      "category": "success",
+      "outboundRequests": 1,
+      "retirement": true
+    }
+  ],
+  "caseReceipts": [
+    {
+      "case": "consumed-response-views",
+      "mode": 0,
+      "receipt": {
+        "path": "controls/consumed-response-views-case.json",
+        "sha256": "sha256:2e0dd4d1f5120242a71c45080b3dbd6ac9d4087ca296c6fabec15801ee2b0623",
+        "bytes": 20132
+      }
+    },
+    {
+      "case": "borrowed-caller-output",
+      "mode": 1,
+      "receipt": {
+        "path": "controls/borrowed-caller-output-case.json",
+        "sha256": "sha256:1726d0414aef0293b61c3112ac8cbedec1323edcb84d27a3801aecfc739f8175",
+        "bytes": 21431
+      }
+    },
+    {
+      "case": "held-body-sibling-and-backpressure",
+      "mode": 2,
+      "receipt": {
+        "path": "controls/held-body-sibling-and-backpressure-case.json",
+        "sha256": "sha256:c8118bbe0ffa95628ffebdd1ce39fe5237690dac281909bc37032a9cbd3d3d66",
+        "bytes": 40721
+      }
+    },
+    {
+      "case": "retained-prefix-then-truncation",
+      "mode": 3,
+      "receipt": {
+        "path": "controls/retained-prefix-then-truncation-case.json",
+        "sha256": "sha256:7ac035255d9eed75707a5f64d0df2ccbb688df3e32c0554d938de9585bbb15eb",
+        "bytes": 25705
+      }
+    },
+    {
+      "case": "original-response-limit",
+      "mode": 4,
+      "receipt": {
+        "path": "controls/original-response-limit-case.json",
+        "sha256": "sha256:2bbae90831d2d2e44632f6b0056e5210309e33152e64a03a882367e37e8a1540",
+        "bytes": 26972
+      }
+    },
+    {
+      "case": "exact-request-boundary",
+      "mode": 5,
+      "receipt": {
+        "path": "controls/exact-request-boundary-case.json",
+        "sha256": "sha256:852febb553e04081097c963b803456fdbdf3edc67b6f26cfff113833e18d1983",
+        "bytes": 28285
+      }
+    },
+    {
+      "case": "original-request-limit",
+      "mode": 6,
+      "receipt": {
+        "path": "controls/original-request-limit-case.json",
+        "sha256": "sha256:8f916bce219a12e74de33f93aa3b33a3c685a143c373762c9b23af838917c585",
+        "bytes": 28292
+      }
+    },
+    {
+      "case": "cancel-after-partial-body-and-sibling",
+      "mode": 7,
+      "receipt": {
+        "path": "controls/cancel-after-partial-body-and-sibling-case.json",
+        "sha256": "sha256:72d892ae7988cb1a33f97083c9beece5ff121464f723ad3d75760837d8317e38",
+        "bytes": 47574
+      }
+    },
+    {
+      "case": "fresh-after-cancel",
+      "mode": 8,
+      "receipt": {
+        "path": "controls/fresh-after-cancel-case.json",
+        "sha256": "sha256:4a1b9fc0bb7484cc15d4008dc19017bed59b947c4326eefa06cb8605797eea2f",
+        "bytes": 32330
+      }
+    },
+    {
+      "case": "exact-response-boundary",
+      "mode": 9,
+      "receipt": {
+        "path": "controls/exact-response-boundary-case.json",
+        "sha256": "sha256:b2ee7a66e212605f71a055ecf8c2e97bedfb39925438ee39086aa8e30833a2b1",
+        "bytes": 33721
+      }
+    }
+  ],
+  "authorityDenials": 1,
+  "httpContacts": 11,
+  "pendingPhysicalSamples": 2,
+  "perCasePhysicalRetirement": 10,
+  "all18ActiveProviderCountersZero": true,
+  "cleanReapedNode": true,
+  "peerStoppedZeroOpen": true,
+  "finalProductsUnchanged": true,
+  "wholeNodeLifetimeSeconds": 300,
+  "invocationWallMillis": 120000,
+  "fuel": 1000000000,
+  "guestMemoryBytes": 67108864,
+  "httpRequestBytes": 4096,
+  "httpResponseBytes": 8192,
+  "chunkBytes": 4096,
+  "outstandingChunks": 2,
+  "nodeAndOperatorComponentInputBytes": 67108864,
+  "defaultComponentInputBytes": 16777216,
+  "earlierFailures": [
+    {
+      "source": "f9790989258bb86b2cb9ebfa9c94e0545c6dc332",
+      "run": 39525108126,
+      "job": 118977799122,
+      "artifact": 12312666952,
+      "status": "failed",
+      "stage": "component-new",
+      "preciseAssemblyDiagnosticRetained": false
+    },
+    {
+      "source": "8e5ee2d66b54a6db08495af8ed963fa950b62d26",
+      "run": 39526718936,
+      "job": 118983000030,
+      "artifact": 12313654149,
+      "status": "failed",
+      "stage": "component-new",
+      "cause": "Capsule.run body 13,797,140 exceeds original 7,654,321-byte validator bound",
+      "encoderOnlyReproduced": true
+    }
+  ],
+  "repair": "Only split four fixture case bodies into ordinary helper methods; exact statement and ten-mode host-JDK differential preserved operations/results/cleanup. No compiler/validator limit change.",
+  "integrationBase": "8c5e926e050859e6ab9d39f9cbfef21ad138bce4",
+  "integrationScope": {
+    "qualifiedFeatureBlobsUnchanged": true,
+    "javaSdkAndWitPreimagesUnchanged": 199,
+    "campaignMaterialDeltas": [
+      "tools/toolchain.toml: Go 1.27.2 to 1.27.3 only; Java pin unchanged",
+      "tools/rust_capsule_build.py: optional Rust HTTP runtime only; shared Commands/package_inputs unchanged"
+    ],
+    "historicalNativeCompilationNotTransferredToCurrentSource": true
+  },
+  "lateCompletionClaimed": false,
+  "nativeRecompiledByConsumer": false,
+  "reproducibilityClaimed": false,
+  "full688Qualified": false,
+  "full741Qualified": false,
+  "limitations": [
+    "Finite mixed-body programme; late accepted-task completion remains a separate actual gate.",
+    "Historical 6fd native products/source retain their own identity; no current native rebuild or unchanged earlier positive replay.",
+    "Source/build observation remains nonhermetic with declared-input completeness and no reproducibility claim."
+  ]
+}

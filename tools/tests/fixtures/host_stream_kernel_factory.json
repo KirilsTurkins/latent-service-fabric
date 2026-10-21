@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "lsf.kernel-outer-factory-source.v1",
+  "upstreamCommit": "adc218676eef25575469234709c2d87185ca223a",
+  "source": {
+    "net/socket.c": {
+      "bytes": 93292,
+      "sha256": "26573c98db58359bd892a3db6664efd27674d765db2c6377b2c126e03e54c5e2",
+      "gitBlob": "042451f01c6520b85496213e6b3d8d2116ab2533",
+      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/socket.c"
+    },
+    "net/ipv4/af_inet.c": {
+      "bytes": 51923,
+      "sha256": "4a055450bbb5d8e578ca2f44e4be31e262d1ced7b2fee9b129027b499ec98eac",
+      "gitBlob": "b24d74616637a0e5fc1183cad927fe7c862104c2",
+      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/af_inet.c"
+    },
+    "net/ipv6/af_inet6.c": {
+      "bytes": 32504,
+      "sha256": "79b1a13c5ae676a3ed4a591e120a9d24377a9a495c9d6a752b141d517743d455",
+      "gitBlob": "ba69b86f1c7d5e8d9c8b02f3e70a95d913082701",
+      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv6/af_inet6.c"
+    },
+    "include/linux/net.h": {
+      "bytes": 12256,
+      "sha256": "48163c43b595fd24e02caa86650b9c6dd067a51c75332935a3f5b48b9798ae77",
+      "gitBlob": "b75bc534c1b351955ac2ada9da09c52bd3bdae3e",
+      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/linux/net.h"
+    },
+    "fs/inode.c": {
+      "bytes": 75527,
+      "sha256": "05f873648c57568a496e1bde9f313152de67f3bac0e1b621e5710da1e5f50663",
+      "gitBlob": "8dabb224f941c0b95e7a0e154592bb9137e5bc2c",
+      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/fs/inode.c"
+    }
+  },
+  "functions": {
+    "sock_alloc_inode": {
+      "source": "net/socket.c",
+      "prefix": "static struct inode *sock_alloc_inode(",
+      "sha256": "b2a4c7fe9a88f5650acc0304baef5ccfcd4bd8c058281877e457aa76d07d17d5",
+      "text": "static struct inode *sock_alloc_inode(struct super_block *sb)\n{\n\tstruct socket_alloc *ei;\n\n\tei = alloc_inode_sb(sb, sock_inode_cachep, GFP_KERNEL);\n\tif (!ei)\n\t\treturn NULL;\n\tinit_waitqueue_head(&ei->socket.wq.wait);\n\tei->socket.wq.fasync_list = NULL;\n\tei->socket.wq.flags = 0;\n\n\tei->socket.state = SS_UNCONNECTED;\n\tei->socket.flags = 0;\n\tei->socket.ops = NULL;\n\tei->socket.sk = NULL;\n\tei->socket.file = NULL;\n\n\treturn &ei->vfs_inode;\n}\n",
+      "closureProven": false
+    },
+    "sock_alloc_file": {
+      "source": "net/socket.c",
+      "prefix": "struct file *sock_alloc_file(",
+      "sha256": "40735b74fc23f7c1566c0fde9f0c3c97cac1a48f59768212c08ff797819a7d32",
+      "text": "struct file *sock_alloc_file(struct socket *sock, int flags, const char *dname)\n{\n\tstruct file *file;\n\n\tif (!dname)\n\t\tdname = sock->sk ? sock->sk->sk_prot_creator->name : \"\";\n\n\tfile = alloc_file_pseudo(SOCK_INODE(sock), sock_mnt, dname,\n\t\t\t\tO_RDWR | (flags & O_NONBLOCK),\n\t\t\t\t&socket_file_ops);\n\tif (IS_ERR(file)) {\n\t\tsock_release(sock);\n\t\treturn file;\n\t}\n\n\tfile->f_mode |= FMODE_NOWAIT;\n\tsock->file = file;\n\tfile->private_data = sock;\n\tstream_open(SOCK_INODE(sock), file);\n\treturn file;\n}\n",
+      "closureProven": false
+    },
+    "sock_alloc": {
+      "source": "net/socket.c",
+      "prefix": "struct socket *sock_alloc(void)",
+      "sha256": "f4fce698474d356cc045ab1e9927cb7816b01cf2adfdc7960b55e8ed3f627f1e",
+      "text": "struct socket *sock_alloc(void)\n{\n\tstruct inode *inode;\n\tstruct socket *sock;\n\n\tinode = new_inode_pseudo(sock_mnt->mnt_sb);\n\tif (!inode)\n\t\treturn NULL;\n\n\tsock = SOCKET_I(inode);\n\n\tinode->i_ino = get_next_ino();\n\tinode->i_mode = S_IFSOCK | S_IRWXUGO;\n\tinode->i_uid = current_fsuid();\n\tinode->i_gid = current_fsgid();\n\tinode->i_op = &sockfs_inode_ops;\n\n\treturn sock;\n}\n",
+      "closureProven": false
+    },
+    "__sock_create": {
+      "source": "net/socket.c",
+      "prefix": "int __sock_create(",
+      "sha256": "f70b1abc95a7b24a1d2ed7a8382df13d2db8bbce87834ee8fbbc2d800196a929",
+      "text": "int __sock_create(struct net *net, int family, int type, int protocol,\n\t\t\t struct socket **res, int kern)\n{\n\tint err;\n\tstruct socket *sock;\n\tconst struct net_proto_family *pf;\n\n\t/*\n\t *      Check protocol is in range\n\t */\n\tif (family < 0 || family >= NPROTO)\n\t\treturn -EAFNOSUPPORT;\n\tif (type < 0 || type >= SOCK_MAX)\n\t\treturn -EINVAL;\n\n\t/* Compatibility.\n\n\t   This uglymoron is moved from INET layer to here to avoid\n\t   deadlock in module load.\n\t */\n\tif (family == PF_INET && type == SOCK_PACKET) {\n\t\tpr_info_once(\"%s uses obsolete (PF_INET,SOCK_PACKET)\\n\",\n\t\t\t     current->comm);\n\t\tfamily = PF_PACKET;\n\t}\n\n\terr = security_socket_create(family, type, protocol, kern);\n\tif (err)\n\t\treturn err;\n\n\t/*\n\t *\tAllocate the socket and allow the family to set things up. if\n\t *\tthe protocol is 0, the family is instructed to select an appropriate\n\t *\tdefault.\n\t */\n\tsock = sock_alloc();\n\tif (!sock) {\n\t\tnet_warn_ratelimited(\"socket: no more sockets\\n\");\n\t\treturn -ENFILE;\t/* Not exactly a match, but its the\n\t\t\t\t   closest posix thing */\n\t}\n\n\tsock->type = type;\n\n#ifdef CONFIG_MODULES\n\t/* Attempt to load a protocol module if the find failed.\n\t *\n\t * 12/09/1996 Marcin: But! this makes REALLY only sense, if the user\n\t * requested real, full-featured networking support upon configuration.\n\t * Otherwise module support will break!\n\t */\n\tif (rcu_access_pointer(net_families[family]) == NULL)\n\t\trequest_module(\"net-pf-%d\", family);\n#endif\n\n\trcu_read_lock();\n\tpf = rcu_dereference(net_families[family]);\n\terr = -EAFNOSUPPORT;\n\tif (!pf)\n\t\tgoto out_release;\n\n\t/*\n\t * We will call the ->create function, that possibly is in a loadable\n\t * module, so we have to bump that loadable module refcnt first.\n\t */\n\tif (!try_module_get(pf->owner))\n\t\tgoto out_release;\n\n\t/* Now protected by module ref count */\n\trcu_read_unlock();\n\n\terr = pf->create(net, sock, protocol, kern);\n\tif (err < 0) {\n\t\t/* ->create should release the allocated sock->sk object on error\n\t\t * but it may leave the dangling pointer\n\t\t */\n\t\tsock->sk = NULL;\n\t\tgoto out_module_put;\n\t}\n\n\t/*\n\t * Now to bump the refcnt of the [loadable] module that owns this\n\t * socket at sock_release time we decrement its refcnt.\n\t */\n\tif (!try_module_get(sock->ops->owner))\n\t\tgoto out_module_busy;\n\n\t/*\n\t * Now that we're done with the ->create function, the [loadable]\n\t * module can have its refcnt decremented\n\t */\n\tmodule_put(pf->owner);\n\terr = security_socket_post_create(sock, family, type, protocol, kern);\n\tif (err)\n\t\tgoto out_sock_release;\n\t*res = sock;\n\n\treturn 0;\n\nout_module_busy:\n\terr = -EAFNOSUPPORT;\nout_module_put:\n\tsock->ops = NULL;\n\tmodule_put(pf->owner);\nout_sock_release:\n\tsock_release(sock);\n\treturn err;\n\nout_release:\n\trcu_read_unlock();\n\tgoto out_sock_release;\n}\n",
+      "closureProven": false
+    },
+    "inet_create": {
+      "source": "net/ipv4/af_inet.c",
+      "prefix": "static int inet_create(",
+      "sha256": "26edccf1e1c5a801b3e42fb5a4aa236223d625a4eb42a0c09d433eab2255ff5f",
+      "text": "static int inet_create(struct net *net, struct socket *sock, int protocol,\n\t\t       int kern)\n{\n\tstruct sock *sk;\n\tstruct inet_protosw *answer;\n\tstruct inet_sock *inet;\n\tstruct proto *answer_prot;\n\tunsigned char answer_flags;\n\tint try_loading_module = 0;\n\tint err;\n\n\tif (protocol < 0 || protocol >= IPPROTO_MAX)\n\t\treturn -EINVAL;\n\n\tsock->state = SS_UNCONNECTED;\n\n\t/* Look for the requested type/protocol pair. */\nlookup_protocol:\n\terr = -ESOCKTNOSUPPORT;\n\trcu_read_lock();\n\tlist_for_each_entry_rcu(answer, &inetsw[sock->type], list) {\n\n\t\terr = 0;\n\t\t/* Check the non-wild match. */\n\t\tif (protocol == answer->protocol) {\n\t\t\tif (protocol != IPPROTO_IP)\n\t\t\t\tbreak;\n\t\t} else {\n\t\t\t/* Check for the two wild cases. */\n\t\t\tif (IPPROTO_IP == protocol) {\n\t\t\t\tprotocol = answer->protocol;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tif (IPPROTO_IP == answer->protocol)\n\t\t\t\tbreak;\n\t\t}\n\t\terr = -EPROTONOSUPPORT;\n\t}\n\n\tif (unlikely(err)) {\n\t\tif (try_loading_module < 2) {\n\t\t\trcu_read_unlock();\n\t\t\t/*\n\t\t\t * Be more specific, e.g. net-pf-2-proto-132-type-1\n\t\t\t * (net-pf-PF_INET-proto-IPPROTO_SCTP-type-SOCK_STREAM)\n\t\t\t */\n\t\t\tif (++try_loading_module == 1)\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d-type-%d\",\n\t\t\t\t\t       PF_INET, protocol, sock->type);\n\t\t\t/*\n\t\t\t * Fall back to generic, e.g. net-pf-2-proto-132\n\t\t\t * (net-pf-PF_INET-proto-IPPROTO_SCTP)\n\t\t\t */\n\t\t\telse\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d\",\n\t\t\t\t\t       PF_INET, protocol);\n\t\t\tgoto lookup_protocol;\n\t\t} else\n\t\t\tgoto out_rcu_unlock;\n\t}\n\n\terr = -EPERM;\n\tif (sock->type == SOCK_RAW && !kern &&\n\t    !ns_capable(net->user_ns, CAP_NET_RAW))\n\t\tgoto out_rcu_unlock;\n\n\tsock->ops = answer->ops;\n\tanswer_prot = answer->prot;\n\tanswer_flags = answer->flags;\n\trcu_read_unlock();\n\n\tWARN_ON(!answer_prot->slab);\n\n\terr = -ENOMEM;\n\tsk = sk_alloc(net, PF_INET, GFP_KERNEL, answer_prot, kern);\n\tif (!sk)\n\t\tgoto out;\n\n\terr = 0;\n\tif (INET_PROTOSW_REUSE & answer_flags)\n\t\tsk->sk_reuse = SK_CAN_REUSE;\n\n\tif (INET_PROTOSW_ICSK & answer_flags)\n\t\tinet_init_csk_locks(sk);\n\n\tinet = inet_sk(sk);\n\tinet_assign_bit(IS_ICSK, sk, INET_PROTOSW_ICSK & answer_flags);\n\n\tinet_clear_bit(NODEFRAG, sk);\n\n\tif (SOCK_RAW == sock->type) {\n\t\tinet->inet_num = protocol;\n\t\tif (IPPROTO_RAW == protocol)\n\t\t\tinet_set_bit(HDRINCL, sk);\n\t}\n\n\tif (READ_ONCE(net->ipv4.sysctl_ip_no_pmtu_disc))\n\t\tinet->pmtudisc = IP_PMTUDISC_DONT;\n\telse\n\t\tinet->pmtudisc = IP_PMTUDISC_WANT;\n\n\tatomic_set(&inet->inet_id, 0);\n\n\tsock_init_data(sock, sk);\n\n\tsk->sk_destruct\t   = inet_sock_destruct;\n\tsk->sk_protocol\t   = protocol;\n\tsk->sk_backlog_rcv = sk->sk_prot->backlog_rcv;\n\tsk->sk_txrehash = READ_ONCE(net->core.sysctl_txrehash);\n\n\tinet->uc_ttl\t= -1;\n\tinet_set_bit(MC_LOOP, sk);\n\tinet->mc_ttl\t= 1;\n\tinet_set_bit(MC_ALL, sk);\n\tinet->mc_index\t= 0;\n\tinet->mc_list\t= NULL;\n\tinet->rcv_tos\t= 0;\n\n\tif (inet->inet_num) {\n\t\t/* It assumes that any protocol which allows\n\t\t * the user to assign a number at socket\n\t\t * creation time automatically\n\t\t * shares.\n\t\t */\n\t\tinet->inet_sport = htons(inet->inet_num);\n\t\t/* Add to protocol hash chains. */\n\t\terr = sk->sk_prot->hash(sk);\n\t\tif (err) {\n\t\t\tsk_common_release(sk);\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tif (sk->sk_prot->init) {\n\t\terr = sk->sk_prot->init(sk);\n\t\tif (err) {\n\t\t\tsk_common_release(sk);\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tif (!kern) {\n\t\terr = BPF_CGROUP_RUN_PROG_INET_SOCK(sk);\n\t\tif (err) {\n\t\t\tsk_common_release(sk);\n\t\t\tgoto out;\n\t\t}\n\t}\nout:\n\treturn err;\nout_rcu_unlock:\n\trcu_read_unlock();\n\tgoto out;\n}\n",
+      "closureProven": false
+    },
+    "inet6_create": {
+      "source": "net/ipv6/af_inet6.c",
+      "prefix": "static int inet6_create(",
+      "sha256": "ecb035f1f03fdb761ad24d5e40823c7bd708cb700f8565b0d630bac1a5cd8363",
+      "text": "static int inet6_create(struct net *net, struct socket *sock, int protocol,\n\t\t\tint kern)\n{\n\tstruct inet_sock *inet;\n\tstruct ipv6_pinfo *np;\n\tstruct sock *sk;\n\tstruct inet_protosw *answer;\n\tstruct proto *answer_prot;\n\tunsigned char answer_flags;\n\tint try_loading_module = 0;\n\tint err;\n\n\tif (protocol < 0 || protocol >= IPPROTO_MAX)\n\t\treturn -EINVAL;\n\n\t/* Look for the requested type/protocol pair. */\nlookup_protocol:\n\terr = -ESOCKTNOSUPPORT;\n\trcu_read_lock();\n\tlist_for_each_entry_rcu(answer, &inetsw6[sock->type], list) {\n\n\t\terr = 0;\n\t\t/* Check the non-wild match. */\n\t\tif (protocol == answer->protocol) {\n\t\t\tif (protocol != IPPROTO_IP)\n\t\t\t\tbreak;\n\t\t} else {\n\t\t\t/* Check for the two wild cases. */\n\t\t\tif (IPPROTO_IP == protocol) {\n\t\t\t\tprotocol = answer->protocol;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tif (IPPROTO_IP == answer->protocol)\n\t\t\t\tbreak;\n\t\t}\n\t\terr = -EPROTONOSUPPORT;\n\t}\n\n\tif (err) {\n\t\tif (try_loading_module < 2) {\n\t\t\trcu_read_unlock();\n\t\t\t/*\n\t\t\t * Be more specific, e.g. net-pf-10-proto-132-type-1\n\t\t\t * (net-pf-PF_INET6-proto-IPPROTO_SCTP-type-SOCK_STREAM)\n\t\t\t */\n\t\t\tif (++try_loading_module == 1)\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d-type-%d\",\n\t\t\t\t\t\tPF_INET6, protocol, sock->type);\n\t\t\t/*\n\t\t\t * Fall back to generic, e.g. net-pf-10-proto-132\n\t\t\t * (net-pf-PF_INET6-proto-IPPROTO_SCTP)\n\t\t\t */\n\t\t\telse\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d\",\n\t\t\t\t\t\tPF_INET6, protocol);\n\t\t\tgoto lookup_protocol;\n\t\t} else\n\t\t\tgoto out_rcu_unlock;\n\t}\n\n\terr = -EPERM;\n\tif (sock->type == SOCK_RAW && !kern &&\n\t    !ns_capable(net->user_ns, CAP_NET_RAW))\n\t\tgoto out_rcu_unlock;\n\n\tsock->ops = answer->ops;\n\tanswer_prot = answer->prot;\n\tanswer_flags = answer->flags;\n\trcu_read_unlock();\n\n\tWARN_ON(!answer_prot->slab);\n\n\terr = -ENOBUFS;\n\tsk = sk_alloc(net, PF_INET6, GFP_KERNEL, answer_prot, kern);\n\tif (!sk)\n\t\tgoto out;\n\n\tsock_init_data(sock, sk);\n\n\terr = 0;\n\tif (INET_PROTOSW_REUSE & answer_flags)\n\t\tsk->sk_reuse = SK_CAN_REUSE;\n\n\tif (INET_PROTOSW_ICSK & answer_flags)\n\t\tinet_init_csk_locks(sk);\n\n\tinet = inet_sk(sk);\n\tinet_assign_bit(IS_ICSK, sk, INET_PROTOSW_ICSK & answer_flags);\n\n\tif (SOCK_RAW == sock->type) {\n\t\tinet->inet_num = protocol;\n\t\tif (IPPROTO_RAW == protocol)\n\t\t\tinet_set_bit(HDRINCL, sk);\n\t}\n\n\tsk->sk_destruct\t\t= inet6_sock_destruct;\n\tsk->sk_family\t\t= PF_INET6;\n\tsk->sk_protocol\t\t= protocol;\n\n\tsk->sk_backlog_rcv\t= answer->prot->backlog_rcv;\n\n\tinet_sk(sk)->pinet6 = np = inet6_sk_generic(sk);\n\tnp->hop_limit\t= -1;\n\tnp->mcast_hops\t= IPV6_DEFAULT_MCASTHOPS;\n\tinet6_set_bit(MC6_LOOP, sk);\n\tinet6_set_bit(MC6_ALL, sk);\n\tnp->pmtudisc\t= IPV6_PMTUDISC_WANT;\n\tinet6_assign_bit(REPFLOW, sk, net->ipv6.sysctl.flowlabel_reflect &\n\t\t\t\t     FLOWLABEL_REFLECT_ESTABLISHED);\n\tsk->sk_ipv6only\t= net->ipv6.sysctl.bindv6only;\n\tsk->sk_txrehash = READ_ONCE(net->core.sysctl_txrehash);\n\n\t/* Init the ipv4 part of the socket since we can have sockets\n\t * using v6 API for ipv4.\n\t */\n\tinet->uc_ttl\t= -1;\n\n\tinet_set_bit(MC_LOOP, sk);\n\tinet->mc_ttl\t= 1;\n\tinet->mc_index\t= 0;\n\tRCU_INIT_POINTER(inet->mc_list, NULL);\n\tinet->rcv_tos\t= 0;\n\n\tif (READ_ONCE(net->ipv4.sysctl_ip_no_pmtu_disc))\n\t\tinet->pmtudisc = IP_PMTUDISC_DONT;\n\telse\n\t\tinet->pmtudisc = IP_PMTUDISC_WANT;\n\n\tif (inet->inet_num) {\n\t\t/* It assumes that any protocol which allows\n\t\t * the user to assign a number at socket\n\t\t * creation time automatically shares.\n\t\t */\n\t\tinet->inet_sport = htons(inet->inet_num);\n\t\terr = sk->sk_prot->hash(sk);\n\t\tif (err) {\n\t\t\tsk_common_release(sk);\n\t\t\tgoto out;\n\t\t}\n\t}\n\tif (sk->sk_prot->init) {\n\t\terr = sk->sk_prot->init(sk);\n\t\tif (err) {\n\t\t\tsk_common_release(sk);\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tif (!kern) {\n\t\terr = BPF_CGROUP_RUN_PROG_INET_SOCK(sk);\n\t\tif (err) {\n\t\t\tsk_common_release(sk);\n\t\t\tgoto out;\n\t\t}\n\t}\nout:\n\treturn err;\nout_rcu_unlock:\n\trcu_read_unlock();\n\tgoto out;\n}\n",
+      "closureProven": false
+    },
+    "alloc_inode": {
+      "source": "fs/inode.c",
+      "prefix": "static struct inode *alloc_inode(",
+      "sha256": "0928ddbe8a0eabd87ecc6dfcc000c38e3ab1125bac6c0f94c244ed98df57eeed",
+      "text": "static struct inode *alloc_inode(struct super_block *sb)\n{\n\tconst struct super_operations *ops = sb->s_op;\n\tstruct inode *inode;\n\n\tif (ops->alloc_inode)\n\t\tinode = ops->alloc_inode(sb);\n\telse\n\t\tinode = alloc_inode_sb(sb, inode_cachep, GFP_KERNEL);\n\n\tif (!inode)\n\t\treturn NULL;\n\n\tif (unlikely(inode_init_always(sb, inode))) {\n\t\tif (ops->destroy_inode) {\n\t\t\tops->destroy_inode(inode);\n\t\t\tif (!ops->free_inode)\n\t\t\t\treturn NULL;\n\t\t}\n\t\tinode->free_inode = ops->free_inode;\n\t\ti_callback(&inode->i_rcu);\n\t\treturn NULL;\n\t}\n\n\treturn inode;\n}\n",
+      "closureProven": false
+    },
+    "new_inode_pseudo": {
+      "source": "fs/inode.c",
+      "prefix": "struct inode *new_inode_pseudo(",
+      "sha256": "e70293266df3fa8db179981c09f960a95039046f8f099ac59308148150129232",
+      "text": "struct inode *new_inode_pseudo(struct super_block *sb)\n{\n\treturn alloc_inode(sb);\n}\n",
+      "closureProven": false
+    }
+  },
+  "kernelBuilt": false,
+  "trustedFactoryInstalled": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

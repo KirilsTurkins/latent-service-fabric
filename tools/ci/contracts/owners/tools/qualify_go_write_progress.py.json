@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_write_progress.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original eight progress controls and add exact prior-source close-between-fragments RED plus ninth closed-prefix control; preserve original caps, one direction owner and deadline.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "05a61fce763b2200449dc68a10793c0a53e3b927d2c49d1aeef4954de21a09cc"
+  "sha256": "53e45c5adc9f5b7299b8c33d49d3f2326b012868bc28f811b1a2e4ef63e6b30b"
 }

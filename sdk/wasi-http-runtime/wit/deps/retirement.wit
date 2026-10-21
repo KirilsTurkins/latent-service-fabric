@@ -1,0 +1,6 @@
+package latent:rust-http-retirement@0.1.0;
+
+// Compiler-private composition edge, consumed before host admission.
+interface owner {
+    drain: async func();
+}

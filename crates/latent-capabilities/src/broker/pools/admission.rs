@@ -380,6 +380,9 @@ impl PoolReady {
     }
 }
 impl PoolCall {
+    pub(super) fn retain_stream_request(&self) -> Arc<Request> {
+        Arc::clone(&self.request)
+    }
     pub fn io_mut(&mut self) -> &mut IoCall {
         &mut self.io
     }

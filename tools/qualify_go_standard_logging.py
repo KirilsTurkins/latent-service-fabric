@@ -50,7 +50,7 @@ def frozen(native: Path):
 def reference(output, commands, go):
     directory = fresh(output)
     (directory / 'ordinary').mkdir()
-    (directory / 'go.mod').write_text('module reference.local/logging\n\ngo 1.27.2\n', encoding='utf-8')
+    (directory / 'go.mod').write_text('module reference.local/logging\n\ngo 1.27.3\n', encoding='utf-8')
     (directory / 'ordinary/logging.go').write_text(LIBRARY, encoding='utf-8')
     (directory / 'main.go').write_text('package main\nimport ("fmt"; "os"; '
         '"reference.local/logging/ordinary")\nfunc main() { '
