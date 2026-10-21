@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "lsf.kernel-objects-observed.v1",
+  "source": "3cea8bb7c44531992e12cd62ccb07e7236a771e1",
+  "run": 39534304766,
+  "job": 119007259943,
+  "artifact": 12316263246,
+  "archiveBytes": 275339,
+  "archiveSha256": "aa3d94025aec85858a1c1ee5251ef6806a289b2c7a4401b2435e695c2d280a77",
+  "authenticatedMembers": 34,
+  "qualification": {
+    "bytes": 5371,
+    "sha256": "5ff9685fafc5634ab93ab8ad9b446d4d93f47a7793148229ae9a9541a12c36a1"
+  },
+  "derivedProductsVerified": 16,
+  "unchangedCompiledSourceMaterials": 44,
+  "commandsCompleted": 11,
+  "resolvedConfigSymbols": 4309,
+  "onlyConfigChange": "CONFIG_LSF_STREAM_FACTORY",
+  "securitySymbolsEnabled": [
+    "CONFIG_INET",
+    "CONFIG_SECURITY",
+    "CONFIG_SECURITY_NETWORK",
+    "CONFIG_SECURITY_SELINUX"
+  ],
+  "actualObjects": {
+    "net/socket.o": {
+      "bytes": 100072,
+      "sha256": "629a62c88f3d8d5e071528c62c82f1afa2fb4051981b5cded147f668a3d63cf0",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sock_create"
+      ]
+    },
+    "fs/inode.o": {
+      "bytes": 79984,
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_new_inode"
+      ]
+    },
+    "net/core/sock.o": {
+      "bytes": 119520,
+      "sha256": "81b0c5374cb4c3b14e629374927d9bf3ecdeb22f5fc5addba7228d2b2666c21f",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sk_alloc",
+        "lsf_prepaid_protocol_allocate",
+        "lsf_prepaid_protocol_return",
+        "lsf_prepaid_protocol_clear"
+      ]
+    },
+    "net/ipv4/af_inet.o": {
+      "bytes": 53840,
+      "sha256": "c7e53df910c3a33e38bbea7cd6d4da7cd4884cf4f993d0f48d5e218191a6c7c4",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_inet_create",
+        "lsf_prepaid_protocol_family"
+      ]
+    },
+    "security/security.o": {
+      "bytes": 411400,
+      "sha256": "25bbcd7677df83f3d8cc9b1a2434a21c3dd766394359ba590b481cd4ab90d3f7",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_inode_alloc",
+        "lsf_prepaid_security_sk_alloc"
+      ]
+    },
+    "net/factory.o": {
+      "bytes": 10808,
+      "sha256": "5da0314c93988dbd3b8ea712d14990830e0304bb738ffb50881090d937fbd1a2",
+      "requiredDefinedSymbols": [
+        "lsf_factory_register",
+        "lsf_factory_blob_allocate",
+        "lsf_factory_blob_finish"
+      ]
+    }
+  },
+  "independentElfPrivateGlobals": 13,
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "originalFailuresRemainFailed": [
+    39531468747,
+    39533124438
+  ]
+}
