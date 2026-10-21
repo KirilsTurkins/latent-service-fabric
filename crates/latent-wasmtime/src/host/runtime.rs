@@ -130,8 +130,10 @@ pub(crate) fn prepare_native_stack(
     state: &mut HostState,
     size: usize,
     maximum_children: usize,
+    async_workers: bool,
 ) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
     let budget = state.accounting.budget().clone();
+    let maximum_native = state.runtime_limits.map(|limits| limits.native_owners);
     let table = table(state)?;
     if table.native_stacks.is_some() {
         return Err(failure(
@@ -139,7 +141,20 @@ pub(crate) fn prepare_native_stack(
             "native-stack-context-already-created",
         ));
     }
-    let context = if maximum_children == 0 {
+    let context = if async_workers {
+        if maximum_children != 0 {
+            return Err(failure(
+                PlatformErrorCode::Internal,
+                "native-stack-profile-conflict",
+            ));
+        }
+        crate::native_stacks::StackContext::with_async_workers(
+            budget,
+            table.runtime.clone(),
+            size,
+            maximum_native.expect("initialized original runtime limits") as usize,
+        )?
+    } else if maximum_children == 0 {
         crate::native_stacks::StackContext::new(budget, table.runtime.clone(), size)?
     } else {
         crate::native_stacks::StackContext::with_children(
