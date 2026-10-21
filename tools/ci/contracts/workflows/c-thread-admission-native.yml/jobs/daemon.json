@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Build three affected products and check normal configuration and provenance",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Fetch the immutable original four-product compiler source",
+        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Install existing pinned Python recipe dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Build only the three affected products and retain exact source and controls",
+        "run": "python3 -B - <<'PY'\nimport os, shutil, subprocess, sys, time\nfrom pathlib import Path\nfrom tools import build_process_linux, build_process_signals\nfrom tools.build_observation import build_environment\nfrom tools import c_thread_package_native_products as inherited\ninherited_revision=inherited.SOURCE\nfrom tools.java_replay_materials import git_source_identity\nfrom tools.phase2_operator_process import require\nfrom tools.phase3_resource_identity import file_identity, source_identity\nfrom tools.rust_capsule_build import Commands\nfrom tools.rust_capsule_project import fresh, write_json\nroot=Path.cwd();output=fresh(Path(os.environ['RUNNER_TEMP'])/'c-thread-admission-native')\nrevision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,timeout=10).decode().strip()\nchanged=('apps/latentd/src/config/derive.rs','apps/latentd/src/config/policy.rs',\n    'apps/latentd/src/config/tests/providers/activation_runtime.rs',\n    'crates/latent-signing/src/provenance/tests.rs','crates/latent-signing/src/provenance/validate.rs')\noriginal=git_source_identity(inherited_revision)\nrequire(original['sha256']=='sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14'\n    and original['files']==3325 and original['bytes']==26393594,'c-admission-inherited-original-native-source')\nbefore=source_identity(root)\nrequire(before==git_source_identity(revision),'c-admission-current-git-native-source')\npaths=subprocess.check_output(['git','diff','--name-only',inherited_revision,revision,'--',\n    'apps','crates','sdk/rust','tools/optimization-workloads','Cargo.toml','Cargo.lock',\n    'rust-toolchain.toml','.cargo/config.toml'],cwd=root,timeout=15).decode().splitlines()\nrequire(paths==list(changed),'c-admission-only-reviewed-five-native-input-changes')\nchanges={}\nfor name in changed:\n    raw=subprocess.check_output(['git','show',inherited_revision+':'+name],cwd=root,timeout=15)\n    require(len(raw)<=64*1024,'c-admission-original-source-bound')\n    from tools.rust_capsule_project import digest\n    changes[name]={'inherited':{'sha256':digest(raw),'bytes':len(raw)},'compiled':file_identity(root/name)}\ndef helpers():\n    result={'.github/workflows/c-thread-admission-native.yml':file_identity(root/'.github/workflows/c-thread-admission-native.yml')}\n    for module in tuple(sys.modules.values()):\n        filename=getattr(module,'__file__',None)\n        if type(filename) is str:\n            path=Path(filename).resolve()\n            if path.suffix=='.py' and path.is_relative_to(root):result[path.relative_to(root).as_posix()]=file_identity(path)\n    require(0<len(result)<=256 and sum(row['bytes'] for row in result.values())<=4*1024**2,\n        'c-admission-producer-helper-closure-bound')\n    return dict(sorted(result.items()))\noriginal_materials=inherited.READER._git_materials()\nrequire(len(original_materials)==134 and all(file_identity(root/name)==row for name,row in original_materials.items()),\n    'c-admission-original-full-auxiliary-inputs-current')\ndef materials_now():\n    return dict(sorted({**{name:file_identity(root/name) for name in original_materials},**helpers()}.items()))\nmaterials=materials_now()\nwrite_json(output/'source-inputs.json',{'native':before,'inheritedNativeSource':original,\n    'inheritedRevision':inherited_revision,'reviewedNativeChanges':changes,\n    'allOtherNativeFilesByteExact':3320,'materials':materials})\ntarget=Path(os.environ.get('CARGO_TARGET_DIR',root/'target')).resolve()\nenvironment=build_environment(output)\nenvironment.update(CARGO_TARGET_DIR=str(target),RUSTUP_TOOLCHAIN='1.97.1',CARGO_INCREMENTAL='0',\n    CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0',CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',\n    CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',\n    CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')\nstarted=time.monotonic()\ncommands=Commands(root,output,environment,deadline_seconds=1320,command_seconds=1200)\nrecord={'schemaVersion':'latent.sdk.native-product-overlay.v1','sourceRevision':revision,\n    'nativeSource':before,'materials':materials,'profile':'normal-managed-guest-default-features',\n    'inheritedProducts':{'sourceRevision':inherited_revision,'nativeSource':original,\n        'keys':['examples/package','examples/capsule_contracts']},\n    'productsBuilt':['latent','latentd','examples/capsule_authoring'],'signedQualification':False,'guestCompiled':False,'backendCompiled':False}\ntry:\n    compiler=commands.run('rust-version','rustc','--version').decode().strip()\n    require(compiler.startswith('rustc 1.97.1 ('),'c-admission-exact-rust-version')\n    commands.run('normal-affected-products-build','cargo','--config',root/'.cargo/managed-guest.toml',\n        'build','--locked','-p','latent','-p','latentd','--bins','-p','latent-policy','--example','capsule_authoring')\n    result=commands.run('normal-activation-configuration-controls','cargo','--config',root/'.cargo/managed-guest.toml',\n        'test','--locked','-p','latentd','--lib','config::tests::providers::activation_runtime::','--','--test-threads=1')\n    require(b'test result: ok. 8 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-eight-runtime-config-controls')\n    for stage,name in (\n        ('closed-c-engine','config::tests::engine::c_threading_engine_input_is_closed_and_default_input_remains_unselected'),\n        ('closed-root-only','config::tests::engine::activation_stack_accounting_is_a_closed_opt_in_and_omission_stays_default'),\n        ('normal-defaults','config::tests::defaults_derive_compatible_node_limits_without_creating_storage')):\n        result=commands.run(stage,'cargo','--config',root/'.cargo/managed-guest.toml',\n            'test','--locked','-p','latentd','--lib',name,'--','--exact','--test-threads=1')\n        require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-single-control')\n    result=commands.run('go-provenance-profile-controls','cargo','--config',root/'.cargo/managed-guest.toml',\n        'test','--locked','-p','latent-signing','--lib','provenance::tests::','--','--test-threads=1')\n    require(b'test result: ok. 3 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-three-provenance-controls')\n    products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)\n    for name in ('latent','latentd','examples/capsule_authoring'):\n        source=target/'debug'/name;destination=owned/name.replace('/','-')\n        identity=file_identity(source,512*1024**2);shutil.copyfile(source,destination);destination.chmod(0o700)\n        require(identity==file_identity(source,512*1024**2)==file_identity(destination,512*1024**2),\n            'c-admission-product-capture-unchanged')\n        with destination.open('rb') as stream:require(stream.read(4)==b'\\x7fELF','c-admission-real-ELF-product')\n        products[name]=identity\n    record.update(status='passed',compiler=compiler,commands=commands.records,\n        products=products,\n        nativeSourceAfter=source_identity(root),materialsAfter=materials_now(),\n        elapsedSeconds=time.monotonic()-started)\n    require(record['nativeSourceAfter']==before and record['materialsAfter']==materials,\n        'c-admission-final-full-source-and-materials')\n    write_json(output/'native-products.json',record)\nexcept BaseException:\n    record.update(status='failed',commands=commands.records)\n    write_json(output/'FAILED.json',record)\n    raise\nPY\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain original bounded commands, source proof and three affected products",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "c-thread-admission-native-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-thread-admission-native",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "daemon",
+  "kind": "job",
+  "reviewReason": "Parent full-source review approved this exact bounded corrective programme; original commands, controls, limits and prior failure evidence remain. New native producer rebuilds only three affected products with separate two-product ancestry.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-admission-native.yml"
+}

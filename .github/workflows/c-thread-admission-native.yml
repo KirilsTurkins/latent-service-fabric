@@ -1,0 +1,165 @@
+name: C cooperative admission and Go v6 native products
+on:
+  push:
+    branches: ['diag/c-thread-admission-native-20261021']
+    paths:
+      - .github/workflows/c-thread-admission-native.yml
+      - apps/latentd/src/config/derive.rs
+      - apps/latentd/src/config/policy.rs
+      - apps/latentd/src/config/tests/providers/activation_runtime.rs
+      - crates/latent-signing/src/provenance/validate.rs
+      - crates/latent-signing/src/provenance/tests.rs
+permissions:
+  contents: read
+concurrency:
+  group: c-thread-admission-native-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  daemon:
+    name: Build three affected products and check normal configuration and provenance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fetch the immutable original four-product compiler source
+        run: git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install existing pinned Python recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Build only the three affected products and retain exact source and controls
+        run: |
+          python3 -B - <<'PY'
+          import os, shutil, subprocess, sys, time
+          from pathlib import Path
+          from tools import build_process_linux, build_process_signals
+          from tools.build_observation import build_environment
+          from tools import c_thread_package_native_products as inherited
+          inherited_revision=inherited.SOURCE
+          from tools.java_replay_materials import git_source_identity
+          from tools.phase2_operator_process import require
+          from tools.phase3_resource_identity import file_identity, source_identity
+          from tools.rust_capsule_build import Commands
+          from tools.rust_capsule_project import fresh, write_json
+          root=Path.cwd();output=fresh(Path(os.environ['RUNNER_TEMP'])/'c-thread-admission-native')
+          revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,timeout=10).decode().strip()
+          changed=('apps/latentd/src/config/derive.rs','apps/latentd/src/config/policy.rs',
+              'apps/latentd/src/config/tests/providers/activation_runtime.rs',
+              'crates/latent-signing/src/provenance/tests.rs','crates/latent-signing/src/provenance/validate.rs')
+          original=git_source_identity(inherited_revision)
+          require(original['sha256']=='sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14'
+              and original['files']==3325 and original['bytes']==26393594,'c-admission-inherited-original-native-source')
+          before=source_identity(root)
+          require(before==git_source_identity(revision),'c-admission-current-git-native-source')
+          paths=subprocess.check_output(['git','diff','--name-only',inherited_revision,revision,'--',
+              'apps','crates','sdk/rust','tools/optimization-workloads','Cargo.toml','Cargo.lock',
+              'rust-toolchain.toml','.cargo/config.toml'],cwd=root,timeout=15).decode().splitlines()
+          require(paths==list(changed),'c-admission-only-reviewed-five-native-input-changes')
+          changes={}
+          for name in changed:
+              raw=subprocess.check_output(['git','show',inherited_revision+':'+name],cwd=root,timeout=15)
+              require(len(raw)<=64*1024,'c-admission-original-source-bound')
+              from tools.rust_capsule_project import digest
+              changes[name]={'inherited':{'sha256':digest(raw),'bytes':len(raw)},'compiled':file_identity(root/name)}
+          def helpers():
+              result={'.github/workflows/c-thread-admission-native.yml':file_identity(root/'.github/workflows/c-thread-admission-native.yml')}
+              for module in tuple(sys.modules.values()):
+                  filename=getattr(module,'__file__',None)
+                  if type(filename) is str:
+                      path=Path(filename).resolve()
+                      if path.suffix=='.py' and path.is_relative_to(root):result[path.relative_to(root).as_posix()]=file_identity(path)
+              require(0<len(result)<=256 and sum(row['bytes'] for row in result.values())<=4*1024**2,
+                  'c-admission-producer-helper-closure-bound')
+              return dict(sorted(result.items()))
+          original_materials=inherited.READER._git_materials()
+          require(len(original_materials)==134 and all(file_identity(root/name)==row for name,row in original_materials.items()),
+              'c-admission-original-full-auxiliary-inputs-current')
+          def materials_now():
+              return dict(sorted({**{name:file_identity(root/name) for name in original_materials},**helpers()}.items()))
+          materials=materials_now()
+          write_json(output/'source-inputs.json',{'native':before,'inheritedNativeSource':original,
+              'inheritedRevision':inherited_revision,'reviewedNativeChanges':changes,
+              'allOtherNativeFilesByteExact':3320,'materials':materials})
+          target=Path(os.environ.get('CARGO_TARGET_DIR',root/'target')).resolve()
+          environment=build_environment(output)
+          environment.update(CARGO_TARGET_DIR=str(target),RUSTUP_TOOLCHAIN='1.97.1',CARGO_INCREMENTAL='0',
+              CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0',CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
+              CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
+              CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+          started=time.monotonic()
+          commands=Commands(root,output,environment,deadline_seconds=1320,command_seconds=1200)
+          record={'schemaVersion':'latent.sdk.native-product-overlay.v1','sourceRevision':revision,
+              'nativeSource':before,'materials':materials,'profile':'normal-managed-guest-default-features',
+              'inheritedProducts':{'sourceRevision':inherited_revision,'nativeSource':original,
+                  'keys':['examples/package','examples/capsule_contracts']},
+              'productsBuilt':['latent','latentd','examples/capsule_authoring'],'signedQualification':False,'guestCompiled':False,'backendCompiled':False}
+          try:
+              compiler=commands.run('rust-version','rustc','--version').decode().strip()
+              require(compiler.startswith('rustc 1.97.1 ('),'c-admission-exact-rust-version')
+              commands.run('normal-affected-products-build','cargo','--config',root/'.cargo/managed-guest.toml',
+                  'build','--locked','-p','latent','-p','latentd','--bins','-p','latent-policy','--example','capsule_authoring')
+              result=commands.run('normal-activation-configuration-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+                  'test','--locked','-p','latentd','--lib','config::tests::providers::activation_runtime::','--','--test-threads=1')
+              require(b'test result: ok. 8 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-eight-runtime-config-controls')
+              for stage,name in (
+                  ('closed-c-engine','config::tests::engine::c_threading_engine_input_is_closed_and_default_input_remains_unselected'),
+                  ('closed-root-only','config::tests::engine::activation_stack_accounting_is_a_closed_opt_in_and_omission_stays_default'),
+                  ('normal-defaults','config::tests::defaults_derive_compatible_node_limits_without_creating_storage')):
+                  result=commands.run(stage,'cargo','--config',root/'.cargo/managed-guest.toml',
+                      'test','--locked','-p','latentd','--lib',name,'--','--exact','--test-threads=1')
+                  require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-single-control')
+              result=commands.run('go-provenance-profile-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+                  'test','--locked','-p','latent-signing','--lib','provenance::tests::','--','--test-threads=1')
+              require(b'test result: ok. 3 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-three-provenance-controls')
+              products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)
+              for name in ('latent','latentd','examples/capsule_authoring'):
+                  source=target/'debug'/name;destination=owned/name.replace('/','-')
+                  identity=file_identity(source,512*1024**2);shutil.copyfile(source,destination);destination.chmod(0o700)
+                  require(identity==file_identity(source,512*1024**2)==file_identity(destination,512*1024**2),
+                      'c-admission-product-capture-unchanged')
+                  with destination.open('rb') as stream:require(stream.read(4)==b'\x7fELF','c-admission-real-ELF-product')
+                  products[name]=identity
+              record.update(status='passed',compiler=compiler,commands=commands.records,
+                  products=products,
+                  nativeSourceAfter=source_identity(root),materialsAfter=materials_now(),
+                  elapsedSeconds=time.monotonic()-started)
+              require(record['nativeSourceAfter']==before and record['materialsAfter']==materials,
+                  'c-admission-final-full-source-and-materials')
+              write_json(output/'native-products.json',record)
+          except BaseException:
+              record.update(status='failed',commands=commands.records)
+              write_json(output/'FAILED.json',record)
+              raise
+          PY
+      - name: Retain original bounded commands, source proof and three affected products
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-thread-admission-native-${{ github.sha }}
+          path: ${{ runner.temp }}/c-thread-admission-native
+          if-no-files-found: warn
+          retention-days: 3

@@ -1,0 +1,34 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-thread-admission-native-${{ github.ref }}"
+    },
+    "name": "C cooperative admission and Go v6 native products",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/c-thread-admission-native-20261021"
+        ],
+        "paths": [
+          ".github/workflows/c-thread-admission-native.yml",
+          "apps/latentd/src/config/derive.rs",
+          "apps/latentd/src/config/policy.rs",
+          "apps/latentd/src/config/tests/providers/activation_runtime.rs",
+          "crates/latent-signing/src/provenance/validate.rs",
+          "crates/latent-signing/src/provenance/tests.rs"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "daemon"
+  ],
+  "reviewReason": "Parent full-source review approved this exact bounded corrective programme; original commands, controls, limits and prior failure evidence remain. New native producer rebuilds only three affected products with separate two-product ancestry.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-admission-native.yml"
+}

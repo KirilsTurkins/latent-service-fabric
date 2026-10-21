@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "latent.c-thread.admission-failure.v1",
+  "sourceRevision": "209224f1cda0fc07c168d19837475a4be13c5978",
+  "run": 39632715942,
+  "job": 119334956451,
+  "artifact": {
+    "id": 12360845654,
+    "bytes": 1543749,
+    "sha256": "sha256:7dafed9056bad86164fb828d91e5a3f8f0b6cfe1445d7efaf15340f3cbea898f",
+    "members": 76
+  },
+  "actualInvocation": {
+    "activation": "c-thread-authority-0",
+    "exitCode": 4,
+    "startedAtUnixMillis": "1792599411195",
+    "elapsedNanos": "13937288",
+    "decoded": null,
+    "response": {
+      "category": "platform-failure",
+      "command": "invoke",
+      "data": {
+        "activationId": "c-thread-authority-0",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "0"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:fed38fe2191d7b25a31f4c820687d46614b6b51ab5c6732477768685abc28214",
+          "releaseDigest": "sha256:769002599aad1081a0f19873068e2d2fa02bb799bb2c57897570de7735d01025",
+          "revisionId": "revision-v1:sha256:7017c1b3accf15bc5cf3b5ade30e4a37c3317eff32ed13acef78d29b9693429d",
+          "routeGeneration": "3"
+        },
+        "terminalState": "rejected"
+      },
+      "error": {
+        "code": "admission-rejected",
+        "details": [
+          {
+            "fields": {
+              "dimension": "threading",
+              "reason": "no-compatible-cell",
+              "scope": "node"
+            },
+            "kind": "admission.limit"
+          }
+        ],
+        "message": "The platform reported a failure.",
+        "retryable": false
+      },
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "processReaped": true
+  },
+  "normalCompilePackageSignPublishSucceeded": true,
+  "guestExecutionReached": false,
+  "component": {
+    "bytes": 1853427,
+    "sha256": "sha256:769002599aad1081a0f19873068e2d2fa02bb799bb2c57897570de7735d01025"
+  },
+  "originalOuterFailurePreserved": true,
+  "runtimeQualification": false,
+  "correction": "Derive the validated shared engine before admission; explicit aligned C operator/provider profile advertises only Cooperative, matching actual manifest preparation. Original cells/Store RuntimeLimits and quotas remain unchanged.",
+  "sourcePredicateControl": {
+    "oldCooperativeAdmission": "rejected",
+    "newSelectedExactC": "advertised",
+    "ordinaryModelsOnlyOnNonC": true,
+    "mismatchRefusals": 8,
+    "manifestAcceptanceSourceMatchCopiedVerbatim": true,
+    "normalNodeDerivationExecutedLocally": false
+  },
+  "newProducer": {
+    "productsBuilt": [
+      "latent",
+      "latentd",
+      "examples/capsule_authoring"
+    ],
+    "inheritedProducts": [
+      "examples/package",
+      "examples/capsule_contracts"
+    ],
+    "inheritedCompilerSource": "f6251df89851de98cb869784d095ad5cc2e5b385",
+    "guestRecompiled": false,
+    "backendRecompiled": false,
+    "plannedRustControls": 14,
+    "qualification": false
+  }
+}
