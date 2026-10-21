@@ -254,7 +254,7 @@ installation and node/operator conformance remain open. The complete consumer
 and production profile remain unavailable under the original 96/64 KiB and
 fixed-slot limits.
 
-## Pending copied-TCP packet object extension
+## Compiled copied-TCP packet object extension
 
 The separate `feat/stream-kernel-packet-prefix-20261021` branch adds a closed
 `--packet` object-only selection. It preserves all nine prior modes, their
@@ -286,9 +286,15 @@ helper and moves only the private copy include after it; all implementation
 bodies and the other 82 derived outputs remain exact. A declaration-order
 regression and all twelve prior packet source controls pass.
 
-The corrected owning object campaign is pending. It will compile the actual maintained
-TCP, TCP-output, TCP-input and SKB translation units and retain the same complete
-configuration/security checks and bounded diagnostics. It does not link or boot
+The corrected [owning campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39601912368)
+passed on source `7029895fec970a0b16ce43c448ca741430f581e1`. The
+[compact observation](evidence/kernel-packet-objects-compiled-2026-10-21.json)
+binds all 97 ZIP members, 189 exact Git materials, 27 x86 ELF objects and 99
+GLOBAL function oracles (90 private and nine original). It retains the same
+4,309-symbol configuration with only `CONFIG_LSF_STREAM_FACTORY` changed from `n` to `y`, all 175
+actual source/controller tests and 32 completed, cleaned commands. The TCP,
+TCP-output, TCP-input and SKB translation units were actually compiled under the
+original security configuration and diagnostic bounds. This does not link or boot
 a kernel, install a factory, qualify RX/DMA or certify final-free. Production
 installation and complete allocation closure remain false; the full factory
 consumer remains unavailable. RX/TX device initialization, trusted prelookup
