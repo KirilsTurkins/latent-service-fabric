@@ -17,6 +17,17 @@ the original bootstrap, exact negative result, fresh invocation and physical
 retirement checks. Every original limit, assertion and zero-contact requirement
 is preserved. The earlier workflow and its immutable observations remain intact.
 
-The result is pending until the actual owning job completes. This programme
-does not alone establish complete GC/stack accounting, all late-wake behavior,
-socket support, or completion of #745/#736.
+[Run39561770610/job119094482153](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39561770610/job/119094482153)
+passed at exact source `63224663df622426a8a657355fb6ccc6294215ee`.
+The [retained observation](evidence/typescript-tracking-limits-signed-2026-10-21.json)
+binds all327 archive members,99 captured source inputs,111 recipe inputs and
+the actual12,410,038-byte component. All15 outcomes were known, callers reaped,
+and15 physical-retirement and available-zero-owner barriers passed. Five nodes
+stopped cleanly; their peers saw zero requests. The typed refusals followed12
+Task,14 queue,53 Promise native-owner and eight timer admissions. The memory
+case reached64,045,560 bytes under its unchanged64MiB caller ceiling, returned
+resource-exhausted, then passed a fresh invocation under the same ceiling.
+
+The guest compiler ran once for17.299326 seconds. This programme does not alone
+establish complete GC/stack accounting, all late-wake behavior, socket support,
+or completion of #745/#736. The cancelled original boundary remains cancelled.
