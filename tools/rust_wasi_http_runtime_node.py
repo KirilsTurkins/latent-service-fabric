@@ -309,7 +309,22 @@ def outcome(row,spec,client_name,revision,budget):
         and response['requestDispatched'] is True and data.get('resolvedRevision')==revision,
         'rust-http-known-current-revision-and-reaped-call')
     consumption=data['consumption'];capacity=None
-    if action=='capacity':
+    if action=='capacity' and client_name=='golem':
+        require(tuple(spec)==('resource-capacity','capacity','/conformance/json',
+            'error:resource-capacity',8,'domain-json','capacity'),
+            'rust-http-golem-pressure-only-its-exact-original-case')
+        require(row['exitCode']==4 and row['decoded'] is None
+            and response['category']=='platform-failure' and data.get('terminalState')=='guest_trap'
+            and response.get('error',{}).get('code')=='guest-trap'
+            and response['error'].get('details')==[
+                {'fields':{'code':'guest-trap'},'kind':'activation.guest-trap'},
+                {'fields':{'kind':'unreachable-code'},'kind':'activation.guest-trap-kind'}],
+            'rust-http-golem-held-pressure-exact-unreachable-trap')
+        capacity={'observedOutboundRequests':8,'heldResponseCountProved':False,'publicTerminal':'guest-trap',
+            'trapKind':'unreachable-code','timerTrapSiteProved':False,
+            'catchableLibraryErrorObserved':False,'limitingOwnerKindProven':False,
+            'taskExhaustionClaimed':False,'originalEnvelopeChanged':False}
+    elif action=='capacity':
         decoded=row['decoded'];prefix='fresh:'+client_name+':capacity:'
         require(row['exitCode']==0 and type(decoded) is list and len(decoded)==1
             and type(decoded[0]) is dict and set(decoded[0])=={'ok'} and type(decoded[0]['ok']) is str
@@ -555,7 +570,8 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
             'before':before,'after':snapshots})
         framing=malformed_framing_peer(before[tenant],snapshots[tenant])
     diagnostic=outcome(row,spec,client_name,pin,chosen['budget'])
-    if action=='capacity':contacts=diagnostic['observedAcceptedResponses']
+    if action=='capacity':
+        contacts=diagnostic['observedOutboundRequests' if client_name=='golem' else 'observedAcceptedResponses']
     require(action not in {'release','cancel','deadline'} or pending is not None,'rust-http-missing-real-pending-witness')
     require(action!='release' or released,'rust-http-real-body-release-not-observed')
     require(action!='cancel' or cancelled is not None,'rust-http-cancel-receipt-required')

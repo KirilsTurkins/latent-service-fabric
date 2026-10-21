@@ -596,6 +596,43 @@ class RuntimeOracles(unittest.TestCase):
             with self.subTest(raw=raw),self.assertRaises(Exception):node.golem_timer_pending(raw,'pending')
         self.assertIsNone(node.golem_timer_pending(record(mode=b'drain'),'pending'))
 
+    def test_retained_golem_pressure_trap_is_exact_and_does_not_weaken_other_outcomes(self):
+        path=Path(__file__).parent/'fixtures/rust-http-capacity-golem-794.json'
+        row=json.loads(path.read_bytes())
+        spec=next(s for s in node.cases() if s[0]=='resource-capacity')
+        revision=row['response']['data']['resolvedRevision']
+        budget={'cpuFuel':1_000_000_000,'memoryBytes':32*1024**2}
+        actual=node.outcome(row,spec,'golem',revision,budget)
+        self.assertEqual(actual['observedOutboundRequests'],8)
+        self.assertFalse(actual['heldResponseCountProved'])
+        self.assertNotIn('observedAcceptedResponses',actual)
+        self.assertFalse(actual['timerTrapSiteProved'])
+        self.assertFalse(actual['catchableLibraryErrorObserved'])
+        with self.assertRaisesRegex(RuntimeError,'held-response-capacity-result'):
+            node.outcome(row,spec,'waki',revision,budget)
+        other=list(spec);other[0]='root-trap'
+        with self.assertRaisesRegex(RuntimeError,'only-its-exact-original-case'):
+            node.outcome(row,other,'golem',revision,budget)
+        for kind in ('code','trap-kind','terminal','exit','payload','category','outbound','fuel',
+                'fuel-limit','memory','memory-limit','reaped','known','revision'):
+            changed=copy.deepcopy(row);response=changed['response'];data=response['data']
+            if kind=='code':response['error']['code']='permission-denied'
+            elif kind=='trap-kind':response['error']['details'][1]['fields']['kind']='out-of-fuel'
+            elif kind=='terminal':data['terminalState']='deadline_exceeded'
+            elif kind=='exit':changed['exitCode']=0
+            elif kind=='payload':changed['decoded']=[{'ok':'synthetic'}]
+            elif kind=='category':response['category']='success'
+            elif kind=='outbound':data['consumption']['outboundRequests']=7
+            elif kind=='fuel':data['consumption']['cpuFuel']='0'
+            elif kind=='fuel-limit':data['consumption']['cpuFuel']=str(budget['cpuFuel']+1)
+            elif kind=='memory':data['consumption']['peakMemoryBytes']='0'
+            elif kind=='memory-limit':data['consumption']['peakMemoryBytes']=str(budget['memoryBytes']+1)
+            elif kind=='reaped':changed['processReaped']=False
+            elif kind=='known':response['outcomeKnown']=False
+            else:data['resolvedRevision']['routeGeneration']='stale'
+            with self.subTest(kind=kind),self.assertRaises(RuntimeError):
+                node.outcome(changed,spec,'golem',revision,budget)
+
     def test_forced_host_terminal_never_synthesizes_guest_close_and_other_paths_still_require_it(self):
         prefix=node.TIMER_PREFIX
         pending=prefix+b'|pending|wait-pending|1|1|1|1\n'

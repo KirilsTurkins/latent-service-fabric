@@ -15,6 +15,7 @@
     "RuntimeOracles.test_programme_remains_within_original_peer_and_per_activation_authority_limits",
     "RuntimeOracles.test_real_library_diagnostics_discriminate_timeout_permission_json_and_opaque_stream_errors",
     "RuntimeOracles.test_result_is_the_real_rust_result_type_with_exact_current_revision_and_budget",
+    "RuntimeOracles.test_retained_golem_pressure_trap_is_exact_and_does_not_weaken_other_outcomes",
     "RuntimeOracles.test_root_cancel_deadline_and_trap_never_accept_successful_library_completion",
     "RuntimeOracles.test_source_authenticated_library_formatters_refuse_unprefixed_or_wrong_typed_variants",
     "RuntimeOracles.test_terminal_timer_observation_is_retained_before_a_strict_terminal_refusal",
@@ -210,6 +211,18 @@
       ],
       "skipSites": []
     },
+    "RuntimeOracles.test_retained_golem_pressure_trap_is_exact_and_does_not_weaken_other_outcomes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
     "RuntimeOracles.test_root_cancel_deadline_and_trap_never_accept_successful_library_completion": {
       "bases": [
         "unittest.TestCase"
@@ -369,6 +382,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime.py",
-  "reviewReason": "Parent full-source review approved this exact bounded corrective programme; original commands, controls, limits and prior failure evidence remain. New native producer rebuilds only three affected products with separate two-product ancestry.",
+  "reviewReason": "Parent reviewed exact Golem-only capacity trap after eight outbound requests with no held-response or timer-site claim; Waki typed errors, all64 attempts, original budgets, physical/provider retirement and fresh gates retained.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

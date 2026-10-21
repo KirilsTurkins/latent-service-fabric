@@ -111,3 +111,16 @@ call; the diagnostic is not qualification. The Component Model's
 distinguishes a function's async effect from its Core ABI. Generator-only controls
 verify the explicit contract and unchanged ordinary source bodies; fresh signed
 execution is still required for the corrected profile.
+
+The retained `794cc5f` node-only replay passed 49 cases before its Golem pressure
+case trapped. The original eight-Task/eight-Timer envelope is unchanged: Waki
+returned its exact typed resource error after eight held responses; Golem
+reported an unreachable guest trap after eight outbound requests. That public
+row does not prove eight retained responses or the precise timer trap site.
+The selected pressure expectation distinguishes those two actual outcomes;
+both still require full physical/provider retirement and an opposite-library
+fresh invocation. The whole historical replay remains failed. The source-port
+control preserves charged retired timers through the private drain and proves
+that an ordinary infallible timer path can trap at its original ceiling; it is
+not an attribution of the actual guest instruction. See the
+[finite observation](evidence/rust-wasi-http-capacity-failure-2026-10-21.json).
