@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/java_http_retained_component.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one default-false node-only prepared tenant campaign; all original workflow jobs, inputs, conditions, commands and timeouts deep-equal after removing only this input/job. Reuse authenticated native and component products without compiling.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6f5e4f02c6421efad57d430e1da40651f9e5bf5fa992ac6139065364fe7622ea"
+}
