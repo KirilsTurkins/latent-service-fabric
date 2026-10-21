@@ -43,8 +43,22 @@ All method API classifications remain `unknown`. A native declaration alone
 does not establish an unsupported API. Compiler absence does not prove that
 reflection, generated code or another configuration cannot reach an operation.
 Runtime execution and worker drain require their own source-bound actual
-observations. These collectors have focused metadata and parser controls;
-their new application-level compiler and signed runtime matrix remains pending.
+observations. These collectors have focused metadata and parser controls.
+The [Java finite signed programme](../testing/evidence/java-compiler-observations-signed-2026-10-21.json)
+passed on source `991370f3297971ef1328a18b3874df229f5bd479`: six actual
+initializer/callback/trap/fresh outcomes, a pre-entry grant denial, eight exact
+completed queries and the same-JAR one-edge compiler refusal. Each activation
+released its physical owners and all 18 active provider counters. The receipt
+retains its original c713 native compilation and two explicit source projections;
+it does not requalify later integrations or the whole six-language matrix.
+
+The [.NET finite signed programme](../testing/evidence/dotnet-compiler-observations-signed-2026-10-21.json)
+passed on source `0a9dc35f79d87b94601be6fcaaf6e4f71a9bf4dd`: six actual
+initializer/callback/trap/fresh outcomes and a pre-entry denial, with three
+positive scanner anchors and nine exact captured-library queries. Its original
+managed Task/private-I/O ownership receipts, six physical retirements and all
+18 active provider counters are independently bound. The queried dead wrapper
+is absent from scanner analysis; its API support remains `unknown`.
 
 The dedicated compiler-compatibility programme captures two ordinary transitive
 libraries per language through normal review and offline authoring. It compiles
@@ -76,4 +90,10 @@ is unchanged. Generic uncaught traps keep unknown causes, and arbitrary worker
 drain remains unproven. The owning artifact retains bounded public results and
 the signable component/package for causal replay; it excludes private DGML,
 response files, query labels, signing keys and application temporary directories.
-These are source-reviewed programme obligations; signed results remain pending.
+These two receipts supply the finite observations above. Initial source
+`1be35fc` failed before signing in both languages; .NET source `991370f` also
+retains its unavailable observation, whose precise original refusal branch is
+unknown. The corrected pinned-writer control is not a reconstruction of that
+private graph. An unavailable sidecar projects only an inspected static refusal
+code or `unknown`; it never publishes raw exception text, response arguments or
+graph labels. Whole #679 and arbitrary library worker quiescence remain open.
