@@ -3339,14 +3339,15 @@
         "transaction_runtime::factory::pre_host_conflict::tests::protected_original_clock_is_sampled_before_publication_and_response_fences",
         "transaction_runtime::factory::pre_host_conflict::tests::protected_original_deadline_cannot_be_replaced_by_recovery_time",
         "transaction_runtime::tests::technical_abort::successful_return_with_unavailable_host_result_preserves_original_pending_command",
-        "activation_runner::diagnostics::tests::runtime_phase_requires_generic_failure_and_only_closed_source_boundaries"
+        "activation_runner::diagnostics::tests::runtime_phase_requires_generic_failure_and_only_closed_source_boundaries",
+        "activation_runner::tests::typed_memory_and_fuel_interruptions_keep_public_dimensions_and_operator_reasons"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 189,
+      "minimumCases": 190,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -9269,7 +9270,8 @@
         "invocation::conversion::tests::trap_kinds::host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds",
         "invocation::conversion::tests::trap_kinds::runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics",
         "management::release::preparation::tests::release_preparation_wait_is_finite_and_keeps_original_transport_expiry",
-        "management::release::preparation::tests::release_preparation_body_bound_does_not_inherit_a_longer_transport_wait"
+        "management::release::preparation::tests::release_preparation_body_bound_does_not_inherit_a_longer_transport_wait",
+        "invocation::conversion::tests::bounds::typed_memory_and_fuel_details_keep_only_the_matching_closed_dimension"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9336,7 +9338,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 277,
+      "minimumCases": 278,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9720,14 +9722,15 @@
         "management::tests::preparation::release_prepare_requires_exact_publication_generation_and_finite_setup_wait",
         "management::phase2::execute::release::tests::prepared_release_projection_is_bounded_lossless_and_never_execution_authority",
         "command::tests::exact_release_preparation_command_keeps_its_public_result_name",
-        "management::execute::tests::parsed_release_prepare_keeps_management_dispatch_and_exact_selection"
+        "management::execute::tests::parsed_release_prepare_keeps_management_dispatch_and_exact_selection",
+        "error::tests::typed_memory_and_fuel_details_survive_cli_redaction_without_private_cell_or_reason"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 171,
+      "minimumCases": 172,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
