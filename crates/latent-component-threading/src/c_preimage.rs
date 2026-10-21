@@ -1,0 +1,836 @@
+//! Bounded original-core proof data for an explicitly selected C profile.
+//!
+//! The section is untrusted input, never a selector or an authentication marker.
+//! Every consumer recomputes the full C derivation and actual component graph.
+use super::*;
+use std::borrow::Cow;
+use wasm_encoder::{CustomSection, Encode, Section};
+
+pub const C_PREIMAGE_SECTION: &str = "latent-c-original-core-v1";
+pub const MAX_C_PREIMAGE_BYTES: usize = 1024 * 1024;
+pub const MAX_C_RECOMPUTED_IMAGE_BYTES: usize = 2 * 1024 * 1024;
+// Owned working allowance, not an RSS measurement. The C-only preflight below
+// limits every input to the finite shape used by this calculation. Sixteen
+// 2MiB byte-image units cover simultaneously retained reencoder capacity,
+// intermediate cores, old/new snapshots, section copies and the TLS image.
+// Eight MiB separately covers bounded signature/graph/edge containers, and
+// eight MiB covers the pinned validator's bounded scalar/control/local state.
+// Original component storage is charged IN ADDITION to this work allowance.
+pub const C_VERIFICATION_WORK_BYTES: usize =
+    16 * MAX_C_RECOMPUTED_IMAGE_BYTES + 8 * 1024 * 1024 + 8 * 1024 * 1024;
+const MAGIC: &[u8; 8] = b"LSFCPR01";
+const HEADER_BYTES: usize = 20;
+const MAX_PUBLIC_BYTES: usize = 512;
+
+struct Original<'a> {
+    core: &'a [u8],
+    public: &'a str,
+}
+
+fn finite_i32_offset(raw: &mut wasmparser::BinaryReader<'_>) -> Result<(), &'static str> {
+    if !matches!(raw.read_u8(), Ok(0x41)) {
+        return Err("c-preimage-finite-offset");
+    }
+    raw.read_var_i32().map_err(|_| "c-preimage-finite-offset")?;
+    if !matches!(raw.read_u8(), Ok(0x0b)) {
+        return Err("c-preimage-finite-offset");
+    }
+    Ok(())
+}
+
+fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
+    if input.len() > MAX_C_RECOMPUTED_IMAGE_BYTES {
+        return Err("c-preimage-finite-core-byte-bound");
+    }
+    let mut functions = 0u32;
+    let mut operators = 0;
+    let mut globals = 0u32;
+    let mut imports = 0u32;
+    let mut locals = 0u64;
+    for (ordinal, payload) in Parser::new(0).parse_all(input).enumerate() {
+        if ordinal >= 512 {
+            return Err("c-preimage-finite-core-section-bound");
+        }
+        match payload.map_err(|_| "c-preimage-finite-core-parse")? {
+            Payload::TypeSection(reader) => {
+                if reader.count() > 160 {
+                    return Err("c-preimage-finite-type-count");
+                }
+                // Read the closed numeric encoding directly before FuncType
+                // decoding could allocate a declared GC group or parameter Vec.
+                let range = reader.range();
+                let mut raw = wasmparser::BinaryReader::new(
+                    input
+                        .get(range.start as usize..range.end as usize)
+                        .ok_or("c-preimage-finite-type-range")?,
+                    range.start,
+                );
+                let count = raw
+                    .read_var_u32()
+                    .map_err(|_| "c-preimage-finite-type-count")?;
+                for _ in 0..count {
+                    if raw.read_u8().map_err(|_| "c-preimage-finite-scalar-type")? != 0x60 {
+                        return Err("c-preimage-finite-scalar-type");
+                    }
+                    let mut width = 0;
+                    for _ in 0..2 {
+                        let count = raw
+                            .read_var_u32()
+                            .map_err(|_| "c-preimage-finite-scalar-signature")?;
+                        width += u64::from(count);
+                        if width > 32 {
+                            return Err("c-preimage-finite-scalar-signature");
+                        }
+                        for _ in 0..count {
+                            if !matches!(raw.read_u8(), Ok(0x7c..=0x7f)) {
+                                return Err("c-preimage-finite-scalar-type");
+                            }
+                        }
+                    }
+                }
+                if !raw.eof() {
+                    return Err("c-preimage-finite-type-trailing");
+                }
+            }
+            Payload::ImportSection(reader) => {
+                if reader.count() > 64 {
+                    return Err("c-preimage-finite-import-count");
+                }
+                for import in reader.into_imports() {
+                    imports += 1;
+                    if imports > 64 {
+                        return Err("c-preimage-finite-import-count");
+                    }
+                    let import = import.map_err(|_| "c-preimage-finite-import")?;
+                    if import.module.len() > 512 || import.name.len() > 512 {
+                        return Err("c-preimage-finite-import-name");
+                    }
+                    if matches!(import.ty, TypeRef::Func(_) | TypeRef::FuncExact(_)) {
+                        functions = functions
+                            .checked_add(1)
+                            .ok_or("c-preimage-finite-function-count")?;
+                    }
+                }
+            }
+            Payload::FunctionSection(reader) => {
+                functions = functions
+                    .checked_add(reader.count())
+                    .ok_or("c-preimage-finite-function-count")?
+            }
+            Payload::TableSection(reader) => {
+                if reader.count() > 8 {
+                    return Err("c-preimage-finite-table-count");
+                }
+                let range = reader.range();
+                let mut raw = wasmparser::BinaryReader::new(
+                    input
+                        .get(range.start as usize..range.end as usize)
+                        .ok_or("c-preimage-finite-table-range")?,
+                    range.start,
+                );
+                let count = raw
+                    .read_var_u32()
+                    .map_err(|_| "c-preimage-finite-table-count")?;
+                for _ in 0..count {
+                    // Ordinary funcref tables only: no allocating initializer
+                    // ConstExpr reader or indexed/recursive reference types.
+                    if !matches!(raw.read_u8(), Ok(0x70)) {
+                        return Err("c-preimage-finite-table-type");
+                    }
+                    let flags = raw
+                        .read_u8()
+                        .map_err(|_| "c-preimage-finite-table-limits")?;
+                    if flags > 1 {
+                        return Err("c-preimage-finite-table-limits");
+                    }
+                    raw.read_var_u32()
+                        .map_err(|_| "c-preimage-finite-table-limits")?;
+                    if flags == 1 {
+                        raw.read_var_u32()
+                            .map_err(|_| "c-preimage-finite-table-limits")?;
+                    }
+                }
+                if !raw.eof() {
+                    return Err("c-preimage-finite-table-trailing");
+                }
+            }
+            Payload::MemorySection(reader) if reader.count() > 8 => {
+                return Err("c-preimage-finite-memory-count");
+            }
+            Payload::TagSection(_) => return Err("c-preimage-finite-numeric-control-only"),
+            Payload::GlobalSection(reader) => {
+                globals = globals
+                    .checked_add(reader.count())
+                    .ok_or("c-preimage-finite-global-count")?;
+                if globals > 256 {
+                    return Err("c-preimage-finite-global-count");
+                }
+                let range = reader.range();
+                let mut raw = wasmparser::BinaryReader::new(
+                    input
+                        .get(range.start as usize..range.end as usize)
+                        .ok_or("c-preimage-finite-global-range")?,
+                    range.start,
+                );
+                let count = raw
+                    .read_var_u32()
+                    .map_err(|_| "c-preimage-finite-global-count")?;
+                for _ in 0..count {
+                    if !matches!(raw.read_u8(), Ok(0x7c..=0x7f))
+                        || !matches!(raw.read_u8(), Ok(0 | 1))
+                    {
+                        return Err("c-preimage-finite-global-type");
+                    }
+                    match raw
+                        .read_u8()
+                        .map_err(|_| "c-preimage-finite-global-constant")?
+                    {
+                        0x41 => {
+                            raw.read_var_i32()
+                                .map_err(|_| "c-preimage-finite-global-constant")?;
+                        }
+                        0x42 => {
+                            raw.read_var_i64()
+                                .map_err(|_| "c-preimage-finite-global-constant")?;
+                        }
+                        0x43 => {
+                            raw.read_bytes(4)
+                                .map_err(|_| "c-preimage-finite-global-constant")?;
+                        }
+                        0x44 => {
+                            raw.read_bytes(8)
+                                .map_err(|_| "c-preimage-finite-global-constant")?;
+                        }
+                        _ => return Err("c-preimage-finite-global-constant"),
+                    }
+                    if raw.read_u8().map_err(|_| "c-preimage-finite-global-end")? != 0x0b {
+                        return Err("c-preimage-finite-global-end");
+                    }
+                }
+                if !raw.eof() {
+                    return Err("c-preimage-finite-global-trailing");
+                }
+            }
+            Payload::ExportSection(reader) => {
+                if reader.count() > 128 {
+                    return Err("c-preimage-finite-export-count");
+                }
+                for export in reader {
+                    if export.map_err(|_| "c-preimage-finite-export")?.name.len() > 512 {
+                        return Err("c-preimage-finite-export-name");
+                    }
+                }
+            }
+            Payload::DataSection(reader) => {
+                if reader.count() > 256 {
+                    return Err("c-preimage-finite-data-count");
+                }
+                // Do not let a typed ConstExpr reader allocate exception/GC
+                // state before enforcing the finite constant-offset encoding.
+                let range = reader.range();
+                let mut raw = wasmparser::BinaryReader::new(
+                    input
+                        .get(range.start as usize..range.end as usize)
+                        .ok_or("c-preimage-finite-data-range")?,
+                    range.start,
+                );
+                let count = raw
+                    .read_var_u32()
+                    .map_err(|_| "c-preimage-finite-data-count")?;
+                for _ in 0..count {
+                    match raw
+                        .read_var_u32()
+                        .map_err(|_| "c-preimage-finite-data-flags")?
+                    {
+                        0 => finite_i32_offset(&mut raw)?,
+                        1 => {}
+                        2 => {
+                            raw.read_var_u32()
+                                .map_err(|_| "c-preimage-finite-data-memory")?;
+                            finite_i32_offset(&mut raw)?;
+                        }
+                        _ => return Err("c-preimage-finite-data-flags"),
+                    }
+                    let bytes = raw
+                        .read_var_u32()
+                        .map_err(|_| "c-preimage-finite-data-bytes")?;
+                    raw.read_bytes(bytes as usize)
+                        .map_err(|_| "c-preimage-finite-data-bytes")?;
+                }
+                if !raw.eof() {
+                    return Err("c-preimage-finite-data-trailing");
+                }
+            }
+            Payload::ElementSection(reader) => {
+                if reader.count() > 256 {
+                    return Err("c-preimage-finite-element-count");
+                }
+                let range = reader.range();
+                let mut raw = wasmparser::BinaryReader::new(
+                    input
+                        .get(range.start as usize..range.end as usize)
+                        .ok_or("c-preimage-finite-element-range")?,
+                    range.start,
+                );
+                let groups = raw
+                    .read_var_u32()
+                    .map_err(|_| "c-preimage-finite-element-count")?;
+                for _ in 0..groups {
+                    let flags = raw
+                        .read_var_u32()
+                        .map_err(|_| "c-preimage-finite-element-flags")?;
+                    match flags {
+                        0 => finite_i32_offset(&mut raw)?,
+                        1 | 3 => {}
+                        2 => {
+                            raw.read_var_u32()
+                                .map_err(|_| "c-preimage-finite-element-table")?;
+                            finite_i32_offset(&mut raw)?;
+                        }
+                        _ => return Err("c-preimage-finite-function-elements-only"),
+                    }
+                    if flags != 0 && !matches!(raw.read_u8(), Ok(0)) {
+                        return Err("c-preimage-finite-element-kind");
+                    }
+                    let count = raw
+                        .read_var_u32()
+                        .map_err(|_| "c-preimage-finite-element-items")?;
+                    if count > 256 {
+                        return Err("c-preimage-finite-element-items");
+                    }
+                    for _ in 0..count {
+                        raw.read_var_u32()
+                            .map_err(|_| "c-preimage-finite-element-function")?;
+                    }
+                }
+                if !raw.eof() {
+                    return Err("c-preimage-finite-element-trailing");
+                }
+            }
+            Payload::CodeSectionEntry(body) => {
+                let mut depth = 0u32;
+                let declarations = body
+                    .get_locals_reader()
+                    .map_err(|_| "c-preimage-finite-locals")?;
+                if declarations.get_count() > 256 {
+                    return Err("c-preimage-finite-local-groups");
+                }
+                for declaration in declarations {
+                    let (count, ty) = declaration.map_err(|_| "c-preimage-finite-local")?;
+                    if !matches!(
+                        ty,
+                        wasmparser::ValType::I32
+                            | wasmparser::ValType::I64
+                            | wasmparser::ValType::F32
+                            | wasmparser::ValType::F64
+                    ) {
+                        return Err("c-preimage-finite-local-type");
+                    }
+                    locals = locals
+                        .checked_add(u64::from(count))
+                        .ok_or("c-preimage-finite-local-overflow")?;
+                    if locals > 4096 {
+                        return Err("c-preimage-finite-local-count");
+                    }
+                }
+                let mut reader = body
+                    .get_operators_reader()
+                    .map_err(|_| "c-preimage-finite-code")?;
+                while !reader.eof() {
+                    // Reject allocation-bearing exception/GC forms before the
+                    // typed operator reader constructs catch/type arrays.
+                    let opcode = reader
+                        .get_binary_reader()
+                        .read_u8()
+                        .map_err(|_| "c-preimage-finite-opcode")?;
+                    if matches!(opcode, 0x06..=0x0a | 0x18 | 0x19 | 0x1c | 0x1f | 0xe0..=0xe6 | 0xfb | 0xfd | 0xfe)
+                    {
+                        return Err("c-preimage-finite-numeric-control-only");
+                    }
+                    if opcode == 0x0e {
+                        let mut raw = reader.get_binary_reader();
+                        raw.read_u8().map_err(|_| "c-preimage-finite-opcode")?;
+                        if raw
+                            .read_var_u32()
+                            .map_err(|_| "c-preimage-finite-branch-table")?
+                            > 256
+                        {
+                            return Err("c-preimage-finite-branch-table");
+                        }
+                    }
+                    operators += 1;
+                    if operators > if original { 16_384 } else { 32_768 } {
+                        return Err("c-preimage-finite-operator-count");
+                    }
+                    match reader.read().map_err(|_| "c-preimage-finite-operator")? {
+                        Operator::Block { .. } | Operator::Loop { .. } | Operator::If { .. } => {
+                            depth += 1;
+                            if depth > 256 {
+                                return Err("c-preimage-finite-control-depth");
+                            }
+                        }
+                        Operator::End => depth = depth.saturating_sub(1),
+                        Operator::BrTable { targets } if targets.len() > 256 => {
+                            return Err("c-preimage-finite-branch-table");
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+        if functions > if original { 256 } else { 280 } || globals > 256 {
+            return Err("c-preimage-finite-function-or-global-count");
+        }
+    }
+    Ok(operators)
+}
+
+// This runs only AFTER the caller admits C_VERIFICATION_WORK_BYTES. It rejects
+// expansive shapes before invoking any full Validator or recomputing a core.
+fn finite_preflight(component: &[u8], original: &[u8]) -> Result<(), &'static str> {
+    let accesses = bounded_core(original, true)?;
+    let mut modules = 0;
+    let mut rows = 0;
+    let mut depth = 0;
+    let mut instances = 0u32;
+    let mut component_instances = 0u32;
+    let mut aliases = 0u32;
+    let mut canonical = 0u32;
+    let mut type_prefixes = 0usize;
+    for payload in Parser::new(0).parse_all(component) {
+        let payload = payload.map_err(|_| "c-preimage-finite-component")?;
+        rows += 1;
+        if rows > 4096 {
+            return Err("c-preimage-finite-component-rows");
+        }
+        if let Payload::ModuleSection {
+            unchecked_range, ..
+        } = &payload
+        {
+            modules += 1;
+            if modules > 4 {
+                return Err("c-preimage-finite-module-count");
+            }
+            let start = usize::try_from(unchecked_range.start)
+                .map_err(|_| "c-preimage-finite-core-range")?;
+            let end =
+                usize::try_from(unchecked_range.end).map_err(|_| "c-preimage-finite-core-range")?;
+            bounded_core(
+                component
+                    .get(start..end)
+                    .ok_or("c-preimage-finite-core-range")?,
+                false,
+            )?;
+        }
+        if matches!(payload, Payload::ComponentSection { .. }) {
+            return Err("c-preimage-finite-nested-component");
+        }
+        if depth == 0 {
+            match &payload {
+                Payload::InstanceSection(reader) => {
+                    instances = instances
+                        .checked_add(reader.count())
+                        .ok_or("c-preimage-finite-instances")?
+                }
+                Payload::ComponentInstanceSection(reader) => {
+                    component_instances = component_instances
+                        .checked_add(reader.count())
+                        .ok_or("c-preimage-finite-instances")?
+                }
+                Payload::ComponentAliasSection(reader) => {
+                    aliases = aliases
+                        .checked_add(reader.count())
+                        .ok_or("c-preimage-finite-aliases")?
+                }
+                Payload::ComponentCanonicalSection(reader) => {
+                    canonical = canonical
+                        .checked_add(reader.count())
+                        .ok_or("c-preimage-finite-canonical")?
+                }
+                Payload::CoreTypeSection(_) | Payload::ComponentTypeSection(_) => {
+                    let (_, range) = payload.as_section().ok_or("c-preimage-finite-type-range")?;
+                    let start =
+                        usize::try_from(range.start).map_err(|_| "c-preimage-finite-type-range")?;
+                    let end =
+                        usize::try_from(range.end).map_err(|_| "c-preimage-finite-type-range")?;
+                    let bytes = component
+                        .get(start..end)
+                        .ok_or("c-preimage-finite-type-range")?;
+                    if bytes.len() > 16 * 1024 {
+                        return Err("c-preimage-finite-type-encoding-bytes");
+                    }
+                    // A conservative raw-byte ceiling BEFORE recursive typed
+                    // decoding. Every nested component/instance/module type
+                    // necessarily consumes one of these prefixes. Counting
+                    // coincident string/index bytes too can only refuse a
+                    // wider encoding; it cannot undercount actual nesting.
+                    type_prefixes += bytes
+                        .iter()
+                        .filter(|b| matches!(**b, 0x41 | 0x42 | 0x50))
+                        .count();
+                }
+                _ => {}
+            }
+            if instances > 32
+                || component_instances > 32
+                || aliases > 512
+                || canonical > 256
+                || type_prefixes > 16
+            {
+                return Err("c-preimage-finite-component-container-bound");
+            }
+        }
+        if depth == 0
+            && let Some((id, range)) = payload.as_section()
+            && id != 0
+            && id != 1
+            && range.end - range.start > 64 * 1024
+        {
+            return Err("c-preimage-finite-component-structure-bytes");
+        }
+        match payload {
+            Payload::ModuleSection { .. } => depth += 1,
+            Payload::End(_) if depth != 0 => depth -= 1,
+            _ => {}
+        }
+    }
+    let (_, extent) = c_context::original_template_layout(original)?;
+    if extent > 128 * 1024
+        || original
+            .len()
+            .checked_add(extent as usize)
+            .and_then(|n| n.checked_add(accesses as usize * 16))
+            .and_then(|n| n.checked_add(128 * 1024))
+            .is_none_or(|n| n > MAX_C_RECOMPUTED_IMAGE_BYTES)
+    {
+        return Err("c-preimage-finite-derived-image-bound");
+    }
+    Ok(())
+}
+
+fn public_name(public: &str) -> Result<(), &'static str> {
+    if public.is_empty() || public.len() > MAX_PUBLIC_BYTES || public.chars().any(char::is_control)
+    {
+        return Err("c-preimage-public-name");
+    }
+    Ok(())
+}
+
+fn decode(input: &[u8]) -> Result<Original<'_>, &'static str> {
+    if !(HEADER_BYTES..=MAX_C_PREIMAGE_BYTES).contains(&input.len()) {
+        return Err("c-preimage-payload-bound");
+    }
+    if input.get(..8) != Some(MAGIC) {
+        return Err("c-preimage-magic");
+    }
+    let read = |start| u32::from_le_bytes(input[start..start + 4].try_into().unwrap());
+    if read(8) != 1 {
+        return Err("c-preimage-version");
+    }
+    let name_bytes = usize::try_from(read(12)).map_err(|_| "c-preimage-public-bound")?;
+    let core_bytes = usize::try_from(read(16)).map_err(|_| "c-preimage-core-bound")?;
+    let core_start = HEADER_BYTES
+        .checked_add(name_bytes)
+        .ok_or("c-preimage-length-overflow")?;
+    if name_bytes > MAX_PUBLIC_BYTES
+        || core_start.checked_add(core_bytes) != Some(input.len())
+        || core_bytes < 8
+    {
+        return Err("c-preimage-exact-lengths");
+    }
+    let public = std::str::from_utf8(
+        input
+            .get(HEADER_BYTES..core_start)
+            .ok_or("c-preimage-public-bound")?,
+    )
+    .map_err(|_| "c-preimage-public-utf8")?;
+    public_name(public)?;
+    let core = input.get(core_start..).ok_or("c-preimage-core-bound")?;
+    if core.get(..8) != Some(b"\0asm\x01\0\0\0") {
+        return Err("c-preimage-original-core-encoding");
+    }
+    Ok(Original { core, public })
+}
+
+fn encode(core: &[u8], public: &str) -> Result<Vec<u8>, &'static str> {
+    let total = check_original_envelope(core, public)?;
+    let name_bytes = u32::try_from(public.len()).map_err(|_| "c-preimage-public-bound")?;
+    let core_bytes = u32::try_from(core.len()).map_err(|_| "c-preimage-core-bound")?;
+    let mut payload = Vec::with_capacity(total);
+    payload.extend_from_slice(MAGIC);
+    payload.extend_from_slice(&1u32.to_le_bytes());
+    payload.extend_from_slice(&name_bytes.to_le_bytes());
+    payload.extend_from_slice(&core_bytes.to_le_bytes());
+    payload.extend_from_slice(public.as_bytes());
+    payload.extend_from_slice(core);
+    Ok(payload)
+}
+
+/// Bound the original compiler input before deriving any copied core image.
+pub fn check_original_envelope(core: &[u8], public: &str) -> Result<usize, &'static str> {
+    public_name(public)?;
+    let total = HEADER_BYTES
+        .checked_add(public.len())
+        .and_then(|n| n.checked_add(core.len()))
+        .ok_or("c-preimage-length-overflow")?;
+    if total > MAX_C_PREIMAGE_BYTES || core.get(..8) != Some(b"\0asm\x01\0\0\0") {
+        return Err("c-preimage-original-core-bound");
+    }
+    Ok(total)
+}
+
+fn top_level_payload(input: &[u8]) -> Result<Option<&[u8]>, &'static str> {
+    if input.len() > MAX_BYTES {
+        return Err("c-preimage-component-bound");
+    }
+    if input.get(..8) != Some(b"\0asm\r\0\x01\0") {
+        return Err("c-preimage-component-required");
+    }
+    let mut depth = 0u32;
+    let mut found = None;
+    for (index, payload) in Parser::new(0).parse_all(input).enumerate() {
+        if index >= 65536 {
+            return Err("c-preimage-parser-work-bound");
+        }
+        let payload = payload.map_err(|_| "c-preimage-component-parse")?;
+        if index == 0
+            && !matches!(
+                payload,
+                Payload::Version {
+                    encoding: Encoding::Component,
+                    ..
+                }
+            )
+        {
+            return Err("c-preimage-component-required");
+        }
+        match payload {
+            Payload::ModuleSection { .. } | Payload::ComponentSection { .. } => {
+                depth = depth.checked_add(1).ok_or("c-preimage-depth-overflow")?;
+                if depth > 16 {
+                    return Err("c-preimage-component-depth");
+                }
+            }
+            Payload::End(_) if depth != 0 => depth -= 1,
+            Payload::CustomSection(section)
+                if depth == 0 && section.name() == C_PREIMAGE_SECTION =>
+            {
+                if found.is_some() {
+                    return Err("c-preimage-duplicate-top-level");
+                }
+                decode(section.data())?;
+                found = Some(section.data());
+            }
+            _ => {}
+        }
+    }
+    Ok(found)
+}
+
+/// The compiler attaches full proof data only after verifying the ordinary
+/// encoded component. This does not select a host profile or create a child.
+pub fn attach_c_original_core(
+    original: &[u8],
+    component: &[u8],
+    public: &str,
+) -> Result<Vec<u8>, &'static str> {
+    if top_level_payload(component)?.is_some() {
+        return Err("c-preimage-already-present");
+    }
+    let payload = encode(original, public)?;
+    let capacity = component
+        .len()
+        .checked_add(C_PREIMAGE_SECTION.len() + 16)
+        .and_then(|n| n.checked_add(payload.len()))
+        .filter(|n| *n <= MAX_BYTES)
+        .ok_or("c-preimage-component-bound")?;
+    verify_c_component_routing(original, component, public)?;
+    let mut output = Vec::with_capacity(capacity);
+    output.extend_from_slice(component);
+    let section = CustomSection {
+        name: Cow::Borrowed(C_PREIMAGE_SECTION),
+        data: Cow::Borrowed(&payload),
+    };
+    output.push(Section::id(&section));
+    section.encode(&mut output);
+    // The normal graph, all source derivations and the complete final digest
+    // must also agree with the exact component that will be packaged.
+    verify_embedded_c_original_core(&output)?;
+    Ok(output)
+}
+
+/// An operator-selected C profile calls this before compilation, native loading
+/// and instantiation. Missing/forged proof fails; presence provides no authority.
+pub fn verify_embedded_c_original_core(
+    component: &[u8],
+) -> Result<CComponentRoutingReceipt, &'static str> {
+    let payload = top_level_payload(component)?.ok_or("c-preimage-top-level-required")?;
+    let original = decode(payload)?;
+    finite_preflight(component, original.core)?;
+    verify_c_component_routing(original.core, component, original.public)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wasm_encoder::{ConstExpr, DataSection};
+
+    fn component(payloads: &[&[u8]]) -> Vec<u8> {
+        let mut component = wasm_encoder::Component::new();
+        for payload in payloads {
+            component.section(&CustomSection {
+                name: Cow::Borrowed(C_PREIMAGE_SECTION),
+                data: Cow::Borrowed(payload),
+            });
+        }
+        component.finish()
+    }
+
+    #[test]
+    fn c_finite_preflight_refuses_expansive_signatures_locals_and_control_before_validator() {
+        let mut module = Module::new();
+        let mut types = TypeSection::new();
+        types.ty().function([ValType::I32; 33], []);
+        module.section(&types);
+        assert_eq!(
+            bounded_core(&module.finish(), true).unwrap_err(),
+            "c-preimage-finite-scalar-signature"
+        );
+        for (locals, depth, expected) in [
+            (4097, 0, "c-preimage-finite-local-count"),
+            (0, 257, "c-preimage-finite-control-depth"),
+        ] {
+            let mut module = Module::new();
+            let mut types = TypeSection::new();
+            types.ty().function([], []);
+            module.section(&types);
+            let mut functions = FunctionSection::new();
+            functions.function(0);
+            module.section(&functions);
+            let mut code = CodeSection::new();
+            let mut function = Function::new([(locals, ValType::I32)]);
+            for _ in 0..depth {
+                function.instruction(&Instruction::Block(BlockType::Empty));
+            }
+            for _ in 0..=depth {
+                function.instruction(&Instruction::End);
+            }
+            code.function(&function);
+            module.section(&code);
+            assert_eq!(bounded_core(&module.finish(), true).unwrap_err(), expected);
+        }
+        for opcode in [0x1c, 0x1f, 0xe3, 0xe4, 0xe5] {
+            let mut module = Module::new();
+            let mut types = TypeSection::new();
+            types.ty().function([], []);
+            module.section(&types);
+            let mut functions = FunctionSection::new();
+            functions.function(0);
+            module.section(&functions);
+            let mut code = CodeSection::new();
+            let mut function = Function::new([]);
+            // The immediate is deliberately truncated. The profile refusal
+            // must precede the pinned reader's allocating immediate decoder.
+            function.raw([opcode]);
+            code.function(&function);
+            module.section(&code);
+            assert_eq!(
+                bounded_core(&module.finish(), true).unwrap_err(),
+                "c-preimage-finite-numeric-control-only"
+            );
+        }
+        let mut module = Module::new();
+        let mut data = DataSection::new();
+        data.active(0, &ConstExpr::raw([0x41, 1, 0x41, 2, 0x6a]), [0]);
+        module.section(&data);
+        assert_eq!(
+            bounded_core(&module.finish(), true).unwrap_err(),
+            "c-preimage-finite-offset"
+        );
+        let mut module = Module::new();
+        let mut elements = wasm_encoder::ElementSection::new();
+        elements.raw(&[0, 0x41, 1, 0x41, 2, 0x6a, 0x0b, 0]);
+        module.section(&elements);
+        assert_eq!(
+            bounded_core(&module.finish(), true).unwrap_err(),
+            "c-preimage-finite-offset"
+        );
+    }
+
+    #[test]
+    fn c_proof_payload_roundtrips_original_bytes_but_never_grants_routing() {
+        let core = Module::new().finish();
+        let payload = encode(&core, "examples:threading/api@1.0.0#greet").unwrap();
+        let decoded = decode(&payload).unwrap();
+        assert_eq!(decoded.core, core);
+        assert_eq!(decoded.public, "examples:threading/api@1.0.0#greet");
+        let supplied = component(&[&payload]);
+        assert_eq!(
+            top_level_payload(&supplied).unwrap(),
+            Some(payload.as_slice())
+        );
+        assert!(verify_embedded_c_original_core(&supplied).is_err());
+        assert!(attach_c_original_core(&core, &component(&[]), decoded.public).is_err());
+    }
+
+    #[test]
+    fn c_proof_payload_refuses_version_lengths_trailing_bytes_and_invalid_names() {
+        let core = Module::new().finish();
+        let original = encode(&core, "run").unwrap();
+        for (index, value) in [(0, 0), (8, 2), (12, 0), (16, 0), (HEADER_BYTES, 0xff)] {
+            let mut changed = original.clone();
+            changed[index] = value;
+            assert!(decode(&changed).is_err());
+        }
+        let mut trailing = original.clone();
+        trailing.push(0);
+        assert!(decode(&trailing).is_err());
+        assert!(encode(&core, "").is_err());
+        assert!(encode(&core, "run\n").is_err());
+        assert!(encode(&core, &"x".repeat(MAX_PUBLIC_BYTES + 1)).is_err());
+        assert!(encode(b"\0asm\r\0\x01\0", "run").is_err());
+    }
+
+    #[test]
+    fn c_proof_payload_is_bounded_before_copy_and_rejects_duplicate_top_level_data() {
+        assert!(decode(&vec![0; MAX_C_PREIMAGE_BYTES + 1]).is_err());
+        let mut core = vec![0; MAX_C_PREIMAGE_BYTES];
+        core[..8].copy_from_slice(b"\0asm\x01\0\0\0");
+        assert!(encode(&core, "run").is_err());
+        let payload = encode(&Module::new().finish(), "run").unwrap();
+        assert_eq!(
+            top_level_payload(&component(&[&payload, &payload])).unwrap_err(),
+            "c-preimage-duplicate-top-level"
+        );
+        assert_eq!(
+            top_level_payload(&vec![0; MAX_BYTES + 1]).unwrap_err(),
+            "c-preimage-component-bound"
+        );
+        assert!(top_level_payload(&Module::new().finish()).is_err());
+    }
+
+    #[test]
+    fn c_proof_nested_core_or_component_metadata_is_never_selected() {
+        let payload = encode(&Module::new().finish(), "run").unwrap();
+        let mut module = Module::new();
+        module.section(&CustomSection {
+            name: Cow::Borrowed(C_PREIMAGE_SECTION),
+            data: Cow::Borrowed(&payload),
+        });
+        let mut child = wasm_encoder::Component::new();
+        child.section(&CustomSection {
+            name: Cow::Borrowed(C_PREIMAGE_SECTION),
+            data: Cow::Borrowed(&payload),
+        });
+        let mut outer = wasm_encoder::Component::new();
+        outer.section(&wasm_encoder::ModuleSection(&module));
+        outer.section(&wasm_encoder::NestedComponentSection(&child));
+        let bytes = outer.finish();
+        assert!(top_level_payload(&bytes).unwrap().is_none());
+        assert_eq!(
+            verify_embedded_c_original_core(&bytes).unwrap_err(),
+            "c-preimage-top-level-required"
+        );
+    }
+}

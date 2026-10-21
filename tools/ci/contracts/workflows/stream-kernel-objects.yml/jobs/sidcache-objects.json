@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') || inputs.sidcache == true)))) }}",
+    "if": "${{ inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') || inputs.sidcache == true)))))) }}",
     "name": "Fifteen actual maintained objects with SID cache and audit strings",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -65,7 +65,7 @@
   },
   "jobId": "sidcache-objects",
   "kind": "job",
-  "reviewReason": "Add one exclusive route object-only lane preserving all seven previous job bodies, 22 objects and75 global oracles, every original case/guard and original config/runtime/diagnostic bounds. No kernel link, boot, execution or installation qualification.",
+  "reviewReason": "Add one exclusive source-only linear copied-TCP packet object profile, retaining all nine prior jobs, exact symbol floors, original configuration and bounds; two old job-set assertions project only the separately checked new packet job. No kernel/runtime/install qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

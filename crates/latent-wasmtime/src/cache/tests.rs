@@ -34,6 +34,33 @@ fn publish(cache: &Arc<PreparedCache<u8>>, handle: &str, value: u8) {
 }
 
 #[test]
+fn c_verification_work_is_admitted_before_use_and_never_becomes_resident_source() {
+    let cache = Arc::new(PreparedCache::<u8>::new(limits()).unwrap());
+    assert!(cache
+        .begin_with_verification("too-large".into(), 2, 3, 11)
+        .is_err());
+    assert_eq!(cache.snapshot().preparing_source_bytes, 0);
+    let PrepareAccess::Compile(reservation) =
+        cache.begin_with_verification("c".into(), 2, 3, 8).unwrap()
+    else {
+        panic!("fresh C work");
+    };
+    assert_eq!(reservation.verification_bytes(), 8);
+    assert_eq!(cache.snapshot().preparing_source_bytes, 10);
+    reservation.publish(Arc::new(1), 4).unwrap();
+    assert_eq!(cache.snapshot().source_bytes, 2);
+    assert_eq!(cache.snapshot().preparing_source_bytes, 0);
+    let PrepareAccess::Compile(reservation) = cache
+        .begin_with_verification("cancelled".into(), 2, 3, 8)
+        .unwrap()
+    else {
+        panic!("fresh C work");
+    };
+    drop(reservation);
+    assert_eq!(cache.snapshot().preparing_source_bytes, 0);
+}
+
+#[test]
 fn shared_hits_refresh_lru_and_release_requires_matching_runtime() {
     let cache = Arc::new(PreparedCache::new(limits()).unwrap());
     let sibling = Arc::clone(&cache);

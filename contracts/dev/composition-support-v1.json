@@ -26,13 +26,13 @@
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:d33f7488ad30e84e59ccd9384ba600340c42ca0fa6f745dee53e77d7ed2a9636",
-      "commit": "4a765592e1b9bfcc2c898351d085836bec8da8c4"
+      "digest": "sha256:046f4db8ac19171e371036d31930165b29a138c0793dd8f9a3bb2e50d9e59478",
+      "commit": "20a8b5df7d56ec4dc2eeaa94d70d84fa5bc71435"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
-      "digest": "sha256:7db258c8cb167a124441ae227249cf485b82c9e918b9257d21134b23ad7c9521",
-      "commit": "4a765592e1b9bfcc2c898351d085836bec8da8c4"
+      "digest": "sha256:439a1879d288e2658b4b95865d6e58bab548e40cc618c0b6e9a8c5b991f70be9",
+      "commit": "8473afecac55bbf6d67b411b7d7b73820991b289"
     },
     "sealed-web-projection": {
       "path": "crates/latent-artifacts/src/local_repository/web/projection/metadata.rs",
@@ -91,8 +91,8 @@
     },
     "structural-engine-profile": {
       "path": "crates/latent-wasmtime/src/config/profile.rs",
-      "digest": "sha256:f01ee267f0388d09257c46e1d35d7629ef9985df12c015cc4cbbc299704dcb82",
-      "commit": "4a765592e1b9bfcc2c898351d085836bec8da8c4"
+      "digest": "sha256:61890362902278d1dd68fa114f183f6e3aeb1622c0a0f0b0dd1fe87941abcd99",
+      "commit": "20a8b5df7d56ec4dc2eeaa94d70d84fa5bc71435"
     },
     "ready-inspection": {
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",

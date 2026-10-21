@@ -1,6 +1,11 @@
 name: SDK current native products
 on:
   workflow_dispatch:
+    inputs:
+      c-thread-profile-controls:
+        description: Run the finite C proof, accounting and normal operator controls with these same products
+        type: boolean
+        default: false
   push:
     branches: ['feat/sdk-current-native-products-20261020', 'diag/sdk-v7-native-products-20261020', 'feat/http-phase-nominal-semantics-20261020', 'fix/http-phase-unused-nominal-type-20261020', 'fix/http-phase-operational-authority-20261020', 'fix/runtime-wait-positive-observation-20261020']
 permissions:
@@ -15,6 +20,7 @@ jobs:
     timeout-minutes: 25
     env:
       CARGO_BUILD_JOBS: '2'
+      C_THREAD_PROFILE_CONTROLS: ${{ github.event_name == 'workflow_dispatch' && inputs.c-thread-profile-controls && 'true' || 'false' }}
       CARGO_INCREMENTAL: '0'
       CARGO_PROFILE_DEV_DEBUG: '0'
       CARGO_PROFILE_TEST_DEBUG: '0'
@@ -56,6 +62,7 @@ jobs:
           from tools.rust_capsule_build import Commands
           from tools.rust_capsule_project import fresh, write_json
           root=Path.cwd();output=fresh(Path(os.environ['RUNNER_TEMP'])/'sdk-native-products')
+          require(os.environ['C_THREAD_PROFILE_CONTROLS'] in ('true','false'),'native-products-c-profile-closed-selector')
           pins=tomllib.loads((root/'rust-toolchain.toml').read_text())
           require(pins['toolchain']['channel']=='1.97.1','native-products-original-rust-pin')
           selected=('.github/workflows/sdk-native-products.yml','.cargo/managed-guest.toml',
@@ -187,6 +194,31 @@ jobs:
               '--','--exact','--test-threads=1')
           require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in release_dispatch,
               'native-products-release-preparation-one-dispatch-control')
+          if os.environ['C_THREAD_PROFILE_CONTROLS']=='true':
+              result=commands.run('c-original-and-final-proof-controls','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-component-threading','--lib','--','--test-threads=1')
+              require(b'test result: ok. 55 passed; 0 failed; 0 ignored;' in result,'c-original-and-final-proof-controls-exact-count')
+              result=commands.run('c-profile-1','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','cache::tests::c_verification_work_is_admitted_before_use_and_never_becomes_resident_source','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-1-exact-count')
+              result=commands.run('c-profile-2','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','component_threading::tests::c_profile_requires_prepaid_work_before_reading_proof_and_never_grants_from_data','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-2-exact-count')
+              result=commands.run('c-profile-3','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','component_threading::tests::c_profile_proof_cannot_replay_as_rust_or_under_default_cache_settings','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-3-exact-count')
+              result=commands.run('c-profile-4','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','config::engine::tests::c_bootstrap_changes_only_the_explicit_closed_native_profile_field','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-4-exact-count')
+              result=commands.run('c-profile-5','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','aot::ownership::tests::recomputed_input_work_shares_the_original_aggregate_and_refunds_after_owner_drop','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-5-exact-count')
+              result=commands.run('c-profile-6','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-manifest','--lib','runtime_compatibility::tests::cooperative_c_is_a_distinct_trusted_profile_and_default_fingerprint_is_stable','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-6-exact-count')
+              result=commands.run('c-profile-7','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latentd','--lib','config::tests::engine::c_threading_engine_input_is_closed_and_default_input_remains_unselected','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-7-exact-count')
+              result=commands.run('c-profile-8','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latentd','--lib','config::tests::engine::activation_stack_accounting_is_a_closed_opt_in_and_omission_stays_default','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-8-exact-count')
+              result=commands.run('c-profile-9','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latentd','--lib','config::tests::providers::activation_runtime::c_native_opt_in_preserves_the_old_provider_digest_and_requires_its_own_binding','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-9-exact-count')
+              result=commands.run('c-profile-10','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latentd','--lib','config::tests::providers::activation_runtime::protected_c_profile_reaches_normal_node_settings_without_raising_any_limits','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-10-exact-count')
+              result=commands.run('c-profile-11','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latentd','--lib','config::tests::providers::activation_runtime::activation_owned_stack_selection_keeps_native_threads_and_provider_quotas_unchanged','--','--exact','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-11-exact-count')
           require(before==source_identity(root) and materials==material_identities(),
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)

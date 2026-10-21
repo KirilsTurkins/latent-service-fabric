@@ -25,6 +25,9 @@ pub struct CRootReceipt {
     pub root_stack_high: u32,
     pub root_context_installed_before_c_prologue: bool,
     pub original_constructor_body_is_empty: bool,
+    /// Logical root tokens settle only after the authenticated final C frame.
+    pub root_logical_owners_settled_after_c_frames: bool,
+    /// The host's physical stack and metadata permits still outlive the Store.
     pub root_owners_retained_until_store_drop: bool,
     pub component_routing_authenticated: bool,
     pub runtime_profile_qualified: bool,
@@ -39,6 +42,7 @@ struct Root {
     results: Vec<ValType>,
     initialize: u32,
     finish: u32,
+    settle: u32,
     context_set: u32,
     lifecycle: u32,
     wrapper: u32,
@@ -72,6 +76,7 @@ fn inspect(input: &[u8], export: &str, start: u32, extent: u32) -> Result<Root, 
     let mut globals = Vec::new();
     let mut exports = std::collections::BTreeMap::new();
     let mut context_set = None;
+    let mut settle = None;
     let mut imported = 0;
     let mut code = base.imported_functions;
     let mut empty_ctors = false;
@@ -93,6 +98,20 @@ fn inspect(input: &[u8], export: &str, start: u32, extent: u32) -> Result<Root, 
                                 || !ty.results().is_empty()
                             {
                                 return Err("c-root-context-set-signature");
+                            }
+                        }
+                        if row.module == "latent:runtime/activation@0.1.0" && row.name == "settle" {
+                            let ty = types.get(ty as usize).ok_or("c-root-settle-type")?;
+                            if settle.replace(imported).is_some()
+                                || ty.params()
+                                    != [
+                                        wasmparser::ValType::I64,
+                                        wasmparser::ValType::I64,
+                                        wasmparser::ValType::I32,
+                                    ]
+                                || !ty.results().is_empty()
+                            {
+                                return Err("c-root-settle-signature");
                             }
                         }
                         imported += 1;
@@ -266,6 +285,7 @@ fn inspect(input: &[u8], export: &str, start: u32, extent: u32) -> Result<Root, 
             .collect::<Result<_, _>>()?,
         initialize,
         finish,
+        settle: settle.ok_or("c-root-typed-settle-required")?,
         context_set: context_set.ok_or("c-root-context-set-missing")?,
         lifecycle: globals.len() as u32,
         template_start: start,
@@ -353,8 +373,78 @@ impl Root {
         reject(&mut body);
         body.instruction(&Instruction::I32Const(RECORD))
             .instruction(&Instruction::I32Const(5))
-            .instruction(&Instruction::I32Store(address(20)))
-            .instruction(&Instruction::I32Const(0))
+            .instruction(&Instruction::I32Store(address(20)));
+        // No C prologue/epilogue runs from here. The checked frame has exited;
+        // only its exact logical Native then Task tokens may be settled. The
+        // separate host stack/metadata permits are not reachable by this ABI.
+        for offset in [48, 32] {
+            body.instruction(&Instruction::I32Const(RECORD))
+                .instruction(&Instruction::I64Load(MemArg {
+                    offset,
+                    align: 3,
+                    memory_index: 0,
+                }))
+                .instruction(&Instruction::I64Eqz)
+                .instruction(&Instruction::If(BlockType::Empty));
+            body.instruction(&Instruction::I32Const(RECORD))
+                .instruction(&Instruction::I64Load(MemArg {
+                    offset: offset + 8,
+                    align: 3,
+                    memory_index: 0,
+                }))
+                .instruction(&Instruction::I64Eqz)
+                .instruction(&Instruction::I32Eqz);
+            reject(&mut body);
+            body.instruction(&Instruction::Else);
+            body.instruction(&Instruction::I32Const(RECORD))
+                .instruction(&Instruction::I64Load(MemArg {
+                    offset: offset + 8,
+                    align: 3,
+                    memory_index: 0,
+                }))
+                .instruction(&Instruction::I64Eqz);
+            reject(&mut body);
+            body.instruction(&Instruction::I32Const(RECORD))
+                .instruction(&Instruction::I32Const(255))
+                .instruction(&Instruction::I32Store8(MemArg {
+                    offset: 80,
+                    align: 0,
+                    memory_index: 0,
+                }))
+                .instruction(&Instruction::I32Const(RECORD))
+                .instruction(&Instruction::I64Load(MemArg {
+                    offset,
+                    align: 3,
+                    memory_index: 0,
+                }))
+                .instruction(&Instruction::I32Const(RECORD))
+                .instruction(&Instruction::I64Load(MemArg {
+                    offset: offset + 8,
+                    align: 3,
+                    memory_index: 0,
+                }))
+                .instruction(&Instruction::I32Const(RECORD + 80))
+                .instruction(&Instruction::Call(self.settle))
+                .instruction(&Instruction::I32Const(RECORD))
+                .instruction(&Instruction::I32Load8U(MemArg {
+                    offset: 80,
+                    align: 0,
+                    memory_index: 0,
+                }));
+            reject(&mut body);
+            // Zero only after the typed result positively returned Ok.
+            for at in [offset, offset + 8] {
+                body.instruction(&Instruction::I32Const(RECORD))
+                    .instruction(&Instruction::I64Const(0))
+                    .instruction(&Instruction::I64Store(MemArg {
+                        offset: at,
+                        align: 3,
+                        memory_index: 0,
+                    }));
+            }
+            body.instruction(&Instruction::End);
+        }
+        body.instruction(&Instruction::I32Const(0))
             .instruction(&Instruction::Call(self.context_set))
             .instruction(&Instruction::I32Const(2))
             .instruction(&Instruction::GlobalSet(self.lifecycle));
@@ -605,6 +695,7 @@ pub fn transform_c_root_bootstrap(
             root_stack_high: STACK_HIGH,
             root_context_installed_before_c_prologue: true,
             original_constructor_body_is_empty: true,
+            root_logical_owners_settled_after_c_frames: true,
             root_owners_retained_until_store_drop: true,
             component_routing_authenticated: false,
             runtime_profile_qualified: false,
@@ -629,10 +720,18 @@ pub(crate) mod tests {
         types.ty().function([ValType::I32], []);
         types.ty().function([ValType::I32], [ValType::I64]);
         types.ty().function([], []);
+        types
+            .ty()
+            .function([ValType::I64, ValType::I64, ValType::I32], []);
         module.section(&types);
         let mut imports = ImportSection::new();
         imports.import("$root", "[context-get-1]", EntityType::Function(0));
         imports.import("$root", "[thread-new-indirect-v0]", EntityType::Function(1));
+        imports.import(
+            "latent:runtime/activation@0.1.0",
+            "settle",
+            EntityType::Function(5),
+        );
         module.section(&imports);
         let mut functions = FunctionSection::new();
         for ty in [2, 2, 1, 2, 1, 2, 3, 4] {
@@ -696,14 +795,14 @@ pub(crate) mod tests {
             ("run", 8),
             (CTORS, 9),
         ] {
-            exports.export(name, ExportKind::Func, index);
+            exports.export(name, ExportKind::Func, index + 1);
         }
         module.section(&exports);
         let mut elements = ElementSection::new();
         elements.active(
             Some(0),
             &ConstExpr::i32_const(1),
-            Elements::Functions(Cow::Owned(vec![2, 1])),
+            Elements::Functions(Cow::Owned(vec![3, 1])),
         );
         module.section(&elements);
         let mut code = CodeSection::new();
@@ -793,6 +892,7 @@ pub(crate) mod tests {
         assert!(
             receipt.root_context_installed_before_c_prologue
                 && receipt.original_constructor_body_is_empty
+                && receipt.root_logical_owners_settled_after_c_frames
                 && receipt.root_owners_retained_until_store_drop
         );
         assert!(!receipt.component_routing_authenticated && !receipt.runtime_profile_qualified);
@@ -805,6 +905,100 @@ pub(crate) mod tests {
         )
         .unwrap();
         verify(&child, &output, &root).unwrap();
+    }
+
+    #[test]
+    fn fixed_root_settles_only_its_two_logical_tokens_after_c_frames_and_before_detach() {
+        let input = fixture(STACK_HIGH as i32, false, false);
+        let (child, template) = stages(&input);
+        let root = inspect(
+            &child,
+            "run",
+            template.original_template_start,
+            template.conservative_template_extent,
+        )
+        .unwrap();
+        let (output, _) =
+            transform_c_root_bootstrap(&input, Sha256::digest(&input).into(), "run").unwrap();
+        let body = Parser::new(0)
+            .parse_all(&output)
+            .filter_map(|p| match p.unwrap() {
+                Payload::CodeSectionEntry(body) => Some(body),
+                _ => None,
+            })
+            .nth((root.wrapper - root.base.imported_functions) as usize)
+            .unwrap();
+        let ops = body
+            .get_operators_reader()
+            .unwrap()
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        let positions = |function| {
+            ops.iter()
+                .enumerate()
+                .filter_map(|(i, op)| {
+                    matches!(op,Operator::Call{function_index} if *function_index==function)
+                        .then_some(i)
+                })
+                .collect::<Vec<_>>()
+        };
+        let finish = positions(root.finish);
+        let settle = positions(root.settle);
+        let contexts = positions(root.context_set);
+        assert_eq!((finish.len(), settle.len(), contexts.len()), (1, 2, 2));
+        let exited = ops
+            .windows(2)
+            .position(|ops| {
+                matches!(ops,
+            [Operator::I32Const{value:5},Operator::I32Store{memarg}] if memarg.offset==20)
+            })
+            .unwrap();
+        assert!(
+            finish[0] < exited
+                && exited < settle[0]
+                && settle[0] < settle[1]
+                && settle[1] < contexts[1]
+        );
+        assert!(
+            !ops[contexts[1] + 1..]
+                .iter()
+                .any(|op| matches!(op, Operator::Call { .. } | Operator::CallIndirect { .. }))
+        );
+        for (position, offset) in settle.into_iter().zip([48, 32]) {
+            assert!(matches!(ops[position-4],Operator::I64Load{memarg} if memarg.offset==offset));
+            assert!(matches!(ops[position-2],Operator::I64Load{memarg} if memarg.offset==offset+8));
+            assert!(matches!(ops[position-1],Operator::I32Const{value} if value==RECORD+80));
+            assert!(
+                matches!(ops[position-6],Operator::I32Store8{memarg} if memarg.offset==80 && memarg.align==0)
+            );
+            assert!(
+                matches!(ops[position+2],Operator::I32Load8U{memarg} if memarg.offset==80 && memarg.align==0)
+            );
+        }
+    }
+
+    #[test]
+    fn root_logical_retirement_refuses_missing_or_wrong_typed_settle_import() {
+        let original = fixture(STACK_HIGH as i32, false, false);
+        let at = original
+            .windows(6)
+            .position(|bytes| bytes == b"settle")
+            .unwrap();
+        let mut missing = original.clone();
+        missing[at] = b'x';
+        assert_eq!(
+            transform_c_root_bootstrap(&missing, Sha256::digest(&missing).into(), "run")
+                .unwrap_err(),
+            "c-root-typed-settle-required"
+        );
+        assert_eq!(&original[at + 6..at + 8], &[0, 5]);
+        let mut wrong = original;
+        wrong[at + 7] = 2;
+        assert_eq!(
+            transform_c_root_bootstrap(&wrong, Sha256::digest(&wrong).into(), "run").unwrap_err(),
+            "c-root-settle-signature"
+        );
     }
 
     #[test]

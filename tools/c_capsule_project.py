@@ -10,17 +10,22 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
     fresh, inventory, read_file, snapshot)
 
 
-def sdk_inputs(root: Path) -> dict[str, bytes]:
+def sdk_inputs(root: Path, *, threading: bool = False) -> dict[str, bytes]:
     vendor = {}
     for folder in ("sdk/c-guest/include", "sdk/c-guest/src", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(root / folder).items()})
     for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE"):
         vendor[path] = read_file(root / path)
+    if threading:
+        for path in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c'):
+            vendor['sdk/c-guest/runtime/' + path] = read_file(root / 'sdk/c-guest/runtime' / path)
     return vendor
 
 
 def authoring_inputs(root: Path) -> dict[str, bytes]:
-    files = sdk_inputs(root)
+    # Ship the optional profile's sources in the installed SDK inventory. The
+    # ordinary project still captures only sdk_inputs(..., threading=False).
+    files = sdk_inputs(root, threading=True)
     for template in AUTHORING_TEMPLATES:
         path = ("tools/toolchain-smoke/examples/tutorial_" + template.replace("-", "_")
                 if template in TUTORIALS else "examples/rust-capsules/" + template)
@@ -34,7 +39,7 @@ def authoring_inputs(root: Path) -> dict[str, bytes]:
     return dict(sorted(files.items()))
 
 
-def create(directory: Path, template: str, name: str | None = None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, threading_profile: str | None = None) -> Path:
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown C capsule template")
     name = name or "my-" + template
@@ -42,7 +47,11 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         raise ValueError("use a lowercase kebab-case capsule name, at most 64 bytes")
     source = (ROOT / "tools/toolchain-smoke/examples" / ("tutorial_" + template.replace("-", "_"))
               if template in TUTORIALS else ROOT / "examples/rust-capsules" / template)
-    vendor = sdk_inputs(ROOT)
+    selected_threading = False
+    if threading_profile is not None:
+        from tools.c_guest import threading
+        selected_threading = threading.selected({'threadingProfile': threading_profile})
+    vendor = sdk_inputs(ROOT, threading=selected_threading)
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/main.c": read_file(ROOT / "sdk/c-guest/templates" / (template + ".c")),
                   "wit/world.wit": read_file(source / "world.wit"), ".gitignore": b"/target/\n"})
@@ -54,6 +63,8 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         limits.update(cpuFuel=1_000_000_000, memoryBytes=16_777_216, wallTimeLimitMillis=5000, outboundRequests=1)
     project = {"formatVersion": 1, "name": name, "version": "1.0.0", "tenant": "examples",
                "service": "examples/" + name, "world": f"examples:{template}/service@1.0.0", "limits": limits}
+    if selected_threading:
+        project['threadingProfile'] = threading.PROFILE
     lock = {"formatVersion": 1, "language": "c", "sdk": json.loads(inventory(vendor)),
             "bindings": json.loads(read_file(ROOT / "tools/guest_bindings.lock.json")),
             "template": {"name": template, "sourceDigest": digest(files["src/main.c"]),
@@ -79,13 +90,18 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if not {"capsule-project.json", "sdk-lock.json", "src/main.c", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete C capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
-    if (not isinstance(project, dict) or set(project) - {"runtimeProfile", "languageStandard"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or set(project) - {"runtimeProfile", "languageStandard", "threadingProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
     from tools.c_guest.standard_facilities import selected_profile
     selected_profile(project)
     from tools.c_guest.language import selected_standard
     selected_standard(project)
+    if project.get('threadingProfile', 'single-threaded') != 'single-threaded':
+        from tools.c_guest import threading
+        if threading.selected(project) and not all('vendor/lsf/sdk/c-guest/runtime/' + name in files
+                                                 for name in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c')):
+            raise ValueError('c-threading-profile-requires-captured-runtime')
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid C capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "tenant", "service", "world")):

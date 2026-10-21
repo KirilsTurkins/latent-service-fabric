@@ -168,6 +168,12 @@ pub(super) fn derive(
     }
     providers.validate_http_streaming_installations()?;
     if let Some(runtime) = &providers.activation_runtime {
+        if runtime.native_threads
+            && config.engine.threading_profile
+                != super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+        {
+            return Err(invalid("providers.activationRuntime.nativeThreads.profile"));
+        }
         if config.security_profile != latent_wasmtime::ExecutionIsolationProfile::LocalExperimental
         {
             return Err(invalid("providers.activationRuntime.securityProfile"));
@@ -284,6 +290,7 @@ impl ConfiguredProviders {
                 "latent:http/streaming@0.3.0" => self.http_streaming_binding(binding, false),
                 "latent:http/phase-timing@0.4.0" => self.http_streaming_binding(binding, true),
                 latent_core::activation_runtime::CAPABILITY => self.activation_runtime.as_ref().map(|runtime| &runtime.identity),
+                "latent:runtime-native/threads@0.1.0" => self.activation_runtime.as_ref().filter(|r| r.native_threads).map(|r| &r.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),

@@ -50,7 +50,7 @@ class FrozenNativeProducts:
             and type(branch) is str and re.fullmatch(r'[A-Za-z0-9._/-]{1,128}', branch)
             and type(event) is str and event in ('push', 'workflow_dispatch')
             and type(include_protocol) is bool
-            and type(stages) is tuple and 0 < len(stages) <= 32
+            and type(stages) is tuple and 0 < len(stages) <= 64
             and len(set(stages)) == len(stages)
             and all(type(stage) is str and re.fullmatch(r'[a-z0-9-]{1,80}', stage) for stage in stages),
             'sdk-native-frozen-configuration')

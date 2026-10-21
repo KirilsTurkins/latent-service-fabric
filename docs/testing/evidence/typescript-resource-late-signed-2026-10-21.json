@@ -1,0 +1,363 @@
+{
+  "schemaVersion": "latent.typescript.resource-late-signed.v1",
+  "status": "PASS",
+  "source": "91c43a476b2ade8bc40ef7206a2919657be4377d",
+  "run": 39593951578,
+  "job": 119201530779,
+  "artifact": {
+    "id": 12343815620,
+    "bytes": 8653455,
+    "sha256": "1b4306fa661897f85433b949b27f2db3b3587c787ab8286f40da2044d9aee9ee",
+    "crcMembers": 246
+  },
+  "sourceHelpers": 34,
+  "recipeInputs": 111,
+  "sdkInputs": 91,
+  "allGitInputs": 197,
+  "capturedSourceFiles": 104,
+  "component": {
+    "sha256": "sha256:ff767f5b4f60329abe667138182be21d59d3e687b8f4821b089f9bebd3670e20",
+    "bytes": 12168066
+  },
+  "compiledNativeSource": "f0d36b38d39a837cef7f6242b4b4a99aa36b8b75",
+  "compiledNativeProducts": 5,
+  "nativeOrEngineRebuilds": 0,
+  "compilerNode": "24.19.0",
+  "buildCommands": 28,
+  "admittedOutcomes": 4,
+  "preCpuDenials": 2,
+  "rawOutcomeRows": [
+    {
+      "tenant": "examples",
+      "mode": "late",
+      "invocation": {
+        "activation": "resource-ts-late-examples",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792583193248",
+        "elapsedNanos": "123630511",
+        "decoded": [
+          "resource-runtime|late=accepted|copies=2|entropy=noncrypto53|wall64=1|fresh=1"
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-ts-late-examples",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "21345182",
+              "effectCount": 0,
+              "logBytes": "557",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "9508272",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "105330"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "80",
+              "data": "WyJyZXNvdXJjZS1ydW50aW1lfGxhdGU9YWNjZXB0ZWR8Y29waWVzPTJ8ZW50cm9weT1ub25jcnlwdG81M3x3YWxsNjQ9MXxmcmVzaD0xIl0=",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:654dcde1ccb858c0cc8b7ceda79926f96c6c874453f867576dddd68e66cdb132",
+              "releaseDigest": "sha256:ff767f5b4f60329abe667138182be21d59d3e687b8f4821b089f9bebd3670e20",
+              "revisionId": "revision-v1:sha256:031b7dbfb1954a1d5f3f8b7438045fde425db9228873c67ff14bc4c4953dc3fd",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "invocation": {
+        "activation": "resource-ts-fresh-after-examples",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792583193437",
+        "elapsedNanos": "97029409",
+        "decoded": [
+          "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-ts-fresh-after-examples",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "15968755",
+              "effectCount": 0,
+              "logBytes": "261",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "9508088",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "78843"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "55",
+              "data": "WyJyZXNvdXJjZS1ydW50aW1lfGZyZXNoPTAwZmY4MDQxMGQwYXxlbXB0eT0wfGZyZXNoPTEiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:b668599fd8300190ffa5a3a5740c8f8935b892759d8e574d559d3f311371bd5d",
+              "releaseDigest": "sha256:ff767f5b4f60329abe667138182be21d59d3e687b8f4821b089f9bebd3670e20",
+              "revisionId": "revision-v1:sha256:12a0e7fef8a457009e6ca0e4f9658757dda5f407f7e3b96d6006c2168ffe78ba",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    },
+    {
+      "tenant": "foreign",
+      "mode": "late",
+      "invocation": {
+        "activation": "resource-ts-late-foreign",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792583193593",
+        "elapsedNanos": "107264630",
+        "decoded": [
+          "resource-runtime|late=accepted|copies=2|entropy=noncrypto53|wall64=1|fresh=1"
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-ts-late-foreign",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "21345182",
+              "effectCount": 0,
+              "logBytes": "553",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "9508272",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "91886"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "80",
+              "data": "WyJyZXNvdXJjZS1ydW50aW1lfGxhdGU9YWNjZXB0ZWR8Y29waWVzPTJ8ZW50cm9weT1ub25jcnlwdG81M3x3YWxsNjQ9MXxmcmVzaD0xIl0=",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:b668599fd8300190ffa5a3a5740c8f8935b892759d8e574d559d3f311371bd5d",
+              "releaseDigest": "sha256:ff767f5b4f60329abe667138182be21d59d3e687b8f4821b089f9bebd3670e20",
+              "revisionId": "revision-v1:sha256:12a0e7fef8a457009e6ca0e4f9658757dda5f407f7e3b96d6006c2168ffe78ba",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    },
+    {
+      "tenant": "examples",
+      "mode": "fresh",
+      "invocation": {
+        "activation": "resource-ts-fresh-after-foreign",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792583193761",
+        "elapsedNanos": "91807252",
+        "decoded": [
+          "resource-runtime|fresh=00ff80410d0a|empty=0|fresh=1"
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-ts-fresh-after-foreign",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "15968755",
+              "effectCount": 0,
+              "logBytes": "259",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "9508088",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "75075"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "55",
+              "data": "WyJyZXNvdXJjZS1ydW50aW1lfGZyZXNoPTAwZmY4MDQxMGQwYXxlbXB0eT0wfGZyZXNoPTEiXQ==",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:654dcde1ccb858c0cc8b7ceda79926f96c6c874453f867576dddd68e66cdb132",
+              "releaseDigest": "sha256:ff767f5b4f60329abe667138182be21d59d3e687b8f4821b089f9bebd3670e20",
+              "revisionId": "revision-v1:sha256:031b7dbfb1954a1d5f3f8b7438045fde425db9228873c67ff14bc4c4953dc3fd",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    }
+  ],
+  "physicalRetirementObservations": 6,
+  "exactCallbackLogCharges": [
+    557,
+    553
+  ],
+  "frozenLogAccountingSources": {
+    "crates/latent-wasmtime/src/host/logging.rs": {
+      "sha256": "sha256:36a08992775520c9e4868f15485080a3fc52dc08d306e1c870e628d6f462fe89",
+      "bytes": 13292
+    },
+    "crates/latent-wire/src/invocation/trace.rs": {
+      "sha256": "sha256:802caba7116e82eafb929a4c7ee119e40de0521182d684ce6209d0f2c9afc99d",
+      "bytes": 2807
+    },
+    "tools/typescript_guest/console.mjs": {
+      "sha256": "sha256:607180cea788ccf1b20689edab41156627af2ee2f3a3dfa553f342a840f133a9",
+      "bytes": 2944
+    }
+  },
+  "peerContacts": 0,
+  "sameComponentIndependentTenantPublications": true,
+  "nodeCleanReaped": true,
+  "minimumIdleRssBytes": 527056896,
+  "maximumIdleRssBytes": 527294464,
+  "nativeThreadsQualified": false,
+  "cryptographicEntropyClaimed": false,
+  "callbackAfterStoreRetirementClaimed": false,
+  "waitForPollPendingClaimed": false,
+  "fullTicketQualification": false,
+  "owningRunUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39593951578/job/119201530779",
+  "expandedArchiveBytes": 26932550,
+  "freshComponentsBuilt": 1,
+  "historicalCompilerRunConclusion": "cancelled",
+  "individualCompilerOwningJobs": "success",
+  "currentCompilerSdkInputs": 40,
+  "selectedDependenciesHermeticClaimed": false,
+  "originalFailures": [
+    {
+      "source": "2834bee5680ab8b3e0433f67254e29dbf65c7094",
+      "run": 39587715987,
+      "artifact": 12339748107,
+      "sha256": "a4abbfe8cbc33975a2ba26b5e6e2d0965238e5367c2b0050b5d449cf4a90f4ad",
+      "stage": "compiler SDK identity refusal before component"
+    },
+    {
+      "source": "def560c713a127d98ef92b9b7186beb414701440",
+      "run": 39592375558,
+      "artifact": 12341979131,
+      "sha256": "d110176daa0309cd3f94da6d79d6f9c72703a622893529cf0f2c68886ba8c3ae",
+      "stage": "first late result successful; harness required wrong result wrapper; whole campaign failed"
+    }
+  ],
+  "integrationOnlyCFormatting": {
+    "review": "docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json",
+    "producer": "f0d36b38d39a837cef7f6242b4b4a99aa36b8b75",
+    "compiledNativeSource": {
+      "sha256": "sha256:37a714bc32b0ea6af4b3f72226601e84c4f20fb271b9d91abd4968e478db212b",
+      "files": 3324,
+      "bytes": 26365840,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "formattedConsumerSource": {
+      "sha256": "sha256:2751cae37918f4313a4a44f72f4996f8d13efbf0d16ce3727b8da53896c315af",
+      "files": 3324,
+      "bytes": 26365871,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "files": [
+      {
+        "path": "crates/latent-component-threading/src/c_preimage.rs",
+        "edition": "2024",
+        "original": {
+          "sha256": "sha256:d329c594a72efa3442efcc809fce7606c4272735e83df67043350f7af2dda035",
+          "bytes": 35559
+        },
+        "formatted": {
+          "sha256": "sha256:d310322aed1be54f93f638377f7ba1b8fc68be46ae87c2b5ba614624aa8d9cce",
+          "bytes": 35560
+        }
+      },
+      {
+        "path": "crates/latent-component-threading/src/c_root.rs",
+        "edition": "2024",
+        "original": {
+          "sha256": "sha256:e9f0ced65eec8b644a26d205ec1ab8fce5588831729a258163d71e1bc529846d",
+          "bytes": 41805
+        },
+        "formatted": {
+          "sha256": "sha256:70ddefacc857bbbff4a0b8bfb7a517584fd659ca7541e8a7ab631d807c389788",
+          "bytes": 41835
+        }
+      }
+    ],
+    "otherNativeFilesByteExact": 3322,
+    "nativeRebuild": false
+  }
+}

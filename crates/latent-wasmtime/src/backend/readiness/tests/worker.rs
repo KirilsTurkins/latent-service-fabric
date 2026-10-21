@@ -23,6 +23,7 @@ async fn busy_compiler_worker_fails_once_without_replaying_owned_preparation() {
             source_bytes: 1,
             metadata_bytes: 1,
             document_bytes: 0,
+            verification_bytes: 0,
         })
         .unwrap()
     else {
@@ -242,6 +243,7 @@ fn block_worker(
             source_bytes: 1,
             metadata_bytes: 1,
             document_bytes: 0,
+            verification_bytes: 0,
         })
         .unwrap()
     else {

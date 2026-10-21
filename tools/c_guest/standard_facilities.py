@@ -76,6 +76,10 @@ def stage(source: Path, world: str, destination: Path, platform: Path, *, profil
     if profile not in PROFILE_IMPORTS:
         raise ValueError('c-runtime-profile-has-no-derived-contracts')
     imports = PROFILE_IMPORTS[profile]
+    return stage_imports(source, world, destination, platform, imports)
+
+
+def stage_imports(source: Path, world: str, destination: Path, platform: Path, imports) -> Path:
     source, destination, platform = source.resolve(), destination.resolve(), platform.resolve()
     if any(destination == root or destination in root.parents or root in destination.parents
            for root in (source, platform)):
