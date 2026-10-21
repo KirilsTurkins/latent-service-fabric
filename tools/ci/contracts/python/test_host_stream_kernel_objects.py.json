@@ -4,6 +4,10 @@
     "KernelNetlabelObjectSelection.test_netlabel_must_already_be_enabled_no_configuration_override_is_added",
     "KernelNetlabelObjectSelection.test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals",
     "KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access",
+    "KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals",
+    "KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build",
+    "KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact",
+    "KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition",
     "KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison",
     "KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file",
     "KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols",
@@ -51,6 +55,54 @@
       "skipSites": []
     },
     "KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -161,6 +213,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_objects.py",
-  "reviewReason": "Reviewed closed exclusive Netlabel object-only mode: original six job body/default and all original commands/config/security/process bounds preserved; twelve targets, thirty-four globals, NETLABEL already enabled, no link boot installation or physical qualification.",
+  "reviewReason": "Exclusive Netport14 source-only Kbuild profile; retain both earlier complete job bodies, all twelve old source controls, original security/config/command bounds and all old required globals. Four additive closed-selector controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
