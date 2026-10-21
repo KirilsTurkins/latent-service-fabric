@@ -23,18 +23,18 @@
       },
       {
         "name": "Fetch only the exact frozen native source object",
-        "run": "git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f"
+        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385"
       },
       {
         "name": "Verify source and adverse fixed-product controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_threading_compatibility -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility -v\n"
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Authenticate the original five native products without rebuilding them",
-        "run": "python3 -B tools/activation_stack_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
+        "run": "python3 -B tools/c_thread_package_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
       },
       {
         "uses": "mlugg/setup-zig",
@@ -71,7 +71,7 @@
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Reviewed explicitly selected C runtime-profile supplement preserves original base-v5 inspection and ABI, verifies full component proof with existing native binder, and appends five source refusal controls; all original17 signed oracles/caps remain mandatory.",
+  "reviewReason": "Reviewed f625 fixed five-product acquisition and exact3325 native plus134 auxiliary current identities before and after execution; original seventeen C lifecycle outcomes and all caps retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

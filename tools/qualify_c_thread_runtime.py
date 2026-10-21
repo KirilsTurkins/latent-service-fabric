@@ -14,7 +14,7 @@ if __package__ in {None, ''}:
 
 from tools import c_capsule_build as compiler
 from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
-from tools.activation_stack_native_source import assert_current
+from tools.java_replay_materials import git_source_identity
 from tools.c_guest.threading import IMPORTS, PROFILE, RECIPE as THREAD_RECIPE
 from tools.c_guest import threading_compatibility as compatibility
 from tools.c_guest.threading_compatibility import RECIPE as COMPATIBILITY_RECIPE
@@ -28,8 +28,7 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 # no old language qualification receipt is relabelled as this programme.
 MATERIALS = (
     'tools/qualify_c_thread_runtime.py', 'tools/c_thread_runtime_fixture.py',
-    'tools/c_thread_runtime_node.py', 'tools/activation_stack_native_products.py',
-    'tools/activation_stack_native_source.py',
+    'tools/c_thread_runtime_node.py', 'tools/c_thread_package_native_products.py',
     'tools/sdk_native_products_reader.py', 'tools/java_replay_materials.py',
     'tools/phase2_operator_canary.py', 'tools/phase2_operator_process.py',
     'tools/phase2_operator_scenario.py', 'tools/phase3_management_scenario.py',
@@ -142,18 +141,34 @@ def build_evidence(artifact, source):
             'package': package_identity(artifact, marker)}
 
 
+def assert_current(root):
+    from tools import c_thread_package_native_products as products
+    compiled = git_source_identity(products.SOURCE)
+    current = source_identity(root)
+    require(current == compiled, 'c-thread-current-native-source-must-be-byte-exact')
+    return {'compiledSourceRevision': products.SOURCE, 'compiledNativeSource': compiled,
+            'consumerNativeSource': current, 'compiledSourceByteExact': True,
+            'reviewedSourceChanges': []}
+
+
 def native_evidence(products, prepared):
     before = products.verify_prepared(prepared)
     proof = assert_current(ROOT)
     require(products.SOURCE == proof['compiledSourceRevision'],
             'c-thread-exact-native-producer')
+    snapshot = read_json(prepared / 'source-inputs.json')
+    require(len(snapshot['materials']) == 134
+            and snapshot['native'] == proof['compiledNativeSource']
+            and snapshot['materials'] == {name: file_identity(ROOT / name)
+                for name in snapshot['materials']}, 'c-thread-all-current-auxiliary-materials-byte-exact')
+    proof['auxiliaryMaterialsByteExact'] = 134
     return before, proof, products.native_products(prepared)
 
 
 def qualify(prepared, output):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-thread-unprivileged-linux-python313')
-    from tools import activation_stack_native_products as products
+    from tools import c_thread_package_native_products as products
     output = output.absolute()
     require(output != ROOT and output not in ROOT.parents and ROOT not in output.parents,
             'c-thread-output-outside-checkout')
@@ -184,7 +199,7 @@ def qualify(prepared, output):
         stage = 'unchanged-source-tools-products-and-original-build'
         require(time.monotonic() - started <= 1100
                 and source_identity(ROOT) == source_proof['consumerNativeSource']
-                and products.verify_prepared(prepared) == before
+                and native_evidence(products, prepared) == (before, source_proof, native)
                 and materials() == record['materials']
                 and inventory(snapshot(application)) == source
                 and build_evidence(artifact, source) == record['build'], 'c-thread-final-source-product-and-build-fence')

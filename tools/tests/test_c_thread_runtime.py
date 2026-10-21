@@ -16,23 +16,38 @@ class CThreadRuntime(unittest.TestCase):
     def test_current_native_source_equality_is_required_before_any_product_use(self):
         from unittest.mock import Mock, patch
         from tools import qualify_c_thread_runtime as qualification
-        from tools import activation_stack_native_source as guard
+        from tools import c_thread_package_native_products as guard
+        compiled = json.loads((qualification.ROOT /
+            'docs/testing/evidence/c-thread-package-native-2026-10-21.json').read_bytes())['nativeSource']
         products = Mock(SOURCE=guard.SOURCE)
         products.verify_prepared.return_value = {'verified': 'frozen receipt'}
         products.native_products.return_value = {'latentd': Path('unexecuted')}
         proof = {'compiledSourceRevision': guard.SOURCE,
-                 'compiledNativeSource': guard.COMPILED, 'consumerNativeSource': guard.COMPILED,
+                 'compiledNativeSource': compiled, 'consumerNativeSource': compiled,
                  'compiledSourceByteExact': True, 'reviewedSourceChanges': []}
-        with patch.object(qualification, 'assert_current', return_value=proof):
+        with patch.object(qualification, 'git_source_identity', return_value=compiled), \
+                patch.object(qualification, 'source_identity', return_value=compiled):
+            self.assertEqual(qualification.assert_current(qualification.ROOT), proof)
+        for field in ('sha256', 'files', 'bytes', 'scope', 'hermetic', 'implicitCompilerInputs'):
+            with self.subTest(field=field), \
+                    patch.object(qualification, 'git_source_identity', return_value=compiled), \
+                    patch.object(qualification, 'source_identity', return_value={**compiled, field: 'foreign'}), \
+                    self.assertRaisesRegex(RuntimeError, 'must-be-byte-exact'):
+                qualification.assert_current(qualification.ROOT)
+        auxiliary = {f'controlled-{i}': {'sha256': 'sha256:'+'0'*64, 'bytes': 1} for i in range(134)}
+        snapshot = {'native': compiled, 'materials': auxiliary}
+        with patch.object(qualification, 'assert_current', return_value=proof), \
+                patch.object(qualification, 'read_json', return_value=snapshot), \
+                patch.object(qualification, 'file_identity', return_value=next(iter(auxiliary.values()))):
             before, actual, native = qualification.native_evidence(products, Path('prepared'))
         self.assertEqual((before, actual, native),
                          (products.verify_prepared.return_value, proof, products.native_products.return_value))
         products.native_products.reset_mock()
         reviewed = json.loads((qualification.ROOT /
             'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json').read_text())
-        with patch.object(guard, 'git_source_identity', return_value=copy.deepcopy(guard.COMPILED)), \
-                patch.object(guard, 'source_identity', return_value=reviewed['formattedConsumerSource']), \
-                self.assertRaisesRegex(RuntimeError, 'exact-current-source'):
+        with patch.object(qualification, 'git_source_identity', return_value=copy.deepcopy(compiled)), \
+                patch.object(qualification, 'source_identity', return_value=reviewed['formattedConsumerSource']), \
+                self.assertRaisesRegex(RuntimeError, 'must-be-byte-exact'):
             qualification.native_evidence(products, Path('prepared'))
         products.native_products.assert_not_called()
         products.SOURCE = 'f' * 40
