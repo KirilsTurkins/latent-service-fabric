@@ -1,0 +1,330 @@
+{
+  "schemaVersion": "lsf.kernel-bind-objects-compiled.v1",
+  "sourceCommit": "6ed2ab49bf5195acb0b8841372a9a655de24c356",
+  "run": 39559206353,
+  "job": 119086135069,
+  "workflow": ".github/workflows/stream-kernel-objects.yml",
+  "event": "push",
+  "branch": "feat/stream-kernel-route-owners-20261021",
+  "artifact": {
+    "id": 12327550463,
+    "bytes": 563753,
+    "sha256": "f5d6a008a6b3c8437a71db3b28f08cbd0d6de49d15161700a5c0eba49490657d",
+    "crcMembers": 82
+  },
+  "receipt": {
+    "bytes": 16826,
+    "sha256": "3c7a227105ec0eb6b63edee1c8f24d37f312a875bf2e9a75d4f98bcefffe7dec"
+  },
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "officialArchive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "manifestSha256": "551b4157660f6f63adc90bbc39b1d5d8ba71e5444044f598ef9abdfea9fb7960",
+  "source": {
+    "gitMaterials": 157,
+    "gitMaterialTableSha256": "4427244a8ec543fb31d48ab843946ecc2b280ed4ea937635661637818a631630",
+    "wholeInputs": 27,
+    "wholeInputBytes": 1724745,
+    "exactFunctionPreimages": 12,
+    "derivedFiles": 51,
+    "priorAuditOutputsPreserved": 45,
+    "derivedDigestTableSha256": "22d86c98998b0eac0ea3c326c0c9659d7eac7347feba1cdbb9cfcdb3a326ff28"
+  },
+  "configuration": {
+    "baseline": {
+      "bytes": 143203,
+      "sha256": "239e925557d3d349ea4c47c028e14431063f964ce6e7809024b6e4e804c7b659"
+    },
+    "selected": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "onlyChangedSymbol": "CONFIG_LSF_STREAM_FACTORY",
+    "securityAndInetPreserved": [
+      "CONFIG_INET",
+      "CONFIG_SECURITY",
+      "CONFIG_SECURITY_NETWORK",
+      "CONFIG_SECURITY_SELINUX"
+    ],
+    "resolvedSymbols": 4309,
+    "onlyDelta": {
+      "CONFIG_LSF_STREAM_FACTORY": [
+        "n",
+        "y"
+      ]
+    },
+    "NETLABELAlreadyEnabled": true,
+    "SIDCACHEOriginalEntries": 256,
+    "AUDITAndAUDITSYSCALLAlreadyEnabled": true
+  },
+  "objects": {
+    "net/socket.o": {
+      "bytes": 100072,
+      "sha256": "629a62c88f3d8d5e071528c62c82f1afa2fb4051981b5cded147f668a3d63cf0",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sock_create"
+      ]
+    },
+    "fs/inode.o": {
+      "bytes": 79984,
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_new_inode"
+      ]
+    },
+    "net/core/sock.o": {
+      "bytes": 119520,
+      "sha256": "81b0c5374cb4c3b14e629374927d9bf3ecdeb22f5fc5addba7228d2b2666c21f",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sk_alloc",
+        "lsf_prepaid_protocol_allocate",
+        "lsf_prepaid_protocol_return",
+        "lsf_prepaid_protocol_clear"
+      ]
+    },
+    "net/ipv4/af_inet.o": {
+      "bytes": 53976,
+      "sha256": "72ff5b5dd7a3133d692860bbd25a3763281e9cb47e570a7d74515ff282676f71",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_inet_create",
+        "lsf_prepaid_protocol_family"
+      ]
+    },
+    "security/security.o": {
+      "bytes": 411400,
+      "sha256": "25bbcd7677df83f3d8cc9b1a2434a21c3dd766394359ba590b481cd4ab90d3f7",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_inode_alloc",
+        "lsf_prepaid_security_sk_alloc"
+      ]
+    },
+    "net/factory.o": {
+      "bytes": 31696,
+      "sha256": "6fc979f62944cd6d80a669e55e817a3088e43e2bc2491e9dad86a036c0d09bf0",
+      "requiredDefinedSymbols": [
+        "lsf_factory_register",
+        "lsf_factory_blob_allocate",
+        "lsf_factory_blob_finish",
+        "lsf_factory_child_allocate",
+        "lsf_factory_protocol_parent",
+        "lsf_factory_options_publish",
+        "lsf_factory_options_owned",
+        "lsf_factory_options_queue",
+        "lsf_factory_netport_publish",
+        "lsf_factory_netport_queue",
+        "lsf_factory_netport_candidate",
+        "lsf_factory_netport_current",
+        "lsf_factory_sidcache_publish",
+        "lsf_factory_sidcache_queue",
+        "lsf_factory_sidcache_destroy",
+        "lsf_factory_sidcache_candidate",
+        "lsf_factory_sidcache_current",
+        "lsf_factory_avc_member",
+        "lsf_factory_avc_phase",
+        "lsf_factory_avc_replace",
+        "lsf_factory_avc_publish",
+        "lsf_factory_avc_queue",
+        "lsf_factory_avc_candidate",
+        "lsf_factory_avc_current",
+        "lsf_factory_audit_head_current"
+      ]
+    },
+    "security/selinux/netlabel.o": {
+      "bytes": 14624,
+      "sha256": "3cc8dc452bfc1721536c3b2fdaf30347f13afeab029691f5c4a6a66cd0000fdb",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netlabel_sock_genattr"
+      ]
+    },
+    "security/selinux/ss/services.o": {
+      "bytes": 77336,
+      "sha256": "6c923c61ac5d64818cb06bd4cbd7dd2ce603cd1d16a27b8e766d8b98d2c393a1",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_sid_to_secattr",
+        "lsf_prepaid_audit_dup",
+        "lsf_prepaid_audit_string_return",
+        "lsf_prepaid_sidcache_drain",
+        "lsf_prepaid_security_sid_to_context"
+      ]
+    },
+    "security/selinux/ss/mls.o": {
+      "bytes": 12888,
+      "sha256": "7521993d0962d86f50b7ee8c0fe4cf6e804b8cc7ebe60b5e682026b532016c0c",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_mls_export_cat"
+      ]
+    },
+    "security/selinux/ss/ebitmap.o": {
+      "bytes": 13160,
+      "sha256": "1ea1533eaf822ef73cb34c4048030cc0d871ef871289847761fd06be3f35f3ad",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_ebitmap_export"
+      ]
+    },
+    "net/netlabel/netlabel_kapi.o": {
+      "bytes": 30672,
+      "sha256": "8a2cd385e536309c67501bdc49fa7559282c8661d4b13db97dc72068077eb6a3",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_catmap_setlong",
+        "lsf_prepaid_netlbl_sock_setattr",
+        "lsf_prepaid_netlbl_conn_setattr",
+        "lsf_prepaid_netlabel_source",
+        "lsf_prepaid_label_domain_return",
+        "lsf_prepaid_label_catmap_return",
+        "lsf_prepaid_label_secattr_return",
+        "lsf_prepaid_cipso_buffer_return",
+        "lsf_prepaid_options_failed_return",
+        "lsf_prepaid_options_retire",
+        "lsf_prepaid_netlabel_strdup"
+      ]
+    },
+    "net/ipv4/cipso_ipv4.o": {
+      "bytes": 25048,
+      "sha256": "2007e461bc0da8595416bfa0db2027147da121319f375dcb23a91df7259a2bf3",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_cipso_sock_setattr"
+      ]
+    },
+    "security/selinux/netport.o": {
+      "bytes": 9032,
+      "sha256": "d6304536ae577f5ba9019539971947454cd6864a26241fa23dff1d311af02c8a",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netport_sid",
+        "lsf_prepaid_netport_drain"
+      ]
+    },
+    "security/selinux/hooks.o": {
+      "bytes": 167952,
+      "sha256": "9fc1edd58b0cd9338d239ca569f01b0c9c330abcd0479a784fc1765e9ff62b95",
+      "requiredDefinedSymbols": []
+    },
+    "security/selinux/ss/sidtab.o": {
+      "bytes": 18032,
+      "sha256": "6ce048f8495d52ca0304a60540554b0b069a1cedb5fca84eb85697075f1b1a59",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sid2str_put",
+        "lsf_prepaid_sid2str_get",
+        "lsf_prepaid_sidcache_detach"
+      ]
+    },
+    "security/selinux/avc.o": {
+      "bytes": 121136,
+      "sha256": "211e7bf803d6bac9a2b46a4256639dbf9828e8f2152cf06fada3ed3e6f973b54",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_avc_has_perm",
+        "lsf_prepaid_avc_drain",
+        "lsf_prepaid_avc_audit"
+      ]
+    },
+    "net/core/skbuff.o": {
+      "bytes": 177368,
+      "sha256": "c38302428aa893bf1155bef09253d8616380ca006a3b4c56d34045e861cffa98",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_audit_skb_new"
+      ]
+    },
+    "kernel/audit.o": {
+      "bytes": 64248,
+      "sha256": "605dadeae642da4959e2504fac99eaca29c0ab176d939d4aca54fc15db584482",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_audit_log_start",
+        "lsf_prepaid_audit_log_end"
+      ]
+    },
+    "security/lsm_audit.o": {
+      "bytes": 10328,
+      "sha256": "ffab0aebcfb4681fb6c3b9c5bcea7f5aa8bba8495cc732d19bf1199b3a0316a5",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_common_lsm_audit"
+      ]
+    },
+    "net/netlink/af_netlink.o": {
+      "bytes": 83552,
+      "sha256": "894f5909b4a3efaaf59b6b0bfb5a2f5e3f6f9080b99d61de6b22f5d4464d531d",
+      "requiredDefinedSymbols": [
+        "netlink_unicast",
+        "netlink_broadcast_filtered"
+      ]
+    },
+    "net/ipv4/inet_hashtables.o": {
+      "bytes": 40192,
+      "sha256": "14983984ce226ac9af26b38158ac78e7829551d42d2783ccea8c5758102cd111",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_bind_check",
+        "lsf_prepaid_bind_owned",
+        "lsf_prepaid_bind_bucket_create",
+        "lsf_prepaid_bind2_allocate",
+        "lsf_prepaid_bind_return"
+      ]
+    },
+    "net/ipv4/inet_connection_sock.o": {
+      "bytes": 42872,
+      "sha256": "994725c668892381819e64d99f95697307cca3f418cc3e61cea505d65fcfe97e",
+      "requiredDefinedSymbols": [
+        "inet_csk_get_port"
+      ]
+    }
+  },
+  "globalFunctions": {
+    "total": 75,
+    "private": 72,
+    "original": 3
+  },
+  "hostedSourceAndControllerTests": {
+    "count": 118,
+    "jobLog": {
+      "bytes": 75006,
+      "sha256": "d460358b86582312cb0b37650b4cfbcae849cdc2966b700d2857acec2f9cc736"
+    }
+  },
+  "ownedCommands": {
+    "count": 27,
+    "allCompletedAndCleaned": true,
+    "aggregateDeadlineSeconds": 900,
+    "perCommandDeadlineSeconds": 300,
+    "diagnosticBytes": 274848,
+    "perCommandDiagnosticLimit": 4194304,
+    "aggregateDiagnosticLimit": 16777216
+  },
+  "supplementalReference": {
+    "serializedDoubles": true,
+    "cases": 25,
+    "oldAllocatorExitCode": 2,
+    "currentExitCode": 0,
+    "receipt": {
+      "bytes": 3164,
+      "sha256": "08ff009c724bb6b5bf3ff287dac09a884cfa5a7127a7ede7d43e5de58f329ac7"
+    }
+  },
+  "unselectedTestOracleRepair": {
+    "path": "tools/tests/test_host_stream_kernel_outer_derivation.py",
+    "old": {
+      "bytes": 9250,
+      "sha256": "1a43db2ed6ba2210f8d620b1125e99554ec2731b3c9006312650704152622199"
+    },
+    "new": {
+      "bytes": 9840,
+      "sha256": "d44afe57c9dee1f6df08c324f1aab82d006e8c4c69be176f7c29117ef93d9e7f"
+    },
+    "originalFailure": {
+      "run": 39557127433,
+      "job": 119080355856
+    },
+    "cases": 11,
+    "allCasesAndGuardsUnchanged": true,
+    "selectedByThisOwningJob": false
+  },
+  "mandatoryAuditSourceImplemented": true,
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "actualAuditExecuted": false,
+  "actualPortOrTimewaitExecuted": false,
+  "actualLinuxRcuExecuted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "hostTlsAccountingQualified": false,
+  "productionInstallation": false
+}
