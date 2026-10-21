@@ -39,8 +39,12 @@ def integer(value):
     return int(value)
 
 
-def configure(settings, capsule, *, language='typescript', standard_entropy=False):
+def configure(settings, capsule, *, language='typescript', standard_entropy=False, go_queue_ceiling=None):
     _fixture,scalars,limits,_template,_function,_prefix=selection(language,standard_entropy=standard_entropy)
+    require(go_queue_ceiling is None or language == 'go' and type(go_queue_ceiling) is int
+            and go_queue_ceiling in (8,9,16), 'resource-runtime-closed-Go-queue-ceiling')
+    if go_queue_ceiling is not None:
+        limits = {**limits, 'queuedWork':go_queue_ceiling}
     imports = capsule.get('imports')
     require(type(imports) is list and len(imports) == len(scalars)+1
             and all(type(r) is dict and set(r) == {'contract','optional'} and r['optional'] is False for r in imports)

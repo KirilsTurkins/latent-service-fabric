@@ -52,6 +52,11 @@ fn validate_prechecked(component: &[u8], limits: SemanticLimits) -> Result<()> {
         // Recognize this syntax only after the same final-byte graph proof
         // required again by runtime compilation, native loading and reuse.
         latent_component_threading::verify_component_routing(component)
+            .map(|_| ())
+            .or_else(|_| {
+                latent_component_threading::c_preimage::verify_embedded_c_original_core(component)
+                    .map(|_| ())
+            })
             .map_err(|_| invalid("unverified-native-thread-component"))?;
         features |= WasmFeatures::CM_THREADING | WasmFeatures::CM_ASYNC_STACKFUL;
     }
