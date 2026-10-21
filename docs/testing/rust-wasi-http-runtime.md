@@ -53,6 +53,27 @@ input approval. Its original source WIT must explicitly import
 `--http-runtime /absolute/owned/http-runtime`. Emitted WASI imports confer no
 authority, and no version alias is installed.
 
+Installed Rust tools can explicitly capture that same prepared runtime during
+nonpublishing bundle assembly:
+
+```sh
+python3 -B tools/build_dev_guest_tools.py --language rust \
+  --output "$PWD/target/rust-http-tools" --python-prefix /usr/local \
+  --rust-http-runtime /absolute/owned/http-runtime
+```
+
+This option is assembly-only and has source/control evidence; an installed
+bundle build has not yet been qualified. Assembly checks the exact staged Rustc
+and wasm-tools bytes, preserves the original producer receipt and source
+inventory, and copies only the four component/WIT files and pinned composer.
+The complete 113-file consumer recipe and all seven retained runtime files join
+the existing authenticated tool inventory. Installed compilation resolves the
+application's exact package/version/world using the pinned whole-WIT reader and
+selects this adapter only when that world declares all three interfaces above.
+Pure templates and partial declarations retain the ordinary builder path and
+its concrete import refusals. Selection grants no provider authority and uses
+no application or library identity.
+
 The compiler composes a generated forwarding root around the actual application
 component. Each call retains its actual value or error until the private drain
 returns. The first bridge supports finite unnamed value APIs; named aggregate,

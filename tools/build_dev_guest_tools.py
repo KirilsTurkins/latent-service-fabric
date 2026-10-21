@@ -153,9 +153,14 @@ def main() -> int:
                         help="Untrusted digest-addressed archives, reverified before use; defaults to LSF_DEV_COMPILER_CACHE")
     parser.add_argument('--typescript-runtime-inputs',type=Path,
                         help='Explicit source-bound candidate engine/splicer bundle; certifies no runtime API')
+    parser.add_argument('--rust-http-runtime', type=Path,
+                        help='Assembly-only capture of prepared standard WASI HTTP inputs; '
+                             'no installed-build qualification or node authority')
     args = parser.parse_args()
     require(args.typescript_runtime_inputs is None or args.language=='typescript',
             'typescript-runtime-inputs-require-typescript-builder')
+    require(args.rust_http_runtime is None or args.language == 'rust',
+            'rust-http-runtime-requires-rust-builder')
     if args.typescript_runtime_inputs is not None:
         from tools.typescript_guest.runtime_bundle import validate
         validate(args.typescript_runtime_inputs)
@@ -188,6 +193,9 @@ def main() -> int:
         return result.stdout
     pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     tools, _ = resolve_tools(pins, ROOT, environment)
+    if args.rust_http_runtime is not None:
+        from tools.rust_wasi_http_inputs import Prepared
+        Prepared(args.rust_http_runtime, tools['rustc'], tools['wasm-tools']).check()
     node_features = ["latentd/development-test-node"] if args.node_tests else []
     node_arguments = ["-p", "latentd", "--bin", "latentd", "-p", "latent-wasmtime", "--bin", "latent-aot-compiler",
                       "--features", ",".join(node_features)] if args.node_tests else []
@@ -261,7 +269,14 @@ def main() -> int:
         dev_typescript_distribution.prepare(payload, output, fetch_archive,
             runtime_inputs=args.typescript_runtime_inputs)
         upstream.update(dev_typescript_distribution.SOURCES)
-    distribution.recipe(payload, args.language)
+    if args.rust_http_runtime is not None:
+        from tools.dev_rust_http_runtime import prepare
+        from tools.dotnet_guest.composer import selection
+        executables.update(prepare(payload, args.rust_http_runtime))
+        composer = selection(ROOT / 'sdk/dotnet-guest')
+        upstream['rust-http-composer'] = {'url': composer['url'], 'version': composer['version'],
+            'sha256': composer['digest'], 'maximum': composer['size']}
+    distribution.recipe(payload, args.language, rust_http_runtime=args.rust_http_runtime is not None)
     for name in executables:
         (payload / name).chmod(0o700)
     run("python-version", payload / "sdk/bin/python", "-I", "-B", "-c", "import sys; assert sys.version_info[:3] == (3, 13, 5)")
