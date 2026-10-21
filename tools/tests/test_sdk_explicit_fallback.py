@@ -13,11 +13,35 @@ def result(language='c', seed=7, alternate=42, trap=False):
     """A reader model only; it is never marked actual-component evidence."""
     return {'processReaped': True, 'exitCode': 4 if trap else 0,
         'decoded': None if trap else fixture.expected(language, seed, alternate),
-        'response': {'outcomeKnown': True, 'error': {'code': 'guest-trap' if trap else ''},
-            'data': {'terminalState': 'guest_trap' if trap else 'completed'}}}
+        'response': {'outcomeKnown': True, 'requestDispatched': True,
+            'schemaVersion': 'latent.cli.result.v1', 'command': 'invoke',
+            'category': 'platform-failure' if trap else 'success',
+            'error': {'code': 'guest-trap'} if trap else None,
+            'data': {'terminalState': 'guest_trap'} if trap else {}}}
 
 
 class ExplicitFallbackControls(unittest.TestCase):
+    def test_actual_success_has_no_terminal_field_and_keeps_exact_public_success_and_alternate(self):
+        import json
+        actual = json.loads((Path(__file__).parent / 'fixtures/sdk-explicit-fallback-first-c.json').read_bytes())
+        self.assertNotIn('terminalState', actual['response']['data'])
+        proof = node.outcome('c', actual, 7, 42)
+        self.assertEqual(proof['alternate'], 42)
+        for kind in ('category', 'error', 'not-dispatched', 'not-known', 'not-reaped', 'wrong-schema',
+                'wrong-command', 'wrong-value', 'wrong-native-marker'):
+            changed = copy.deepcopy(actual)
+            if kind == 'category': changed['response']['category'] = 'platform-failure'
+            elif kind == 'error': changed['response']['error'] = {'code': 'resource-exhausted'}
+            elif kind == 'not-dispatched': changed['response']['requestDispatched'] = False
+            elif kind == 'not-known': changed['response']['outcomeKnown'] = False
+            elif kind == 'not-reaped': changed['processReaped'] = False
+            elif kind == 'wrong-schema': changed['response']['schemaVersion'] = 'other'
+            elif kind == 'wrong-command': changed['response']['command'] = 'inspect'
+            elif kind == 'wrong-value': changed['decoded'] = fixture.expected('c', 11, 62)
+            else: changed['decoded'][0]['ok'] = changed['decoded'][0]['ok'].replace('unsupported', 'unexpected-success')
+            with self.subTest(kind=kind), self.assertRaises(WorkflowError):
+                node.outcome('c', changed, 7, 42)
+
     def test_actual_frozen_reader_api_routes_compiler_and_signer_products(self):
         from tools import qualify_sdk_explicit_fallback as qualifier
         prepared = Path('controlled-prepared-products')

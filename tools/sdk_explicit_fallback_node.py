@@ -61,12 +61,18 @@ def consumption(value, budget):
 
 def outcome(language, row, seed, alternate):
     require(language in LANGUAGES and row['processReaped'] is True
-        and row['response']['outcomeKnown'] is True, 'fallback-known-reaped-result')
+        and row['response']['outcomeKnown'] is row['response']['requestDispatched'] is True
+        and row['response']['schemaVersion'] == 'latent.cli.result.v1'
+        and row['response']['command'] == 'invoke', 'fallback-known-reaped-result')
     if alternate is None:
-        require(row['exitCode'] == 4 and row['response']['error']['code'] == 'guest-trap'
+        require(row['exitCode'] == 4 and row['decoded'] is None
+            and row['response']['category'] == 'platform-failure'
+            and row['response']['error']['code'] == 'guest-trap'
             and row['response']['data']['terminalState'] == 'guest_trap', 'fallback-explicit-terminal-trap')
         return {'category': 'guest-trap', 'preciseInstructionCauseProved': False}
-    require(row['exitCode'] == 0 and row['response']['data']['terminalState'] == 'completed'
+    # Successful invocation data has a payload, not a terminalState field.
+    require(row['exitCode'] == 0 and row['response']['category'] == 'success'
+        and row['response']['error'] is None
         and row['decoded'] == expected(language, seed, alternate), 'fallback-native-refusal-and-real-alternate-required')
     return {'category': 'explicit-application-fallback', 'seed': seed, 'alternate': alternate,
         'nativeRefusal': 'ENOTSUP' if language == 'c' else 'errors.ErrUnsupported+ENOSYS52',

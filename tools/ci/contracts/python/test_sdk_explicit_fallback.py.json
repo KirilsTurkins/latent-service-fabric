@@ -1,6 +1,7 @@
 {
   "cases": [
     "ExplicitFallbackControls.test_actual_frozen_reader_api_routes_compiler_and_signer_products",
+    "ExplicitFallbackControls.test_actual_success_has_no_terminal_field_and_keeps_exact_public_success_and_alternate",
     "ExplicitFallbackControls.test_cleanup_preserves_primary_but_refuses_an_otherwise_successful_result",
     "ExplicitFallbackControls.test_fallback_and_deliberate_trap_follow_the_exact_native_refusal",
     "ExplicitFallbackControls.test_native_counters_keep_exact_canonical_finite_types",
@@ -17,7 +18,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ExplicitFallbackControls.test_actual_success_has_no_terminal_field_and_keeps_exact_public_success_and_alternate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -29,7 +42,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -41,7 +54,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -53,7 +66,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -65,7 +78,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -77,7 +90,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -89,7 +102,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -101,7 +114,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:1ee834ef15bfdbcc4f39a3c2d6ae891e3651e595cb89531c7ad197adbcd2671f",
+        "module:setup-sha256:38b6fc29cea535c65ffdc8f08006885ba7e20b5c3ceb613e66565fa08412b0ac",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -109,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_sdk_explicit_fallback.py",
-  "reviewReason": "Actual76a4 prebuild KeyError: use unchanged frozen reader public API keys; preserve original fixture/budgets/eight outcomes and add actual reader-key adverse routing control; original failure retained, zero prior compiler or guest credit.",
+  "reviewReason": "Root reviewed actual77ea attempt2 C1307-byte public response. Global reader model now follows success category/error-null with no invented terminalState; all8 original test bodies/bases/decorators/skip sites remain exact, add actual-row schema adverse. Failed whole programme stays failed; no native/guest source change.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
