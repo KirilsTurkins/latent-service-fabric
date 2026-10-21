@@ -297,6 +297,10 @@ enum Value {
     ShimTable,
     MainTable(u32),
     MainMemory(u32),
+    CContextGet,
+    CContextSet,
+    CThreadIndex,
+    CThreadYield,
     Other,
 }
 #[derive(Clone)]
@@ -318,7 +322,9 @@ struct Graph<'a> {
     main: usize,
     shim: usize,
     fixup: usize,
-    admission: admission::Admission,
+    raw_import: u32,
+    native_import: u32,
+    c: Option<CBoundary>,
     signatures: Vec<Signature>,
     funcs: Vec<Value>,
     tables: Vec<Value>,
@@ -337,6 +343,17 @@ struct Graph<'a> {
     raw_alias: bool,
 }
 
+struct CBoundary {
+    start_module: usize,
+    start_instances: usize,
+    root: u32,
+    initialize: u32,
+    realloc: u32,
+    post: u32,
+    lifted: bool,
+    function_types: Vec<Option<bool>>,
+}
+
 fn forbidden_creation(function: &CanonicalFunction) -> bool {
     matches!(
         function,
@@ -347,6 +364,10 @@ fn forbidden_creation(function: &CanonicalFunction) -> bool {
 /// Extract only root core modules. Nested WIT export wrappers cannot import a
 /// dynamic module/component or contain another executable core module/creator.
 fn modules(input: &[u8]) -> Result<Vec<&[u8]>, &'static str> {
+    modules_with_limit(input, 3)
+}
+
+fn modules_with_limit(input: &[u8], count: usize) -> Result<Vec<&[u8]>, &'static str> {
     if input.len() > MAX_BYTES {
         return Err("rust-component-byte-limit");
     }
@@ -369,7 +390,7 @@ fn modules(input: &[u8]) -> Result<Vec<&[u8]>, &'static str> {
             Payload::ModuleSection {
                 unchecked_range, ..
             } => {
-                if stack.len() != 1 || modules.len() == 3 {
+                if stack.len() != 1 || modules.len() == count {
                     return Err("rust-component-finite-three-module-profile");
                 }
                 let start = usize::try_from(unchecked_range.start)
@@ -439,7 +460,7 @@ fn modules(input: &[u8]) -> Result<Vec<&[u8]>, &'static str> {
             _ => {}
         }
     }
-    if modules.len() != 3 {
+    if modules.len() != count {
         return Err("rust-component-finite-three-module-profile");
     }
     Ok(modules)
@@ -494,7 +515,9 @@ impl<'a> Graph<'a> {
             main,
             shim,
             fixup,
-            admission,
+            raw_import: admission.raw,
+            native_import: admission.admit,
+            c: None,
             signatures,
             funcs: vec![],
             tables: vec![],
@@ -554,19 +577,97 @@ impl<'a> Graph<'a> {
                         && name == "start",
                 ),
                 ComponentExternalKind::Instance => self.component_instances.push(false),
+                ComponentExternalKind::Type => {
+                    if let Some(c) = &mut self.c {
+                        c.function_types.push(None);
+                    }
+                }
                 _ => {}
             },
+            ComponentAlias::Outer {
+                kind: wasmparser::ComponentOuterAliasKind::Type,
+                ..
+            } => {
+                if let Some(c) = &mut self.c {
+                    c.function_types.push(None);
+                }
+            }
             _ => {}
         }
         Ok(())
     }
     fn canonical(&mut self, function: CanonicalFunction) -> Result<(), &'static str> {
+        // C uses the original ordinary sync generated ABI. No callback-code
+        // reinterpretation or async option can stand in for its real result.
+        if self.c.is_some() {
+            let builtin = match &function {
+                CanonicalFunction::ContextGet {
+                    ty: wasmparser::ValType::I32,
+                    slot: 1,
+                } => Some(Value::CContextGet),
+                CanonicalFunction::ContextSet {
+                    ty: wasmparser::ValType::I32,
+                    slot: 1,
+                } => Some(Value::CContextSet),
+                CanonicalFunction::ThreadIndex => Some(Value::CThreadIndex),
+                CanonicalFunction::ThreadYieldThenResume => Some(Value::CThreadYield),
+                _ => None,
+            };
+            if let Some(value) = builtin {
+                self.funcs.push(value);
+                if self.funcs.len() > MAX_FUNCTIONS as usize {
+                    return Err("c-component-function-limit");
+                }
+                return Ok(());
+            }
+        }
         match function {
             CanonicalFunction::Lift {
                 core_func_index,
+                type_index,
                 options,
-                ..
             } => {
+                if let Some(c) = &self.c {
+                    if c.lifted
+                        || Self::indexed(&self.funcs, core_func_index)? != Value::MainFunc(c.root)
+                        || c.start_instances != 1
+                        || c.function_types.get(type_index as usize) != Some(&Some(false))
+                    {
+                        return Err("c-component-single-owned-sync-lift-after-initialize");
+                    }
+                    let mut memory = 0;
+                    let mut realloc = 0;
+                    let mut post = 0;
+                    let mut utf8 = 0;
+                    for option in options.iter() {
+                        match *option {
+                            CanonicalOption::Memory(index)
+                                if Self::indexed(&self.memories, index)?
+                                    == Value::MainMemory(0) =>
+                            {
+                                memory += 1
+                            }
+                            CanonicalOption::Realloc(index)
+                                if Self::indexed(&self.funcs, index)?
+                                    == Value::MainFunc(c.realloc) =>
+                            {
+                                realloc += 1
+                            }
+                            CanonicalOption::PostReturn(index)
+                                if Self::indexed(&self.funcs, index)?
+                                    == Value::MainFunc(c.post) =>
+                            {
+                                post += 1
+                            }
+                            CanonicalOption::UTF8 => utf8 += 1,
+                            _ => return Err("c-component-owned-sync-canonical-options"),
+                        }
+                    }
+                    if memory != 1 || realloc != 1 || post != 1 || utf8 > 1 {
+                        return Err("c-component-exact-realloc-postreturn-memory");
+                    }
+                    self.c.as_mut().unwrap().lifted = true;
+                }
                 self.denied_uses
                     .push(Self::indexed(&self.funcs, core_func_index)?);
                 self.options(&options)?;
@@ -628,6 +729,24 @@ impl<'a> Graph<'a> {
     }
     fn options(&mut self, options: &[CanonicalOption]) -> Result<(), &'static str> {
         for option in options {
+            if let Some(c) = &self.c {
+                match *option {
+                    CanonicalOption::Realloc(index)
+                        if Self::indexed(&self.funcs, index)? != Value::MainFunc(c.realloc) =>
+                    {
+                        return Err("c-component-unowned-realloc-option");
+                    }
+                    CanonicalOption::PostReturn(index)
+                        if Self::indexed(&self.funcs, index)? != Value::MainFunc(c.post) =>
+                    {
+                        return Err("c-component-unowned-postreturn-option");
+                    }
+                    CanonicalOption::Callback(_) | CanonicalOption::Async => {
+                        return Err("c-component-async-callback-abi-not-selected");
+                    }
+                    _ => {}
+                }
+            }
             if let CanonicalOption::Realloc(index)
             | CanonicalOption::PostReturn(index)
             | CanonicalOption::Callback(index) = option
@@ -703,6 +822,25 @@ impl<'a> Graph<'a> {
                 } else if module == self.fixup {
                     kind = 3;
                     self.fixup_instances.push(self.instances.len());
+                } else if self.c.as_ref().is_some_and(|c| module == c.start_module) {
+                    let c = self.c.as_mut().unwrap();
+                    if c.start_instances != 0
+                        || arguments.len() != 1
+                        || self.main_instances.len() != 1
+                        || self.fixup_instances.len() != 1
+                    {
+                        return Err("c-component-initialize-order-or-duplicate");
+                    }
+                    let argument =
+                        *arguments.get("").ok_or("c-component-start-argument-name")? as usize;
+                    if self.instances[argument].kind != 0
+                        || self.instances[argument].exports.len() != 1
+                        || self.instances[argument].value("")? != Value::MainFunc(c.initialize)
+                    {
+                        return Err("c-component-original-initialize-route");
+                    }
+                    c.start_instances += 1;
+                    kind = 4;
                 } else {
                     return Err("rust-component-unqualified-module-instantiation");
                 }
@@ -735,6 +873,16 @@ impl<'a> Graph<'a> {
                 _ => {}
             }
             match payload {
+                Payload::ComponentTypeSection(reader) if self.c.is_some() => {
+                    let c = self.c.as_mut().unwrap();
+                    for ty in reader {
+                        c.function_types
+                            .push(match ty.map_err(|_| "c-component-public-type")? {
+                                wasmparser::ComponentType::Func(function) => Some(function.async_),
+                                _ => None,
+                            });
+                    }
+                }
                 Payload::ComponentImportSection(reader) => {
                     for import in reader {
                         let import = import.map_err(|_| "rust-component-graph-import")?;
@@ -745,6 +893,11 @@ impl<'a> Graph<'a> {
                                 self.component_instances.push(native);
                             }
                             ComponentTypeRef::Func(_) => self.component_funcs.push(false),
+                            ComponentTypeRef::Type(_) => {
+                                if let Some(c) = &mut self.c {
+                                    c.function_types.push(None);
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -781,6 +934,11 @@ impl<'a> Graph<'a> {
                                     .ok_or("rust-component-export-function-index")?,
                             ),
                             ComponentExternalKind::Instance => self.component_instances.push(false),
+                            ComponentExternalKind::Type => {
+                                if let Some(c) = &mut self.c {
+                                    c.function_types.push(None);
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -791,6 +949,40 @@ impl<'a> Graph<'a> {
         Ok(())
     }
     fn finish(&self) -> Result<(u32, u32), &'static str> {
+        if self.c.is_some() && self.fixup_instances.len() != 1 {
+            return Err("c-component-single-fixup-required");
+        }
+        if let Some(c) = &self.c {
+            if !c.lifted || c.start_instances != 1 {
+                return Err("c-component-missing-public-or-initialize");
+            }
+            for (import, value) in self.cores[self.main].imports.iter().zip(&self.main_imports) {
+                if import.module == "$root" {
+                    let expected = match import.name.as_str() {
+                        "[context-get-1]" => Value::CContextGet,
+                        "[context-set-1]" => Value::CContextSet,
+                        "[thread-index]" => Value::CThreadIndex,
+                        "[thread-yield-then-resume]" => Value::CThreadYield,
+                        NEW => continue,
+                        _ => return Err("c-component-unknown-root-intrinsic"),
+                    };
+                    // Intrinsics may be routed through the encoder's fixed
+                    // shim. The actual fixup binding is checked below too.
+                    let resolved = match value {
+                        Value::Shim(slot) => {
+                            let fixup = &self.instances[self.fixup_instances[0]];
+                            let args =
+                                *fixup.arguments.get("").ok_or("c-component-fixup-args")? as usize;
+                            self.instances[args].value(&slot.to_string())?
+                        }
+                        value => *value,
+                    };
+                    if resolved != expected {
+                        return Err("c-component-canonical-context-route");
+                    }
+                }
+            }
+        }
         if self.shim_instances != 1
             || self.main_instances.len() != 1
             || self.fixup_instances.len() != 1
@@ -835,14 +1027,14 @@ impl<'a> Graph<'a> {
             raw.ok_or("rust-component-raw-slot-missing")?,
             native.ok_or("rust-component-native-slot-missing")?,
         );
-        if self.main_imports.get(self.admission.raw as usize) != Some(&Value::Shim(raw))
-            || self.main_imports.get(self.admission.admit as usize) != Some(&Value::Shim(native))
+        if self.main_imports.get(self.raw_import as usize) != Some(&Value::Shim(raw))
+            || self.main_imports.get(self.native_import as usize) != Some(&Value::Shim(native))
         {
             return Err("rust-component-main-admission-routing");
         }
         for (index, value) in self.main_imports.iter().enumerate() {
             if *value == Value::Raw
-                || (*value == Value::Shim(raw) && index != self.admission.raw as usize)
+                || (*value == Value::Shim(raw) && index != self.raw_import as usize)
             {
                 return Err("rust-component-main-raw-import-escape");
             }
@@ -877,6 +1069,10 @@ impl<'a> Graph<'a> {
         Ok((raw, native))
     }
 }
+
+#[path = "c_component.rs"]
+mod c;
+pub use c::{CComponentRoutingReceipt, verify_c_component_routing};
 
 /// Check the actual final component, not a compiler marker or supplied digest.
 /// Static authentication is separate from native execution, std compatibility

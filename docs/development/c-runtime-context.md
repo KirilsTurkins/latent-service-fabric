@@ -209,8 +209,8 @@ records do not replace host admission or final-byte routing verification.
 The finite root fixtures use scalar core arguments. Canonical string lowering
 may execute C `cabi_realloc` before the public root, and post-return may execute
 C after it. Those paths need their own authenticated context lifecycle before
-an ordinary string component can select this port. No pre-root or post-root
-shared-stack/TLS fallback is implemented or implicitly authorized here.
+an ordinary string component can select this port. The bootstrap-only API does
+not supply those scopes; the separate C ABI derivation below is still unselected.
 Non-default attributes, detach, `pthread_exit`, cancellation unwinding,
 setjmp/longjmp, C++ dynamic TLS, mutex/condition/timed waits, CPU checkpoints,
 atomics and standard I/O are outside this source slice. Their absence cannot
@@ -236,3 +236,64 @@ canonical child, a production node, whole-component C routing or a qualified
 threading profile. Tool binaries and compiler implicit inputs are not
 independently retained by this artifact. No #744 checkbox closes from this
 finite source slice.
+
+### Separate C canonical ABI source bridge
+
+`c_abi.rs` extends the source derivation for the actual ordinary sync C ABI.
+The generator's implementation prototype, result area, exported core signature
+and post-return body are retained. It does not rename a sync C function to an
+async callback or interpret a callback status as a user result. The public root
+still calls the original generated wrapper and drains accepted children before
+returning its original numeric flat result. Blocking I/O and an async export ABI
+are outside this finite source profile.
+
+The fixed `_initialize`, `cabi_realloc` and corresponding `cabi_post_*` wrappers
+open private, nonreentrant System scopes before or after the ordinary C root.
+Only the exact stackless SP/TLS helpers can select the original root stack and
+TLS base within such a scope. Initialization, ordinary root execution and
+post-return retain the same original TLS bytes, including an allocator's real
+errno/OOM path. No additional TLS allocation, memory limit or native allowance
+is introduced. While a root or child is live, canonical reallocation uses that
+thread's current checked context instead.
+
+Every System path has a bounded, transitive direct-call closure. Imports,
+thread/context/TSS operations, indirect/reference calls and tail-call escape
+are concrete refusals, including on failure branches. The two SP helpers and
+TLS helper are the only special terminals and retain their original checked
+context bodies outside the private scope. Each System exit checks the restored
+64KiB root stack. Initialization and post-return are one-use. Nonzero-size
+canonical allocations must return aligned bytes wholly inside original memory
+and at or above authenticated `__heap_base`, beyond guard, stack and TLS;
+the generator's size-zero sentinel remains valid. A trap leaves the scope
+closed to further success, with production containment/Store destruction still
+responsible for cleanup. The standalone core control does not model component
+Store lockdown after a trap and uses a separate instance for each negative.
+
+The C-only `verify_c_component_routing` consumes the original linked-core
+preimage and actual normal encoder output. It recomputes the entire C chain,
+requires exact executable/data sections, and permits only consumed
+`component-type` metadata and the pinned encoder's `wit-component` producer
+merge. It authenticates the four finite main/thunk/fixup/start-shim modules,
+the original initializer route and ordering, one sync public lift, memory,
+realloc and post-return identities, native admission, sole raw creation and
+actual canonical context/index/yield bindings. Private raw/thunk escapes,
+additional starts, unknown modules and an async/callback ABI are refused.
+Normal staged-world/export verification remains mandatory; this compiler
+preimage proof is not an autonomous host profile selector. The original Rust
+entrypoint and its three-module profile keep their separate verifier path.
+
+Read-only replay of historical C run39413019080/artifact12259784236 verified
+all161 ZIP members and regenerated its three original binding outputs exactly
+with `wit-bindgen`0.62.0. The actual string component has `_initialize` through
+the normal start shim, a `(i32,i32)->i32` entry and `i32->()` post-return. A
+metadata-only embed/component-new replay changed only the pinned producer
+version; all other18 main-core sections were exact. Those are historical data
+observations, not execution of the new threading source.
+
+The new canonical-ABI fixture uses ordinary pthread/C11 calls beneath an
+unchanged generated `bool` implementation prototype and real string Err/Ok
+results. Local work so far is generation, strict data inspection, Rust syntax
+formatting and JavaScript syntax checking only. The six new Rust cases, actual
+selected threaded C link, core ABI/OOM execution and generated final graph still
+require a reviewed hosted control. No engine, builder, host grant or threading
+profile selects this path, and no additional #744 acceptance criterion closes.
