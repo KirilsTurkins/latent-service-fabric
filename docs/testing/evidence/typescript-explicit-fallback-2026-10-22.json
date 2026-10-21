@@ -1,0 +1,925 @@
+{
+  "schemaVersion": "latent.typescript.explicit-fallback.observation.v1",
+  "issue": 679,
+  "pullRequest": 1322,
+  "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39689466570",
+  "artifactUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39689466570/artifacts/12388353966",
+  "verification": {
+    "status": "passed",
+    "source": "56a73d71ef0187d7992e1f6750d27e42312957c1",
+    "run": 39689466570,
+    "job": 119531764930,
+    "artifact": 12388353966,
+    "bytes": 8943953,
+    "sha256": "bd05b65575a77a68a4bebba9d838ce728b4dadd6c3b53c0c37f17db0e3672c3e",
+    "members": 142,
+    "expandedBytes": 28120502,
+    "gitMaterials": 190,
+    "recipeRows": 110,
+    "sourceRows": 63,
+    "originalProjectRowsVerified": 58,
+    "capturedOriginalLibraryAndTransitiveCallback": true,
+    "buildCommands": 20,
+    "outerCommands": 2,
+    "verifiedStreams": 44,
+    "installedCompilerFiles": 4431,
+    "selectedCompilerFiles": 4432,
+    "onlyCompilerAddition": {
+      "path": "node_modules/@bytecodealliance/componentize-js/src/componentize.lsf-core-v2.mjs",
+      "digest": "sha256:dff73e4283a98c0cd064d1e63ed71ae1fd880e0492f38c32221ea164adc2bb9b",
+      "size": 18966
+    },
+    "component": {
+      "sha256": "sha256:ea6e9555213a939100075b09e63d72d9e8e631785456c626940a47a21dea7f38",
+      "bytes": 12469122
+    },
+    "outcomes": [
+      {
+        "mode": "catch",
+        "seed": 7,
+        "alternate": 42,
+        "decoded": [
+          {
+            "ok": "fallback|typescript|unsupported|seed=7|alternate=42|fresh=1"
+          }
+        ],
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "3585825",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "9502720",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "22693713"
+        }
+      },
+      {
+        "mode": "catch",
+        "seed": 11,
+        "alternate": 62,
+        "decoded": [
+          {
+            "ok": "fallback|typescript|unsupported|seed=11|alternate=62|fresh=1"
+          }
+        ],
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "3600682",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "9502720",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "5543"
+        }
+      },
+      {
+        "mode": "uncaught",
+        "seed": 13,
+        "alternate": null,
+        "decoded": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1843314",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "9502720",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "4022"
+        }
+      },
+      {
+        "mode": "catch",
+        "seed": 19,
+        "alternate": 102,
+        "decoded": [
+          {
+            "ok": "fallback|typescript|unsupported|seed=19|alternate=102|fresh=1"
+          }
+        ],
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "3615270",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "9502720",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "5632"
+        }
+      }
+    ],
+    "physicalRetirements": 4,
+    "providerCountersZero": 18,
+    "cleanReapedNode": true,
+    "requests": 0,
+    "nativeCompilationLineage": "three-f244-two-f625-original-identities",
+    "wholeTicketQualified": false
+  },
+  "developmentProjection": {
+    "actualSource": "56a73d71ef0187d7992e1f6750d27e42312957c1",
+    "composedBase": "cfafb32265882a6c9b5624a29e7a5326abb47f47",
+    "allExecutedMaterialsByteExact": true,
+    "materials": {
+      "tools/c_capsule.py": {
+        "sha256": "sha256:22e4568084b4a8bcca84e7135bb8703cba2b6a196177ef99f4a99b21825570b7",
+        "bytes": 11325
+      },
+      "tools/c_capsule_project.py": {
+        "sha256": "sha256:7e6c3752e487a93d10801d0ea3a1f5f77baecca3baa9a65c39f219686edd092e",
+        "bytes": 8057
+      },
+      "tools/c_capsule_build.py": {
+        "sha256": "sha256:97b6985eb06c16a66153b63b5b62934d891f3af278cdbe177cb4052f19f1cb5b",
+        "bytes": 17321
+      },
+      "tools/application_dependencies.py": {
+        "sha256": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+        "bytes": 28732
+      },
+      "tools/application_dependency_store.py": {
+        "sha256": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+        "bytes": 12139
+      },
+      "tools/application_dependency_tools.py": {
+        "sha256": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+        "bytes": 5192
+      },
+      "tools/c_application_dependencies.py": {
+        "sha256": "sha256:043fcb36d328c3333fb940fb68c1dd04ab18c9ddac547b98cb5f26a7bc4bef30",
+        "bytes": 12569
+      },
+      "tools/c_static_symbols.py": {
+        "sha256": "sha256:1740aee71ad186204c73a680f3d8e86fb89ddad167aa4d07021ca17160aacb10",
+        "bytes": 4512
+      },
+      "tools/c_static_archive_build.py": {
+        "sha256": "sha256:0972e4fad0fb686a9609da30046560cc29455c361c30a0f394ca75fc5de026fc",
+        "bytes": 5437
+      },
+      "tools/c_dependency_authoring.py": {
+        "sha256": "sha256:05d91141fe5c1cbab3da538be6a6144f1e7600b59effacbfe96d349c722281e1",
+        "bytes": 16467
+      },
+      "tools/dev_workflow/state.py": {
+        "sha256": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+        "bytes": 3683
+      },
+      "tools/dev_workflow/project.py": {
+        "sha256": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+        "bytes": 7395
+      },
+      "tools/dev_workflow/dependencies.py": {
+        "sha256": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+        "bytes": 6022
+      },
+      "tools/dev_workflow/snapshot.py": {
+        "sha256": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+        "bytes": 7519
+      },
+      "tools/dev_workflow/paths.py": {
+        "sha256": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+        "bytes": 6758
+      },
+      "tools/dev_workflow/windows.py": {
+        "sha256": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+        "bytes": 6584
+      },
+      "tools/captured_compiler_isolation.py": {
+        "sha256": "sha256:061f3e31f567871e7f3b0d8e8a402077d036b3327ccd2d7455294ec7bf28af15",
+        "bytes": 14529
+      },
+      "tools/c_guest/compiler.py": {
+        "sha256": "sha256:59a54680df7b7de773c703b5f424314bf9929d854ebcb8abc2afe87df8e879d5",
+        "bytes": 19680
+      },
+      "tools/c_guest/bindings.py": {
+        "sha256": "sha256:4ba1faa8ffce71fc726a937867dbd45ae62a3b669b5a82f0710d9f9829e8613e",
+        "bytes": 4201
+      },
+      "tools/c_guest/closed_filesystem.py": {
+        "sha256": "sha256:c97d48ab608a1b56e6c6884d8c26deecf6908b0dc72521e314351f80f701d6dc",
+        "bytes": 2222
+      },
+      "tools/rust_capsule_project.py": {
+        "sha256": "sha256:c181435f37218bbe86c69483926985911a19a76dbda9cc11364b134bef8be3c4",
+        "bytes": 16263
+      },
+      "tools/rust_capsule_build.py": {
+        "sha256": "sha256:46d8b9245911248d14d80cae251ee37d84c8f9a4b912806a79b9f0e86edec700",
+        "bytes": 47482
+      },
+      "tools/build_observation.py": {
+        "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+        "bytes": 7868
+      },
+      "tools/build_process.py": {
+        "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+        "bytes": 9063
+      },
+      "tools/build_process_linux.py": {
+        "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "bytes": 3853
+      },
+      "tools/build_process_windows.py": {
+        "sha256": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+        "bytes": 7409
+      },
+      "tools/build_process_signals.py": {
+        "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "bytes": 3012
+      },
+      "tools/build_snapshot.py": {
+        "sha256": "sha256:172c556c2d8918d09f97d6163b64c3ffe1dda79d2f0fe72675fd223b533f5284",
+        "bytes": 12918
+      },
+      "tools/stage_runtime_wit.py": {
+        "sha256": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+        "bytes": 4194
+      },
+      "examples/echo-contract/capsule.json": {
+        "sha256": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d",
+        "bytes": 1294
+      },
+      "examples/echo-contract/deployment.json": {
+        "sha256": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a",
+        "bytes": 1104
+      },
+      "tools/transaction_guest_project.py": {
+        "sha256": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+        "bytes": 10287
+      },
+      "tools/dev_workflow/common.py": {
+        "sha256": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+        "bytes": 3129
+      },
+      "tools/dev_workflow/transaction_binding.py": {
+        "sha256": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+        "bytes": 3588
+      },
+      "tools/guest_compatibility.py": {
+        "sha256": "sha256:cc9752af131ee1e0ec5f0308a0ae658380a083cf53a29c5a41eb6e6c2e49f112",
+        "bytes": 14702
+      },
+      "tools/guest_compatibility_build.py": {
+        "sha256": "sha256:67339aedb2de99b7de7675ac51e69aa6d7de4c5f1f26e0d773ca315cfca24840",
+        "bytes": 18286
+      },
+      "wit/host-abi-phase3-v4.json": {
+        "sha256": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+        "bytes": 4523
+      },
+      "wit/host-abi-phase4-v1.json": {
+        "sha256": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+        "bytes": 2559
+      },
+      "sdk/profile/transaction-requirements-v1.json": {
+        "sha256": "sha256:9bb389824b6a2d3015727b5c17de25a51505339d0a4f6cf46199ffe520881cd5",
+        "bytes": 9418
+      },
+      "tools/guest_compatibility_context.py": {
+        "sha256": "sha256:a335b326d995de2e11cae5e302221d347fe108695d677c47478cc6ffb5a8c5ad",
+        "bytes": 8320
+      },
+      "tools/guest_compatibility_context_build.py": {
+        "sha256": "sha256:8307d07c3c13dba0b83802de5f7d5ad379e53f0d48f5e3c20bb0f78c35b7509d",
+        "bytes": 8747
+      },
+      "tools/guest_runtime_receipts.py": {
+        "sha256": "sha256:09b8cea1c5c864eac01f67bed66fe3c09afab5a3ee71238385781ca5b6fbfd1f",
+        "bytes": 12510
+      },
+      "tools/guest_emitted_code.py": {
+        "sha256": "sha256:211c7ef2b359b2ec2e2227cae1e4212b57c020dc4f02649302c976e0eb85dbbd",
+        "bytes": 20181
+      },
+      "tools/guest_dependency_inputs.py": {
+        "sha256": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+        "bytes": 10044
+      },
+      "tools/application_dependency_approval.py": {
+        "sha256": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+        "bytes": 1996
+      },
+      "tools/dev_workflow/__init__.py": {
+        "sha256": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+        "bytes": 98
+      },
+      "tools/dev_workflow/resource_inputs.py": {
+        "sha256": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+        "bytes": 2645
+      },
+      "tools/guest_resources.py": {
+        "sha256": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+        "bytes": 18098
+      },
+      "tools/guest_authoring_frontend.py": {
+        "sha256": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+        "bytes": 9578
+      },
+      "tools/c_generator_authoring.py": {
+        "sha256": "sha256:046bc3eff1a92c1e7f952680f68503080feba6373c528a8d6b83e4fa8a0e5253",
+        "bytes": 15621
+      },
+      "tools/c_guest/standard_facilities.py": {
+        "sha256": "sha256:237b0f3b128af2b9ff5f86c91518181b118cbe5ed8e41add620e3af591942a48",
+        "bytes": 5104
+      },
+      "tools/c_guest/language.py": {
+        "sha256": "sha256:b8b53436311e8e9891b9ce1f7e7bcbf4c5fd97ac02b703d8ffcb1b92d6d0ac9c",
+        "bytes": 656
+      },
+      "tools/c_resource_inputs.py": {
+        "sha256": "sha256:25619af0548fb5c88793ceef11aa4562df61124c9fbe171709dcf9cbe136932f",
+        "bytes": 4570
+      },
+      "tools/go_capsule.py": {
+        "sha256": "sha256:5ad2e3eeb24f10c825be6004de84f60134ee2d4e59701f1a42e588080ba06136",
+        "bytes": 10891
+      },
+      "tools/go_capsule_project.py": {
+        "sha256": "sha256:08fa169d9f463f19ae44e20736f8146da3e16695e1ff56df700e6573afc97138",
+        "bytes": 8984
+      },
+      "tools/go_capsule_build.py": {
+        "sha256": "sha256:b3df8b8a979ba6821c4aa4eda9d893c9e1969ae82b42b66f8f83c60f20829cf3",
+        "bytes": 12607
+      },
+      "tools/go_guest/compiler.py": {
+        "sha256": "sha256:0f985f83400360d236b7b0b50c4a14ad9ef0df7df598ed7c1950033921b365a9",
+        "bytes": 20515
+      },
+      "tools/go_guest/runtime.py": {
+        "sha256": "sha256:62cb9d60060cae1eb5dd4398f22294235c26b36129d35a1e237c22a4e31b150b",
+        "bytes": 14030
+      },
+      "tools/go_guest/activation.py": {
+        "sha256": "sha256:e08d4f7dda2fb485ef2310bffd5875b278d22a40628be0a46376afb26f5fffee",
+        "bytes": 9230
+      },
+      "tools/go_guest/checkpoints.py": {
+        "sha256": "sha256:82842d6869f2dfeb894e5c6d6fcbfc6b2b119def5ae3c6f1d309bad592b9033f",
+        "bytes": 3839
+      },
+      "tools/go_guest/timers.py": {
+        "sha256": "sha256:02b2e599ea01140815ff68e51d02693f48acbad532111c795117e58457bf0f3f",
+        "bytes": 4000
+      },
+      "tools/go_guest/initializers.py": {
+        "sha256": "sha256:b4a9b887ded6ba8ce4e795b10c85e45d9801de87410d7ea0789de8cfa045d0c3",
+        "bytes": 1570
+      },
+      "tools/go_guest/http_context.py": {
+        "sha256": "sha256:4ee6c075f2a9e17df83afd40698120224f178fab87ac0eb01d0b9c44e4f3a12d",
+        "bytes": 4425
+      },
+      "tools/go_guest/http.py": {
+        "sha256": "sha256:4a1776e7f6a8b43696dc4814b2b04596aa68d503296a58876039afe371bfc2e2",
+        "bytes": 3761
+      },
+      "tools/go_guest/network_context.py": {
+        "sha256": "sha256:23582121281735581d98225169d4f9ed2ab575200d0b70552a9e7d686e68c8c4",
+        "bytes": 4987
+      },
+      "tools/go_guest/network.py": {
+        "sha256": "sha256:17daaaed00e0e065e053363ea58e5f3ed24ffb252bf47d9d3b860f512fee9a72",
+        "bytes": 5647
+      },
+      "tools/go_guest/sdk.py": {
+        "sha256": "sha256:ebb7f73b47db980bf5027af4b15cae492d9f38298db3d250052060eb3c4d8834",
+        "bytes": 7529
+      },
+      "tools/go_application_dependencies.py": {
+        "sha256": "sha256:5ca4f09ce5a1dad20af664a1156241220357babcc7171d7f871eac7c1b01a9dc",
+        "bytes": 29620
+      },
+      "tools/go_dependency_authoring.py": {
+        "sha256": "sha256:9c27cd55bcc6b0fee1c8bcd023ffba663fb4ec173b03f79042a4d3137150f1ee",
+        "bytes": 14416
+      },
+      "tools/go_native_authoring.py": {
+        "sha256": "sha256:e47daad7ba72f979f274fbbf2331d5dcd9a9f31a1c2eabd0fb3d5d89c94c6173",
+        "bytes": 15368
+      },
+      "tools/go_generator_authoring.py": {
+        "sha256": "sha256:8f33b9122b0d4911729fd561a977c7b69e44a23b8e2056bbd70922356fd6d9a4",
+        "bytes": 11501
+      },
+      "tools/go_proxy_tls.py": {
+        "sha256": "sha256:a2be901491a38a32f137e06a01ed71a444b9b4929ff29506e2909a99d13be599",
+        "bytes": 3989
+      },
+      "tools/go_guest/standard_log.py": {
+        "sha256": "sha256:4caecab1b926c87592f04265628c4970d5b0551251715821d498ff60ce6deb62",
+        "bytes": 3904
+      },
+      "tools/go_guest/managed_idle.py": {
+        "sha256": "sha256:5310ba47d883942e95080927f8bbff9e0f1d452e8c6897f11195555bfde245fc",
+        "bytes": 1856
+      },
+      "tools/go_guest/queues.py": {
+        "sha256": "sha256:5d9c5d8a8708126873bec775152195d66670a06993894b7d07fc62999e519f85",
+        "bytes": 2998
+      },
+      "tools/qualify_sdk_explicit_fallback.py": {
+        "sha256": "sha256:84c880003bad17a35d04de573ad7408fff60214c244d418128ca4d1a4d4ac8bf",
+        "bytes": 8482
+      },
+      "tools/sdk_explicit_fallback_fixture.py": {
+        "sha256": "sha256:9f33b8d784161881f5363566449b98c9d6e66e61bf991a5310fd67f0101e32b4",
+        "bytes": 5010
+      },
+      "tools/sdk_explicit_fallback_node.py": {
+        "sha256": "sha256:f4c455e6f3156556cd5dd97dd0d2a0e7ebd81c1dad2776fd09b21779474eba67",
+        "bytes": 10891
+      },
+      "tools/qualify_sdk_scratch.py": {
+        "sha256": "sha256:037b59b85d186442f7bafca7ee6292cf00cb1154cd4f8d5774822e2708aed98d",
+        "bytes": 16948
+      },
+      "tools/sdk_scratch_fixture.py": {
+        "sha256": "sha256:d7beaedfd012af394669cc559d8a6522172648efe8ca814e93197d6eaef1118e",
+        "bytes": 17728
+      },
+      "tools/sdk_scratch_probe.py": {
+        "sha256": "sha256:20381b35623e1d94444d17c665ccb864fbe1399b2ebbcc7b630b16569072bfd7",
+        "bytes": 6363
+      },
+      "tools/resource_tenant_node.py": {
+        "sha256": "sha256:32cb8d1c9feac256fc51568eba390c79cebdd47f7dd4fe365f8ff08613633926",
+        "bytes": 12424
+      },
+      "tools/qualify_resource_tenants.py": {
+        "sha256": "sha256:805c5f634ae5a3197b4de5f434eca78a88b01e354d63ee9d2c55288e4a539fc2",
+        "bytes": 16957
+      },
+      "tools/resource_tenant_inputs.py": {
+        "sha256": "sha256:ad3c9bf7a0564151b203e28077f1ed899144f6eaaa5055675896ff457913982d",
+        "bytes": 7175
+      },
+      "tools/resource_tenant_originals.py": {
+        "sha256": "sha256:13ba36570518d564d4a1bbd8e017d9e72db82d44a7c9185106875bc2e4482231",
+        "bytes": 10719
+      },
+      "tools/java_server_tenants.py": {
+        "sha256": "sha256:f53f7265d33a43b4e0c3cdee5a71ec316695c4e2fba24eb01222d3260990e5a8",
+        "bytes": 18967
+      },
+      "tools/rust_capsule_node.py": {
+        "sha256": "sha256:11fce2a2866a9c9c7e016bc429050ba1139cf249b4af53c4674030636a792157",
+        "bytes": 18922
+      },
+      "tools/run_rust_capsule_workflow.py": {
+        "sha256": "sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7",
+        "bytes": 34233
+      },
+      "tools/rust_capsule_cases.py": {
+        "sha256": "sha256:d96e528c134ec40974b07d3b3fc0cf3ea2d3b07a17201ab440ed6e89e710533f",
+        "bytes": 8645
+      },
+      "tools/phase2_operator_process.py": {
+        "sha256": "sha256:ea7951f5005a39c98991070b9a62e3debba05855b95a7845af9977293849b857",
+        "bytes": 15212
+      },
+      "tools/phase2_operator_scenario.py": {
+        "sha256": "sha256:eb024da258700494ebee27fa84de2a17ae2d5f84354641ca126222d677ec6a35",
+        "bytes": 21456
+      },
+      "tools/phase3_resource_identity.py": {
+        "sha256": "sha256:ca979a245b623bd588fe6ce32aec1de3a45a00e8bb0d6e49c6554417051327b0",
+        "bytes": 3354
+      },
+      "tools/phase3_resource_os.py": {
+        "sha256": "sha256:2d3a7b610bb2ceece7116d0a6ad824dcefbb9113042bb019a9c3407e73858140",
+        "bytes": 8840
+      },
+      "tools/phase3_resource_profile.py": {
+        "sha256": "sha256:633a3eb3e639014ef221cf5180a533ea595cca32a761d53fe2d4e305d658a818",
+        "bytes": 9743
+      },
+      "tools/sdk_provider_scenario.py": {
+        "sha256": "sha256:54c213bb7e3261e10adbf83434cf47852217fc0249df3f011decf69db781c3eb",
+        "bytes": 10998
+      },
+      "tools/c_thread_admission_native_products.py": {
+        "sha256": "sha256:af5bc80aed0d274c43a317117c5dedbac801d428b8d5e59dfdb347f5007091b3",
+        "bytes": 17080
+      },
+      "tools/c_thread_package_native_products.py": {
+        "sha256": "sha256:2313f4470d6ef7c313745a120c7ac7af22c479e88e441426c220325824cf3910",
+        "bytes": 2421
+      },
+      "tools/sdk_native_products_reader.py": {
+        "sha256": "sha256:b44340e70358ebe03852da25679e2343de46e45001837eef0a5f49e5e2deb6bf",
+        "bytes": 17336
+      },
+      "tools/java_replay_materials.py": {
+        "sha256": "sha256:155092d73c3f847d2250076bed86f6694c738d011fab30d7269fb27c5a1e63e3",
+        "bytes": 15714
+      },
+      "tools/c_guest/__init__.py": {
+        "sha256": "sha256:b6d8a2ed0807b37c3f3e28dae6b9ee806bbe0e8bf1024935f0abbab8e818a5a4",
+        "bytes": 82
+      },
+      "tools/go_guest/__init__.py": {
+        "sha256": "sha256:5354e5f8298b88bbe23ad881d84f9338afdcda826ebe1c5c4dcc368be3cac0d9",
+        "bytes": 82
+      },
+      "tools/dev_workflow/client.py": {
+        "sha256": "sha256:fa44e35d05c5201137c6a12696fd3e071144c72759511214f6c901b01b03837c",
+        "bytes": 3856
+      },
+      "tools/dev_workflow/process.py": {
+        "sha256": "sha256:5e104ad042a7cdac6ff374d1fe42deddd47ab4c22d293b16b0a6902ceaf9d43d",
+        "bytes": 4470
+      },
+      "tools/guest_runtime_profiles.py": {
+        "sha256": "sha256:97fd5b5d1b6b3f9edff10f276ec3453364e6d2642d9497a320538584a8c8080a",
+        "bytes": 822
+      },
+      "tools/java_control_refusal_diagnostic.py": {
+        "sha256": "sha256:2ae0d67c5f987e6a2515fcf81c31bf993b6221f3effe4001ef021289ab114133",
+        "bytes": 2382
+      },
+      "tools/java_server_lifecycle.py": {
+        "sha256": "sha256:739db520ee52ea49894646782dd4e1dcd888f4c51d38f8b92c966f651eae0d06",
+        "bytes": 33299
+      },
+      "tools/java_server_lifecycle_peer.py": {
+        "sha256": "sha256:5889ff37f4cefaa10767a4447c92217e9016a83ad176c196ef7c1cac6feb68cc",
+        "bytes": 5019
+      },
+      "tools/java_server_node.py": {
+        "sha256": "sha256:64c6d1ca652d5afc48fe1d15d1fe774fb31c658673a0b5b516898421e3e11cae",
+        "bytes": 30685
+      },
+      "tools/native_runtime/__init__.py": {
+        "sha256": "sha256:741aa3c6636e2a8890abbca5a65802c44526a0ad6aee31791ab8b6d9f20c505b",
+        "bytes": 79
+      },
+      "tools/native_runtime/common.py": {
+        "sha256": "sha256:b6d6fc672370c17056b8c5810804d5a74b32aaa0c496ffaf2aa9fa496ccfbc0f",
+        "bytes": 3468
+      },
+      "tools/native_runtime/files.py": {
+        "sha256": "sha256:b382a26a43c780a9b622262639d66ce703265da3d64a6fb6fcf8d4e05431d6ae",
+        "bytes": 11048
+      },
+      "tools/native_runtime/verify.py": {
+        "sha256": "sha256:49eaf8817407d020c8e1a5a43dfd53749c2945096328cd12ad862afa63d6ad18",
+        "bytes": 14381
+      },
+      "tools/phase2_operator_canary.py": {
+        "sha256": "sha256:6cfcb4ccd6fbc9ac780703c466faa18bc7b4b850260a3b862336332b25319f68",
+        "bytes": 7921
+      },
+      "tools/phase3_management_scenario.py": {
+        "sha256": "sha256:b5c46c851cc9b3a832e0e3c4a7bce0c0fd7ba883fb4e26f90f569300c436b365",
+        "bytes": 12132
+      },
+      "tools/sdk_provider_http_fixture.py": {
+        "sha256": "sha256:9051cfed8bfd7fe8302b20668ad302e08eeb5760d8e5bf7b7a58ab19e159f5fc",
+        "bytes": 11902
+      },
+      "tools/server_routes.py": {
+        "sha256": "sha256:e804380cb21a799b9acc07fdb0c1a60b570ff78e8ca83aa59431df68c399f6cf",
+        "bytes": 18059
+      },
+      "tools/server_source.py": {
+        "sha256": "sha256:4f9c5aceaab9bd8bf55dc1cc8b689fba4b8700656f22be80476532e696b4fd95",
+        "bytes": 15320
+      },
+      "tools/typescript_capsule.py": {
+        "sha256": "sha256:199e1ddecc72a72481e2d2cd475297d9e44b30a57a11cdea87328e4891325b66",
+        "bytes": 14057
+      },
+      "tools/typescript_guest/project.py": {
+        "sha256": "sha256:acc09ae99e1344857706435bc93725c2d57d3d3f79cf675ac27aa688e440f0f7",
+        "bytes": 8912
+      },
+      "tools/typescript_guest/build.py": {
+        "sha256": "sha256:33d62de1c101d0f5b12a342bb73d7f06be5e290fe9c1de29360d6947688bd801",
+        "bytes": 21534
+      },
+      "tools/typescript_guest/compiler.py": {
+        "sha256": "sha256:08e750380f714b6e18eea2cd7059db79986feeec6340dae37e69a8555ada848a",
+        "bytes": 32305
+      },
+      "tools/typescript_guest/probe.py": {
+        "sha256": "sha256:535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c",
+        "bytes": 5948
+      },
+      "tools/typescript_guest/bundle.mjs": {
+        "sha256": "sha256:dbf2cbea0d01498d2c4c3204acc1aa0921b7895445d90c5bf0c3c9f7b0c3038e",
+        "bytes": 12314
+      },
+      "tools/typescript_guest/componentize.mjs": {
+        "sha256": "sha256:36d9cc5075ecf28349200d634dfcb462c4a0092618ce3aa9c18af4585a3baee9",
+        "bytes": 7147
+      },
+      "tools/typescript_guest/signed64.mjs": {
+        "sha256": "sha256:52ef7eb6c6b963d7f577d614cdb1dc19dcb54b437d8edc6115ac0e717de8fc22",
+        "bytes": 1641
+      },
+      "tools/typescript_guest/resources.mjs": {
+        "sha256": "sha256:14e01f582cbadbe37e722b692e6b57b7bceb45d884e01ffae273aa8e7977d9b9",
+        "bytes": 1830
+      },
+      "tools/typescript_guest/source_splicer.mjs": {
+        "sha256": "sha256:d5d5fa4bcfc79adf63eb208d99868ad5e65cf327a38e6877fd22f2c091982283",
+        "bytes": 464
+      },
+      "tools/typescript_guest/async_waiters.mjs": {
+        "sha256": "sha256:eeb942c30c3cb578d493a603e14aa0ab6b603ae607205736f3a69b9e4d344518",
+        "bytes": 18606
+      },
+      "tools/typescript_application_dependencies.py": {
+        "sha256": "sha256:c3ef142c3f7092e54fb91658ce887465410410e36f353a365080f1e011dc2d55",
+        "bytes": 27173
+      },
+      "tools/typescript_dependency_authoring.py": {
+        "sha256": "sha256:116a1095848c3fa5fc7ebdb148962d365a5601fe10ef9f2d7c9ae4ae699f4d19",
+        "bytes": 15751
+      },
+      "tools/npm_lock_authoring.py": {
+        "sha256": "sha256:3e637186d42c04bf00d8ecb351297b48eca9f51fbf8d774273347aec4d8c9b11",
+        "bytes": 11489
+      },
+      "tools/typescript_registry_tls.py": {
+        "sha256": "sha256:ae7bc74dd8a2c891ec1d09f8a7e6977e9e73642906273a709491170f7be2bf3a",
+        "bytes": 3826
+      },
+      "tools/typescript_guest/runtime_profile.py": {
+        "sha256": "sha256:f769e4591ebeb3f2289fa417cbf6ac7d43344297323a3fb93c2353c7ba7d81dc",
+        "bytes": 23222
+      },
+      "tools/typescript_guest/activation_engine.py": {
+        "sha256": "sha256:449242586e04b173f152745d80928ef7953bfb5f2a80cc14ed2fc25a96c050b0",
+        "bytes": 14930
+      },
+      "tools/typescript_guest/promise_engine.py": {
+        "sha256": "sha256:e10298e8916272c1ca53d99ba195150ca678707ac75d6ab9cf1afd0d53fbd5af",
+        "bytes": 10598
+      },
+      "tools/typescript_guest/timer_engine.py": {
+        "sha256": "sha256:d24094ced9bb6ec3e11b80308bddc569d0daefa8449892d3d22a058bd9702277",
+        "bytes": 4996
+      },
+      "tools/typescript_guest/abort_engine.py": {
+        "sha256": "sha256:1ca796a7c902c99e186baa10df6a19df23626d464972773a242e4f7eedd3ec4b",
+        "bytes": 4020
+      },
+      "tools/typescript_guest/event_engine.py": {
+        "sha256": "sha256:30264b9718c0d02e2f2a79897334b3f088ef62590983ceb0c211922c87169b63",
+        "bytes": 18823
+      },
+      "tools/typescript_guest/clock_engine.py": {
+        "sha256": "sha256:c9d75ae50b8290e380f1b5d9d33729df931767ca2efb59dcd556c05df96af669",
+        "bytes": 7780
+      },
+      "sdk/typescript-guest/activation/runtime-globals.d.ts": {
+        "sha256": "sha256:589cf515d06c16454916ecd28a5b1b785db30034300d67e0676b66ca4bcdfb7b",
+        "bytes": 1215
+      },
+      "sdk/typescript-guest/activation/native_job_queue.h": {
+        "sha256": "sha256:3df24d0b1c17c27f8b6a3d9d90ba292dde23804c3af626cdb16d7911f5bffb49",
+        "bytes": 9584
+      },
+      "sdk/typescript-guest/activation/broker_accounting.h": {
+        "sha256": "sha256:5771507a3bf4905b3707d31426675ad0bcd699a1fa96799541c98b7755eddc33",
+        "bytes": 9391
+      },
+      "sdk/typescript-guest/activation/native_engine.h": {
+        "sha256": "sha256:f87f03ba595f1ec17bf368400156892f3c6c4678105be0aaa32176448ece0a38",
+        "bytes": 1813
+      },
+      "sdk/typescript-guest/activation/native_engine.cpp": {
+        "sha256": "sha256:7dd1b56450d6e0af4c874e7a73fee01a59968095ddc452093cc2b9a1dcf85a6f",
+        "bytes": 12438
+      },
+      "sdk/typescript-guest/activation/promise_hooks.h": {
+        "sha256": "sha256:c533f19bc2010c9df736ef4ce9585620aca9ef7c0b8a27d9987e4602b99a10eb",
+        "bytes": 2147
+      },
+      "sdk/typescript-guest/activation/promise_records.h": {
+        "sha256": "sha256:70602d45bdc088d43878a2b44de814bd58ea6d137803f1c4393c2caf6963f3ff",
+        "bytes": 5174
+      },
+      "sdk/typescript-guest/activation/promise_accounting.h": {
+        "sha256": "sha256:1451f4d6d53a300e378a0a371810021ded638d683bf0b3dc145671ec0d5060b9",
+        "bytes": 2406
+      },
+      "sdk/typescript-guest/activation/reaction_records.h": {
+        "sha256": "sha256:89dea37b194c3f0c31f17983aabaa624baf8c5091dd16ca3df4dfab4b356a95b",
+        "bytes": 5680
+      },
+      "sdk/typescript-guest/activation/native_readiness.h": {
+        "sha256": "sha256:d38d7d66ed3b16d25c3e1705f2858923ed47ef1a374c88ee9049a98ce04801f3",
+        "bytes": 8450
+      },
+      "sdk/typescript-guest/activation/native_timers.h": {
+        "sha256": "sha256:5413bb498d1c0ca713d87eb171c4e4ca19e330831de3db069cf96d5b5a5b32a3",
+        "bytes": 11314
+      },
+      "sdk/typescript-guest/activation/native_timeout.h": {
+        "sha256": "sha256:f5b1e996dc1e7fa9a535760a13d00829854773eb11b0676727365582cfaad2d9",
+        "bytes": 1416
+      },
+      "sdk/typescript-guest/activation/native_retirement.h": {
+        "sha256": "sha256:5921cccf4dd2cd6a11ad070383247a4e186cbd15e21f955a56069149297d24b6",
+        "bytes": 4294
+      },
+      "sdk/typescript-guest/activation/native_objects.h": {
+        "sha256": "sha256:081afe123537c0555d0d29d20a85181dcb7feb62ce85251d4de7e2932427d039",
+        "bytes": 1028
+      },
+      "sdk/typescript-guest/activation/native_ownership.h": {
+        "sha256": "sha256:476b5db1f88bf96637221e199e0dbbd44deb3d924d7f3389ef4b7f3bccf472ed",
+        "bytes": 615
+      },
+      "sdk/typescript-guest/activation/native_import_lifecycle.h": {
+        "sha256": "sha256:c17bbf0f1c3f3de8353741ac4f9cdbde40f232198377a467fec6560ef55d6537",
+        "bytes": 5845
+      },
+      "sdk/typescript-guest/activation/native_imports.h": {
+        "sha256": "sha256:40b5737a75a9c8c06511a2ea36df14110b3577fb7f7098b202940e5abc839dd7",
+        "bytes": 9865
+      },
+      "sdk/typescript-guest/activation/broker_import_accounting.h": {
+        "sha256": "sha256:d06c3a53bc789ac68b87475ac83543da37f42b6ac61c5a96f63c21c99b4f3ec1",
+        "bytes": 3204
+      },
+      "sdk/typescript-guest/activation/native_import_values.h": {
+        "sha256": "sha256:5b98e85df356d7005ab6a3085fc9c12ad4e5f6cc8d00ddf33095f4683fc0ea24",
+        "bytes": 2390
+      },
+      "sdk/typescript-guest/activation/native_cancel.h": {
+        "sha256": "sha256:59397ab2badf02d292e517157c9686a730cd7ebe582ea1d5a7b4c81be57b7438",
+        "bytes": 479
+      },
+      "sdk/typescript-guest/activation/native_clock_engine.cpp": {
+        "sha256": "sha256:897d1611ac4e9d4557756447355d0aad7110b02f863c378df48ca28a755e1885",
+        "bytes": 1859
+      },
+      "sdk/typescript-guest/activation/native_clocks.h": {
+        "sha256": "sha256:2a318536a65272343a7c7579c0baecdac42a0a22e307e30ec7146a2df288659a",
+        "bytes": 1584
+      },
+      "sdk/typescript-guest/activation/clock_values.h": {
+        "sha256": "sha256:8e85831a0817eda3a1375fda790df22a6b343277ee102e64ef7b2be37df0bb42",
+        "bytes": 1238
+      },
+      "sdk/typescript-guest/activation/clock_globals.js": {
+        "sha256": "sha256:883fb57b1266b9643f3f61e817cf2f4c0e51fdbde80d2edbf3acb95f3d9badbd",
+        "bytes": 984
+      },
+      "sdk/typescript-guest/activation/clock-globals.d.ts": {
+        "sha256": "sha256:200c8e3d6be9c33a56101b8c5ce9b2d7e252b27c7fb8631884b4654fbb227cc7",
+        "bytes": 159
+      },
+      "sdk/typescript-guest/activation/native_import_bridge.cpp": {
+        "sha256": "sha256:8a372b13338d7b05d04943ac5135048e967bfd80a99da02150f8a2138b0cf5b2",
+        "bytes": 2848
+      },
+      "sdk/typescript-guest/activation/native_import_globals.cpp": {
+        "sha256": "sha256:b3805f336b3989d683c8b9037f0f74154430a4522561570a32715e9f756c03b7",
+        "bytes": 2418
+      },
+      "sdk/typescript-guest/activation/async_import_descriptor.rs": {
+        "sha256": "sha256:27873dad4fe5e9027f1a743e2c1663351dff8cc97cec33c21037a7f970aac1fd",
+        "bytes": 10427
+      },
+      "sdk/typescript-guest/activation/async_import_splice.rs": {
+        "sha256": "sha256:63ff8bae771e4abcda56d95d9a622f996a6bb685ce32965edd7124793e8f522e",
+        "bytes": 12163
+      },
+      "tools/typescript_guest/import_engine.py": {
+        "sha256": "sha256:a7661eb4a73ba55b19c72beb4b6f76c581c3aa77f29aebf050c42a5c062dbd9e",
+        "bytes": 5330
+      },
+      "tools/typescript_guest/import_bindgen.py": {
+        "sha256": "sha256:12b5b49c4cd77a5fc3998ba4adc52c1a4cb246b845a7a8b670d7e6dd4601c8d7",
+        "bytes": 17313
+      },
+      "tools/typescript_guest/import_profile.py": {
+        "sha256": "sha256:049391920f3308f22226e5441458f490ae753785e6785910489901ee8aa5b53a",
+        "bytes": 4324
+      },
+      "tools/typescript_guest/splicer_input.py": {
+        "sha256": "sha256:13dad90d3ea9ce55d767c38edab78a693e471868de9e596a88c2e7a01f8c32b2",
+        "bytes": 3070
+      },
+      "tools/typescript_guest/runtime_bundle.py": {
+        "sha256": "sha256:33e3413769ecff9603bd24345cd193eeb086834b89acebffb891c56529da1fa5",
+        "bytes": 4363
+      },
+      "tools/typescript_guest/text_codec_engine.py": {
+        "sha256": "sha256:22493a4a4d254e86f296493069094b3d27bf890b0eee84cf190f19b11f431e78",
+        "bytes": 2178
+      },
+      "tools/typescript_guest/clock_app.mjs": {
+        "sha256": "sha256:523fe669da8ee559e3c3d436f50d70fa83785c27603e4edbb67d441708b1a698",
+        "bytes": 2720
+      },
+      "tools/typescript_generator_authoring.py": {
+        "sha256": "sha256:a80543c5d49d9617b8cd4e69e51f41238e1a739f8799027394c48dc0e7c81f56",
+        "bytes": 14785
+      },
+      "tools/typescript_guest/entropy.mjs": {
+        "sha256": "sha256:44f7d2d5e58ed4ad88aee76471a7c0c10d32ca4379f4216162c84efd85094a94",
+        "bytes": 1224
+      },
+      "tools/typescript_guest/entropy_profile.py": {
+        "sha256": "sha256:a7808e01e0c017c6866db6a13dd279dc47447505694531fd88e427491b165309",
+        "bytes": 1294
+      },
+      "tools/typescript_guest/fetch.mjs": {
+        "sha256": "sha256:ad6a73821a309249e2e73d67f150f974c32e2284863ffb83424ae669a96490e9",
+        "bytes": 23266
+      },
+      "tools/typescript_guest/fetch_profile.py": {
+        "sha256": "sha256:f51b902c525464b8455559163eeb8fe3a28a29b29e25a407e31ef9801fadb837",
+        "bytes": 1118
+      },
+      "sdk/typescript-guest/activation/fetch-globals.d.ts": {
+        "sha256": "sha256:7e83c9cdd4e9f76f1652688f001dd4d5f332b83f3704c4e6549f1e6140162c40",
+        "bytes": 4561
+      },
+      "tools/typescript_guest/console.mjs": {
+        "sha256": "sha256:607180cea788ccf1b20689edab41156627af2ee2f3a3dfa553f342a840f133a9",
+        "bytes": 2944
+      },
+      "tools/typescript_guest/console_profile.py": {
+        "sha256": "sha256:57b9922333a7cb4ff5bb41e43d7570a9733fab1f86bfae7fdb589ef17c3a4aa6",
+        "bytes": 2276
+      },
+      "tools/typescript_guest/activation_module.mjs": {
+        "sha256": "sha256:4a7c04199588e6adc7b08aa9b9f76995f003ad35acf06d131786b7b05483c225",
+        "bytes": 4763
+      },
+      "sdk/typescript-guest/capabilities/console-globals.d.ts": {
+        "sha256": "sha256:d01a653793101b1defcd7321832e8b6a559e5d8f3469b99e737f6b5467835542",
+        "bytes": 235
+      },
+      ".github/workflows/typescript-explicit-fallback.yml": {
+        "sha256": "sha256:bc6f8129e51e64f31b504ef2b2d8f6a8faefc79035ac5ee5e03a6c04ca63efb6",
+        "bytes": 4120
+      },
+      "tools/qualify_typescript_explicit_fallback.py": {
+        "sha256": "sha256:74f35f1c01a53da4582535153b2febaca23c46297bfef51d9ef6e932858b8dc9",
+        "bytes": 6122
+      },
+      "tools/typescript_explicit_fallback_fixture.py": {
+        "sha256": "sha256:919414bd7399cf06db4848f43f8fc1290c2fe6787dd5a86d589af675846ca045",
+        "bytes": 5678
+      },
+      "tools/typescript_explicit_fallback_node.py": {
+        "sha256": "sha256:1d7f92eb98ed740f5171764b59ea1ae593f23f0d9fb286e22e59ce1813fe5734",
+        "bytes": 8325
+      },
+      "tools/tests/test_typescript_explicit_fallback.py": {
+        "sha256": "sha256:9e40689bccd45218b28822f7aab3dea573a07f28d73f3653b357c3d711df1228",
+        "bytes": 5279
+      }
+    },
+    "executedMaterials": 190,
+    "guestCompilerRerun": false,
+    "nativeRebuild": false
+  },
+  "nativeProvenance": {
+    "sourceForThreeProducts": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+    "sourceForTwoProducts": "f6251df89851de98cb869784d095ad5cc2e5b385",
+    "originalProductIdentitiesPreserved": true,
+    "nativeProductsRebuilt": false
+  },
+  "bounds": {
+    "guestBuilds": 1,
+    "signedCalls": 4,
+    "newClockGrant": false,
+    "javascriptEngineRebuilt": false,
+    "compilerPayloadsAndGeneratedAdapterBytesRetained": false,
+    "compilerIdentityRecordsRetained": true,
+    "signedAttestation": false,
+    "hermeticBuildClaimed": false,
+    "fullTicketQualified": false,
+    "remainingGaps": [
+      "native table and Store/instance aggregate memory ownership",
+      "all-language eliminated unsupported-path compiler evidence",
+      "all-language required runtime/profile/limit/lifecycle report coverage"
+    ]
+  }
+}
