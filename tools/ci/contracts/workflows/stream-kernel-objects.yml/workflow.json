@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "stream-kernel-objects-${{ github.ref }}"
+    },
+    "name": "Stream maintained kernel object check",
+    "on": {
+      "push": {
+        "branches": [
+          "test/stream-kernel-objects-20261021"
+        ],
+        "paths": [
+          ".github/workflows/stream-kernel-objects.yml",
+          "tools/qualify_host_stream_kernel_objects.py",
+          "tools/host_stream_kernel_protocol.py",
+          "research/standard-outbound/linux-6.12-lineage/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "selected-objects"
+  ],
+  "reviewReason": "Six real maintained Kbuild objects only; enable private source while preserving all x86 defconfig and active SELinux symbols; no link boot installation or whole-ticket completion",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-kernel-objects.yml"
+}
