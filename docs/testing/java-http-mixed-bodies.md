@@ -49,6 +49,16 @@ protocol-inclusive `6fd19eab2c224fc31481d03de5008de4d3e4429e` producer; all 3,31
 native source files and 134 materials, including 20 protocol files, must match
 before and after the consumer. Historical helpers and receipts remain unchanged.
 
+The first two hosted attempts stopped at component assembly, before signing or
+guest execution. The second retained the exact public core and adapter. Pinned
+`wasm-tools 1.254.0` reproduces its refusal: `Capsule.run` has a 13,797,140-byte
+body, exceeding the existing 7,654,321-byte validation limit. The fixture now
+places the four original case bodies in separate ordinary methods. Their
+operations, assertions, cleanup and result strings are unchanged; a host-JDK
+comparison of all ten modes preserves results, errors and ownership operations.
+This is a fixture refactor, not a raised parser limit or compiler acceptance
+change. The original failed artifacts and core remain unchanged.
+
 The eight focused source/controller controls and existing peer controls are not
 signed-component evidence. Hosted execution is pending. Earlier default-client,
 phase, SPI and tenant programmes keep their original source attribution. No full

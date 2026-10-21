@@ -107,6 +107,83 @@ public final class Capsule implements Bindings.Exports {
         } finally { request.disconnect(); }
     }
 
+    // Keep independently suspended cases in separate ordinary Java methods.
+    // Their original operations, ownership assertions and caller finally remain.
+    private static String requestBoundary(HttpURLConnection connection, Long which, int invocation) throws Exception {
+        connection.setDoOutput(true);
+        connection.setFixedLengthStreamingMode(which == 5 ? 4096 : 4097);
+        try {
+            byte[] bytes = new byte[4096];
+            for (int index = 0; index < bytes.length; index++) bytes[index] = 'x';
+            try (OutputStream output = connection.getOutputStream()) { output.write(bytes); }
+            if (which == 6) throw new IllegalStateException("over-limit-request-accepted");
+            JSONObject response;
+            try (InputStream input = connection.getInputStream()) {
+                response = new JSONObject(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+            }
+            StringBuilder expected = new StringBuilder();
+            for (int index = 0; index < 1365; index++) expected.append("eHh4");
+            expected.append("eA==");
+            if (!response.getString("bodyBase64").equals(expected.toString())
+                    || !response.getString("method").equals("POST")
+                    || !response.getBoolean("contentLengthPresent"))
+                throw new IllegalStateException("request-boundary-body-changed");
+            return invocation + ":request-boundary:4096:200";
+        } catch (IOException error) {
+            if (which != 6 || !code(error).equals("invalid-request")) throw error;
+            return invocation + ":request-limit:invalid-request";
+        }
+    }
+
+    private static String responseBoundary(HttpURLConnection connection, int invocation) throws Exception {
+        try (InputStream input = connection.getInputStream()) {
+            int length = 0;
+            for (int value; (value = input.read()) != -1;) {
+                if (value != 'x') throw new IllegalStateException("response-boundary-bytes-changed");
+                length++;
+            }
+            if (length != 8192) throw new IllegalStateException("response-boundary-length");
+            return invocation + ":response-boundary:8192:200";
+        }
+    }
+
+    private static String responseLimit(HttpURLConnection connection, int invocation) throws Exception {
+        try {
+            try (InputStream input = connection.getInputStream()) { input.readAllBytes(); }
+            throw new IllegalStateException("over-limit-response-accepted");
+        } catch (IOException error) {
+            if (!code(error).equals("response-too-large")) throw error;
+            return invocation + ":response-limit:response-too-large";
+        }
+    }
+
+    private static String responseViews(HttpURLConnection connection, Long which, int invocation) throws Exception {
+        try (InputStream input = connection.getInputStream()) {
+            byte[] prefix = new byte[5];
+            readPrefix(input, prefix);
+            if (which == 3) {
+                if (!new String(prefix, StandardCharsets.UTF_8).equals("short"))
+                    throw new IllegalStateException("truncation-prefix-lost");
+                try { input.read(); }
+                catch (IOException error) {
+                    if (!code(error).equals("unexpected-eof")) throw error;
+                    return invocation + ":partial-error:short:unexpected-eof";
+                }
+                throw new IllegalStateException("truncation-became-normal-eof");
+            }
+            InputStream borrowed = connection.getInputStream();
+            if (borrowed != input) throw new IllegalStateException("response-stream-was-replayed");
+            int length = prefix.length;
+            for (int value; (value = borrowed.read()) != -1;) length++;
+            if (length != 57 || input.read() != -1 || connection.getInputStream().read() != -1)
+                throw new IllegalStateException("consumed-response-restarted");
+            borrowed.close();input.close();
+            try { input.read(); }
+            catch (IOException closed) { return invocation + ":views:57:same:consumed:closed"; }
+            throw new IllegalStateException("closed-body-still-readable");
+        }
+    }
+
     public String run(Long which, String endpoint) {
         if (which == null || which < 0 || which > 9) throw new IllegalArgumentException("unknown-body-case");
         int invocation = ++calls;
@@ -120,75 +197,10 @@ public final class Capsule implements Bindings.Exports {
                 : which == 5 || which == 6 ? "/conformance/echo" : "/conformance/json";
             HttpURLConnection connection = connection(endpoint, path);
             try {
-                if (which == 5 || which == 6) {
-                    connection.setDoOutput(true);
-                    connection.setFixedLengthStreamingMode(which == 5 ? 4096 : 4097);
-                    try {
-                        byte[] bytes = new byte[4096];
-                        for (int index = 0; index < bytes.length; index++) bytes[index] = 'x';
-                        try (OutputStream output = connection.getOutputStream()) { output.write(bytes); }
-                        if (which == 6) throw new IllegalStateException("over-limit-request-accepted");
-                        JSONObject response;
-                        try (InputStream input = connection.getInputStream()) {
-                            response = new JSONObject(new String(input.readAllBytes(), StandardCharsets.UTF_8));
-                        }
-                        StringBuilder expected = new StringBuilder();
-                        for (int index = 0; index < 1365; index++) expected.append("eHh4");
-                        expected.append("eA==");
-                        if (!response.getString("bodyBase64").equals(expected.toString())
-                                || !response.getString("method").equals("POST")
-                                || !response.getBoolean("contentLengthPresent"))
-                            throw new IllegalStateException("request-boundary-body-changed");
-                        return invocation + ":request-boundary:4096:200";
-                    } catch (IOException error) {
-                        if (which != 6 || !code(error).equals("invalid-request")) throw error;
-                        return invocation + ":request-limit:invalid-request";
-                    }
-                }
-                if (which == 9) {
-                    try (InputStream input = connection.getInputStream()) {
-                        int length = 0;
-                        for (int value; (value = input.read()) != -1;) {
-                            if (value != 'x') throw new IllegalStateException("response-boundary-bytes-changed");
-                            length++;
-                        }
-                        if (length != 8192) throw new IllegalStateException("response-boundary-length");
-                        return invocation + ":response-boundary:8192:200";
-                    }
-                }
-                if (which == 4) {
-                    try {
-                        try (InputStream input = connection.getInputStream()) { input.readAllBytes(); }
-                        throw new IllegalStateException("over-limit-response-accepted");
-                    } catch (IOException error) {
-                        if (!code(error).equals("response-too-large")) throw error;
-                        return invocation + ":response-limit:response-too-large";
-                    }
-                }
-                try (InputStream input = connection.getInputStream()) {
-                    byte[] prefix = new byte[5];
-                    readPrefix(input, prefix);
-                    if (which == 3) {
-                        if (!new String(prefix, StandardCharsets.UTF_8).equals("short"))
-                            throw new IllegalStateException("truncation-prefix-lost");
-                        try { input.read(); }
-                        catch (IOException error) {
-                            if (!code(error).equals("unexpected-eof")) throw error;
-                            return invocation + ":partial-error:short:unexpected-eof";
-                        }
-                        throw new IllegalStateException("truncation-became-normal-eof");
-                    }
-                    InputStream borrowed = connection.getInputStream();
-                    if (borrowed != input) throw new IllegalStateException("response-stream-was-replayed");
-                    int length = prefix.length;
-                    for (int value; (value = borrowed.read()) != -1;) length++;
-                    if (length != 57 || input.read() != -1 || connection.getInputStream().read() != -1)
-                        throw new IllegalStateException("consumed-response-restarted");
-                    borrowed.close();input.close();
-                    try { input.read(); }
-                    catch (IOException closed) { return invocation + ":views:57:same:consumed:closed"; }
-                    throw new IllegalStateException("closed-body-still-readable");
-                }
+                if (which == 5 || which == 6) return requestBoundary(connection, which, invocation);
+                if (which == 9) return responseBoundary(connection, invocation);
+                if (which == 4) return responseLimit(connection, invocation);
+                return responseViews(connection, which, invocation);
             } finally { connection.disconnect(); }
         } catch (Exception error) {
             throw new IllegalStateException("ordinary-java-mixed-body-failed", error);
