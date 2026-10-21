@@ -64,6 +64,33 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
         raise ValueError('rust-http-original-blocking-io-missing')
     forward, root_record, root_files = root.prepare_project(directory/'root-source', canonical,
         original, read_file(work/'Cargo.lock', 8*1024*1024))
+    # The captured application's feature union can retain dependency edges that
+    # this smaller compiler-owned crate does not enable. Let Cargo normalize
+    # only metadata in the same offline captured namespace, then reject any
+    # package/identity/edge expansion before protecting the final build inputs.
+    original_proof = read_file(forward/'source-proof.json')
+    for name in root_files:
+        if name != 'Cargo.lock':
+            isolation.protect_inputs(forward/name)
+    environment_guard.check_unchanged(commands.environment)
+    metadata = isolation.wrap(tools['cargo'], ['metadata', '--offline', '--format-version', '1',
+        '--manifest-path', str(forward/'Cargo.toml')], forward, commands.environment)
+    commands.run('rust-http-compiler-root-normalize-lock', *metadata)
+    environment_guard.check_unchanged(commands.environment)
+    normalized = read_file(forward/'Cargo.lock', 8*1024*1024)
+    lock_record = root.normalized_lock(root_files['Cargo.lock'], normalized, root_record['name'])
+    if (read_file(forward/'source-proof.json') != original_proof
+            or any(read_file(forward/name) != body for name, body in root_files.items() if name != 'Cargo.lock')
+            or set(snapshot(forward)) != {*root_files, 'source-proof.json'}):
+        raise ValueError('rust-http-compiler-root-normalization-mutated-source')
+    write_json(output/'rust-http-root-locks.json', {'originalCapturedLockDigest': root_record['originalCapturedCargoLock'],
+        'projected': root_files['Cargo.lock'].decode(), 'normalized': normalized.decode(), 'validation': lock_record})
+    root_files['Cargo.lock'] = normalized
+    root_record['files'] = decode_json(inventory(root_files))
+    root_record['lockNormalization'] = lock_record
+    # This fresh owned proof is the only explicitly updated generated document;
+    # its preimage was checked above and both lock preimages are retained.
+    (forward/'source-proof.json').write_bytes((json.dumps(root_record, indent=2, ensure_ascii=False)+'\n').encode())
     isolation.protect_inputs(forward)
     environment_guard.check_unchanged(commands.environment)
     wrapped = isolation.wrap(tools['cargo'], ['build', '--locked', '--offline', '--release',
