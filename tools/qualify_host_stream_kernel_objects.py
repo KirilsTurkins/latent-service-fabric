@@ -20,6 +20,7 @@ from tools import host_stream_kernel_maintained as maintained
 from tools import host_stream_kernel_protocol as protocol
 from tools import host_stream_kernel_netlabel as netlabel_source
 from tools import host_stream_kernel_netport as netport_source
+from tools import host_stream_kernel_sidcache as sidcache_source
 from tools.owned_test_process import ProcessFailure, run_owned
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,11 +59,23 @@ NETPORT_OBJECTS = {
 }
 NETPORT_FACTORY = ('lsf_factory_netport_publish', 'lsf_factory_netport_queue',
                    'lsf_factory_netport_candidate', 'lsf_factory_netport_current')
+SIDCACHE_FACTORY = ('lsf_factory_sidcache_publish', 'lsf_factory_sidcache_queue',
+    'lsf_factory_sidcache_destroy', 'lsf_factory_sidcache_candidate', 'lsf_factory_sidcache_current')
+SIDCACHE_SERVICES = ('lsf_prepaid_audit_dup', 'lsf_prepaid_audit_string_return',
+    'lsf_prepaid_sidcache_drain', 'lsf_prepaid_security_sid_to_context')
+SIDCACHE_OBJECTS = {'security/selinux/ss/sidtab.o':
+    ('lsf_prepaid_sid2str_put', 'lsf_prepaid_sid2str_get', 'lsf_prepaid_sidcache_detach')}
 
 
-def object_selection(netlabel, netport=False):
-    require(type(netlabel) is bool and type(netport) is bool, 'closed-profile-selector')
-    require(not (netlabel and netport), 'exclusive-profile-selector')
+def object_selection(netlabel, netport=False, sidcache=False):
+    require(all(type(value) is bool for value in (netlabel, netport, sidcache)), 'closed-profile-selector')
+    require(sum((netlabel, netport, sidcache)) <= 1, 'exclusive-profile-selector')
+    if sidcache:
+        selected = object_selection(False, True)
+        selected.update(SIDCACHE_OBJECTS)
+        selected['net/factory.o'] += SIDCACHE_FACTORY
+        selected['security/selinux/ss/services.o'] += SIDCACHE_SERVICES
+        return selected
     if netport:
         return {**OBJECTS, **NETLABEL_OBJECTS, **NETPORT_OBJECTS,
             'net/factory.o': OBJECTS['net/factory.o'] + NETLABEL_FACTORY + NETPORT_FACTORY}
@@ -159,14 +172,20 @@ def netlabel_configuration(before, after):
             'netlabel-originally-disabled')
 
 
+def sidcache_configuration(before, after):
+    require(before.get('CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE') ==
+            after.get('CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE') == '256',
+            'sidcache-original-256-entry-profile-required')
+
+
 def identity(path):
     require(path.is_file() and not path.is_symlink(), 'regular-product-required')
     with path.open('rb') as stream:
         return {'bytes': path.stat().st_size, 'sha256': hashlib.file_digest(stream, 'sha256').hexdigest()}
 
 
-def run(archive, output, *, netlabel=False, netport=False):
-    selected_objects = object_selection(netlabel, netport)
+def run(archive, output, *, netlabel=False, netport=False, sidcache=False):
+    selected_objects = object_selection(netlabel, netport, sidcache)
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('RUNNER_OS') == 'Linux', 'hosted-linux-only')
     value = maintained.manifest()
@@ -177,8 +196,8 @@ def run(archive, output, *, netlabel=False, netport=False):
     # All archive readers and tar now consume this private verified snapshot,
     # never reopen the caller's mutable pathname. Recheck before any make.
     additional_sources = ('net/Kconfig', 'net/Makefile')
-    if netlabel or netport:
-        recipe = netport_source if netport else netlabel_source
+    if netlabel or netport or sidcache:
+        recipe = sidcache_source if sidcache else netport_source if netport else netlabel_source
         additional_sources += tuple(name for name in recipe.fixture()['source'] if name not in value['source'])
     original = maintained.authenticate_archive(archive, value, additional_sources)
     archive_identity = identity(archive)
@@ -209,7 +228,10 @@ def run(archive, output, *, netlabel=False, netport=False):
         require(identity(archive) == archive_identity, 'snapshot-changed-during-extraction')
         require(all((tree / name).read_bytes() == raw for name, raw in original.items()), 'extracted-preimage-drift')
         stage = 'derive'
-        if netport:
+        if sidcache:
+            derived = sidcache_source.derive({name: original[name] for name in sidcache_source.fixture()['source']})
+            receipt['profile'] = 'sidcache-audit-string-owner-source'
+        elif netport:
             derived = netport_source.derive({name: original[name] for name in netport_source.fixture()['source']})
             receipt['profile'] = 'netport-cache-owner-source'
         else:
@@ -241,23 +263,29 @@ def run(archive, output, *, netlabel=False, netport=False):
         commands.run('resolve-selected-config', *common, 'olddefconfig')
         final = (build / '.config').read_bytes()
         selected_configuration(before, configuration(final))
-        if netlabel or netport:
+        if netlabel or netport or sidcache:
             netlabel_configuration(before, configuration(final))
             receipt['netlabelEnabledBeforeAndAfter'] = True
+        if sidcache:
+            sidcache_configuration(before, configuration(final))
+            receipt['sidcacheOriginalEntries'] = 256
         (output / 'selected.config').write_bytes(final)
         receipt['configuration'] = {'baseline': identity(output / 'baseline.config'),
             'selected': identity(output / 'selected.config'), 'onlyChangedSymbol': SELECTED,
             'securityAndInetPreserved': list(REQUIRED)}
         receipt['compiler'] = compiler
         paths.write_new(output / 'selection.json', (json.dumps(receipt, indent=2)+'\n').encode())
-        stage = 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
-        commands.run('fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
+        stage = 'fifteen-sidcache-objects' if sidcache else 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
+        commands.run('fifteen-selected-real-kbuild-objects' if sidcache else 'fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
                      *common, '-j2', *selected_objects)
         autoconf = (build / 'include/generated/autoconf.h').read_bytes()
         require(all(('#define '+name+' 1\n').encode() in autoconf for name in (*REQUIRED, SELECTED)),
             'generated-private-or-security-code-disabled')
-        if netlabel or netport:
+        if netlabel or netport or sidcache:
             require(b'#define CONFIG_NETLABEL 1\n' in autoconf, 'netlabel-generated-code-disabled')
+        if sidcache:
+            require(b'#define CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE 256\n' in autoconf,
+                    'sidcache-generated-profile-disabled')
         require((build / '.config').read_bytes() == final, 'build-mutated-config')
         receipt['objects'] = {}
         for name, expected in selected_objects.items():
@@ -290,5 +318,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--netlabel', action='store_true', help='select the closed nested-label object-only profile')
     parser.add_argument('--netport', action='store_true', help='select the closed port-cache object-only profile')
+    parser.add_argument('--sidcache', action='store_true', help='select the closed SID-cache and audit-string object-only profile')
     args = parser.parse_args()
-    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport)
+    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport, sidcache=args.sidcache)
