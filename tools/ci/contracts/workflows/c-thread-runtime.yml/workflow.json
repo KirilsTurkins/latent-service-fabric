@@ -28,6 +28,8 @@
           "tools/c_guest/compiler.py",
           "tools/c_guest/threading_compatibility.py",
           "sdk/c-guest/runtime/tls-keys.c",
+          "sdk/c-guest/runtime/threads.c",
+          "sdk/c-guest/runtime/template-copy.c",
           "docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json",
           "tools/tests/test_c_threading_profile.py",
           "tools/tests/test_c_threading_compatibility.py",
@@ -49,7 +51,7 @@
   "requiredJobs": [
     "ordinary-c-threads"
   ],
-  "reviewReason": "Root approved exact f2443+f6252 acquisition and five current native source files; original17 signed outcomes, fixed budgets,49 owning preflight cases, compile/package/sign/provider/physical/fresh oracles unchanged; no native build.",
+  "reviewReason": "Retain all existing C lifecycle triggers and cover both the caller and its separately compiled refusal stub",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

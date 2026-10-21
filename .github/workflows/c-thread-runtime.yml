@@ -20,6 +20,8 @@ on:
       - 'tools/c_guest/compiler.py'
       - 'tools/c_guest/threading_compatibility.py'
       - 'sdk/c-guest/runtime/tls-keys.c'
+      - 'sdk/c-guest/runtime/threads.c'
+      - 'sdk/c-guest/runtime/template-copy.c'
       - 'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json'
       - 'tools/tests/test_c_threading_profile.py'
       - 'tools/tests/test_c_threading_compatibility.py'

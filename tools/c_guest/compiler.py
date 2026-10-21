@@ -199,7 +199,7 @@ class Compiler:
             graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))
             public = threading.public_export(graph)
             runtime = self.sdk / 'runtime'
-            sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c']
+            sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c', runtime / 'template-copy.c']
             include_directories = (*include_directories, runtime)
             defines = threading.linked_defines(defines)
         self.validate_static_libraries(static_libraries, destination)
@@ -211,7 +211,9 @@ class Compiler:
                    "-I", str(self.sdk / "include"), *map(str, sources)]
         thread_flags = []
         if threaded:
-            thread_flags = ['-matomics', '-mbulk-memory', '-pthread']
+            # The post-link template-copy body is deliberately opaque to its
+            # callers; LTO could propagate its temporary refusal into them.
+            thread_flags = ['-matomics', '-mbulk-memory', '-pthread', '-fno-lto']
             for family in ('wasm-wasi-musl', 'generic-musl'):
                 thread_flags.extend(['-isystem', str(self.paths['zig'].parent / 'lib/libc/include' / family)])
             command[command.index('-Wl,-z,stack-size=65536')] = '-Wl,-z,stack-size=69632'
