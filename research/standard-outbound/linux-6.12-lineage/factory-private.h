@@ -35,6 +35,13 @@ void *lsf_factory_blob_allocate(struct lsf_factory_context *, unsigned long,
 int lsf_factory_blob_lookup(const void *, unsigned int, struct lsf_factory_blob *);
 int lsf_factory_blob_queue(const void *);
 int lsf_factory_blob_finish(struct lsf_factory_blob, unsigned int);
+void *lsf_factory_child_allocate(struct lsf_factory_blob, unsigned long,
+                                unsigned int);
+int lsf_factory_protocol_parent(const void *, struct lsf_factory_context *,
+                                struct lsf_prepaid_ticket, struct lsf_factory_blob *);
+int lsf_factory_options_publish(const void *);
+int lsf_factory_options_queue(const void *);
+int lsf_factory_options_owned(const void *, struct lsf_factory_blob);
 
 /* Deliberately unavailable: mandatory security, outer VFS, protocol, RX,
  * route/cache/deferred layout and final-free consumers are not yet complete.

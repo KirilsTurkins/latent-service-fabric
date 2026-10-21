@@ -174,6 +174,59 @@ void *lsf_factory_blob_allocate(struct lsf_factory_context *context,
     return result;
 }
 
+void *lsf_factory_child_allocate(struct lsf_factory_blob parent,
+                                 unsigned long bytes, unsigned int kind)
+{
+    struct lsf_factory_context *context;
+    struct lsf_prepaid_ticket ticket;
+    lsf_u64 offset;
+    unsigned long flags;
+    void *result = NULL;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(parent.context);
+    if (context && lsf_prepaid_child_allocate(&factory.pool, context->key, bytes,
+                                               kind, parent.ticket, &ticket, &offset)) {
+        result = (char *)page_address(factory.pages) + offset;
+        memset(result, 0, bytes);
+    }
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+/* Read only the origin established before the original socket was published.
+ * An exact live record must ALREADY match that object's actual address. This
+ * cannot register an unrelated socket or create a new context/admission. */
+int lsf_factory_protocol_parent(const void *address,
+    struct lsf_factory_context *context, struct lsf_prepaid_ticket ticket,
+    struct lsf_factory_blob *copy)
+{
+    struct lsf_prepaid_view *record;
+    unsigned long flags, base, value = (unsigned long)address;
+    int result = 0;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (!context || !factory.pages || !ticket.slot ||
+        ticket.slot >= LSF_ALLOCATION_SLOTS || !copy)
+        goto invalid;
+    record = &factory.pool.records[ticket.slot];
+    base = (unsigned long)page_address(factory.pages);
+    if (value < base || value - base >= LSF_BACKING_BYTES ||
+        record->offset != value - base || record->phase != LSF_PREPAID_LIVE ||
+        record->kind != LSF_PREPAID_OBJECT || record->deferred ||
+        record->generation != ticket.generation || record->owner != context->key.slot ||
+        record->owner_generation != context->key.generation)
+        goto invalid;
+    copy->context = context;
+    copy->ticket = ticket;
+    result = 1;
+    goto out;
+invalid:
+    factory.pool.poisoned = 1;
+out:
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
 /* Caller holds pool_lock. No dereference of address occurs. Classification
  * outside this single protected extent retains the original normal free path.
  * Exact births INSIDE it are the only valid private returns. Unknown interior
@@ -216,6 +269,52 @@ int lsf_factory_blob_queue(const void *address)
     result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_INODE_BLOB, &copy);
     if (result == 1 && !lsf_prepaid_blob_queue(&factory.pool, copy.context->key,
                                               copy.ticket))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_options_publish(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_IP_OPTIONS, &copy);
+    if (result == 1 && !lsf_prepaid_options_publish(&factory.pool, copy.context->key,
+                                                  copy.ticket))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+/* Owned replacement must not inherit an uncharged normal or other-context
+ * option. Ordinary sockets still use their original producers/free paths. */
+int lsf_factory_options_owned(const void *address, struct lsf_factory_blob parent)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_IP_OPTIONS, &copy);
+    if (result != 1 || copy.context != lsf_factory_context_current(parent.context) ||
+        factory.pool.records[copy.ticket.slot].deferred != LSF_PREPAID_PUBLISHED) {
+        factory.pool.poisoned = 1;
+        result = 0;
+    }
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_options_queue(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_IP_OPTIONS, &copy);
+    if (result == 1 && !lsf_prepaid_record_queue(&factory.pool, copy.context->key,
+                                               copy.ticket, LSF_PREPAID_IP_OPTIONS))
         result = -1;
     spin_unlock_irqrestore(&pool_lock, flags);
     return result;
