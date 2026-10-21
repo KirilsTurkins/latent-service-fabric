@@ -38,10 +38,10 @@ def revision(number: int) -> dict:
     if number not in (1, 2):
         raise ValueError('unknown owned watch fixture revision')
     version, increment = ('v0.1.0', 39) if number == 1 else ('v0.1.1', 40)
-    return {'primary': {'go.mod': ('module ' + PRIMARY + '\n\ngo 1.27.2\n\nrequire ' + CHILD + ' ' + version +
+    return {'primary': {'go.mod': ('module ' + PRIMARY + '\n\ngo 1.27.3\n\nrequire ' + CHILD + ' ' + version +
         '\nreplace ' + CHILD + ' => ../child\n').encode(),
         'primary.go': PRIMARY_SOURCE, 'badge.txt': RESOURCE},
-        'child': {'go.mod': ('module ' + CHILD + '\n\ngo 1.27.2\n').encode(),
+        'child': {'go.mod': ('module ' + CHILD + '\n\ngo 1.27.3\n').encode(),
             'child.go': ('package child\nfunc Add(value uint32) uint32 {return value+' + str(increment) + '}\n').encode()}}
 
 

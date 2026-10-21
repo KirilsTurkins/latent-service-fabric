@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "lsf.compatibility-attribution-retained-reader.v1",
+  "evidence": "retained-data-reprojection",
+  "originalSource": "f9a296e9f302de6c489445e2e92b18ad6ac2aef3",
+  "originalRun": 39529845887,
+  "originalJob": 118992976265,
+  "artifact": 12314528828,
+  "archiveBytes": 1961005,
+  "archiveSha256": "sha256:e7d712304486307888e4a1dae70cd319962a2ee346a33349041ada348796a88e",
+  "membersReadAndVerified": 2,
+  "originalReport": {
+    "bytes": 1252,
+    "sha256": "sha256:50b68ad9e8916f806246ce3d5e6c3ccaad11d20bacc0996d4ed6bec616156cac"
+  },
+  "originalContext": {
+    "bytes": 3861,
+    "sha256": "sha256:2cdd76a4b3fcafdf900c7368113aea5308f63fb7e4fb73836c3c05b621974d3a"
+  },
+  "previousPresentationRetainedRuntimeIdentities": false,
+  "correctedPresentationRetainedRuntimeIdentities": true,
+  "actualRetainedRuntimeAndPatchMaterials": 1,
+  "reportBytesChanged": false,
+  "contextBytesChanged": false,
+  "newGuestExecution": false,
+  "newCompilerExecution": false,
+  "nativeProductsRebuilt": false,
+  "runtimeQualificationExpanded": false
+}

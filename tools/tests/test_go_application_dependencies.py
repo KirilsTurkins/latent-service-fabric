@@ -122,7 +122,7 @@ class GoDependencies(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             cache = Path(temporary)
             versions = {'v1.3.0': b'module example.test/Upper/Library\n',
-                        'v1.8.0': b'module example.test/Upper/Library\n\ngo 1.27.2\n'}
+                        'v1.8.0': b'module example.test/Upper/Library\n\ngo 1.27.3\n'}
             expected = {}
             for version, raw in versions.items():
                 path = cache / ('example.test/!upper/!library/@v/' + version + '.mod')
@@ -155,7 +155,7 @@ class GoDependencies(unittest.TestCase):
             self.assertEqual(graph_manifests(cache, expected), {'example.test/library/@v/v1.0.0.mod': raw})
 
     def test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection(self):
-        root = {'Module': {'Path': 'application.example.test/new-identity'}, 'Go': '1.27.2',
+        root = {'Module': {'Path': 'application.example.test/new-identity'}, 'Go': '1.27.3',
                 'Exclude': [{'Path': 'module.example.test/transitive', 'Version': 'v0.9.0'}]}
         modules = [{'Path': root['Module']['Path'], 'Main': True},
                    {'Path': 'module.example.test/library', 'Version': 'v1.0.0',
@@ -163,7 +163,7 @@ class GoDependencies(unittest.TestCase):
                    {'Path': 'module.example.test/transitive', 'Version': 'v1.3.0', 'Indirect': True}]
         actual = graph(modules, root['Module']['Path'] + ' module.example.test/library@v1.0.0\n'
                        'module.example.test/library@v1.0.0 module.example.test/transitive@v1.1.0\n'
-                       + root['Module']['Path'] + ' go@1.27.2\n', root)
+                       + root['Module']['Path'] + ' go@1.27.3\n', root)
         self.assertEqual(actual['edges'][1]['minimumVersion'], 'v1.1.0')
         self.assertTrue(actual['edges'][2]['nativeToolchainDirective'])
         self.assertEqual(actual['exclusions'], root['Exclude'])

@@ -46,8 +46,8 @@ def source_project(language: str, directory: Path, outside: Path):
     parent.mkdir(); child.mkdir()
     first, second = PACKAGES[language]
     if language == 'go':
-        (parent/'go.mod').write_bytes(f'module {first}\n\ngo 1.27.2\nrequire {second} v0.0.0\n'.encode())
-        (child/'go.mod').write_bytes(f'module {second}\n\ngo 1.27.2\n'.encode())
+        (parent/'go.mod').write_bytes(f'module {first}\n\ngo 1.27.3\nrequire {second} v0.0.0\n'.encode())
+        (child/'go.mod').write_bytes(f'module {second}\n\ngo 1.27.3\n'.encode())
         for target, name in ((parent/'library.go','library.go'),(child/'data.go','data.go')):
             target.write_bytes(read_file(ROOT/EXAMPLE/'go'/name))
         name = 'src/main.go'; marker = b'func Greet(name string) wit.Result[string, string] {'
