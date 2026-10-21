@@ -12,6 +12,34 @@ from tools.rust_capsule_project import canonical,digest
 
 
 class SourceAndNativeSeparation(unittest.TestCase):
+    def test_actual_output_guard_receipt_and_original_compiler_success_are_both_required(self):
+        from tools.rust_capsule_build import RustExecutableOutputs
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);target=root/'target';(target/'release/deps').mkdir(parents=True)
+            (target/'release/deps/libcontrol.so').write_bytes(b'controlled original tool output')
+            output=root/'output';output.mkdir()
+            approval={'identity':'sha256:'+'a'*64}
+            guard=RustExecutableOutputs(target,output,approval['identity'])
+            receipt=json.loads(guard.path.read_bytes())
+            self.assertEqual(set(receipt),{'formatVersion','approvalIdentity','cleanup','hermetic','outputs'})
+            with self.assertRaises(KeyError):receipt['compilerCommandSucceeded']
+            commands=[{'stage':'compile','exitCode':0}]
+            qualification.verify_executable_outputs(receipt,approval,commands)
+            for key,value in (('formatVersion',True),('approvalIdentity','sha256:'+'b'*64),
+                ('cleanup','uncertain'),('hermetic',True),('outputs',{})):
+                changed=copy.deepcopy(receipt);changed[key]=value
+                with self.subTest(key=key),self.assertRaises(Exception):
+                    qualification.verify_executable_outputs(changed,approval,commands)
+            for changed_commands in ([],[{'stage':'compile','exitCode':1}],
+                    [{'stage':'rust-http-compiler-root-compile','exitCode':0}],commands+commands):
+                with self.subTest(commands=changed_commands),self.assertRaises(Exception):
+                    qualification.verify_executable_outputs(receipt,approval,changed_commands)
+            changed=copy.deepcopy(receipt)
+            changed['outputs']['release/deps/libcontrol.so']['size']=64*1024**2+1
+            with self.assertRaises(Exception):qualification.verify_executable_outputs(changed,approval,commands)
+            changed=copy.deepcopy(receipt);changed['compilerCommandSucceeded']=True
+            with self.assertRaises(Exception):qualification.verify_executable_outputs(changed,approval,commands)
+
     def test_backend_producer_origin_requires_exact_successful_source_job_and_artifact(self):
         from tools import rust_wasi_http_backend_products as backend
         run={'id':backend.RUN,'head_sha':backend.SOURCE,'head_branch':'feat/rust-wasi-http-profile-20261021',

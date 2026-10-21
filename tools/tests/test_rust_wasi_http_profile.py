@@ -163,6 +163,34 @@ class OriginalSourceAndAuthority(unittest.TestCase):
 
 
 class CompilerRoot(unittest.TestCase):
+    def test_additional_compiler_outputs_refuse_in_app_target_and_remain_separately_observed(self):
+        from tools.rust_capsule_build import RustExecutableOutputs, executable_output_inventory
+        from tools.application_dependency_store import DependencyError
+        with tempfile.TemporaryDirectory() as temporary:
+            owned = Path(temporary)
+            application = owned/'application-target'
+            (application/'release/deps').mkdir(parents=True)
+            (application/'release/deps/liboriginal.so').write_bytes(b'original approved macro')
+            output = owned/'observation'
+            output.mkdir()
+            guard = RustExecutableOutputs(application, output, 'sha256:'+'a'*64)
+            guard.check_unchanged()
+            added = application/'release/deps/libcompiler_root.so'
+            added.write_bytes(b'compiler-owned macro')
+            with self.assertRaisesRegex(DependencyError, 'cargo-executable-outputs-mutated'):
+                guard.check_unchanged()
+            added.unlink()
+            separate = owned/'rust-http-composition/compiler-target'
+            (separate/'release/deps').mkdir(parents=True)
+            macro = separate/'release/deps/libcompiler_root.so'
+            macro.write_bytes(b'compiler-owned macro')
+            snapshot = executable_output_inventory(separate)
+            self.assertIn('release/deps/libcompiler_root.so', snapshot)
+            guard.check_unchanged()
+            macro.write_bytes(b'changed compiler-owned macro')
+            self.assertNotEqual(executable_output_inventory(separate), snapshot)
+            guard.check_unchanged()
+
     def test_normalized_lock_only_prunes_original_edges_and_preserves_captured_identities(self):
         name = 'lsf-owned-http-root-'+'b'*16
         original = ('''version = 4

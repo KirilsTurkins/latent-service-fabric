@@ -1,5 +1,6 @@
 {
   "cases": [
+    "CompilerRoot.test_additional_compiler_outputs_refuse_in_app_target_and_remain_separately_observed",
     "CompilerRoot.test_compiler_lock_keeps_exact_captured_sdk_closure_and_refuses_ambiguity",
     "CompilerRoot.test_normalized_lock_only_prunes_original_edges_and_preserves_captured_identities",
     "CompilerRoot.test_private_projection_never_changes_public_exports_or_unrelated_types",
@@ -13,6 +14,18 @@
     "OriginalSourceAndAuthority.test_whole_original_files_and_manifest_are_authenticated"
   ],
   "guards": {
+    "CompilerRoot.test_additional_compiler_outputs_refuse_in_app_target_and_remain_separately_observed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:687d2ccd06fc5f1099580d61d3935ebb2a5a75de84b78b28171dfd5d68be005e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "CompilerRoot.test_compiler_lock_keeps_exact_captured_sdk_closure_and_refuses_ambiguity": {
       "bases": [
         "unittest.TestCase"
@@ -148,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_profile.py",
-  "reviewReason": "Review bounded captured-lock normalization and exact compiler-root import mapping controls; preserve all existing cases",
+  "reviewReason": "Review separate compiler-target output guard causal control; all existing cases retained",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -93,8 +93,16 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
     (forward/'source-proof.json').write_bytes((json.dumps(root_record, indent=2, ensure_ascii=False)+'\n').encode())
     isolation.protect_inputs(forward)
     environment_guard.check_unchanged(commands.environment)
+    target = directory/'compiler-target'
+    application_target = Path(commands.environment['CARGO_TARGET_DIR']).resolve(strict=True)
+    if (target.exists() or target.is_symlink() or not target.is_relative_to(isolation.workspace)
+            or target == application_target or target in application_target.parents
+            or application_target in target.parents):
+        raise ValueError('rust-http-compiler-root-fresh-separate-owned-target')
+    target.mkdir(mode=0o700)
     wrapped = isolation.wrap(tools['cargo'], ['build', '--locked', '--offline', '--release',
-        '--lib', '--target', 'wasm32-unknown-unknown', '--manifest-path', str(forward/'Cargo.toml')],
+        '--lib', '--target', 'wasm32-unknown-unknown', '--target-dir', str(target),
+        '--manifest-path', str(forward/'Cargo.toml')],
         forward, commands.environment)
     commands.run('rust-http-compiler-root-compile', *wrapped)
     environment_guard.check_unchanged(commands.environment)
@@ -102,7 +110,16 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
         raise ValueError('rust-http-compiler-root-source-mutated')
     if decode_json(read_file(forward/'source-proof.json')) != root_record:
         raise ValueError('rust-http-compiler-root-proof-mutated')
-    target = Path(commands.environment['CARGO_TARGET_DIR'])
+    from tools.rust_capsule_build import executable_output_inventory
+    root_outputs = executable_output_inventory(target)
+    root_output_record = {'schemaVersion': 'latent.rust.http.compiler-root-outputs.v1',
+        'target': target.relative_to(isolation.workspace).as_posix(),
+        'targetOwner': 'fresh-compiler-owned-root', 'applicationTargetIsSeparate': True,
+        'rootSource': digest(inventory(root_files)), 'originalCapturedLock': root_record['originalCapturedCargoLock'],
+        'normalizedLock': lock_record['normalizedLockDigest'], 'outputs': root_outputs,
+        'applicationOutputGuard': 'original caller guard remains mandatory'}
+    write_json(output/'rust-http-root-executable-outputs.json', root_output_record)
+    root_outputs_digest = digest(json.dumps(root_output_record, sort_keys=True, separators=(',', ':')).encode())
     module = target/'wasm32-unknown-unknown/release'/(root_record['name'].replace('-', '_')+'.wasm')
     raw_root = directory/'root-original.wasm'
     commands.run('rust-http-compiler-root-component', tools['wasm-tools'], 'component', 'new',
@@ -151,9 +168,13 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
     prepared.check()
     if read_file(component, MAX_COMPONENT) != before_component or read_file(script, 65536) != source:
         raise ValueError('rust-http-composition-original-input-changed')
+    if (executable_output_inventory(target) != root_outputs
+            or decode_json(read_file(output/'rust-http-root-executable-outputs.json')) != root_output_record):
+        raise ValueError('rust-http-compiler-root-executable-outputs-mutated')
     record = {'schemaVersion': 'latent.rust.http.exact-composition.v1', 'profile': profile.PROFILE,
         'originalComponentDigest': digest(before_component), 'selectedComponentDigest': digest(selected_bytes),
-        'root': root_record, 'internalIo': io_record, 'privateDrain': root_io_record,
+        'root': root_record, 'compilerRootOutputs': root_outputs_digest,
+        'internalIo': io_record, 'privateDrain': root_io_record,
         'source': digest(source), 'originalCoreModulesRetained': len(list(original_cores.elements())),
         'publicGraphUnchanged': True, 'imports': sorted(final_imports),
         'exports': sorted(profile.names(final, 'exports')), 'runtimeReceipt': digest(prepared.material()),

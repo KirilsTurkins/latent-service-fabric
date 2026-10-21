@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import json
+import re
 from pathlib import Path
 import secrets
 import subprocess
@@ -115,6 +116,33 @@ def catalogue_inputs(source,recipe,installed_sdk):
         'proof':'complete actual source-inputs.json and recipe-inputs.json names, both bound to current bytes'}
 
 
+def verify_executable_outputs(outputs, approval, commands):
+    from tools.rust_capsule_build import MAX_EXECUTABLE_OUTPUT_BYTES, MAX_EXECUTABLE_OUTPUT_FILES
+    require(type(outputs) is dict and set(outputs)=={'formatVersion','approvalIdentity','cleanup','hermetic','outputs'}
+        and type(outputs['formatVersion']) is int and outputs['formatVersion']==1
+        and outputs['approvalIdentity']==approval['identity']
+        and outputs['cleanup']=='namespace-and-owned-process-reaped' and outputs['hermetic'] is False,
+        'rust-http-real-executable-output-receipt')
+    rows=outputs['outputs']
+    require(type(rows) is dict and 0<len(rows)<=MAX_EXECUTABLE_OUTPUT_FILES,
+        'rust-http-executable-output-file-bound')
+    total=0
+    for name,row in rows.items():
+        require(type(name) is str and 0<len(name)<=4096 and '\\' not in name
+            and all(part not in {'','.','..'} for part in name.split('/'))
+            and type(row) is dict and set(row)=={'digest','size'}
+            and type(row['digest']) is str and re.fullmatch('sha256:[0-9a-f]{64}',row['digest']) is not None
+            and type(row['size']) is int and 0<=row['size']<=MAX_EXECUTABLE_OUTPUT_BYTES,
+            'rust-http-executable-output-identity')
+        total+=row['size']
+        require(total<=MAX_EXECUTABLE_OUTPUT_BYTES,'rust-http-executable-output-byte-bound')
+    require(type(commands) is list and all(type(row) is dict for row in commands),
+        'rust-http-original-compiler-command-records')
+    actual=[row for row in commands if row.get('stage')=='compile']
+    require(len(actual)==1 and type(actual[0].get('exitCode')) is int and actual[0]['exitCode']==0,
+        'rust-http-original-compiler-command-success')
+
+
 def verify_build(artifact,app,captured,approval,prepared):
     require(read_file(artifact/'source-inputs.json')==captured
         and inventory(snapshot(app))==captured and verify_inputs(app,'rust') is not None,
@@ -123,8 +151,7 @@ def verify_build(artifact,app,captured,approval,prepared):
     require(marker['observationDigest']==digest(read_file(artifact/'build-observation.json')),
         'rust-http-normal-build-observation-marker')
     outputs=read_json(artifact/'executable-input-outputs.json',32*1024**2)
-    require(outputs['approvalIdentity']==approval['identity'] and outputs['compilerCommandSucceeded'] is True,
-        'rust-http-exact-16-executable-approval-and-outputs')
+    verify_executable_outputs(outputs,approval,marker['commands'])
     require(read_json(artifact/'executable-input-approval-request.json',8*1024**2)==approval,
         'rust-http-retained-executable-approval-changed')
     recipe=read_json(artifact/'recipe-inputs.json',8*1024**2)
