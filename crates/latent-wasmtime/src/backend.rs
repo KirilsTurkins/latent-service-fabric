@@ -806,6 +806,7 @@ impl WasmtimeBackend {
                 } else {
                     0
                 },
+                !self.config.owned_native_threads,
             )?;
             // Native admission was charged before the first engine counter is
             // installed. Its original fuel is never copied into a fresh allowance.

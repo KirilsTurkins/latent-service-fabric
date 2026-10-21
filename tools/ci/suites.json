@@ -7369,7 +7369,10 @@
         "component_threading::tests::c_profile_requires_prepaid_work_before_reading_proof_and_never_grants_from_data",
         "component_threading::tests::c_profile_proof_cannot_replay_as_rust_or_under_default_cache_settings",
         "config::engine::tests::c_bootstrap_changes_only_the_explicit_closed_native_profile_field",
-        "aot::ownership::tests::recomputed_input_work_shares_the_original_aggregate_and_refunds_after_owner_drop"
+        "aot::ownership::tests::recomputed_input_work_shares_the_original_aggregate_and_refunds_after_owner_drop",
+        "native_stacks::tests::async_workers_share_original_native_and_memory_limits_and_retire_after_unmap",
+        "native_stacks::tests::async_worker_memory_refusal_rolls_back_native_admission_before_mapping",
+        "native_stacks::tests::actual_nested_async_import_needs_an_engine_worker_without_a_c_thread_start"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7382,7 +7385,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 395,
+      "minimumCases": 398,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
