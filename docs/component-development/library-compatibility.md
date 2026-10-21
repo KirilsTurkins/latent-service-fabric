@@ -251,3 +251,27 @@ The separate [six-language API/runtime matrix](runtime-capabilities.md) identifi
 finite implemented and qualified surfaces, explicit profile limits and proposed
 ports without using sample package names as API eligibility. Its versioned data
 binds source files and original evidence; it installs no runtime or authority.
+
+The [six-language final-import control](../testing/evidence/six-language-final-import-controls-2026-10-21.json)
+checks actual retained C, Rust, Go, TypeScript, Java and .NET components with
+`wasm-tools 1.254.0` and the normal final-component inspector. Each original
+passes. A declaration-only suffix adds the callable
+`diagnostic:unknown/final-import@0.1.0` interface while preserving every original
+byte, core module, initializer and existing import. Both binaries validate; the
+inspector then rejects the added interface as `unknown-import` at link time.
+No guest is compiled, signed or executed by this check. Runtime compatibility,
+permission, fallback and physical retirement still require their own evidence.
+
+To reproduce, restore `component.wasm` and `capsule.json` for each language into
+`INPUTS/LANGUAGE/`, matching the exact file and origin identities in
+`tools/tests/fixtures/final-import-components.json`, then run:
+
+```sh
+python -B tools/qualify_guest_final_imports.py --inputs INPUTS --output NEW_OUTPUT --wasm-tools PATH_TO_WASM_TOOLS
+```
+
+The fresh output contains the original and changed components, actual WIT,
+refusal reports and bounded command diagnostics. The index-space decoder refuses
+unsupported forms or bounds; it never treats its own decoding as Wasm validation.
+The published record includes all 32 successful tool calls, source and original
+input hashes, and the two earlier control failures and their precise corrections.
