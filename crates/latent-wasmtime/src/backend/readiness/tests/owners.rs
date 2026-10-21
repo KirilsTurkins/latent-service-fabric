@@ -40,12 +40,10 @@ async fn dropping_final_currentness_wait_releases_exact_warm_ready_pin() {
         window.check(|| context.check_runtime(&pin.runtime)).await?;
         Ok::<_, PlatformError>(pin)
     });
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     assert_eq!(f.backend.compiler_snapshot().ready_preparations, 1);
     assert!(f.backend.compiler_snapshot().ready_compiled_image_bytes > 0);
     drop(pending);
@@ -97,12 +95,10 @@ async fn dropping_post_acquire_source_wait_releases_unstarted_job_and_document_c
         future.reserve_documents(super::super::document_bytes(bounds)?)?;
         Ok::<(), PlatformError>(())
     });
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     let retained = f.backend.compiler_snapshot();
     assert_eq!(retained.waiting_callers, 1);
     assert_eq!(retained.ready_preparations, 1);

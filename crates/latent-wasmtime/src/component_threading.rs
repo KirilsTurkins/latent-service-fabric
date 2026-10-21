@@ -200,14 +200,12 @@ mod tests {
             .unwrap();
         proof.check_before_instantiation(&original).unwrap();
         assert!(proof.check_profile(None, &original).is_err());
-        assert!(
-            proof
-                .check_profile(
-                    Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
-                    &original
-                )
-                .is_err()
-        );
+        assert!(proof
+            .check_profile(
+                Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+                &original
+            )
+            .is_err());
         original.metadata.insert(METADATA.into(), PROFILE.into());
         assert!(proof.check_before_instantiation(&original).is_err());
     }

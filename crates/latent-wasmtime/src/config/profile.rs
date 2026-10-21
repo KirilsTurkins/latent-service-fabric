@@ -1,6 +1,6 @@
 use latent_core::Metadata;
 
-use super::{DispatchMode, InstanceAllocator, WASMTIME_VERSION, WasmtimeConfig};
+use super::{DispatchMode, InstanceAllocator, WasmtimeConfig, WASMTIME_VERSION};
 use crate::WasmtimeEngineProfile;
 
 impl WasmtimeConfig {

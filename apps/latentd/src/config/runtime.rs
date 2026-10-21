@@ -10,8 +10,8 @@ use latent_wire::management::ManagementLimits;
 
 use super::validation::Capacity;
 use super::{
-    CONTEXT_BYTES, EngineAllocator, EngineOptimization, IDENTIFIER_BYTES, JOURNAL_RECORD_BYTES,
-    MIB, NodeConfig, invalid,
+    invalid, EngineAllocator, EngineOptimization, NodeConfig, CONTEXT_BYTES, IDENTIFIER_BYTES,
+    JOURNAL_RECORD_BYTES, MIB,
 };
 
 pub(super) fn wasmtime(

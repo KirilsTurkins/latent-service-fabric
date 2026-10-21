@@ -1,6 +1,6 @@
 //! Affine reservations outlive cancellation and the bytes/process they cover.
 
-use super::{AOT_OUTPUT_METADATA_BYTES, exhausted, invalid};
+use super::{exhausted, invalid, AOT_OUTPUT_METADATA_BYTES};
 use latent_core::PlatformError;
 use std::sync::{Arc, Mutex};
 

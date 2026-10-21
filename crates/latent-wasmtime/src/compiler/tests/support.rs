@@ -2,7 +2,7 @@ use std::future::Future;
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::{mpsc, Arc};
 use std::task::{Context, Poll, Waker};
 use std::time::{Duration, Instant};
 
@@ -118,11 +118,9 @@ pub(super) fn complete<T>(future: impl Future<Output = T>) -> T {
 }
 
 pub(super) fn pending(future: &mut PreparationWait<u8>) {
-    assert!(
-        Pin::new(future)
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(Pin::new(future)
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
 }
 
 pub(super) fn idle(pool: &CompilerPool<u8>) {

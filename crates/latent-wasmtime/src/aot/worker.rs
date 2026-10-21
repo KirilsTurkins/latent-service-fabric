@@ -28,7 +28,7 @@ pub fn run_aot_compiler_worker() -> i32 {
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn run(options: WorkerOptions, clean: bool) -> Result<(), &'static str> {
-    use super::{AotCompilerLimits, profile, protocol, sandbox};
+    use super::{profile, protocol, sandbox, AotCompilerLimits};
     use std::io::Write as _;
 
     let mut arguments = options
