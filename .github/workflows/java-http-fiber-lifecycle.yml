@@ -513,6 +513,8 @@ jobs:
         run: >-
           python3 -B tools/release_preparation_cli_native_products.py
           --output "$RUNNER_TEMP/java-mixed-native"
+      - name: Check only fixed public failed-assembly input retention
+        run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
         with:
           distribution: temurin
@@ -561,12 +563,15 @@ jobs:
             ${{ runner.temp }}/java-http-mixed/campaign/compiler-acquisition/*.log
             ${{ runner.temp }}/java-http-mixed/campaign/compiler-acquisition/*.command.json
             ${{ runner.temp }}/java-http-mixed/campaign/build/*.json
+            ${{ runner.temp }}/java-http-mixed/campaign/build/component-inputs/core.wasm
+            ${{ runner.temp }}/java-http-mixed/campaign/build/component-inputs/closed-runtime.wasm
             ${{ runner.temp }}/java-http-mixed/campaign/build/component.wasm
             ${{ runner.temp }}/java-http-mixed/campaign/build/package/**
             ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-to-c.log
             ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-owned-classes.log
             ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-coroutine-*.log
             ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-c-to-wasm.log
+            ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-component-new.log
             ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-c-to-wasm-context.command.json
             ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-expected-wit.log
             ${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-compiled-wit.log
