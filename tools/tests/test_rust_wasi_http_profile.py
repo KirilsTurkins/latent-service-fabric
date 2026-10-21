@@ -24,6 +24,35 @@ def value_graph():
 
 
 class OriginalSourceAndAuthority(unittest.TestCase):
+    def test_encoder_can_only_process_exact_pinned_metadata_and_keeps_code_and_other_sections(self):
+        from tools.dotnet_guest.internal_io import encoded_integer as enc
+        def text(value):
+            body = value.encode()
+            return enc(len(body)) + body
+        def section(kind, body):
+            return bytes([kind]) + enc(len(body)) + body
+        def custom(name, body):
+            return section(0, text(name) + body)
+        def producers(extra=()):
+            values = [('rustc', '1.97.1 (8bab26f4f 2026-07-14)'), *extra]
+            return enc(2) + text('language') + enc(1) + text('Rust') + text('') + text('processed-by') + enc(len(values)) + b''.join(text(k)+text(v) for k, v in values)
+        marker = 'component-type:wit-bindgen:0.62.0:latent:rust-http-runtime@0.1.0:client:encoded world'
+        header = b'\0asm\x01\0\0\0'
+        retained = section(10, b'code-control') + custom('target_features', b'features-control')
+        original = header + retained + custom(marker, b'original-wit-control') + custom('producers', producers())
+        encoded = header + retained + custom('producers', producers([
+            ('wit-component', '0.259.0'), ('wit-bindgen-rust', '0.62.0')]))
+        self.assertTrue(profile.verify_compiled_core(original, [encoded])['allNonEncoderMetadataSectionsExact'])
+        self.assertTrue(profile.verify_compiled_core(original, [original])['originalCoreExact'])
+        for changed in (encoded.replace(b'code-control', b'code-altered'),
+                encoded.replace(b'features-control', b'features-altered'),
+                encoded.replace(b'0.259.0', b'0.258.0'), encoded + custom(marker, b'unexpected'),
+                encoded + custom('component-type:unknown', b'unexpected')):
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                profile.verify_compiled_core(original, [changed])
+        with self.assertRaisesRegex(ValueError, 'executable-or-metadata-drift'):
+            profile.verify_compiled_core(original, [encoded, encoded])
+
     def test_whole_original_files_and_manifest_are_authenticated(self):
         self.assertEqual(len(profile.validate_assets()), 12)
         with tempfile.TemporaryDirectory() as temporary:
@@ -52,6 +81,70 @@ class OriginalSourceAndAuthority(unittest.TestCase):
             selected.write_bytes(selected.read_bytes().replace(b'    read: func(', b'    read: async func('))
             with self.assertRaisesRegex(ValueError, 'selected-io-projection-drift'):
                 profile.validate_assets(directory)
+
+    def test_linker_may_eliminate_only_host_import_members_without_changing_any_export(self):
+        reference = {'worlds': [{'name': 'client', 'imports': {}, 'exports': {}}],
+            'interfaces': [], 'packages': [], 'types': []}
+        for direction, identities in (('imports', profile.AUTHORITY),
+                ('exports', profile.EXTERNAL | {profile.RETIREMENT})):
+            for identity in sorted(identities):
+                package, interface = identity.split('/', 1)
+                name, version = interface.split('@')
+                index = len(reference['interfaces'])
+                reference['packages'].append({'name': package + '@' + version})
+                functions = {key: {'name': key, 'kind': 'freestanding',
+                    'params': [{'name': 'value', 'type': 'u32'}], 'result': None,
+                    'stability': {'stable': {'since': '0.2.0'}}}
+                    for key in ('used', 'unused')}
+                if identity == profile.RETIREMENT:
+                    functions = {'drain': {'name': 'drain', 'kind': 'async-freestanding',
+                        'params': [], 'result': None}}
+                reference['interfaces'].append({'name': name, 'package': index,
+                    'types': {}, 'functions': functions})
+                reference['worlds'][0][direction][str(index)] = {'interface': {'id': index}}
+        actual = copy.deepcopy(reference)
+        for interface in actual['interfaces']:
+            for function in interface['functions'].values():
+                function.pop('stability', None)
+        for row in actual['worlds'][0]['imports'].values():
+            del actual['interfaces'][row['interface']['id']]['functions']['unused']
+        self.assertTrue(profile.validate_adapter(reference, actual)['emittedImportsAreExactSubsets'])
+        imports = list(actual['worlds'][0]['imports'].values())
+        first = actual['interfaces'][imports[0]['interface']['id']]
+        first['functions']['unknown'] = copy.deepcopy(first['functions']['used'])
+        with self.assertRaisesRegex(ValueError, 'unknown-or-empty-import-member'):
+            profile.validate_adapter(reference, actual)
+        del first['functions']['unknown']
+        first['functions']['used']['params'][0]['type'] = 'u64'
+        with self.assertRaisesRegex(ValueError, 'original-function-drift'):
+            profile.validate_adapter(reference, actual)
+        first['functions']['used']['params'][0]['type'] = 'u32'
+        exported = next(row for row in actual['worlds'][0]['exports'].values()
+            if 'unused' in actual['interfaces'][row['interface']['id']]['functions'])
+        del actual['interfaces'][exported['interface']['id']]['functions']['unused']
+        with self.assertRaisesRegex(ValueError, 'exact-type-or-function-set'):
+            profile.validate_adapter(reference, actual)
+
+    def test_renumbered_option_and_tuple_references_keep_nominal_payload_types(self):
+        first = {'packages': [{'name': 'outside:contract@1.0.0'}],
+            'interfaces': [{'name': 'api', 'package': 0}], 'types': [
+                {'name': 'token', 'owner': {'interface': 0}, 'kind': {
+                    'record': {'fields': [{'name': 'id', 'type': 'u64'}]}}},
+                {'name': None, 'owner': None, 'kind': {'option': 0}},
+                {'name': None, 'owner': None, 'kind': {'tuple': {'types': [0, 1]}}}]}
+        second = copy.deepcopy(first)
+        second['types'].insert(0, {'name': 'unused', 'owner': None, 'kind': {'type': 'u32'}})
+        second['types'][2]['kind']['option'] = 1
+        second['types'][3]['kind']['tuple']['types'] = [1, 2]
+        expected = profile.shape(first, 2, type_index=True)
+        self.assertEqual(expected, profile.shape(second, 3, type_index=True))
+        second['types'][1]['kind']['record']['fields'][0]['type'] = 'u32'
+        self.assertNotEqual(expected, profile.shape(second, 3, type_index=True))
+        second['types'][1]['kind']['record']['fields'][0]['type'] = 'u64'
+        second['packages'][0]['name'] = 'outside:other-owner@1.0.0'
+        self.assertNotEqual(expected, profile.shape(second, 3, type_index=True))
+        with self.assertRaisesRegex(ValueError, 'depth-or-work-bound'):
+            profile.shape({'types': [{'name': None, 'kind': {'option': 0}}]}, 0, type_index=True)
 
     def test_emission_never_grants_authority_or_aliases_versions(self):
         declared, emitted = sorted(profile.AUTHORITY), sorted(profile.EXTERNAL)

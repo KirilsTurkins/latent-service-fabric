@@ -5,7 +5,10 @@
     "CompilerRoot.test_resources_unknown_abis_and_unbounded_types_refuse",
     "CompilerRoot.test_varied_pure_value_api_keeps_actual_result_until_drain",
     "OriginalSourceAndAuthority.test_emission_never_grants_authority_or_aliases_versions",
+    "OriginalSourceAndAuthority.test_encoder_can_only_process_exact_pinned_metadata_and_keeps_code_and_other_sections",
+    "OriginalSourceAndAuthority.test_linker_may_eliminate_only_host_import_members_without_changing_any_export",
     "OriginalSourceAndAuthority.test_only_eight_internal_io_declarations_may_differ_from_whole_original",
+    "OriginalSourceAndAuthority.test_renumbered_option_and_tuple_references_keep_nominal_payload_types",
     "OriginalSourceAndAuthority.test_whole_original_files_and_manifest_are_authenticated"
   ],
   "guards": {
@@ -69,7 +72,43 @@
       ],
       "skipSites": []
     },
+    "OriginalSourceAndAuthority.test_encoder_can_only_process_exact_pinned_metadata_and_keeps_code_and_other_sections": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:687d2ccd06fc5f1099580d61d3935ebb2a5a75de84b78b28171dfd5d68be005e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OriginalSourceAndAuthority.test_linker_may_eliminate_only_host_import_members_without_changing_any_export": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:687d2ccd06fc5f1099580d61d3935ebb2a5a75de84b78b28171dfd5d68be005e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "OriginalSourceAndAuthority.test_only_eight_internal_io_declarations_may_differ_from_whole_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:687d2ccd06fc5f1099580d61d3935ebb2a5a75de84b78b28171dfd5d68be005e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OriginalSourceAndAuthority.test_renumbered_option_and_tuple_references_keep_nominal_payload_types": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -96,6 +135,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_profile.py",
-  "reviewReason": "Preserve all prior cases and guards. Add one adversarial control rejecting any active I/O WIT change beyond the exact eight internal async declarations, while the whole original remains byte-authenticated separately. Actual2071 adapter compiled but componentization refused inconsistent async metadata; no application/public interface rewrite.",
+  "reviewReason": "Compare nominal encoder types and preserve exact compiled core sections across pinned metadata processing",
   "schemaVersion": "latent.ci.contracts.v1"
 }

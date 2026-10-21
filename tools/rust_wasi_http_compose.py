@@ -8,7 +8,7 @@ from pathlib import Path
 from tools import rust_wasi_http_profile as profile
 from tools import rust_wasi_http_io as io
 from tools import rust_wasi_http_root as root
-from tools.dotnet_guest.internal_io import core_modules, shape
+from tools.dotnet_guest.internal_io import core_modules
 from tools.rust_capsule_project import decode_json, digest, inventory, read_file, snapshot, write_json
 
 MAX_COMPONENT = 64*1024*1024
@@ -32,10 +32,10 @@ def unchanged_exports(original: dict, final: dict):
             raise ValueError('rust-http-composition-public-interface-shape')
         for function, row in left['functions'].items():
             candidate = right['functions'][function]
-            if row['kind'] != candidate['kind'] or shape(original, row) != shape(final, candidate):
+            if row['kind'] != candidate['kind'] or profile.shape(original, row) != profile.shape(final, candidate):
                 raise ValueError('rust-http-composition-public-function-changed')
         for member, index in left['types'].items():
-            if shape(original, index, type_index=True) != shape(final, right['types'][member], type_index=True):
+            if profile.shape(original, index, type_index=True) != profile.shape(final, right['types'][member], type_index=True):
                 raise ValueError('rust-http-composition-public-type-changed')
 
 

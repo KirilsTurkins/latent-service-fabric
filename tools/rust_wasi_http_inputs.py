@@ -172,9 +172,9 @@ class Prepared:
         require(value['graphValidation'] == profile.validate_adapter(reference, actual),
             'prepared-adapter-graph')
         cores = core_modules(read_file(self.adapter, MAX_BINARY))
-        require(value['cores'] == [{'digest': digest(body), 'size': len(body)} for body in cores]
-            and read_file(self.path / 'raw-runtime.wasm', MAX_BINARY) in cores,
+        require(value['cores'] == [{'digest': digest(body), 'size': len(body)} for body in cores],
             'prepared-core-drift')
+        profile.verify_compiled_core(read_file(self.path / 'raw-runtime.wasm', MAX_BINARY), cores)
         self.value = value
 
     def check(self):
@@ -252,7 +252,7 @@ def install(directory: Path):
         stage = 'final-verification'
         graph = profile.validate_adapter(decode_json(reference), decode_json(actual))
         cores = core_modules(read_file(directory / ADAPTER, MAX_BINARY))
-        require(1 <= len(cores) <= 8 and raw in cores, 'component-original-core')
+        profile.verify_compiled_core(raw, cores)
         require(before == source_files(), 'runtime-source-changed')
         require(all(row == _identity(tools[name] if name in tools else wac, name,
             256 * 1024 * 1024) for name, row in tools_before.items()), 'runtime-tools-changed')

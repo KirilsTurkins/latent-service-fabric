@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_wasi_http_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Exact Linux-only selected backend installer fingerprint, preserving16MiB output/900s lifetime and strict producer/consumer source, tool, WIT, core and receipt fences.",
+  "reviewReason": "Authenticate encoder metadata without requiring removed component type bytes inside executable core",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1e75d7044aa60df8b9f86880eb22490cf885a2a553824792de259233fb87a8d6"
+  "sha256": "16aa085533525f6fc2c8531a21a5e9dcfa4def25475d6d9488d34326490f76b1"
 }

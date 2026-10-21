@@ -28,7 +28,7 @@ def projection(original: dict, adapter: dict, targets: dict) -> tuple[dict, dict
         for name in sorted(names & imports.get(identity, {}).keys()):
             source = imports[identity][name]
             candidate = supplied.get(identity, {}).get(name)
-            if candidate is None or binary.shape(expected, source) != binary.shape(adapter, candidate):
+            if candidate is None or profile.shape(expected, source) != profile.shape(adapter, candidate):
                 raise ValueError('rust-http-private-projection-function-shape:' + identity + '#' + name)
             kind = source['kind']
             if kind == 'freestanding':
