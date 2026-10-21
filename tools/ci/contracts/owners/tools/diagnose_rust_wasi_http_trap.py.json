@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_rust_wasi_http_trap.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed private-only first Waki trap observer; exact historical guest/native inputs, no qualification or default workflow changes",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b4ebb6fe908ca7324b01cfeea63e6801a4663603c9f84779cb08e1d159d8c1d9"
+}

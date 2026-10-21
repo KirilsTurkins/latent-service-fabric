@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.original-trap.v1",
+  "source": "d41298716494bf57943ea4d481ea5609c9ad05b4",
+  "run": 39535525173,
+  "job": 119011167982,
+  "outerConclusion": "failure",
+  "artifact": {
+    "id": 12318280672,
+    "size_in_bytes": 2214457,
+    "digest": "sha256:f7073580f985b9a4224079336d12697acd4e70ddd9ec559368d235720f6def9c"
+  },
+  "member": "rust-http-node-replay/node/invocation-examples-json.json",
+  "invocation": {
+    "activation": "examples-json",
+    "exitCode": 4,
+    "startedAtUnixMillis": "1792551932953",
+    "elapsedNanos": "21203717",
+    "decoded": null,
+    "response": {
+      "category": "platform-failure",
+      "command": "invoke",
+      "data": {
+        "activationId": "examples-json",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "17955",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "3672824",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "6862"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:9e7a95a026894bbc7ba85609469643fb2f067fbcbd435b94b8fa1b6c04bc4d7b",
+          "releaseDigest": "sha256:ceff069712671613cbb1d330fbb256979147b3d630b14114e59df5025193ab6f",
+          "revisionId": "revision-v1:sha256:5542e5e12e36bab018d54c422c2cde608c1d2d73909fd0231f8fa365a8b22b82",
+          "routeGeneration": "13"
+        },
+        "terminalState": "guest_trap"
+      },
+      "error": {
+        "code": "guest-trap",
+        "details": [
+          {
+            "fields": {
+              "code": "guest-trap"
+            },
+            "kind": "activation.guest-trap"
+          },
+          {
+            "fields": {
+              "kind": "guest-fault"
+            },
+            "kind": "activation.guest-trap-kind"
+          }
+        ],
+        "message": "The platform reported a failure.",
+        "retryable": false
+      },
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "processReaped": true
+  },
+  "qualification": false,
+  "causeProven": false
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-wasi-http-private-trap-${{ github.ref }}"
+    },
+    "name": "Private original Rust WASI HTTP trap observation",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/rust-wasi-http-private-trap-20261021"
+        ],
+        "paths": [
+          ".github/workflows/rust-wasi-http-private-trap.yml"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "private-first-call"
+  ],
+  "reviewReason": "Reviewed private-only first Waki trap observer; exact historical guest/native inputs, no qualification or default workflow changes",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-private-trap.yml"
+}

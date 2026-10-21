@@ -1,0 +1,100 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Observe only the unchanged first Waki call with private closed trap records",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install only the existing pinned controller dependencies",
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "name": "Fetch exact original compiler and native objects without compilation",
+        "run": "git fetch --no-tags --depth=1 origin 8f1d08257e724dca71b0c20aeff547524cba7076 6fd19eab2c224fc31481d03de5008de4d3e4429e"
+      },
+      {
+        "name": "Check exact original failure, lock and closed observation limits",
+        "run": "python3 -B -m unittest tools.tests.test_rust_wasi_http_private_trap -q"
+      },
+      {
+        "name": "Restore only the original compiled-guest artifact",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "rust-wasi-http-runtime-8f1d08257e724dca71b0c20aeff547524cba7076",
+          "path": "${{ runner.temp }}/rust-http-private-original",
+          "run-id": "39532447535"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate unchanged original five products without another product build",
+        "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/rust-http-private-native\""
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Install only the existing private build boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Build only the private diagnostic host and inspect the original first call",
+        "run": "python3 -B tools/diagnose_rust_wasi_http_trap.py --native \"$RUNNER_TEMP/rust-http-private-native\" --retained \"$RUNNER_TEMP/rust-http-private-original\" --output \"$RUNNER_TEMP/rust-http-private-observation\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain private diagnostic host and bounded numeric observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-wasi-http-private-trap-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-http-private-observation/*.json\n${{ runner.temp }}/rust-http-private-observation/private-build.*.txt\n${{ runner.temp }}/rust-http-private-observation/private-fetch.*.txt\n${{ runner.temp }}/rust-http-private-observation/private-latentd\n${{ runner.temp }}/rust-http-private-observation/node/*.json\n${{ runner.temp }}/rust-http-private-observation/node/controls/*.json\n${{ runner.temp }}/rust-http-private-observation/node/foreign-controls/*.json\n",
+          "retention-days": 1
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "private-first-call",
+  "kind": "job",
+  "reviewReason": "Reviewed private-only first Waki trap observer; exact historical guest/native inputs, no qualification or default workflow changes",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-private-trap.yml"
+}

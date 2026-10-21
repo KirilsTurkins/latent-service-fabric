@@ -1,0 +1,89 @@
+name: Private original Rust WASI HTTP trap observation
+
+on:
+  push:
+    branches: ['diag/rust-wasi-http-private-trap-20261021']
+    paths: ['.github/workflows/rust-wasi-http-private-trap.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rust-wasi-http-private-trap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  private-first-call:
+    name: Observe only the unchanged first Waki call with private closed trap records
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install only the existing pinned controller dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Fetch exact original compiler and native objects without compilation
+        run: >-
+          git fetch --no-tags --depth=1 origin
+          8f1d08257e724dca71b0c20aeff547524cba7076
+          6fd19eab2c224fc31481d03de5008de4d3e4429e
+      - name: Check exact original failure, lock and closed observation limits
+        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_private_trap -q
+      - name: Restore only the original compiled-guest artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rust-wasi-http-runtime-8f1d08257e724dca71b0c20aeff547524cba7076
+          run-id: '39532447535'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/rust-http-private-original
+      - name: Authenticate unchanged original five products without another product build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/rust-http-private-native"
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install only the existing private build boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Build only the private diagnostic host and inspect the original first call
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/diagnose_rust_wasi_http_trap.py
+          --native "$RUNNER_TEMP/rust-http-private-native"
+          --retained "$RUNNER_TEMP/rust-http-private-original"
+          --output "$RUNNER_TEMP/rust-http-private-observation"
+      - name: Retain private diagnostic host and bounded numeric observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-wasi-http-private-trap-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/rust-http-private-observation/*.json
+            ${{ runner.temp }}/rust-http-private-observation/private-build.*.txt
+            ${{ runner.temp }}/rust-http-private-observation/private-fetch.*.txt
+            ${{ runner.temp }}/rust-http-private-observation/private-latentd
+            ${{ runner.temp }}/rust-http-private-observation/node/*.json
+            ${{ runner.temp }}/rust-http-private-observation/node/controls/*.json
+            ${{ runner.temp }}/rust-http-private-observation/node/foreign-controls/*.json

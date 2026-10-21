@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "RustHttpPrivateTrap.test_closed_numeric_observer_and_global_bounds_keep_unknown_text_out",
+    "RustHttpPrivateTrap.test_exact_original6fd_lock_and_two_existing_source_overlays",
+    "RustHttpPrivateTrap.test_original_failed_first_call_cannot_be_replaced_by_another_outcome_or_component",
+    "RustHttpPrivateTrap.test_outer_owned_peer_and_service_cleanup_preserves_primary_but_refuses_false_success",
+    "RustHttpPrivateTrap.test_retention_and_cleanup_refusal_cannot_mask_the_primary_failure"
+  ],
+  "guards": {
+    "RustHttpPrivateTrap.test_closed_numeric_observer_and_global_bounds_keep_unknown_text_out": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33d16a60f36cc82ae9dde75d737e6232f1bfdb00d289effe94336109cf4f7682",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpPrivateTrap.test_exact_original6fd_lock_and_two_existing_source_overlays": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33d16a60f36cc82ae9dde75d737e6232f1bfdb00d289effe94336109cf4f7682",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpPrivateTrap.test_original_failed_first_call_cannot_be_replaced_by_another_outcome_or_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33d16a60f36cc82ae9dde75d737e6232f1bfdb00d289effe94336109cf4f7682",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpPrivateTrap.test_outer_owned_peer_and_service_cleanup_preserves_primary_but_refuses_false_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33d16a60f36cc82ae9dde75d737e6232f1bfdb00d289effe94336109cf4f7682",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpPrivateTrap.test_retention_and_cleanup_refusal_cannot_mask_the_primary_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33d16a60f36cc82ae9dde75d737e6232f1bfdb00d289effe94336109cf4f7682",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_private_trap.py",
+  "reviewReason": "Reviewed private-only first Waki trap observer; exact historical guest/native inputs, no qualification or default workflow changes",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
