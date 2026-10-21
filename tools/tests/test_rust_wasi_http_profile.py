@@ -39,6 +39,20 @@ class OriginalSourceAndAuthority(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'original-manifest-drift'):
                 profile.validate_assets(directory)
 
+    def test_only_eight_internal_io_declarations_may_differ_from_whole_original(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            copied = directory/'sdk/wasi-http-runtime'
+            shutil.copytree(profile.ROOT/'sdk/wasi-http-runtime', copied)
+            original = (copied/'upstream/wit/deps/io.wit').read_bytes()
+            selected = copied/'wit/deps/io.wit'
+            self.assertEqual(selected.read_bytes(), profile.selected_io(original))
+            self.assertEqual(selected.read_bytes().count(b': async func('), 8)
+            self.assertEqual(len(profile.validate_assets(directory)), 12)
+            selected.write_bytes(selected.read_bytes().replace(b'    read: func(', b'    read: async func('))
+            with self.assertRaisesRegex(ValueError, 'selected-io-projection-drift'):
+                profile.validate_assets(directory)
+
     def test_emission_never_grants_authority_or_aliases_versions(self):
         declared, emitted = sorted(profile.AUTHORITY), sorted(profile.EXTERNAL)
         self.assertTrue(profile.select(declared, emitted))

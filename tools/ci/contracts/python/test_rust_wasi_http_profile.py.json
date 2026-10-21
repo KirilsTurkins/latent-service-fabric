@@ -5,6 +5,7 @@
     "CompilerRoot.test_resources_unknown_abis_and_unbounded_types_refuse",
     "CompilerRoot.test_varied_pure_value_api_keeps_actual_result_until_drain",
     "OriginalSourceAndAuthority.test_emission_never_grants_authority_or_aliases_versions",
+    "OriginalSourceAndAuthority.test_only_eight_internal_io_declarations_may_differ_from_whole_original",
     "OriginalSourceAndAuthority.test_whole_original_files_and_manifest_are_authenticated"
   ],
   "guards": {
@@ -68,6 +69,18 @@
       ],
       "skipSites": []
     },
+    "OriginalSourceAndAuthority.test_only_eight_internal_io_declarations_may_differ_from_whole_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:687d2ccd06fc5f1099580d61d3935ebb2a5a75de84b78b28171dfd5d68be005e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "OriginalSourceAndAuthority.test_whole_original_files_and_manifest_are_authenticated": {
       "bases": [
         "unittest.TestCase"
@@ -83,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_profile.py",
-  "reviewReason": "Six new authority, whole-source, finite value-root, exact captured compiler-lock and private projection controls; all prior cases/guards/commands unchanged, no runtime qualification.",
+  "reviewReason": "Preserve all prior cases and guards. Add one adversarial control rejecting any active I/O WIT change beyond the exact eight internal async declarations, while the whole original remains byte-authenticated separately. Actual2071 adapter compiled but componentization refused inconsistent async metadata; no application/public interface rewrite.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
