@@ -21,6 +21,9 @@
           "tools/activation_stack_native_products.py",
           "tools/c_thread_package_native_products.py",
           "tools/c_thread_admission_native_products.py",
+          "tools/host_codec_native_products.py",
+          "tools/host_codec_native_products_reader.py",
+          "tools/tests/test_host_codec_native_products_reader.py",
           "tools/tests/test_c_thread_admission_native_products.py",
           "tools/tests/fixtures/c-thread-admission-f244-records.json",
           "tools/activation_stack_native_source.py",
@@ -51,7 +54,7 @@
   "requiredJobs": [
     "ordinary-c-threads"
   ],
-  "reviewReason": "Retain all existing C lifecycle triggers and cover both the caller and its separately compiled refusal stub",
+  "reviewReason": "Use independently authenticated immutable7b five-product native cohort and explicit async C public type with unchanged sync Core ABI; preserve every original17 lifecycle oracle, limits, old fixed reader controls, no native rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

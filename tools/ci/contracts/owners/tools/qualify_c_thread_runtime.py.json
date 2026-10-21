@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_thread_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Root approved exact f2443+f6252 acquisition and five current native source files; original17 signed outcomes, fixed budgets,49 owning preflight cases, compile/package/sign/provider/physical/fresh oracles unchanged; no native build.",
+  "reviewReason": "Root full-read approval of exact3-path C61 integration: replace only old f2443+f6252 acquisition command with strict immutable7b five-product acquisition; append7b fetch and three reader controls, retain all old tests and original17 runtime outcomes/caps. No native rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e7d8c923297060feed66cf9cbf453e9ad59161642795c30e2f28eb79d0958ad8"
+  "sha256": "37fe17eff30cf481a7e148d705f25ed12c42e36d45193e6c79e3b34fe0f2e52c"
 }
