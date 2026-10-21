@@ -144,6 +144,8 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
     use latent_routing::revision_policy::ThreadingModel;
     use latent_wasmtime::{NativeThreadProfile, WasmtimeConfig};
     let mut value = document();
+    let directory = tempfile::tempdir().unwrap();
+    value["dataDirectory"] = json!(directory.path().join("uncreated-data"));
     let decode =
         |value: &Value| super::super::input::decode(&serde_json::to_vec(value).unwrap()).unwrap();
     let original = decode(&value);

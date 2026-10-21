@@ -122,6 +122,16 @@ jobs:
               require(compiler.startswith('rustc 1.97.1 ('),'c-admission-exact-rust-version')
               commands.run('normal-affected-products-build','cargo','--config',root/'.cargo/managed-guest.toml',
                   'build','--locked','-p','latent','-p','latentd','--bins','-p','latent-policy','--example','capsule_authoring')
+              products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)
+              for name in ('latent','latentd','examples/capsule_authoring'):
+                  source=target/'debug'/name;destination=owned/name.replace('/','-')
+                  identity=file_identity(source,512*1024**2);shutil.copyfile(source,destination);destination.chmod(0o700)
+                  require(identity==file_identity(source,512*1024**2)==file_identity(destination,512*1024**2),
+                      'c-admission-product-capture-unchanged')
+                  with destination.open('rb') as stream:require(stream.read(4)==b'\x7fELF','c-admission-real-ELF-product')
+                  products[name]=identity
+              record['builtProductIdentities']=products
+              record['focusedControlsPassed']=False
               result=commands.run('normal-activation-configuration-controls','cargo','--config',root/'.cargo/managed-guest.toml',
                   'test','--locked','-p','latentd','--lib','config::tests::providers::activation_runtime::','--','--test-threads=1')
               require(b'test result: ok. 8 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-eight-runtime-config-controls')
@@ -135,15 +145,7 @@ jobs:
               result=commands.run('go-provenance-profile-controls','cargo','--config',root/'.cargo/managed-guest.toml',
                   'test','--locked','-p','latent-signing','--lib','provenance::tests::','--','--test-threads=1')
               require(b'test result: ok. 3 passed; 0 failed; 0 ignored;' in result,'c-admission-exact-three-provenance-controls')
-              products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)
-              for name in ('latent','latentd','examples/capsule_authoring'):
-                  source=target/'debug'/name;destination=owned/name.replace('/','-')
-                  identity=file_identity(source,512*1024**2);shutil.copyfile(source,destination);destination.chmod(0o700)
-                  require(identity==file_identity(source,512*1024**2)==file_identity(destination,512*1024**2),
-                      'c-admission-product-capture-unchanged')
-                  with destination.open('rb') as stream:require(stream.read(4)==b'\x7fELF','c-admission-real-ELF-product')
-                  products[name]=identity
-              record.update(status='passed',compiler=compiler,commands=commands.records,
+              record.update(status='passed',focusedControlsPassed=True,compiler=compiler,commands=commands.records,
                   products=products,
                   nativeSourceAfter=source_identity(root),materialsAfter=materials_now(),
                   elapsedSeconds=time.monotonic()-started)
