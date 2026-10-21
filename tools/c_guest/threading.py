@@ -57,6 +57,12 @@ def libc_inputs(zig):
     return paths
 
 
+def libc_material_name(path):
+    if path not in LIBC:
+        raise ValueError('c-threading-original-libc-material-path')
+    return 'c-threading-libc-' + str(sorted(LIBC).index(path))
+
+
 def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:
     return standard_facilities.stage_imports(source, world, destination, platform, IMPORTS)
 

@@ -132,6 +132,36 @@ class CThreadingProfile(unittest.TestCase):
                 threading.stage(destination, 'examples:ordinary/service@1.0.0', root / 'again',
                                 c_capsule_project.ROOT / 'wit/platform')
 
+    def test_closed_libc_material_labels_preserve_original_paths_and_recheck_the_same_files(self):
+        from types import SimpleNamespace
+        from tools.c_guest.compiler import Compiler
+        from tools.build_observation import file_identity
+        names=sorted(threading.LIBC)
+        self.assertEqual([threading.libc_material_name(name) for name in names],
+                         ['c-threading-libc-'+str(i) for i in range(10)])
+        with self.assertRaisesRegex(ValueError,'original-libc-material-path'):
+            threading.libc_material_name('lib/unknown/errno.c')
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);paths={}
+            for i,name in enumerate(names):
+                path=root/('controlled-'+str(i));path.write_bytes(('controlled source '+str(i)).encode())
+                paths[name]=path
+            zig=root/'zig';zig.write_bytes(b'controlled unchanged tool')
+            compiler=Compiler.__new__(Compiler)
+            compiler.closed_filesystem=SimpleNamespace(check_unchanged=lambda:None)
+            compiler.threading_inputs=paths;compiler.paths={'zig':zig};compiler.isolation=None
+            compiler.materials={'zig':file_identity(zig,'zig')}
+            compiler.materials.update({name:file_identity(path,threading.libc_material_name(name),32768)
+                                      for name,path in paths.items()})
+            self.assertEqual(set(compiler.threading_inputs),set(threading.LIBC))
+            self.assertTrue(all('/' not in row['name'] for row in compiler.materials.values()))
+            with patch.object(threading,'libc_inputs',return_value=paths):
+                compiler.check_unchanged()
+                original=compiler.materials[names[0]]['name'];compiler.materials[names[0]]['name']=names[0]
+                with self.assertRaisesRegex(ValueError,'libc-input-changed'):compiler.check_unchanged()
+                compiler.materials[names[0]]['name']=original;paths[names[0]].write_bytes(b'changed source')
+                with self.assertRaisesRegex(ValueError,'libc-input-changed'):compiler.check_unchanged()
+
 
 if __name__ == '__main__':
     unittest.main()
