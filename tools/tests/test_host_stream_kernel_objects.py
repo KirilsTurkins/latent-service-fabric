@@ -34,6 +34,18 @@ class KernelObjectSelection(unittest.TestCase):
             with self.subTest(raw=raw[:32]), self.assertRaises(ValueError):
                 candidate.configuration(raw)
 
+    def test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison(self):
+        # These three lines are retained from the first actual defconfig.
+        original=b'# CONFIG_SCSI_DC395x is not set\n# CONFIG_MT76x0U is not set\nCONFIG_FONT_8x16=y\n'
+        values=candidate.configuration(original)
+        self.assertEqual(values,{'CONFIG_SCSI_DC395x':'n','CONFIG_MT76x0U':'n','CONFIG_FONT_8x16':'y'})
+        before={**self.baseline(),**values}
+        candidate.selected_configuration(before,{**before,candidate.SELECTED:'y'})
+        with self.assertRaisesRegex(ValueError,'unrelated-config-drift'):
+            candidate.selected_configuration(before,{**before,candidate.SELECTED:'y','CONFIG_FONT_8x16':'n'})
+        with self.assertRaisesRegex(ValueError,'configuration-duplicate'):
+            candidate.configuration(original+b'CONFIG_FONT_8x16=n\n')
+
     def test_six_real_objects_require_private_constructor_and_blob_symbols(self):
         self.assertEqual(len(candidate.OBJECTS), 6)
         symbols = {name for names in candidate.OBJECTS.values() for name in names}

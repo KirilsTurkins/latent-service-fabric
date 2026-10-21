@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_objects.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Guarded immutable archive snapshot before extract or make; retain owned process timeout overflow cleanup diagnostics without masking; preserve original config and require thirteen private globals in six unlinked objects",
+  "reviewReason": "Fix actual upstream mixed-case Kconfig symbol reader failure only; preserve all config security source object and process guards",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "64e46a7b4d02e81f4f2ed3e3139eff9f6ba025e2c48e163d63a85702f4fdd70f"
+  "sha256": "b1b5cf4b7a8797a0523c7837a0e271d0cda6579359d259999fecab81d034b87e"
 }

@@ -97,9 +97,9 @@ def configuration(raw):
     require(type(raw) is bytes and len(raw) <= 1024 * 1024, 'configuration-bound')
     result = {}
     for line in raw.decode('utf8').splitlines():
-        if match := re.fullmatch(r'(CONFIG_[A-Z0-9_]+)=(.*)', line):
+        if match := re.fullmatch(r'(CONFIG_[A-Za-z0-9_]+)=(.*)', line):
             name, value = match.groups()
-        elif match := re.fullmatch(r'# (CONFIG_[A-Z0-9_]+) is not set', line):
+        elif match := re.fullmatch(r'# (CONFIG_[A-Za-z0-9_]+) is not set', line):
             name, value = match[1], 'n'
         else:
             require(not line.startswith(('CONFIG_', '# CONFIG_')), 'configuration-line')
