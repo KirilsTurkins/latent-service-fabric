@@ -20,6 +20,7 @@ if __package__ in {None,''}:
 
 from tools import rust_wasi_http_runtime_fixture as fixture, rust_wasi_http_runtime_node as node
 from tools import rust_wasi_http_inputs as runtime
+from tools import rust_wasi_http_backend_products as backend
 from tools.application_dependencies import verify_inputs
 from tools.build_observation import build_environment, resolve_tools
 from tools.java_replay_materials import git_source_identity
@@ -44,6 +45,7 @@ FRONTEND={
 MATERIALS=('tools/qualify_rust_wasi_http_runtime.py','tools/rust_wasi_http_runtime_fixture.py',
     'tools/rust_wasi_http_fixture.py','tools/rust_wasi_http_runtime_node.py','tools/qualify_rust_wasi_http_inputs.py',
     'tools/release_preparation_cli_native_products.py','tools/sdk_native_products_reader.py',
+    'tools/rust_wasi_http_backend_products.py',
     'tools/java_replay_materials.py','tools/qualify_rust_capsules.py',
     'tools/install_guest_bindgen.py','tools/toolchain.toml',*node.MATERIALS)
 
@@ -172,6 +174,8 @@ def qualify(native_directory,adapter_directory,output):
     require(original_inputs['native']==before,'rust-http-authenticated-compiled-native-identity')
     aux_current={name:file_identity(ROOT/name) for name in original_inputs['materials']}
     compatibility=native_compatibility(original_inputs['materials'],aux_current)
+    adapter_origin=backend.verify(adapter_directory)
+    (adapter_directory/'component-composer/wac').chmod(0o700)
     tools,_identities=resolve_tools(tomllib.loads(read_file(ROOT/'tools/toolchain.toml').decode()),ROOT,build_environment(output))
     prepared=runtime.Prepared(adapter_directory,tools['rustc'],tools['wasm-tools'])
     names=dict.fromkeys((*RECIPE,*MATERIALS,*runtime.consumer_files()))
@@ -181,6 +185,7 @@ def qualify(native_directory,adapter_directory,output):
         'source':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip(),
         'nativeProducer':original_native,'compiledNativeSource':before,'nativeAuxiliaryCompatibility':compatibility,
         'materials':materials,'nativeProducts':native_files,'adapterProducer':prepared.value,
+        'adapterProducerOrigin':adapter_origin,
         'freshApplicationComponentsCompiled':0,'nativeProductsBuilt':0,'libraryCodePatched':False,
         'applicationTransportInjected':False,'fullTicketQualification':False}
     stage='normal-unseen-two-client-source-capture'

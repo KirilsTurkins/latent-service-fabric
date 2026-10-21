@@ -3,15 +3,19 @@
     "RuntimeOracles.test_capacity_uses_actual_accepted_count_and_specific_error_without_naming_an_unobserved_owner",
     "RuntimeOracles.test_golem_transitive_timer_uses_original_closed_pending_not_preparation_or_elapsed_time",
     "RuntimeOracles.test_neutral_deployment_never_changes_world_or_inherits_foreign_grants",
+    "RuntimeOracles.test_partial_collection_and_cleanup_failure_cannot_replace_the_primary_invocation_failure",
     "RuntimeOracles.test_pending_requires_all_five_original_physical_owners_and_current_tenant_provider_work",
+    "RuntimeOracles.test_pre_result_failure_keeps_bounded_actual_cli_bytes_without_inventing_completion",
     "RuntimeOracles.test_programme_remains_within_original_peer_and_per_activation_authority_limits",
     "RuntimeOracles.test_real_library_diagnostics_discriminate_timeout_permission_json_and_opaque_stream_errors",
     "RuntimeOracles.test_result_is_the_real_rust_result_type_with_exact_current_revision_and_budget",
     "RuntimeOracles.test_root_cancel_deadline_and_trap_never_accept_successful_library_completion",
     "RuntimeOracles.test_two_tenant_configuration_binds_only_three_exact_authorities_and_policy_ids",
+    "SourceAndNativeSeparation.test_backend_producer_origin_requires_exact_successful_source_job_and_artifact",
     "SourceAndNativeSeparation.test_catalogue_absence_is_bound_to_complete_actual_source_and_recipe_names",
     "SourceAndNativeSeparation.test_each_original_core_namespace_must_remain_in_the_actual_selected_component",
     "SourceAndNativeSeparation.test_only_the_reviewed_unlinked_frontend_pair_may_differ",
+    "SourceAndNativeSeparation.test_restored_backend_members_and_composer_are_bound_before_they_can_execute",
     "SourceAndNativeSeparation.test_unsupported_platform_refuses_before_output_or_product_acquisition"
   ],
   "guards": {
@@ -51,7 +55,31 @@
       ],
       "skipSites": []
     },
+    "RuntimeOracles.test_partial_collection_and_cleanup_failure_cannot_replace_the_primary_invocation_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
     "RuntimeOracles.test_pending_requires_all_five_original_physical_owners_and_current_tenant_provider_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_pre_result_failure_keeps_bounded_actual_cli_bytes_without_inventing_completion": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -123,6 +151,18 @@
       ],
       "skipSites": []
     },
+    "SourceAndNativeSeparation.test_backend_producer_origin_requires_exact_successful_source_job_and_artifact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "SourceAndNativeSeparation.test_catalogue_absence_is_bound_to_complete_actual_source_and_recipe_names": {
       "bases": [
         "unittest.TestCase"
@@ -159,6 +199,18 @@
       ],
       "skipSites": []
     },
+    "SourceAndNativeSeparation.test_restored_backend_members_and_composer_are_bound_before_they_can_execute": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "SourceAndNativeSeparation.test_unsupported_platform_refuses_before_output_or_product_acquisition": {
       "bases": [
         "unittest.TestCase"
@@ -174,6 +226,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime.py",
-  "reviewReason": "Add fail-closed current source, exact native ancestry and actual ordinary client error/capacity/pending oracles; no guest qualification claim",
+  "reviewReason": "Preserve all prior execution guards; add exact backend origin and selected-byte controls plus failure-retention and primary-error masking negatives",
   "schemaVersion": "latent.ci.contracts.v1"
 }

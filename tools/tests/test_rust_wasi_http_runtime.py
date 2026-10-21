@@ -12,6 +12,49 @@ from tools.rust_capsule_project import canonical,digest
 
 
 class SourceAndNativeSeparation(unittest.TestCase):
+    def test_backend_producer_origin_requires_exact_successful_source_job_and_artifact(self):
+        from tools import rust_wasi_http_backend_products as backend
+        run={'id':backend.RUN,'head_sha':backend.SOURCE,'head_branch':'feat/rust-wasi-http-profile-20261021',
+            'event':'push','path':'.github/workflows/rust-wasi-http-runtime.yml','status':'completed','conclusion':'success'}
+        job={'id':backend.JOB,'run_id':backend.RUN,'head_sha':backend.SOURCE,'status':'completed','conclusion':'success'}
+        artifact={**backend.ARTIFACT,'expired':False,'name':'rust-wasi-http-backend-'+backend.SOURCE,
+            'workflow_run':{'id':backend.RUN,'head_sha':backend.SOURCE,'head_branch':run['head_branch'],
+                'repository_id':1337591365,'head_repository_id':1337591365}}
+        self.assertFalse(backend.validate_origin(run,job,artifact)['signedQualification'])
+        for selected,key,value in (('run','head_sha','0'*40),('run','event','workflow_dispatch'),
+            ('job','conclusion','failure'),('job','run_id',1),('artifact','expired',True),
+            ('artifact','digest','sha256:'+'0'*64),('artifact','size_in_bytes',1),('artifact','id',1)):
+            values={'run':copy.deepcopy(run),'job':copy.deepcopy(job),'artifact':copy.deepcopy(artifact)}
+            values[selected][key]=value
+            with self.subTest(selected=selected,key=key),self.assertRaises(Exception):
+                backend.validate_origin(values['run'],values['job'],values['artifact'])
+        changed=copy.deepcopy(artifact);changed['workflow_run']['head_repository_id']=1
+        with self.assertRaises(Exception):backend.validate_origin(run,job,changed)
+
+    def test_restored_backend_members_and_composer_are_bound_before_they_can_execute(self):
+        from tools import rust_wasi_http_backend_products as backend
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);(root/'component-composer').mkdir()
+            names={'rust-wasi-http-runtime.wasm','raw-runtime.wasm','reference.wit.json','adapter.wit.json'}
+            for name in names:(root/name).write_bytes(('controlled '+name).encode())
+            (root/'component-composer/wac').write_bytes(b'controlled unexecuted composer')
+            sources=b'controlled original source inventory'
+            (root/'source-inputs.json').write_bytes(sources)
+            def row(name):
+                raw=(root/name).read_bytes();return {'name':name,'digest':digest(raw),'size':len(raw)}
+            record={'sourceRows':110,'sourceDigest':digest(sources),'qualification':'compiled-adapter-only',
+                'signedQualification':False,'files':{name:row(name) for name in names},
+                'tools':{'component-composer':row('component-composer/wac')}}
+            raw=canonical(record);(root/'INSTALL-COMPLETE.json').write_bytes(raw)
+            pins={'INSTALL-COMPLETE.json':{'sha256':digest(raw),'bytes':len(raw)},
+                'source-inputs.json':{'sha256':digest(sources),'bytes':len(sources)}}
+            with patch.object(backend,'RECEIPTS',pins):
+                self.assertFalse(backend.verify_materials(root)['producerReceiptRewritten'])
+                for name in (*names,'component-composer/wac','source-inputs.json','INSTALL-COMPLETE.json'):
+                    path=root/name;original=path.read_bytes();path.write_bytes(original+b'tampered')
+                    with self.subTest(name=name),self.assertRaises(Exception):backend.verify_materials(root)
+                    path.write_bytes(original)
+
     def test_catalogue_absence_is_bound_to_complete_actual_source_and_recipe_names(self):
         source={'src/lib.rs':{},'vendor/lsf/sdk/src/lib.rs':{'digest':'original-sdk','size':7},'sdk-lock.json':{}}
         sdk={'sdk/src/lib.rs':source['vendor/lsf/sdk/src/lib.rs']}
@@ -85,6 +128,52 @@ class SourceAndNativeSeparation(unittest.TestCase):
 
 
 class RuntimeOracles(unittest.TestCase):
+    def test_partial_collection_and_cleanup_failure_cannot_replace_the_primary_invocation_failure(self):
+        import time
+        class PrimaryFailure(RuntimeError):pass
+        process=Mock();process.owner.exited.return_value=False;process.owner.finished=False
+        process.drain.side_effect=PrimaryFailure('original owned controller failure')
+        process.close.side_effect=OSError('injected cleanup refusal')
+        peer=Mock();peer.observation.return_value={'acceptedConnections':0}
+        peer.origin.return_value={'host':'127.0.0.1','port':12345}
+        client=Mock();client.deadline=time.monotonic()+10
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)
+            with patch.object(node,'selected_revision',return_value={}),patch.object(node,'start_call',return_value=process), \
+                patch.object(node,'retain_partial',side_effect=OSError('injected collection refusal')):
+                with self.assertRaisesRegex(PrimaryFailure,'original owned controller failure'):
+                    node.invoke(client,Mock(),{'budget':{}},{'examples':peer,'foreign':peer},'examples',
+                        'waki','alpha',node.cases()[0],None,output,'original')
+            value=json.loads((output/'partial-retention-refused-original.json').read_bytes())
+            self.assertEqual(value['collectionStatus'],'refused')
+            self.assertFalse(value['qualification'])
+            self.assertFalse(value['cliProcessReapedObserved'])
+            self.assertNotIn('injected',json.dumps(value))
+        with self.assertRaises(OSError):node.close_call(process,primary_failure=False)
+
+    def test_pre_result_failure_keeps_bounded_actual_cli_bytes_without_inventing_completion(self):
+        import base64
+        process=Mock()
+        process.authoring_activation='node-stop-pending'
+        process.buffers=[bytearray(b'{"schemaVersion":"latent.cli.result.v1",'),bytearray(b'controlled public CLI stderr')]
+        process.owner.finished=False
+        def close():process.owner.finished=True
+        process.close.side_effect=close
+        native=Mock();native.buffers=[bytearray(),bytearray(b'unrelated native line\n'+node.TIMER_PREFIX+b'|pending|wait-pending|1|1|2|1\n')]
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)
+            value=node.retain_partial(process,native,output,'original')
+            self.assertFalse(value['qualification'])
+            self.assertFalse(value['normalResultCompleted'])
+            self.assertTrue(value['cliProcessReapedAfterCleanup'])
+            self.assertEqual(base64.b64decode(value['streams']['stdout']['base64']),bytes(process.buffers[0]))
+            self.assertEqual(value['streams']['stderr']['sha256'],digest(bytes(process.buffers[1])))
+            self.assertEqual(len(value['nativeTimerRecords']),1)
+            self.assertNotIn('unrelated',json.dumps(value))
+            self.assertFalse(value['nativeTimerRecordsTruncated'])
+            self.assertTrue((output/'partial-invocation-original.json').is_file())
+            process.complete.assert_not_called()
+
     def test_real_library_diagnostics_discriminate_timeout_permission_json_and_opaque_stream_errors(self):
         def payload(client,phase,display,debug,**public):
             base=({'typedWasiErrorCode':None,'serdeJsonError':False} if client=='waki' else {

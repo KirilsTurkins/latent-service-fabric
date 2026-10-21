@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import base64
 from contextlib import ExitStack
 import json
 from pathlib import Path
@@ -24,7 +25,7 @@ from tools.qualify_resource_tenants import client_for_foreign, credential_denial
 from tools.resource_tenant_node import FOREIGN_TOKEN, SUBJECTS, TENANTS, require_denied_before_guest
 from tools.rust_capsule_node import (RecordingClient, delete_all, deploy, finish_call,
     sample, selected_revision, start_call)
-from tools.rust_capsule_project import ROOT, fresh, read_file, read_json
+from tools.rust_capsule_project import ROOT, digest, fresh, read_file, read_json
 from tools.rust_wasi_http_runtime_fixture import SERVICE
 from tools.rust_wasi_http_profile import ACTIVATION, CLOCK, HTTP
 from tools.standard_http.observations import delta, require_zero_contact, validate as validate_peer
@@ -347,6 +348,62 @@ def golem_timer_pending(stderr,mode):
         'waitPending':pending[-1],'proof':'actual original wait_for Poll::Pending with task/wait/timer charged'}
 
 
+def retain_partial(process,node,output,label):
+    """Diagnostic bytes from this owned public-fixture CLI, never an outcome.
+
+    Process.close reaps but does not drain. Save already collected bytes after
+    one bounded drain, then close the process. Do not fabricate finish_call or
+    infer known dispatch/completion from a partial JSON document.
+    """
+    drained=False
+    try:
+        process.drain();drained=True
+    except Exception:pass
+    buffers=[bytes(raw) for raw in process.buffers]
+    require(len(buffers)==2 and sum(map(len,buffers))<=32768,'rust-http-original-partial-output-bound')
+    record={'schemaVersion':'latent.rust.http.partial-invocation.v1','qualification':False,
+        'activation':process.authoring_activation,'normalResultCompleted':False,
+        'oneBoundedDrainSucceeded':drained,'collectionEndedBeforeCleanup':True,
+        'streams':{name:{'bytes':len(raw),'sha256':digest(raw),'base64':base64.b64encode(raw).decode('ascii')}
+            for name,raw in zip(('stdout','stderr'),buffers)},'nativeTimerRecords':[]}
+    # Keep only the exact existing static native marker family, rather than any
+    # unrelated node log or error message. The marker reader itself remains the
+    # qualification gate; these raw diagnostic lines supply no passing credit.
+    if node is not None:
+        try:node.drain()
+        except Exception:pass
+        records=[raw for raw in bytes(node.buffers[1]).splitlines(keepends=True) if raw.startswith(TIMER_PREFIX)]
+        record['nativeTimerRecordsTruncated']=len(records)>32 or any(len(raw)>128 for raw in records)
+        record['nativeTimerRecords']=[base64.b64encode(raw[:128]).decode('ascii') for raw in records[:32]]
+    try:process.close()
+    finally:
+        record['cliProcessReapedAfterCleanup']=process.owner.finished is True
+        write_json(output/('partial-invocation-'+label+'.json'),record)
+    return record
+
+
+def retain_after_failure(process,node,output,label):
+    # Diagnostics must never replace the primary controller/library failure.
+    # If collection, writing or process cleanup refuses, retain only closed
+    # certainty fields where possible. A failed diagnostic earns no credit.
+    try:return retain_partial(process,node,output,label)
+    except BaseException:
+        refused={'schemaVersion':'latent.rust.http.partial-retention-refusal.v1',
+            'qualification':False,'collectionStatus':'refused','primaryFailurePreserved':True,
+            'cliProcessReapedObserved':getattr(getattr(process,'owner',None),'finished',False) is True}
+        try:write_json(output/('partial-retention-refused-'+label+'.json'),refused)
+        except BaseException:pass
+        return refused
+
+
+def close_call(process,*,primary_failure):
+    if not primary_failure:
+        process.close()  # Successful calls still require successful cleanup.
+        return
+    try:process.close()
+    except BaseException:pass
+
+
 def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,label):
     _name,mode,path,_expected,contacts,vector,action=spec
     require(alias in {'alpha','delta'} and client_name in {'waki','golem'},'rust-http-closed-ordinary-client-selection')
@@ -363,7 +420,7 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
     native_mode=({'cancel':'pending','deadline':'drain'}.get(action) if client_name=='golem' else None)
     activation='node-stop-'+native_mode if native_mode else label
     process=start_call(client,chosen,'greeting','greet',[alias+'|'+client_name+'|'+mode+'|'+endpoint],activation)
-    pending=cancelled=None;released=False
+    pending=cancelled=None;released=False;primary_failure=False
     try:
         expires=min(client.deadline,time.monotonic()+10)
         while not process.owner.exited():
@@ -389,7 +446,11 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
                     require(cancelled['outcomeKnown'] is True and cancelled['data']['activationId']==activation
                         and cancelled['data']['disposition']=='accepted','rust-http-original-root-cancel-receipt')
         row=finish_call(client,process)
-    finally:process.close()
+    except BaseException:
+        primary_failure=True
+        retain_after_failure(process,node,output,label)
+        raise
+    finally:close_call(process,primary_failure=primary_failure)
     # Original public result is retained before any posthoc assertion/cleanup.
     write_json(output/('invocation-'+label+'.json'),row)
     require(row['activation']==activation,'rust-http-exact-owned-activation-result')
@@ -529,7 +590,11 @@ def provider_absence(signed,native,output,deadline):
             for name in ('waki','golem'):
                 pending=start_call(client,target,'greeting','greet',['alpha|'+name+'|json|'+peers['examples'].url('domain-json')],
                     'rust-http-provider-absent-'+name)
-                row=finish_call(client,pending);write_json(output/('invocation-'+name+'.json'),row)
+                try:row=finish_call(client,pending)
+                except BaseException:
+                    retain_after_failure(pending,node,output,'provider-absent-'+name)
+                    raise
+                write_json(output/('invocation-'+name+'.json'),row)
                 response=row['response']
                 require(row['exitCode']==4 and row['processReaped'] is True and row['decoded'] is None
                     and response['outcomeKnown'] is True and response['error']['code']=='incompatible-contract'
@@ -560,7 +625,7 @@ def queued_cancel(client,node,target,peers,probe,output):
     real held peer request and sole queue-depth transition identify this pair.
     """
     peer=peers['examples'];before={t:p.observation() for t,p in peers.items()}
-    pin=selected_revision(client,target);held=queued=None;witness=None
+    pin=selected_revision(client,target);held=queued=None;witness=None;primary_failure=False
     try:
         held=start_call(client,target,'greeting','greet',[
             'alpha|waki|bytes|'+peer.url('pending-headers')],'rust-http-held-for-queue')
@@ -620,9 +685,14 @@ def queued_cancel(client,node,target,peers,probe,output):
         retirement=retire(client,probe,target,output,'queued-before-dispatch')
         return {'queued':row,'holder':holder,'positive':witness,'queuedInventory':observed,
             'queuedCancel':cancelled,'holderCancel':holder_cancel,'retirement':retirement}
+    except BaseException:
+        primary_failure=True
+        for name,process in (('holder',held),('queued',queued)):
+            if process is not None:retain_after_failure(process,node,output,'queue-'+name)
+        raise
     finally:
         for process in (queued,held):
-            if process is not None:process.close()
+            if process is not None:close_call(process,primary_failure=primary_failure)
 
 
 def run(artifact,native,output,*,deadline):
