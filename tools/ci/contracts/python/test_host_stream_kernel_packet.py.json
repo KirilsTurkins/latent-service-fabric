@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "KernelLinearPacketSource.test_allocating_send_alternatives_refuse_before_original_calls",
+    "KernelLinearPacketSource.test_audit_and_normal_dispatchers_remain_distinct_from_packet",
+    "KernelLinearPacketSource.test_changed_duplicate_crlf_and_missing_whole_source_refuse",
+    "KernelLinearPacketSource.test_collapse_refuses_unknown_and_foreign_packet_before_lookup_or_copy",
+    "KernelLinearPacketSource.test_control_packets_reserve_under_actual_sock_before_original_constructor",
+    "KernelLinearPacketSource.test_copied_payload_uses_real_linear_copy_and_original_accounting_tail",
+    "KernelLinearPacketSource.test_copy_dispatch_has_exact_normal_definition_and_no_stale_birth_fallback",
+    "KernelLinearPacketSource.test_exact_parent_sources_and_primary_new_source_provenance",
+    "KernelLinearPacketSource.test_full_head_and_header_before_publication_and_no_generic_fallback",
+    "KernelLinearPacketSource.test_prior_birth_generation_and_closed_kind_routes_precede_any_use",
+    "KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first",
+    "KernelLinearPacketSource.test_retransmit_copy_proves_linear_origin_and_checked_extent_before_new_birth"
+  ],
+  "guards": {
+    "KernelLinearPacketSource.test_allocating_send_alternatives_refuse_before_original_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_audit_and_normal_dispatchers_remain_distinct_from_packet": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_changed_duplicate_crlf_and_missing_whole_source_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_collapse_refuses_unknown_and_foreign_packet_before_lookup_or_copy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_control_packets_reserve_under_actual_sock_before_original_constructor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_copied_payload_uses_real_linear_copy_and_original_accounting_tail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_copy_dispatch_has_exact_normal_definition_and_no_stale_birth_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_exact_parent_sources_and_primary_new_source_provenance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_full_head_and_header_before_publication_and_no_generic_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_prior_birth_generation_and_closed_kind_routes_precede_any_use": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
+    "KernelLinearPacketSource.test_retransmit_copy_proves_linear_origin_and_checked_extent_before_new_birth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_packet.py",
+  "reviewReason": "Add one exclusive source-only linear copied-TCP packet object profile, retaining all nine prior jobs, exact symbol floors, original configuration and bounds; two old job-set assertions project only the separately checked new packet job. No kernel/runtime/install qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
