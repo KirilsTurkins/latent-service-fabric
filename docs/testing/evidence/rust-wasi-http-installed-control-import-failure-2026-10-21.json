@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.installed-control-import-failure.v1",
+  "sourceRevision": "12538de147f40cb4f37cc7efc3b3fff3277d31ea",
+  "run": 39632908133,
+  "job": 119335608375,
+  "conclusion": "failure",
+  "artifact": {
+    "id": 12359899379,
+    "bytes": 167666,
+    "sha256": "sha256:a5b631c494cf7a77a84acb0486d8bd9f8d3af4d6e1bc18785e39b21f8566cbee",
+    "members": 9
+  },
+  "failedStage": "owning-control-import-before-compiler-execution",
+  "originalError": "ImportError: cannot import name tool_inventory from tools.dev_workflow",
+  "controllerOnlyDependency": true,
+  "recipeFilesByteExactToFailedInventory": 120,
+  "selectedModulesImportedInIsolatedSourceControl": 18,
+  "loadedStagedModules": 44,
+  "linuxOwnershipDispatchHelperAndImportsPresent": true,
+  "compilerOrGuestExecutedInSourceControl": false,
+  "guestCompilationReached": false,
+  "signedQualification": false,
+  "correction": "Keep controller-only full inventory validation at prepare, immediately after compiler exit before output/signing, and final; readonly inner inventory digest remains mandatory. Do not add the controller module to the maintained recipe."
+}

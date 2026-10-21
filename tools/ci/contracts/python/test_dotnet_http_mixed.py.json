@@ -165,6 +165,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_http_mixed.py",
-  "reviewReason": "Append ordered Closing-child and awaited-finally negatives; preserve all old cases, skip guards, resource limits and result oracles.",
+  "reviewReason": "Preserve every original mixed control and original whole-workflow hash; first restore only the new default-false owner-capacity selector/exclusions.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

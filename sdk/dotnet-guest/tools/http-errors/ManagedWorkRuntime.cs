@@ -30,6 +30,7 @@ public static partial class ManagedWorkRuntime
         internal (ulong Generation, ulong Id) Token;
         internal bool Active;
         internal bool Root;
+        internal bool Timer;
         internal bool Result;
         internal bool Observed;
         internal bool CallbackDone;
@@ -81,6 +82,7 @@ public static partial class ManagedWorkRuntime
                 records = new Record?[MaximumRecords];
                 queued = new Queued?[MaximumQueued];
                 required = new Required?[MaximumRecords];
+                timers = new TimerOwner?[MaximumRecords];
                 root = new Record { Primary = new object(), Token = rootToken, Active = true, Root = true };
                 records[0] = root;
                 current = new AsyncLocal<Record?>(ContextChanged);
@@ -115,6 +117,7 @@ public static partial class ManagedWorkRuntime
         foreach (var owner in records)
             if (owner is not null && (ReferenceEquals(owner.Primary, item)
                 || ReferenceEquals(owner.Outer, item) || ReferenceEquals(owner.Inner, item))) return owner;
+        if (FindTimer(item) is { } timer) return timer.Owner;
         if (required is not null)
             foreach (var pending in required)
                 if (pending is not null && ReferenceEquals(pending.Task, item)) return pending.Owner;
@@ -249,7 +252,7 @@ public static partial class ManagedWorkRuntime
         int index = -1;
         for (int i = 0; i < MaximumQueued; i++)
         {
-            if (queued![i] is not null && ReferenceEquals(queued[i]!.Item, item))
+            if (queued![i] is not null && ReferenceEquals(queued[i]!.Item, item) && FindTimer(item) is null)
                 throw new InvalidOperationException("managed-work-duplicate-enqueue");
             if (index < 0 && queued[i] is null) index = i;
         }
@@ -344,6 +347,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) return;
         var owner = Find(item);
+        if (owner is { Timer: true }) { TryRetireTimer(FindTimer(owner.Primary)!); return; }
         if (owner is not null && owner.Completion is null && !owner.Root)
         {
             owner.CallbackDone = true;
@@ -418,6 +422,7 @@ public static partial class ManagedWorkRuntime
     private static void Release(Record owner)
     {
         if (!owner.Active) throw new InvalidOperationException("managed-work-double-settle");
+        if (owner.Timer) { TryRetireTimer(FindTimer(owner.Primary)!); return; }
         settle!(owner.Token.Generation, owner.Token.Id);
         owner.Active = false;
         for (int i = 1; i < MaximumRecords; i++)
@@ -454,6 +459,7 @@ public static partial class ManagedWorkRuntime
             }
             bool queuedWork = false;
             foreach (var item in queued!) if (item is not null) { queuedWork = true; break; }
+            active |= PendingTimers();
             if (!active && !queuedWork) break;
             if (!ReadySource()) throw new InvalidOperationException("managed-work-unproven-quiescence");
             if (pending is not null) WaitForCompletion(pending);
@@ -484,13 +490,15 @@ public static partial class ManagedWorkRuntime
             throw new InvalidOperationException("managed-work-finalization-owners");
         foreach (var item in queued!) if (item is not null)
             throw new InvalidOperationException("managed-work-finalization-queue");
+        foreach (var timer in timers!) if (timer is not null)
+            throw new InvalidOperationException("managed-work-finalization-timers");
         foreach (var item in required!) if (item is not null)
             throw new InvalidOperationException("managed-work-finalization-continuations");
         settle!(storage.Generation, storage.Id);
         Release(root!);
         current!.Value = null;
         installed = false;
-        records = null; queued = null; required = null; current = null; root = null;
+        records = null; queued = null; required = null; timers = null; current = null; root = null;
         reserve = null; settle = null; close = null; adapterContext = null;
         storage = default; closing = false;
     }

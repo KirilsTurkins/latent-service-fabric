@@ -1,0 +1,328 @@
+{
+  "archive": {
+    "bytes": 8275406,
+    "sha256": "sha256:11756833ae82517f0d8c21548dad42648dd3ea80ae2a130d10a2c629a11a85be"
+  },
+  "artifact": 12353339133,
+  "guestQualification": false,
+  "job": 119283819097,
+  "originalRecords": {
+    "closed-runtime-coverage.json": {
+      "bytes": 2918,
+      "sha256": "sha256:850a55ef1c5cae629073625eceabfeeb411fed8a5a473a7f0444f61a4471dc27"
+    },
+    "internal-io-port.json": {
+      "bytes": 1083,
+      "sha256": "sha256:dec34587cbca14f8daf1f7944ae6273566f0950473bf202179835e96f3c2c22c"
+    },
+    "retirement-port.json": {
+      "bytes": 597,
+      "sha256": "sha256:54b20f626794f20ad300236ca0ee920debe33da334c2eb77cd53f7d81b103b9a"
+    },
+    "runtime-profile.json": {
+      "bytes": 3469,
+      "sha256": "sha256:69636e453850bfc7864b1aae02ff5bf92b4bddbe22dafb0e6510866b24f5a10a"
+    },
+    "task-wait-port.json": {
+      "bytes": 10408,
+      "sha256": "sha256:8b51cf6fc8d1d68e171bf3a134bff09317e8aa0ffa6c55d7fd60bbe6ff73672a"
+    }
+  },
+  "projection": "Full runtime/retirement/internal-IO/coverage records; only managedAcceptedWork field from original task receipt. No node execution in the original failed run.",
+  "records": {
+    "closed-runtime-coverage.json": {
+      "adapterExports": [
+        "latent:dotnet-managed-work/owner@0.1.0",
+        "latent:dotnet-retirement/owner@0.1.0",
+        "wasi:cli/environment@0.2.6",
+        "wasi:cli/exit@0.2.6",
+        "wasi:cli/stderr@0.2.6",
+        "wasi:cli/stdin@0.2.6",
+        "wasi:cli/stdout@0.2.6",
+        "wasi:cli/terminal-input@0.2.6",
+        "wasi:cli/terminal-output@0.2.6",
+        "wasi:cli/terminal-stderr@0.2.6",
+        "wasi:cli/terminal-stdin@0.2.6",
+        "wasi:cli/terminal-stdout@0.2.6",
+        "wasi:clocks/monotonic-clock@0.2.6",
+        "wasi:clocks/wall-clock@0.2.6",
+        "wasi:filesystem/preopens@0.2.6",
+        "wasi:filesystem/types@0.2.6",
+        "wasi:http/outgoing-handler@0.2.0",
+        "wasi:http/types@0.2.0",
+        "wasi:io/error@0.2.6",
+        "wasi:io/poll@0.2.6",
+        "wasi:io/streams@0.2.6",
+        "wasi:random/insecure@0.2.0",
+        "wasi:random/insecure@0.2.6",
+        "wasi:random/random@0.2.6"
+      ],
+      "additionalAdapters": [
+        {
+          "componentDigest": "sha256:2dbf0dacbc5c95439609a6ed8db7ecb935e4a5ce3581d688cfb6c9478fefc7c0",
+          "name": "entropy",
+          "witDigest": "sha256:22b3c4c3b9c4a06181047b153a65433b5ce8c8493fab67c55eeadbfd3f13cabb",
+          "witSource": "additional-runtime-entropy.wit.json"
+        },
+        {
+          "componentDigest": "sha256:387ce4a0195f1eed12721a0303448e5cf9a19d6322de64647afd61a4628d874a",
+          "name": "wall",
+          "witDigest": "sha256:333520b63f24e0474152a2d1c94ef8c3fdd3870043ed0d22a7b2ed32a13579a1",
+          "witSource": "additional-runtime-wall.wit.json"
+        }
+      ],
+      "analysisCompleteness": "required-member-names",
+      "authority": "none",
+      "compilerPrivateImports": [
+        "latent:dotnet-retirement/owner@0.1.0",
+        "latent:dotnet-managed-work/owner@0.1.0"
+      ],
+      "gaps": [],
+      "rawComponentDigest": "sha256:67cd9d6f8217ce59473ca5436979eda9417b41ac09a6c0935db8727637edbb30",
+      "rawWitDigest": "sha256:3fdb5f6680ed20d48def1aa22f979ba60e85370c43e41a100c4e29edc1337e07",
+      "requiredImports": [
+        "latent:dotnet-managed-work/owner@0.1.0",
+        "latent:dotnet-retirement/owner@0.1.0",
+        "latent:random/random@0.1.0",
+        "wasi:cli/environment@0.2.6",
+        "wasi:cli/exit@0.2.6",
+        "wasi:cli/stderr@0.2.6",
+        "wasi:cli/stdin@0.2.6",
+        "wasi:cli/stdout@0.2.6",
+        "wasi:cli/terminal-input@0.2.6",
+        "wasi:cli/terminal-output@0.2.6",
+        "wasi:cli/terminal-stderr@0.2.6",
+        "wasi:cli/terminal-stdin@0.2.6",
+        "wasi:cli/terminal-stdout@0.2.6",
+        "wasi:clocks/monotonic-clock@0.2.6",
+        "wasi:clocks/wall-clock@0.2.6",
+        "wasi:filesystem/preopens@0.2.6",
+        "wasi:filesystem/types@0.2.6",
+        "wasi:io/error@0.2.6",
+        "wasi:io/poll@0.2.6",
+        "wasi:io/streams@0.2.6",
+        "wasi:random/insecure@0.2.6"
+      ],
+      "runtimeAdapterDigest": "sha256:10bd9e53b418c876fe2a6e601a55e58d09bd0d6410b795bd3d1d104f8a2dc2e5",
+      "runtimeProfile": "dotnet-native-aot-component-v1",
+      "runtimeWitDigest": "sha256:34ad704cba1c5a03efff96a529f9a0e133b7fa62ccd64680de027ae81f227dae",
+      "schemaVersion": "lsf.dotnet.runtime.coverage.v1"
+    },
+    "internal-io-port.json": {
+      "coreBytesUnchanged": true,
+      "coreModules": [
+        {
+          "digest": "sha256:6882ae0f9c64bc52ed6b7a988cc1a07b6861749e22a8155bed23a7118f311f4f",
+          "size": 2526090
+        },
+        {
+          "digest": "sha256:b12c21ab7b52e67a216f01141ea9ab910f7ef8102047b998f7a8988512b6fdd4",
+          "size": 627
+        },
+        {
+          "digest": "sha256:c5bc1f0318f2e0b371fe8228dd79f37ec3f029a9b639429af261aa69214ee687",
+          "size": 319
+        },
+        {
+          "digest": "sha256:c31cc6ffd33735cbd42510e5afdd4cd5adf9b8591bd9c2af517674101268c9ea",
+          "size": 24
+        }
+      ],
+      "functions": {
+        "wasi:io/poll@0.2.6": [
+          "[method]pollable.block",
+          "poll"
+        ],
+        "wasi:io/streams@0.2.6": [
+          "[method]input-stream.blocking-read",
+          "[method]output-stream.blocking-flush"
+        ]
+      },
+      "originalDigest": "sha256:bff0cf0b7c6073b0e1de32689b9a89de0fd95ff8a0fc932b8438615abd1737b8",
+      "profile": "dotnet-private-async-io-v1",
+      "publicApplicationGraphUnchanged": true,
+      "selectedDigest": "sha256:67cd9d6f8217ce59473ca5436979eda9417b41ac09a6c0935db8727637edbb30",
+      "signedExecution": "not-run"
+    },
+    "retirement-port.json": {
+      "authority": "none",
+      "managedWork": {
+        "authority": "none",
+        "privateImport": "latent:dotnet-managed-work/owner@0.1.0",
+        "profile": "dotnet-managed-accepted-work-v1",
+        "qualified": false
+      },
+      "originalDigest": "sha256:715e185e6d1a456de84e96be2796b3533419e8e475db0f765da070703a893d9d",
+      "privateImport": "latent:dotnet-retirement/owner@0.1.0",
+      "profile": "dotnet-owned-retirement-v1",
+      "publicGraphUnchanged": true,
+      "qualification": "unknown",
+      "selectedDigest": "sha256:e86948b9e4c3516f0e387a7592863e87df83bbbe4610fa02b68b0427f75cb3b8",
+      "signedExecution": "not-run"
+    },
+    "runtime-profile.json": {
+      "adapter": {
+        "digest": "sha256:10bd9e53b418c876fe2a6e601a55e58d09bd0d6410b795bd3d1d104f8a2dc2e5",
+        "name": "managed-activation-logging-runtime",
+        "size": 184861
+      },
+      "additionalAdapters": [
+        {
+          "digest": "sha256:2dbf0dacbc5c95439609a6ed8db7ecb935e4a5ce3581d688cfb6c9478fefc7c0",
+          "name": "noncrypto-entropy",
+          "size": 28716
+        },
+        {
+          "digest": "sha256:387ce4a0195f1eed12721a0303448e5cf9a19d6322de64647afd61a4628d874a",
+          "name": "wall-clock-runtime",
+          "size": 21215
+        }
+      ],
+      "declaredImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:log/log@0.1.0",
+        "latent:random/random@0.1.0",
+        "latent:runtime/activation@0.1.0"
+      ],
+      "emittedImports": [
+        "latent:random/random@0.1.0",
+        "wasi:cli/environment@0.2.6",
+        "wasi:cli/exit@0.2.6",
+        "wasi:cli/stderr@0.2.6",
+        "wasi:cli/stdin@0.2.6",
+        "wasi:cli/stdout@0.2.6",
+        "wasi:cli/terminal-input@0.2.6",
+        "wasi:cli/terminal-output@0.2.6",
+        "wasi:cli/terminal-stderr@0.2.6",
+        "wasi:cli/terminal-stdin@0.2.6",
+        "wasi:cli/terminal-stdout@0.2.6",
+        "wasi:clocks/monotonic-clock@0.2.6",
+        "wasi:clocks/wall-clock@0.2.6",
+        "wasi:filesystem/preopens@0.2.6",
+        "wasi:filesystem/types@0.2.6",
+        "wasi:io/error@0.2.6",
+        "wasi:io/poll@0.2.6",
+        "wasi:io/streams@0.2.6",
+        "wasi:random/insecure@0.2.6"
+      ],
+      "internalIoPort": {
+        "coreBytesUnchanged": true,
+        "coreModules": [
+          {
+            "digest": "sha256:6882ae0f9c64bc52ed6b7a988cc1a07b6861749e22a8155bed23a7118f311f4f",
+            "size": 2526090
+          },
+          {
+            "digest": "sha256:b12c21ab7b52e67a216f01141ea9ab910f7ef8102047b998f7a8988512b6fdd4",
+            "size": 627
+          },
+          {
+            "digest": "sha256:c5bc1f0318f2e0b371fe8228dd79f37ec3f029a9b639429af261aa69214ee687",
+            "size": 319
+          },
+          {
+            "digest": "sha256:c31cc6ffd33735cbd42510e5afdd4cd5adf9b8591bd9c2af517674101268c9ea",
+            "size": 24
+          }
+        ],
+        "functions": {
+          "wasi:io/poll@0.2.6": [
+            "[method]pollable.block",
+            "poll"
+          ],
+          "wasi:io/streams@0.2.6": [
+            "[method]input-stream.blocking-read",
+            "[method]output-stream.blocking-flush"
+          ]
+        },
+        "originalDigest": "sha256:bff0cf0b7c6073b0e1de32689b9a89de0fd95ff8a0fc932b8438615abd1737b8",
+        "profile": "dotnet-private-async-io-v1",
+        "publicApplicationGraphUnchanged": true,
+        "selectedDigest": "sha256:67cd9d6f8217ce59473ca5436979eda9417b41ac09a6c0935db8727637edbb30",
+        "signedExecution": "not-run"
+      },
+      "profile": "runtime-managed-logging",
+      "rawComponent": {
+        "digest": "sha256:67cd9d6f8217ce59473ca5436979eda9417b41ac09a6c0935db8727637edbb30",
+        "name": "raw-native-aot-component",
+        "size": 2545733
+      },
+      "retirementPort": {
+        "authority": "none",
+        "managedWork": {
+          "authority": "none",
+          "privateImport": "latent:dotnet-managed-work/owner@0.1.0",
+          "profile": "dotnet-managed-accepted-work-v1",
+          "qualified": false
+        },
+        "originalDigest": "sha256:715e185e6d1a456de84e96be2796b3533419e8e475db0f765da070703a893d9d",
+        "privateImport": "latent:dotnet-retirement/owner@0.1.0",
+        "profile": "dotnet-owned-retirement-v1",
+        "publicGraphUnchanged": true,
+        "qualification": "unknown",
+        "selectedDigest": "sha256:e86948b9e4c3516f0e387a7592863e87df83bbbe4610fa02b68b0427f75cb3b8",
+        "signedExecution": "not-run"
+      },
+      "schemaVersion": "latent.dotnet.runtime.v1"
+    },
+    "task-wait-port.json": {
+      "managedAcceptedWork": {
+        "authoritativeLimits": "original-activation-owner-ledger",
+        "closing": "original-native-close-and-live-parent-only",
+        "completion": "after-original-finish-continuations",
+        "context": "private-key-original-immutable-map-original-notifications",
+        "contextSourceTypes": [
+          "System.Threading.Tasks.Task",
+          "System.Threading.QueueUserWorkItemCallback",
+          "System.Threading.QueueUserWorkItemCallback`1",
+          "System.Threading.QueueUserWorkItemCallbackDefaultContext",
+          "System.Threading.QueueUserWorkItemCallbackDefaultContext`1"
+        ],
+        "copiedRegistryMethods": 58,
+        "join": "original-task-wait-dispatch-with-readiness-each-iteration",
+        "modifiedOriginalMethods": {
+          "System.Boolean System.Threading.ThreadPoolWorkQueue::LocalFindAndPop(System.Object)": "68f914a3793366fa56a9531a97333b666d0778025ad0bfa2dd133fe74e728eaa",
+          "System.Boolean System.Threading.TimerQueue::UpdateTimer(System.Threading.TimerQueueTimer,System.UInt32,System.UInt32)": "a6718748ddf98afce1b550bd346cf0140de8944544f600816362c15b61fd4b6b",
+          "System.Runtime.CompilerServices.IAsyncStateMachineBox System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1::GetStateMachineBox(TStateMachine&,System.Threading.Tasks.Task`1<TResult>&)": "10f360a3fb90041302a4a06fc3b8b6347f7b0d27ba07cd6fba5af0d068b5a7a4",
+          "System.Void System.Threading.QueueUserWorkItemCallback::Execute()": "24d788dd686009bd9c37633d78bbe221e0405ebac6e4639a25900ea43a40ffda",
+          "System.Void System.Threading.QueueUserWorkItemCallbackDefaultContext::Execute()": "7fa5fdbfc8cfb1b4eea8eef334152c9827e02ebcc7af19488af4533a31af3445",
+          "System.Void System.Threading.QueueUserWorkItemCallbackDefaultContext`1::Execute()": "c1e6ffae01dbfc05922b307ef4ecef2d51106d81de81831cf10ca510028f53d5",
+          "System.Void System.Threading.QueueUserWorkItemCallback`1::Execute()": "83b3d36f9275ca06a5035475ddf254407c5f2466bb85ba67489d0d4c2ec7c2ae",
+          "System.Void System.Threading.Tasks.Task/<>c::<.cctor>b__289_0(System.Object)": "3933c87a0c328cf8deb495fa633edb6b149164c1c01e54878872fad89f86e648",
+          "System.Void System.Threading.Tasks.Task::ContinueWithCore(System.Threading.Tasks.Task,System.Threading.Tasks.TaskScheduler,System.Threading.CancellationToken,System.Threading.Tasks.TaskContinuationOptions)": "3b191683964cabe022ef170ac505707bbc8f86d9859c60e5804c4a3be512a588",
+          "System.Void System.Threading.Tasks.Task::ExecuteWithThreadLocal(System.Threading.Tasks.Task&,System.Threading.Thread)": "a32966dad0b1ca31ea2dea3b9043f8b45b6d47fad8efdcdfd856d34cca8c7f1b",
+          "System.Void System.Threading.Tasks.Task::FinishStageThree()": "c9a030644a719cee1334e3f1c7d20cc3cfbc54e009d98c3a9653c506fc38118a",
+          "System.Void System.Threading.Tasks.Task::ScheduleAndStart(System.Boolean)": "e8dc768f03b492707419b8a0b42c737d09511477283706c247d7c2ea23b69f6f",
+          "System.Void System.Threading.Tasks.TaskExceptionHolder::MarkAsHandled(System.Boolean)": "fed64c98d93669065af30688e9644356f0073492179248c2c2b7db5312bb83b6",
+          "System.Void System.Threading.Tasks.UnwrapPromise`1::.ctor(System.Threading.Tasks.Task,System.Boolean)": "983681313253b07ab4db7856e41e50a713ce6a8a3a27e00a9097721ffb9f9fd4",
+          "System.Void System.Threading.Tasks.UnwrapPromise`1::ProcessInnerTask(System.Threading.Tasks.Task)": "4a3f34930eb1861aabe76311974eb6fa9acfcc2139e5f0b3fb0df6aa16f8f8c5",
+          "System.Void System.Threading.ThreadPoolWorkQueue::DispatchWorkItem(System.Object,System.Threading.Thread)": "95d2738f3cf3a7ad5bafb7e9b400b22fe0ef162fe08f17b8b036fbf2890e855c",
+          "System.Void System.Threading.ThreadPoolWorkQueue::Enqueue(System.Object,System.Boolean)": "4c5c012afe0e5aa5c2a4cdc51aba12426e0d871f41d0a1db82a8ff5a920fa085",
+          "System.Void System.Threading.ThreadPoolWorkQueue::EnqueueAtHighPriority(System.Object)": "b6e96c60ed73aaae51ae1e20479b4c8a7a3b1a4b3c204472a0abefc10cd5d7df",
+          "System.Void System.Threading.ThreadPoolWorkQueueThreadLocals::TransferLocalWork()": "20de413ab84da45069699cc7081077ec8b05a780c7f3a35a99c833cdfb0e6a38",
+          "System.Void System.Threading.TimerQueue::DeleteTimer(System.Threading.TimerQueueTimer)": "97df4a648d3a936be0a512e16dff243bee88b9b77a44c5865e8c6f3f0d4f2f8d",
+          "System.Void System.Threading.TimerQueue::FireNextTimers()": "5e78e327e830b1b1543c560634848e2244663e3ec32686f5d6f8bd7904a11f09",
+          "System.Void System.Threading.TimerQueueTimer::CallCallback(System.Boolean)": "078f485b1d05ad88167bae8b04cb7c683ccb6987620d2b433507ec9c52e3097d",
+          "System.Void System.Threading.TimerQueueTimer::Fire(System.Boolean)": "7aac3cfdb1d33f5f32c3ef6760cc61596a805b5e33a26cee5d07ced09ec8962b"
+        },
+        "newAssemblyReferences": 0,
+        "patch": "latent.dotnet.managed-accepted-work.v2",
+        "privateRootBridge": "exact-Task-UnsafeAccessor-static-forwarders",
+        "qualified": false,
+        "queueAdmission": "before-original-enqueue-with-fault-rollback",
+        "requiredContinuationIdentity": "actual-state-machine-box-before-await-registration",
+        "structuralQueueLimit": 64,
+        "structuralRecordLimit": 32,
+        "structuralTimerLimit": 32,
+        "taskIdentity": "actual-task-unwrap-promise-and-inner",
+        "timerAdmission": "original-TimerQueueTimer-before-active-list-mutation",
+        "timerCallbackContext": "original-ExecutionContext-values-with-private-live-timer-owner",
+        "timerRetirement": "original-disarmed-no-accepted-queued-running-or-required-callback",
+        "unobservedFaults": "original-task-exception-retained-result-owner"
+      }
+    }
+  },
+  "run": 39617997010,
+  "source": "df4f5628add1a9ba9b1562ee00353fad57e4f7d5"
+}

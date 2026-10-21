@@ -11,6 +11,7 @@
     <Compile Include="../../../tools/http-errors/IdleTimerDriver.cs" Link="IdleTimerDriver.cs" />
     <Compile Include="../../../tools/http-errors/ClosedFilesystem.cs" Link="ClosedFilesystem.cs" />
     <Compile Include="../../../tools/http-errors/ManagedWorkRuntime.cs" Link="ManagedWorkRuntime.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkTimers.cs" Link="ManagedWorkTimers.cs" />
     <Compile Include="../../../tools/http-errors/ManagedWorkBindings.cs" Link="ManagedWorkBindings.cs" />
     <Compile Include="../../../tools/http-errors/ManagedWorkCopy.cs" Link="ManagedWorkCopy.cs" />
     <Compile Include="../../../tools/http-errors/ManagedWorkContext.cs" Link="ManagedWorkContext.cs" />

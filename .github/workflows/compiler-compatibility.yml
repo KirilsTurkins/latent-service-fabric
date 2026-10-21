@@ -1,0 +1,271 @@
+name: Compiler and signed initializer callback diagnostics
+'on':
+  push:
+    branches: ['feat/java-dotnet-diagnostics-679-20261021']
+    paths:
+      - '.github/workflows/compiler-compatibility.yml'
+      - 'sdk/java-guest/**'
+      - 'sdk/dotnet-guest/**'
+      - 'tools/java_guest/**'
+      - 'tools/dotnet_guest/**'
+      - 'tools/java_capsule.py'
+      - 'tools/java_capsule_build.py'
+      - 'tools/dotnet_capsule.py'
+      - 'tools/compiler_compatibility_*.py'
+      - 'tools/qualify_compiler_compatibility.py'
+      - 'tools/fixtures/compatibility-java/**'
+      - 'tools/fixtures/compatibility-dotnet/**'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: compiler-diagnostics-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  java-diagnostics:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/java-dotnet-diagnostics-679-20261021' }}
+    name: Compiler observations plus six signed java initializer and callback cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Fetch the exact historical native source before bounded verification
+      run: git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: 3.13.5
+    - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      with:
+        distribution: temurin
+        java-version: 25.0.4+101.0.LTS
+    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      with:
+        version: 1.254.0
+    - name: Install the existing pinned Java guest compiler tools
+      shell: bash
+      run: |
+        set -euo pipefail
+        curl --fail --location --retry 3 --max-time 180 \
+          https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+          -o "$RUNNER_TEMP/gradle.zip"
+        echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check --strict
+        unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+        echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+        curl --fail --location --max-time 180 \
+          https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+          -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
+        echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+        tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+        python3 -B tools/install_guest_bindgen.py "$RUNNER_TEMP/java-diagnostics-bindgen"
+        echo "$RUNNER_TEMP/java-diagnostics-bindgen" >> "$GITHUB_PATH"
+    - name: Check passive collectors, source binding and finite runtime oracles
+      run: |
+        python3 -m pip install --requirement tools/requirements.lock
+        python3 -B -m unittest tools.tests.test_java_compiler_reachability tools.tests.test_dotnet_compiler_reachability tools.tests.test_compiler_compatibility_fixture tools.tests.test_compiler_compatibility_execution tools.tests.test_compiler_compatibility_workflows -v
+    - name: Authenticate the same five native products without rebuilding the host
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/activation_stack_native_products.py --output "$RUNNER_TEMP/java-diagnostics-native"
+    - name: Capture one substantive component and run exact compiler plus signed observations
+      run: |
+        python3 -B tools/qualify_compiler_compatibility.py --language java \
+          --native "$RUNNER_TEMP/java-diagnostics-native" --tools "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" \
+          --output "$RUNNER_TEMP/java-compiler-diagnostics"
+    - name: Retain bounded public identities, actual results and signable package for causal replay
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: java-compiler-diagnostics-${{ github.sha }}
+        retention-days: 3
+        if-no-files-found: warn
+        path: |
+          ${{ runner.temp }}/java-diagnostics-native/*.json
+          ${{ runner.temp }}/java-compiler-diagnostics/*.json
+          ${{ runner.temp }}/java-compiler-diagnostics/commands/logs/**
+          ${{ runner.temp }}/java-compiler-diagnostics/compiler-cache/compiler-cache-selection.json
+          ${{ runner.temp }}/java-compiler-diagnostics/node/*.json
+          ${{ runner.temp }}/java-compiler-diagnostics/node/controls/*.json
+          ${{ runner.temp }}/java-compiler-diagnostics/node/commands/logs/**
+          ${{ runner.temp }}/java-compiler-diagnostics/node/signed/release-set.json
+          ${{ runner.temp }}/java-compiler-diagnostics/node/signed/my-greeting/build-observation.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/BUILD-COMPLETE.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/BUILD-COMPLETE.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/BUILD-FAILED.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/BUILD-FAILED.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/build-observation.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/build-observation.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/source-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/source-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/recipe-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/recipe-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compiler-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/package-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package-inputs.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/application-dependencies.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/application-dependencies.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/runtime-profile.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/runtime-profile.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compiler-patches.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-patches.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compiler-method-observation-selection.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-method-observation-selection.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-compiler-methods.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-compiler-methods.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-compiler-methods-unavailable.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-compiler-methods-unavailable.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-report.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-report.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-java-compiler-report.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-java-compiler-report.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-java-compiler-failed.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-java-compiler-failed.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-context.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-context.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/java-classpath.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/java-classpath.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/source-origins.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/source-origins.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/coroutine-compiler-preparation.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/coroutine-compiler-preparation.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/retirement-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/retirement-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/task-wait-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/task-wait-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/closed-filesystem-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/closed-filesystem-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/internal-io-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/internal-io-port.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/closed-runtime-coverage.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/closed-runtime-coverage.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/component.wasm
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/component.wasm
+          ${{ runner.temp }}/java-compiler-diagnostics/build/capsule.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/capsule.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/package-source.json
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package-source.json
+          ${{ runner.temp }}/java-compiler-diagnostics/build/package/**
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package/**
+          ${{ runner.temp }}/java-compiler-diagnostics/build/compiler-logs/*-java-to-c.log
+          ${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-logs/*-java-to-c.log
+  dotnet-diagnostics:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/java-dotnet-diagnostics-679-20261021' }}
+    name: Compiler observations plus six signed dotnet initializer and callback cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Fetch the exact historical native source before bounded verification
+      run: git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: 3.13.5
+    - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      with:
+        dotnet-version: 10.0.100
+    - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      with:
+        targets: wasm32-unknown-unknown
+    - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      with:
+        prefix-key: lsf-ci-dependencies-v2
+        shared-key: host-correctness
+        key: ubuntu-24.04
+        cache-targets: true
+        cache-bin: false
+        cache-workspace-crates: false
+        cache-all-crates: false
+        cache-on-failure: false
+        save-if: false
+    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      with:
+        version: 1.254.0
+    - name: Install the normal captured compiler isolation boundary
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+    - name: Prepare the pinned compiler and small current closed-runtime adapters
+      shell: bash
+      run: |
+        curl --fail --location --max-time 180 \
+          https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+          --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+        printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+        tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+        python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-diagnostics-bindgen"
+        export PATH="$RUNNER_TEMP/dotnet-diagnostics-bindgen:$PATH"
+        printf '%s\n' "$RUNNER_TEMP/dotnet-diagnostics-bindgen" >> "$GITHUB_PATH"
+        python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-diagnostics-tools" \
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+    - name: Check passive collectors, source binding and finite runtime oracles
+      run: |
+        python3 -m pip install --requirement tools/requirements.lock
+        python3 -B -m unittest tools.tests.test_java_compiler_reachability tools.tests.test_dotnet_compiler_reachability tools.tests.test_compiler_compatibility_fixture tools.tests.test_compiler_compatibility_execution tools.tests.test_compiler_compatibility_workflows -v
+    - name: Authenticate the same five native products without rebuilding the host
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/activation_stack_native_products.py --output "$RUNNER_TEMP/dotnet-diagnostics-native"
+    - name: Capture one substantive component and run exact compiler plus signed observations
+      run: |
+        python3 -B tools/qualify_compiler_compatibility.py --language dotnet \
+          --native "$RUNNER_TEMP/dotnet-diagnostics-native" --tools "$RUNNER_TEMP/dotnet-diagnostics-tools" \
+          --output "$RUNNER_TEMP/dotnet-compiler-diagnostics"
+    - name: Retain bounded public identities, actual results and signable package for causal replay
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: dotnet-compiler-diagnostics-${{ github.sha }}
+        retention-days: 3
+        if-no-files-found: warn
+        path: |
+          ${{ runner.temp }}/dotnet-diagnostics-native/*.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/*.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/commands/logs/**
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/compiler-cache/compiler-cache-selection.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/node/*.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/node/controls/*.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/node/commands/logs/**
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/node/signed/release-set.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/node/signed/my-greeting/build-observation.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/BUILD-COMPLETE.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/BUILD-FAILED.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/build-observation.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/source-inputs.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/recipe-inputs.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-inputs.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/package-inputs.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/application-dependencies.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/runtime-profile.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-patches.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-method-observation-selection.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-compiler-methods.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-compiler-methods-unavailable.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-report.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-java-compiler-report.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-java-compiler-failed.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-context.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/java-classpath.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/source-origins.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/coroutine-compiler-preparation.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/retirement-port.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/task-wait-port.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/closed-filesystem-port.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/internal-io-port.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/closed-runtime-coverage.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/component.wasm
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/capsule.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/package-source.json
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/package/**
+          ${{ runner.temp }}/dotnet-compiler-diagnostics/build/logs/**
+          ${{ runner.temp }}/dotnet-diagnostics-tools/INSTALL-COMPLETE.json
+          ${{ runner.temp }}/dotnet-diagnostics-tools/runtime-inputs.json
+          ${{ runner.temp }}/dotnet-diagnostics-tools/wasi-sdk.json
+          ${{ runner.temp }}/dotnet-diagnostics-tools/logs/**

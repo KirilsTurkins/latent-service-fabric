@@ -20,13 +20,16 @@ LIVE = ('execution-cell-leases', 'guest-invocations', 'guest-stores', 'guest-hos
 PENDING_MODES = {'node-stop-pending':'pending', 'node-stop-drain':'drain'}
 
 
-def selection(language):
+def selection(language, *, standard_entropy=False):
     require(language in ('typescript','go'),'resource-runtime-closed-language')
+    require(type(standard_entropy) is bool and (not standard_entropy or language == 'typescript'),
+            'resource-runtime-closed-standard-entropy')
     if language == 'go':
         from tools import go_resource_runtime_fixture as selected
         from tools.go_node_stop_probe import OWNER_LIMITS
         return selected, (*SCALARS,'latent:random/random@0.1.0'), OWNER_LIMITS, 'greeting', 'greet', 'resource-runtime:'
-    return fixture, SCALARS, LIMITS, 'resource-runtime', 'run', ''
+    scalars = (*SCALARS,'latent:random/random@0.1.0') if standard_entropy else SCALARS
+    return fixture, scalars, LIMITS, 'resource-runtime', 'run', ''
 
 
 def integer(value):
@@ -36,8 +39,12 @@ def integer(value):
     return int(value)
 
 
-def configure(settings, capsule, *, language='typescript'):
-    _fixture,scalars,limits,_template,_function,_prefix=selection(language)
+def configure(settings, capsule, *, language='typescript', standard_entropy=False, go_queue_ceiling=None):
+    _fixture,scalars,limits,_template,_function,_prefix=selection(language,standard_entropy=standard_entropy)
+    require(go_queue_ceiling is None or language == 'go' and type(go_queue_ceiling) is int
+            and go_queue_ceiling in (8,9,16), 'resource-runtime-closed-Go-queue-ceiling')
+    if go_queue_ceiling is not None:
+        limits = {**limits, 'queuedWork':go_queue_ceiling}
     imports = capsule.get('imports')
     require(type(imports) is list and len(imports) == len(scalars)+1
             and all(type(r) is dict and set(r) == {'contract','optional'} and r['optional'] is False for r in imports)
@@ -58,8 +65,8 @@ def configure(settings, capsule, *, language='typescript'):
     return settings
 
 
-def grant(client, node, manifest, publication, target, tenant, *, language='typescript'):
-    _fixture,scalars,_limits,template,function,prefix=selection(language)
+def grant(client, node, manifest, publication, target, tenant, *, language='typescript', standard_entropy=False):
+    _fixture,scalars,_limits,template,function,prefix=selection(language,standard_entropy=standard_entropy)
     target = resources.install_grants(client,node,manifest,publication,target,list(scalars),language,tenant)
     denied = call(client,target,template,function,[prefix+'parallel'],'resource-'+tenant+'-without-runtime')
     resources.require_denied_before_guest(denied)

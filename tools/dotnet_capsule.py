@@ -123,6 +123,8 @@ def parser():
     compile_.add_argument("--output", type=Path, required=True)
     compile_.add_argument("--repository", required=True)
     compile_.add_argument('--executable-approval')
+    compile_.add_argument('--compiler-methods', action='store_true',
+                          help='Collect bounded compiler method observations; no API execution or support claim')
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
     return parser
@@ -177,7 +179,8 @@ def main(argv: list[str] | None = None) -> int:
             result = create(args.directory, args.template, args.name)
         else:
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, tools=args.tools,
-                executable_approval=args.executable_approval)
+                executable_approval=args.executable_approval,
+                **({'compiler_methods': True} if args.compiler_methods else {}))
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError, KeyError, TypeError) as error:

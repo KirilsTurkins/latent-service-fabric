@@ -110,6 +110,11 @@ certificate of general library compatibility. Compiler elimination requires a
 source identity and compiler evidence. A scan for an API name cannot prove
 reachability or elimination.
 
+Java and .NET offer explicit, default-off
+[compiler method observations](compiler-method-observations.md). Dependency or
+scanner retention stays separate from API support and actual execution; missing
+or incomplete observations remain unknown.
+
 The additive Rust diagnostics programme uses an outside captured crate and its
 transitive callback crate through the ordinary Cargo authoring and lock-review
 workflow. It removes the original sources before the network-disabled build,
@@ -124,8 +129,15 @@ Only an exact successful decoded fallback can create the source-bound
 `unsupported-reached` observation. A generic terminal trap remains unresolved;
 the report does not infer its cause, retry safety or general worker quiescence.
 The fixture's target-selected branch checks are not promoted to arbitrary API
-elimination. The new hosted signed result remains pending until its receipt
-passes; this Rust programme does not complete the six-language diagnostics matrix.
+elimination. The [retained signed Rust result](../testing/evidence/rust-compatibility-signed-2026-10-21.json)
+passed all four cases on development source `7f169e7d2279f71bc10adaaac58625ae914fe8ed`:
+catchable denial with explicit fallback, the target-selected branch, an uncaught
+terminal trap, and a fresh successful fallback invocation after the trap. Each
+case has an idle physical node observation; the node shut down cleanly and was
+reaped. Its original machine report remains `blocked`, because the selected
+closed profile does not implement thread creation. The native references remain
+separate. Initialization failure, arbitrary API elimination, arbitrary worker
+quiescence and the six-language diagnostics matrix remain unqualified.
 
 `unsupported-reached` requires an initialization, invocation or retirement
 observation labelled `actual-component` or `native-reference`. Compile/link,

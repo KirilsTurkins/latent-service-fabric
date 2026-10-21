@@ -23,7 +23,7 @@ BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
     "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
-    "tools/dotnet_guest/managed_entropy.py",
+    "tools/dotnet_guest/managed_entropy.py", "tools/dotnet_guest/reachability.py",
     "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/task_wait.py", "tools/dotnet_guest/closed_filesystem.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/dotnet_guest/async_exports.py",
     "tools/dotnet_guest/internal_io.py",
@@ -45,7 +45,10 @@ RECIPE += guest_dependency_inputs.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
-          *, tools: Path, offline: bool = False, executable_approval: str | None = None):
+          *, tools: Path, offline: bool = False, executable_approval: str | None = None,
+          compiler_methods: bool = False):
+    if type(compiler_methods) is not bool:
+        raise ValueError('dotnet compiler method observations require an explicit boolean')
     project_path, output, tools = map(checked_path, (project_path, output, tools))
     project_path = guest_dependency_inputs.application_root(project_path, 'dotnet')
     if output == project_path or output in project_path.parents or (
@@ -92,7 +95,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             stage = "compiler-inputs"
             verified = verify_inputs(observed.dependency_root, 'dotnet')
-            compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None)
+            compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None,
+                **({'compiler_methods': True} if compiler_methods else {}))
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
             write_json(output / 'compiler-patches-preparation.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
@@ -169,6 +173,35 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("closed-runtime-coverage", read_file(output / "closed-runtime-coverage.json", 4 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json"]),
                 ("toolchain-config", files["global.json"])))
+            if compiler_methods:
+                from tools.dotnet_guest import reachability
+                from tools import guest_runtime_receipts
+                observed_methods = getattr(compiler, 'reachability_observation', None)
+                methods_material = None
+                try:
+                    if observed_methods is None or observed_methods.get('schemaVersion') != 'lsf.dotnet.compiler-methods.v1':
+                        raise ValueError('compiler-method-observation-unavailable')
+                    graph = guest_runtime_receipts.captured_graph(files)
+                    observed_methods = reachability.bind(observed_methods, source=digest(source_inputs),
+                        component=digest(component), compiler=digest(read_file(output / 'compiler-inputs.json', 32 * 1024 * 1024)),
+                        recipe=digest(recipe), graph=digest(canonical(graph)) if graph is not None else None)
+                    write_json(output / 'compatibility-compiler-methods.json', observed_methods)
+                    data = read_file(output / 'compatibility-compiler-methods.json', reachability.MAX_PUBLIC_BYTES)
+                    methods_material = {'name': 'compiler-method-reachability', 'digest': digest(data), 'size': len(data)}
+                    materials.append(methods_material)
+                except Exception:
+                    # A missing/overbound observation remains unknown. It
+                    # cannot replace the original successful compiler result.
+                    write_json(output / 'compatibility-compiler-methods-unavailable.json',
+                        reachability.unavailable(getattr(compiler, 'reachability_observation', None)))
+                selected = canonical({'schemaVersion': 'lsf.guest.compiler-method-selection.v1',
+                    'language': 'dotnet', 'selected': True,
+                    'status': 'observed' if methods_material is not None else 'unavailable',
+                    'observation': methods_material}) + b'\n'
+                with (output / 'compiler-method-observation-selection.json').open('xb') as stream:
+                    stream.write(selected)
+                materials.append({'name': 'compiler-method-observation-selection',
+                    'digest': digest(selected), 'size': len(selected)})
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("compiler observation deadline or clock invalid")

@@ -8,6 +8,8 @@ namespace Lsf.CompilerOwned;
 // ledger. Those have separate exact metadata and signed-execution gates.
 public static partial class ManagedWorkRuntime
 {
+    private static partial bool TimerScheduled(object item) => throw new InvalidOperationException("unexpected-control-timer");
+    private static partial int TimerCallbacks(object item) => throw new InvalidOperationException("unexpected-control-timer");
     private static partial object? ContextValue(ExecutionContext? context) => null;
     private static partial ExecutionContext ContextWithOwner(ExecutionContext? context, object owner) =>
         context ?? ExecutionContext.Capture() ?? throw new InvalidOperationException("control-context");

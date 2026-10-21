@@ -16,8 +16,10 @@ use super::{
 pub(super) fn admission(
     config: &NodeConfig,
     capacity: &Capacity,
+    wasmtime: &latent_wasmtime::WasmtimeConfig,
 ) -> Result<NodeAdmissionPolicy, PlatformError> {
     let limits = quota(config, capacity)?;
+    let threading_models = threading_models(config, wasmtime)?;
     let classes: BTreeSet<_> = config.cells.iter().map(|cell| cell.class.clone()).collect();
     let mut tenants: BTreeMap<TenantId, TenantAdmissionPolicy> = BTreeMap::new();
     for credential in &config.credentials {
@@ -85,10 +87,7 @@ pub(super) fn admission(
                     CellClassPolicy {
                         maximum_memory_bytes: cell.maximum_memory_bytes,
                         parallelism: cell.capacity,
-                        threading_models: vec![
-                            ThreadingModel::SingleThreaded,
-                            ThreadingModel::Reentrant,
-                        ],
+                        threading_models: threading_models.clone(),
                         features: BTreeSet::new(),
                     },
                 )
@@ -119,6 +118,38 @@ pub(super) fn admission(
         .validate_profile(config.budget_profile.profile())
         .map_err(|_| invalid("admission"))?;
     Ok(policy)
+}
+
+fn threading_models(
+    config: &NodeConfig,
+    wasmtime: &latent_wasmtime::WasmtimeConfig,
+) -> Result<Vec<ThreadingModel>, PlatformError> {
+    let models = vec![ThreadingModel::SingleThreaded, ThreadingModel::Reentrant];
+    if config.engine.threading_profile
+        == super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+    {
+        let installation = config
+            .providers
+            .as_ref()
+            .and_then(|providers| providers.activation_runtime.as_ref())
+            .ok_or_else(|| invalid("admission.threadingProfile.activationRuntime"))?;
+        // All configured cell classes use this same validated engine. Match
+        // its original per-Store owner limits; engine capability alone must
+        // never advertise a cooperative cell or create additional capacity.
+        if !installation.native_threads
+            || !wasmtime.owned_native_threads
+            || !wasmtime.owned_native_stacks
+            || wasmtime.native_thread_profile
+                != latent_wasmtime::NativeThreadProfile::CContext144SyncCooperativeV1
+            || wasmtime.activation_runtime != Some(installation.runtime_limits())
+        {
+            return Err(invalid("admission.threadingProfile.runtime"));
+        }
+        // The selected C verifier accepts only Cooperative manifests. Do not
+        // advertise the ordinary models on this differently configured engine.
+        return Ok(vec![ThreadingModel::Cooperative]);
+    }
+    Ok(models)
 }
 
 fn quota(config: &NodeConfig, capacity: &Capacity) -> Result<QuotaLimits, PlatformError> {

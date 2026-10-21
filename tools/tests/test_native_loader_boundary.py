@@ -82,7 +82,7 @@ all = "warn"
         for before, after in (
             ('ProtFlags::empty()', 'ProtFlags::READ | ProtFlags::WRITE'),
             ('runtime.register(OwnerKind::Native, None)?', 'unrelated_runtime.register(OwnerKind::Native, None)?'),
-            ('drop(self.permit.take());', 'self.permit.take();'),
+            ('drop(permit);', 'std::mem::forget(permit);'),
             ('#![allow(unsafe_code)]', '#![allow(unsafe_code)]\nunsafe fn extra() {}'),
         ):
             with self.subTest(change=before):
@@ -126,6 +126,22 @@ all = "warn"
             with self.subTest(change=before):
                 self.assertIn(before, source)
                 self.write(boundary.NATIVE_STACK_CHILD, source.replace(before, after))
+                self.assertTrue(boundary.validate(self.root))
+
+    def test_worker_live_parent_original_limits_and_retirement_remain_reviewed(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK_WORKER).read_text(encoding="utf-8")
+        self.write(boundary.NATIVE_STACK_WORKER, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for before, after in (
+            ('workers.parents.len() >= workers.maximum', 'false'),
+            ('.register(OwnerKind::Native, Some(parent))', '.register(OwnerKind::Native, None)'),
+            ('.reserve_host_memory(self.mapped as u64)', '.reserve_host_memory(0)'),
+            ('.retain(|parent| *parent != token)', '.clear()'),
+            ('use super::*;', 'use super::*;\n#[allow(unsafe_code)] unsafe fn extra() {}'),
+        ):
+            with self.subTest(change=before):
+                self.assertIn(before, source)
+                self.write(boundary.NATIVE_STACK_WORKER, source.replace(before, after))
                 self.assertTrue(boundary.validate(self.root))
 
     def test_allowance_cannot_expand_to_module_or_another_function(self) -> None:

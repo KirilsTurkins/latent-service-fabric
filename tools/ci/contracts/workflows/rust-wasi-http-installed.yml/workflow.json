@@ -1,0 +1,38 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-wasi-http-installed-${{ github.ref }}"
+    },
+    "name": "Installed Rust ordinary WASI HTTP recipe",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-http-installed-current-20261021"
+        ],
+        "paths": [
+          ".github/workflows/rust-wasi-http-installed.yml",
+          "tools/qualify_rust_wasi_http_installed.py",
+          "tools/rust_wasi_http_installed_*.py",
+          "tools/rust_wasi_http_current_backend.py",
+          "tools/dev_rust_http_runtime.py",
+          "tools/dev_guest_recipe.py",
+          "tools/dev_tool_distribution.py",
+          "tools/tests/test_rust_wasi_http_installed.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "ordinary-clients"
+  ],
+  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-installed.yml"
+}

@@ -77,7 +77,9 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
     if managed:
         from tools.dotnet_guest.managed_work import validate_rewrite
         validate_rewrite(value.get('managedAcceptedWork'))
-        fixed.update(generatedHelperCount=77, unchangedOriginalMethods=44723, managedAcceptedWork=value['managedAcceptedWork'])
+        timers = value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v2'
+        fixed.update(generatedHelperCount=91 if timers else 77, unchangedOriginalMethods=44719 if timers else 44723,
+            managedAcceptedWork=value['managedAcceptedWork'])
     bodies = value.get('timerDriverOriginalBodies')
     cache_bodies = value.get('zeroCacheOriginalBodies')
     body_names = {'System.Void System.Threading.TimerQueue::SetNextTimer(System.Int64,System.Int64)',

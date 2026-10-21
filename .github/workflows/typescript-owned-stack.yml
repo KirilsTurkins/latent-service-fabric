@@ -44,7 +44,7 @@ jobs:
           python3 -B - <<'PY'
           import os, subprocess
           from pathlib import Path
-          from tools import c_thread_native_products as native
+          from tools import activation_stack_native_products as native
           subprocess.check_call(['git','fetch','--no-tags','--depth=1','origin',native.SOURCE])
           native.prepare(Path(os.environ['RUNNER_TEMP'])/'typescript-owned-stack-native')
           PY

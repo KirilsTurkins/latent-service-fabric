@@ -1,0 +1,351 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.signed-observation.v1",
+  "source": "407cac236c337b4cfae6d855d499717fd9ddce95",
+  "run": 39668260882,
+  "job": 119458961583,
+  "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39668260882/job/119458961583",
+  "outerConclusion": "success",
+  "artifact": {
+    "id": 12378817614,
+    "sha256": "sha256:d1e368ed13a377774e33c4aaa77458396a48c7d6ea5993ac03769e4f558f6ae8",
+    "bytes": 3365582,
+    "members": 815,
+    "expandedBytes": 13668740
+  },
+  "signedQualification": true,
+  "fullTicketQualification": false,
+  "scope": "Selected explicit-async WASI HTTP0.2.12 default-client finite programme; no ecosystem-wide threads/executors or individual owner saturation claim.",
+  "buildReuse": {
+    "guestSource": "88b3c9c1d305eb8e308a7187600f782163bc6131",
+    "originalGuestRun": 39623507324,
+    "originalOuterConclusion": "failure",
+    "component": {
+      "sha256": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+      "bytes": 934498
+    },
+    "originalArchiveMembers": 420,
+    "originalCompilerCommands": 34,
+    "originalExecutedGitMaterials": 143,
+    "originalRecipeGitRows": 116,
+    "backendSource": "52654f7b86ef0043a8250dea39093d955ee9f480",
+    "backendGitRows": 110,
+    "nativeSource": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "nativeSourceCompatibility": {
+      "compiledSourceRevision": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+      "compiledNativeSource": {
+        "sha256": "sha256:8ae85103a4ea211b686ac7b16222bfa2f6a950a08c5957f9b488785c7f007268",
+        "files": 3325,
+        "bytes": 26391555,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "consumerNativeSource": {
+        "sha256": "sha256:a55ef0a2b05ef959f47bab7b44e817da5f73c1c8afc9faa3364d4520ec0ad200",
+        "files": 3325,
+        "bytes": 26391846,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "compiledSourceByteExact": false,
+      "reviewedSourceChanges": [
+        {
+          "path": "apps/latentd/src/config/runtime.rs",
+          "reviewedRevision": "8473afecac55bbf6d67b411b7d7b73820991b289",
+          "operation": "reverse-fixed-stack-profile-helper-extraction",
+          "compiledFile": {
+            "sha256": "sha256:afb01d90bba9bbbecf641bc8467075c67fa3b83696e7f37004c25a3cc71d38a6",
+            "bytes": 9601
+          },
+          "currentFile": {
+            "sha256": "sha256:439a1879d288e2658b4b95865d6e58bab548e40cc618c0b6e9a8c5b991f70be9",
+            "bytes": 9789
+          },
+          "reverseInlineByteExact": true,
+          "allOtherNativeFilesByteExact": 3323
+        },
+        {
+          "path": "apps/latentd/src/config/tests/engine.rs",
+          "reviewedRevision": "d79bd0d49431d95f7cf46297629649682c277b69",
+          "operation": "reverse-two-fixed-explicit-test-defaults",
+          "compiledFile": {
+            "sha256": "sha256:c640fd38d4702aeadc919269086f0653374720ff2db3b22d7f60cab4c27e4e33",
+            "bytes": 7524
+          },
+          "currentFile": {
+            "sha256": "sha256:7dd8fee5a7ac533fbcb815a02145291d421129f24899f03e1a2f494c0fda298c",
+            "bytes": 7627
+          },
+          "reverseSubstitutionsByteExact": true,
+          "allOtherNativeFilesByteExact": 3323
+        }
+      ]
+    },
+    "nativeAuxiliaryRows": 134,
+    "nativeProducts": {
+      "latent": {
+        "sha256": "sha256:aad7701ef9fcd1df60f53dfeb90c1e74e3ca7131e3fe2fa30d9e31f27d5e52db",
+        "bytes": 69176392
+      },
+      "latentd": {
+        "sha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc",
+        "bytes": 188938624
+      },
+      "examples/package": {
+        "sha256": "sha256:697287c09863072460378304848a57aad670c43720b5972b503d69b1908fff42",
+        "bytes": 17854768
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:a02d591021cae76792f71fdf026d07b6929cdca8372644a2b5247bea6c99b67d",
+        "bytes": 13844184
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:bc3077253cb60975214f8492b70a92a372b64101143fd2221246ec2d07a1152b",
+        "bytes": 24136488
+      }
+    },
+    "originalObservationRewritten": false,
+    "originalPackageInputsRewritten": false,
+    "newGuestBackendOrNativeBuilds": 0,
+    "freshNormalSigningObserved": true,
+    "publicWitRestorations": {
+      "wit/deps/clock-monotonic/package.wit": {
+        "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "size": 139
+      },
+      "wit/deps/http/package.wit": {
+        "digest": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+        "size": 2915
+      },
+      "wit/deps/runtime/package.wit": {
+        "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+        "size": 2539
+      },
+      "wit/world.wit": {
+        "digest": "sha256:bcc62b3cd5dc21e568bda3256c264cdaabc93f4de2fbbcf97cd974dcf7d87761",
+        "size": 275
+      }
+    }
+  },
+  "ordinaryLibraries": {
+    "waki": "0.5.1",
+    "golem-wasi-http": "0.2.0",
+    "factories": [
+      "waki::Client::new()",
+      "golem_wasi_http::Client::new()"
+    ],
+    "libraryCodePatched": false,
+    "applicationTransportInjected": false,
+    "outsideCrates": [
+      "alpha",
+      "delta"
+    ],
+    "sourceCatalogueDataInputs": [],
+    "catalogueProofScope": "Complete captured source/SDK and116recipe input names are checked by the original normal build; repository publication data is not removed."
+  },
+  "programme": {
+    "ordinaryCases": 52,
+    "guestExecutions": 53,
+    "invocationAttempts": 64,
+    "preEntryRefusals": 11,
+    "cases": [
+      "examples-json",
+      "foreign-json",
+      "examples-post",
+      "foreign-post",
+      "examples-http404",
+      "foreign-http404",
+      "examples-http500",
+      "foreign-http500",
+      "examples-reserved-auth",
+      "foreign-reserved-auth",
+      "examples-reserved-cookie",
+      "foreign-reserved-cookie",
+      "examples-foreign-target",
+      "foreign-foreign-target",
+      "examples-redirect-stopped",
+      "foreign-redirect-stopped",
+      "examples-redirect-denied-stopped",
+      "foreign-redirect-denied-stopped",
+      "examples-malformed-json",
+      "foreign-malformed-json",
+      "examples-truncated",
+      "foreign-truncated",
+      "examples-malformed-framing",
+      "foreign-malformed-framing",
+      "examples-oversized",
+      "foreign-oversized",
+      "examples-partial-complete",
+      "foreign-partial-complete",
+      "examples-early-drop",
+      "foreign-early-drop",
+      "examples-root-drop",
+      "foreign-root-drop",
+      "examples-root-trap",
+      "foreign-root-trap",
+      "examples-fresh-after-trap",
+      "foreign-fresh-after-trap",
+      "examples-pending-cancel",
+      "foreign-pending-cancel",
+      "examples-pending-deadline",
+      "foreign-pending-deadline",
+      "examples-uncertain-post",
+      "foreign-uncertain-post",
+      "examples-timeout-option-unsupported",
+      "foreign-timeout-option-unsupported",
+      "examples-repeat",
+      "foreign-repeat",
+      "examples-authorized-secondary",
+      "foreign-authorized-secondary",
+      "examples-resource-capacity",
+      "foreign-resource-capacity",
+      "examples-cross-fresh",
+      "foreign-cross-fresh"
+    ],
+    "independentGrantDenials": 8,
+    "providerAbsence": 2,
+    "queuedBeforeGuestCancellation": 1,
+    "positivePeerPhysicalProviderPendingBarriers": 7,
+    "actualTransitiveTimerPending": 2,
+    "retirementRecords": 65,
+    "physicalKinds": 5,
+    "providerActiveCounters": 18,
+    "finalPeerContacts": {
+      "examples": 31,
+      "foreign": 30
+    },
+    "foreignPressureFinalLedger": {
+      "acceptedConnections": 8,
+      "parsedRequests": 7,
+      "completedWrites": 7,
+      "closedBeforeParseRequest": 29,
+      "receivedRequestBytesProved": false,
+      "heldResponseCountProved": false,
+      "timerTrapSiteProved": false
+    },
+    "allPeerConnectionsClosed": true,
+    "cleanShutdown": true,
+    "budgets": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 16777216,
+      "outboundRequests": 8,
+      "wallTimeLimitMillis": 5000,
+      "requestedDeadlineCaseMillis": 4000
+    },
+    "runtimeLimits": {
+      "tasks": 8,
+      "executors": 2,
+      "queuedWork": 8,
+      "waits": 16,
+      "timers": 8,
+      "results": 8,
+      "nativeOwners": 8
+    },
+    "oppositeFreshClients": {
+      "examples": "golem",
+      "foreign": "waki"
+    }
+  },
+  "capacityScope": {
+    "waki": "Exact catchable runtime-resource-exhausted public result after eight accepted responses.",
+    "golem": "Exact unreachable guest trap after eight charged outbound starts, eight accepted TCP connections, seven parsed complete JSON responses and one exact preparse close.",
+    "limitingOwnerKindProven": false,
+    "individualMemoryTaskTimerSaturationProved": false,
+    "guestPeakMemoryIsNotMemoryLimitProof": true
+  },
+  "composition": {
+    "baseDevelopment": "4be5786b47084cd9ab02aadf056af416be2ba421",
+    "actualExecuted407Materials": {
+      "rows": 30,
+      "same": 30,
+      "deltas": []
+    },
+    "historical88bMaterials": {
+      "rows": 143,
+      "same": 141,
+      "deltas": [
+        {
+          "path": "tools/guest_runtime_receipts.py",
+          "executed": {
+            "sha256": "sha256:3ff4a3dc509dd0287972c48e9df1898a6909b314cb3b76b7e5d22d37bfca5a91",
+            "bytes": 12480
+          },
+          "currentComposition": {
+            "sha256": "sha256:09b8cea1c5c864eac01f67bed66fe3c09afab5a3ee71238385781ca5b6fbfd1f",
+            "bytes": 12510
+          }
+        },
+        {
+          "path": "tools/rust_wasi_http_runtime_node.py",
+          "executed": {
+            "sha256": "sha256:4812700c02cc0a5cedf1b5fa4fad460ba6beed2830389d05643ea3e299328225",
+            "bytes": 57127
+          },
+          "currentComposition": {
+            "sha256": "sha256:ecc8ce33cdfcf709cd32b802b0abada8ed311cf5d0300097e86cca7c004fc25c",
+            "bytes": 73456
+          }
+        }
+      ]
+    },
+    "historical88bRecipe": {
+      "rows": 116,
+      "same": 115,
+      "deltas": [
+        {
+          "path": "tools/guest_runtime_receipts.py",
+          "executed": {
+            "sha256": "sha256:3ff4a3dc509dd0287972c48e9df1898a6909b314cb3b76b7e5d22d37bfca5a91",
+            "bytes": 12480
+          },
+          "currentComposition": {
+            "sha256": "sha256:09b8cea1c5c864eac01f67bed66fe3c09afab5a3ee71238385781ca5b6fbfd1f",
+            "bytes": 12510
+          }
+        }
+      ]
+    },
+    "additionalRecipeDeltaReason": "Only the Go-specific closed runtime-profile list adds go-component-activation-v6; the Rust branch is byte-exact. No compiler re-execution or current116-row identity is claimed.",
+    "currentNativeCompiledByC713Claimed": false
+  },
+  "mandatoryEvidenceLedger": {
+    "delivered": [
+      "Two independent unchanged ordinary clients on the same selected backend/default factories.",
+      "Actual request/domain JSON parsing, methods/headers/status versus transport errors.",
+      "Two captured developer-owned crate coordinates absent SDK catalogue inputs.",
+      "Independent HTTP/activation/monotonic grant refusal and provider absence, all pre-entry fuel0.",
+      "Reserved auth/cookie, foreign destination zero-contact, redirect credential isolation.",
+      "Malformed/truncated/oversized responses, held partial body, early/root Drop, trap, cancellation/deadline.",
+      "Uncertain POST has exactly one committed mutation per tenant and no replay.",
+      "Root drain, same-cell fresh opposite client/tenant, positive physical/provider owners and eventual full retirement.",
+      "Captured installed developer tooling is independently qualified by#1314."
+    ],
+    "remaining": [
+      "Individual signed memory-limit, Task-limit and Timer-limit saturation with physical retirement/fresh reuse for this exact selected Rust profile."
+    ],
+    "notClaimed": [
+      "Whole#743 runtime closure or arbitrary std/Tokio/Rayon/thread support.",
+      "Exact instruction/owner causing the Golem pressure trap.",
+      "Current merged-native compilation by the historical c713 producer."
+    ]
+  },
+  "preservedFailureObservations": [
+    "rust-wasi-http-runtime-88b-retained.json",
+    "rust-wasi-http-forbidden-reader-failure-2026-10-21.json",
+    "rust-wasi-http-malformed-framing-failure-2026-10-21.json",
+    "rust-wasi-http-forced-terminal-failure-2026-10-21.json",
+    "rust-wasi-http-capacity-failure-2026-10-21.json",
+    "rust-wasi-http-pressure-peer-2026-10-21.json"
+  ],
+  "verification": {
+    "wholeArchiveShaCrcChecked": true,
+    "sourceGitAndRawOraclesRechecked": true,
+    "independentParentVerificationPassed": true,
+    "verificationScript": {
+      "sha256": "sha256:127c2581ecb92486db3b7ed65a506da2c64ac15525ac20b44af604dcf2d7e3b5",
+      "bytes": 17463
+    },
+    "localEvidencePathsAreNotPublishedProductInputs": true
+  }
+}

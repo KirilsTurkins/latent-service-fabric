@@ -152,7 +152,8 @@ PROPERTIES=('<PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputTyp
     '<ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets></PropertyGroup>')
 
 
-def project(directory:Path,outside:Path):
+def project(directory:Path,outside:Path,*,late_completion=False):
+    require(type(late_completion) is bool, 'resource-dotnet-late-selector')
     require(directory.parent.resolve(strict=True)==outside.parent.resolve(strict=True)
         and ROOT not in outside.parents and outside.parent.resolve(strict=True)!=ROOT,
         'resource-dotnet-independent-originals')
@@ -179,7 +180,8 @@ def project(directory:Path,outside:Path):
         for path,name in (('text.txt','text'),('binary.bin','binary'),('empty.bin','empty')))
     (child/'Child.csproj').write_bytes(('<Project Sdk="Microsoft.NET.Sdk">'+PROPERTIES+
         '<PropertyGroup><AssemblyName>'+PACKAGES[1]+'</AssemblyName></PropertyGroup><ItemGroup>'+resources+'</ItemGroup></Project>').encode())
-    (library/'Library.cs').write_bytes(LIBRARY_SOURCE.encode())
+    (library/'Library.cs').write_bytes(read_file(ROOT/'tools/fixtures/dotnet-resource-late/Library.cs')
+        if late_completion else LIBRARY_SOURCE.encode())
     (library/'Library.csproj').write_bytes(('<Project Sdk="Microsoft.NET.Sdk">'+PROPERTIES+
         '<PropertyGroup><AssemblyName>'+PACKAGES[0]+'</AssemblyName></PropertyGroup><ItemGroup>'+
         '<Compile Remove="child/**" /><ProjectReference Include="child/Child.csproj" /></ItemGroup></Project>').encode())
