@@ -9,6 +9,7 @@
     "InstalledRustHttp.test_outer_inventory_boundary_uses_the_genuine_checker_and_refuses_payload_or_source_drift",
     "InstalledRustHttp.test_outer_namespace_has_no_network_or_checkout_mount_and_installed_isolated_entry",
     "InstalledRustHttp.test_owning_cli_bootstraps_without_pythonpath_or_compiler_execution",
+    "InstalledRustHttp.test_real_controller_packaging_joins_actual_tool_and_preserves_original_compiler_records",
     "InstalledRustHttp.test_selected_installed_rust_imports_include_linux_dispatch_without_controller_only_inventory"
   ],
   "guards": {
@@ -120,6 +121,18 @@
       ],
       "skipSites": []
     },
+    "InstalledRustHttp.test_real_controller_packaging_joins_actual_tool_and_preserves_original_compiler_records": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
     "InstalledRustHttp.test_selected_installed_rust_imports_include_linux_dispatch_without_controller_only_inventory": {
       "bases": [
         "unittest.TestCase"
@@ -135,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_installed.py",
-  "reviewReason": "Reviewed retained12538 control-only import failure: genuine full inventory validation remains prepare/after-compiler-before-signing/final; readonly inner inventory SHA remains exact; Linux helper source closure and two additive controls preserved.",
+  "reviewReason": "Parent full-source review approved genuine existing public CLI packaging/provenance join within unchanged900s after one normal installed compile, plus bounded prepackage/final signer diagnostics; old commands,16 approval entries,six attempts,caps/native/backend reuse unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -33,7 +33,11 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 
 MATERIALS = ('.github/workflows/rust-wasi-http-installed.yml', 'tools/qualify_rust_wasi_http_installed.py', 'tools/qualify_rust_wasi_http_runtime.py',
     'tools/build_dev_guest_tools.py', 'tools/install_guest_bindgen.py',
-    'tools/rust_wasi_http_runtime_fixture.py', *inputs.MATERIALS, *node.MATERIALS, *backend.MATERIALS)
+    'tools/rust_wasi_http_runtime_fixture.py',
+    'tools/dev_workflow/__init__.py','tools/dev_workflow/build_artifacts.py','tools/dev_workflow/build_provenance.py',
+    'tools/dev_workflow/process.py','tools/dev_workflow/paths.py','tools/dev_workflow/common.py',
+    'tools/dev_workflow/state.py','tools/dev_workflow/transaction_binding.py',
+    *inputs.MATERIALS, *node.MATERIALS, *backend.MATERIALS)
 
 
 def check_installed_inventory(payload, assembled, inventory_before):
@@ -42,6 +46,47 @@ def check_installed_inventory(payload, assembled, inventory_before):
     require(assembled['inventoryIdentity'] == tool_inventory.check(payload, descriptor, 'linux-x86_64')
         and inventory_before == file_identity(payload/'guest-tools.json'),
         'installed-rust-full-inventory-before-trusting-compiler-output')
+
+
+
+def complete_installed_package(artifact, native, output, deadline):
+    from tools.dev_workflow import build_artifacts, build_provenance
+    # The installed recipe deliberately compiles only. Use the exact ordinary
+    # developer controller packaging/join immediately, inside its original900s.
+    original={name:file_identity(artifact/name) for name in
+        ('build-observation.json','BUILD-COMPLETE.json','component.wasm')}
+    packager=file_identity(native['latent'],512*1024**2)
+    output.mkdir(mode=0o700)
+    refused=run_bounded_result([str(native['capsule_authoring']),'demo-sign-neutral-resources',
+        str(output/'original-refused-signature'),str(artifact)],output,build_environment(output),
+        timeout_seconds=min(30,deadline-time.monotonic()),max_output_bytes=65536)
+    diagnostic={'scope':'actual-compile-only-signing-before-controller-packaging','exitCode':refused.returncode}
+    for suffix,raw in (('stdout',refused.stdout),('stderr',refused.stderr)):
+        path=output/('compile-only-signing.'+suffix);path.write_bytes(raw)
+        diagnostic[suffix]=file_identity(path,65536)
+    write_json(output/'compile-only-signing.json',diagnostic)
+    require(refused.returncode!=0,'installed-rust-original-compile-only-signing-refusal')
+    descriptor={'build':{'adapter':{},'outputRoot':artifact.name},'artifacts':{
+        'component':artifact.name+'/component.wasm','capsule':artifact.name+'/capsule.json',
+        'contracts':artifact.name+'/contracts.json','packageSource':artifact.name+'/package-source.json',
+        'packageRoot':artifact.name+'/package'}}
+    packaged=build_artifacts.package(native['latent'],artifact.parent,descriptor['artifacts'],
+        deadline,lambda:require(time.monotonic()<deadline,'installed-rust-packaging-deadline'),cached=False)
+    build_provenance.complete(artifact.parent,descriptor,native['latent'],packager['sha256'],packaged)
+    require(original['build-observation.json']==file_identity(artifact/'compiler-build-observation.json')
+        and original['BUILD-COMPLETE.json']==file_identity(artifact/'compiler-BUILD-COMPLETE.json')
+        and original['component.wasm']==file_identity(artifact/'component.wasm')
+        and file_identity(native['latent'],512*1024**2)==packager
+        and read_json(artifact/'BUILD-COMPLETE.json')['packageAssembled'] is True,
+        'installed-rust-real-controller-packaging-preserves-original-compiler-bytes')
+    record={'schemaVersion':'latent.rust.wasi-http.installed-packaging.v1','originalCompiler':original,
+        'packager':packager,'actualPackage':packaged,'controllerPackaging':file_identity(artifact/'controller-packaging.json'),
+        'joinedBuildObservation':file_identity(artifact/'build-observation.json'),
+        'joinedComplete':file_identity(artifact/'BUILD-COMPLETE.json'),
+        'componentCompilationPerformed':False,'signRefusalDiagnostic':diagnostic,
+        'entry':'tools/dev_workflow/build_artifacts.package +tools/dev_workflow/build_provenance.complete'}
+    write_json(output/'packaging.json',record)
+    return record
 
 
 def qualify(native_directory, adapter_directory, zig_archive, python_prefix, output, *, retained_backend):
@@ -114,10 +159,12 @@ def qualify(native_directory, adapter_directory, zig_archive, python_prefix, out
         require(read_json(artifact/'BUILD-COMPLETE.json')['packageAssembled'] is False,
             'installed-rust-controller-packaging-required')
         record['guestComponentsCompiled'] = 1
-        stage = 'signed-installed-two-client-denial-retirement-fresh'
         native = inputs.products.native_products(native_directory)
         for path in native.values():
             path.chmod(0o700)
+        stage = 'normal-controller-package-and-compiler-observation-join'
+        record['packaging'] = complete_installed_package(artifact,native,output/'packaging',deadline)
+        stage = 'signed-installed-two-client-denial-retirement-fresh'
         observed = node.run(artifact, native, output/'node', deadline=deadline)
         require(observed['status'] == 'passed' and observed['guestExecutions'] == 4
             and observed['invocationAttempts'] == 6 and observed['preEntryRefusalsCount'] == 2

@@ -120,6 +120,11 @@ jobs:
             ${{ runner.temp }}/rust-http-installed/installed-execution/approved/output/logs/*.txt
             ${{ runner.temp }}/rust-http-installed/installed-execution/unapproved/output/*.json
             ${{ runner.temp }}/rust-http-installed/installed-execution/unapproved/output/logs/*.txt
+            ${{ runner.temp }}/rust-http-installed/packaging/*.json
+            ${{ runner.temp }}/rust-http-installed/packaging/*.stdout
+            ${{ runner.temp }}/rust-http-installed/packaging/*.stderr
+            ${{ runner.temp }}/rust-http-installed/node/*.stdout
+            ${{ runner.temp }}/rust-http-installed/node/*.stderr
             ${{ runner.temp }}/rust-http-installed/node/*.json
             ${{ runner.temp }}/rust-http-installed/node/examples-controls/*.json
             ${{ runner.temp }}/rust-http-installed/node/foreign-controls/*.json

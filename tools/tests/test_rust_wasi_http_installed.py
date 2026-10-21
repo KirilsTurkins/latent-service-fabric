@@ -18,6 +18,41 @@ from tools import rust_wasi_http_installed_inputs as inputs
 
 
 class InstalledRustHttp(unittest.TestCase):
+    def test_real_controller_packaging_joins_actual_tool_and_preserves_original_compiler_records(self):
+        from unittest.mock import patch
+        from tools.dev_workflow import build_artifacts,build_provenance
+        import json,time
+        artifact=self.root/'attempt/output';artifact.mkdir(parents=True)
+        (artifact/'component.wasm').write_bytes(b'component')
+        packager=self.root/'latent';packager.write_bytes(b'actual-controlled-cli')
+        signer=self.root/'signer';signer.write_bytes(b'actual-controlled-signer')
+        observed={'componentDigest':digest(b'component'),'componentSize':9,'materials':[],
+            'startedAt':10,'finishedAt':11}
+        raw=canonical(observed);(artifact/'build-observation.json').write_bytes(raw)
+        marker=canonical({'formatVersion':1,'componentDigest':digest(b'component'),
+            'observationDigest':digest(raw),'packageAssembled':False})
+        (artifact/'BUILD-COMPLETE.json').write_bytes(marker)
+        result={'componentDigest':digest(b'component'),'packageDigest':'sha256:'+'a'*64}
+        refused=SimpleNamespace(returncode=1,stdout=b'',stderr=b'controlled unsigned refusal')
+        with patch.object(owning,'run_bounded_result',return_value=refused), \
+                patch.object(build_artifacts,'package',return_value=result) as actual, \
+                patch.object(build_provenance.time,'time',return_value=12):
+            record=owning.complete_installed_package(artifact,{'latent':packager,'capsule_authoring':signer},
+                self.root/'packaging',time.monotonic()+30)
+        self.assertEqual(actual.call_count,1)
+        self.assertEqual(actual.call_args.args[:2],(packager,artifact.parent))
+        self.assertEqual(actual.call_args.args[2]['component'],'output/component.wasm')
+        self.assertFalse(actual.call_args.kwargs['cached'])
+        self.assertEqual((artifact/'compiler-build-observation.json').read_bytes(),raw)
+        self.assertEqual((artifact/'compiler-BUILD-COMPLETE.json').read_bytes(),marker)
+        self.assertTrue(json.loads((artifact/'BUILD-COMPLETE.json').read_bytes())['packageAssembled'])
+        joined=json.loads((artifact/'build-observation.json').read_bytes())
+        self.assertEqual(joined['materials'],[{'name':'packager','digest':digest(packager.read_bytes()),
+            'size':len(packager.read_bytes())}])
+        self.assertFalse(record['componentCompilationPerformed'])
+        self.assertEqual((self.root/'packaging/compile-only-signing.stderr').read_bytes(),refused.stderr)
+        self.assertEqual(record['controllerPackaging']['sha256'],digest((artifact/'controller-packaging.json').read_bytes()))
+
     def test_selected_installed_rust_imports_include_linux_dispatch_without_controller_only_inventory(self):
         import json
         from tools import dev_tool_distribution as distribution

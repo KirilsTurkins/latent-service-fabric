@@ -111,3 +111,15 @@ call; the diagnostic is not qualification. The Component Model's
 distinguishes a function's async effect from its Core ABI. Generator-only controls
 verify the explicit contract and unchanged ordinary source bodies; fresh signed
 execution is still required for the corrected profile.
+
+The `8e6ce8d` installed owning attempt compiled one genuine installed-entry
+component with all 32 normal compiler/composition commands passing. Its
+compile-only observation correctly omitted a packager. Signing failed before
+node execution; that attempt did not retain the signer stderr. The installed
+controller now follows the existing ordinary public CLI packaging and provenance
+join before signing, inside the unchanged original 900-second compiler clock.
+The genuine join preserves the original compiler statement and marker verbatim
+and adds the actual packager identity. This requires one corrected installed
+build and six signed attempts; it does not require another host or backend build.
+The original [failure observation](evidence/rust-wasi-http-installed-packaging-failure-2026-10-21.json)
+remains failed.

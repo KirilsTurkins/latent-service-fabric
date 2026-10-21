@@ -57,6 +57,10 @@ def run(artifact, native, output, *, deadline):
         result = run_bounded_result([str(native['capsule_authoring']), 'demo-sign-neutral-resources',
             str(signed), str(artifact)], output, build_environment(output),
             timeout_seconds=min(30, deadline-time.monotonic()), max_output_bytes=65536)
+        record['signingCommand']={'exitCode':result.returncode}
+        for suffix,raw in (('stdout',result.stdout),('stderr',result.stderr)):
+            path=output/('signing.'+suffix);path.write_bytes(raw)
+            record['signingCommand'][suffix]=file_identity(path,65536)
         require(result.returncode == 0, 'installed-rust-normal-signing')
         record['signing'] = original.checked_signing(artifact, signed, before)
         with tempfile.TemporaryDirectory(prefix='lsf-installed-rust-http-') as temporary, \

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_wasi_http_installed.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Parent source review approved the exact retained failure correction and additive adversarial controls; all prior commands, cases, caps and guards remain.",
+  "reviewReason": "Parent full-source review approved genuine existing public CLI packaging/provenance join within unchanged900s after one normal installed compile, plus bounded prepackage/final signer diagnostics; old commands,16 approval entries,six attempts,caps/native/backend reuse unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8bcfad2e42496b675d6459906fda4c94b97167f8077416735a58c4534646720a"
+  "sha256": "8fefd156ed71151e7225e75493dbaf33a0b0c5c514242aa224c08a9203176578"
 }
