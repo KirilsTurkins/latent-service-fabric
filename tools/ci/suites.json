@@ -9709,14 +9709,15 @@
         "error::tests::runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certainty",
         "management::tests::preparation::release_prepare_requires_exact_publication_generation_and_finite_setup_wait",
         "management::phase2::execute::release::tests::prepared_release_projection_is_bounded_lossless_and_never_execution_authority",
-        "command::tests::exact_release_preparation_command_keeps_its_public_result_name"
+        "command::tests::exact_release_preparation_command_keeps_its_public_result_name",
+        "management::execute::tests::parsed_release_prepare_keeps_management_dispatch_and_exact_selection"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 170,
+      "minimumCases": 171,
       "mode": "libtest",
       "package": "latent",
       "platforms": [

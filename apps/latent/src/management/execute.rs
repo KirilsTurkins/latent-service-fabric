@@ -31,6 +31,7 @@ fn is_phase2(operation: &Operation) -> bool {
             | Operation::DeleteDeployment(_)
             | Operation::GetDeployment(_)
             | Operation::GetReleaseLifecycle(_)
+            | Operation::PrepareRelease(_)
             | Operation::LookupReleaseReceipt(_)
             | Operation::ChangeReleaseLifecycle(_)
             | Operation::RenewReleaseEvidence(_)
@@ -220,4 +221,58 @@ fn publication_digest(
         )
     })?;
     Ok(latent_artifacts::content_digest(&artifact.component_bytes).0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+    use std::time::Duration;
+
+    #[test]
+    fn parsed_release_prepare_keeps_management_dispatch_and_exact_selection() {
+        let publication = format!("publication:sha256:{}", "a".repeat(64));
+        let generation = u64::MAX.to_string();
+        let cli = crate::args::Cli::try_parse_from([
+            "latent",
+            "release",
+            "prepare",
+            "--publication",
+            &publication,
+            "--lifecycle-generation",
+            &generation,
+            "--maximum-wait-ms",
+            "300000",
+        ])
+        .unwrap();
+        cli.validate().unwrap();
+        let config = crate::config::ResolvedConfig {
+            endpoint: "http://127.0.0.1:1".into(),
+            tenant: "examples".into(),
+            token: "x".repeat(32),
+            connect_timeout: Duration::from_secs(1),
+            rpc_timeout: Duration::from_secs(300),
+            limits: crate::config::InputLimits::default(),
+            manifest_profile: latent_manifest::ManifestValidationProfile::default(),
+        };
+        let operation = crate::management::prepare(&cli.command, &config).unwrap();
+        assert!(is_phase2(&operation));
+        assert!(!operation.is_invocation());
+        let Operation::PrepareRelease(request) = operation else {
+            panic!("expected exact release preparation operation");
+        };
+        assert_eq!(
+            request.publication,
+            Some(proto::PublicationRef {
+                id: publication,
+                tenant: "examples".into(),
+            })
+        );
+        assert_eq!(request.lifecycle_generation, u64::MAX);
+        assert_eq!(request.maximum_wait_millis, 300_000);
+        assert!(!is_phase2(&Operation::GetNode(
+            proto::GetNodeRequest::default()
+        )));
+        assert!(!is_phase2(&Operation::Invoke(Default::default())));
+    }
 }
