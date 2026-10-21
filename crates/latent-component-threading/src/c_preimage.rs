@@ -392,7 +392,8 @@ fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
 // the suffix value, so this also bounds every preallocating reader's count.
 // Signed valtypes use their ordinary one-byte tags. Larger signed encodings,
 // indices and non-ASCII names may be refused by this first finite profile.
-// No type encoding contains a floating-point literal; f32/f64 are type tags.
+// Component structural encodings contain no floating-point literals; f32/f64
+// are type tags. Core modules and custom payloads are deliberately excluded.
 fn finite_type_encoding(bytes: &[u8]) -> Result<(), &'static str> {
     let mut position = 0;
     while position < bytes.len() {
@@ -423,9 +424,66 @@ fn finite_type_encoding(bytes: &[u8]) -> Result<(), &'static str> {
     Ok(())
 }
 
+// Framing must precede Parser: its component-start payload eagerly collects
+// arguments, and later instance readers collect attacker-declared vectors.
+// Borrow two component containers; never follow or scan core/custom payloads.
+fn finite_component_leaves(component: &[u8]) -> Result<(), &'static str> {
+    let mut containers = [Some(component), None];
+    let mut sections = 0usize;
+    let mut children = 0usize;
+    for depth in 0..containers.len() {
+        let Some(bytes) = containers[depth] else {
+            break;
+        };
+        if bytes.get(..8) != Some(b"\0asm\x0d\0\x01\0") {
+            return Err("c-preimage-finite-component-framing");
+        }
+        let mut raw = wasmparser::BinaryReader::new(&bytes[8..], 0);
+        while !raw.eof() {
+            sections += 1;
+            if sections > 4096 {
+                return Err("c-preimage-finite-component-rows");
+            }
+            let id = raw
+                .read_u8()
+                .map_err(|_| "c-preimage-finite-component-framing")?;
+            let size = raw
+                .read_var_u32()
+                .map_err(|_| "c-preimage-finite-component-framing")?;
+            let payload = raw
+                .read_bytes(size as usize)
+                .map_err(|_| "c-preimage-finite-component-framing")?;
+            match id {
+                0 | 1 => {} // Custom payload or an independently bounded core.
+                4 => {
+                    children += 1;
+                    if depth != 0 || children > 1 {
+                        return Err("c-preimage-finite-nested-component-count");
+                    }
+                    containers[1] = Some(payload);
+                }
+                2 | 3 | 5..=11 => {
+                    if payload.len() > 64 * 1024 {
+                        return Err("c-preimage-finite-component-structure-bytes");
+                    }
+                    if matches!(id, 3 | 7) {
+                        finite_type_encoding(payload)?;
+                    } else {
+                        finite_type_encoding(payload)
+                            .map_err(|_| "c-preimage-finite-structural-integer-envelope")?;
+                    }
+                }
+                _ => return Err("c-preimage-finite-component-framing"),
+            }
+        }
+    }
+    Ok(())
+}
+
 // This runs only AFTER the caller admits C_VERIFICATION_WORK_BYTES. It rejects
 // expansive shapes before invoking any full Validator or recomputing a core.
 fn finite_preflight(component: &[u8], original: &[u8]) -> Result<(), &'static str> {
+    finite_component_leaves(component)?;
     let accesses = bounded_core(original, true)?;
     let mut modules = 0;
     let mut rows = 0;
@@ -649,6 +707,7 @@ fn top_level_payload(input: &[u8]) -> Result<Option<&[u8]>, &'static str> {
     if input.get(..8) != Some(b"\0asm\r\0\x01\0") {
         return Err("c-preimage-component-required");
     }
+    finite_component_leaves(input)?;
     let mut depth = 0u32;
     let mut found = None;
     for (index, payload) in Parser::new(0).parse_all(input).enumerate() {
@@ -887,10 +946,12 @@ mod tests {
         let original = c_root::tests::fixture(69632, false, false);
         let mut aliases = Vec::new();
         256u32.encode(&mut aliases);
-        let mut more = Vec::new();
-        257u32.encode(&mut more);
         let mut child = wasm_encoder::Component::new();
-        child.section(&wasm_encoder::RawSection { id: 6, data: &more });
+        child.section(&wasm_encoder::RawSection {
+            id: 6,
+            data: &aliases,
+        });
+        child.section(&wasm_encoder::RawSection { id: 6, data: &[1] });
         let mut outer = wasm_encoder::Component::new();
         outer.section(&wasm_encoder::RawSection {
             id: 6,
@@ -926,6 +987,77 @@ mod tests {
         assert_eq!(
             finite_preflight(&outer.finish(), &original).unwrap_err(),
             "c-preimage-finite-type-integer-envelope"
+        );
+    }
+
+    #[test]
+    fn c_finite_structural_leaves_refuse_declared_vectors_before_typed_or_eager_readers() {
+        // Each forged vector count fits its pinned wasmparser limit but exceeds
+        // this profile's allocation envelope. No vector element need exist.
+        for (id, prefix, count) in [
+            (2, vec![1, 0, 0], 100_000u32), // Core instantiate arguments.
+            (2, vec![1, 1], 100_000),       // Core instance exports.
+            (5, vec![1, 0, 0], 100_000),    // Component instantiate arguments.
+            (5, vec![1, 1], 100_000),       // Component instance exports.
+            (9, vec![0], 1000),             // Eager component-start arguments.
+        ] {
+            let mut payload = prefix;
+            count.encode(&mut payload);
+            let mut component = wasm_encoder::Component::new();
+            component.section(&wasm_encoder::RawSection { id, data: &payload });
+            let bytes = component.finish();
+            assert_eq!(
+                finite_component_leaves(&bytes).unwrap_err(),
+                "c-preimage-finite-structural-integer-envelope"
+            );
+            // Proof discovery itself must refuse before Parser can construct
+            // the eager start's arguments, even without a proof section.
+            assert_eq!(
+                top_level_payload(&bytes).unwrap_err(),
+                "c-preimage-finite-structural-integer-envelope"
+            );
+        }
+        let mut payload = vec![0];
+        1000u32.encode(&mut payload);
+        let mut child = wasm_encoder::Component::new();
+        child.section(&wasm_encoder::RawSection {
+            id: 9,
+            data: &payload,
+        });
+        let mut parent = wasm_encoder::Component::new();
+        parent.section(&wasm_encoder::NestedComponentSection(&child));
+        assert_eq!(
+            finite_component_leaves(&parent.finish()).unwrap_err(),
+            "c-preimage-finite-structural-integer-envelope"
+        );
+    }
+
+    #[test]
+    fn c_finite_leaf_framing_excludes_core_and_custom_bytes_but_refuses_bad_structural_frames() {
+        let opaque = [0xff; 16];
+        let mut component = wasm_encoder::Component::new();
+        for id in [0, 1] {
+            component.section(&wasm_encoder::RawSection { id, data: &opaque });
+        }
+        // Only the framing pass excludes these payloads. Full core/custom
+        // parsing and graph validation remain mandatory afterward.
+        finite_component_leaves(&component.finish()).unwrap();
+        for tail in [vec![12, 0], vec![5, 4, 1], vec![2, 0x80]] {
+            let mut bytes = wasm_encoder::Component::new().finish();
+            bytes.extend_from_slice(&tail);
+            assert_eq!(
+                finite_component_leaves(&bytes).unwrap_err(),
+                "c-preimage-finite-component-framing"
+            );
+        }
+        let mut component = wasm_encoder::Component::new();
+        component.section(&wasm_encoder::RawSection {
+            id: 5,
+            data: &[0; 64 * 1024 + 1],
+        });
+        assert_eq!(
+            finite_component_leaves(&component.finish()).unwrap_err(),
+            "c-preimage-finite-component-structure-bytes"
         );
     }
 
