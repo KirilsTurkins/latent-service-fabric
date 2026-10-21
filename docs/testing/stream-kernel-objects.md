@@ -104,6 +104,12 @@ target and all 52 prior definitions. It records digests for eighteen whole
 inputs and 38 derived files. Netlabel and the 256-entry SID cache must already
 be enabled; only the private factory symbol changes. The original four jobs'
 complete step bodies and all build, warning, process and artifact bounds are
-preserved. The AVC compile is pending. Its mandatory audit entry remains an
-unimplemented declaration, and complete allocation/final-free closure and
-production installation remain unavailable.
+preserved. The AVC mode passed at source
+`d872bfcca2911938165889a7ab804b929d1c422b`, run `39550402947`, job
+`119058043143`: sixteen unlinked x86-64 objects, 61 global function
+definitions, 82 hosted source/controller tests and 21 clean owned commands.
+The [compiled observation](evidence/kernel-avc-objects-compiled-2026-10-21.json)
+binds all 64 archive members, 100 Git materials and unchanged security
+configuration. Its mandatory audit entry remains an unimplemented
+declaration, and complete allocation/final-free closure and production
+installation remain unavailable.

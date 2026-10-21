@@ -81,7 +81,15 @@ objects and fifty-two definitions. It preserves the original security-enabled
 defconfig, requires Netlabel already enabled and SID-cache size 256, and changes
 only the private factory symbol from disabled to enabled. The original four
 job bodies, build deadlines, compiler warnings and diagnostic limits remain.
-This lane has not run for the composed AVC source; no compile credit is claimed.
+The lane passed at exact source `d872bfcca2911938165889a7ab804b929d1c422b`,
+run `39550402947`, job `119058043143`: sixteen unlinked x86-64 objects,
+61 global function definitions and 82 hosted source/controller tests. The
+[compiled observation](../../../docs/testing/evidence/kernel-avc-objects-compiled-2026-10-21.json)
+binds all 64 archive members, 100 source materials, eighteen whole inputs,
+38 derived identities and 21 completed/cleaned owned commands. The original
+four jobs were skipped. Unlinked compilation does not execute LSM/RCU,
+implement mandatory audit, certify full allocation/final-free closure or
+install a provider.
 
 The complete private permission entry calls the separately owned exact
 `lsf_prepaid_avc_audit` producer. This source declares that seam and deliberately
