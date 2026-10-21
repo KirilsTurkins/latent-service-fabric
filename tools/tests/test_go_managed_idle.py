@@ -41,7 +41,7 @@ class ManagedIdle(unittest.TestCase):
         self.assertIn(managed_idle.PROFILE, activation.TIMER_PROFILES)
         self.assertIn(managed_idle.PROFILE, activation.CHECKPOINT_PROFILES)
         self.assertEqual(dependencies.selection({'runtimeProfile': managed_idle.PROFILE})['runtimeProfile'], managed_idle.PROFILE)
-        for profile in ('go-component-activation-v6', 'go-component-activation-v5-extra'):
+        for profile in ('go-component-activation-v7', 'go-component-activation-v5-extra'):
             with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'profile-not-installed'):
                 dependencies.selection({'runtimeProfile': profile})
 

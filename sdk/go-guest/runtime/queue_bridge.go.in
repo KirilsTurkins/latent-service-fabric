@@ -1,0 +1,41 @@
+// v6 holds one original queued-work reservation for every live logical g,
+// including parked work that can later resume. This deliberately conservative
+// admission cannot multiply runnable capacity through checkpoint/park cycles.
+// Stack and queue storage remain inside the original limited Wasm memory.
+var lsfManagedQueues [lsfManagedCapacity][2]uint64
+
+// Reserve before gfget/malg/runq publication; this helper allocates no heap.
+// A denied application queue rolls back its not-yet-published task. Maintenance
+// failure retains its bootstrap owners until the failed Store is destroyed.
+//go:nosplit
+func lsfReserveQueue(parent [2]uint64, rollbackTask bool) [2]uint64 {
+	var result lsfTokenResult
+	lsfRegister(3, 1, int64(parent[0]), int64(parent[1]), unsafe.Pointer(&result))
+	if result.tag != 0 || result.id == 0 {
+		if rollbackTask {
+			var settled lsfUnitResult
+			lsfSettle(int64(parent[0]), int64(parent[1]), unsafe.Pointer(&settled))
+			if settled.tag != 0 { lsfFail("LSF unallocated goroutine rollback unconfirmed") }
+		}
+		lsfFail("LSF goroutine queued-work capacity denied")
+	}
+	return [2]uint64{result.generation, result.id}
+}
+
+//go:nosplit
+func lsfReleaseQueue(owner [2]uint64) {
+	if owner[1] == 0 { lsfFail("LSF goroutine queue owner missing") }
+	var result lsfUnitResult
+	lsfSettle(int64(owner[0]), int64(owner[1]), unsafe.Pointer(&result))
+	if result.tag != 0 { lsfFail("LSF goroutine queue settlement unconfirmed") }
+}
+
+// Prepaid slot selection is import-free even when GC creates a worker inside
+// canonical lowering. Keep the v5 identity and retirement fences unchanged.
+//go:nosplit
+func lsfTakeManagedAdmission() [4]uint64 {
+	owner := lsfTakeManagedOwner()
+	queue := lsfManagedQueues[lsfManagedAssigned-1]
+	if queue[1] == 0 { lsfFail("LSF maintenance queue owner missing") }
+	return [4]uint64{owner[0], owner[1], queue[0], queue[1]}
+}

@@ -163,6 +163,132 @@ class OriginalSourceAndAuthority(unittest.TestCase):
 
 
 class CompilerRoot(unittest.TestCase):
+    def test_explicit_async_function_type_keeps_sync_abi_forwarding_without_future_or_retag(self):
+        graph=value_graph()
+        with self.assertRaisesRegex(ValueError,'explicit-async-export-required'):
+            root.selected_contract(graph)
+        graph['interfaces'][0]['functions']['request']['kind']='async-freestanding'
+        original=copy.deepcopy(graph)
+        selected=root.selected_contract(graph)
+        self.assertEqual(selected,[{'interface':'outside:varied-client/api@1.2.3',
+            'function':'request','kind':'async-freestanding'}])
+        source,calls=root.forwarding_source(graph)
+        self.assertIn(b'world: "root", async: false, with:',source)
+        self.assertIn(b'    fn request(',source)
+        self.assertNotIn(b'async fn',source)
+        self.assertNotIn(b'.await',source)
+        self.assertTrue(calls[0]['asyncPublic'])
+        self.assertEqual(graph,original)
+
+    def test_root_application_import_must_keep_full_explicit_function_kind_and_nominal_value_shape(self):
+        from tools import rust_wasi_http_compose as compose
+        graph=value_graph()
+        graph['interfaces'][0]['functions']['request']['kind']='async-freestanding'
+        same=copy.deepcopy(graph)
+        compose.unchanged_exports(graph,same)
+        for changed in ('kind','parameter','result','owner'):
+            selected=copy.deepcopy(same)
+            function=selected['interfaces'][0]['functions']['request']
+            if changed=='kind':function['kind']='freestanding'
+            elif changed=='parameter':function['params'][0]['type']='u64'
+            elif changed=='result':selected['types'][0]['kind']['result']['err']='u32'
+            else:selected['packages'][0]['name']='outside:foreign@1.2.3'
+            with self.subTest(changed=changed),self.assertRaises(ValueError):
+                compose.unchanged_interfaces(graph,selected,profile.names(graph,'exports'),
+                    profile.names(selected,'exports'))
+
+    def test_additional_compiler_outputs_refuse_in_app_target_and_remain_separately_observed(self):
+        from tools.rust_capsule_build import RustExecutableOutputs, executable_output_inventory
+        from tools.application_dependency_store import DependencyError
+        with tempfile.TemporaryDirectory() as temporary:
+            owned = Path(temporary)
+            application = owned/'application-target'
+            (application/'release/deps').mkdir(parents=True)
+            (application/'release/deps/liboriginal.so').write_bytes(b'original approved macro')
+            output = owned/'observation'
+            output.mkdir()
+            guard = RustExecutableOutputs(application, output, 'sha256:'+'a'*64)
+            guard.check_unchanged()
+            added = application/'release/deps/libcompiler_root.so'
+            added.write_bytes(b'compiler-owned macro')
+            with self.assertRaisesRegex(DependencyError, 'cargo-executable-outputs-mutated'):
+                guard.check_unchanged()
+            added.unlink()
+            separate = owned/'rust-http-composition/compiler-target'
+            (separate/'release/deps').mkdir(parents=True)
+            macro = separate/'release/deps/libcompiler_root.so'
+            macro.write_bytes(b'compiler-owned macro')
+            snapshot = executable_output_inventory(separate)
+            self.assertIn('release/deps/libcompiler_root.so', snapshot)
+            guard.check_unchanged()
+            macro.write_bytes(b'changed compiler-owned macro')
+            self.assertNotEqual(executable_output_inventory(separate), snapshot)
+            guard.check_unchanged()
+
+    def test_normalized_lock_only_prunes_original_edges_and_preserves_captured_identities(self):
+        name = 'lsf-owned-http-root-'+'b'*16
+        original = ('''version = 4
+[[package]]
+name = "wit-bindgen"
+version = "0.62.0"
+source = "registry+https://example.invalid/index"
+checksum = "original-bindgen"
+dependencies = ["macro 1.0.0", "feature-leaf 1.0.0"]
+[[package]]
+name = "macro"
+version = "1.0.0"
+source = "registry+https://example.invalid/index"
+checksum = "original-macro"
+dependencies = ["feature-leaf 1.0.0"]
+[[package]]
+name = "feature-leaf"
+version = "1.0.0"
+source = "registry+https://example.invalid/index"
+checksum = "original-leaf"
+[[package]]
+name = "'''+name+'''"
+version = "0.0.0"
+dependencies = ["wit-bindgen"]
+''').encode()
+        normalized = original.replace(b'["macro 1.0.0", "feature-leaf 1.0.0"]', b'["macro"]')
+        normalized = normalized.replace(b'["feature-leaf 1.0.0"]', b'["feature-leaf"]')
+        result = root.normalized_lock(original, normalized, name)
+        self.assertEqual(result['originalPackageCount'], 4)
+        self.assertEqual(result['normalizedPackageCount'], 4)
+        self.assertEqual(result['removedDependencyEdges'], 1)
+        self.assertEqual(result['newPackageIdentities'], 0)
+        self.assertEqual(result['newDependencyEdges'], 0)
+        self.assertFalse(result['networkResolution'])
+        self.assertFalse(result['compilation'])
+        for changed in (
+            normalized.replace(b'original-macro', b'different-macro'),
+            normalized.replace(b'https://example.invalid/index', b'https://other.invalid/index', 1),
+            normalized.replace(b'version = "1.0.0"', b'version = "2.0.0"', 1),
+            normalized.replace(b'checksum = "original-leaf"',
+                b'checksum = "original-leaf"\ndependencies = ["macro"]'),
+            normalized.replace(b'dependencies = ["wit-bindgen"]', b'dependencies = ["macro"]'),
+            normalized.replace(b'["feature-leaf"]', b'["absent"]'),
+            normalized + b'\n[[package]]\nname="unknown"\nversion="1.0.0"\n',
+            normalized.replace(b'["macro"]', b'["macro", "macro"]'),
+            normalized + b'\n[[package]]\nname="'+name.encode()+b'"\nversion="0.0.0"\n',
+            normalized + b'\n[[package]]\nname="macro"\nversion="2.0.0"\n',
+        ):
+            with self.subTest(changed=changed), self.assertRaisesRegex(ValueError, 'normalized-'):
+                root.normalized_lock(original, changed, name)
+        for invalid in (None, True, '../root', 'lsf-owned-http-root-'+'g'*16):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, 'generated-root-name'):
+                root.normalized_lock(original, normalized, invalid)
+        another_macro = b'\n[[package]]\nname="macro"\nversion="2.0.0"\n'
+        ambiguous_before = original + another_macro
+        ambiguous_after = normalized + another_macro
+        with self.assertRaisesRegex(ValueError, 'dependency-ambiguous'):
+            root.normalized_lock(ambiguous_before, ambiguous_after, name)
+        deps = ','.join('"p'+str(i)+'"' for i in range(256))
+        dense = ('version=4\n'+''.join('[[package]]\nname="p'+str(i)+
+            '"\nversion="1.0.0"\ndependencies=['+deps+']\n' for i in range(257))).encode()
+        with self.assertRaisesRegex(ValueError, 'edge-bound'):
+            root.normalized_lock(dense, dense, name)
+
     def test_compiler_lock_keeps_exact_captured_sdk_closure_and_refuses_ambiguity(self):
         original = b'''version = 4
 [[package]]
@@ -199,6 +325,10 @@ version = "1.0.0"
         self.assertNotIn(b'unwrap', source)
         self.assertNotIn(b'waki', source)
         self.assertNotIn(b'golem', source)
+        self.assertIn(b'"outside:varied-client/api@1.2.3": generate', source)
+        self.assertIn(b'"'+profile.RETIREMENT.encode()+b'": generate', source)
+        self.assertEqual(source.count(b': generate'), 2)
+        self.assertNotIn(b'generate_all', source)
         self.assertEqual(calls, [{'interface': 'outside:varied-client/api@1.2.3',
             'function': 'request', 'asyncPublic': False, 'drainBeforeReturningValueOrError': True}])
         original = 'package root:component;\nworld root {\n  export outside:varied-client/api@1.2.3;\n}\n'

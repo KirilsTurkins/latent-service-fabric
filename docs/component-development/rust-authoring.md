@@ -271,3 +271,24 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+
+
+## Selected ordinary WASI HTTP clients
+
+The optional [WASI HTTP runtime](../testing/rust-wasi-http-runtime.md) uses the
+same captured developer-project build. Declare all three required HTTP,
+activation and monotonic-clock interfaces in the selected world, and declare
+its public entries explicitly `async`, for example:
+
+```wit
+greet: async func(name: string) -> result<string, string>;
+```
+
+A synchronous ordinary Rust implementation uses the pinned generator's
+`async: false` option in `wit_bindgen::generate!`. The emitted component retains
+the declared async function type; the application body and ordinary published
+client calls remain synchronous. This selection installs no executor or host
+grant. A synchronous public WIT entry is refused for the selected HTTP profile.
+The default pure templates keep their original synchronous contract. Follow the
+profile guide for preparation, explicit `--http-runtime` selection and current
+qualification limits; generator controls alone do not establish HTTP execution.

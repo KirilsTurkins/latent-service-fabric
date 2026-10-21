@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.provider-counter-reader-failure.v1",
+  "source": "8f1d08257e724dca71b0c20aeff547524cba7076",
+  "run": 39532447535,
+  "job": 119001285605,
+  "jobConclusion": "failure",
+  "artifact": {
+    "id": 12315739891,
+    "bytes": 4643426,
+    "sha256": "ab5bd26fd462e4c34182b31b47e0155e4d8c107c1f28075d7fd2ff1981a56ee0",
+    "members": 133,
+    "allMemberCrcVerified": true
+  },
+  "buildComplete": {
+    "sha256": "sha256:99901a163c355cece6f323d255205bc74f74103b0453582943e57269b428b2a8",
+    "allCommandsExitZero": true,
+    "originalApplicationOutputGuardPassed": true
+  },
+  "component": {
+    "sha256": "sha256:ceff069712671613cbb1d330fbb256979147b3d630b14114e59df5025193ab6f",
+    "bytes": 932193
+  },
+  "actualCounterResponse": {
+    "sha256": "sha256:531dc4097f29c6ad4d5c2739333d3427307a3d7eafa1ebc057ad90fb9ff1abe3",
+    "bytes": 2144,
+    "member": "rust-http-runtime-qualification/node/provider-absence/controls/006.json"
+  },
+  "observedNodeUsage": {
+    "counters": {
+      "audit_capture_dropped": "0",
+      "audit_closed": "0",
+      "audit_dropped_observations": "0",
+      "audit_pending_attempts": "0",
+      "audit_query_bytes": "0",
+      "audit_query_owners": "0",
+      "audit_queued_bytes": "0",
+      "audit_queued_operations": "0",
+      "audit_recovery_pending": "0",
+      "audit_reserved_bytes": "0",
+      "audit_reserved_records": "0",
+      "audit_stage_bytes": "0",
+      "audit_unavailable_events": "0",
+      "broker_buffer_bytes": "0",
+      "broker_calls": "0",
+      "broker_handles": "0",
+      "broker_metadata_bytes": "16896",
+      "broker_plans": "0",
+      "broker_providers": "2",
+      "broker_results": "0",
+      "broker_sessions": "0",
+      "io_buffers": "0",
+      "io_calls": "0",
+      "io_metadata_bytes": "0",
+      "io_occupied_running_slots": "0",
+      "io_queued_calls": "0",
+      "io_result_bytes": "0",
+      "io_staged_bytes": "0",
+      "io_streams": "0",
+      "pool_active_connections": "0",
+      "pool_cleanup_jobs": "0",
+      "pool_clients": "0",
+      "pool_closed": "0",
+      "pool_configurations": "0",
+      "pool_connecting_connections": "0",
+      "pool_connections": "0",
+      "pool_control_failed": "0",
+      "pool_control_owners": "1",
+      "pool_failed_cleanup": "0",
+      "pool_idle_connections": "0",
+      "pool_metadata_bytes": "53248",
+      "pool_pending_requests": "0",
+      "pool_retained_configurations": "0",
+      "pool_retired_connections": "0",
+      "pool_running_requests": "0",
+      "pool_workers": "0"
+    },
+    "scope": "node",
+    "unavailable": []
+  },
+  "physicalOwners": {
+    "execution-cell-leases": "0",
+    "guest-invocations": "0",
+    "guest-stores": "0",
+    "guest-host-states": "0",
+    "guest-component-instances": "0"
+  },
+  "firstProviderAbsenceInvocation": {
+    "outcomeKnown": true,
+    "reaped": true,
+    "terminalState": "rejected",
+    "errorCode": "incompatible-contract",
+    "cpuFuel": "0",
+    "outboundRequests": 0
+  },
+  "failure": "Reader required Boolean False; public API projects unavailable as a list of missing observations. Actual empty list is fully available.",
+  "correction": "Require exact node scope, empty list type, all original eighteen counters and unchanged unsigned bounds/zero retirement.",
+  "finalPeerAndShutdownObserved": false,
+  "fullSignedProgrammePassed": false,
+  "nativeProductsBuilt": 0,
+  "backendComponentsBuilt": 0
+}

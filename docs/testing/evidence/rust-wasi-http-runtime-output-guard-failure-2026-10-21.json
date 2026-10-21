@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.compiler-output-failure.v1",
+  "source": "b2f50c04c226115c443c392aaa847174d2f116f1",
+  "run": 39530139137,
+  "job": 118993897121,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39530139137/job/118993897121",
+  "jobConclusion": "failure",
+  "artifact": {
+    "id": 12314904011,
+    "bytes": 4609597,
+    "sha256": "771bf5db8fab084b7adaa789f18455d7f1823f1738ede37d585471e3795008be",
+    "members": 111,
+    "allMemberCrcVerified": true
+  },
+  "failure": {
+    "stage": "recheck",
+    "code": "cargo-executable-outputs-mutated",
+    "originalOutputGuardRetained": true,
+    "completedStages": {
+      "compile": 0,
+      "rust-http-compiler-root-normalize-lock": 0,
+      "rust-http-compiler-root-compile": 0,
+      "rust-http-exact-composition": 0,
+      "rust-http-final-validation": 0,
+      "package": 0,
+      "inspect": 0
+    }
+  },
+  "component": {
+    "bytes": 932256,
+    "sha256": "f84d1a6431057ab2862bc5f35c8389c3873d03fc47c3f3066fd7b5f6dda2ae4e",
+    "buildComplete": false,
+    "signedExecution": false
+  },
+  "inferredCause": {
+    "scope": "Source-local inference plus causal output-guard control; the failed job did not retain an after-target inventory.",
+    "source": "Application and compiler-owned root used one CARGO_TARGET_DIR. Additional root macro outputs invalidate the original application inventory.",
+    "afterTargetInventoryRetained": false
+  },
+  "posthocReaderCorrection": {
+    "actualReceiptFields": [
+      "approvalIdentity",
+      "cleanup",
+      "formatVersion",
+      "hermetic",
+      "outputs"
+    ],
+    "retainedRows": 122,
+    "oldReaderWouldFail": "KeyError: compilerCommandSucceeded",
+    "actualJobFailureWasThisReader": false,
+    "newReaderRequires": "Exact actual five fields, approval identity, reaped cleanup, bounded identities and successful original compile command; no invented producer field."
+  },
+  "sourceControl": {
+    "actualOriginalGuardRefusesAdditionalAppTargetMacro": true,
+    "sameGuardAcceptsSeparateRootTarget": true,
+    "separateOutputInventoryRejectsTamper": true,
+    "compilationOrRuntimeQualification": false
+  },
+  "correction": "Fresh namespace-owned compiler root --target-dir, unchanged original environment and application guard, separate bounded root output inventory/digest/recheck.",
+  "nativeProductsBuilt": 0,
+  "backendComponentsBuilt": 0,
+  "signedRuntimeQualification": false,
+  "fullTicketQualification": false
+}
