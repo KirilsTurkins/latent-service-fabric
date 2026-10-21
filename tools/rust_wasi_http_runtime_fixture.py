@@ -239,7 +239,12 @@ def prepare(output: Path, nonce: str):
         };
     }
 ''').encode()
-    (app/'src/lib.rs').write_bytes(initial['src/lib.rs'].replace(marker, code+marker, 1))
+    bindings = b'wit_bindgen::generate!({path: "wit", world: "service"});'
+    require(initial['src/lib.rs'].count(bindings) == 1, 'rust-http-runtime-original-binding-generator')
+    mappings = b','.join(b'"'+name.encode()+b'": generate' for name in sorted(AUTHORITY))
+    selected = b'wit_bindgen::generate!({path: "wit", world: "service", with: {'+mappings+b'}});'
+    (app/'src/lib.rs').write_bytes(initial['src/lib.rs'].replace(marker, code+marker, 1)
+        .replace(bindings, selected, 1))
     # All dependencies are declared; selection grants no authority. The actual
     # normal componentizer must consume these three through the selected port.
     world = initial['wit/world.wit']

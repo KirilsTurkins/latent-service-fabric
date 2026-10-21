@@ -52,6 +52,13 @@ class OrdinaryCapturedClients(unittest.TestCase):
         self.assertEqual(set(declarations),fixture.AUTHORITY)
         self.assertEqual(len(declarations),3)
         self.assertNotIn('http-runtime',read_file(self.app/'sdk-lock.json').decode())
+        code=read_file(self.app/'src/lib.rs').decode()
+        original='wit_bindgen::generate!({path: "wit", world: "service"});'
+        self.assertNotIn(original,code)
+        self.assertEqual(code.count('with: {'),1)
+        for capability in declarations:
+            self.assertEqual(code.count('"'+capability+'": generate'),1)
+        self.assertNotIn('generate_all',code)
 
     def test_nonce_rejects_unbounded_or_path_like_coordinates_before_output(self):
         for value in ('../other','0'*15,'0'*17,'A'*16,True,None):
