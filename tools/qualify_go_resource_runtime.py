@@ -20,10 +20,12 @@ from tools.run_rust_capsule_workflow import write_workflow_receipt
 MATERIALS=(*SHARED_MATERIALS,'tools/qualify_go_resource_runtime.py','tools/go_resource_runtime_build.py',
     'tools/go_resource_runtime_fixture.py','tools/go_node_stop_probe.py',
     'tools/rust_http_installed_native_products.py','tools/sdk_native_products_reader.py',
-    '.github/workflows/go-resource-runtime.yml')
+    '.github/workflows/go-resource-runtime.yml','tools/go_resource_late.py',
+    '.github/workflows/go-resource-late.yml')
 
 
-def qualify(native_directory,output):
+def qualify(native_directory,output, *, late_completion=False):
+    require(type(late_completion) is bool, 'resource-Go-closed-late-selector')
     require(sys.platform=='linux' and sys.version_info>=(3,13),'resource-Go-linux-python313')
     native_directory=Path(native_directory).resolve(strict=True);output=Path(output).absolute()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents
@@ -42,7 +44,10 @@ def qualify(native_directory,output):
         'historicalNormalProgrammeRelabelledAsCurrent':False,'fullTicketQualification':False}
     stage='ordinary-outside-transitive-Go-capture'
     try:
-        app,record['fixture']=fixture.project(output/'project',output/'outside')
+        if late_completion:
+            from tools.go_resource_late import accounting_sources
+            record['frozenLogAccountingSources']=accounting_sources(products.SOURCE)
+        app,record['fixture']=fixture.project(output/'project',output/'outside',late_completion=late_completion)
         record['capture']=fixture.capture(app,output/'outside',Path(go).resolve(strict=True))
         before=inventory(snapshot(app));binaries={name if name in ('latent','latentd') else 'examples/'+name:path
                                                 for name,path in native.items()}
@@ -52,15 +57,19 @@ def qualify(native_directory,output):
         require((artifact/'source-inputs.json').read_bytes()==before,'resource-Go-actual-source-capture-mismatch')
         record['freshBuild']=build_evidence(artifact)
         stage='signed-two-tenant-resource-goroutine-timer-programme'
-        observed=execute(artifact,native,output/'node',language='go')
+        observed=execute(artifact,native,output/'node',language='go',late_completion=late_completion)
         require(observed['status']=='passed' and inventory(snapshot(app))==before
             and products.verify_prepared(native_directory)==native_record
             and source_identity(ROOT)==consumer_native
             and helpers=={name:file_identity(ROOT/name) for name in MATERIALS}
             and file_identity(Path(go).resolve(strict=True),128*1024*1024)==compiler,
             'resource-Go-final-source-compiler-and-native-identities')
-        record.update(status='passed',nodeReceipt=file_identity(output/'node/qualified.json'),outcomes=13,
+        record.update(status='passed',nodeReceipt=file_identity(output/'node/qualified.json'),outcomes=6 if late_completion else 13,
             signedAndAdmitted=True,sourceOriginalsRemoved=True)
+        if late_completion:
+            require(accounting_sources(products.SOURCE)==record['frozenLogAccountingSources'],
+                'resource-Go-final-frozen-log-accounting-sources')
+            record['lateCompletionProgramme']='running-AfterFunc-Stop-false-accepted-facilities-v1'
         write_workflow_receipt(output/'qualified.json',record);return record
     except BaseException as error:
         record.update(status='failed',stage=stage,errorCategory=type(error).__name__)
@@ -70,4 +79,5 @@ def qualify(native_directory,output):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--native',type=Path,required=True);parser.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args();print(qualify(args.native,args.output)['status'])
+    parser.add_argument('--late-completion',action='store_true')
+    args=parser.parse_args();print(qualify(args.native,args.output,late_completion=args.late_completion)['status'])

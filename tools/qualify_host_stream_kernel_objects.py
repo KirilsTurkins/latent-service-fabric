@@ -25,6 +25,7 @@ from tools import host_stream_kernel_avc as avc_source
 from tools import host_stream_kernel_audit as audit_source
 from tools import host_stream_kernel_bind as bind_source
 from tools import host_stream_kernel_route as route_source
+from tools import host_stream_kernel_route_cache as route_cache_source
 from tools.owned_test_process import ProcessFailure, run_owned
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,11 +92,19 @@ ROUTE_OBJECTS = {
     'net/core/dst.o': ('dst_release',),
 }
 ROUTE_FACTORY = ('lsf_factory_route_queue', 'lsf_factory_route_return')
+ROUTE_CACHE_FACTORY = ('lsf_factory_route_parent_attach', 'lsf_factory_route_cache_publish',
+    'lsf_factory_route_current', 'lsf_factory_route_parent_take')
+ROUTE_CACHE_FUNCTIONS = ('lsf_prepaid_route_cache_return', 'lsf_prepaid_route_cache_drain')
 
 
-def object_selection(netlabel, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False):
-    require(all(type(value) is bool for value in (netlabel, netport, sidcache, avc, audit, bind, route)), 'closed-profile-selector')
-    require(sum((netlabel, netport, sidcache, avc, audit, bind, route)) <= 1, 'exclusive-profile-selector')
+def object_selection(netlabel, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False, route_cache=False):
+    require(all(type(value) is bool for value in (netlabel, netport, sidcache, avc, audit, bind, route, route_cache)), 'closed-profile-selector')
+    require(sum((netlabel, netport, sidcache, avc, audit, bind, route, route_cache)) <= 1, 'exclusive-profile-selector')
+    if route_cache:
+        selected = object_selection(False, False, False, False, False, False, True)
+        selected['net/factory.o'] += ROUTE_CACHE_FACTORY
+        selected['net/ipv4/route.o'] += ROUTE_CACHE_FUNCTIONS
+        return selected
     if route:
         selected = object_selection(False, False, False, False, False, True)
         selected.update(ROUTE_OBJECTS)
@@ -243,8 +252,8 @@ def identity(path):
         return {'bytes': path.stat().st_size, 'sha256': hashlib.file_digest(stream, 'sha256').hexdigest()}
 
 
-def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False):
-    selected_objects = object_selection(netlabel, netport, sidcache, avc, audit, bind, route)
+def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False, route_cache=False):
+    selected_objects = object_selection(netlabel, netport, sidcache, avc, audit, bind, route, route_cache)
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('RUNNER_OS') == 'Linux', 'hosted-linux-only')
     value = maintained.manifest()
@@ -255,8 +264,8 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
     # All archive readers and tar now consume this private verified snapshot,
     # never reopen the caller's mutable pathname. Recheck before any make.
     additional_sources = ('net/Kconfig', 'net/Makefile')
-    if netlabel or netport or sidcache or avc or audit or bind or route:
-        recipe = route_source if route else bind_source if bind else audit_source if audit else avc_source if avc else sidcache_source if sidcache else netport_source if netport else netlabel_source
+    if netlabel or netport or sidcache or avc or audit or bind or route or route_cache:
+        recipe = route_cache_source if route_cache else route_source if route else bind_source if bind else audit_source if audit else avc_source if avc else sidcache_source if sidcache else netport_source if netport else netlabel_source
         additional_sources += tuple(name for name in recipe.fixture()['source'] if name not in value['source'])
     original = maintained.authenticate_archive(archive, value, additional_sources)
     archive_identity = identity(archive)
@@ -287,7 +296,16 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
         require(identity(archive) == archive_identity, 'snapshot-changed-during-extraction')
         require(all((tree / name).read_bytes() == raw for name, raw in original.items()), 'extracted-preimage-drift')
         stage = 'derive'
-        if route:
+        if route_cache:
+            derived = route_cache_source.derive({name: original[name] for name in route_cache_source.fixture()['source']})
+            receipt['profile'] = 'ipv4-route-cache-parent-source'
+            receipt['mandatoryAuditSourceImplemented'] = True
+            receipt['actualAuditExecuted'] = False
+            receipt['actualLinuxRcuExecuted'] = False
+            receipt['actualPortOrTimewaitExecuted'] = False
+            receipt['actualRouteOrXfrmExecuted'] = False
+            receipt['actualParentCacheDrainExecuted'] = False
+        elif route:
             derived = route_source.derive({name: original[name] for name in route_source.fixture()['source']})
             receipt['profile'] = 'ipv4-route-owner-source'
             receipt['mandatoryAuditSourceImplemented'] = True
@@ -346,16 +364,16 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
         commands.run('resolve-selected-config', *common, 'olddefconfig')
         final = (build / '.config').read_bytes()
         selected_configuration(before, configuration(final))
-        if netlabel or netport or sidcache or avc or audit or bind or route:
+        if netlabel or netport or sidcache or avc or audit or bind or route or route_cache:
             netlabel_configuration(before, configuration(final))
             receipt['netlabelEnabledBeforeAndAfter'] = True
-        if sidcache or avc or audit or bind or route:
+        if sidcache or avc or audit or bind or route or route_cache:
             sidcache_configuration(before, configuration(final))
             receipt['sidcacheOriginalEntries'] = 256
-        if audit or bind or route:
+        if audit or bind or route or route_cache:
             audit_configuration(before, configuration(final))
             receipt['auditEnabledBeforeAndAfter'] = list(AUDIT_REQUIRED)
-        if route:
+        if route or route_cache:
             route_configuration(before, configuration(final))
             receipt['routeXfrmEnabledBeforeAndAfter'] = True
             receipt['routeTrackerAndLwtOriginallyDisabled'] = True
@@ -365,21 +383,21 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
             'securityAndInetPreserved': list(REQUIRED)}
         receipt['compiler'] = compiler
         paths.write_new(output / 'selection.json', (json.dumps(receipt, indent=2)+'\n').encode())
-        stage = 'twenty-four-route-objects' if route else 'twenty-two-bind-objects' if bind else 'twenty-audit-objects' if audit else 'sixteen-avc-objects' if avc else 'fifteen-sidcache-objects' if sidcache else 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
-        commands.run('twenty-four-selected-real-kbuild-objects' if route else 'twenty-two-selected-real-kbuild-objects' if bind else 'twenty-selected-real-kbuild-objects' if audit else 'sixteen-selected-real-kbuild-objects' if avc else 'fifteen-selected-real-kbuild-objects' if sidcache else 'fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
+        stage = 'twenty-four-route-cache-objects' if route_cache else 'twenty-four-route-objects' if route else 'twenty-two-bind-objects' if bind else 'twenty-audit-objects' if audit else 'sixteen-avc-objects' if avc else 'fifteen-sidcache-objects' if sidcache else 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
+        commands.run('twenty-four-selected-real-kbuild-objects' if route or route_cache else 'twenty-two-selected-real-kbuild-objects' if bind else 'twenty-selected-real-kbuild-objects' if audit else 'sixteen-selected-real-kbuild-objects' if avc else 'fifteen-selected-real-kbuild-objects' if sidcache else 'fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
                      *common, '-j2', *selected_objects)
         autoconf = (build / 'include/generated/autoconf.h').read_bytes()
         require(all(('#define '+name+' 1\n').encode() in autoconf for name in (*REQUIRED, SELECTED)),
             'generated-private-or-security-code-disabled')
-        if netlabel or netport or sidcache or avc or audit or bind or route:
+        if netlabel or netport or sidcache or avc or audit or bind or route or route_cache:
             require(b'#define CONFIG_NETLABEL 1\n' in autoconf, 'netlabel-generated-code-disabled')
-        if sidcache or avc or audit or bind or route:
+        if sidcache or avc or audit or bind or route or route_cache:
             require(b'#define CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE 256\n' in autoconf,
                     'sidcache-generated-profile-disabled')
-        if audit or bind or route:
+        if audit or bind or route or route_cache:
             require(all(('#define '+name+' 1\n').encode() in autoconf for name in AUDIT_REQUIRED),
                     'audit-generated-code-disabled')
-        if route:
+        if route or route_cache:
             require(b'#define CONFIG_XFRM 1\n' in autoconf and
                 b'#define CONFIG_NET_DEV_REFCNT_TRACKER ' not in autoconf and
                 b'#define CONFIG_LWTUNNEL ' not in autoconf, 'route-generated-profile-drift')
@@ -420,5 +438,6 @@ if __name__ == '__main__':
     parser.add_argument('--audit', action='store_true', help='select the closed mandatory audit and SKB object-only profile')
     parser.add_argument('--bind', action='store_true', help='select the closed bind-bucket and mandatory audit object-only profile')
     parser.add_argument('--route', action='store_true', help='select the closed IPv4 route and original-reference object-only profile')
+    parser.add_argument('--route-cache', action='store_true', help='select the closed route-cache parent and drain object-only profile')
     args = parser.parse_args()
-    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport, sidcache=args.sidcache, avc=args.avc, audit=args.audit, bind=args.bind, route=args.route)
+    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport, sidcache=args.sidcache, avc=args.avc, audit=args.audit, bind=args.bind, route=args.route, route_cache=args.route_cache)

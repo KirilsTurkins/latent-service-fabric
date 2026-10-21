@@ -1,0 +1,323 @@
+{
+  "status": "PASS",
+  "source": "def20373bf9d7842dac3df4ebcecfc52fda3ea0a",
+  "run": 39582173371,
+  "job": 119163314775,
+  "artifact": {
+    "id": 12338411109,
+    "bytes": 2566804,
+    "sha256": "3aec9b4c146a4257bbed69efaf06381df7c911bce7c3256b1f9fad9e570c04e4",
+    "crcMembers": 221
+  },
+  "sourceHelpers": 35,
+  "recipeInputs": 61,
+  "sdkInputs": 95,
+  "allGitInputs": 187,
+  "capturedSourceFiles": 110,
+  "component": {
+    "sha256": "sha256:2c8c416780fa51f770aafb84a75fac6be57c784c634801793d5b93bd3dfcbbb4",
+    "bytes": 3229532
+  },
+  "compiledNativeSource": "357eecbd7744bbc026741d241b679966d14b0e95",
+  "compiledNativeProducts": 5,
+  "nativeOrEngineRebuilds": 0,
+  "compilerGo": "1.27.3",
+  "buildCommands": 22,
+  "admittedOutcomes": 4,
+  "preCpuDenials": 2,
+  "rawOutcomeRows": [
+    {
+      "tenant": "examples",
+      "mode": "late",
+      "invocation": {
+        "activation": "resource-late-examples",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792577627438",
+        "elapsedNanos": "27560086",
+        "decoded": [
+          {
+            "ok": "resource-go|late=stopped-false|readers=2|entropy=8|wall64=1|fresh=1"
+          }
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-late-examples",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "1652107",
+              "effectCount": 0,
+              "logBytes": "556",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "3475232",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "17036"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "78",
+              "data": "W3sib2siOiJyZXNvdXJjZS1nb3xsYXRlPXN0b3BwZWQtZmFsc2V8cmVhZGVycz0yfGVudHJvcHk9OHx3YWxsNjQ9MXxmcmVzaD0xIn1d",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:0a34ecd5625c4e8d95bf1d25a9a2793c0c98ef7f071e5d023ba2a905266c0f7d",
+              "releaseDigest": "sha256:2c8c416780fa51f770aafb84a75fac6be57c784c634801793d5b93bd3dfcbbb4",
+              "revisionId": "revision-v1:sha256:00bcf8cd635b2ee46220515edff344177a253f754c9b4ccd02ad7a0d15614b49",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "invocation": {
+        "activation": "resource-fresh-after-late-examples",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792577627507",
+        "elapsedNanos": "22380284",
+        "decoded": [
+          {
+            "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-fresh-after-late-examples",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "1465867",
+              "effectCount": 0,
+              "logBytes": "291",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "3475048",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "13326"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "57",
+              "data": "W3sib2siOiJyZXNvdXJjZS1nb3xmcmVzaD0wMGZmODA0MTBkMGF8ZW1wdHk9MHxmcmVzaD0xIn1d",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:e4edbb139fbbc3d243af0da037d3d10970df8bf1a606e379df77856382834526",
+              "releaseDigest": "sha256:2c8c416780fa51f770aafb84a75fac6be57c784c634801793d5b93bd3dfcbbb4",
+              "revisionId": "revision-v1:sha256:5388b774881f4cb2beb3ce7619196fe9905b2bba2526d9e2f14c8ecc1f8a728e",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    },
+    {
+      "tenant": "foreign",
+      "mode": "late",
+      "invocation": {
+        "activation": "resource-late-foreign",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792577627565",
+        "elapsedNanos": "22441425",
+        "decoded": [
+          {
+            "ok": "resource-go|late=stopped-false|readers=2|entropy=8|wall64=1|fresh=1"
+          }
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-late-foreign",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "1650384",
+              "effectCount": 0,
+              "logBytes": "552",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "3475232",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "15390"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "78",
+              "data": "W3sib2siOiJyZXNvdXJjZS1nb3xsYXRlPXN0b3BwZWQtZmFsc2V8cmVhZGVycz0yfGVudHJvcHk9OHx3YWxsNjQ9MXxmcmVzaD0xIn1d",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:e4edbb139fbbc3d243af0da037d3d10970df8bf1a606e379df77856382834526",
+              "releaseDigest": "sha256:2c8c416780fa51f770aafb84a75fac6be57c784c634801793d5b93bd3dfcbbb4",
+              "revisionId": "revision-v1:sha256:5388b774881f4cb2beb3ce7619196fe9905b2bba2526d9e2f14c8ecc1f8a728e",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    },
+    {
+      "tenant": "examples",
+      "mode": "fresh",
+      "invocation": {
+        "activation": "resource-fresh-after-late-foreign",
+        "exitCode": 0,
+        "startedAtUnixMillis": "1792577627623",
+        "elapsedNanos": "22443519",
+        "decoded": [
+          {
+            "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "response": {
+          "category": "success",
+          "command": "invoke",
+          "data": {
+            "activationId": "resource-fresh-after-late-foreign",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "1464877",
+              "effectCount": 0,
+              "logBytes": "289",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "3475048",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "11649"
+            },
+            "effectIds": [],
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "operator-workflow-test:phase0:standard:00000000"
+            },
+            "payload": {
+              "byteLength": "57",
+              "data": "W3sib2siOiJyZXNvdXJjZS1nb3xmcmVzaD0wMGZmODA0MTBkMGF8ZW1wdHk9MHxmcmVzaD0xIn1d",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:0a34ecd5625c4e8d95bf1d25a9a2793c0c98ef7f071e5d023ba2a905266c0f7d",
+              "releaseDigest": "sha256:2c8c416780fa51f770aafb84a75fac6be57c784c634801793d5b93bd3dfcbbb4",
+              "revisionId": "revision-v1:sha256:00bcf8cd635b2ee46220515edff344177a253f754c9b4ccd02ad7a0d15614b49",
+              "routeGeneration": "7"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "processReaped": true
+      },
+      "physicalRetirementVerified": true,
+      "all18ProviderCountersZero": true
+    }
+  ],
+  "physicalRetirementObservations": 6,
+  "exactCallbackLogCharges": [
+    556,
+    552
+  ],
+  "frozenLogAccountingSources": {
+    "crates/latent-wasmtime/src/host/logging.rs": {
+      "sha256": "sha256:36a08992775520c9e4868f15485080a3fc52dc08d306e1c870e628d6f462fe89",
+      "bytes": 13292
+    },
+    "crates/latent-wire/src/invocation/trace.rs": {
+      "sha256": "sha256:802caba7116e82eafb929a4c7ee119e40de0521182d684ce6209d0f2c9afc99d",
+      "bytes": 2807
+    },
+    "sdk/go-guest/runtime/standard_log.go.in": {
+      "sha256": "sha256:bbbffc142bd9387fc84641297cf3483d00ed3d0e82591141a8a91151e853e824",
+      "bytes": 1127
+    }
+  },
+  "peerContacts": 0,
+  "sameComponentIndependentTenantPublications": true,
+  "nodeCleanReaped": true,
+  "minimumIdleRssBytes": 191315968,
+  "maximumIdleRssBytes": 191528960,
+  "nativeThreadsQualified": false,
+  "callbackAfterStoreRetirementClaimed": false,
+  "waitForPollPendingClaimed": false,
+  "fullTicketQualification": false,
+  "schemaVersion": "latent.go.resource-late-signed.v1",
+  "workflow": ".github/workflows/go-resource-late.yml",
+  "event": "push",
+  "branch": "feat/go-resource-late-completion-20261021",
+  "scope": "Ordinary already-entered AfterFunc callback retains resource readers after Stop(false), completes facilities before physical retirement; no instruction-after-library-return or post-Store callback claim.",
+  "failureHistory": [
+    {
+      "source": "e538e3e267edb34042bb787d0e387c9185abbf21",
+      "run": 39580838922,
+      "job": 119157756144,
+      "conclusion": "failure",
+      "cause": "Progress writer used exclusive creation; first late case and physical retirement passed before second write failed.",
+      "artifact": {
+        "id": 12336945342,
+        "bytes": 2515061,
+        "sha256": "bc6da491d1e0d8ccfb7068cbe8d1dd55142061833aee72df662b96cd4eca5a37"
+      }
+    },
+    {
+      "source": "1bd801eb6376bc319d83da5335b9b30516730f66",
+      "run": 39582045816,
+      "conclusion": "cancelled",
+      "cause": "Superseded incorrect writer import; cancelled before qualification; no passing credit."
+    }
+  ]
+}
