@@ -21,7 +21,7 @@ if __package__ in {None,''}:
 
 from tools import rust_wasi_http_runtime_fixture as fixture, rust_wasi_http_runtime_node as node
 from tools import rust_wasi_http_inputs as runtime
-from tools import rust_wasi_http_backend_products as backend
+from tools.c_thread_native_source import compatibility as native_source_compatibility, REVIEW as FORMAT_REVIEW
 from tools.application_dependencies import verify_inputs
 from tools.build_observation import build_environment, resolve_tools
 from tools.java_replay_materials import git_source_identity
@@ -34,19 +34,13 @@ from tools.rust_capsule_project import ROOT, canonical, digest, fresh, inventory
 from tools.rust_wasi_http_profile import AUTHORITY, PROFILE
 from tools.dotnet_guest.internal_io import core_modules
 
-NATIVE_SOURCE='6fd19eab2c224fc31481d03de5008de4d3e4429e'
-# Only this unlinked frontend was extended for explicit standard-WASI composition.
-# Original compiled native3318 and every other auxiliary/API/WIT byte stay exact.
-# These are reviewed byte pairs, never a pathname-only or arbitrary-hash waiver.
-FRONTEND={
-    'tools/rust_capsule_build.py':(
-        {'sha256':'sha256:a00cb2afce425556cc0a9a776c5a23f757c3012f3440eda6c0e1cc709e0a2948','bytes':45923},
-        {'sha256':'sha256:ab843105bee16373938d1f68f24a60bcdf4326e2ea21bf0c5d48794c4e77ba48','bytes':47118}),
-}
+NATIVE_SOURCE='f0d36b38d39a837cef7f6242b4b4a99aa36b8b75'
+# Every original native auxiliary input remains byte exact. Selected current
+# guest/compiler-root recipes and the fresh adapter are attested separately.
 MATERIALS=('tools/qualify_rust_wasi_http_runtime.py','tools/rust_wasi_http_runtime_fixture.py',
     'tools/rust_wasi_http_fixture.py','tools/rust_wasi_http_runtime_node.py','tools/qualify_rust_wasi_http_inputs.py',
-    'tools/release_preparation_cli_native_products.py','tools/sdk_native_products_reader.py',
-    'tools/rust_wasi_http_backend_products.py',
+    'tools/c_thread_native_products.py','tools/sdk_native_products_reader.py',
+    'tools/c_thread_native_source.py',FORMAT_REVIEW,
     'tools/java_replay_materials.py','tools/qualify_rust_capsules.py',
     'tools/install_guest_bindgen.py','tools/toolchain.toml',*node.MATERIALS)
 
@@ -54,19 +48,9 @@ MATERIALS=('tools/qualify_rust_wasi_http_runtime.py','tools/rust_wasi_http_runti
 def native_compatibility(original,current):
     require(type(original) is dict and len(original)==134 and set(current)==set(original),
         'rust-http-exact-original-native-auxiliary-set')
-    changes=[]
-    for name,previous in original.items():
-        selected=current[name]
-        if previous==selected:continue
-        require(name in FRONTEND and (previous,selected)==FRONTEND[name],
-            'rust-http-unreviewed-native-auxiliary-change')
-        changes.append({'name':name,'compiledProducerInput':previous,'currentUnlinkedFrontend':selected,
-            'linkedIntoNativeProducts':False,'reason':'explicit maintained standard-WASI runtime selection/composition'})
-    require(set(row['name'] for row in changes)==set(FRONTEND),
-        'rust-http-exact-reviewed-selected-frontend-required')
-    return {'compiledNativeSourceUnchanged':True,'auxiliaryRows':134,
-        'unchangedAuxiliaryRows':134-len(changes),'unlinkedFrontendChanges':changes,
-        'allAuxiliaryRowsCurrentAtProducerCompilation':False}
+    require(current==original,'rust-http-unreviewed-native-auxiliary-change')
+    return {'auxiliaryRows':134,'unchangedAuxiliaryRows':134,
+        'unlinkedFrontendChanges':[], 'allAuxiliaryRowsCurrentAtProducerCompilation':True}
 
 
 def verify_composition(record,component,adapter):
@@ -187,7 +171,7 @@ def qualify(native_directory,adapter_directory,output):
     # This one owning lane uses actual emitted guest code. Refuse on Windows
     # before fresh output, executable approval or any tool/network operation.
     require(sys.platform=='linux' and sys.version_info>=(3,13),'rust-http-runtime-linux-python313')
-    from tools import release_preparation_cli_native_products as products
+    from tools import c_thread_native_products as products
     require(products.SOURCE==NATIVE_SOURCE,'rust-http-exact-current-native-producer')
     native_directory=Path(native_directory).resolve(strict=True)
     adapter_directory=Path(adapter_directory).resolve(strict=True)
@@ -200,21 +184,27 @@ def qualify(native_directory,adapter_directory,output):
     binaries=products.native_products(native_directory)
     for path in binaries.values():path.chmod(0o700)
     before=source_identity(ROOT)
-    require(before==git_source_identity(products.SOURCE),'rust-http-original-3318-native-source')
+    compiled_source=git_source_identity(products.SOURCE)
+    source_proof=native_source_compatibility(compiled_source,before)
     original_inputs=read_json(native_directory/'source-inputs.json')
-    require(original_inputs['native']==before,'rust-http-authenticated-compiled-native-identity')
+    require(original_inputs['native']==compiled_source,'rust-http-authenticated-compiled-native-identity')
     aux_current={name:file_identity(ROOT/name) for name in original_inputs['materials']}
     compatibility=native_compatibility(original_inputs['materials'],aux_current)
-    adapter_origin=backend.verify(adapter_directory)
     (adapter_directory/'component-composer/wac').chmod(0o700)
     tools,_identities=resolve_tools(tomllib.loads(read_file(ROOT/'tools/toolchain.toml').decode()),ROOT,build_environment(output))
     prepared=runtime.Prepared(adapter_directory,tools['rustc'],tools['wasm-tools'])
+    adapter_origin={'buildKind':'prepared-current-source',
+        'producerReceipt':file_identity(adapter_directory/runtime.RECEIPT),
+        'sourceInventory':file_identity(adapter_directory/'source-inputs.json'),
+        'receiptRewritten':False,'historicalAdapterReceiptRebound':False}
     names=dict.fromkeys((*RECIPE,*MATERIALS,*runtime.consumer_files()))
     materials={name:file_identity(ROOT/name) for name in names}
     native_files={name:file_identity(path,512*1024**2) for name,path in binaries.items()}
     record={'schemaVersion':'latent.rust.wasi-http.runtime-qualification.v1','status':'incomplete',
         'source':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip(),
-        'nativeProducer':original_native,'compiledNativeSource':before,'nativeAuxiliaryCompatibility':compatibility,
+        'nativeProducer':original_native,'compiledNativeSource':compiled_source,
+        'consumerNativeSource':before,'nativeSourceCompatibility':source_proof,
+        'nativeAuxiliaryCompatibility':compatibility,
         'materials':materials,'nativeProducts':native_files,'adapterProducer':prepared.value,
         'adapterProducerOrigin':adapter_origin,
         'freshApplicationComponentsCompiled':0,'nativeProductsBuilt':0,'libraryCodePatched':False,

@@ -129,19 +129,22 @@ class SourceAndNativeSeparation(unittest.TestCase):
                 qualification.catalogue_inputs(source,recipe,altered)
 
     def test_only_the_reviewed_unlinked_frontend_pair_may_differ(self):
+        # The newer historical C tuple already contains the reviewed frontend.
+        # Its entire auxiliary manifest must now match, with no old-pair waiver.
         original={f'wit/unchanged-{i}.wit':{'sha256':'sha256:'+'1'*64,'bytes':3} for i in range(133)}
+        original['tools/rust_capsule_build.py']={'sha256':'sha256:'+'2'*64,'bytes':4}
         current=copy.deepcopy(original)
-        for name,(before,after) in qualification.FRONTEND.items():original[name]=before;current[name]=after
         value=qualification.native_compatibility(original,current)
-        self.assertEqual(value['unchangedAuxiliaryRows'],133)
-        self.assertFalse(value['allAuxiliaryRowsCurrentAtProducerCompilation'])
+        self.assertEqual(value['unchangedAuxiliaryRows'],134)
+        self.assertTrue(value['allAuxiliaryRowsCurrentAtProducerCompilation'])
+        self.assertEqual(value['unlinkedFrontendChanges'],[])
         for mutate in ('new-source','new-WIT','missing','extra','old-frontend'):
             changed=copy.deepcopy(current)
-            if mutate=='new-source':changed['tools/rust_capsule_build.py']['sha256']='sha256:'+'2'*64
+            if mutate=='new-source':changed['tools/rust_capsule_build.py']['sha256']='sha256:'+'3'*64
             if mutate=='new-WIT':changed['wit/unchanged-0.wit']['bytes']=4
             if mutate=='missing':changed.pop('wit/unchanged-1.wit')
             if mutate=='extra':changed['unknown']={'sha256':'sha256:'+'3'*64,'bytes':1}
-            if mutate=='old-frontend':changed['tools/rust_capsule_build.py']=original['tools/rust_capsule_build.py']
+            if mutate=='old-frontend':changed['tools/rust_capsule_build.py']['bytes']=5
             with self.subTest(mutate=mutate),self.assertRaises(Exception):
                 qualification.native_compatibility(original,changed)
 

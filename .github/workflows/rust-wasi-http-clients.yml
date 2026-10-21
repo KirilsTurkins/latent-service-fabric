@@ -2,8 +2,18 @@ name: Rust ordinary WASI HTTP signed runtime
 
 on:
   push:
-    branches: ['feat/rust-wasi-http-signed-20261021']
-    paths: ['.github/workflows/rust-wasi-http-clients.yml']
+    branches: ['fix/rust-http-explicit-async-entry-20261021']
+    paths:
+      - '.github/workflows/rust-wasi-http-clients.yml'
+      - 'tools/qualify_rust_wasi_http_runtime.py'
+      - 'tools/rust_wasi_http_runtime_fixture.py'
+      - 'tools/rust_wasi_http_runtime_node.py'
+      - 'tools/rust_wasi_http_root.py'
+      - 'tools/rust_wasi_http_compose.py'
+      - 'tools/c_thread_native_products.py'
+      - 'tools/tests/test_rust_wasi_http_runtime.py'
+      - 'tools/tests/test_rust_wasi_http_runtime_fixture.py'
+      - 'tools/tests/test_rust_wasi_http_profile.py'
   workflow_dispatch:
 
 permissions:
@@ -33,6 +43,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
@@ -48,27 +69,24 @@ jobs:
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/rust-http-tools"
           echo "$RUNNER_TEMP/rust-http-tools" >> "$GITHUB_PATH"
       - name: Fetch the exact historical native producer source without a host build
-        run: git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e
+        run: git fetch --no-tags --depth=1 origin f0d36b38d39a837cef7f6242b4b4a99aa36b8b75
       - name: Check actual-source capture and refusal oracles without compiling a guest
-        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_runtime_fixture tools.tests.test_rust_wasi_http_runtime -q
-      - name: Restore the exact successful standard backend without recompilation
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: rust-wasi-http-backend-a6ec444c8cafe7380f6ae0e08016446ef80a6aba
-          run-id: '39524005962'
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/rust-http-backend-origin
+        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_runtime_fixture tools.tests.test_rust_wasi_http_runtime tools.tests.test_rust_wasi_http_profile tools.tests.test_rust_wasi_http_inputs_prepared -q
+      - name: Acquire only locked SDK sources for this current adapter
+        run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
+      - name: Compile exactly one current source-bound standard backend
+        run: python3 -B tools/rust_wasi_http_inputs.py --output "$RUNNER_TEMP/rust-http-current-backend"
       - name: Authenticate the original five products without building another host
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/rust-http-native"
+        run: python3 -B tools/c_thread_native_products.py --output "$RUNNER_TEMP/rust-http-native"
       - name: Compile one ordinary captured guest then sign and execute all strict cases
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           python3 -B tools/qualify_rust_wasi_http_runtime.py
           --native-products "$RUNNER_TEMP/rust-http-native"
-          --http-runtime "$RUNNER_TEMP/rust-http-backend-origin/rust-http-runtime"
+          --http-runtime "$RUNNER_TEMP/rust-http-current-backend"
           --output "$RUNNER_TEMP/rust-http-runtime-qualification"
       - name: Retain bounded public source build invocation and cleanup observations
         if: always()
@@ -96,5 +114,10 @@ jobs:
             ${{ runner.temp }}/rust-http-runtime-qualification/node/provider-absence/*.json
             ${{ runner.temp }}/rust-http-runtime-qualification/node/provider-absence/controls/*.json
             ${{ runner.temp }}/rust-http-native/*.json
+            ${{ runner.temp }}/rust-http-current-backend/*.json
+            ${{ runner.temp }}/rust-http-current-backend/*.wasm
+            ${{ runner.temp }}/rust-http-current-backend/component-composer/wac
+            ${{ runner.temp }}/rust-http-current-backend/logs/*.stdout.txt
+            ${{ runner.temp }}/rust-http-current-backend/logs/*.stderr.txt
           if-no-files-found: warn
           retention-days: 3

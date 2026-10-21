@@ -91,6 +91,7 @@ def configuration(directory, releases, peers, credentials, *, http_present=True)
         and value['cells'][0]['capacity']==1 and value['cells'][0]['queueCapacity']==2
         and providers['activationRuntime']['limits']==RUNTIME_LIMITS,
         'rust-http-original-cell-and-runtime-ceilings')
+    value.setdefault('engine',{})['activationStackAccounting']='activation-owned-v1'
     # The original finite configuration carries Go's additional scalar providers.
     # This selected Rust graph requires ONLY monotonic+activation+typed HTTP.
     for name in ('clockWall','random'):del providers[name]
