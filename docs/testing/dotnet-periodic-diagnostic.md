@@ -30,3 +30,17 @@ capacity or whole-issue completion credit. The node must retire physical owners,
 return all eighteen active counters to zero and shut down cleanly. No HTTP contact
 is expected. Uploads select public fixture products and bounded diagnostic records;
 signing keys, private credentials and temporary releases are excluded.
+
+The first diagnostic at `3a2cfe5a47176ac57ae96019fb5d64e0867494b0` observed code15
+(`managed-work-admission-refused`) through exactly229 encoded log bytes. Its
+original trap remains failed; the diagnostic does not identify the owner kind or
+host error, which the original generated bridge discards. The next diagnostic
+also derives exactly that bridge's refusal branch in its captured compiler recipe.
+Before throwing the same original exception it projects only the original owner
+kind0..7 and original host u32 error0..6 into56 fixed markers. Successful admission,
+arguments, parent tokens and all limits remain unchanged. Unknown pairs have only
+the unknown marker, and projection/writer failure cannot replace the refusal.
+The first-marker-only Console stream discards the later generic handler marker.
+An observed pair is not automatically a capacity diagnosis: retain and inspect the
+real kind/error before changing production code. The original diagnostic archive
+and its thirty-seven-code decoder retain their immutable source attribution.

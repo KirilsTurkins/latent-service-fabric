@@ -30,7 +30,7 @@ ACTIVATION='periodic-diagnostic'
 
 
 def frame_size(message_length):
-    require(type(message_length) is int and 1<=message_length<=38,'periodic-fixed-frame-length')
+    require(type(message_length) is int and 1<=message_length<=94,'periodic-fixed-frame-length')
     # Exact frozen6fd logging.rs BorrowedLog and normalized BTreeMap order.
     # The original host trace/span formats are fixed32/16 lowercase hex.
     value={'activation_id':ACTIVATION,'level':'error','message':'p'*message_length,
@@ -41,9 +41,16 @@ def frame_size(message_length):
 def decode(log_bytes):
     require(type(log_bytes) is int and 0<=log_bytes<=1024,'periodic-public-log-byte-bound')
     if log_bytes==0:return {'status':'not-observed','code':None,'reason':'unknown','qualification':False}
-    values=[index for index in range(38) if frame_size(index+1)==log_bytes]
+    values=[index for index in range(94) if frame_size(index+1)==log_bytes]
     require(len(values)==1,'periodic-not-exactly-one-fixed-diagnostic-frame')
     code=values[0]
+    if code>=38:
+        kind,error=divmod(code-38,7)
+        return {'status':'original-reserve-refusal-observed','code':code,'reason':'managed-work-admission-refused',
+            'ownerKind':kind,'ownerName':('task','managed-idle-worker','executor','queued-work','wait','timer','result','native')[kind],
+            'originalHostU32':error,'hostError':('unavailable','permission-denied','resource-exhausted','cancelled',
+                'deadline','invalid-state','invalid-token')[error],
+            'qualification':False,'originalExceptionTextExported':False,'originalFailureUnchanged':True}
     return {'status':'original-handler-observed','code':code,
         'reason':'unknown' if code==0 else codes()[code-1],'qualification':False,
         'originalExceptionTextExported':False,'originalFailureUnchanged':True}

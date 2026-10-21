@@ -27,7 +27,8 @@ fn write(stream:&console::Stream,bytes:&[u8]) {
 fn captured()->Vec<String> { VALUES.with(|v|v.borrow().clone()) }
 #[test]
 fn every_closed_code_is_chunk_safe_and_emits_one_length_only() {
-    for code in 0..=console::CODES.len() {
+    assert_eq!(console::CODES.len(),37);
+    for code in 0..=console::LAST_CODE {
         for chunk in 1..=256 {
             reset();let stream=console::stderr().unwrap();
             let text=format!("LSF-PERIODIC-CODE:{code:04}\nProcess terminated. TimerQueue.TimerHandler failed\nprivate/path\n");
