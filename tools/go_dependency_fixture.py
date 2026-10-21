@@ -49,7 +49,7 @@ def install(project: Path, outside: Path, go: Path) -> dict:
     library = outside / 'developer-owned-library'
     library.mkdir()
     identity = 'outside.example.test/developer-owned-module'
-    (library / 'go.mod').write_text('module ' + identity + '\n\ngo 1.27.2\n\nrequire github.com/mattn/go-runewidth v0.0.16\n', encoding='ascii')
+    (library / 'go.mod').write_text('module ' + identity + '\n\ngo 1.27.3\n\nrequire github.com/mattn/go-runewidth v0.0.16\n', encoding='ascii')
     resource = b'Hello, '
     (library / 'greeting.txt').write_bytes(resource)
     (library / 'message.txt').write_text('Gr\u00fc\u00dfe', encoding='utf-8')

@@ -72,7 +72,7 @@ func Exercise(mode string) string {
 def install(project: Path, outside: Path, go: Path) -> dict:
     before = snapshot(project)
     outside.mkdir(mode=0o700)
-    (outside / 'go.mod').write_text('module ' + IDENTITY + '\n\ngo 1.27.2\n', encoding='utf-8')
+    (outside / 'go.mod').write_text('module ' + IDENTITY + '\n\ngo 1.27.3\n', encoding='utf-8')
     (outside / 'logging.go').write_text(LIBRARY, encoding='utf-8')
     source = before['src/main.go']
     hook = b'func Greet(name string) wit.Result[string, string] {'

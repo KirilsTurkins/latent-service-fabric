@@ -29,7 +29,7 @@
       },
       {
         "name": "Authenticate one official reference compiler",
-        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-write-reference-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\necho \"$out/go/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-write-reference-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz\necho \"65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\necho \"$out/go/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Execute original failure and corrected finite method controls",
@@ -51,7 +51,7 @@
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "Retain original eight progress controls and add exact prior-source close-between-fragments RED plus ninth closed-prefix control; preserve original caps, one direction owner and deadline.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-write-progress-reference.yml"
 }
