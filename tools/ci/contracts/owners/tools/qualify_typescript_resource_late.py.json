@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_resource_late.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Select only the already successful current tracking compiler engine/splicer, authenticated with their original cancelled-run and successful-owning identities; preserve all budgets, six signed outcomes and baseline input pins, no engine or native rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "abb7bbecee6ca4b499c0105d4a722d7ffd65a09c9632235d0e6d0bb53ecec664"
+}

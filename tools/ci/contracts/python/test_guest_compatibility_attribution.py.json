@@ -1,5 +1,6 @@
 {
   "cases": [
+    "CompatibilityAttribution.test_actual_generated_transform_material_is_visible_without_changing_the_bound_context",
     "CompatibilityAttribution.test_all_six_build_contexts_bind_exact_captured_package_version_and_both_identities",
     "CompatibilityAttribution.test_dependency_omissions_preserve_existing_material_floor_and_explicit_count",
     "CompatibilityAttribution.test_native_replacement_uses_selected_version_and_local_source_keeps_version_unknown",
@@ -8,9 +9,22 @@
     "CompatibilityAttribution.test_selected_runtime_and_patch_present_original_result_and_transform_separately",
     "CompatibilityAttribution.test_text_retains_bounded_package_source_symbol_and_location_without_raw_symbol_leak",
     "CompatibilityAttribution.test_unchanged_source_inventory_cannot_borrow_a_different_dependency_graph",
+    "CompatibilityAttribution.test_untransformed_generated_tool_material_does_not_claim_an_original_or_transformation",
     "CompatibilityAttribution.test_version_tokens_cannot_attach_to_an_unrelated_runtime_material"
   ],
   "guards": {
+    "CompatibilityAttribution.test_actual_generated_transform_material_is_visible_without_changing_the_bound_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea35b4fd7b2c0a75b9201ab5fd00376daf729e09ab2c553663bd77a4400f1526",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "CompatibilityAttribution.test_all_six_build_contexts_bind_exact_captured_package_version_and_both_identities": {
       "bases": [
         "unittest.TestCase"
@@ -107,6 +121,18 @@
       ],
       "skipSites": []
     },
+    "CompatibilityAttribution.test_untransformed_generated_tool_material_does_not_claim_an_original_or_transformation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea35b4fd7b2c0a75b9201ab5fd00376daf729e09ab2c553663bd77a4400f1526",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "CompatibilityAttribution.test_version_tokens_cannot_attach_to_an_unrelated_runtime_material": {
       "bases": [
         "unittest.TestCase"
@@ -122,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility_attribution.py",
-  "reviewReason": "Present bound diagnostic attribution for all six build contexts. Preserve every existing report/context case and guard; nine new controls including existing partial owner graph compatibility cover source/graph drift, omitted metadata, version redaction, exact original/transformed identities and shared authority. No compiler/runtime qualification or execution added.",
+  "reviewReason": "Preserve all nine original attribution cases and guards; add exact generated original/selected/transformation presentation and refusal to imply transforms from incomplete generated inputs.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

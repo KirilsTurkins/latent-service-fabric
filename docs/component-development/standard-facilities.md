@@ -48,9 +48,18 @@ outcomes. They do not grant authority, infer the cause of a generic trap, certif
 an unobserved API or replace signing/admission. Historical observations retain
 their original component, compiled-source and native-product identities.
 
-The individual guides link finite signed observations and failed predecessors.
-They are not a current-head build of every profile or the required coupled
-six-language programme. Concurrent resource/log callbacks, root cancellation,
-pending flush, late completion and fresh cross-tenant state remain explicit
-work under #681/#736. The [Java resource conformance](java-resource-conformance.md) observation
-now proves its finite39-outcome programme; it does not close those coupled rows.
+The individual guides link finite signed observations and failed predecessors;
+they do not describe a current-head build of every runtime profile. The selected
+C/Rust facility profiles are synchronous. The separate joined
+[TypeScript](../testing/typescript-resource-runtime.md),
+[Go](../testing/go-resource-runtime.md), [Java](../testing/java-resource-runtime.md)
+and [.NET](../testing/dotnet-resource-runtime.md) observations cover concurrent
+resource/log callbacks, actual pending cancellation/deadline, trap and fresh
+cross-tenant state. The accepted late-facility observations for
+[Go](../testing/evidence/go-resource-late-signed-2026-10-21.json),
+[TypeScript](../testing/evidence/typescript-resource-late-signed-2026-10-21.json)
+and [Java/.NET](../testing/java-dotnet-late-facilities.md) separately bind actual
+resource, clock, entropy and log completion after ordinary stop/cancel/disposal,
+before physical retirement. No selected port has an asynchronous console-flush
+queue; synchronous acceptance remains distinct from remote delivery. Broader
+scheduler/runtime features remain with their language owners.

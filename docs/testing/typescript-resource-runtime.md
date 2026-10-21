@@ -55,3 +55,62 @@ These finite logical-task cases do not qualify native threads, mutable
 worker TLS, a pending asynchronous console flush queue, a separately observed
 late wake attempt, or full issue #681/#736 completion. The callback-error case
 requires its preceding log but does not infer a native trap cause from it.
+
+## Accepted late facility callback
+
+The separate `typescript-resource-late.yml` programme builds one fresh ordinary
+component from the same two outside packages. It adds the explicit RANDOM
+contract, selecting the maintained approved `Math.random` path; this is a
+noncryptographic 53-bit fraction and no random value is logged or returned.
+The original Promise/clock profile, LOG selection, runtime owner ceilings and
+activation budgets remain unchanged. The earlier thirteen-case programme and
+positive pending guards remain intact.
+
+The library accepts an ordinary `setTimeout` and returns its root value without
+joining the timer. The callback clears its own already-running timer, verifies
+both independent resource copies and exact text/empty assets, draws through
+`Math.random`, checks full-width wall and monotonic clocks, and logs completion.
+The controller requires the exact original-host encoded charge for both root
+and callback records; a constant root result or root log alone cannot qualify.
+The frozen host serializer, trusted correlation shape and standard console
+source are bound before and after execution.
+
+Two pre-CPU runtime-grant denials and four admitted late/fresh cases are mandatory
+across independent tenant publications. Every case retains the original physical
+and eighteen-counter provider retirement barriers, followed by zero-contact peer
+and clean reaped node shutdown. The programme reuses the authenticated f0 native
+products and source-bound import engine/splicer; it rebuilds one component and
+performs no native or engine build. The signed six-outcome programme passed.
+No post-Store callback, exact instruction-after-return, `Poll::Pending`, native
+thread, asynchronous console flush or complete ticket result is claimed.
+
+The initial late-facility attempt at source `2834bee5680ab8b3e0433f67254e29dbf65c7094`
+(run `39587715987`, job `119180672270`) correctly refused an older compiler engine
+whose SDK inputs differ from the current source, before producing a component.
+The correction selects the already retained current tracking engine and splicer
+from source `5c38079b1de2e0bbfe437ad7003582460618742d`. Their individual owning
+jobs passed in run `39540608310`; its overall cancelled boundary stays cancelled
+and supplies no qualification credit. All forty current engine SDK inputs and
+the source-built splicer match their original receipts. No engine is repinned,
+relabeled or rebuilt, and the earlier resource programme keeps its original pins.
+
+
+The [signed late-facility run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39593951578/job/119201530779)
+passed on source `91c43a476b2ade8bc40ef7206a2919657be4377d`.
+The [retained observation](evidence/typescript-resource-late-signed-2026-10-21.json)
+binds the complete 246-member artifact, 197 authenticated Git inputs, 111 recipe
+rows, 91 SDK files, 28 successful normal build commands and one 12,168,066-byte
+component. Both tenant callbacks completed their facilities with exact two-record
+charges of 557 and 553 bytes. All six outcomes have physical retirement and all
+eighteen active provider counters at zero; distinct tenant publications and the
+zero-contact peer and node finish clean and reaped.
+
+The intermediate `def560c` run remains a failure: its first guest callback
+succeeded, but the harness incorrectly expected a result wrapper instead of the
+TypeScript export's direct string. The focused correction retains the exact
+value, completion-log and budget requirements. Integration also applies only the
+two [reviewed C formatting changes](evidence/c-thread-native-rustfmt-2026-10-21.json)
+responsible for the existing development formatting failure. The other 3,322
+native inputs are byte exact, and the successful producer and historical
+compiler cancellation identities remain unchanged. This finite late-facility
+result does not close the remaining Java/.NET late rows or full #681/#736.

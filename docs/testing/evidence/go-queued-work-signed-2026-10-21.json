@@ -1,0 +1,992 @@
+{
+  "schemaVersion": "latent.go.queued-work.signed-observation.v1",
+  "status": "passed",
+  "source": "d889f0d3ec911c43375ac0679528c3303bad95fb",
+  "run": 39663672168,
+  "job": 119442944970,
+  "artifact": 12375268701,
+  "artifactIdentity": {
+    "bytes": 3051096,
+    "sha256": "sha256:12564e2fcddc5ede6eb3cb4e8a0fe5595c65bb10afe48244003137ec24b0dc0f"
+  },
+  "archiveMembers": 591,
+  "expandedBytes": 12112405,
+  "component": {
+    "sha256": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+    "bytes": 3219953
+  },
+  "profile": "go-component-activation-v6",
+  "queueReservationsPerLogicalGoroutine": 1,
+  "reservationLifetime": "through-gdestroy",
+  "managedQueueReservations": 8,
+  "originalTaskCeiling": 16,
+  "nativeProductsBuiltByThisProgramme": 0,
+  "guestComponentsCompiled": 1,
+  "compiledNative": {
+    "schemaVersion": "latent.sdk.composite-native-retrieval.v1",
+    "currentSourceRevision": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+    "inheritedSourceRevision": "f6251df89851de98cb869784d095ad5cc2e5b385",
+    "producerRun": 39645135536,
+    "producerJob": 119378576823,
+    "overlayReceipts": {
+      "native-products.json": {
+        "sha256": "sha256:f0e8c6b7cae2ee68daff0d46f27de1ed3ebd12ecf1516173ac7e619b6c19cb44",
+        "bytes": 55570
+      },
+      "source-inputs.json": {
+        "sha256": "sha256:5dba7da494916696f503c9090ed6d0b99c11e72c005b2e54b722feb72bd20f67",
+        "bytes": 28650
+      }
+    },
+    "inheritedReceipts": {
+      "native-products.json": {
+        "sha256": "sha256:f2369a8dcd9bc477dc19afec0a3dbf72ff9fd6251c2e2cb5a916d97590539edd",
+        "bytes": 27125
+      },
+      "source-inputs.json": {
+        "sha256": "sha256:2d4b53ee1d52592fd57dbb002416ea2839b2b3b85f402d92d2cd5ac89539af34",
+        "bytes": 22275
+      }
+    },
+    "perProductCompilation": {
+      "latent": {
+        "sourceRevision": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+        "nativeSource": {
+          "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+          "files": 3325,
+          "bytes": 26398761,
+          "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+          "hermetic": false,
+          "implicitCompilerInputs": "not-attested"
+        },
+        "identity": {
+          "sha256": "sha256:95096a62d68e32a8a3125713ed78409fbcfd96234e19d0bc28bf4152a947af24",
+          "bytes": 72344408
+        }
+      },
+      "latentd": {
+        "sourceRevision": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+        "nativeSource": {
+          "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+          "files": 3325,
+          "bytes": 26398761,
+          "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+          "hermetic": false,
+          "implicitCompilerInputs": "not-attested"
+        },
+        "identity": {
+          "sha256": "sha256:4ea650604df9b76d438650ee6ebec55bf5f439fad4f3a3f23915603357a08a4e",
+          "bytes": 188944080
+        }
+      },
+      "examples/package": {
+        "sourceRevision": "f6251df89851de98cb869784d095ad5cc2e5b385",
+        "nativeSource": {
+          "sha256": "sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14",
+          "files": 3325,
+          "bytes": 26393594,
+          "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+          "hermetic": false,
+          "implicitCompilerInputs": "not-attested"
+        },
+        "identity": {
+          "sha256": "sha256:07feedce67fd514014eb660dc2c60f9daffdcb1bb28fa5a9064465f6e5046db4",
+          "bytes": 21091976
+        }
+      },
+      "examples/capsule_contracts": {
+        "sourceRevision": "f6251df89851de98cb869784d095ad5cc2e5b385",
+        "nativeSource": {
+          "sha256": "sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14",
+          "files": 3325,
+          "bytes": 26393594,
+          "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+          "hermetic": false,
+          "implicitCompilerInputs": "not-attested"
+        },
+        "identity": {
+          "sha256": "sha256:32870ecc73aaed002087a9327f25bb22922a622748fb705fd63021b21947a8da",
+          "bytes": 13844296
+        }
+      },
+      "examples/capsule_authoring": {
+        "sourceRevision": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+        "nativeSource": {
+          "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+          "files": 3325,
+          "bytes": 26398761,
+          "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+          "hermetic": false,
+          "implicitCompilerInputs": "not-attested"
+        },
+        "identity": {
+          "sha256": "sha256:a47b6f6b359d37e05b37bc52cfadf94b1ea51fb7276bf7e97ddfddb14a7e43a1",
+          "bytes": 27354800
+        }
+      }
+    },
+    "overlayOrigin": {
+      "artifact": 12367356857,
+      "archiveDigest": "sha256:e4cb1d108f96e8595bc9941ef5f7fb9dbedca356e08b396bf5f46b8065cc037c",
+      "wholeArchiveRetained": false,
+      "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+      "fixedMembersPreflighted": {
+        "native-products.json": {
+          "bytes": 55570,
+          "compressedBytes": 9735
+        },
+        "source-inputs.json": {
+          "bytes": 28650,
+          "compressedBytes": 9241
+        },
+        "native-binaries/latent": {
+          "bytes": 72344408,
+          "compressedBytes": 16070548
+        },
+        "native-binaries/latentd": {
+          "bytes": 188944080,
+          "compressedBytes": 39350700
+        },
+        "native-binaries/examples-capsule_authoring": {
+          "bytes": 27354800,
+          "compressedBytes": 6541614
+        }
+      },
+      "rangeBytes": 61983736,
+      "rangeRequests": 260
+    },
+    "inheritedOrigin": {
+      "artifact": 12355629104,
+      "archiveDigest": "sha256:eff899b51ceeea5af53c34ccb546b18a80dba735763730d517f2b65dc2b26254",
+      "wholeArchiveRetained": false,
+      "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+      "fixedMembersPreflighted": {
+        "native-products.json": {
+          "bytes": 27125,
+          "compressedBytes": 8232
+        },
+        "source-inputs.json": {
+          "bytes": 22275,
+          "compressedBytes": 7124
+        },
+        "native-binaries/examples-package": {
+          "bytes": 21091976,
+          "compressedBytes": 4859899
+        },
+        "native-binaries/examples-capsule_contracts": {
+          "bytes": 13844296,
+          "compressedBytes": 3213757
+        }
+      },
+      "rangeBytes": 8096233,
+      "rangeRequests": 34
+    },
+    "signedQualification": false
+  },
+  "consumerNativeSource": {
+    "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+    "files": 3325,
+    "bytes": 26398761,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "sourceOriginalsRemoved": true,
+  "signedOutcomes": 25,
+  "preEntryDenials": 6,
+  "signedExecutions": 19,
+  "cases": [
+    {
+      "queueCeiling": 8,
+      "tenant": "examples",
+      "mode": "missing-runtime-grant",
+      "exitCode": 4,
+      "error": "permission-denied",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7512940"
+      },
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 8,
+      "tenant": "foreign",
+      "mode": "missing-runtime-grant",
+      "exitCode": 4,
+      "error": "permission-denied",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7528375"
+      },
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 8,
+      "tenant": "examples",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": true,
+      "exitCode": 4,
+      "result": null,
+      "error": "guest-trap",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1112359",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475288",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "20526"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 8,
+      "tenant": "foreign",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": true,
+      "exitCode": 4,
+      "result": null,
+      "error": "guest-trap",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1112041",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475288",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "25787"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "examples",
+      "mode": "missing-runtime-grant",
+      "exitCode": 4,
+      "error": "permission-denied",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7464664"
+      },
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "foreign",
+      "mode": "missing-runtime-grant",
+      "exitCode": 4,
+      "error": "permission-denied",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7502302"
+      },
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "examples",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1471557",
+        "effectCount": 0,
+        "logBytes": "259",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475328",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "33220"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "foreign",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1473458",
+        "effectCount": 0,
+        "logBytes": "257",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475328",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "27859"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "examples",
+      "mode": "parallel",
+      "expectedQueueAdmissionDenial": true,
+      "exitCode": 4,
+      "result": null,
+      "error": "guest-trap",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1377397",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475328",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "18076"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "foreign",
+      "mode": "parallel",
+      "expectedQueueAdmissionDenial": true,
+      "exitCode": 4,
+      "result": null,
+      "error": "guest-trap",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1380465",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475328",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "18401"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "examples",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1476455",
+        "effectCount": 0,
+        "logBytes": "259",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475328",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "30814"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 9,
+      "tenant": "foreign",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1473188",
+        "effectCount": 0,
+        "logBytes": "257",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475328",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "27339"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "examples",
+      "mode": "missing-runtime-grant",
+      "exitCode": 4,
+      "error": "permission-denied",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7441168"
+      },
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "foreign",
+      "mode": "missing-runtime-grant",
+      "exitCode": 4,
+      "error": "permission-denied",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7426850"
+      },
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "examples",
+      "mode": "parallel",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|parallel=first:80410d0a+second:00ff80410d0a|entropy=16|wall64=1|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1810134",
+        "effectCount": 0,
+        "logBytes": "589",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475792",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "48044"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "foreign",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1473281",
+        "effectCount": 0,
+        "logBytes": "285",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475608",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "28901"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "examples",
+      "mode": "clear",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|clear=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1544982",
+        "effectCount": 0,
+        "logBytes": "269",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475792",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "31851"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "examples",
+      "mode": "trap",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 4,
+      "result": null,
+      "error": "guest-trap",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1886347",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475792",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "19312"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "foreign",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1474560",
+        "effectCount": 0,
+        "logBytes": "295",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475608",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "23975"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "examples",
+      "mode": "cancel",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 4,
+      "result": null,
+      "error": "cancelled",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1540814",
+        "effectCount": 0,
+        "logBytes": "265",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475792",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "82624"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "foreign",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1473043",
+        "effectCount": 0,
+        "logBytes": "281",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475608",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "25041"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "examples",
+      "mode": "deadline",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 4,
+      "result": null,
+      "error": "deadline-exceeded",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1542963",
+        "effectCount": 0,
+        "logBytes": "261",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475792",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "3002429"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "foreign",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1472293",
+        "effectCount": 0,
+        "logBytes": "285",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475608",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "28416"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "foreign",
+      "mode": "callback-error",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 4,
+      "result": null,
+      "error": "guest-trap",
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:86617bb63321f61b9ca651bb43ef0ff3f8e8dc379645654640dab4b635dc31bc",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:de8fc0e23df45cc930644b1f901a00cd42c7cc0102687ff6bb0e17f973e12887",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "2018841",
+        "effectCount": 0,
+        "logBytes": "282",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475792",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "23895"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    },
+    {
+      "queueCeiling": 16,
+      "tenant": "examples",
+      "mode": "fresh",
+      "expectedQueueAdmissionDenial": false,
+      "exitCode": 0,
+      "result": [
+        {
+          "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+        }
+      ],
+      "error": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:131c09eed6ddecd5c294acab9ef534d0e7af6a04eaabfe6cc75cdc681b42accf",
+        "releaseDigest": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+        "revisionId": "revision-v1:sha256:25e6cd5efe0392a7ae3286d310b324fe4d3b38b9ec9a52a944de71b09e772663",
+        "routeGeneration": "7"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "1472623",
+        "effectCount": 0,
+        "logBytes": "293",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "3475608",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "27104"
+      },
+      "processReaped": true,
+      "physicalOwnersZero": 5,
+      "activeProviderCountersZero": 18
+    }
+  ],
+  "cleanReapedNodes": 3,
+  "fullTicketQualification": false,
+  "fullCostMatrixQualified": false,
+  "physicalMemoryAccountingQualified": false,
+  "nativeThreadsQualified": false,
+  "postQualificationChange": {
+    "kind": "test-only-clippy-semicolon",
+    "path": "apps/latentd/src/config/tests/providers/activation_runtime.rs",
+    "originalSha256": "e414b3585af653ae804cce50b2fa4aeb5433eaf2fa869ab8ad0f8d74f8ae9568",
+    "currentSha256": "5bef46ebff67ec616f5ccdb57e18e1de2d6660ac93c37382f6f8a20cfaba0315",
+    "compiledNativeSnapshotReattributed": false,
+    "newExecutionClaimed": false
+  },
+  "historicalFailures": [
+    {
+      "source": "729531d7406285e9548323f7fba967a86828fb77",
+      "run": 39636199193,
+      "stage": "stale-v5-capture-selector",
+      "conclusion": "failure"
+    },
+    {
+      "source": "2a9fc15503461a39b926f277cf0be97f264db682",
+      "run": 39637180463,
+      "stage": "old-signer-v6-provenance-refusal",
+      "conclusion": "failure"
+    }
+  ]
+}

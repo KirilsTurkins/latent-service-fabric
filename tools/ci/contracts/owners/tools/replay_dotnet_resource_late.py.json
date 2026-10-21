@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_resource_late.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual 798 replay failed before signing because Commands requires an integer finite setup deadline. Floor the clipped fractional remaining seconds; retain >=120 admission, command120, original deadline and all guest limits. One early real-Commands RED/GREEN control, no compiler/native change.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5c22e6e696821e3e662e90cb8afd10188b1f4bfe7789f764e75f8692f7ed8945"
+}

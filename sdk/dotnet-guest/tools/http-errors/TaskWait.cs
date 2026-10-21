@@ -320,13 +320,20 @@ internal static class TaskWait
             {
                 var managed = ManagedWorkPort.Install(module, originalMethods);
                 foreach (var method in managed.Changed)
-                    modifiedBodies.Add(originalMap.Single(item => item.Value == method).Key, BodyIdentity(method));
+                {
+                    var key = originalMap.Single(item => item.Value == method).Key;
+                    // The selected timer ownership port extends only this one
+                    // already-derived idle-driver method, retaining that body.
+                    if (modifiedBodies.ContainsKey(key))
+                        Require(method.DeclaringType.FullName == "System.Threading.TimerQueue" && method.Name == "DeleteTimer");
+                    modifiedBodies[key] = BodyIdentity(method);
+                }
                 managedReceipt = managed.Receipt;
             }
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == (managedSelected ? 77 : finiteSelected ? 10 : 9)
-                && timerMethods.Length == 3 && modifiedBodies.Count == (managedSelected ? 22 : 4));
+            Require(generatedHelpers.Count == (managedSelected ? 91 : finiteSelected ? 10 : 9)
+                && timerMethods.Length == 3 && modifiedBodies.Count == (managedSelected ? 26 : 4));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
@@ -343,7 +350,7 @@ internal static class TaskWait
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
                 var addedFields = module.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName)
                     .Where(name => !originalFields.Contains(name)).ToHashSet();
-                Require(addedFields.Count == (managedSelected ? 41 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
+                Require(addedFields.Count == (managedSelected ? 49 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
                     fields.Except(addedFields).ToHashSet().SetEquals(originalFields) && addedFields.IsSubsetOf(fields));
             }
             Require(FileDigest(original, 8 * 1024 * 1024) == SourceDigest);

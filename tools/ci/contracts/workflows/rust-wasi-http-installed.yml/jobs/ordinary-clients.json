@@ -1,0 +1,115 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "One installed recipe guest and six signed parsed-client outcomes",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Prepare the normal captured compiler sandbox and pinned binding tool only",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/rust-http-tools\"\necho \"$RUNNER_TEMP/rust-http-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Fetch the exact historical native producer source without a host build",
+        "run": "git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f\ngit fetch --no-tags --depth=1 origin 52654f7b86ef0043a8250dea39093d955ee9f480\n"
+      },
+      {
+        "name": "Check exact installed recipe and original runtime source boundaries",
+        "run": "python3 -B -m unittest tools.tests.test_rust_wasi_http_installed tools.tests.test_dev_rust_http_runtime tools.tests.test_rust_wasi_http_async_runtime_replay -q"
+      },
+      {
+        "name": "Acquire only locked SDK sources for the unchanged compiler-owned forwarding root",
+        "run": "cargo fetch --locked"
+      },
+      {
+        "name": "Restore the exact already compiled current110 backend without rebuilding it",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "rust-wasi-http-runtime-52654f7b86ef0043a8250dea39093d955ee9f480",
+          "path": "${{ runner.temp }}/rust-http-original",
+          "run-id": "39606039445"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the original five products without building another host",
+        "run": "python3 -B tools/activation_stack_native_products.py --output \"$RUNNER_TEMP/rust-http-native\""
+      },
+      {
+        "name": "Acquire only the existing pinned installed linker archive",
+        "run": "python3 -B - <<'PY'\nimport os\nfrom pathlib import Path\nfrom tools.build_dev_guest_tools import download, SOURCES\ndownload(Path(os.environ['RUNNER_TEMP'])/'rust-http-installed-zig.tar.xz', SOURCES['zig'])\nPY\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Assemble current installed inputs then compile and sign one ordinary guest",
+        "run": "python3 -B tools/qualify_rust_wasi_http_installed.py --native-products \"$RUNNER_TEMP/rust-http-native\" --http-runtime \"$RUNNER_TEMP/rust-http-original/rust-http-current-backend\" --retained-backend \"$RUNNER_TEMP/rust-http-original\" --zig-archive \"$RUNNER_TEMP/rust-http-installed-zig.tar.xz\" --python-prefix \"$pythonLocation\" --output \"$RUNNER_TEMP/rust-http-installed\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public installed build and signed cleanup observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-wasi-http-installed-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-http-installed/*.json\n${{ runner.temp }}/rust-http-installed/installed.stdout\n${{ runner.temp }}/rust-http-installed/installed.stderr\n${{ runner.temp }}/rust-http-installed/staged/*.json\n${{ runner.temp }}/rust-http-installed/staged/payload/guest-tools.json\n${{ runner.temp }}/rust-http-installed/installed-execution/*.json\n${{ runner.temp }}/rust-http-installed/installed-execution/*.stdout\n${{ runner.temp }}/rust-http-installed/installed-execution/*.stderr\n${{ runner.temp }}/rust-http-installed/installed-execution/approved/output/*.json\n${{ runner.temp }}/rust-http-installed/installed-execution/approved/output/*.wasm\n${{ runner.temp }}/rust-http-installed/installed-execution/approved/output/logs/*.txt\n${{ runner.temp }}/rust-http-installed/installed-execution/unapproved/output/*.json\n${{ runner.temp }}/rust-http-installed/installed-execution/unapproved/output/logs/*.txt\n${{ runner.temp }}/rust-http-installed/packaging/*.json\n${{ runner.temp }}/rust-http-installed/packaging/*.stdout\n${{ runner.temp }}/rust-http-installed/packaging/*.stderr\n${{ runner.temp }}/rust-http-installed/node/*.stdout\n${{ runner.temp }}/rust-http-installed/node/*.stderr\n${{ runner.temp }}/rust-http-installed/node/*.json\n${{ runner.temp }}/rust-http-installed/node/examples-controls/*.json\n${{ runner.temp }}/rust-http-installed/node/foreign-controls/*.json\n${{ runner.temp }}/rust-http-native/*.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "ordinary-clients",
+  "kind": "job",
+  "reviewReason": "Parent full-source review approved genuine existing public CLI packaging/provenance join within unchanged900s after one normal installed compile, plus bounded prepackage/final signer diagnostics; old commands,16 approval entries,six attempts,caps/native/backend reuse unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-installed.yml"
+}

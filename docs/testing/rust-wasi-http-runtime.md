@@ -1,10 +1,12 @@
 # Selected Rust WASI HTTP runtime
 
 This source implements a selected backend for the six external WASI 0.2.12
-interfaces observed from ordinary, unchanged Waki and Golem clients. Its first
-owning workflow compiles the adapter and exercises bounded fields/options
-controls. **The adapter and compiler integration have not yet passed a signed
-client programme.** Compilation alone does not qualify #689 or #743.
+interfaces observed from ordinary, unchanged Waki and Golem clients. The
+[actual signed programme](evidence/rust-wasi-http-signed-2026-10-21.json) passed
+64 attempts: 52 ordinary cases, one queued holder and 11 pre-entry refusals.
+It reuses the original authenticated component, backend and native products.
+Individual signed memory, Task and Timer saturation remain required evidence;
+this finite result does not close #689 or #743.
 
 The upstream files are complete originals from
 [`wasip2 1.0.4+wasi-0.2.12`](https://crates.io/crates/wasip2/1.0.4+wasi-0.2.12).
@@ -71,8 +73,15 @@ python3 -B tools/build_dev_guest_tools.py --language rust \
   --rust-http-runtime /absolute/owned/http-runtime
 ```
 
-This option is assembly-only and has source/control evidence; an installed
-bundle build has not yet been qualified. Assembly checks the exact staged Rustc
+The maintained installed recipe now has a [signed finite qualification](evidence/rust-wasi-http-installed-2026-10-21.json)
+from [run 39663071131](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39663071131):
+one guest compiled through `recipe/tools/dev_guest_recipe.py`, both unchanged
+clients parsed JSON across two independently authorized tenant publications,
+and two pre-entry denials, four contacts, physical/provider retirement and a
+clean shutdown passed. This qualifies the installed recipe; release publisher
+authentication and the full released frontend remain unqualified.
+
+Assembly checks the exact staged Rustc
 and wasm-tools bytes, preserves the original producer receipt and source
 inventory, and copies only the four component/WIT files and pinned composer.
 The complete 113-file consumer recipe and all seven retained runtime files join
@@ -97,9 +106,12 @@ pinned composer. Only the internal blocking operations and private drain are
 projected; every original application core byte must survive. Final WASI/private
 imports or undeclared authority fail the build before packaging.
 
-The pending qualification must exercise actual signed two-client/developer-crate
-calls, real provider errors and denials, partial I/O, cancellation, uncertain
-POST without replay, lifecycle retirement, physical owners and fresh tenant reuse.
+The signed finite programme exercises two unchanged clients and varied captured
+developer-crate coordinates, real errors and independent authority denials,
+partial I/O, cancellation, uncertain POST without replay, lifecycle retirement,
+physical owners and fresh cross-tenant reuse. Each public case retains its own
+original values and SHA/byte identity; the aggregate stays within its original
+256 KiB bound.
 The historical [compiler-only observation](rust-wasi-http-inputs.md) remains
 separately attributable and retains its original compatibility failure.
 
@@ -109,30 +121,41 @@ retained the closed `cannot-block-sync-task` trap from its first ordinary Waki
 call; the diagnostic is not qualification. The Component Model's
 [concurrency contract](https://github.com/WebAssembly/component-model/blob/main/design/mvp/Concurrency.md)
 distinguishes a function's async effect from its Core ABI. Generator-only controls
-verify the explicit contract and unchanged ordinary source bodies; fresh signed
-execution is still required for the corrected profile.
+verify the explicit contract and unchanged ordinary source bodies. The installed
+finite installed programme and the signed 64-attempt programme now prove real
+execution of that contract. The separate [individual limits programme](rust-wasi-http-limits.md)
+now supplies signed memory/Task/Timer differentials and matched fresh calls.
 
-The retained `794cc5f` node-only replay passed 49 cases before its Golem pressure
-case trapped. The original eight-Task/eight-Timer envelope is unchanged: Waki
-returned its exact typed resource error after eight held responses; Golem
-reported an unreachable guest trap after eight outbound requests. That public
-row does not prove eight retained responses or the precise timer trap site.
-The selected pressure expectation distinguishes those two actual outcomes;
-both still require full physical/provider retirement and an opposite-library
-fresh invocation. The whole historical replay remains failed. The source-port
-control preserves charged retired timers through the private drain and proves
-that an ordinary infallible timer path can trap at its original ceiling; it is
-not an attribution of the actual guest instruction. See the
-[finite observation](evidence/rust-wasi-http-capacity-failure-2026-10-21.json).
+The `8e6ce8d` installed owning attempt compiled one genuine installed-entry
+component with all 32 normal compiler/composition commands passing. Its
+compile-only observation correctly omitted a packager. Signing failed before
+node execution; that attempt did not retain the signer stderr. The installed
+controller now follows the existing ordinary public CLI packaging and provenance
+join before signing, inside the unchanged original 900-second compiler clock.
+The genuine join preserves the original compiler statement and marker verbatim
+and adds the actual packager identity. The corrected installed attempt passed all 32 compiler commands and six signed
+attempts using the retained native and backend products. No host or backend
+was rebuilt. The original 155 qualifier materials, 245 assembly inputs and 116
+Rust recipe inputs remain bound to `ed4fdcbb...`. Current development preserves
+all 155 qualifier and 116 Rust recipe bytes at the #1314 integration; five
+Java/.NET assembly helpers outside the selected Rust compiler recipe differ,
+listed in that observation. The later 64-attempt integration retains all 30
+executed replay materials. Its original compiler recipe remains attributed to
+88b: a separate Go-only profile-list addition changes one current helper, and
+the strict runtime reader has its explicit later source identity. The historical installed inventory
+and compiler statements have not been rewritten as a current assembly.
+The original [failure observation](evidence/rust-wasi-http-installed-packaging-failure-2026-10-21.json)
+remains failed.
 
-The [single pressure observation](evidence/rust-wasi-http-pressure-peer-2026-10-21.json)
-retains a further distinction: Golem charged eight outbound starts and accepted
-eight TCP connections, but only seven requests were parsed and received complete
-JSON response writes. The final connection closed before request parsing, with
-zero response bytes. All connections and the original physical/provider owners
-retired. This does not prove zero received request bytes, eight retained response
-objects, or a specific timer trap instruction. Only this exact pressure trap
-uses the explicit unparsed-connection ledger; ordinary calls and Waki retain
-their exact request, credential and response checks. The original full replay
-and diagnostic remain failed; a fresh full programme must pass the corrected
-reader and every original final gate.
+
+The 64-attempt result retains the earlier failed pressure and reader runs. Waki
+returns the precise resource error; Golem's exact pressure trap has eight charged
+outbound starts and eight accepted TCP connections, with seven parsed complete
+responses and one exact preparse close. Both pass physical/provider retirement
+and fresh opposite-client reuse. The limiting owner and trap instruction remain
+unknown. Peak memory below 16 MiB and positive Task/Wait/Timer ownership do not
+prove individual memory, Task or Timer exhaustion. The separate nine-attempt
+limits programme supplies those three differentials with their own positive,
+physical/provider retirement and fresh gates. Its memory public detail remains
+empty and its Timer instruction remains unknown; no blanket runtime or
+scheduler qualification is inferred.

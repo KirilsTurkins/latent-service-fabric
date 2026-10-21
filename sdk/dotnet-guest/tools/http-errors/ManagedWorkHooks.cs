@@ -414,6 +414,99 @@ internal sealed class ManagedWorkHooks
         il = readyStub.Body.GetILProcessor(); il.Emit(OpCodes.Call, ready); il.Emit(OpCodes.Ret);
     }
 
+    private void TimerHooks(IReadOnlyDictionary<string, string> originalBodies)
+    {
+        var queue = Type("System.Threading.TimerQueue");
+        var timer = Type("System.Threading.TimerQueueTimer");
+        MethodDefinition Original(TypeDefinition type, string name, int parameters, string expected)
+        {
+            var method = type.Methods.Single(candidate => candidate.Name == name && candidate.Parameters.Count == parameters);
+            string key = type.FullName + "#" + type.Methods.IndexOf(method);
+            Need(originalBodies[key] == expected);
+            return method;
+        }
+        var update = Original(queue, "UpdateTimer", 3, "a6718748ddf98afce1b550bd346cf0140de8944544f600816362c15b61fd4b6b");
+        var deleted = Original(queue, "DeleteTimer", 1, "97df4a648d3a936be0a512e16dff243bee88b9b77a44c5865e8c6f3f0d4f2f8d");
+        var accepted = Original(queue, "FireNextTimers", 0, "5e78e327e830b1b1543c560634848e2244663e3ec32686f5d6f8bd7904a11f09");
+        var fire = Original(timer, "Fire", 1, "7aac3cfdb1d33f5f32c3ef6760cc61596a805b5e33a26cee5d07ced09ec8962b");
+        var callback = Original(timer, "CallCallback", 1, "078f485b1d05ad88167bae8b04cb7c683ccb6987620d2b433507ec9c52e3097d");
+        Need(update.Body.ExceptionHandlers.Count == 0 && update.ReturnType.MetadataType == MetadataType.Boolean
+            && accepted.Body.Instructions.Count(instruction => instruction.Operand is FieldReference field
+                && field.Name == "_everQueued") == 1);
+        // Other existing compiler ports only touch DeleteTimer; these four
+        // producer bodies must still equal their exact authenticated preimages.
+        foreach (var method in new[] { update, accepted, fire, callback })
+            Need(TaskWait.BodyIdentity(method) == originalBodies[method.DeclaringType.FullName + "#" + method.DeclaringType.Methods.IndexOf(method)]);
+
+        foreach (var (stub, fieldName, result) in new[] {
+            ("TimerScheduled", "_dueTime", module.TypeSystem.Boolean),
+            ("TimerCallbacks", "_callbacksRunning", module.TypeSystem.Int32) })
+        {
+            var field = timer.Fields.Single(candidate => candidate.Name == fieldName);
+            Need((fieldName == "_dueTime" ? field.IsAssembly : field.IsPrivate)
+                && !field.IsStatic && field.FieldType.MetadataType ==
+                (fieldName == "_dueTime" ? MetadataType.UInt32 : MetadataType.Int32));
+            var reader = New(timer, "Lsf" + stub, result,
+                MethodAttributes.Assembly | MethodAttributes.Static, module.TypeSystem.Object);
+            var code = reader.Body.GetILProcessor();
+            code.Emit(OpCodes.Ldarg_0); code.Emit(OpCodes.Castclass, timer); code.Emit(OpCodes.Ldfld, field);
+            if (fieldName == "_dueTime")
+            { code.Emit(OpCodes.Ldc_I4_M1); code.Emit(OpCodes.Ceq); code.Emit(OpCodes.Ldc_I4_0); code.Emit(OpCodes.Ceq); }
+            code.Emit(OpCodes.Ret);
+            var target = Hook(stub); target.Body = new MethodBody(target);
+            code = target.Body.GetILProcessor(); code.Emit(OpCodes.Ldarg_0); code.Emit(OpCodes.Call, reader); code.Emit(OpCodes.Ret);
+        }
+
+        // Admission precedes all original list/active-count mutation. The outer
+        // finally checks real original state after successful or failed Change.
+        var original = update.Body.Instructions[0];
+        var il = update.Body.GetILProcessor();
+        il.InsertBefore(original, Instruction.Create(OpCodes.Ldarg_1));
+        il.InsertBefore(original, Instruction.Create(OpCodes.Call, Hook("TimerChanging")));
+        var resultValue = new VariableDefinition(module.TypeSystem.Boolean);
+        update.Body.InitLocals = true; update.Body.Variables.Add(resultValue);
+        var cleanup = Instruction.Create(OpCodes.Ldarg_1); var done = Instruction.Create(OpCodes.Ldloc, resultValue);
+        foreach (var exit in update.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray())
+        {
+            exit.OpCode = OpCodes.Stloc; exit.Operand = resultValue;
+            il.InsertAfter(exit, Instruction.Create(OpCodes.Leave, done));
+        }
+        il.Append(cleanup); il.Emit(OpCodes.Call, Hook("TimerChanged")); il.Emit(OpCodes.Endfinally);
+        il.Append(done); il.Emit(OpCodes.Ret);
+        update.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = original, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done,
+        }); changed.Add(update);
+
+        var exitDelete = deleted.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Ret);
+        Before(deleted, exitDelete, Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Call, Hook("TimerDeleted")));
+        changed.Add(deleted);
+        var queued = accepted.Body.Instructions.Single(instruction => instruction.Operand is FieldReference field && field.Name == "_everQueued");
+        Need(queued.OpCode == OpCodes.Stfld && queued.Previous.OpCode == OpCodes.Ldc_I4_1);
+        // Stack is [actual timer] here. Preserve its original true/store pair.
+        Before(accepted, queued.Previous, Instruction.Create(OpCodes.Dup), Instruction.Create(OpCodes.Call, Hook("TimerAccepted")));
+        changed.Add(accepted);
+
+        original = fire.Body.Instructions[0]; il = fire.Body.GetILProcessor();
+        var previous = new VariableDefinition(module.TypeSystem.Object);
+        fire.Body.InitLocals = true; fire.Body.Variables.Add(previous);
+        il.InsertBefore(original, Instruction.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(original, Instruction.Create(OpCodes.Call, Hook("TimerEnter")));
+        il.InsertBefore(original, Instruction.Create(OpCodes.Stloc, previous));
+        cleanup = Instruction.Create(OpCodes.Ldarg_0); done = Instruction.Create(OpCodes.Ret);
+        foreach (var exit in fire.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray())
+        { exit.OpCode = OpCodes.Leave; exit.Operand = done; }
+        il.Append(cleanup); il.Emit(OpCodes.Ldloc, previous); il.Emit(OpCodes.Call, Hook("TimerLeave")); il.Emit(OpCodes.Endfinally); il.Append(done);
+        fire.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = original, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done,
+        }); changed.Add(fire);
+
+        var captured = callback.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Ldfld
+            && instruction.Operand is FieldReference field && field.Name == "_executionContext");
+        il = callback.Body.GetILProcessor(); var item = Instruction.Create(OpCodes.Ldarg_0);
+        il.InsertAfter(captured, item); il.InsertAfter(item, Instruction.Create(OpCodes.Call, Hook("BindContext")));
+        changed.Add(callback);
+    }
+
     private void BridgeBindings()
     {
         var task = Type("System.Threading.Tasks.Task");
@@ -473,9 +566,9 @@ internal sealed class ManagedWorkHooks
         method.Body.MaxStackSize = Math.Max(method.Body.MaxStackSize + 2, 8);
     }
 
-    internal (MethodDefinition[] Changed, MethodDefinition[] Added) Install()
+    internal (MethodDefinition[] Changed, MethodDefinition[] Added) Install(IReadOnlyDictionary<string, string> originalBodies)
     {
-        CapturedContext(); TaskHooks(); QueueHooks(); ProducerBindings(); BridgeBindings();
+        CapturedContext(); TaskHooks(); QueueHooks(); ProducerBindings(); TimerHooks(originalBodies); BridgeBindings();
         foreach (var method in changed) Widen(method);
         return (changed.ToArray(), added.ToArray());
     }

@@ -12,7 +12,7 @@ internal static class ManagedWorkPort
         using var tool = ModuleDefinition.ReadModule(typeof(Lsf.CompilerOwned.ManagedWorkRuntime).Assembly.Location);
         var registry = new ManagedWorkCopy(module).Copy(tool);
         ManagedWorkContext.Install(module, registry);
-        var hooks = new ManagedWorkHooks(module, registry).Install();
+        var hooks = new ManagedWorkHooks(module, registry).Install(originalBodies);
         if (!references.SequenceEqual(module.AssemblyReferences.Select(reference => reference.FullName)))
             throw new InvalidDataException("managed-work-new-assembly-reference");
         string[] contextTypes = ["System.Threading.Tasks.Task", "System.Threading.QueueUserWorkItemCallback",
@@ -28,10 +28,10 @@ internal static class ManagedWorkPort
         }
         var changed = hooks.Changed.ToDictionary(method => method.FullName,
             method => originalBodies[method.DeclaringType.FullName + "#" + method.DeclaringType.Methods.IndexOf(method)]);
-        if (changed.Count != 18 || registry.Count != 46)
+        if (changed.Count != 23 || registry.Count != 58)
             throw new InvalidDataException("managed-work-selected-method-count");
         return (hooks.Changed, new {
-            patch = "latent.dotnet.managed-accepted-work.v1",
+            patch = "latent.dotnet.managed-accepted-work.v2",
             modifiedOriginalMethods = changed,
             copiedRegistryMethods = registry.Count,
             taskIdentity = "actual-task-unwrap-promise-and-inner",
@@ -44,7 +44,10 @@ internal static class ManagedWorkPort
             join = "original-task-wait-dispatch-with-readiness-each-iteration",
             unobservedFaults = "original-task-exception-retained-result-owner",
             privateRootBridge = "exact-Task-UnsafeAccessor-static-forwarders",
-            structuralRecordLimit = 32, structuralQueueLimit = 64,
+            structuralRecordLimit = 32, structuralQueueLimit = 64, structuralTimerLimit = 32,
+            timerAdmission = "original-TimerQueueTimer-before-active-list-mutation",
+            timerRetirement = "original-disarmed-no-accepted-queued-running-or-required-callback",
+            timerCallbackContext = "original-ExecutionContext-values-with-private-live-timer-owner",
             authoritativeLimits = "original-activation-owner-ledger",
             newAssemblyReferences = 0,
             qualified = false,

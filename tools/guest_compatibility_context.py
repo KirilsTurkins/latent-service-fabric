@@ -131,9 +131,11 @@ def present(value):
             "Reachability and initialization remain unknown; worker drain remains unproven.\n"
             "Use the ordinary captured dependency/profile workflow; review grants separately.\n")
     for row in value['materials']:
-        if row['kind'] not in {'runtime', 'patch', 'dependency'}:
+        transformed = row['kind'] == 'generated' and {'originalDigest', 'transformDigest'} <= row.keys()
+        if row['kind'] not in {'runtime', 'patch', 'dependency'} and not transformed:
             continue
-        label = 'Captured dependency' if row['kind'] == 'dependency' else row['kind'].capitalize()
+        label = ('Generated transformation' if transformed else
+                 'Captured dependency' if row['kind'] == 'dependency' else row['kind'].capitalize())
         details = [f"{label}: {row['name']}", "selected " + row['digest']]
         if row['kind'] == 'dependency':
             details.append('captured version ' + row.get('version', 'not-observed'))
