@@ -22,6 +22,9 @@ class ReactionRecords final {
   NativeOwner failed_native_{};
   JobOwners failed_job_{};
   bool failed_admission_ = false;
+  NativeOwner retired_native_{};
+  JobOwners retired_job_{};
+  bool retirement_pending_ = false;
   bool stopped_ = false;
 
   static bool live(const JobOwners& owners) {
@@ -128,6 +131,10 @@ public:
       if (!rollback(cx, failed_native_, failed_job_)) return false;
       failed_admission_ = false;
     }
+    if (retirement_pending_) {
+      if (!rollback(cx, retired_native_, retired_job_)) return false;
+      retirement_pending_ = false;
+    }
     auto* link = &records_;
     while (*link) {
       auto* record = link->get();
@@ -135,9 +142,19 @@ public:
         link = &record->next;
         continue;
       }
-      if (!rollback(cx, record->native, record->job)) return false;
-      auto next = std::move(record->next);
-      *link = std::move(next);
+      // Destruction precedes both owner acknowledgements, including the
+      // never-enqueued reaction path. No retry needs another allocation.
+      retired_native_ = record->native;
+      retired_job_ = record->job;
+      retirement_pending_ = true;
+      auto physical = std::move(*link);
+      *link = std::move(physical->next);
+      physical.reset();
+      if (!rollback(cx, retired_native_, retired_job_)) {
+        stopped_ = true;
+        return false;
+      }
+      retirement_pending_ = false;
     }
     return true;
   }
@@ -145,7 +162,7 @@ public:
     for (auto* record = records_.get(); record; record = record->next.get()) {
       if (record->physical && !record->transferred) return true;
     }
-    return failed_admission_;
+    return failed_admission_ || retirement_pending_;
   }
 };
 

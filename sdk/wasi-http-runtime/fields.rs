@@ -1,7 +1,7 @@
 //! Standard fields preserve duplicate values, casing, order and child lifetime.
 use super::{
     quota::Slot,
-    state::{MAX_HEADER_BYTES, MAX_HEADERS},
+    state::{MAX_HEADERS, MAX_HEADER_BYTES},
 };
 use std::{
     cell::{Cell, RefCell},
