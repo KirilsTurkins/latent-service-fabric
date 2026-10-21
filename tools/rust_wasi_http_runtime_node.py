@@ -197,8 +197,12 @@ def positive_pending(client,probe,target):
         and all(name in rows and unsigned(rows[name]['activeCount'])==1 for name in PHYSICAL),
         'rust-http-five-real-physical-owners')
     counts=usage(client,target)
-    require(counts['tenantUsage']['unavailable'] is False
-        and min(unsigned(counts['tenantUsage']['counters'][key]) for key in ('calls','sessions'))>=1,
+    tenant=counts['tenantUsage']
+    require(type(tenant) is dict and tenant['scope']=='tenant'
+        and type(tenant['unavailable']) is list and tenant['unavailable']==[]
+        and type(tenant['counters']) is dict
+        and all(key in tenant['counters'] and unsigned(tenant['counters'][key])>=1
+            for key in ('calls','sessions')),
         'rust-http-current-tenant-provider-call-and-session')
     require(all(unsigned(counts['nodeUsage']['counters'][name])>=1
         for name in ('broker_calls','pool_active_connections','pool_running_requests')),
