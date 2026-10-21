@@ -67,7 +67,7 @@ and no cache statistic is used as physical-free evidence.
 
 ## Evidence and remaining chain
 
-Eleven focused source controls and all fifty unchanged Netlabel/protocol/
+Twelve focused source controls and all fifty unchanged Netlabel/protocol/
 factory/outer controls pass. The supplemental freestanding C reference executes
 ten selected actual factory definitions plus the selected maintained hash,
 find, insert, slow/fast SID lookup and flush bodies. The original generic cache
@@ -77,10 +77,19 @@ cross-context hit, stale generation, published-return refusal, late birth and
 flush/callback between snapshot and lock acquisition. A first reference attempt
 retains its unused-variable compile error; the corrected attempt is separate.
 
+The first real fourteen-object Kbuild attempt reached the selected configuration
+and failed because a local ticket named `current` expanded through Linux's
+`current` macro. The correction renames only that local to `observed_ticket`.
+The reference now includes the observed macro shape. An additional compiler
+control rejects the exact old header and compiles the corrected header with
+strict warnings; the original nineteen lifetime controls still pass. The first
+syntax-only probe's Zig wrapper warning is retained separately and is not
+positive evidence.
+
 The reference uses explicit serialized type/list/policy/lock/RCU doubles. It
 does not execute Linux policy, actual spinlocks or Linux RCU, and does not
-establish real geometry, allocation bounds or physical final free. No hosted
-kernel/object/host campaign has run for this new prefix yet.
+establish real geometry, allocation bounds or physical final free. The corrected
+hosted object attempt remains pending; the original failure is retained.
 
 The authenticated source also exposes remaining real allocation paths:
 

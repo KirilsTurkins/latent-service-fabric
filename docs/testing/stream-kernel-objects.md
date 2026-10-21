@@ -63,7 +63,12 @@ code are compiled with original kernel headers, SELinux/Netlabel enabled and
 `-Werror`; the original configuration equality, `-j2`, 900/300-second command
 bounds, owned cleanup and bounded failure diagnostics remain.
 
-The new mode has not run yet. The earlier twelve-object receipt remains bound
+The first fourteen-object attempt failed in real Kbuild after configuration:
+the private ticket local `current` collided with Linux's macro of that name.
+The correction changes only that local's name, with exact-old-header RED and
+new-header GREEN compiler controls. The [failed observation](evidence/kernel-netport-object-current-macro-failure-2026-10-21.json)
+retains the actual source/run and bounded artifact. The corrected attempt is
+pending. The earlier twelve-object receipt remains bound
 to its original source and does not qualify this cache prefix. A successful
 object run will still prove neither real cache/RCU execution nor lazy policy
 SID, AVC/audit, RX/SKB/page closure, kernel linking/boot, final-free retirement

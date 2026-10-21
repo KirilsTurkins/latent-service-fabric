@@ -343,11 +343,11 @@ static inline int lsf_prepaid_netport_current(struct lsf_prepaid *pool,
     struct lsf_prepaid_key key, struct lsf_prepaid_ticket ticket,
     unsigned int bucket, lsf_u64 *offset)
 {
-    struct lsf_prepaid_ticket current;
+    struct lsf_prepaid_ticket observed_ticket;
     unsigned int actual;
     if (!offset || lsf_prepaid_netport_candidate(pool, key, ticket.slot,
-                                                 &current, &actual) != 1 ||
-        current.generation != ticket.generation || actual != bucket)
+                                                 &observed_ticket, &actual) != 1 ||
+        observed_ticket.generation != ticket.generation || actual != bucket)
         return 0;
     *offset = pool->records[ticket.slot].offset;
     return 1;
