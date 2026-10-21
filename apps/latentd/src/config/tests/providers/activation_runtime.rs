@@ -147,7 +147,7 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
     let decode =
         |value: &Value| super::super::input::decode(&serde_json::to_vec(value).unwrap()).unwrap();
     let original = decode(&value);
-    let capacity = super::super::validation::validate(&original).unwrap();
+    let capacity = crate::config::validation::validate(&original).unwrap();
     let limits = original
         .providers
         .as_ref()
@@ -166,7 +166,7 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
     // Neither its capability nor RootOnly accounting widens ordinary cells.
     for threads in [true, false] {
         runtime.owned_native_threads = threads;
-        let policy = super::super::policy::admission(&original, &capacity, &runtime).unwrap();
+        let policy = crate::config::policy::admission(&original, &capacity, &runtime).unwrap();
         assert!(policy.cell_classes.values().all(|cell| {
             cell.threading_models == vec![ThreadingModel::SingleThreaded, ThreadingModel::Reentrant]
         }));
@@ -176,7 +176,7 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
     let selected = decode(&value);
     runtime.owned_native_threads = true;
     runtime.native_thread_profile = NativeThreadProfile::CContext144SyncCooperativeV1;
-    let policy = super::super::policy::admission(&selected, &capacity, &runtime).unwrap();
+    let policy = crate::config::policy::admission(&selected, &capacity, &runtime).unwrap();
     assert!(policy
         .cell_classes
         .values()
@@ -193,10 +193,10 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
             3 => wrong.activation_runtime = None,
             _ => wrong.activation_runtime.as_mut().unwrap().native_owners += 1,
         }
-        assert!(super::super::policy::admission(&selected, &capacity, &wrong).is_err());
+        assert!(crate::config::policy::admission(&selected, &capacity, &wrong).is_err());
     }
     value["providers"]["activationRuntime"]["nativeThreads"] = false.into();
-    assert!(super::super::policy::admission(&decode(&value), &capacity, &runtime).is_err());
+    assert!(crate::config::policy::admission(&decode(&value), &capacity, &runtime).is_err());
 }
 
 #[test]
