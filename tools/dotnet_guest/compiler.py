@@ -337,10 +337,8 @@ class Compiler:
                 from tools.dotnet_guest import reachability
                 try:
                     self.reachability_observation = reachability.collect(self, project, output, application_selection)
-                except Exception:
-                    self.reachability_observation = {'schemaVersion': 'lsf.guest.compatibility.failure.v1',
-                        'status': 'unavailable', 'authority': 'none',
-                        'reason': 'compiler-method-observation-unavailable-or-stale'}
+                except Exception as error:
+                    self.reachability_observation = reachability.unavailable(error)
             if self.isolation:
                 if wrapper.read_text() != script:
                     raise ValueError('SDK-owned-binding-wrapper-mutated')

@@ -22,6 +22,35 @@ MAX_NODES = 131072
 MAX_LINKS = 524288
 MAX_PUBLIC_BYTES = 65536
 NS = '{http://schemas.microsoft.com/vs/2009/dgml}'
+FAILURE_CODES = frozenset({
+    'compiler-method-managed-input', 'compiler-method-managed-input-count',
+    'compiler-method-observer-input-changed', 'compiler-method-owned-tool-source',
+    'compiler-method-response-bytes', 'compiler-method-response-count', 'compiler-method-response-selection',
+    'compiler-method-scanner-count', 'compiler-method-scanner-location',
+    'compiler-scanner-complete-graph', 'compiler-scanner-input-bound-or-declaration',
+    'compiler-scanner-link-shape', 'compiler-scanner-malformed-xml', 'compiler-scanner-node-bound',
+    'compiler-scanner-node-shape', 'compiler-scanner-property-shape', 'compiler-scanner-public-bound',
+    'compiler-scanner-query-anchor', 'compiler-scanner-query-fields', 'compiler-scanner-query-id',
+    'compiler-scanner-query-name', 'compiler-scanner-query-schema', 'compiler-scanner-root',
+    'compiler-scanner-root-mapping-anchor-unavailable', 'compiler-scanner-section-order-or-attributes',
+    'compiler-scanner-unexpected-text', 'compiler-scanner-unknown-element', 'compiler-scanner-work-bound',
+    'compiler-scanner-xml-depth',
+})
+
+
+def unavailable(value=None):
+    """Project only inspected static refusal codes; never exception messages."""
+    code = None
+    if type(value) is ValueError and len(value.args) == 1:
+        code = value.args[0]
+    elif type(value) is dict and set(value) == {'schemaVersion', 'status', 'authority', 'reason', 'observerFailure'} \
+            and value.get('schemaVersion') == 'lsf.guest.compatibility.failure.v1' \
+            and value.get('status') == 'unavailable' and value.get('authority') == 'none':
+        if value.get('reason') == 'compiler-method-observation-unavailable-or-stale':
+            code = value.get('observerFailure')
+    return {'schemaVersion': 'lsf.guest.compatibility.failure.v1', 'status': 'unavailable',
+        'authority': 'none', 'reason': 'compiler-method-observation-unavailable-or-stale',
+        'observerFailure': code if type(code) is str and code in FAILURE_CODES else 'unknown'}
 
 
 def scanner(raw: bytes, queries: dict) -> dict:
@@ -83,7 +112,8 @@ def _scanner(raw: bytes, queries: dict) -> dict:
             require(stack == [root, NS + 'Links', NS + 'Link']
                     and {'Source', 'Target'} <= item.attrib.keys()
                     and item.attrib.keys() <= {'Source', 'Target', 'Reason', 'Stroke'}
-                    and ('Stroke' not in item.attrib or item.attrib['Stroke'] == '#FF0000')
+                    and ('Stroke' not in item.attrib or item.attrib['Stroke'] in {'#FF0000', '#0000FF'}
+                        or item.attrib['Stroke'] == '#00FF00' and item.attrib.get('Reason') in {'Primary', 'Secondary'})
                     and len(item.attrib.get('Reason', '')) <= 16384
                     and len(links) < MAX_LINKS, 'compiler-scanner-link-shape')
             links.append((item.attrib['Source'], item.attrib['Target']))

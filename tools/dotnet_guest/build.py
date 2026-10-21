@@ -192,9 +192,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 except Exception:
                     # A missing/overbound observation remains unknown. It
                     # cannot replace the original successful compiler result.
-                    write_json(output / 'compatibility-compiler-methods-unavailable.json', {
-                        'schemaVersion': 'lsf.guest.compatibility.failure.v1', 'status': 'unavailable',
-                        'authority': 'none', 'reason': 'compiler-method-observation-unavailable-or-stale'})
+                    write_json(output / 'compatibility-compiler-methods-unavailable.json',
+                        reachability.unavailable(getattr(compiler, 'reachability_observation', None)))
                 selected = canonical({'schemaVersion': 'lsf.guest.compiler-method-selection.v1',
                     'language': 'dotnet', 'selected': True,
                     'status': 'observed' if methods_material is not None else 'unavailable',

@@ -111,8 +111,36 @@ class ScannerMethods(unittest.TestCase):
             {b'DirectedGraph', b'Nodes', b'Links', b'Properties', b'Property', b'Node', b'Link'})
         self.assertEqual(set(re.findall(rb'WriteAttributeString\("([A-Za-z]+)"', source)),
             {b'Id', b'Label', b'DataType', b'Source', b'Target', b'Reason', b'Stroke'})
-        self.assertIn(b'"Stroke", "#FF0000"', source)
+        self.assertEqual(set(re.findall(rb'"Stroke", "(#[A-F0-9]+)"', source)),
+                         {b'#FF0000', b'#00FF00', b'#0000FF'})
         self.assertEqual(r.scanner(GRAPH, queries())['mappingAnchorCount'], 1)
+
+    def test_actual_pinned_writer_conditional_edges_and_closed_failure_projection(self):
+        # Actual DgmlWriter.cs output with explicit dependency-interface model
+        # seams. This is a writer/parser control, not ILC or guest evidence.
+        raw = (Path(__file__).parent/'fixtures/nativeaot-dgml-conditional-8449.xml').read_bytes()
+        self.assertEqual(digest(raw), 'sha256:c0f9a7609860fcd38048e6d618be5fd072b70825cca287652223b230bb41b248')
+        value = r.scanner(raw, queries())
+        self.assertEqual((value['nodesInspected'], value['linksInspected'], value['mappingAnchorCount']), (5, 5, 1))
+        self.assertEqual([row['state'] for row in value['methods']], ['linked', 'not-retained', 'unknown'])
+        for changed in (raw.replace(b'#00FF00', b'#123456'),
+                        raw.replace(b'Reason="Primary"', b'Reason="unrecognized"'),
+                        raw.replace(b'#0000FF', b'#0000ff')):
+            with self.subTest(changed=changed[-200:]), self.assertRaisesRegex(ValueError, 'compiler-scanner-link-shape'):
+                r.scanner(changed, queries())
+        failure = r.unavailable(ValueError('compiler-scanner-link-shape'))
+        self.assertEqual(failure['observerFailure'], 'compiler-scanner-link-shape')
+        self.assertEqual(r.unavailable(failure), failure)
+        for error in (ValueError('private/path/secret'), ValueError('compiler-scanner-link-shape', 'private'),
+                      RuntimeError('compiler-scanner-link-shape'),
+                      failure | {'authority': 'compiler'}, failure | {'reason': 'private'},
+                      failure | {'status': 'passed'}, failure | {'schemaVersion': 'other'},
+                      failure | {'extra': 'private'}, failure | {'observerFailure': 'private'}):
+            with self.subTest(error=type(error).__name__):
+                projected = r.unavailable(error)
+                self.assertEqual(projected['observerFailure'], 'unknown')
+                self.assertNotIn('private', encode(projected).decode())
+        self.assertEqual(r.unavailable()['observerFailure'], 'unknown')
 
     def test_private_node_labels_and_xml_entities_are_never_public(self):
         raw = GRAPH.replace(b'Selected exports', b'C:/private/secret source')
