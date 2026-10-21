@@ -274,7 +274,7 @@ mod tests {
             proto::GetNodeRequest::default()
         )));
         assert!(!is_phase2(&Operation::Invoke(
-            proto::InvokeRequest::default()
+            latent_rpc::invocation::v1::InvokeRequest::default()
         )));
     }
 }
