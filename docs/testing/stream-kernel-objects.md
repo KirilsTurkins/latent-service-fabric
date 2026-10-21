@@ -220,3 +220,36 @@ neighbour and shared-infrastructure ownership remain incomplete. No kernel
 was linked or booted, no trusted factory or complete physical/final-free proof
 was installed, and the complete consumer and production profile remain
 unavailable under the original 96/64 KiB and fixed-slot limits.
+
+
+The separate default-false `route_cache` selector retains the eight preceding
+job bodies and the same 24 object targets. It adds six private cache-parent
+functions, retaining all 81 preceding function oracles: 87 defined GLOBAL FUNC
+symbols, of which 82 are private and five original. The source keeps a real
+FIB or leaf-nexthop reference before cache publication, fences publication
+against owned close, and revalidates the current parent under RCU before
+draining an exact cache cell. A separate safe destination hold protects the
+drain. Original parent cleanup precedes returning the prepaid view; unknown
+parents, replaced cells and overlong exception chains retain their charges.
+
+This mode passed at exact source
+`274f649fc04e8c032c3a39e7abcb899a6e920915`, run `39582378526`, job
+`119162845309`: all 24 unlinked x86-64 objects, 87 function definitions, 157
+hosted source/controller cases and 29 completed/cleaned commands. The
+[compiled observation](evidence/kernel-route-cache-objects-compiled-2026-10-21.json)
+binds all 88 CRC-checked members and 177 Git materials, 45 complete maintained
+inputs, 42 function preimages and 75 derived outputs. Of the preceding 68
+outputs, 62 remain byte exact; six have closed reviewed source extensions.
+All 4,309 configuration symbols retain the sole factory n-to-y delta, with
+security, Netlabel, SID-cache size, audit and XFRM requirements unchanged.
+The original `-Werror`, `-j2`, deadlines and diagnostic limits remain. Separate
+serialized C controls retain two original RED mechanisms and 24 passing
+lifetime cases; the source-stage route-cache guide predates this object run.
+
+This result does not execute actual Linux cache-parent drain, route/XFRM,
+RCU, port/TIMEWAIT or audit behavior. No kernel was linked or booted and no
+factory was installed. RX/TX/SKB/page, neighbour, DNS and shared-infrastructure
+closure, real layout/backing bounds, sealed image/BTF, trusted final-free
+installation and node/operator conformance remain open. The complete consumer
+and production profile remain unavailable under the original 96/64 KiB and
+fixed-slot limits.
