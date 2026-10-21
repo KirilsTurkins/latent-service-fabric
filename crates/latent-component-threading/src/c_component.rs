@@ -28,17 +28,106 @@ fn start_shim() -> Vec<u8> {
     module.finish()
 }
 
-// The normal encoder removes its component-type custom section and merges
-// one pinned producer identity. Every other section is byte-exact, including
-// the actual fixed bodies, element/data order, memory bounds and public names.
+type Producers = BTreeMap<String, BTreeMap<String, String>>;
+
+fn producer_fields(data: &[u8], offset: usize) -> Result<Producers, &'static str> {
+    let reader =
+        wasmparser::ProducersSectionReader::new(wasmparser::BinaryReader::new(data, offset))
+            .map_err(|_| "c-component-producers")?;
+    if reader.count() > 3 {
+        return Err("c-component-producer-field-bound");
+    }
+    let mut fields = Producers::new();
+    for field in reader {
+        let field = field.map_err(|_| "c-component-producer-field")?;
+        if field.name.len() > 1024 || field.values.count() > 64 {
+            return Err("c-component-producer-value-bound");
+        }
+        let mut values = BTreeMap::new();
+        for value in field.values {
+            let value = value.map_err(|_| "c-component-producer-value")?;
+            if value.name.len() > 1024 || value.version.len() > 1024 {
+                return Err("c-component-producer-string-bound");
+            }
+            if values
+                .insert(value.name.to_owned(), value.version.to_owned())
+                .is_some()
+            {
+                return Err("c-component-duplicate-producer-value");
+            }
+        }
+        if fields.insert(field.name.to_owned(), values).is_some() {
+            return Err("c-component-duplicate-producer-field");
+        }
+    }
+    Ok(fields)
+}
+
+// wit-bindgen0.62 emits an original metadata-only component inside the linked
+// core. The normal encoder merges its two original producer identities into
+// the main core; its own0.254 identity belongs to the generated shims instead.
+fn generator_producers(input: &[u8]) -> Result<Producers, &'static str> {
+    if input.len() > 1024 * 1024 {
+        return Err("c-component-generator-metadata-bound");
+    }
+    let mut version = false;
+    let mut encoding = false;
+    let mut producers = None;
+    for (index, payload) in Parser::new(0).parse_all(input).enumerate() {
+        if index >= 256 {
+            return Err("c-component-generator-section-bound");
+        }
+        match payload.map_err(|_| "c-component-generator-section")? {
+            Payload::Version {
+                encoding: Encoding::Component,
+                ..
+            } if index == 0 => version = true,
+            Payload::CustomSection(section) if section.name() == "wit-component-encoding" => {
+                if encoding || section.data() != [4, 0] {
+                    return Err("c-component-generator-encoding");
+                }
+                encoding = true;
+            }
+            Payload::CustomSection(section) if section.name() == "producers" => {
+                if producers.is_some() {
+                    return Err("c-component-duplicate-generator-producers");
+                }
+                producers = Some(producer_fields(section.data(), section.data_offset())?);
+            }
+            Payload::ComponentTypeSection(_)
+            | Payload::ComponentExportSection(_)
+            | Payload::End(_) => {}
+            _ => return Err("c-component-generator-metadata-only"),
+        }
+    }
+    let expected = BTreeMap::from([(
+        "processed-by".into(),
+        BTreeMap::from([
+            ("wit-component".into(), "0.259.0".into()),
+            ("wit-bindgen-c".into(), "0.62.0".into()),
+        ]),
+    )]);
+    if !version || !encoding || producers.as_ref() != Some(&expected) {
+        return Err("c-component-pinned-generator-producers");
+    }
+    Ok(expected)
+}
+
+// Only the consumed original component-type metadata and its exact producer
+// merge differ. Every other section, including executable/data bytes, is exact.
 fn encoded_core_sections(input: &[u8], source: bool) -> Result<Vec<(u8, Vec<u8>)>, &'static str> {
     let mut sections = Vec::new();
     let mut producers = None;
+    let mut generated = None;
     for payload in Parser::new(0).parse_all(input) {
         let payload = payload.map_err(|_| "c-component-core-section")?;
         if let Payload::CustomSection(section) = &payload {
             if section.name().starts_with("component-type") {
                 if source {
+                    if generated.is_some() {
+                        return Err("c-component-one-generator-metadata");
+                    }
+                    generated = Some(generator_producers(section.data())?);
                     continue;
                 }
                 return Err("c-component-unconsumed-component-type");
@@ -47,37 +136,7 @@ fn encoded_core_sections(input: &[u8], source: bool) -> Result<Vec<(u8, Vec<u8>)
                 if producers.is_some() {
                     return Err("c-component-duplicate-producers");
                 }
-                let reader = wasmparser::ProducersSectionReader::new(
-                    wasmparser::BinaryReader::new(section.data(), section.data_offset()),
-                )
-                .map_err(|_| "c-component-producers")?;
-                if reader.count() > 3 {
-                    return Err("c-component-producer-field-bound");
-                }
-                let mut fields = BTreeMap::<String, BTreeMap<String, String>>::new();
-                for field in reader {
-                    let field = field.map_err(|_| "c-component-producer-field")?;
-                    if field.values.count() > 64 {
-                        return Err("c-component-producer-value-bound");
-                    }
-                    let mut values = BTreeMap::new();
-                    for value in field.values {
-                        let value = value.map_err(|_| "c-component-producer-value")?;
-                        if value.name.len() > 1024 || value.version.len() > 1024 {
-                            return Err("c-component-producer-string-bound");
-                        }
-                        if values
-                            .insert(value.name.to_owned(), value.version.to_owned())
-                            .is_some()
-                        {
-                            return Err("c-component-duplicate-producer-value");
-                        }
-                    }
-                    if fields.insert(field.name.to_owned(), values).is_some() {
-                        return Err("c-component-duplicate-producer-field");
-                    }
-                }
-                producers = Some(fields);
+                producers = Some(producer_fields(section.data(), section.data_offset())?);
                 continue;
             }
         }
@@ -95,17 +154,34 @@ fn encoded_core_sections(input: &[u8], source: bool) -> Result<Vec<(u8, Vec<u8>)
     }
     let mut producers = producers.unwrap_or_default();
     if source {
-        producers
-            .entry("processed-by".into())
-            .or_default()
-            .insert("wit-component".into(), "0.254.0".into());
-    } else if producers
-        .get("processed-by")
-        .and_then(|values| values.get("wit-component"))
-        .map(String::as_str)
-        != Some("0.254.0")
-    {
-        return Err("c-component-pinned-encoder-producer");
+        if let Some(fields) = generated {
+            for (field, values) in fields {
+                let original = producers.entry(field).or_default();
+                for (name, value) in values {
+                    if original.get(&name).is_some_and(|old| old != &value) {
+                        return Err("c-component-generator-producer-conflict");
+                    }
+                    original.insert(name, value);
+                }
+            }
+        } else {
+            producers
+                .entry("processed-by".into())
+                .or_default()
+                .insert("wit-component".into(), "0.254.0".into());
+        }
+    } else {
+        let processed = producers.get("processed-by");
+        let encoder = processed.and_then(|values| values.get("wit-component"));
+        if encoder.map(String::as_str) != Some("0.254.0")
+            && !(encoder.map(String::as_str) == Some("0.259.0")
+                && processed
+                    .and_then(|values| values.get("wit-bindgen-c"))
+                    .map(String::as_str)
+                    == Some("0.62.0"))
+        {
+            return Err("c-component-pinned-encoder-producer");
+        }
     }
     // This final comparison value encodes the full parsed metadata, so no
     // other compiler/language field can be deleted or invented by the encoder.
@@ -269,14 +345,27 @@ mod tests {
     use wasm_encoder::{CustomSection, ProducersField, ProducersSection};
 
     fn metadata(version: &str, name: &str, marker: &[u8]) -> Vec<u8> {
+        metadata_with_generator(version, name, marker, false)
+    }
+    fn metadata_with_generator(
+        version: &str,
+        name: &str,
+        marker: &[u8],
+        generator: bool,
+    ) -> Vec<u8> {
         let mut module = Module::new();
         let mut types = TypeSection::new();
         types.ty().function([], []);
         module.section(&types);
         let mut producers = ProducersSection::new();
         let mut compiler = ProducersField::new();
-        compiler.value("wit-component", version);
+        if !version.is_empty() {
+            compiler.value("wit-component", version);
+        }
         compiler.value(name, "21.1.0");
+        if generator {
+            compiler.value("wit-bindgen-c", "0.62.0");
+        }
         producers.field("processed-by", &compiler);
         module.section(&producers);
         module.section(&CustomSection {
@@ -284,6 +373,30 @@ mod tests {
             data: Cow::Borrowed(marker),
         });
         module.finish()
+    }
+    fn generated_metadata(version: &str, encoding: &[u8]) -> Vec<u8> {
+        let mut component = wasm_encoder::Component::new();
+        component.section(&CustomSection {
+            name: Cow::Borrowed("wit-component-encoding"),
+            data: Cow::Borrowed(encoding),
+        });
+        let mut producers = ProducersSection::new();
+        let mut compiler = ProducersField::new();
+        compiler.value("wit-component", version);
+        compiler.value("wit-bindgen-c", "0.62.0");
+        producers.field("processed-by", &compiler);
+        component.section(&producers);
+        component.finish()
+    }
+    fn with_generated_metadata(mut core: Vec<u8>, metadata: &[u8]) -> Vec<u8> {
+        use wasm_encoder::{Encode, Section};
+        let section = CustomSection {
+            name: Cow::Borrowed("component-type:probe"),
+            data: Cow::Borrowed(metadata),
+        };
+        core.push(Section::id(&section));
+        section.encode(&mut core);
+        core
     }
     #[test]
     fn c_encoder_changes_only_the_exact_component_producer_version() {
@@ -305,6 +418,54 @@ mod tests {
         assert_eq!(
             encoded_core_sections(&metadata("0.255.0", "clang", b"original"), false).unwrap_err(),
             "c-component-pinned-encoder-producer"
+        );
+    }
+    #[test]
+    fn c_encoder_merges_only_the_original_pinned_c_generator_metadata() {
+        let original = metadata("", "clang", b"original");
+        let generated = generated_metadata("0.259.0", &[4, 0]);
+        let source = with_generated_metadata(original, &generated);
+        let encoded = metadata_with_generator("0.259.0", "clang", b"original", true);
+        assert_eq!(
+            encoded_core_sections(&source, true).unwrap(),
+            encoded_core_sections(&encoded, false).unwrap()
+        );
+        for changed in [
+            metadata_with_generator("0.259.0", "foreign-compiler", b"original", true),
+            metadata_with_generator("0.259.0", "clang", b"changed", true),
+            metadata_with_generator("0.254.0", "clang", b"original", true),
+        ] {
+            assert_ne!(
+                encoded_core_sections(&source, true).unwrap(),
+                encoded_core_sections(&changed, false).unwrap()
+            );
+        }
+        assert!(encoded_core_sections(&metadata("0.259.0", "clang", b"original"), false).is_err());
+    }
+    #[test]
+    fn c_generator_metadata_refuses_unknown_versions_encoding_duplicates_and_conflicts() {
+        let original = metadata("", "clang", b"original");
+        for generated in [
+            generated_metadata("0.260.0", &[4, 0]),
+            generated_metadata("0.259.0", &[3, 0]),
+            metadata("0.259.0", "clang", b"not-a-component"),
+        ] {
+            assert!(
+                encoded_core_sections(&with_generated_metadata(original.clone(), &generated), true)
+                    .is_err()
+            );
+        }
+        let generated = generated_metadata("0.259.0", &[4, 0]);
+        let source = with_generated_metadata(original, &generated);
+        assert_eq!(
+            encoded_core_sections(&with_generated_metadata(source, &generated), true).unwrap_err(),
+            "c-component-one-generator-metadata"
+        );
+        let conflicting =
+            with_generated_metadata(metadata("0.254.0", "clang", b"original"), &generated);
+        assert_eq!(
+            encoded_core_sections(&conflicting, true).unwrap_err(),
+            "c-component-generator-producer-conflict"
         );
     }
     #[test]

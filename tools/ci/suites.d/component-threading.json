@@ -12,6 +12,8 @@
         "c_abi::tests::c_reactor_allocation_and_post_return_have_closed_system_scopes",
         "c_abi::tests::c_system_closure_rejects_host_and_indirect_failure_paths",
         "c_abi::tests::c_system_errno_tls_path_preserves_original_root_storage",
+        "c_component::tests::c_encoder_merges_only_the_original_pinned_c_generator_metadata",
+        "c_component::tests::c_generator_metadata_refuses_unknown_versions_encoding_duplicates_and_conflicts",
         "c_context::tests::actual_stack_and_tls_accesses_are_replaced_without_a_runtime_claim",
         "c_context::tests::c_linker_layout_never_trusts_the_first_operand_of_an_extended_global",
         "c_context::tests::helper_calls_are_only_stackless_context_lookup_and_original_imports_stay_exact",
@@ -56,7 +58,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 46,
+      "minimumCases": 48,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [

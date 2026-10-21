@@ -272,8 +272,10 @@ Store lockdown after a trap and uses a separate instance for each negative.
 The C-only `verify_c_component_routing` consumes the original linked-core
 preimage and actual normal encoder output. It recomputes the entire C chain,
 requires exact executable/data sections, and permits only consumed
-`component-type` metadata and the pinned encoder's `wit-component` producer
-merge. It authenticates the four finite main/thunk/fixup/start-shim modules,
+`component-type` metadata and its authenticated original producer merge.
+The pinned C generator's0.259/0.62 identities are distinct from the normal
+encoder's0.254 shim identity. It authenticates the four finite
+main/thunk/fixup/start-shim modules,
 the original initializer route and ordering, one sync public lift, memory,
 realloc and post-return identities, native admission, sole raw creation and
 actual canonical context/index/yield bindings. Private raw/thunk escapes,
@@ -314,3 +316,16 @@ retain their original fallback definitions. Five preprocessing-only controls
 confirmed exact standalone output, an external TLS declaration in linked mode,
 and refusal of invalid mode/header families; they did not link or run a core.
 The linked source/header preimages are checked before and after the programme.
+
+Run39553398769 at1a0e01d linked the ordinary C core in20.99seconds and passed
+ABI derivation, normal component encoding, validation and final WIT checks.
+The final graph reader then refused its incorrect0.254 main-producer
+expectation. The original embedded generator metadata actually contributes
+`wit-component`0.259.0 and `wit-bindgen-c`0.62.0 to the encoded main module.
+Artifact12324403326 retains85 authenticated members (archive SHA-256
+`aed1d69aefa9a6e91b19497306e621edf6bf0297e6463938fdb724c48f0a949f`).
+Read-only comparison verified all21 other main sections exactly and six adverse
+metadata/data mutations were refused. The corrected reader derives that exact
+merge from bounded, pinned original metadata and preserves all other fields;
+its two new Rust controls and actual graph/ABI/OOM programme remain pending.
+The original failed job and its unexecuted ABI control are not counted as a pass.
