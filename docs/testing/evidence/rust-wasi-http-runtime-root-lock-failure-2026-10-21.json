@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.compiler-root-lock-failure.v1",
+  "source": "b585a3577e0781dda0ad5eeb601fd4c9e22e1808",
+  "run": 39527977876,
+  "job": 118987010343,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39527977876/job/118987010343",
+  "jobConclusion": "failure",
+  "artifact": {
+    "id": 12314336336,
+    "bytes": 4476463,
+    "sha256": "a2e33c8723781d29f19f5510a5c873df5e3b8f338a8660762513761c3784daf2",
+    "members": 70,
+    "allMemberCrcVerified": true
+  },
+  "failure": {
+    "stage": "rust-http-compiler-root-compile",
+    "diagnostic": "error: cannot update the lock file /tmp/lsf-rust-capsule-tk06tsop/rust-http-composition/root-source/Cargo.lock because --locked was passed to prevent this\nhelp: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.\n"
+  },
+  "ordinaryGuestCompiled": true,
+  "ordinaryGuestComponentized": true,
+  "originalIoProjectionValidated": true,
+  "compilerRootCompiled": false,
+  "signedRuntimeQualification": false,
+  "nativeProductsRebuilt": false,
+  "backendRebuilt": false,
+  "metadataControl": {
+    "scope": "Data-only Windows Cargo metadata on the exact retained captured lock closure and generated compiler manifest, with a fixed diagnostic root name. This is not guest or runtime qualification.",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "generatedRoot": "lsf-owned-http-root-0123456789abcdef",
+    "oldLockedOfflineStatus": 101,
+    "normalizedLockedOfflineStatus": 0,
+    "normalizationOfflineOnly": true,
+    "noCompilationOrBuildScripts": true,
+    "validation": {
+      "projectedLockDigest": "sha256:e3e24af04802c57f926e7dcbace9407d40120aec08e62b7aafb352869673c410",
+      "normalizedLockDigest": "sha256:a3943a8dd73938655896d6b3a7e142fbcca7aa89c4e5f5b06495b2ceb453db76",
+      "originalPackageCount": 34,
+      "normalizedPackageCount": 34,
+      "removedDependencyEdges": 5,
+      "newPackageIdentities": 0,
+      "changedPackageSourceOrChecksums": 0,
+      "newDependencyEdges": 0,
+      "networkResolution": false,
+      "buildScriptsExecuted": false,
+      "compilation": false
+    },
+    "locks": {
+      "pruned-original.lock": {
+        "bytes": 8339,
+        "sha256": "e3e24af04802c57f926e7dcbace9407d40120aec08e62b7aafb352869673c410"
+      },
+      "canonical.lock": {
+        "bytes": 8078,
+        "sha256": "a3943a8dd73938655896d6b3a7e142fbcca7aa89c4e5f5b06495b2ceb453db76"
+      }
+    },
+    "commands": [
+      [
+        "cargo",
+        "metadata",
+        "--locked",
+        "--offline",
+        "--format-version",
+        "1"
+      ],
+      [
+        "cargo",
+        "metadata",
+        "--offline",
+        "--format-version",
+        "1"
+      ],
+      [
+        "cargo",
+        "metadata",
+        "--locked",
+        "--offline",
+        "--format-version",
+        "1"
+      ]
+    ]
+  },
+  "correction": "Normalize metadata only in the existing captured offline namespace, require unchanged captured package/source/checksum identities and no new canonical dependency edge, preserve both locks and final source proof, then compile with original --locked --offline. Generate exact actual forwarded interface and private drain mappings."
+}

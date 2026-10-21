@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_wasi_http_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed actual declared POST fixture error: exact unknown-length streamed body expects no Content-Length, all method/binary/header constraints remain; reuse authenticated original526 successful110 backend and original native products for one fresh guest/full64 programme. Original clients workflow and all runtime oracles/caps remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "03d309eaa84e34fa24c4e34d490cab4da06d55e94a6f70d59754e0bde7d4d876"
+}

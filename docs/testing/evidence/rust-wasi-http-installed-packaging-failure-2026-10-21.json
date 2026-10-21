@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.installed-compiler-observation.v1",
+  "source": "8e6ce8dc9eff0925f69f0e29d0941f8917b982de",
+  "run": 39639273063,
+  "job": 119358216546,
+  "outerConclusion": "failure",
+  "artifact": {
+    "id": 12363623978,
+    "size_in_bytes": 3299863,
+    "digest": "sha256:ec9729c49edc829d4f0aed32e3faace179b58dcb0b4cf885571dc6438e02696b"
+  },
+  "members": 116,
+  "expandedBytes": 13481465,
+  "guestComponentsCompiled": 1,
+  "normalInstalledEntry": "recipe/tools/dev_guest_recipe.py",
+  "normalCompilerCommands": 32,
+  "allCompilerCommandsExitZero": true,
+  "component": {
+    "sha256": "sha256:c90ef6b1284554bab4ec2ad6d41876123288ec0b3b803466150016ede534e66b",
+    "bytes": 936600
+  },
+  "originalPackageAssembled": false,
+  "originalUnsignedMaterials": 21,
+  "originalPackagerMaterialPresent": false,
+  "originalSignedOutcome": "failed before node/guest execution",
+  "actualSignerStderrRetained": false,
+  "deterministicSourceRefusal": "exact pinned RustCapsule required-tool loop rejects missing packager material",
+  "fix": "complete genuine dev_workflow.build_artifacts.package +build_provenance.complete immediately after one new normal installed compile; retain original unsigned compiler bytes and original900s interval",
+  "nativeBuildsRepeated": 0,
+  "backendBuildsRepeated": 0,
+  "fullTicketQualified": false,
+  "historicalFailureReclassified": false
+}

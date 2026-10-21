@@ -53,6 +53,15 @@ input approval. Its original source WIT must explicitly import
 `--http-runtime /absolute/owned/http-runtime`. Emitted WASI imports confer no
 authority, and no version alias is installed.
 
+This selected profile requires each public entry to declare its blocking effect
+explicitly, for example `greet: async func(name: string) -> result<string, string>`.
+Ordinary synchronous Rust implementations use the pinned normal generator option
+`async: false`; this selects a synchronous Core ABI while retaining the async
+function type in the embedded component metadata. It adds no executor, future or
+transport to the application or either published client. A selected synchronous
+public contract is refused with `rust-http-selected-explicit-async-export-required`.
+The default non-HTTP authoring contract and generator selection are unchanged.
+
 Installed Rust tools can explicitly capture that same prepared runtime during
 nonpublishing bundle assembly:
 
@@ -62,8 +71,15 @@ python3 -B tools/build_dev_guest_tools.py --language rust \
   --rust-http-runtime /absolute/owned/http-runtime
 ```
 
-This option is assembly-only and has source/control evidence; an installed
-bundle build has not yet been qualified. Assembly checks the exact staged Rustc
+The maintained installed recipe now has a [signed finite qualification](evidence/rust-wasi-http-installed-2026-10-21.json)
+from [run 39663071131](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39663071131):
+one guest compiled through `recipe/tools/dev_guest_recipe.py`, both unchanged
+clients parsed JSON across two independently authorized tenant publications,
+and two pre-entry denials, four contacts, physical/provider retirement and a
+clean shutdown passed. This qualifies the installed recipe; release publisher
+authentication and the full released frontend remain unqualified.
+
+Assembly checks the exact staged Rustc
 and wasm-tools bytes, preserves the original producer receipt and source
 inventory, and copies only the four component/WIT files and pinned composer.
 The complete 113-file consumer recipe and all seven retained runtime files join
@@ -75,10 +91,14 @@ its concrete import refusals. Selection grants no provider authority and uses
 no application or library identity.
 
 The compiler composes a generated forwarding root around the actual application
-component. Each call retains its actual value or error until the private drain
-returns. The first bridge supports finite unnamed value APIs; named aggregate,
+component. The root's application imports and public exports must exactly match
+the explicitly selected async contract, including function kinds and nominal
+value ownership. Its generated Rust bindings also use `async: false`. Each call
+retains its actual value or error until the private drain returns. The first bridge supports finite unnamed value APIs; named aggregate,
 resource and unsupported borrowed-aggregate exports receive concrete build
-diagnostics. It preserves the application's public graph, uses the captured
+diagnostics. `publicGraphUnchanged` refers to that explicitly declared selected
+contract; it never describes a conversion of an older synchronous component.
+The compiler uses the captured
 offline compiler namespace and wires exact nominal interfaces through the
 pinned composer. Only the internal blocking operations and private drain are
 projected; every original application core byte must survive. Final WASI/private
@@ -89,3 +109,30 @@ calls, real provider errors and denials, partial I/O, cancellation, uncertain
 POST without replay, lifecycle retirement, physical owners and fresh tenant reuse.
 The historical [compiler-only observation](rust-wasi-http-inputs.md) remains
 separately attributable and retains its original compatibility failure.
+
+The original synchronous `ceff0697...` component and private diagnostic remain
+historical failures. [Run 39571821467](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39571821467)
+retained the closed `cannot-block-sync-task` trap from its first ordinary Waki
+call; the diagnostic is not qualification. The Component Model's
+[concurrency contract](https://github.com/WebAssembly/component-model/blob/main/design/mvp/Concurrency.md)
+distinguishes a function's async effect from its Core ABI. Generator-only controls
+verify the explicit contract and unchanged ordinary source bodies. The installed
+finite programme now proves real execution of that contract; the complete signed
+runtime matrix remains pending.
+
+The `8e6ce8d` installed owning attempt compiled one genuine installed-entry
+component with all 32 normal compiler/composition commands passing. Its
+compile-only observation correctly omitted a packager. Signing failed before
+node execution; that attempt did not retain the signer stderr. The installed
+controller now follows the existing ordinary public CLI packaging and provenance
+join before signing, inside the unchanged original 900-second compiler clock.
+The genuine join preserves the original compiler statement and marker verbatim
+and adds the actual packager identity. The corrected installed attempt passed all 32 compiler commands and six signed
+attempts using the retained native and backend products. No host or backend
+was rebuilt. The original 155 qualifier materials, 245 assembly inputs and 116
+Rust recipe inputs remain bound to `ed4fdcbb...`. Current development preserves
+all 155 qualifier and 116 Rust recipe bytes; five Java/.NET assembly
+helpers outside the selected Rust compiler recipe differ, listed in the observation. The historical installed inventory
+and compiler statements have not been rewritten as a current assembly.
+The original [failure observation](evidence/rust-wasi-http-installed-packaging-failure-2026-10-21.json)
+remains failed.

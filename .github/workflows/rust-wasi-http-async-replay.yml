@@ -1,0 +1,80 @@
+name: Rust retained explicit async WASI HTTP runtime
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['diag/rust-wasi-http-async-node-replay-20261021']
+    paths:
+      - '.github/workflows/rust-wasi-http-async-replay.yml'
+      - 'tools/replay_rust_wasi_http_async_runtime.py'
+      - 'tools/rust_wasi_http_runtime_node.py'
+      - 'tools/tests/test_rust_wasi_http_async_runtime_replay.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rust-wasi-http-async-replay-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  retained-guest:
+    name: Authenticate the original compiled guest and execute only its full node programme
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install only the existing pinned Python controller dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Fetch exact original compiler and native source objects without compilation
+        run: >-
+          git fetch --no-tags --depth=1 origin
+          52654f7b86ef0043a8250dea39093d955ee9f480
+          c7134289f446cb3171eb0ffd800a94afc2a5209f
+      - name: Check the exact original ancestry and corrected counter reader
+        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_async_runtime_replay tools.tests.test_rust_wasi_http_runtime -q
+      - name: Restore only the fixed original public compiled-guest artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rust-wasi-http-runtime-52654f7b86ef0043a8250dea39093d955ee9f480
+          run-id: '39606039445'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/rust-http-original
+      - name: Authenticate unchanged original native products without another host build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/activation_stack_native_products.py --output "$RUNNER_TEMP/rust-http-native"
+      - name: Re-sign the exact original component and execute all original64 attempts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/replay_rust_wasi_http_async_runtime.py
+          --original-artifact "$RUNNER_TEMP/rust-http-original"
+          --native-products "$RUNNER_TEMP/rust-http-native"
+          --output "$RUNNER_TEMP/rust-http-node-replay"
+      - name: Retain exact ancestry and bounded public invocation and cleanup observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-wasi-http-async-node-replay-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-http-node-replay/*.json
+            ${{ runner.temp }}/rust-http-node-replay/build/*.json
+            ${{ runner.temp }}/rust-http-node-replay/build/*.wasm
+            ${{ runner.temp }}/rust-http-node-replay/build/wit/**
+            ${{ runner.temp }}/rust-http-node-replay/node/*.json
+            ${{ runner.temp }}/rust-http-node-replay/node/examples-controls/*.json
+            ${{ runner.temp }}/rust-http-node-replay/node/foreign-controls/*.json
+            ${{ runner.temp }}/rust-http-node-replay/node/provider-absence/*.json
+            ${{ runner.temp }}/rust-http-node-replay/node/provider-absence/controls/*.json
+            ${{ runner.temp }}/rust-http-native/*.json
+          if-no-files-found: warn
+          retention-days: 3
