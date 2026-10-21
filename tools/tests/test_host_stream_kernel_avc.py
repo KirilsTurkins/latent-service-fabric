@@ -19,8 +19,12 @@ class KernelAvc(unittest.TestCase):
         return (avc.OWNED/name).read_text()
 
     def test_seventeen_actual_whole_inputs_and_nineteen_exact_definitions(self):
-        self.assertEqual(len(self.fixture['source']),17)
-        self.assertEqual(sum(r['bytes'] for r in self.fixture['source'].values()),1110423)
+        direct=set(avc.netport.fixture()['source']) | {avc.AVC,avc.HEADER}
+        self.assertEqual(len(direct),17)
+        self.assertEqual(sum(self.fixture['source'][name]['bytes'] for name in direct),1110423)
+        self.assertEqual(set(self.fixture['source']),direct | {avc.sidcache.SIDTAB})
+        self.assertEqual(self.fixture['source'][avc.sidcache.SIDTAB],
+                         avc.sidcache.fixture()['source'][avc.sidcache.SIDTAB])
         self.assertEqual(len(self.fixture['sections']),19)
         self.assertEqual(self.fixture['upstreamCommit'],avc.maintained.COMMIT)
         for name,row in self.fixture['sections'].items():

@@ -150,7 +150,11 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
                          {"PublishRelease", "GetRelease", "ListReleases", "GetReleaseLifecycle",
                           "GetReleaseOperation", "ChangeReleaseLifecycle", "RenewReleaseEvidence",
                           "PublishWebPackage", "GetWebPublication", "GetWebOperation",
-                          "ChangeWebLifecycle", "RenewWebEvidence", "PrepareWebPublication"})
+                          "ChangeWebLifecycle", "RenewWebEvidence", "PrepareWebPublication", "PrepareRelease"})
+        self.assertEqual({item["name"]: item["number"] for item in message(source, "PrepareReleaseRequest")["field"]},
+                         {"publication": 1, "lifecycle_generation": 2, "maximum_wait_millis": 3})
+        self.assertEqual({item["name"]: item["number"] for item in message(source, "PrepareReleaseResponse")["field"]},
+                         {"publication": 1, "lifecycle_generation": 2, "component_digest": 3, "prepared": 4})
 
     def test_explicit_selector_presence_does_not_fall_back_to_component_digest(self):
         selected = {"id": "publication:sha256:" + "b" * 64, "tenant": "acme"}

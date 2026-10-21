@@ -23,13 +23,11 @@ enum lsf_prepaid_kind {
     LSF_PREPAID_OBJECT, LSF_PREPAID_INODE_BLOB, LSF_PREPAID_SOCK_BLOB,
     LSF_PREPAID_LABEL, LSF_PREPAID_LABEL_DOMAIN, LSF_PREPAID_LABEL_CATMAP,
     LSF_PREPAID_CIPSO_BUFFER, LSF_PREPAID_IP_OPTIONS, LSF_PREPAID_NETPORT,
-    /* Reserved alongside the separately owned mandatory audit/cache path. */
     LSF_PREPAID_SIDCACHE, LSF_PREPAID_AUDIT_STRING, LSF_PREPAID_AUDIT_BUFFER,
     LSF_PREPAID_AUDIT_SKB, LSF_PREPAID_AUDIT_HEAD,
     LSF_PREPAID_AVC_NODE, LSF_PREPAID_AVC_XPERMS,
     LSF_PREPAID_AVC_DECISION, LSF_PREPAID_AVC_DATA
 };
-
 static inline int lsf_prepaid_avc_kind(unsigned int kind)
 {
     return kind == LSF_PREPAID_AVC_NODE || kind == LSF_PREPAID_AVC_XPERMS ||
@@ -44,6 +42,10 @@ struct lsf_prepaid_view {
     /* Original cache bucket plus one, written BEFORE publication. This is
      * inside the SAME fixed record, never a caller-supplied pointer proof. */
     unsigned int cache_bucket;
+    /* Cache-table identity recorded by its real producer before publication.
+     * Only revalidation beneath that table's original lifetime/lock permits
+     * dereference; a copied pointer alone is never an ownership proof. */
+    lsf_u64 cache_anchor;
 };
 struct lsf_prepaid_context {
     struct lsf_scope scope;
@@ -211,7 +213,8 @@ static inline int lsf_prepaid_child_allocate(struct lsf_prepaid *pool,
     lsf_u64 *offset)
 {
     if (((kind < LSF_PREPAID_LABEL || kind > LSF_PREPAID_IP_OPTIONS) &&
-         kind != LSF_PREPAID_NETPORT && !lsf_prepaid_avc_kind(kind)) ||
+         kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
+         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)) ||
         !lsf_prepaid_allocate(pool, key, bytes, 1, parent, ticket, offset))
         return 0;
     pool->records[ticket->slot].kind = kind;
@@ -230,7 +233,8 @@ static inline int lsf_prepaid_blob_find(struct lsf_prepaid *pool,
     if (!pool || !key || !ticket || !pool->initialized || pool->poisoned ||
         offset >= LSF_BACKING_BYTES ||
         ((kind < LSF_PREPAID_INODE_BLOB || kind > LSF_PREPAID_IP_OPTIONS) &&
-         kind != LSF_PREPAID_NETPORT && !lsf_prepaid_avc_kind(kind)))
+         kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
+         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)))
         return 0;
     for (i = 1; i < LSF_ALLOCATION_SLOTS; ++i) {
         struct lsf_prepaid_view *record = &pool->records[i];
@@ -264,11 +268,13 @@ static inline int lsf_prepaid_record_queue(struct lsf_prepaid *pool,
         record->owner != key.slot || record->owner_generation != key.generation ||
         record->kind != kind ||
         (kind != LSF_PREPAID_INODE_BLOB && kind != LSF_PREPAID_IP_OPTIONS &&
-         kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_AVC_NODE) ||
+         kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
+         kind != LSF_PREPAID_AVC_NODE) ||
         (kind == LSF_PREPAID_INODE_BLOB && record->deferred != LSF_PREPAID_PRIVATE) ||
         (kind == LSF_PREPAID_IP_OPTIONS && record->deferred != LSF_PREPAID_PUBLISHED) ||
-        (kind == LSF_PREPAID_NETPORT && record->deferred != LSF_PREPAID_PUBLISHED) ||
-        (kind == LSF_PREPAID_AVC_NODE && record->deferred != LSF_PREPAID_PUBLISHED) ||
+        ((kind == LSF_PREPAID_NETPORT || kind == LSF_PREPAID_SIDCACHE ||
+          kind == LSF_PREPAID_AVC_NODE) &&
+         record->deferred != LSF_PREPAID_PUBLISHED) ||
         !context->live || context->continuations == LSF_ALLOCATION_SLOTS) {
         context->poisoned = 1;
         return 0;
@@ -360,6 +366,64 @@ static inline int lsf_prepaid_netport_current(struct lsf_prepaid *pool,
     if (!offset || lsf_prepaid_netport_candidate(pool, key, ticket.slot,
                                                  &observed_ticket, &actual) != 1 ||
         observed_ticket.generation != ticket.generation || actual != bucket)
+        return 0;
+    *offset = pool->records[ticket.slot].offset;
+    return 1;
+}
+
+/* Actual SID-cache publication holds its original table cache lock. No
+ * unprotected table pointer is followed by these fixed-record operations. */
+static inline int lsf_prepaid_sidcache_publish(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, struct lsf_prepaid_ticket ticket, lsf_u64 anchor)
+{
+    struct lsf_prepaid_context *context = lsf_prepaid_context_for(pool, key);
+    struct lsf_prepaid_view *record;
+    if (!context || !ticket.slot || ticket.slot >= LSF_ALLOCATION_SLOTS)
+        return 0;
+    record = &pool->records[ticket.slot];
+    if (!anchor || record->phase != LSF_PREPAID_LIVE ||
+        record->generation != ticket.generation || record->owner != key.slot ||
+        record->owner_generation != key.generation || record->kind != LSF_PREPAID_SIDCACHE ||
+        record->deferred != LSF_PREPAID_PRIVATE || record->cache_anchor || record->cache_bucket) {
+        context->poisoned = 1;
+        return 0;
+    }
+    record->cache_anchor = anchor;
+    record->deferred = LSF_PREPAID_PUBLISHED;
+    return 1;
+}
+
+static inline int lsf_prepaid_sidcache_candidate(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, unsigned int slot,
+    struct lsf_prepaid_ticket *ticket, lsf_u64 *anchor)
+{
+    struct lsf_prepaid_context *context = lsf_prepaid_context_for(pool, key);
+    struct lsf_prepaid_view *record;
+    if (!context || !ticket || !anchor || !slot || slot >= LSF_ALLOCATION_SLOTS)
+        return 0;
+    record = &pool->records[slot];
+    if (record->phase != LSF_PREPAID_LIVE || record->owner != key.slot ||
+        record->owner_generation != key.generation || record->kind != LSF_PREPAID_SIDCACHE ||
+        record->deferred != LSF_PREPAID_PUBLISHED)
+        return 0;
+    if (!record->generation || !record->cache_anchor || record->cache_bucket) {
+        context->poisoned = 1;
+        return -1;
+    }
+    *ticket = (struct lsf_prepaid_ticket){slot, record->generation};
+    *anchor = record->cache_anchor;
+    return 1;
+}
+
+static inline int lsf_prepaid_sidcache_current(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, struct lsf_prepaid_ticket ticket,
+    lsf_u64 anchor, lsf_u64 *offset)
+{
+    struct lsf_prepaid_ticket observed_ticket;
+    lsf_u64 actual;
+    if (!offset || lsf_prepaid_sidcache_candidate(pool, key, ticket.slot,
+                                                  &observed_ticket, &actual) != 1 ||
+        observed_ticket.generation != ticket.generation || actual != anchor)
         return 0;
     *offset = pool->records[ticket.slot].offset;
     return 1;
@@ -485,14 +549,17 @@ static inline int lsf_prepaid_blob_finish(struct lsf_prepaid *pool,
         record->owner != key.slot || record->owner_generation != key.generation ||
         record->kind != kind || !context->live ||
         ((kind < LSF_PREPAID_INODE_BLOB || kind > LSF_PREPAID_IP_OPTIONS) &&
-         kind != LSF_PREPAID_NETPORT && !lsf_prepaid_avc_kind(kind)) ||
+         kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
+         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)) ||
         record->deferred > LSF_PREPAID_PUBLISHED ||
         (kind == LSF_PREPAID_INODE_BLOB && record->deferred != LSF_PREPAID_QUEUED) ||
         (kind == LSF_PREPAID_IP_OPTIONS && record->deferred == LSF_PREPAID_PUBLISHED) ||
-        (kind == LSF_PREPAID_NETPORT && record->deferred == LSF_PREPAID_PUBLISHED) ||
-        (kind == LSF_PREPAID_AVC_NODE && record->deferred == LSF_PREPAID_PUBLISHED) ||
+        ((kind == LSF_PREPAID_NETPORT || kind == LSF_PREPAID_SIDCACHE ||
+          kind == LSF_PREPAID_AVC_NODE) &&
+         record->deferred == LSF_PREPAID_PUBLISHED) ||
         (kind != LSF_PREPAID_INODE_BLOB && kind != LSF_PREPAID_IP_OPTIONS &&
-         kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_AVC_NODE && record->deferred) ||
+         kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
+         kind != LSF_PREPAID_AVC_NODE && record->deferred) ||
         (record->deferred == LSF_PREPAID_QUEUED && !context->continuations)) {
         context->poisoned = 1;
         return 0;

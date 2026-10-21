@@ -51,6 +51,16 @@ int lsf_factory_netport_candidate(struct lsf_factory_context *, unsigned int,
 int lsf_factory_netport_current(struct lsf_factory_context *,
                                struct lsf_prepaid_ticket, unsigned int, void **);
 void lsf_prepaid_netport_drain(struct lsf_factory_context *);
+int lsf_factory_sidcache_publish(const void *, lsf_u64);
+int lsf_factory_sidcache_queue(const void *);
+int lsf_factory_sidcache_destroy(const void *);
+int lsf_factory_sidcache_candidate(struct lsf_factory_context *, unsigned int,
+                                  struct lsf_prepaid_ticket *, lsf_u64 *);
+int lsf_factory_sidcache_current(struct lsf_factory_context *,
+                                struct lsf_prepaid_ticket, lsf_u64, void **);
+void lsf_prepaid_sidcache_drain(struct lsf_factory_context *);
+
+
 int lsf_factory_avc_member(const void *, unsigned int, unsigned long,
                            struct lsf_factory_blob *);
 int lsf_factory_avc_phase(struct lsf_factory_blob, unsigned int);

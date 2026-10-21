@@ -1,9 +1,11 @@
 # Maintained private AVC cache prefix
 
-This uninstalled derivation extends the authenticated maintained Netport source
-with the actual AVC allocation and permission-check chain. Seventeen whole
-6.12.113 inputs (1,110,423 bytes), nineteen exact definitions and thirty-four
-derived identities are bound to the fixed official archive. It does not select
+This uninstalled derivation extends the authenticated maintained SID-cache and
+Netport source with the actual AVC allocation and permission-check chain. Its
+seventeen direct AVC inputs (1,110,423 bytes) plus the authenticated SID table
+make eighteen whole 6.12.113 inputs. Nineteen AVC definitions and thirty-eight
+derived identities are bound to the fixed official archive. The SID-modified
+services and sidtab sources remain intact beneath this layer. It does not select
 a complete consumer, link a kernel, install a factory or enable a provider.
 
 ## Original cache and policy semantics
@@ -53,13 +55,16 @@ It is neither a grace-period wait nor proof of complete retirement. Genuine
 late descendants remain charged and may require subsequent owned maintenance.
 
 The added factory helper include/drain is selected only by this AVC derivation.
-Earlier six/twelve/fourteen object modes keep their original selection and
+Earlier six/twelve/fourteen/fifteen object modes keep their original selection and
 retain their historical source attribution.
 
 ## Evidence boundary and remaining production chain
 
-Nineteen focused source controls supplement all sixty-two unchanged earlier
-source controls. The freestanding reference compiles selected actual maintained
+Nineteen focused AVC source controls supplement the sixty-two earlier source
+controls and twelve SID-cache source controls. The composed shared header also
+passes the fourteen SID-cache and nineteen Netport lifetime references without
+changing their selected source bodies. These remain supplemental C doubles.
+The AVC freestanding reference compiles selected actual maintained
 allocation/destructor/revocation bodies and the actual private graph/factory
 helpers with explicit serialized type/cache/list/lock/RCU doubles. The original
 general-heap AVC producer is RED (exit 2); twenty-four current cases pass.
@@ -69,6 +74,14 @@ failure-free and duplicate queue refusal, late descendants and original byte/
 record exhaustion. The first reference attempt exposed and retains a genuine
 private/core helper-name collision; the second retains old-mode unused-double
 warnings. These are supplemental mechanism controls, not Linux execution.
+
+One exclusive object-only lane is prepared for sixteen real Kbuild objects and
+sixty-one required global function definitions, retaining all fifteen SID-cache
+objects and fifty-two definitions. It preserves the original security-enabled
+defconfig, requires Netlabel already enabled and SID-cache size 256, and changes
+only the private factory symbol from disabled to enabled. The original four
+job bodies, build deadlines, compiler warnings and diagnostic limits remain.
+This lane has not run for the composed AVC source; no compile credit is claimed.
 
 The complete private permission entry calls the separately owned exact
 `lsf_prepaid_avc_audit` producer. This source declares that seam and deliberately

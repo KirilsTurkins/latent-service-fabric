@@ -11,6 +11,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.dev_workflow import paths
 from tools import host_stream_kernel_netport as netport
+from tools import host_stream_kernel_sidcache as sidcache
 
 maintained = netport.maintained
 OWNED = netport.protocol.OWNED
@@ -34,7 +35,7 @@ def fixture():
     value = json.loads(FIXTURE.read_bytes())
     require(value['upstreamCommit'] == maintained.COMMIT and
         value['archiveSha256'] == maintained.manifest()['archive']['sha256'], 'upstream-identity')
-    require(set(value['source']) == set(netport.fixture()['source']) | {AVC, HEADER}, 'source-membership')
+    require(set(value['source']) == set(sidcache.fixture()['source']) | {AVC, HEADER}, 'source-membership')
     require(set(value['sections']) == set(CLONES) | set(OBSERVED) | {'sock_has_perm'}, 'definition-membership')
     require(value['kernelBuilt'] is value['actualLsmExecuted'] is
         value['completeAllocationClosure'] is value['productionInstallation'] is False, 'uninstalled-only')
@@ -188,7 +189,7 @@ def reference_body():
 
 def derive(inputs):
     authenticate(inputs)
-    outputs = netport.derive({name:inputs[name] for name in netport.fixture()['source']})
+    outputs = sidcache.derive({name:inputs[name] for name in sidcache.fixture()['source']})
     original = inputs[AVC].decode();text = original
     for name in OBSERVED:
         raw = section(original,name);text = replace(text,raw,observed(raw,name))
