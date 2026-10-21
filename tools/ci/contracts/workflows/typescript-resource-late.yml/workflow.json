@@ -18,7 +18,8 @@
           "tools/typescript_resource_runtime_fixture.py",
           "tools/qualify_typescript_resource_runtime.py",
           "tools/resource_runtime_node.py",
-          "tools/tests/test_typescript_resource_late.py"
+          "tools/tests/test_typescript_resource_late.py",
+          "tools/typescript_late_compiler_inputs.py"
         ]
       },
       "workflow_dispatch": null
@@ -31,7 +32,7 @@
   "requiredJobs": [
     "late-facilities"
   ],
-  "reviewReason": "One normal captured TypeScript component and six signed late/fresh facility outcomes using original native products and source-bound compiler inputs; preserve original Go/TypeScript baselines, ceilings and all positive pending/retirement oracles.",
+  "reviewReason": "Select only the already successful current tracking compiler engine/splicer, authenticated with their original cancelled-run and successful-owning identities; preserve all budgets, six signed outcomes and baseline input pins, no engine or native rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-resource-late.yml"
 }

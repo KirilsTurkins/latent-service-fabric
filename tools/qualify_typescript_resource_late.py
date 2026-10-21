@@ -13,7 +13,7 @@ from tools import c_thread_native_products as products
 from tools import qualify_typescript_resource_runtime as base
 from tools import typescript_resource_late as late
 from tools import typescript_resource_runtime_fixture as fixture
-from tools import typescript_resource_runtime_inputs as compiler_inputs
+from tools import typescript_late_compiler_inputs as compiler_inputs
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
 from tools.rust_capsule_project import ROOT, fresh, inventory, snapshot
@@ -22,7 +22,8 @@ from tools.typescript_guest.build import build
 
 MATERIALS = tuple(dict.fromkeys((*base.MATERIALS,'tools/qualify_typescript_resource_late.py',
     'tools/typescript_resource_late.py','tools/c_thread_native_products.py',
-    'tools/sdk_native_products_reader.py','.github/workflows/typescript-resource-late.yml')))
+    'tools/sdk_native_products_reader.py','tools/typescript_late_compiler_inputs.py',
+    'tools/typescript_tracking_replay_inputs.py','.github/workflows/typescript-resource-late.yml')))
 
 
 def qualify(native_directory, compiler_directory, tools, output):

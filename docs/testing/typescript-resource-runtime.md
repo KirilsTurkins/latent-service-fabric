@@ -83,3 +83,13 @@ products and source-bound import engine/splicer; it rebuilds one component and
 performs no native or engine build. Signed execution is pending the owning job.
 No post-Store callback, exact instruction-after-return, `Poll::Pending`, native
 thread, asynchronous console flush or complete ticket result is claimed.
+
+The initial late-facility attempt at source `2834bee5680ab8b3e0433f67254e29dbf65c7094`
+(run `39587715987`, job `119180672270`) correctly refused an older compiler engine
+whose SDK inputs differ from the current source, before producing a component.
+The correction selects the already retained current tracking engine and splicer
+from source `5c38079b1de2e0bbfe437ad7003582460618742d`. Their individual owning
+jobs passed in run `39540608310`; its overall cancelled boundary stays cancelled
+and supplies no qualification credit. All forty current engine SDK inputs and
+the source-built splicer match their original receipts. No engine is repinned,
+relabeled or rebuilt, and the earlier resource programme keeps its original pins.

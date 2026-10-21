@@ -11,6 +11,7 @@ on:
       - 'tools/qualify_typescript_resource_runtime.py'
       - 'tools/resource_runtime_node.py'
       - 'tools/tests/test_typescript_resource_late.py'
+      - 'tools/typescript_late_compiler_inputs.py'
   workflow_dispatch:
 
 permissions:
@@ -59,7 +60,7 @@ jobs:
       - name: Acquire only the original source-bound import engine and splicer
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/typescript_resource_runtime_inputs.py --output "$RUNNER_TEMP/resource-runtime-compiler"
+        run: python3 -B tools/typescript_late_compiler_inputs.py --output "$RUNNER_TEMP/resource-runtime-compiler"
       - name: Capture one normal component and execute six signed late-facility outcomes
         run: |
           python3 -B tools/qualify_typescript_resource_late.py \
