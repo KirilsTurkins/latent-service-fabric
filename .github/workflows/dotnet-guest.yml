@@ -479,6 +479,21 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
