@@ -138,7 +138,7 @@ def project(directory: Path, outside: Path):
     outside.mkdir(mode=0o700)
     for name,identity in zip(('library','data'),PACKAGES,strict=True):
         target=outside/name;target.mkdir()
-        manifest='module '+identity+'\n\ngo 1.27.2\n'
+        manifest='module '+identity+'\n\ngo 1.27.3\n'
         if name=='library':manifest+='require '+PACKAGES[1]+' v0.0.0\n'
         (target/'go.mod').write_bytes(manifest.encode())
     (outside/'library/library.go').write_bytes(LIBRARY_SOURCE)

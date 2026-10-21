@@ -1,4 +1,4 @@
-"""One fresh ordinary Go resource/goroutine component on authenticated V7 products."""
+"""One fresh ordinary Go resource/goroutine component on frozen 357e SDK5 products."""
 from __future__ import annotations
 import argparse
 import json
@@ -8,8 +8,7 @@ import subprocess
 import sys
 
 if __package__ in {None,''}:sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from tools import go_resource_runtime_fixture as fixture, wasmtime_48_0_7_native_products as products
-from tools.java_replay_materials import git_source_identity
+from tools import go_resource_runtime_fixture as fixture, rust_http_installed_native_products as products
 from tools.go_resource_runtime_build import build_evidence
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
@@ -20,7 +19,7 @@ from tools.run_rust_capsule_workflow import write_workflow_receipt
 
 MATERIALS=(*SHARED_MATERIALS,'tools/qualify_go_resource_runtime.py','tools/go_resource_runtime_build.py',
     'tools/go_resource_runtime_fixture.py','tools/go_node_stop_probe.py',
-    'tools/wasmtime_48_0_7_native_products.py','tools/sdk_native_products_reader.py',
+    'tools/rust_http_installed_native_products.py','tools/sdk_native_products_reader.py',
     '.github/workflows/go-resource-runtime.yml')
 
 
@@ -34,12 +33,11 @@ def qualify(native_directory,output):
     for path in native.values():path.chmod(0o700)
     output=fresh(output);source=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip()
     helpers={name:file_identity(ROOT/name) for name in MATERIALS};consumer_native=source_identity(ROOT)
-    require(consumer_native==git_source_identity(products.SOURCE),
-            'resource-Go-current-native-source-must-match-producer')
     go=shutil.which('go');require(go is not None,'resource-Go-owned-pinned-compiler-required')
     compiler=file_identity(Path(go).resolve(strict=True),128*1024*1024)
     record={'schemaVersion':'latent.go.resource-runtime-qualification.v1','status':'incomplete',
         'source':source,'materials':helpers,'compiledNative':native_record,'consumerNativeSource':consumer_native,
+        'compiledNativeSource':products.SOURCE,'consumerNativeCompiledByThisCampaign':False,
         'compiler':compiler,'nativeProductsBuilt':0,'engineRebuilt':False,'guestComponentsCompiled':0,
         'historicalNormalProgrammeRelabelledAsCurrent':False,'fullTicketQualification':False}
     stage='ordinary-outside-transitive-Go-capture'
