@@ -42,12 +42,15 @@ MATERIALS = ('tools/qualify_typescript_resource_runtime.py','tools/resource_runt
     '.github/workflows/typescript-resource-runtime.yml')
 
 
-def checked_release(release, capsule, build_identity):
+def checked_release(release, capsule, build_identity, *, language='typescript'):
     # The normal compiler deliberately derives the activation world in the
     # original namespace, while preserving the original public export contract.
-    selected=scoped_selected_world('examples:resource-runtime/service@1.0.0')
+    require(language in ('typescript','go'),'resource-runtime-closed-build-language')
+    selected=(scoped_selected_world('examples:resource-runtime/service@1.0.0')
+              if language == 'typescript' else 'examples:greeting/service@1.0.0')
+    export='examples:resource-runtime/api@1.0.0' if language == 'typescript' else 'examples:greeting/api@1.0.0'
     require(capsule['metadata']=={'name':'examples/my-greeting','tenant':'examples'}
-            and capsule['exports']==['examples:resource-runtime/api@1.0.0']
+            and capsule['exports']==[export]
             and capsule['component']['world']==selected
             and release['name']==release['service']=='my-greeting'
             and release['world']==selected
@@ -56,11 +59,15 @@ def checked_release(release, capsule, build_identity):
     return release
 
 
-def execute(artifact, native, output):
+def execute(artifact, native, output, *, language='typescript'):
+    require(language in ('typescript','go'),'resource-runtime-closed-execution-language')
+    reader=build_evidence
+    if language == 'go':
+        from tools.go_resource_runtime_build import build_evidence as reader
     output = fresh(output)
-    record = {'schemaVersion':'latent.typescript.resource-runtime-node.v1','status':'incomplete',
+    record = {'schemaVersion':'latent.'+language+'.resource-runtime-node.v1','status':'incomplete',
               'fullTicketQualification':False,'nativeThreadsQualified':False,'runtimeGrantDenials':[]}
-    before = build_evidence(artifact);stage='normal-neutral-package-and-sign'
+    before = reader(artifact);stage='normal-neutral-package-and-sign'
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=600,command_seconds=120)
     node=peer=None;clients={}
     try:
@@ -75,7 +82,7 @@ def execute(artifact, native, output):
                 'resource-runtime-normal-two-tenant-signing')
         release=signature['releases'][0]
         record['signedRelease']=release
-        checked_release(release,read_json(artifact/'capsule.json'),before)
+        checked_release(release,read_json(artifact/'capsule.json'),before,language=language)
         with owned_cancellation() as cancellation, tempfile.TemporaryDirectory(prefix='lsf-resource-runtime-') as temporary:
             work=Path(temporary)
             for name in ('examples','node','peer'):(work/name).mkdir(mode=0o700)
@@ -84,8 +91,8 @@ def execute(artifact, native, output):
             clients['examples']=client
             peer,port=start_provider(client,work/'peer',maximum_seconds=480)
             try:
-                config,settings=configure(work/'node',signed,port,language='typescript')
-                runtime.configure(settings,read_json(artifact/'capsule.json'))
+                config,settings=configure(work/'node',signed,port,language=language)
+                runtime.configure(settings,read_json(artifact/'capsule.json'),language=language)
                 config.write_bytes((json.dumps(settings,sort_keys=True,separators=(',',':'))+'\n').encode())
                 stage='two-tenant-single-cell-startup'
                 client.environment[timer_observer.ENVIRONMENT]='1'
@@ -105,14 +112,14 @@ def execute(artifact, native, output):
                     manifest=selected.directory/'resource-callback-deployment.json'
                     write_json(manifest,tenants.scoped_deployment(read_json(signed/'my-greeting/deployment.json'),tenant))
                     target=deploy(selected,manifest,publications[tenant])
-                    targets[tenant],denied=runtime.grant(selected,node,manifest,publications[tenant],target,tenant)
+                    targets[tenant],denied=runtime.grant(selected,node,manifest,publications[tenant],target,tenant,language=language)
                     record['runtimeGrantDenials'].append({'tenant':tenant,'invocation':denied,
                         'provider':tenants.provider_idle(selected,targets[tenant]),
                         'physical':sample(selected,probe,'resource-runtime-denied-'+tenant,len(publications))})
                 require(publications['examples']!=publications['foreign'],'resource-runtime-independent-publications')
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='resource-callback-cancel-trap-foreign-fresh-programme'
-                record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'])
+                record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'],language=language)
                 for tenant in tenants.TENANTS:delete_all(clients[tenant],[targets[tenant]['name']])
                 record['afterDeletes']=sample(client,probe,'resource-callback-after-deletes',0)
                 clients['foreign'].node=None;stop(client,node)
@@ -130,7 +137,7 @@ def execute(artifact, native, output):
                     if 'peerShutdown' not in record:record['peerFailure']=close_failed_provider(peer)
                     else:peer.close()
             cancellation.check()
-        require(build_evidence(artifact)==before and record['nodeShutdown']['reaped']
+        require(reader(artifact)==before and record['nodeShutdown']['reaped']
                 and record['nodeShutdown']['record']['clean'] and time.monotonic()<commands.deadline
                 and sum(c.calls for c in clients.values())<=384,'resource-runtime-final-build-and-physical-retirement')
         record.update(status='passed',build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
