@@ -90,11 +90,15 @@ def verify_composition(record,component,adapter):
     require(not (required-actual),'rust-http-all-original-app-root-adapter-cores-required')
 
 
-def catalogue_inputs(source,recipe):
+def catalogue_inputs(source,recipe,installed_sdk):
     require(type(source) is dict and type(recipe) is dict and source and recipe
         and all(type(name) is str and name and '\\' not in name and not name.startswith('/')
             and all(part not in {'','.','..'} for part in name.split('/'))
             for names in (source,recipe) for name in names),'rust-http-real-observed-input-name-sets')
+    require(type(installed_sdk) is dict and installed_sdk
+        and {'vendor/lsf/'+name for name in installed_sdk}=={n for n in source if n.startswith('vendor/lsf/')}
+        and all(source['vendor/lsf/'+name]==value for name,value in installed_sdk.items()),
+        'rust-http-full-actual-captured-sdk-manifest-required')
     def catalogue(name):
         return any(part in {'compatibility-catalogue','catalogue.json'} for part in name.split('/'))
     observed=[{'origin':kind,'name':name} for kind,names in (('captured-source',source),('recipe',recipe))
@@ -102,8 +106,9 @@ def catalogue_inputs(source,recipe):
     require(not observed,'rust-http-catalogue-data-is-not-an-application-or-recipe-input')
     return {'scope':'actual captured application/SDK source and full selected recipe; repository publication data is not removed',
         'sourceInputNames':sorted(source),'recipeInputNames':sorted(recipe),
-        'sdkInputNames':{'captured-source':[n for n in sorted(source) if n.startswith(('sdk/','vendor/sdk/'))],
+        'sdkInputNames':{'captured-source':sorted('vendor/lsf/'+n for n in installed_sdk),
             'recipe':[n for n in sorted(recipe) if n.startswith('sdk/')]},
+        'sdkLockInput':source['sdk-lock.json'],
         'catalogueDataInputs':observed,'repositoryPublicationDataDeleted':False,
         'proof':'complete actual source-inputs.json and recipe-inputs.json names, both bound to current bytes'}
 
@@ -140,7 +145,7 @@ def verify_build(artifact,app,captured,approval,prepared):
     require(read_json(artifact/'cargo-inputs.json')['networkResolution'] is False,
         'rust-http-normal-offline-captured-cargo-required')
     return {'marker':marker,'observation':file_identity(artifact/'build-observation.json'),
-        'catalogueInputs':catalogue_inputs(json.loads(captured),recipe),
+        'catalogueInputs':catalogue_inputs(json.loads(captured),recipe,read_json(app/'sdk-lock.json')['sdk']),
         'source':file_identity(artifact/'source-inputs.json'),'recipe':file_identity(artifact/'recipe-inputs.json'),
         'composition':composition,'component':file_identity(artifact/'component.wasm',64*1024**2)}
 

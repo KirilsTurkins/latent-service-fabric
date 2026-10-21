@@ -13,20 +13,28 @@ from tools.rust_capsule_project import canonical,digest
 
 class SourceAndNativeSeparation(unittest.TestCase):
     def test_catalogue_absence_is_bound_to_complete_actual_source_and_recipe_names(self):
-        source={'src/lib.rs':{},'sdk/src/lib.rs':{},'sdk-lock.json':{}}
+        source={'src/lib.rs':{},'vendor/lsf/sdk/src/lib.rs':{'digest':'original-sdk','size':7},'sdk-lock.json':{}}
+        sdk={'sdk/src/lib.rs':source['vendor/lsf/sdk/src/lib.rs']}
         recipe={'sdk/wasi-http-runtime/types.rs':{},'tools/rust_capsule_build.py':{}}
-        proof=qualification.catalogue_inputs(source,recipe)
+        proof=qualification.catalogue_inputs(source,recipe,sdk)
         self.assertEqual(proof['catalogueDataInputs'],[])
         self.assertEqual(proof['sourceInputNames'],sorted(source))
         self.assertEqual(proof['recipeInputNames'],sorted(recipe))
-        self.assertEqual(proof['sdkInputNames']['captured-source'],['sdk/src/lib.rs'])
+        self.assertEqual(proof['sdkInputNames']['captured-source'],['vendor/lsf/sdk/src/lib.rs'])
         self.assertFalse(proof['repositoryPublicationDataDeleted'])
         for selected in ('source','recipe'):
             for name in ('docs/compatibility-catalogue/v3/evidence/entry.json','catalogue.json','../hidden','/absolute','a\\b'):
                 a=copy.deepcopy(source);b=copy.deepcopy(recipe)
                 (a if selected=='source' else b)[name]={}
                 with self.subTest(selected=selected,name=name),self.assertRaises(Exception):
-                    qualification.catalogue_inputs(a,b)
+                    qualification.catalogue_inputs(a,b,sdk)
+        for mutate in ('missing','extra','changed'):
+            altered=copy.deepcopy(sdk)
+            if mutate=='missing':altered.clear()
+            if mutate=='extra':altered['unlisted']={}
+            if mutate=='changed':altered['sdk/src/lib.rs']['size']=8
+            with self.subTest(mutate=mutate),self.assertRaises(Exception):
+                qualification.catalogue_inputs(source,recipe,altered)
 
     def test_only_the_reviewed_unlinked_frontend_pair_may_differ(self):
         original={f'wit/unchanged-{i}.wit':{'sha256':'sha256:'+'1'*64,'bytes':3} for i in range(133)}
@@ -117,6 +125,14 @@ class RuntimeOracles(unittest.TestCase):
         self.assertFalse(proof['exactUnderlyingCategoryProven'])
         self.assertFalse(proof['nativeErrorInferredFromResourceHandle'])
         with self.assertRaises(Exception):node.library_error(opaque,'waki','error:timeout-option')
+        real_body=payload('golem','body','request or response body error','real upstream Kind::Body source debug',
+            isRequest=False,isBody=True,sourceDisplay='latent-http-response-too-large')
+        self.assertTrue(node.library_error(real_body,'golem','error:response-size')['exactUnderlyingCategoryProven'])
+        for substitute in ('latent-http-permission-denied','latent-http-unavailable','latent-runtime-resource-exhausted'):
+            changed=json.loads(real_body.removeprefix('library-error:'))
+            changed['public']['sourceDisplay']=substitute
+            with self.subTest(substitute=substitute),self.assertRaises(Exception):
+                node.library_error('library-error:'+json.dumps(changed),'golem','error:response-size')
 
     def row(self,action=''):
         code={'trap':'guest-trap','cancel':'cancelled','deadline':'deadline-exceeded'}.get(action)
@@ -159,13 +175,21 @@ class RuntimeOracles(unittest.TestCase):
                     node.outcome(changed,spec,'waki',revision,budget)
 
     def test_pending_requires_all_five_original_physical_owners_and_current_tenant_provider_work(self):
-        physical={'inventory':{'topology':{'entries':[{'name':name,'activeCount':'1'} for name in node.PHYSICAL]}}}
+        physical={'inventory':{'topology':{'available':True,'complete':True,
+            'entries':[{'name':name,'activeCount':'1'} for name in node.PHYSICAL]}}}
         counts={'nodeUsage':{'unavailable':False,'counters':dict.fromkeys(node.ACTIVE_COUNTERS,'0')},
             'tenantUsage':{'unavailable':False,'counters':{'calls':'1','sessions':'1'}}}
         for name in ('broker_calls','pool_active_connections','pool_running_requests'):
             counts['nodeUsage']['counters'][name]='1'
         with patch.object(node,'sample',return_value=physical),patch.object(node,'usage',return_value=counts):
             self.assertIn('owners',node.positive_pending(None,None,None)['proof'])
+            for mutate in ('unavailable','incomplete','duplicate'):
+                changed=copy.deepcopy(physical);topology=changed['inventory']['topology']
+                if mutate=='unavailable':topology['available']=False
+                if mutate=='incomplete':topology['complete']=False
+                if mutate=='duplicate':topology['entries'].append(topology['entries'][0])
+                with self.subTest(mutate=mutate),patch.object(node,'sample',return_value=changed),self.assertRaises(Exception):
+                    node.positive_pending(None,None,None)
             for name in node.PHYSICAL:
                 changed=copy.deepcopy(physical)
                 next(r for r in changed['inventory']['topology']['entries'] if r['name']==name)['activeCount']='0'

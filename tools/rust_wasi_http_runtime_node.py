@@ -185,8 +185,10 @@ def retire(client,probe,target,output,name,*,population=2):
 
 def positive_pending(client,probe,target):
     physical=sample(client,probe,'pending-rust-http',2,active=True)
-    rows={row['name']:row for row in physical['inventory']['topology']['entries']}
-    require(all(name in rows and unsigned(rows[name]['activeCount'])==1 for name in PHYSICAL),
+    topology=physical['inventory']['topology']
+    rows={row['name']:row for row in topology['entries']}
+    require(topology['available'] is True and topology['complete'] is True and len(rows)==len(topology['entries'])
+        and all(name in rows and unsigned(rows[name]['activeCount'])==1 for name in PHYSICAL),
         'rust-http-five-real-physical-owners')
     counts=usage(client,target)
     require(counts['tenantUsage']['unavailable'] is False
@@ -226,7 +228,7 @@ def library_error(payload,client_name,expected):
                 and len(public['sourceDisplay'].encode())<=4096),'rust-http-real-golem-public-kind-and-source')
         # Upstream converts the WASI enum into io::Error: retain its real public
         # source Display; do not describe it as a surviving typed WASI variant.
-        code=public['sourceDisplay'] if public['isRequest'] else None
+        code=public['sourceDisplay']
     phase=value['phase'];exact=False
     if expected=='error:timeout-option':
         require(phase=='send' and not public['serdeJsonError'] and (
@@ -260,12 +262,20 @@ def library_error(payload,client_name,expected):
             else {'InternalError(Some("latent-http-response-too-large"))'} if expected=='error:response-size'
             else {'InternalError(Some("latent-http-uncertain"))','HttpResponseIncomplete'})
         exact=phase=='send' and code in selected
+        if client_name=='golem' and phase=='body' and public['isBody'] is True:
+            # Unlike Waki's opaque resource-handle Debug, Golem Body::buffer
+            # invokes error.to_debug_string() and preserves that public source.
+            # These exact strings are emitted by the selected backend's real
+            # HttpError resource; no category is inferred from a handle number.
+            body_codes=({'latent-http-unexpected-eof','latent-http-invalid-request','latent-http-uncertain'}
+                if expected=='error:body-or-protocol' else {'latent-http-response-too-large'}
+                if expected=='error:response-size' else {'latent-http-uncertain','latent-http-unexpected-eof'})
+            exact=code in body_codes
         # A library may erase a response-stream error to the public resource
         # handle. Its body-phase LastOperationFailed is observable, but the
         # underlying native HttpError is explicitly NOT proved by that handle.
         opaque=phase=='body' and 'LastOperationFailed' in value['debug'] and (
-            client_name=='waki' and value['debug'].startswith('input_stream read failed: ')
-            or client_name=='golem' and public['isRequest'] is True)
+            client_name=='waki' and value['debug'].startswith('input_stream read failed: '))
         require(exact or opaque,'rust-http-specific-protocol-or-real-opaque-stream-error-required')
     return {'publicError':value,'exactUnderlyingCategoryProven':exact,
         'upstreamWasiErrorTypePreserved':client_name=='waki' and code is not None,
@@ -527,7 +537,7 @@ def provider_absence(signed,native,output,deadline):
                     and all(int(v)==0 for k,v in response['data']['consumption'].items() if k!='wallTimeMicros'),
                     'rust-http-missing-provider-before-guest-no-authority-or-dispatch')
                 record['invocations'].append({'client':name,'invocation':row,
-                    'physical':sample(client,probe,'after-provider-absent-'+name,1)})
+                    'retirement':retire(client,probe,target,output,'provider-absent-'+name,population=1)})
             delete_all(client,[target['name']]);stop(client,node)
             record['shutdown']=stopped_record(node)
             require(record['shutdown']['reaped'] is True and record['shutdown']['record']['clean'] is True,
