@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "lsf.rust-http-backend-observation.v1",
+  "source": "2f6a6d6bfbc613051986e214f0fee2ec1615b59f",
+  "run": 39521803503,
+  "job": 118967143763,
+  "originalConclusion": "failure",
+  "artifact": {
+    "id": 12312185427,
+    "bytes": 256067,
+    "sha256": "57f21a22ec3c0a024526c64ec4c55da3f9d98be31661d245ca7d3187b60ec810"
+  },
+  "rustCompilePassed": true,
+  "componentEncodingPassed": true,
+  "componentValidationPassed": true,
+  "initialFailure": "Final verifier rejected unused host import members eliminated by the linker.",
+  "additionalVerifierFindings": [
+    "Encoder graph indices are local, requiring complete nominal option, tuple, resource and constructor resolution; source-only docs/stability annotations do not change ABI.",
+    "Normal encoding removes the exact component-type custom section and appends two pinned producers. Every other core section remains byte-exact."
+  ],
+  "retainedOriginalBytesRechecked": true,
+  "graphValidation": {
+    "imports": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:http/streaming@0.3.0",
+      "latent:runtime/activation@0.1.0"
+    ],
+    "exports": [
+      "latent:rust-http-retirement/owner@0.1.0",
+      "wasi:clocks/monotonic-clock@0.2.12",
+      "wasi:http/outgoing-handler@0.2.12",
+      "wasi:http/types@0.2.12",
+      "wasi:io/error@0.2.12",
+      "wasi:io/poll@0.2.12",
+      "wasi:io/streams@0.2.12"
+    ],
+    "wholeOriginalTypesCompared": true,
+    "exactCallingConventions": true,
+    "wholeOriginalExportSurfaceCompared": true,
+    "emittedImportsAreExactSubsets": true
+  },
+  "compiledCoreValidation": {
+    "originalCoreExact": false,
+    "originalSha256": "sha256:e65fbd67f7bda5e1505fbf505f3fb3a81a0f2f9044a8fb98f9022c7425484f88",
+    "encodedSha256": "sha256:4fff0cec893dee49266bb46527d6cff75cce5203c8043eb0f718661daf61bc8d",
+    "allNonEncoderMetadataSectionsExact": true,
+    "onlyPinnedComponentMetadataProcessed": true
+  },
+  "cores": [
+    {
+      "bytes": 255859,
+      "sha256": "4fff0cec893dee49266bb46527d6cff75cce5203c8043eb0f718661daf61bc8d"
+    },
+    {
+      "bytes": 758,
+      "sha256": "9dac4bf5484d7f7b164aa9091a91278bf9309f9f876c1d38a17a2e41366142af"
+    },
+    {
+      "bytes": 391,
+      "sha256": "eccc6b1e6fb5443df0765be87e97b979f83a31b99c34a460de41af843a902584"
+    }
+  ],
+  "focusedPythonCasesPassed": 20,
+  "originalSevenProfileControlsUnchanged": true,
+  "originalBudgetsAndCompileCommandsUnchanged": true,
+  "preparedInstallerReceiptProduced": false,
+  "signedRuntimeQualified": false,
+  "nextAction": "One owning backend packaging retry; no SDK5 or application qualification replay."
+}

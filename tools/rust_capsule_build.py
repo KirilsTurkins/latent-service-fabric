@@ -473,7 +473,7 @@ def componentize(commands, wasm_tools: Path, module: Path, output: Path, source_
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, *, offline: bool = False, host_linker: Path | None = None,
           rust_bin: Path | None = None, executable_approval: str | None = None,
-          standard_runtime: Path | None = None) -> Path:
+          standard_runtime: Path | None = None, http_runtime: Path | None = None) -> Path:
     # Commands/package_inputs are shared by every language. Only this recipe
     # loads the Rust application graph and executable-input approval consumer.
     from tools import rust_standard_logging_inputs as standard
@@ -500,6 +500,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     source_inputs = inventory(files)
     recipe_files = {name: read_file(ROOT / name)
                     for name in dict.fromkeys((*RECIPE, *standard.source_build_inputs(runtime_profile)))}
+    if http_runtime is not None:
+        from tools import rust_wasi_http_inputs as http_inputs
+        recipe_files.update(http_inputs.consumer_files())
     # The manifest/deployment seed is also an actual recipe input, not an
     # implicit dependency hidden outside the observation.
     for name in ("examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"):
@@ -525,6 +528,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 environment.update(CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
             paths, materials = resolve_tools(pins["toolchain"], work, environment, installed=rust_bin)
             prepared_runtime = standard.Prepared(standard_runtime, paths['rustc'], runtime_profile) if standard_runtime is not None else None
+            prepared_http = http_inputs.Prepared(http_runtime, paths['rustc'], paths['wasm-tools']) if http_runtime is not None else None
             bindgen_path = shutil.which("wit-bindgen", path=environment.get("PATH"))
             if bindgen_path is None:
                 raise ValueError("install the pinned wit-bindgen CLI")
@@ -626,6 +630,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
+            if prepared_http is not None:
+                from tools.rust_wasi_http_compose import compose as compose_http
+                stage = 'standard-http-runtime-composition'
+                compose_http(commands, paths, output/'component.wasm', surface, prepared_http,
+                    work, isolation=isolation, environment_guard=environment_guard)
+                component = read_file(output/'component.wasm', 64*1024*1024)
             if standard.has_entropy(runtime_profile) and 'latent:random/random@0.1.0' not in surface['imports']:
                 raise ValueError('standard entropy requires explicit original-world RANDOM declaration')
             if standard.has_logging(runtime_profile) and standard.LOG not in surface['imports']:
@@ -663,6 +673,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 standard_inputs = prepared_runtime.material()
                 (output / 'rust-standard-runtime.json').write_bytes(standard_inputs)
                 materials.append({'name': 'rust-standard-runtime', 'digest': digest(standard_inputs), 'size': len(standard_inputs)})
+            if prepared_http is not None:
+                prepared_http.check()
+                for name in ('rust-http-runtime.json', 'rust-http-composition.json',
+                        'rust-http-root-source.json', 'rust-http-composition.wac'):
+                    data = read_file(output/name, 4*1024*1024)
+                    materials.append({'name': name.removesuffix('.json'), 'digest': digest(data), 'size': len(data)})
             package_files = {"package-source.json": read_file(output / "package-source.json")}
             for layer in read_json(output / "package-source.json")["layers"]:
                 package_files[layer["source"]] = read_file(output / layer["source"], 64 * 1024 * 1024)
