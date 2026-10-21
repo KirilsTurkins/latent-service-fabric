@@ -83,12 +83,21 @@ class OrdinaryCapturedClients(unittest.TestCase):
     def test_capture_preserves_exact_published_code_review_and_removes_originals(self):
         lock=self.lock()
         lock['artifacts'][4]['metadata']['executableKinds']=[['proc-macro']]
+        lock['artifacts'].append({'id':'json-build-script','role':'build-tool','metadata':{
+            'package':'serde_json','version':'1.0.149','executableKinds':[['custom-build']],
+            'vendorChecksum':{'package':'83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86'}}})
+        # The previous fifteen-row non-JSON fixture must now be RED before any
+        # source removal. The sixteen-row ordinary JSON graph alone proceeds.
+        previous=copy.deepcopy(lock);previous['artifacts'].pop()
+        with self.assertRaisesRegex(Exception,'exact-captured-executable-closure'):
+            self.captured(previous)
+        self.assertTrue(all(p.exists() for p in self.outside))
         result=self.captured(lock)
         self.assertTrue(result['originalLibrariesRemoved'])
         self.assertFalse(result['implicitExecutableApproval'])
         self.assertFalse(result['applicationTransportInjected'])
         self.assertFalse(result['libraryCodePatched'])
-        self.assertEqual(len(result['executableInputs']),15)
+        self.assertEqual(len(result['executableInputs']),16)
         self.assertEqual(result['developerCrates'],self.specs)
         self.assertEqual(read_json(self.app/fixture.LOCK),lock)
         self.assertFalse(any(p.exists() for p in self.outside))
@@ -98,6 +107,8 @@ class OrdinaryCapturedClients(unittest.TestCase):
             with self.subTest(choice=choice):
                 lock=copy.deepcopy(self.lock())
                 lock['artifacts'][4]['metadata']['executableKinds']=[['proc-macro']]
+                lock['artifacts'].append({'id':'json-build-script','role':'build-tool','metadata':{
+                    'package':'serde_json','version':'1.0.149','executableKinds':[['custom-build']]}})
                 if choice=='checksum':lock['artifacts'][2]['metadata']['vendorChecksum']['package']='0'*64
                 if choice=='json-feature':lock['artifacts'][2]['metadata']['features']=[]
                 if choice=='executable':lock['artifacts'].pop()

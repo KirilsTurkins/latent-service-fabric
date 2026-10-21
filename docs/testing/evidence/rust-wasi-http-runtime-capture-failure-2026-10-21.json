@@ -1,0 +1,258 @@
+{
+  "schema": "latent.rust-wasi-http.runtime-capture-failure.v1",
+  "sourceRevision": "0a7cb8e44e74bfc879dd2ef97ecf28f07ad66593",
+  "run": 39525773468,
+  "job": 118979936285,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39525773468/job/118979936285",
+  "jobConclusion": "failure",
+  "artifact": {
+    "id": 12312782355,
+    "bytes": 750239,
+    "sha256": "a0f22c51696cad22522e3a2804dd048a76718092332bd1f23c6af2c1313a626c",
+    "members": [
+      {
+        "path": "rust-http-runtime-qualification/FAILED.json",
+        "bytes": 34193,
+        "sha256": "4c872b4eaf1aee962a29dee1c1438d83979abf8d12557b005ae0160fad55fa33"
+      },
+      {
+        "path": "rust-http-runtime-qualification/source/application/Cargo.lock",
+        "bytes": 47777,
+        "sha256": "92056055a87a5453f6504b95820cf221025f346fbf3a904826229b130c7d639a"
+      },
+      {
+        "path": "rust-http-runtime-qualification/source/candidate.json",
+        "bytes": 2226756,
+        "sha256": "baa72485243eca171fec633b711d1be246ed2aa74376ad6c802a401bb6553ed6"
+      },
+      {
+        "path": "rust-http-runtime-qualification/source/application/Cargo.toml",
+        "bytes": 2714,
+        "sha256": "bf8696269e6a91e93122c3568f625e58d7459dd0a4382a110ab899191f0ae714"
+      },
+      {
+        "path": "rust-http-runtime-qualification/source/application/cargo-resolved.lock.json",
+        "bytes": 204043,
+        "sha256": "d8f032d54282a3d75f9a2687df4e6f9a95ad6a5323b3fe01fa1058f6b54a95d1"
+      },
+      {
+        "path": "rust-http-runtime-qualification/source/application/latent.dependencies.json",
+        "bytes": 423252,
+        "sha256": "45227371e937f7cc9dd7db2dbb420f827edae20b991e86559e9aa46d50500c21"
+      },
+      {
+        "path": "rust-http-native/native-products.json",
+        "bytes": 25782,
+        "sha256": "253198f40836c349fe82b28363ca312a3ed51f9b022866623be995a967acece9"
+      },
+      {
+        "path": "rust-http-native/retrieval.json",
+        "bytes": 2530,
+        "sha256": "4d115aa5ef59f87e02c6c666dbc812c7906d60877ce62bd13af51ab3e47a4d7e"
+      },
+      {
+        "path": "rust-http-native/source-inputs.json",
+        "bytes": 22275,
+        "sha256": "02cd78c08043387f8c0d2a5bbf1624357b3071d3b9565fca92748876c4edf643"
+      }
+    ],
+    "allMemberCrcVerified": true
+  },
+  "failure": {
+    "stage": "normal-unseen-two-client-source-capture",
+    "freshApplicationComponentsCompiled": 0,
+    "nativeProductsBuilt": 0,
+    "fullTicketQualification": false,
+    "retainedRecord": {
+      "path": "rust-http-runtime-qualification/FAILED.json",
+      "bytes": 34193,
+      "sha256": "4c872b4eaf1aee962a29dee1c1438d83979abf8d12557b005ae0160fad55fa33"
+    }
+  },
+  "capturedExecutableComparison": {
+    "historicalCount": 15,
+    "currentCount": 16,
+    "unchangedHistoricalRows": [
+      {
+        "package": "ahash",
+        "version": "0.8.12",
+        "checksum": "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "displaydoc",
+        "version": "0.2.7",
+        "checksum": "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8",
+        "kinds": [
+          [
+            "proc-macro"
+          ]
+        ]
+      },
+      {
+        "package": "icu_normalizer_data",
+        "version": "2.3.0",
+        "checksum": "1563da1ed3e0b3bf3d74c9b85917ac9c56464d2f57242270c09c9e752f8021a0",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "icu_properties_data",
+        "version": "2.3.0",
+        "checksum": "e590f038c1464a96894fd6d10127e90a8be4509f56ff7ecef851b15cee0b7caa",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "prettyplease",
+        "version": "0.2.37",
+        "checksum": "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "waki-macros",
+        "version": "0.5.1",
+        "checksum": "a061143f321cc5eeb523f60bdbcd45cfc3ee8851f8cf24f7a4b963bddc5642eb",
+        "kinds": [
+          [
+            "proc-macro"
+          ]
+        ]
+      },
+      {
+        "package": "wit-bindgen",
+        "version": "0.57.1",
+        "checksum": "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "wit-bindgen-rt",
+        "version": "0.34.0",
+        "checksum": "744845cde309b8fa32408d6fb67456449278c66ea4dcd96de29797b302721f02",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "wit-bindgen-rust",
+        "version": "0.34.0",
+        "checksum": "f6919521fc7807f927a739181db93100ca7ed03c29509b84d5f96b27b2e49a9a",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "wit-bindgen-rust-macro",
+        "version": "0.34.0",
+        "checksum": "c967731fc5d50244d7241ecfc9302a8929db508eea3c601fbc5371b196ba38a5",
+        "kinds": [
+          [
+            "proc-macro"
+          ],
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "yoke-derive",
+        "version": "0.8.4",
+        "checksum": "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71",
+        "kinds": [
+          [
+            "proc-macro"
+          ]
+        ]
+      },
+      {
+        "package": "zerocopy",
+        "version": "0.8.63",
+        "checksum": "e5fe1f8f1b06191a00962174c61aa5005e0bb391a6d80d07e24d115c01a92ed8",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      },
+      {
+        "package": "zerocopy-derive",
+        "version": "0.8.63",
+        "checksum": "863ad3ac83293fb4d740aedbfdc9240dd8d1a50c1099acd76ce80ce7c7230c7f",
+        "kinds": [
+          [
+            "proc-macro"
+          ]
+        ]
+      },
+      {
+        "package": "zerofrom-derive",
+        "version": "0.1.8",
+        "checksum": "f75b4683f6c7f45248d4d64056a24298c6281e0993356d7d1b4a1a962ef10d4a",
+        "kinds": [
+          [
+            "proc-macro"
+          ]
+        ]
+      },
+      {
+        "package": "zerovec-derive",
+        "version": "0.11.6",
+        "checksum": "34df6fc39dbd26ddc9c10e6a2984476e13acce22e64e4487636ef494369225da",
+        "kinds": [
+          [
+            "proc-macro"
+          ]
+        ]
+      }
+    ],
+    "added": [
+      {
+        "package": "serde_json",
+        "version": "1.0.149",
+        "checksum": "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86",
+        "kinds": [
+          [
+            "custom-build"
+          ]
+        ]
+      }
+    ],
+    "removed": [],
+    "comparisonFields": [
+      "package",
+      "version",
+      "checksum",
+      "kinds"
+    ],
+    "fullCapturedSpecificationApprovalStillRequired": true,
+    "historicalSource": "a3454f48be8b3908ebf7dbbcc7dba883b4ab7ec7",
+    "comparisonScope": "Normalized package/version/published checksum/executable-kind rows; captured source hashes remain independently bound by the full normal executable approval."
+  },
+  "guestCompiled": false,
+  "signedRuntimeQualification": false,
+  "backendRecompiled": false,
+  "nativeProductsRecompiled": false,
+  "correction": "Require the actual sixteen-input JSON closure; preserve exact full-specification executable approval and nested proc-macro guards. The original fifteen-input compiler observation fixture is unchanged."
+}

@@ -276,7 +276,10 @@ def capture(app: Path, outside: list[Path], specs: list[dict], cargo: Path) -> d
     for row in clients:
         require('json' in row['selectedFeatures'], 'rust-http-runtime-ordinary-library-json-required')
     executables=[r for r in lock['artifacts'] if r['role']=='build-tool']
-    require(len(executables)==15 and any(r['metadata'].get('package')=='waki-macros'
+    # The original non-JSON observation had fifteen tools. Real JSON decoding
+    # adds serde_json's captured build script; the full sixteen-row specification
+    # still requires the normal exact executable approval before compilation.
+    require(len(executables)==16 and any(r['metadata'].get('package')=='waki-macros'
         and ['proc-macro'] in r['metadata'].get('executableKinds',[]) for r in executables),
         'rust-http-runtime-exact-captured-executable-closure')
     raw=read_file(candidate,8*1024**2)

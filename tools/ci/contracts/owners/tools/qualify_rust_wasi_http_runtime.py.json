@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_wasi_http_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind exact reviewed one-guest normal compiler and signed programme runner",
+  "reviewReason": "Review exact ordinary JSON sixteen-input executable closure; retain full captured approval and macro guards",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "15345125cae2c81c7e252736bc7cbdb9b1fd7775304a884fc406991a88e1cfe9"
+  "sha256": "24ce502c1df2d76cafdb970524e91390b30fe1bdaadf26d591c4d1a27e0b1107"
 }

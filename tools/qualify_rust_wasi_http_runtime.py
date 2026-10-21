@@ -124,7 +124,7 @@ def verify_build(artifact,app,captured,approval,prepared):
         'rust-http-normal-build-observation-marker')
     outputs=read_json(artifact/'executable-input-outputs.json',32*1024**2)
     require(outputs['approvalIdentity']==approval['identity'] and outputs['compilerCommandSucceeded'] is True,
-        'rust-http-exact-15-executable-approval-and-outputs')
+        'rust-http-exact-16-executable-approval-and-outputs')
     require(read_json(artifact/'executable-input-approval-request.json',8*1024**2)==approval,
         'rust-http-retained-executable-approval-changed')
     recipe=read_json(artifact/'recipe-inputs.json',8*1024**2)
@@ -200,8 +200,8 @@ def qualify(native_directory,adapter_directory,output):
         try:build(app,denied,*arguments,offline=True,http_runtime=adapter_directory)
         except ValueError:approval=execution_request(denied,app)
         else:raise ValueError('rust-http-unapproved-executable-closure-ran')
-        require(len(approval['specification']['executableInputs'])==15,
-            'rust-http-exact-captured-15-executable-inputs')
+        require(len(approval['specification']['executableInputs'])==16,
+            'rust-http-exact-captured-16-executable-inputs')
         record['executableApproval']=approval
         stage='one-fresh-offline-ordinary-guest-with-compiler-root'
         artifact=build(app,output/'build',*arguments,offline=True,
