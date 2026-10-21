@@ -9,7 +9,10 @@ client programme.** Compilation alone does not qualify #689 or #743.
 The upstream files are complete originals from
 [`wasip2 1.0.4+wasi-0.2.12`](https://crates.io/crates/wasip2/1.0.4+wasi-0.2.12).
 `sdk/wasi-http-runtime/upstream-source.json` records the exact archive checksum,
-original file hashes, manifests and both licenses. Unused filesystem/socket
+original file hashes, manifests and both licenses. The complete original I/O
+WIT is preserved under `upstream/wit/deps/io.wit`; the active owned copy changes
+exactly eight internal blocking declarations to async, matching their actual
+Rust bindings. Every other byte must remain identical. Unused filesystem/socket
 definitions remain source dependencies; the selected world exports only HTTP,
 I/O and monotonic-clock interfaces. It imports only the existing typed HTTP,
 activation runtime and monotonic clock. It installs no provider or grant.

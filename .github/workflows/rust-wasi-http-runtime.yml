@@ -60,7 +60,7 @@ jobs:
           rustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o "$RUNNER_TEMP/rust-http-resource-controls"
           "$RUNNER_TEMP/rust-http-resource-controls" --test-threads=1 | tee "$RUNNER_TEMP/rust-http-resource-controls.txt"
       - name: Acquire only locked SDK compiler sources before offline compilation
-        run: cargo fetch --locked --target wasm32-unknown-unknown
+        run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
       - name: Compile and authenticate only the selected WASI backend
         run: >-
           python3 -B tools/rust_wasi_http_inputs.py

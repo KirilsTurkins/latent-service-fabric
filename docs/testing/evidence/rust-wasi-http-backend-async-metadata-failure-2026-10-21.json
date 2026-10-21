@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.backend-observation.v1",
+  "source": "207118801f8dcc1414d3d75a6aa1002441908ef4",
+  "run": 39520960946,
+  "job": 118964404270,
+  "conclusion": "failure",
+  "pythonControls": 16,
+  "actualSourceResourceControls": 11,
+  "ignored": 0,
+  "rustCompile": {
+    "exitCode": 0,
+    "seconds": 21.626466
+  },
+  "failureStage": "standard-http-runtime-component",
+  "cause": "The macro async selection emitted async canonical lifts while original embedded WIT function types stayed synchronous.",
+  "originalCompilerDiagnostic": "the `async` canonical option requires an async function type",
+  "artifact": {
+    "id": 12309984655,
+    "bytes": 85888,
+    "sha256": "bbb639ad17918568f2798ace7560f1a201e93b7f7028a09582729b06486ed8ea",
+    "members": 16,
+    "expandedBytes": 282392,
+    "crcAndMemberHashesVerified": true
+  },
+  "repair": "Preserve the complete original io.wit under upstream; source-authenticate a separate exact eight-declaration async projection for the selected internal adapter, matching actual async Rust methods. No application core or public API rewrite.",
+  "signedQualification": false,
+  "adapterCompiled": false,
+  "failurePreserved": true
+}

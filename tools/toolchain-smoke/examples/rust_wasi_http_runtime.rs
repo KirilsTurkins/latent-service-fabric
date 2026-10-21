@@ -54,6 +54,10 @@ struct StandardRuntime;
 impl io::error::Guest for StandardRuntime {
     type Error = HttpError;
 }
+impl io::streams::Guest for StandardRuntime {
+    type InputStream = http_io::Input;
+    type OutputStream = http_io::Output;
+}
 impl io::poll::Guest for StandardRuntime {
     type Pollable = poll::Pollable;
     async fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {

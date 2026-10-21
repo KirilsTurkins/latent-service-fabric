@@ -51,7 +51,7 @@ interface poll {
     /// This function is equivalent to calling `poll.poll` on a list
     /// containing only this pollable.
     @since(version = 0.2.0)
-    block: func();
+    block: async func();
   }
 
   /// Poll for completion on a set of pollables.
@@ -74,7 +74,7 @@ interface poll {
   /// the pollables has an error, it is indicated by marking the source as
   /// being ready for I/O.
   @since(version = 0.2.0)
-  poll: func(in: list<borrow<pollable>>) -> list<u32>;
+  poll: async func(in: list<borrow<pollable>>) -> list<u32>;
 }
 
 /// WASI I/O is an I/O abstraction API which is currently focused on providing
@@ -146,7 +146,7 @@ interface streams {
     /// Read bytes from a stream, after blocking until at least one byte can
     /// be read. Except for blocking, behavior is identical to `read`.
     @since(version = 0.2.0)
-    blocking-read: func(len: u64) -> result<list<u8>, stream-error>;
+    blocking-read: async func(len: u64) -> result<list<u8>, stream-error>;
     /// Skip bytes from a stream. Returns number of bytes skipped.
     ///
     /// Behaves identical to `read`, except instead of returning a list
@@ -156,7 +156,7 @@ interface streams {
     /// Skip bytes from a stream, after blocking until at least one byte
     /// can be skipped. Except for blocking behavior, identical to `skip`.
     @since(version = 0.2.0)
-    blocking-skip: func(len: u64) -> result<u64, stream-error>;
+    blocking-skip: async func(len: u64) -> result<u64, stream-error>;
     /// Create a `pollable` which will resolve once either the specified stream
     /// has bytes available to read or the other end of the stream has been
     /// closed.
@@ -218,7 +218,7 @@ interface streams {
     /// subsequent calls to check-write or other interfaces should return
     /// stream-error::closed.
     @since(version = 0.2.0)
-    blocking-write-and-flush: func(contents: list<u8>) -> result<_, stream-error>;
+    blocking-write-and-flush: async func(contents: list<u8>) -> result<_, stream-error>;
     /// Request to flush buffered output. This function never blocks.
     ///
     /// This tells the output-stream that the caller intends any buffered
@@ -234,7 +234,7 @@ interface streams {
     /// Request to flush buffered output, and block until flush completes
     /// and stream is ready for writing again.
     @since(version = 0.2.0)
-    blocking-flush: func() -> result<_, stream-error>;
+    blocking-flush: async func() -> result<_, stream-error>;
     /// Create a `pollable` which will resolve once the output-stream
     /// is ready for more writing, or an error has occurred. When this
     /// pollable is ready, `check-write` will return `ok(n)` with n>0, or an
@@ -262,7 +262,7 @@ interface streams {
     /// Functionality is equivelant to `blocking-write-and-flush` with
     /// contents given as a list of len containing only zeroes.
     @since(version = 0.2.0)
-    blocking-write-zeroes-and-flush: func(len: u64) -> result<_, stream-error>;
+    blocking-write-zeroes-and-flush: async func(len: u64) -> result<_, stream-error>;
     /// Read from one stream and write to another.
     ///
     /// The behavior of splice is equivalent to:
@@ -284,7 +284,7 @@ interface streams {
     /// `output-stream` is ready for writing, and the `input-stream`
     /// is ready for reading, before performing the `splice`.
     @since(version = 0.2.0)
-    blocking-splice: func(src: borrow<input-stream>, len: u64) -> result<u64, stream-error>;
+    blocking-splice: async func(src: borrow<input-stream>, len: u64) -> result<u64, stream-error>;
   }
 }
 

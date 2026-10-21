@@ -69,10 +69,29 @@ def select(declared: list[str], emitted: list[str]) -> bool:
     return True
 
 
+def selected_io(original: bytes) -> bytes:
+    """Compiler-owned internal calling conventions, with every other byte intact.
+
+    The macro's async Rust selection does not alter embedded WIT metadata. The
+    paired adapter must declare those same eight async types before encoding.
+    Applications retain the original nominal public graph and core bytes.
+    """
+    names = sorted(name.rsplit('.', 1)[-1] for group in ASYNC.values() for name in group)
+    if len(names) != len(set(names)) or len(names) != 8:
+        raise ValueError('rust-http-selected-io-function-set')
+    result = original
+    for name in names:
+        before = (name + ': func(').encode()
+        if original.count(before) != 1:
+            raise ValueError('rust-http-selected-io-original-preimage')
+        result = result.replace(before, (name + ': async func(').encode())
+    return result
+
+
 def validate_assets(root=ROOT):
     """Authenticate the complete original WIT files, not reconstructed extracts."""
     directory = root / 'sdk/wasi-http-runtime'
-    if digest(read_file(directory / 'upstream-source.json', 32768)) != 'sha256:5fb3561c30451b55b049a73a48dfc0029b574574753efb66461adfc2ac471a44':
+    if digest(read_file(directory / 'upstream-source.json', 32768)) != 'sha256:bb3622c15a1a922135cce945d1f87877289a9920ff585f60c9b7cfe2419c3212':
         raise ValueError('rust-http-original-manifest-drift')
     manifest = read_json(directory / 'upstream-source.json', 32768)
     expected = manifest['installedOriginalFiles']
@@ -83,7 +102,9 @@ def validate_assets(root=ROOT):
         raise ValueError('rust-http-original-archive-envelope')
     actual = {}
     for name, row in original.items():
-        if name.startswith('wit/deps/'):
+        if name == 'wit/deps/io.wit':
+            path = 'upstream/' + name
+        elif name.startswith('wit/deps/'):
             path = name
         elif name in {'Cargo.toml', 'Cargo.toml.orig', 'LICENSE-APACHE', 'LICENSE-MIT', 'wit/wasi-crate.wit'}:
             path = 'upstream/' + name
@@ -99,6 +120,9 @@ def validate_assets(root=ROOT):
     upstream = snapshot(directory / 'upstream')
     if {'upstream/' + name for name in upstream} != {name for name in actual if name.startswith('upstream/')}:
         raise ValueError('rust-http-original-upstream-extra-input')
+    original_io = read_file(directory / 'upstream/wit/deps/io.wit', 1024 * 1024)
+    if read_file(directory / 'wit/deps/io.wit', 1024 * 1024) != selected_io(original_io):
+        raise ValueError('rust-http-selected-io-projection-drift')
     return actual
 
 
