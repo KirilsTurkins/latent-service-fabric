@@ -116,9 +116,12 @@ class ScannerMethods(unittest.TestCase):
         self.assertEqual(r.scanner(GRAPH, queries())['mappingAnchorCount'], 1)
 
     def test_actual_pinned_writer_conditional_edges_and_closed_failure_projection(self):
+        import base64
+        import json
         # Actual DgmlWriter.cs output with explicit dependency-interface model
         # seams. This is a writer/parser control, not ILC or guest evidence.
-        raw = (Path(__file__).parent/'fixtures/nativeaot-dgml-conditional-8449.xml').read_bytes()
+        saved = json.loads((Path(__file__).parent/'fixtures/nativeaot-dgml-conditional-8449.json').read_bytes())
+        raw = base64.b64decode(saved['rawBase64'], validate=True)
         self.assertEqual(digest(raw), 'sha256:c0f9a7609860fcd38048e6d618be5fd072b70825cca287652223b230bb41b248')
         value = r.scanner(raw, queries())
         self.assertEqual((value['nodesInspected'], value['linksInspected'], value['mappingAnchorCount']), (5, 5, 1))
