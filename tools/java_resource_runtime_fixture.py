@@ -77,7 +77,8 @@ def project(directory):
     return app
 
 
-def capture(directory: Path, commands):
+def capture(directory: Path, commands, *, late_completion=False):
+    require(type(late_completion) is bool, 'java-resource-late-selector')
     app = project(directory/'application')
     original = directory/'outside-originals'; original.mkdir()
     classes = original/'classes'; classes.mkdir()
@@ -85,7 +86,9 @@ def capture(directory: Path, commands):
     originals = {}
     for name in ('parent/Library.java', 'child/Data.java'):
         target = sources/name; target.parent.mkdir(parents=True, exist_ok=True)
-        raw = read_file(ROOT/EXAMPLE/name); target.write_bytes(raw)
+        selected = ('tools/fixtures/java-resource-late/Library.java'
+            if late_completion and name == 'parent/Library.java' else EXAMPLE+'/'+name)
+        raw = read_file(ROOT/selected); target.write_bytes(raw)
         originals[name] = raw
     commands.run('outside-resource-runtime-javac', 'javac', '--release', '25', '-proc:none', '-encoding', 'UTF-8',
         '-d', classes, sources/'parent/Library.java', sources/'child/Data.java')

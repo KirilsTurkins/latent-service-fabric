@@ -97,7 +97,9 @@ def checked_release(release,capsule,before):
         'resource-java-original-world-component-service')
 
 
-def execute(artifact,native,output,deadline,*,diagnostic=False):
+def execute(artifact,native,output,deadline,*,diagnostic=False,late_completion=False):
+    require(type(late_completion) is bool and not (diagnostic and late_completion),
+        'resource-java-distinct-late-and-diagnostic-programmes')
     require(type(diagnostic) is bool,'resource-java-closed-diagnostic-selector')
     output=fresh(output);before=build_evidence(artifact)
     record={'schemaVersion':'latent.java.resource-runtime-node.v1','status':'incomplete',
@@ -151,7 +153,10 @@ def execute(artifact,native,output,deadline,*,diagnostic=False):
                 require(publications['examples']!=publications['foreign'],'resource-java-independent-publications')
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='ordinary-joined-resource-callback-clock-rng-log-programme'
-                if diagnostic:
+                if late_completion:
+                    from tools.resource_late_facilities import programme
+                    record['programme']=programme(clients,targets,probe,output,before['component']['sha256'],'java')
+                elif diagnostic:
                     from tools.java_resource_runtime_diagnostic import programme
                     record['diagnostic']=programme(clients,targets,probe,output,before['component']['sha256'])
                 else:
@@ -162,7 +167,7 @@ def execute(artifact,native,output,deadline,*,diagnostic=False):
                 record['peerShutdown']=stop_observation_peer(peer)
                 stderr=bytes(node.buffers[1]);(output/'node-stderr.txt').write_bytes(stderr)
                 record['nativeTimerObservations']=observer.observe(stderr)
-                require(record['nativeTimerObservations']['status'] in ({'not-observed','observed'} if diagnostic else {'observed'}),
+                require(record['nativeTimerObservations']['status'] in ({'not-observed','observed'} if diagnostic or late_completion else {'observed'}),
                     'resource-java-final-positive-timers')
             finally:
                 for selected in clients.values():selected.node=None
@@ -175,7 +180,7 @@ def execute(artifact,native,output,deadline,*,diagnostic=False):
             and record['nodeShutdown']['record']['clean'] and time.monotonic()<commands.deadline
             and sum(client.calls for client in clients.values())<=384,'resource-java-final-identity-and-retirement')
         record.update(status='diagnostic-observed' if diagnostic else 'passed',diagnosticOnly=diagnostic,
-            originalProgrammePassed=not diagnostic,build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
+            originalProgrammePassed=not (diagnostic or late_completion),build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
         write_workflow_receipt(output/('diagnostic.json' if diagnostic else 'qualified.json'),record);return record
     except BaseException as error:
         record.update(status='failed',stage=stage,errorCategory=type(error).__name__,commands=commands.records)

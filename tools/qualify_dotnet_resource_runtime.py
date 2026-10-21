@@ -91,11 +91,14 @@ def checked_release(release,capsule,before):
         'resource-dotnet-original-contracts-component-and-service')
 
 
-def execute(artifact,native,output):
+def execute(artifact,native,output,*,late_completion=False,deadline=None):
+    require(type(late_completion) is bool,'resource-dotnet-late-selector')
     output=fresh(output);before=build_evidence(artifact)
     record={'schemaVersion':'latent.dotnet.resource-runtime-node.v1','status':'incomplete',
         'fullTicketQualification':False,'runtimeGrantDenials':[],'secureOperationDenials':[]}
-    commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=600,command_seconds=120)
+    remaining=600 if deadline is None else min(600,deadline-time.monotonic())
+    require(remaining>=120,'resource-dotnet-original-node-time-reserved')
+    commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=remaining,command_seconds=120)
     node=peer=None;clients={};stage='normal-neutral-package-signing'
     try:
         signed=output/'signed';commands.run(stage,native['capsule_authoring'],'demo-sign-neutral-resources',signed,artifact)
@@ -138,26 +141,32 @@ def execute(artifact,native,output):
                     record['runtimeGrantDenials'].append({'tenant':tenant,'invocation':denied,
                         'provider':tenants.provider_idle(selected,target),
                         'physical':sample(selected,probe,'resource-dotnet-denied-'+tenant,len(publications))})
-                    stage='ordinary-secure-operation-denial-with-noncrypto-seed-granted'
-                    revision=selected_revision(selected,target)
-                    denied=runtime.call_mode(selected,target,'secure-denied','resource-dotnet-secure-denied-'+tenant)
-                    runtime.checked_invocation(denied,before['component']['sha256'],revision,'secure-denied')
-                    record['secureOperationDenials'].append({'tenant':tenant,'invocation':denied,
-                        'noncryptoBytesGranted':True,'secureU64Granted':False,
-                        'provider':tenants.provider_idle(selected,target),
-                        'physical':sample(selected,probe,'resource-dotnet-secure-retired-'+tenant,len(publications))})
+                    if not late_completion:
+                        stage='ordinary-secure-operation-denial-with-noncrypto-seed-granted'
+                        revision=selected_revision(selected,target)
+                        denied=runtime.call_mode(selected,target,'secure-denied','resource-dotnet-secure-denied-'+tenant)
+                        runtime.checked_invocation(denied,before['component']['sha256'],revision,'secure-denied')
+                        record['secureOperationDenials'].append({'tenant':tenant,'invocation':denied,
+                            'noncryptoBytesGranted':True,'secureU64Granted':False,
+                            'provider':tenants.provider_idle(selected,target),
+                            'physical':sample(selected,probe,'resource-dotnet-secure-retired-'+tenant,len(publications))})
                     targets[tenant]=runtime.grant_secure(selected,node,manifest,publications[tenant],target,tenant)
                 require(publications['examples']!=publications['foreign'],'resource-dotnet-independent-publications')
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='joined-resource-callback-clock-rng-log-programme'
-                record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'])
+                if late_completion:
+                    from tools.resource_late_facilities import programme
+                    record['programme']=programme(clients,targets,probe,output,before['component']['sha256'],'dotnet')
+                else:
+                    record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'])
                 for tenant in tenants.TENANTS:delete_all(clients[tenant],[targets[tenant]['name']])
                 record['afterDeletes']=sample(client,probe,'resource-dotnet-after-deletes',0)
                 clients['foreign'].node=None;stop(client,node);record['nodeShutdown']=stopped_record(node)
                 record['peerShutdown']=stop_observation_peer(peer)
                 stderr=bytes(node.buffers[1]);(output/'node-stderr.txt').write_bytes(stderr)
                 record['nativeTimerObservations']=observer.observe(stderr)
-                require(record['nativeTimerObservations']['status']=='observed','resource-dotnet-final-positive-timers')
+                require(record['nativeTimerObservations']['status'] in ({'not-observed','observed'} if late_completion else {'observed'}),
+                    'resource-dotnet-final-positive-timers')
             finally:
                 for selected in clients.values():selected.node=None
                 if node is not None:node.close();(output/'node-stderr.txt').write_bytes(bytes(node.buffers[1]))
