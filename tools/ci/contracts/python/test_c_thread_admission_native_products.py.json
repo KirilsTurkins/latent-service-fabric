@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "CompositeAdmissionProducts.test_actual_failed_missing_reordered_or_unqualified_control_records_cannot_supply_products",
+    "CompositeAdmissionProducts.test_actual_seven_commands_keep_three_new_and_two_original_compiler_identities",
+    "CompositeAdmissionProducts.test_all_six_source_fields_auxiliary_rows_and_five_preimages_are_mandatory"
+  ],
+  "guards": {
+    "CompositeAdmissionProducts.test_actual_failed_missing_reordered_or_unqualified_control_records_cannot_supply_products": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34402a98638d6c3d8cf117b7f93a6c46a1874cc41ff43438e0e0b82be0e5038c",
+        "class:setup-sha256:e636c6ae11ad364f76a1890489154d3470340a6b2ec343deb01f7d8e5a63793d"
+      ],
+      "skipSites": []
+    },
+    "CompositeAdmissionProducts.test_actual_seven_commands_keep_three_new_and_two_original_compiler_identities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34402a98638d6c3d8cf117b7f93a6c46a1874cc41ff43438e0e0b82be0e5038c",
+        "class:setup-sha256:e636c6ae11ad364f76a1890489154d3470340a6b2ec343deb01f7d8e5a63793d"
+      ],
+      "skipSites": []
+    },
+    "CompositeAdmissionProducts.test_all_six_source_fields_auxiliary_rows_and_five_preimages_are_mandatory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34402a98638d6c3d8cf117b7f93a6c46a1874cc41ff43438e0e0b82be0e5038c",
+        "class:setup-sha256:e636c6ae11ad364f76a1890489154d3470340a6b2ec343deb01f7d8e5a63793d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_thread_admission_native_products.py",
+  "reviewReason": "Add three controls against actual f244 three-product overlay/f625 two-product provenance, exact six-field source identities, failed controls/source/material/lineage drift refusal; original frozen readers remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
