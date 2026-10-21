@@ -260,6 +260,29 @@ int lsf_factory_blob_lookup(const void *address, unsigned int kind,
     return result;
 }
 
+/* The real SKB header supplies its live end offset. Verify that its complete
+ * shared-info span fits the original head birth BEFORE deriving/dereferencing
+ * that shared-info pointer. This is inspection of a prior allocator record,
+ * never a way to adopt an address or establish a new owner. */
+int lsf_factory_audit_head_current(const void *address, unsigned long bytes,
+                                   struct lsf_factory_blob *copy)
+{
+    unsigned long flags;
+    int result;
+    if (!copy)
+        return -1;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_AUDIT_HEAD, copy);
+    if (result == 1 && (!bytes || bytes > LSF_TCP_BYTES ||
+        bytes > factory.pool.records[copy->ticket.slot].bytes)) {
+        factory.pool.contexts[copy->context->key.slot].poisoned = 1;
+        WRITE_ONCE(factory.uncertain, 1);
+        result = -1;
+    }
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
 int lsf_factory_blob_queue(const void *address)
 {
     struct lsf_factory_blob copy;

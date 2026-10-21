@@ -266,3 +266,9 @@ the original policy, cache/LRU and RCU behavior while carrying the original
 socket owner through context strings and cache nodes. Actual policy destruction
 retires private published births before table address reuse. The formatter,
 queued audit SKBs, AVC, RX and complete final-free chain remain separate gates.
+
+The [maintained audit-SKB source prefix](prepaid-audit-skb.md) carries original
+prepaid births through selected header/head allocation, clone, copy, expansion
+and real ordinary/bulk/NAPI/stolen-head free paths. Its supplemental serialized
+controls are separate from Linux compilation or physical final-free evidence.
+Mandatory audit formatting and delivery remain unimplemented in this prefix.
