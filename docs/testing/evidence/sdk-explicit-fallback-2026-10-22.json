@@ -1,0 +1,463 @@
+{
+  "schemaVersion": "latent.sdk.explicit-fallback.public-observation.v1",
+  "status": "passed",
+  "sourceRevision": "7818c145d8645f535b048c166eece815d8975e95",
+  "workflow": ".github/workflows/sdk-explicit-fallback.yml",
+  "run": 39686600359,
+  "job": 119522131427,
+  "artifact": {
+    "id": 12386946687,
+    "bytes": 1278755,
+    "sha256": "sha256:578886cb57f064a70a4abdf304c302b7b8951b4b8741944ab797422acad461fd",
+    "members": 241,
+    "expandedBytes": 4199300
+  },
+  "sourceVerification": {
+    "executedGitInputs": 117,
+    "cRecipeRows": 53,
+    "goRecipeRows": 61,
+    "cCapturedSourceRows": 58,
+    "goCapturedSourceRows": 106,
+    "wholeArchiveShaAndCrcVerified": true,
+    "rootIndependentLiveVerifierPassed": true
+  },
+  "languages": {
+    "c": {
+      "component": {
+        "sha256": "sha256:3b456b9eeabcd3bf1443932a9dcbdada8e73b450ac5b3fad1344b9b5680e1266",
+        "bytes": 928222
+      },
+      "sourceInputs": {
+        "sha256": "sha256:c6665054567416c09534c43fca352d25342518dac3f389b065db6111882cd97d",
+        "bytes": 8084
+      },
+      "recipeInputs": {
+        "sha256": "sha256:caa0818ab4111bf80d4d97f431936de6ca5da4a567cb6d856fe2a44aecc9f653",
+        "bytes": 6936
+      },
+      "buildObservation": {
+        "sha256": "sha256:1adcc6a4633669b370ae68b1abdfc13b54c6c6716a0abc7455db356af360c1e2",
+        "bytes": 2945
+      },
+      "normalBuildCommands": 14,
+      "buildSeconds": 10.890917,
+      "node": {
+        "sha256": "sha256:6339e1e1db80a677e68b254b6175ffe920e99d9db2fd51fb90e50659cf2e06f0",
+        "bytes": 8604
+      },
+      "cases": [
+        {
+          "name": "fallback-c-0",
+          "invocation": {
+            "sha256": "sha256:f7aec2c98c7330e5c31a04b661fad7fa528488d53484802cbc701060f880eced",
+            "bytes": 1306
+          },
+          "retirement": {
+            "sha256": "sha256:cd7c12a74505cef8eb024ac0dd044a6f878513b57503bb002b460927c028f92d",
+            "bytes": 16519
+          },
+          "seed": 7,
+          "expectedAlternate": 42,
+          "observation": {
+            "category": "explicit-application-fallback",
+            "seed": 7,
+            "alternate": 42,
+            "nativeRefusal": "ENOTSUP",
+            "transparentFilesystemCompatibility": false
+          }
+        },
+        {
+          "name": "fallback-c-1",
+          "invocation": {
+            "sha256": "sha256:ed1418baf4be7dfc5198a9550549462c5c6d55965694dbaf4dfbe9223e40ca63",
+            "bytes": 1305
+          },
+          "retirement": {
+            "sha256": "sha256:d4117f8cb629dc4eea96d7a4935e2840d3cb92c54c4319eed403a1f3b61ac580",
+            "bytes": 16520
+          },
+          "seed": 11,
+          "expectedAlternate": 62,
+          "observation": {
+            "category": "explicit-application-fallback",
+            "seed": 11,
+            "alternate": 62,
+            "nativeRefusal": "ENOTSUP",
+            "transparentFilesystemCompatibility": false
+          }
+        },
+        {
+          "name": "fallback-c-2",
+          "invocation": {
+            "sha256": "sha256:ef7bd58adcb59abc81a10a7b82d2e36636cd41163d28adb7274ac301eef628eb",
+            "bytes": 1168
+          },
+          "retirement": {
+            "sha256": "sha256:c7cd20270b334f92f5bf1c1d7b9eb1cb12b359dbcc3d95ab8415ef476678ea32",
+            "bytes": 16519
+          },
+          "seed": 13,
+          "expectedAlternate": null,
+          "observation": {
+            "category": "guest-trap",
+            "preciseInstructionCauseProved": false
+          }
+        },
+        {
+          "name": "fallback-c-3",
+          "invocation": {
+            "sha256": "sha256:9aa14e5e345fe0b5700864e0660c91e0b134e92bbbc6232baf3f81a496e9ee4d",
+            "bytes": 1306
+          },
+          "retirement": {
+            "sha256": "sha256:e1f9d8eb40ef2c6fde100262cc085f0ab7755afbbec3b7e438ac2bd854416393",
+            "bytes": 16523
+          },
+          "seed": 19,
+          "expectedAlternate": 102,
+          "observation": {
+            "category": "explicit-application-fallback",
+            "seed": 19,
+            "alternate": 102,
+            "nativeRefusal": "ENOTSUP",
+            "transparentFilesystemCompatibility": false
+          }
+        }
+      ],
+      "cleanReapedNode": true,
+      "observationPeerRequests": 0
+    },
+    "go": {
+      "component": {
+        "sha256": "sha256:31590798261eb6fd59237ac2f8c0e203c1f8f17eaab198daf01d7bed7e35506e",
+        "bytes": 2723976
+      },
+      "sourceInputs": {
+        "sha256": "sha256:7d7bcd6313b0b214bdc0d09e1f96d749c2b7290d866385459100b3919654cf5d",
+        "bytes": 15566
+      },
+      "recipeInputs": {
+        "sha256": "sha256:9134ebae58d5d17930e76850617f16dbb07c2000a70b4db1cfed33485c46be53",
+        "bytes": 7944
+      },
+      "buildObservation": {
+        "sha256": "sha256:e9bde5682fd10835f8c102ec0f104d32405140954c09d6782dbf1e827e40586e",
+        "bytes": 2845
+      },
+      "normalBuildCommands": 16,
+      "buildSeconds": 4.018282,
+      "node": {
+        "sha256": "sha256:a1de472f36ab0f8ae86961974d6eabcd9b8e3bc1d6ad1ca1d6cbc6d8f146d0c1",
+        "bytes": 10772
+      },
+      "cases": [
+        {
+          "name": "fallback-go-0",
+          "invocation": {
+            "sha256": "sha256:ce30a8718dd6ddc969baddc39f31dd5ae9149e79779669da9e771144430e1695",
+            "bytes": 1315
+          },
+          "retirement": {
+            "sha256": "sha256:5b98dba1fe401057988406e1f716397e3d542775d26ce9c82256f0314c4cb35a",
+            "bytes": 19755
+          },
+          "seed": 7,
+          "expectedAlternate": 42,
+          "observation": {
+            "category": "explicit-application-fallback",
+            "seed": 7,
+            "alternate": 42,
+            "nativeRefusal": "errors.ErrUnsupported+ENOSYS52",
+            "transparentFilesystemCompatibility": false
+          }
+        },
+        {
+          "name": "fallback-go-1",
+          "invocation": {
+            "sha256": "sha256:7e3964cc83c6d612b2dc7b0805567458653df91ba11878b5b7eda766139f2260",
+            "bytes": 1311
+          },
+          "retirement": {
+            "sha256": "sha256:438b830609974aae482ff12755fb5af116571a8dc15a7061782129160fc7987c",
+            "bytes": 19756
+          },
+          "seed": 11,
+          "expectedAlternate": 62,
+          "observation": {
+            "category": "explicit-application-fallback",
+            "seed": 11,
+            "alternate": 62,
+            "nativeRefusal": "errors.ErrUnsupported+ENOSYS52",
+            "transparentFilesystemCompatibility": false
+          }
+        },
+        {
+          "name": "fallback-go-2",
+          "invocation": {
+            "sha256": "sha256:f5e23c29bc274f1469b8bd38449e81c61a564699135d0d98556e7cb3cab76ffd",
+            "bytes": 1173
+          },
+          "retirement": {
+            "sha256": "sha256:f6b80eb70090969b8dfc89c79bc768ee04692050ea253c3364c822b46d8859b5",
+            "bytes": 19756
+          },
+          "seed": 13,
+          "expectedAlternate": null,
+          "observation": {
+            "category": "guest-trap",
+            "preciseInstructionCauseProved": false
+          }
+        },
+        {
+          "name": "fallback-go-3",
+          "invocation": {
+            "sha256": "sha256:a46e3be557fd66cedae3784ed444cea174bf3cce7e61cf434a567eb486f0a65a",
+            "bytes": 1316
+          },
+          "retirement": {
+            "sha256": "sha256:aacd031e30ee434fd5979bf0cc0832ca6b37bd79441d2d9c2c6c750bc4fede9f",
+            "bytes": 19756
+          },
+          "seed": 19,
+          "expectedAlternate": 102,
+          "observation": {
+            "category": "explicit-application-fallback",
+            "seed": 19,
+            "alternate": 102,
+            "nativeRefusal": "errors.ErrUnsupported+ENOSYS52",
+            "transparentFilesystemCompatibility": false
+          }
+        }
+      ],
+      "cleanReapedNode": true,
+      "observationPeerRequests": 0
+    }
+  },
+  "attempts": 8,
+  "physicalRetirements": 8,
+  "physicalOwnerKindsPerObservation": 5,
+  "availableProviderCountersZeroPerObservation": 18,
+  "originalHostCompilation": {
+    "threeProductsSource": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+    "threeProductsNativeSource": {
+      "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+      "files": 3325,
+      "bytes": 26398761,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "twoPackagingProductsSource": "f6251df89851de98cb869784d095ad5cc2e5b385",
+    "twoPackagingProductsNativeSource": {
+      "sha256": "sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14",
+      "files": 3325,
+      "bytes": 26393594,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "productIdentities": {
+      "latent": {
+        "sha256": "sha256:95096a62d68e32a8a3125713ed78409fbcfd96234e19d0bc28bf4152a947af24",
+        "bytes": 72344408
+      },
+      "latentd": {
+        "sha256": "sha256:4ea650604df9b76d438650ee6ebec55bf5f439fad4f3a3f23915603357a08a4e",
+        "bytes": 188944080
+      },
+      "package": {
+        "sha256": "sha256:07feedce67fd514014eb660dc2c60f9daffdcb1bb28fa5a9064465f6e5046db4",
+        "bytes": 21091976
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:32870ecc73aaed002087a9327f25bb22922a622748fb705fd63021b21947a8da",
+        "bytes": 13844296
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:a47b6f6b359d37e05b37bc52cfadf94b1ea51fb7276bf7e97ddfddb14a7e43a1",
+        "bytes": 27354800
+      }
+    },
+    "consumerNativeSourceIsProductCompilationClaim": false
+  },
+  "currentDevelopmentComposition": {
+    "actualSource": "7818c145d8645f535b048c166eece815d8975e95",
+    "compositionHead": "8e71e87a0fb6a8fb34c9aa81dfa4df3dce19dd83",
+    "developmentBase": "63ab9ce04997726458afe74da8a50dbfaf543ffb",
+    "executedMaterialCount": 117,
+    "materialChanges": {
+      "tools/rust_capsule_project.py": {
+        "actual": {
+          "sha256": "sha256:216da6ad5b821381bde28e42e13b8b6ef47ff3faf93b539e0166c880d6fc2360",
+          "bytes": 14549
+        },
+        "current": {
+          "sha256": "sha256:c181435f37218bbe86c69483926985911a19a76dbda9cc11364b134bef8be3c4",
+          "bytes": 16263
+        }
+      },
+      "tools/rust_capsule_build.py": {
+        "actual": {
+          "sha256": "sha256:d417a0c8c4dd7bf6ebaf71d5aba6e7ac1c77011b04dd2b572fc7417174de6d00",
+          "bytes": 47290
+        },
+        "current": {
+          "sha256": "sha256:46d8b9245911248d14d80cae251ee37d84c8f9a4b912806a79b9f0e86edec700",
+          "bytes": 47482
+        }
+      }
+    },
+    "recipeChanges": {
+      "c": {
+        "tools/rust_capsule_build.py": {
+          "actual": {
+            "digest": "sha256:d417a0c8c4dd7bf6ebaf71d5aba6e7ac1c77011b04dd2b572fc7417174de6d00",
+            "size": 47290
+          },
+          "current": {
+            "digest": "sha256:46d8b9245911248d14d80cae251ee37d84c8f9a4b912806a79b9f0e86edec700",
+            "size": 47482
+          }
+        },
+        "tools/rust_capsule_project.py": {
+          "actual": {
+            "digest": "sha256:216da6ad5b821381bde28e42e13b8b6ef47ff3faf93b539e0166c880d6fc2360",
+            "size": 14549
+          },
+          "current": {
+            "digest": "sha256:c181435f37218bbe86c69483926985911a19a76dbda9cc11364b134bef8be3c4",
+            "size": 16263
+          }
+        }
+      },
+      "go": {
+        "tools/rust_capsule_build.py": {
+          "actual": {
+            "digest": "sha256:d417a0c8c4dd7bf6ebaf71d5aba6e7ac1c77011b04dd2b572fc7417174de6d00",
+            "size": 47290
+          },
+          "current": {
+            "digest": "sha256:46d8b9245911248d14d80cae251ee37d84c8f9a4b912806a79b9f0e86edec700",
+            "size": 47482
+          }
+        },
+        "tools/rust_capsule_project.py": {
+          "actual": {
+            "digest": "sha256:216da6ad5b821381bde28e42e13b8b6ef47ff3faf93b539e0166c880d6fc2360",
+            "size": 14549
+          },
+          "current": {
+            "digest": "sha256:c181435f37218bbe86c69483926985911a19a76dbda9cc11364b134bef8be3c4",
+            "size": 16263
+          }
+        }
+      }
+    },
+    "actualBuildsRemainHistoricallyAttributed": true,
+    "noCurrentNativeQualificationClaim": true,
+    "changedDefinitions": {
+      "tools/rust_capsule_project.py": [
+        "locked_dependencies",
+        "sdk_files"
+      ],
+      "tools/rust_capsule_build.py": []
+    },
+    "snapshotRegeneration": {
+      "c": {
+        "byteExact": false,
+        "sourceRows": 58,
+        "changes": {
+          "sdk-lock.json": {
+            "actual": {
+              "digest": "sha256:550b5f35bb56a41f5d9a72ed424e2edab7a5594e2ce347cf2e95233cafc1348d",
+              "size": 9091
+            },
+            "current": {
+              "digest": "sha256:5baa069b21f492e8efdaefe83ceb703e7b8594f752c166497e625090920404bf",
+              "size": 9091
+            }
+          },
+          "vendor/lsf/Cargo.toml": {
+            "actual": {
+              "digest": "sha256:4ee28537862de19fe3141bebdbe5a9890bcea53ff55cce33e9c31687dbbfe199",
+              "size": 3779
+            },
+            "current": {
+              "digest": "sha256:2a15c477dab2e1961f4b62dcb467bd25d476cc80435858e239f7cc87c1ce1002",
+              "size": 3856
+            }
+          }
+        }
+      },
+      "go": {
+        "byteExact": false,
+        "sourceRows": 106,
+        "changes": {
+          "sdk-lock.json": {
+            "actual": {
+              "digest": "sha256:c7996d059493a1c1865b0c3ea247077e31c07af6269bc9b2c1805b49dc5c6f53",
+              "size": 16261
+            },
+            "current": {
+              "digest": "sha256:a78cefecc59772d153dbb0c9e59c9918fac7fa78347a00a7d040d69edec19416",
+              "size": 16261
+            }
+          },
+          "vendor/lsf/Cargo.toml": {
+            "actual": {
+              "digest": "sha256:4ee28537862de19fe3141bebdbe5a9890bcea53ff55cce33e9c31687dbbfe199",
+              "size": 3779
+            },
+            "current": {
+              "digest": "sha256:2a15c477dab2e1961f4b62dcb467bd25d476cc80435858e239f7cc87c1ce1002",
+              "size": 3856
+            }
+          }
+        }
+      }
+    },
+    "semanticProjection": {
+      "sharedRustBuildChange": "Only Rust STANDARD_RECIPE adds authenticated host-fork material names; all function/class ASTs are unchanged. C/Go use their own RECIPE.",
+      "sharedRustProjectChange": "Only Rust locked_dependencies and sdk_files bodies change for authenticated host-fork registry projection. Every function imported/executed by these C/Go fixtures remains AST-identical.",
+      "capturedSdkManifestChange": "Current vendor/lsf/Cargo.toml follows current host workspace metadata (exclude vendor, bytes dependency, Wasmtime path). C Zig and Go componentize-go do not execute this Cargo manifest. sdk-lock changes only that captured file identity. Original build observations remain unchanged."
+    },
+    "sourceRowsByteExact": {
+      "c": 56,
+      "go": 104
+    },
+    "executedMaterialsByteExact": 115,
+    "recipeRowsByteExact": {
+      "c": 51,
+      "go": 59
+    }
+  },
+  "preservedFailures": [
+    {
+      "source": "76a4008da470be2c88a981431fc8df929b8f1217",
+      "run": 39681162881,
+      "job": 119503691719,
+      "cause": "reader public API key mismatch",
+      "guestAttempts": 0
+    },
+    {
+      "source": "77ea73c418cf435186332f4cf3cc591b2be4449d",
+      "run": 39682912712,
+      "job": 119509639838,
+      "cause": "HTTP Error 503: Egress is over the account limit.",
+      "guestAttempts": 0
+    },
+    {
+      "source": "77ea73c418cf435186332f4cf3cc591b2be4449d",
+      "run": 39682912712,
+      "job": 119516046183,
+      "cause": "ordinary successful CLI schema omits terminalState; first actual C fallback42 succeeded before incorrect reader failed",
+      "completedActualCalls": 1,
+      "wholeQualification": "failed"
+    }
+  ],
+  "nativeProductsRebuilt": false,
+  "old27Or33ProgrammeReplayed": false,
+  "filesystemGrantAdded": false,
+  "transparentFilesystemCompatibility": false,
+  "fullTicketQualification": false
+}
