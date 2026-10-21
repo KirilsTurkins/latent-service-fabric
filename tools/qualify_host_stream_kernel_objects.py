@@ -1,4 +1,4 @@
-"""Compile six selected maintained-kernel objects; never link, boot or install."""
+"""Compile selected maintained-kernel objects; never link, boot or install."""
 from __future__ import annotations
 
 import argparse
@@ -18,6 +18,7 @@ from tools.build_observation import build_environment
 from tools.dev_workflow import paths
 from tools import host_stream_kernel_maintained as maintained
 from tools import host_stream_kernel_protocol as protocol
+from tools import host_stream_kernel_netlabel as netlabel_source
 from tools.owned_test_process import ProcessFailure, run_owned
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +35,31 @@ OBJECTS = {
     'security/security.o': ('lsf_prepaid_security_inode_alloc', 'lsf_prepaid_security_sk_alloc'),
     'net/factory.o': ('lsf_factory_register', 'lsf_factory_blob_allocate', 'lsf_factory_blob_finish'),
 }
+
+NETLABEL_OBJECTS = {
+    'security/selinux/netlabel.o': ('lsf_prepaid_netlabel_sock_genattr',),
+    'security/selinux/ss/services.o': ('lsf_prepaid_security_sid_to_secattr',),
+    'security/selinux/ss/mls.o': ('lsf_prepaid_mls_export_cat',),
+    'security/selinux/ss/ebitmap.o': ('lsf_prepaid_ebitmap_export',),
+    'net/netlabel/netlabel_kapi.o': ('lsf_prepaid_catmap_setlong',
+        'lsf_prepaid_netlbl_sock_setattr', 'lsf_prepaid_netlbl_conn_setattr',
+        'lsf_prepaid_netlabel_source', 'lsf_prepaid_label_domain_return',
+        'lsf_prepaid_label_catmap_return', 'lsf_prepaid_label_secattr_return',
+        'lsf_prepaid_cipso_buffer_return', 'lsf_prepaid_options_failed_return',
+        'lsf_prepaid_options_retire', 'lsf_prepaid_netlabel_strdup'),
+    'net/ipv4/cipso_ipv4.o': ('lsf_prepaid_cipso_sock_setattr',),
+}
+NETLABEL_FACTORY = ('lsf_factory_child_allocate', 'lsf_factory_protocol_parent',
+    'lsf_factory_options_publish', 'lsf_factory_options_owned', 'lsf_factory_options_queue')
+
+
+def object_selection(netlabel):
+    require(type(netlabel) is bool, 'closed-profile-selector')
+    if not netlabel:
+        return dict(OBJECTS)
+    return {**OBJECTS, **NETLABEL_OBJECTS,
+        'net/factory.o': OBJECTS['net/factory.o'] + NETLABEL_FACTORY}
+
 
 
 def require(value, message):
@@ -117,13 +143,19 @@ def selected_configuration(before, after):
         == {k: v for k, v in after.items() if k != SELECTED}, 'unrelated-config-drift')
 
 
+def netlabel_configuration(before, after):
+    require(before.get('CONFIG_NETLABEL') == after.get('CONFIG_NETLABEL') == 'y',
+            'netlabel-originally-disabled')
+
+
 def identity(path):
     require(path.is_file() and not path.is_symlink(), 'regular-product-required')
     with path.open('rb') as stream:
         return {'bytes': path.stat().st_size, 'sha256': hashlib.file_digest(stream, 'sha256').hexdigest()}
 
 
-def run(archive, output):
+def run(archive, output, *, netlabel=False):
+    selected_objects = object_selection(netlabel)
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('RUNNER_OS') == 'Linux', 'hosted-linux-only')
     value = maintained.manifest()
@@ -133,7 +165,10 @@ def run(archive, output):
     archive = snapshot_archive(archive,output/'source.tar.xz',value['archive'])
     # All archive readers and tar now consume this private verified snapshot,
     # never reopen the caller's mutable pathname. Recheck before any make.
-    original = maintained.authenticate_archive(archive, value, ('net/Kconfig', 'net/Makefile'))
+    additional_sources = ('net/Kconfig', 'net/Makefile')
+    if netlabel:
+        additional_sources += tuple(name for name in netlabel_source.fixture()['source'] if name not in value['source'])
+    original = maintained.authenticate_archive(archive, value, additional_sources)
     archive_identity = identity(archive)
     require(archive_identity == {key: value['archive'][key] for key in ('bytes', 'sha256')}, 'archive-identity-drift')
     log = output / 'commands';log.mkdir()
@@ -148,7 +183,7 @@ def run(archive, output):
         'upstreamCommit': maintained.COMMIT, 'archive': archive_identity,
         'sourceCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=15).decode().strip(),
         'manifestSha256': maintained.MANIFEST_SHA,
-        'additionalArchiveSources': ['net/Kconfig', 'net/Makefile'],
+        'additionalArchiveSources': list(additional_sources),
         'additionalSourcesIndependentlyGitCorroborated': False,
         'kernelLinked': False, 'kernelBooted': False, 'factoryInstalled': False,
         'completeAllocationClosure': False, 'productionInstallation': False}
@@ -162,7 +197,10 @@ def run(archive, output):
         require(identity(archive) == archive_identity, 'snapshot-changed-during-extraction')
         require(all((tree / name).read_bytes() == raw for name, raw in original.items()), 'extracted-preimage-drift')
         stage = 'derive'
-        derived = protocol.derive({name: original[name] for name in protocol.SOURCES})
+        derived = (netlabel_source.derive({name: original[name] for name in netlabel_source.fixture()['source']})
+                   if netlabel else protocol.derive({name: original[name] for name in protocol.SOURCES}))
+        if netlabel:
+            receipt['profile'] = 'netlabel-nested-owner-source'
         receipt['derived'] = {}
         for name, raw in derived.items():
             target = tree / name
@@ -187,20 +225,26 @@ def run(archive, output):
         commands.run('resolve-selected-config', *common, 'olddefconfig')
         final = (build / '.config').read_bytes()
         selected_configuration(before, configuration(final))
+        if netlabel:
+            netlabel_configuration(before, configuration(final))
+            receipt['netlabelEnabledBeforeAndAfter'] = True
         (output / 'selected.config').write_bytes(final)
         receipt['configuration'] = {'baseline': identity(output / 'baseline.config'),
             'selected': identity(output / 'selected.config'), 'onlyChangedSymbol': SELECTED,
             'securityAndInetPreserved': list(REQUIRED)}
         receipt['compiler'] = compiler
         paths.write_new(output / 'selection.json', (json.dumps(receipt, indent=2)+'\n').encode())
-        stage = 'six-objects'
-        commands.run('six-selected-real-kbuild-objects', *common, '-j2', *OBJECTS)
+        stage = 'twelve-netlabel-objects' if netlabel else 'six-objects'
+        commands.run('twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
+                     *common, '-j2', *selected_objects)
         autoconf = (build / 'include/generated/autoconf.h').read_bytes()
         require(all(('#define '+name+' 1\n').encode() in autoconf for name in (*REQUIRED, SELECTED)),
             'generated-private-or-security-code-disabled')
+        if netlabel:
+            require(b'#define CONFIG_NETLABEL 1\n' in autoconf, 'netlabel-generated-code-disabled')
         require((build / '.config').read_bytes() == final, 'build-mutated-config')
         receipt['objects'] = {}
-        for name, expected in OBJECTS.items():
+        for name, expected in selected_objects.items():
             product = build / name
             require(product.read_bytes()[:4] == b'\x7fELF', 'elf-product-required')
             symbols = commands.run('symbols-' + name.replace('/', '-').replace('.', '-'),
@@ -228,5 +272,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--netlabel', action='store_true', help='select the closed nested-label object-only profile')
     args = parser.parse_args()
-    run(args.archive.resolve(strict=True), args.output)
+    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel)

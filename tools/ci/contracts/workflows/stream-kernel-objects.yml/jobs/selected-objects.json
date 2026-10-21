@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') && inputs.netlabel != true }}",
     "name": "Six actual maintained objects with private code and SELinux enabled",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -55,7 +56,7 @@
   },
   "jobId": "selected-objects",
   "kind": "job",
-  "reviewReason": "One bounded owning compile of six actual unlinked objects with original source/config/security and explicit private symbol checks",
+  "reviewReason": "Reviewed closed exclusive Netlabel object-only mode: original six job body/default and all original commands/config/security/process bounds preserved; twelve targets, thirty-four globals, NETLABEL already enabled, no link boot installation or physical qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

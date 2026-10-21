@@ -88,3 +88,39 @@ class KernelObjectSelection(unittest.TestCase):
             with patch.object(candidate,'run_owned',side_effect=failure),patch.object(commands,'retain',side_effect=OSError('disk')):
                 with self.assertRaises(ProcessFailure) as caught:commands.run('second','compiler')
             self.assertIs(caught.exception,failure)
+
+
+class KernelNetlabelObjectSelection(unittest.TestCase):
+    def test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean(self):
+        self.assertEqual(candidate.object_selection(False), candidate.OBJECTS)
+        for mode in ('true', 'false', 'netlabel', 0, 1, None, [], {}):
+            with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, 'closed-profile-selector'):
+                candidate.object_selection(mode)
+
+    def test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals(self):
+        selected = candidate.object_selection(True)
+        self.assertEqual(len(selected), 12)
+        for name, symbols in candidate.OBJECTS.items():
+            self.assertTrue(set(symbols) <= set(selected[name]))
+        self.assertFalse(set(candidate.NETLABEL_OBJECTS) & set(candidate.OBJECTS))
+        names = [name for symbols in selected.values() for name in symbols]
+        self.assertEqual(len(names), 34)
+        self.assertEqual(len(set(names)), 34)
+        self.assertTrue({'lsf_prepaid_security_sid_to_secattr', 'lsf_prepaid_mls_export_cat',
+            'lsf_prepaid_ebitmap_export', 'lsf_prepaid_cipso_sock_setattr',
+            'lsf_prepaid_netlabel_source', 'lsf_factory_options_owned'} <= set(names))
+
+    def test_netlabel_must_already_be_enabled_no_configuration_override_is_added(self):
+        candidate.netlabel_configuration({'CONFIG_NETLABEL':'y'}, {'CONFIG_NETLABEL':'y'})
+        for before, after in (({},{}),({'CONFIG_NETLABEL':'n'},{'CONFIG_NETLABEL':'y'}),
+                               ({'CONFIG_NETLABEL':'y'},{'CONFIG_NETLABEL':'n'})):
+            with self.assertRaisesRegex(ValueError,'netlabel-originally-disabled'):
+                candidate.netlabel_configuration(before,after)
+        self.assertNotIn('NETLABEL',candidate.KCONFIG)
+        self.assertEqual(candidate.MAKEFILE, '\nobj-$(CONFIG_LSF_STREAM_FACTORY) += factory.o\n')
+
+    def test_optin_object_profile_still_refuses_local_build_before_archive_access(self):
+        with patch.dict(candidate.os.environ, {}, clear=True), patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
+                candidate.run(None,None,netlabel=True)
+            read.assert_not_called()

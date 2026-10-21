@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_objects.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fix actual upstream mixed-case Kconfig symbol reader failure only; preserve all config security source object and process guards",
+  "reviewReason": "Reviewed closed exclusive Netlabel object-only mode: original six job body/default and all original commands/config/security/process bounds preserved; twelve targets, thirty-four globals, NETLABEL already enabled, no link boot installation or physical qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b1b5cf4b7a8797a0523c7837a0e271d0cda6579359d259999fecab81d034b87e"
+  "sha256": "1ea4cbb73361b3af379fc81c0038c6c453f271911b58daf55e7a6d888b0e337a"
 }
