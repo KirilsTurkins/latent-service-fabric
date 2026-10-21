@@ -15,6 +15,46 @@ from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, le
 
 
 class SdkGraphTests(unittest.TestCase):
+    def test_compiler_metadata_helper_has_one_exact_framework_only_manifest_and_no_orphan_allowance(self):
+        import xml.etree.ElementTree as xml
+        from tools.security_common import POLICY, read_file, tracked_paths
+        root = Path(__file__).resolve().parents[2]
+        directory = 'sdk/dotnet-guest/tools/compiler-metadata'
+        path = directory + '/CompilerMetadata.csproj'
+        configuration = json.loads(read_file(POLICY, 'inventory.json'))
+        rows = [row for row in configuration['manifests'] if row['path'] == path]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['kind'], 'no-external-packages')
+        original = read_file(root, path)
+        self.assertEqual(rows[0]['sha256'], digest(original.replace(b'\r\n', b'\n')))
+        project = xml.fromstring(original)
+        self.assertEqual(project.attrib, {'Sdk': 'Microsoft.NET.Sdk'})
+        self.assertEqual([node.tag for node in project], ['PropertyGroup', 'ItemGroup'])
+        self.assertEqual({node.tag: node.text for node in project[0]}, {
+            'OutputType': 'Exe', 'TargetFramework': 'net10.0', 'ImplicitUsings': 'enable',
+            'Nullable': 'enable', 'EnableDefaultCompileItems': 'false'})
+        self.assertEqual([(node.tag, node.attrib) for node in project[1]], [('Compile', {'Include': 'Program.cs'})])
+        for tag in ('PackageReference', 'ProjectReference', 'Reference', 'Import'):
+            self.assertEqual(list(project.iter(tag)), [])
+        _, records = inventory(root)
+        self.assertEqual(next(row for row in records if row['path'] == path)['coverage'], 'reviewed-no-external-packages')
+        for extra in (b'<PackageReference Include="Unreviewed" Version="1.0.0" />',
+                      b'<Import Project="outside.targets" />', b'<Compile Include="outside.cs" />'):
+            mutated = original.replace(b'</Project>', extra + b'</Project>')
+            def changed(repo, name, *limits):
+                return mutated if repo == root and name == path else read_file(repo, name, *limits)
+            with self.subTest(extra=extra), patch('tools.security_inventory.read_file', side_effect=changed), \
+                    self.assertRaisesRegex(SecurityError, 'unreviewed-sdk-manifest-change'):
+                inventory(root)
+        legacy = [name for name in tracked_paths(root) if not name.startswith(directory + '/')]
+        with patch('tools.security_inventory.tracked_paths', return_value=legacy):
+            _, records = inventory(root)
+        self.assertEqual(next(row for row in records if row['path'] == path)['coverage'], 'not-shipped-at-source-revision')
+        for orphan in ('Program.cs', 'Extra.csproj'):
+            with self.subTest(orphan=orphan), patch('tools.security_inventory.tracked_paths',
+                    return_value=[*legacy, directory + '/' + orphan]), self.assertRaises(SecurityError):
+                inventory(root)
+
     def test_original_wasi_manifest_is_only_byte_pinned_provenance_and_mutation_refuses(self):
         from tools.security_common import POLICY, read_file
         from tools import rust_wasi_http_profile as profile
