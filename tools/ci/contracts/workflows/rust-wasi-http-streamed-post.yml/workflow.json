@@ -1,0 +1,43 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-wasi-http-streamed-post-${{ github.ref }}"
+    },
+    "name": "Rust ordinary streamed POST corrective runtime",
+    "on": {
+      "push": {
+        "branches": [
+          "fix/rust-http-streamed-post-fixture-20261021"
+        ],
+        "paths": [
+          ".github/workflows/rust-wasi-http-streamed-post.yml",
+          "tools/qualify_rust_wasi_http_runtime.py",
+          "tools/rust_wasi_http_current_backend.py",
+          "tools/tests/test_rust_wasi_http_async_runtime_replay.py",
+          "tools/rust_wasi_http_runtime_fixture.py",
+          "tools/rust_wasi_http_runtime_node.py",
+          "tools/rust_wasi_http_root.py",
+          "tools/rust_wasi_http_compose.py",
+          "tools/activation_stack_native_products.py",
+          "tools/activation_stack_native_source.py",
+          "tools/tests/test_rust_wasi_http_runtime.py",
+          "tools/tests/test_rust_wasi_http_runtime_fixture.py",
+          "tools/tests/test_rust_wasi_http_profile.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "ordinary-clients"
+  ],
+  "reviewReason": "Reviewed actual declared POST fixture error: exact unknown-length streamed body expects no Content-Length, all method/binary/header constraints remain; reuse authenticated original526 successful110 backend and original native products for one fresh guest/full64 programme. Original clients workflow and all runtime oracles/caps remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-streamed-post.yml"
+}

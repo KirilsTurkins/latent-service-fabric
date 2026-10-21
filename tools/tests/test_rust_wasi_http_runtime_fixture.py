@@ -82,6 +82,26 @@ class OrdinaryCapturedClients(unittest.TestCase):
                 fixture.prepare(self.root/'must-not-exist',value)
             self.assertFalse((self.root/'must-not-exist').exists())
 
+    def test_ordinary_chunked_binary_post_is_exact_and_old_length_expectation_is_red(self):
+        import json
+        from tools.standard_http.protocol import Request
+        from tools.standard_http.vectors import BY_ID, response
+        request=Request()
+        request.feed(b'POST /conformance/echo HTTP/1.1\r\nHost: 127.0.0.1:1\r\n'
+            b'Transfer-Encoding: chunked\r\nx-conformance: rust-client\r\n\r\n'
+            b'4\r\n\x00\x01\x02\x03\r\n0\r\n\r\n')
+        self.assertTrue(request.complete and request.chunked)
+        wire,suffix=response(BY_ID['method-bytes'],request,1)
+        self.assertEqual(suffix,b'')
+        actual=json.loads(wire.split(b'\r\n\r\n',1)[1])
+        expected={'method':'POST','bodyBase64':'AAECAw==',
+            'customHeaderBase64':'cnVzdC1jbGllbnQ=',
+            'contentLengthPresent':False,'contentTypePresent':False}
+        self.assertEqual(actual,expected)
+        self.assertIsNot(actual['contentLengthPresent'],True)  # original fixture RED
+        self.assertIn('value["contentLengthPresent"].as_bool() != Some(false)',fixture.LIBRARY)
+        self.assertNotIn('value["contentLengthPresent"].as_bool() != Some(true)',fixture.LIBRARY)
+        self.assertIn('value.to_string().chars().take(512).collect::<String>()',fixture.LIBRARY)
     def lock(self):
         rows=[{'id':'outside-'+s['alias'],'role':'application','metadata':{
             'package':s['package'],'version':s['version']}} for s in self.specs]

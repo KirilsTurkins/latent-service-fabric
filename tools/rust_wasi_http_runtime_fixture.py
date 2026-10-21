@@ -77,9 +77,10 @@ fn echo(status: u16, value: serde_json::Value) -> Result<String, String> {
     if status != 200 || value["method"].as_str() != Some("POST")
         || value["bodyBase64"].as_str() != Some("AAECAw==")
         || value["customHeaderBase64"].as_str() != Some("cnVzdC1jbGllbnQ=")
-        || value["contentLengthPresent"].as_bool() != Some(true)
+        || value["contentLengthPresent"].as_bool() != Some(false)
         || value["contentTypePresent"].as_bool() != Some(false) {
-        return Err("bad binary request conversion".into());
+        return Err(format!("bad binary request conversion:{status}:{}",
+            value.to_string().chars().take(512).collect::<String>()));
     }
     Ok("200:echo:POST:AAECAw==".into())
 }
