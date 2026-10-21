@@ -20,9 +20,9 @@ from tools.go_guest.runtime import prepare_compiler
 ROOT = Path(__file__).resolve().parents[1]
 REVISION = "148dba505f8c6c64ad84db777cfde5e34e25098b"
 SOURCES = {
-    "go": {"url": "https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz",
-        "version": "go1.27.2", "maximum": 70590635,
-        "sha256": "sha256:ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5"},
+    "go": {"url": "https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz",
+        "version": "go1.27.3", "maximum": 70588678,
+        "sha256": "sha256:65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"},
     "componentize-go": {"url": "https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz",
         "version": "0.4.3", "maximum": 5068079,
         "sha256": "sha256:1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52"},

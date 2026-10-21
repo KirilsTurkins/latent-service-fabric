@@ -82,9 +82,9 @@ def install(project: Path, outside: Path, go: Path) -> dict:
     outside.mkdir(mode=0o700)
     parent, child = outside / 'library', outside / 'resource'
     parent.mkdir(); child.mkdir()
-    (parent / 'go.mod').write_bytes(('module ' + PARENT + '\n\ngo 1.27.2\n\nrequire ' + CHILD + ' ' + VERSION + '\n').encode())
+    (parent / 'go.mod').write_bytes(('module ' + PARENT + '\n\ngo 1.27.3\n\nrequire ' + CHILD + ' ' + VERSION + '\n').encode())
     (parent / 'library.go').write_bytes(LIBRARY.encode('utf-8'))
-    (child / 'go.mod').write_bytes(('module ' + CHILD + '\n\ngo 1.27.2\n').encode())
+    (child / 'go.mod').write_bytes(('module ' + CHILD + '\n\ngo 1.27.3\n').encode())
     (child / 'resource.go').write_bytes(b'package resource\nimport _ "embed"\n//go:embed message.txt\nvar message string\nvar calls uint32\nfunc Read() string { calls++; if calls != 1 { panic("resource state leaked") }; return message }\n')
     resource = 'Gr\u00fc\u00dfe'.encode('utf-8')
     (child / 'message.txt').write_bytes(resource)

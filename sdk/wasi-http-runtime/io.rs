@@ -1,10 +1,10 @@
 //! Full standard stream methods over the original bounded typed HTTP exchange.
 use super::{
-    HttpError,
     exports::wasi::io,
     poll::Pollable,
     pump::{self, Readiness},
-    state::{CHUNK, Exchange, Slot},
+    state::{Exchange, Slot, CHUNK},
+    HttpError,
 };
 use io::streams::GuestInputStream;
 use std::{cell::Cell, rc::Rc};

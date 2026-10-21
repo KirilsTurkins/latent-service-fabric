@@ -60,8 +60,8 @@ jobs:
           cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
           test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
           mkdir -p "$RUNNER_TEMP/go-runtime-costs-tools"
-          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
-          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" | sha256sum --check --strict
+          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz
+          echo "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/go-runtime-costs-tools/go.tar.gz" -C "$RUNNER_TEMP/go-runtime-costs-tools"
           python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/go-runtime-costs-tools/go" --output "$RUNNER_TEMP/go-runtime-costs-tools/go-async"
           echo "$RUNNER_TEMP/go-runtime-costs-tools/go-async/bin" >> "$GITHUB_PATH"

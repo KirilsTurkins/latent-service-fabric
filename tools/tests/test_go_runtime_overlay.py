@@ -605,7 +605,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             goroot, original, upstream = self.fixture(root, prepared=False)
-            (goroot / "VERSION").write_text("go1.27.2\n")
+            (goroot / "VERSION").write_text("go1.27.3\n")
             (goroot / "bin").mkdir()
             (goroot / "bin/go").write_bytes(b"pinned-host-compiler")
             patched = sources()
@@ -630,7 +630,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "version-drift"):
                     runtime.prepare_compiler(goroot, output)
                 self.assertFalse(output.exists())
-                (goroot / "VERSION").write_text("go1.27.2\n")
+                (goroot / "VERSION").write_text("go1.27.3\n")
                 path = goroot / "src/runtime/proc.go"
                 path.write_bytes(original["runtime/proc.go"] + b"drift")
                 output = root / "wrong-source"

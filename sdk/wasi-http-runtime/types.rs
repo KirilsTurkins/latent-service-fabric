@@ -1,6 +1,5 @@
 //! Full nominal standard-WASI client resource surface over original typed HTTP.
 use super::{
-    StandardRuntime,
     exports::wasi::{
         http::{outgoing_handler, types},
         io,
@@ -11,7 +10,8 @@ use super::{
     poll::Pollable,
     pump,
     request_options::RequestOptions,
-    state::{Exchange, MAX_BODY, Slot},
+    state::{Exchange, Slot, MAX_BODY},
+    StandardRuntime,
 };
 use std::{
     cell::{Cell, RefCell},
