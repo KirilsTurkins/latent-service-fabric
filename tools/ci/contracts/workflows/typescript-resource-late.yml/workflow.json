@@ -1,0 +1,37 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-resource-late-${{ github.ref }}"
+    },
+    "name": "TypeScript accepted late resource facilities",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-resource-late-20261021"
+        ],
+        "paths": [
+          ".github/workflows/typescript-resource-late.yml",
+          "tools/typescript_resource_late.py",
+          "tools/qualify_typescript_resource_late.py",
+          "tools/typescript_resource_runtime_fixture.py",
+          "tools/qualify_typescript_resource_runtime.py",
+          "tools/resource_runtime_node.py",
+          "tools/tests/test_typescript_resource_late.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "late-facilities"
+  ],
+  "reviewReason": "One normal captured TypeScript component and six signed late/fresh facility outcomes using original native products and source-bound compiler inputs; preserve original Go/TypeScript baselines, ceilings and all positive pending/retirement oracles.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-resource-late.yml"
+}

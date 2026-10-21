@@ -55,3 +55,31 @@ These finite logical-task cases do not qualify native threads, mutable
 worker TLS, a pending asynchronous console flush queue, a separately observed
 late wake attempt, or full issue #681/#736 completion. The callback-error case
 requires its preceding log but does not infer a native trap cause from it.
+
+## Accepted late facility callback
+
+The separate `typescript-resource-late.yml` programme builds one fresh ordinary
+component from the same two outside packages. It adds the explicit RANDOM
+contract, selecting the maintained approved `Math.random` path; this is a
+noncryptographic 53-bit fraction and no random value is logged or returned.
+The original Promise/clock profile, LOG selection, runtime owner ceilings and
+activation budgets remain unchanged. The earlier thirteen-case programme and
+positive pending guards remain intact.
+
+The library accepts an ordinary `setTimeout` and returns its root value without
+joining the timer. The callback clears its own already-running timer, verifies
+both independent resource copies and exact text/empty assets, draws through
+`Math.random`, checks full-width wall and monotonic clocks, and logs completion.
+The controller requires the exact original-host encoded charge for both root
+and callback records; a constant root result or root log alone cannot qualify.
+The frozen host serializer, trusted correlation shape and standard console
+source are bound before and after execution.
+
+Two pre-CPU runtime-grant denials and four admitted late/fresh cases are mandatory
+across independent tenant publications. Every case retains the original physical
+and eighteen-counter provider retirement barriers, followed by zero-contact peer
+and clean reaped node shutdown. The programme reuses the authenticated f0 native
+products and source-bound import engine/splicer; it rebuilds one component and
+performs no native or engine build. Signed execution is pending the owning job.
+No post-Store callback, exact instruction-after-return, `Poll::Pending`, native
+thread, asynchronous console flush or complete ticket result is claimed.

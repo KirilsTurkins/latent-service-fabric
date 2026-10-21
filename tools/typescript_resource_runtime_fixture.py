@@ -93,7 +93,8 @@ EXPECTED = {
 }
 
 
-def project(directory: Path, outside: Path):
+def project(directory: Path, outside: Path, *, late_completion=False):
+    require(type(late_completion) is bool, 'resource-runtime-closed-late-fixture')
     require(outside.parent.resolve(strict=True) == directory.parent.resolve(strict=True)
             and outside.parent.resolve(strict=True) != ROOT and ROOT not in outside.parents,
             'resource-runtime-independent-outside-project')
@@ -102,12 +103,17 @@ def project(directory: Path, outside: Path):
     config.update(world='examples:resource-runtime/service@1.0.0')
     config['limits']['logBytes'] = 16384
     (app/'capsule-project.json').write_bytes((json.dumps(config, indent=2)+'\n').encode())
-    (app/'wit/world.wit').write_bytes(WORLD)
+    world = WORLD
+    if late_completion:
+        world = world.replace(b'world service { ', b'world service { import latent:random/random@0.1.0; ', 1)
+        random = app/'wit/deps/random';random.mkdir(parents=True)
+        (random/'package.wit').write_bytes(read_file(ROOT/'wit/platform/random/package.wit'))
+    (app/'wit/world.wit').write_bytes(world)
     (app/'src/main.ts').write_bytes(MAIN)
     log = app/'wit/deps/log';log.mkdir(parents=True)
     (log/'package.wit').write_bytes(read_file(ROOT/'wit/platform/log/package.wit'))
     lock = json.loads(read_file(app/'sdk-lock.json'))
-    lock['template'].update(sourceDigest=digest(MAIN), witDigest=digest(WORLD))
+    lock['template'].update(sourceDigest=digest(MAIN), witDigest=digest(world))
     (app/'sdk-lock.json').write_bytes((json.dumps(lock, indent=2)+'\n').encode())
     outside.mkdir(mode=0o700)
     library, data = outside/'library', outside/'data'
@@ -117,7 +123,11 @@ def project(directory: Path, outside: Path):
                    'exports': {'types': './index.d.ts', 'import': './index.mjs'}}
         if path == library:package['dependencies'] = {PACKAGES[1]: 'file:'+str(data.resolve())}
         (path/'package.json').write_bytes((json.dumps(package, indent=2)+'\n').encode())
-    (library/'index.mjs').write_bytes(LIBRARY)
+    library_source = LIBRARY
+    if late_completion:
+        from tools.typescript_resource_late import library_source as late_source
+        library_source = late_source(LIBRARY)
+    (library/'index.mjs').write_bytes(library_source)
     (library/'index.d.ts').write_bytes(b'export function resourceRuntime(mode: string): Promise<string>;\n')
     (data/'index.mjs').write_bytes(RESOURCE)
     (data/'index.d.ts').write_bytes(b'export function openedCopy(): {text: string; bytes: Uint8Array; empty: Uint8Array};\n')
