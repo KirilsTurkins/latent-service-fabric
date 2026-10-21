@@ -613,7 +613,7 @@ pub fn transform_c_root_bootstrap(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::borrow::Cow;
     use wasm_encoder::{
@@ -621,7 +621,7 @@ mod tests {
         MemorySection, MemoryType, RefType, TableSection, TableType,
     };
 
-    fn fixture(stack_high: i32, low_data: bool, constructors: bool) -> Vec<u8> {
+    pub(crate) fn fixture(stack_high: i32, low_data: bool, constructors: bool) -> Vec<u8> {
         let mut module = Module::new();
         let mut types = TypeSection::new();
         types.ty().function([], [ValType::I32]);
