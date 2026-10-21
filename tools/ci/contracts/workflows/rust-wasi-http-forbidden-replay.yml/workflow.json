@@ -9,7 +9,8 @@
     "on": {
       "push": {
         "branches": [
-          "diag/rust-wasi-http-forbidden-node-replay-20261021"
+          "diag/rust-wasi-http-forbidden-node-replay-20261021",
+          "diag/rust-wasi-http-capacity-observation-20261021"
         ],
         "paths": [
           ".github/workflows/rust-wasi-http-forbidden-replay.yml",
@@ -29,7 +30,7 @@
   "requiredJobs": [
     "retained-guest"
   ],
-  "reviewReason": "Root approved one missing exact runtime-test push path; job commands, native/component/backend pins, tests, limits and oracles unchanged; prior test-only push did not start owning run.",
+  "reviewReason": "Parent reviewed one nonqualifying original Golem pressure observation to retain actual peer counts before the unchanged contact assertion; original branch64 default, component/backend/native identities, budgets and retirement predicates preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-forbidden-replay.yml"
 }

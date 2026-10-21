@@ -29,7 +29,7 @@ SOURCE='88b3c9c1d305eb8e308a7187600f782163bc6131'
 RUN,JOB=39623507324,119302796812
 PINS='docs/testing/evidence/rust-wasi-http-runtime-88b-retained.json'
 NODE_PATH='tools/rust_wasi_http_runtime_node.py'
-CURRENT_NODE={'sha256': 'sha256:1c33231a80b622681074f0b289ef3052ee4272f1125e41d6c8a04bb0c26ce747', 'bytes': 66623}
+CURRENT_NODE={'sha256': 'sha256:1bebe2cdb416c8d64541f7b4e71217185c5094ab35fc2b1ab592c4544d4b8096', 'bytes': 69681}
 MATERIALS=('tools/replay_rust_wasi_http_forbidden_runtime.py',PINS,
     '.github/workflows/rust-wasi-http-forbidden-replay.yml',*original.MATERIALS)
 
@@ -196,7 +196,8 @@ def restore(restored,output):
         'originalCompilerSource':SOURCE,'guestCompilationPerformed':False}
 
 
-def replay(restored,native_directory,output):
+def replay(restored,native_directory,output,*,pressure_observation_only=False):
+    require(type(pressure_observation_only) is bool,'rust-http-replay-exact-pressure-diagnostic-selection')
     require(sys.platform=='linux' and sys.version_info>=(3,13),'rust-http-replay-linux-python313')
     output=Path(output).absolute();restored=Path(restored).resolve(strict=True)
     native_directory=Path(native_directory).resolve(strict=True)
@@ -208,6 +209,8 @@ def replay(restored,native_directory,output):
     record={'schemaVersion':'latent.rust.wasi-http.node-replay.v1','status':'incomplete','materials':materials,
         'controllerSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip(),
         'guestComponentsCompiled':0,'nativeProductsBuilt':0,'backendComponentsBuilt':0,'fullTicketQualification':False}
+    if pressure_observation_only:
+        record.update(qualification=False,signedQualification=False,diagnosticOnly=True)
     stage='authenticate-original-compile-and-restore-public-package-assets'
     try:
         artifact,ancestry=restore(restored,output);record['original']=ancestry
@@ -223,8 +226,14 @@ def replay(restored,native_directory,output):
         for path in binaries.values():path.chmod(0o700)
         write_json(output/'original-compile-and-restoration.json',ancestry)
         stage='original-full64-node-programme'
-        result=node.run(artifact,binaries,output/'node',deadline=deadline)
-        require(result['status']=='passed' and len(result['cases'])==52
+        result=node.run(artifact,binaries,output/'node',deadline=deadline,
+            pressure_observation_only=pressure_observation_only)
+        if pressure_observation_only:
+            require(result['status']=='diagnostic-completed' and result['qualification'] is False
+                and result['diagnosticOnly'] is True and len(result['cases'])==1
+                and result['guestExecutions']==result['invocationAttempts']==1,
+                'rust-http-replay-pressure-observation-never-qualification')
+        else:require(result['status']=='passed' and len(result['cases'])==52
             and result['guestExecutions']==53 and result['invocationAttempts']==64
             and result['preEntryRefusalsCount']==11 and len(result['preEntryRefusals'])==8
             and result['providerAbsence']['status']=='passed' and len(result['providerAbsence']['invocations'])==2,
@@ -233,6 +242,9 @@ def replay(restored,native_directory,output):
             and source_proof==assert_current(ROOT)
             and materials=={name:file_identity(ROOT/name) for name in materials}
             and time.monotonic()<deadline,'rust-http-replay-final-source-product-and-deadline')
+        if pressure_observation_only:
+            record.update(status='diagnostic-completed',node=file_identity(output/'node/diagnostic.json',16*1024**2))
+            write_json(output/'diagnostic.json',record);return record
         record.update(status='passed',node=file_identity(output/'node/qualification.json',16*1024**2),
             libraryCases=52,guestExecutions=53,invocationAttempts=64,preEntryRefusals=11,signedQualification=True)
         write_json(output/'qualification.json',record);return record
@@ -247,5 +259,8 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('original-artifact','native-products','output'):
         parser.add_argument('--'+name,type=Path,required=True)
+    parser.add_argument('--pressure-observation-only',action='store_true',
+        help='One original Golem capacity call; diagnostic evidence only, never qualification')
     args=parser.parse_args()
-    print(replay(args.original_artifact,args.native_products,args.output)['status'])
+    print(replay(args.original_artifact,args.native_products,args.output,
+        pressure_observation_only=args.pressure_observation_only)['status'])

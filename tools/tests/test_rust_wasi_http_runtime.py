@@ -12,6 +12,32 @@ from tools.rust_capsule_project import canonical,digest
 
 
 class SourceAndNativeSeparation(unittest.TestCase):
+    def test_pressure_diagnostic_is_one_original_golem_case_and_default_plan_is_exact(self):
+        cases,clients=node.programme_selection(False)
+        self.assertEqual(cases,tuple(enumerate(node.cases())))
+        self.assertEqual(clients,(('examples','waki'),('foreign','golem')))
+        cases,clients=node.programme_selection(True)
+        self.assertEqual(cases,((24,node.cases()[24]),))
+        self.assertEqual(cases[0][1][0],'resource-capacity')
+        self.assertEqual(clients,(('foreign','golem'),))
+        for value in (None,0,1,'true',[],{}):
+            with self.subTest(value=value),self.assertRaisesRegex(RuntimeError,'exact-pressure-diagnostic-selection'):
+                node.programme_selection(value)
+
+    def test_peer_snapshot_is_retained_before_a_contact_refusal_without_inventing_counts(self):
+        before={'foreign':{'acceptedConnections':0,'startedRequests':0,'openConnections':0}}
+        after={'foreign':{'acceptedConnections':7,'startedRequests':7,'openConnections':1}}
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)
+            with self.assertRaisesRegex(RuntimeError,'original-contact-refusal'):
+                node.retain_peer_observations(output,'foreign-resource-capacity',before,after)
+                node.require(False,'original-contact-refusal')
+            actual=json.loads((output/'peer-before-contact-foreign-resource-capacity.json').read_bytes())
+            self.assertFalse(actual['qualification'])
+            self.assertEqual(actual['before'],before)
+            self.assertEqual(actual['after'],after)
+            self.assertEqual(actual['after']['foreign']['openConnections'],1)
+
     def test_actual_available_usage_list_and_all_original_owner_counters_are_required(self):
         path=Path(__file__).resolve().parents[2]/'docs/testing/evidence/rust-wasi-http-runtime-provider-counter-failure-2026-10-21.json'
         actual=json.loads(path.read_bytes())['observedNodeUsage']

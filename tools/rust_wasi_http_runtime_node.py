@@ -507,6 +507,24 @@ def malformed_framing_peer(before,after):
         'responseDigest':digest(wire),'contacts':1,'parserBranchInferred':False}
 
 
+def retain_peer_observations(output,label,before,after):
+    # Actual controlled-public-peer state is diagnostic evidence even when the
+    # next strict outcome/contact assertion refuses. Never turn charged starts
+    # into an invented remote request, response object or physical close.
+    value={'qualification':False,'scope':'controlled-peer-observation-before-contact-assertion',
+        'before':before,'after':after}
+    write_json(output/('peer-before-contact-'+label+'.json'),value)
+    return value
+
+
+def programme_selection(pressure_observation_only):
+    require(type(pressure_observation_only) is bool,'rust-http-exact-pressure-diagnostic-selection')
+    original=tuple(enumerate(cases()))
+    if pressure_observation_only:
+        return original[-1:], (('foreign','golem'),)
+    return original, (('examples','waki'),('foreign','golem'))
+
+
 def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,label):
     _name,mode,path,_expected,contacts,vector,action=spec
     require(alias in {'alpha','delta'} and client_name in {'waki','golem'},'rust-http-closed-ordinary-client-selection')
@@ -583,6 +601,7 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
         for value in peers.values():value.poll(.002)
         if all(value.observation()['openConnections']==0 for value in peers.values()):break
     observations={name:value.observation() for name,value in peers.items()}
+    if action=='capacity':retain_peer_observations(output,label,before,observations)
     for name,value in observations.items():
         change=delta(before[name],value)
         new=value['requests'][before[name]['acceptedConnections']:]
@@ -853,7 +872,8 @@ def retain_failed_record(output,record):
         except BaseException:pass
 
 
-def run(artifact,native,output,*,deadline):
+def run(artifact,native,output,*,deadline,pressure_observation_only=False):
+    selected_cases,selected_clients=programme_selection(pressure_observation_only)
     output=fresh(output)
     original_names=('component.wasm','BUILD-COMPLETE.json','source-inputs.json','recipe-inputs.json',
         'build-observation.json','capsule.json','package-source.json','rust-http-runtime.json')
@@ -864,6 +884,8 @@ def run(artifact,native,output,*,deadline):
         'preEntryRefusals':[],'source':materials,'original':original,'nativeProducts':products,
         'fullTicketQualification':False,'libraryCodePatched':False,'applicationTransportInjected':False,
         'ordinaryFactories':['waki::Client::new()','golem_wasi_http::Client::new()']}
+    if pressure_observation_only:
+        record.update(qualification=False,diagnosticOnly=True,scope='single-original-golem-capacity-call')
     stage='normal-neutral-signing';node=None
     try:
         environment=build_environment(output);signed=output/'releases'
@@ -872,7 +894,8 @@ def run(artifact,native,output,*,deadline):
         require(result.returncode==0,'rust-http-normal-signing')
         record['signing']=checked_signing(artifact,signed,original)
         stage='actual-provider-absence'
-        record['providerAbsence']=provider_absence(signed,native,output/'provider-absence',deadline)
+        if not pressure_observation_only:
+            record['providerAbsence']=provider_absence(signed,native,output/'provider-absence',deadline)
         with tempfile.TemporaryDirectory(prefix='lsf-rust-http-runtime-') as temporary, \
             owned_cancellation() as cancellation,ExitStack() as cleanup:
             work=Path(temporary)
@@ -906,7 +929,7 @@ def run(artifact,native,output,*,deadline):
                 manifests[tenant]=manifest;target=deploy(selected,manifest,publication)
                 grants=grant(selected,node,publication,tenant,peers[tenant]);all_grants[tenant]=grants
                 # Each of the exact three declarations remains independently mandatory.
-                for missing in (None,HTTP,CLOCK,ACTIVATION):
+                for missing in (() if pressure_observation_only else (None,HTTP,CLOCK,ACTIVATION)):
                     selected_grants=[] if missing is None else [g for g in grants if g['capability']!=missing]
                     target=deploy(selected,manifest,publication,generation=str(target['generation']),grants=selected_grants)
                     name='ungranted' if missing is None else 'missing-'+{HTTP:'http',CLOCK:'clock',ACTIVATION:'activation'}[missing]
@@ -927,21 +950,40 @@ def run(artifact,native,output,*,deadline):
             stage='ordinary-client-programme'
             # Alternating tenant executions exercise repeated A->B reuse; the
             # two outside coordinates alternate independently of either library.
-            for index,spec in enumerate(cases()):
-                for tenant,client_name in (('examples','waki'),('foreign','golem')):
+            for index,spec in selected_cases:
+                for tenant,client_name in selected_clients:
                     label=tenant+'-'+spec[0];stage=label
-                    item=invoke(clients[tenant],node,targets[tenant],peers,tenant,client_name,
-                        'alpha' if index%2==0 else 'delta',spec,probe,output,label)
+                    try:
+                        item=invoke(clients[tenant],node,targets[tenant],peers,tenant,client_name,
+                            'alpha' if index%2==0 else 'delta',spec,probe,output,label)
+                    except BaseException:
+                        if pressure_observation_only:
+                            # Preserve the original assertion. The same normal
+                            # owner check and subsequent actual peer snapshot
+                            # distinguish transport state from charged starts.
+                            try:
+                                retire(clients[tenant],probe,targets[tenant],output,'diagnostic-pressure-after-refusal')
+                                for _ in range(64):
+                                    for peer in peers.values():peer.poll(.002)
+                                    if all(peer.observation()['openConnections']==0 for peer in peers.values()):break
+                                write_json(output/'diagnostic-pressure-after-retirement.json',{
+                                    'qualification':False,'primaryFailurePreserved':True,
+                                    'peers':{name:peer.observation() for name,peer in peers.items()}})
+                            except BaseException:
+                                try:write_json(output/'diagnostic-pressure-retention-refused.json',{
+                                    'qualification':False,'primaryFailurePreserved':True,'retentionStatus':'refused'})
+                                except BaseException:pass
+                        raise
                     expected[tenant].extend([spec[5]]*item['observedContacts']);record['cases'].append(item)
                     write_json(output/('case-'+label+'.json'),item)
-                if index==0:
+                if index==0 and not pressure_observation_only:
                     stage='queued-before-dispatch-cancel'
                     record['queuedCancel']=queued_cancel(clients['examples'],node,targets['examples'],peers,probe,output)
                     expected['examples'].append('pending-headers')
                     write_json(output/'queued-before-dispatch.json',record['queuedCancel'])
             # A final opposite-library call in each tenant must start at one:
             # no client/static/credential state transfers with the reused cell.
-            for tenant,client_name in (('examples','golem'),('foreign','waki')):
+            for tenant,client_name in (() if pressure_observation_only else (('examples','golem'),('foreign','waki'))):
                 spec=('cross-tenant-fresh','json','/conformance/json',DOMAIN_TEXT,1,'domain-json','')
                 item=invoke(clients[tenant],node,targets[tenant],peers,tenant,client_name,'delta',spec,probe,output,tenant+'-cross-fresh')
                 record['cases'].append(item);expected[tenant].append('domain-json')
@@ -965,6 +1007,11 @@ def run(artifact,native,output,*,deadline):
             and products=={name:file_identity(path,512*1024**2) for name,path in native.items()}
             and materials=={name:file_identity(ROOT/name) for name in MATERIALS}
             and time.monotonic()<deadline,'rust-http-final-source-products-and-original-deadline')
+        if pressure_observation_only:
+            record.update(status='diagnostic-completed',qualification=False,guestExecutions=1,
+                invocationAttempts=1,preEntryRefusalsCount=0)
+            summary=compact_record(record,output)
+            write_json(output/'diagnostic.json',summary);return summary
         record.update(status='passed',guestExecutions=len(record['cases'])+1,
             invocationAttempts=len(record['cases'])+len(record['preEntryRefusals'])+4,
             preEntryRefusalsCount=len(record['preEntryRefusals'])+3,

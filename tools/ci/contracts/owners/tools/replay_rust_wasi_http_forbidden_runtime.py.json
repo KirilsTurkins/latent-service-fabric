@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_rust_wasi_http_forbidden_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Parent reviewed exact Golem-only capacity trap after eight outbound requests with no held-response or timer-site claim; Waki typed errors, all64 attempts, original budgets, physical/provider retirement and fresh gates retained.",
+  "reviewReason": "Parent reviewed one nonqualifying original Golem pressure observation to retain actual peer counts before the unchanged contact assertion; original branch64 default, component/backend/native identities, budgets and retirement predicates preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c39617bea5e75fe065ace4566fb7b2422b2d222fe6f2b9fa5243d690de399992"
+  "sha256": "c7b229e7131676edc23ad2b541c4c195bcb2ab1d28dd7c486d9aec5a82a6499e"
 }

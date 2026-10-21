@@ -4,6 +4,7 @@
   "coverage": {},
   "definition": {
     "env": {
+      "PRESSURE_OBSERVATION_ONLY": "${{ github.ref_name == 'diag/rust-wasi-http-capacity-observation-20261021' }}",
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "name": "Authenticate the original compiled guest and execute only its full node programme",
@@ -54,8 +55,8 @@
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Re-sign the exact original component and execute all original64 attempts",
-        "run": "python3 -B tools/replay_rust_wasi_http_forbidden_runtime.py --original-artifact \"$RUNNER_TEMP/rust-http-original\" --native-products \"$RUNNER_TEMP/rust-http-native\" --output \"$RUNNER_TEMP/rust-http-node-replay\""
+        "name": "Re-sign the original component for its full programme or nonqualifying pressure observation",
+        "run": "case \"$PRESSURE_OBSERVATION_ONLY\" in\n  true) selection=(--pressure-observation-only) ;;\n  false) selection=() ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/replay_rust_wasi_http_forbidden_runtime.py \\\n  --original-artifact \"$RUNNER_TEMP/rust-http-original\" \\\n  --native-products \"$RUNNER_TEMP/rust-http-native\" \\\n  --output \"$RUNNER_TEMP/rust-http-node-replay\" \"${selection[@]}\"\n"
       },
       {
         "if": "always()",
@@ -73,7 +74,7 @@
   },
   "jobId": "retained-guest",
   "kind": "job",
-  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
+  "reviewReason": "Parent reviewed one nonqualifying original Golem pressure observation to retain actual peer counts before the unchanged contact assertion; original branch64 default, component/backend/native identities, budgets and retirement predicates preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-forbidden-replay.yml"
 }
