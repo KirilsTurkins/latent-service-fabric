@@ -125,10 +125,64 @@ async fn protocol_metadata_reserves_before_work_and_survives_provider_retirement
     clean(&setup.pools).await;
 }
 
+// Only these new native-memory controls select the actual Phase 3 accounting
+// profile. Keep the original legacy Setup and all five existing controls exact.
+fn kernel_session(setup: &Setup, id: &str) -> (CapabilitySession, Control) {
+    use crate::broker::CapabilityBindingSpec;
+    use latent_core::{ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget};
+
+    let (request, mut control) = setup.fixture.request(id);
+    let original = control.budget.deadline();
+    let sample = ClockSample::new(
+        original.admitted_at_unix_millis(),
+        original.admitted_at_monotonic(),
+    );
+    control.budget = ActivationBudget::with_profile(
+        EffectiveActivationBudget::admit_profile_at(
+            BudgetProfile::Phase3,
+            &request.budget,
+            &request.budget,
+            &request.budget,
+            request.activation.deadline_unix_millis,
+            sample,
+        )
+        .unwrap(),
+        BudgetProfile::Phase3,
+    )
+    .unwrap();
+    assert_eq!(
+        control.budget.deadline().unix_millis(),
+        request.activation.deadline_unix_millis
+    );
+    let plan = setup
+        .fixture
+        .broker
+        .compile_plan(
+            &setup.fixture.revision,
+            &[CapabilityBindingSpec {
+                definition_digest: None,
+                provider: &setup.provider.reference(),
+                imported_operations: &["read".into()],
+                policy_ids: &["p".into()],
+                provider_binding_id: "binding",
+                deployment_restriction_json: br#"{"operations":[]}"#,
+            }],
+            &setup.fixture.publication,
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap();
+    let session = setup
+        .fixture
+        .broker
+        .open_session(plan, &request, &control, &setup.fixture.publication)
+        .unwrap();
+    (session, control)
+}
+
 #[tokio::test]
 async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
     let setup = Setup::new(single());
-    let (session, control) = setup.session("kernel-original-owner");
+    let (session, control) = kernel_session(&setup, "kernel-original-owner");
     let observer = session.observer();
     let call = setup.call(&session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
@@ -150,8 +204,8 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
 #[tokio::test]
 async fn kernel_occupancy_rejects_foreign_scope_and_nonoriginal_allowance() {
     let setup = Setup::new(ProviderPoolLimits::default());
-    let (session, control) = setup.session("kernel-scope-original");
-    let (foreign, foreign_control) = setup.session("kernel-scope-foreign");
+    let (session, control) = kernel_session(&setup, "kernel-scope-original");
+    let (foreign, foreign_control) = kernel_session(&setup, "kernel-scope-foreign");
     let call = setup.call(&session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
     let foreign_scope = Arc::new(foreign.reserve_stream().unwrap());
@@ -172,7 +226,7 @@ async fn kernel_occupancy_rejects_foreign_scope_and_nonoriginal_allowance() {
 #[tokio::test]
 async fn stopped_kernel_occupancy_fails_checkpoint_without_refunding_owner() {
     let setup = Setup::new(single());
-    let (session, control) = setup.session("kernel-owner-stopped");
+    let (session, control) = kernel_session(&setup, "kernel-owner-stopped");
     let call = setup.call(&session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
     let before = control.budget.host_memory_bytes();
