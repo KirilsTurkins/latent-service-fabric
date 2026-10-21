@@ -53,6 +53,11 @@
           "tools/qualify_java_http_mixed.py",
           "tools/fixtures/java-http-mixed-bodies/**",
           "tools/tests/test_java_http_mixed.py",
+          "tools/java_http_late_fixture.py",
+          "tools/java_http_late_node.py",
+          "tools/qualify_java_http_late.py",
+          "tools/fixtures/java-http-late-completion/**",
+          "tools/tests/test_java_http_late.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -61,6 +66,11 @@
           "java_http_fibers": {
             "default": false,
             "description": "Fresh ordinary Java HTTP/fiber component with authenticated native products",
+            "type": "boolean"
+          },
+          "java_http_late_completion": {
+            "default": false,
+            "description": "Ordinary cancelled futures retain ownership through actual late HTTP completion",
             "type": "boolean"
           },
           "java_http_mixed_bodies": {
@@ -92,12 +102,13 @@
   },
   "requiredJobs": [
     "http-fiber-lifecycle",
+    "http-late-completion",
     "http-mixed-bodies",
     "http-phase-clients",
     "http-prepared-tenants",
     "http-public-spi"
   ],
-  "reviewReason": "Add one default-false manual mixed-body programme; preserve all existing jobs, commands and guards",
+  "reviewReason": "Append one default-false late accepted-task HTTP programme; deep-restore all six existing jobs, guards and commands unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
