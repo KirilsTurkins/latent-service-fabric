@@ -301,3 +301,99 @@ async fn foreign_or_mismatched_invocation_owner_is_rejected_before_waiting() {
         fence.release();
     }
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn ordinary_backend_codec_reports_original_peak_and_result_outlives_store_cleanup() {
+    use latent_core::{ActivationBudget, BudgetProfile, EffectiveActivationBudget};
+    struct Accounted {
+        id: ActivationId,
+        budget: ActivationBudget,
+    }
+    impl ExecutionCancellation for Accounted {
+        fn activation_id(&self) -> &ActivationId {
+            &self.id
+        }
+        fn is_cancelled(&self) -> bool {
+            false
+        }
+        fn reason(&self) -> Option<String> {
+            None
+        }
+        fn budget_accounting(&self) -> Option<&ActivationBudget> {
+            Some(&self.budget)
+        }
+    }
+    // Reuse the signed, tiny committed packaging component and readiness owner.
+    // It returns u32 without any linear-memory allocation, so limiter-only
+    // reporting cannot accidentally satisfy the original codec-peak assertion.
+    let mut resources = input::request().budget;
+    resources.cpu_fuel = 1_000_000_000;
+    resources.memory_bytes = 64 * 1024 * 1024;
+    resources.wall_time_limit_millis = Some(120_000);
+    resources.log_bytes = 0;
+    let f = Fixture::with_codec_budget(services(false), resources.clone()).await;
+    let active = f.backend.materialize_ready(f.ready().await).unwrap();
+    let (mut request, _) = request(&active);
+    request.budget = resources.clone();
+    request.activation.budget = resources.clone();
+    request.cell.maximum_memory_bytes = resources.memory_bytes;
+    let mut raw = Vec::with_capacity(16 * 1024);
+    raw.extend_from_slice(&request.activation.input);
+    let raw_capacity = raw.capacity() as u64;
+    request.activation.input = raw;
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &resources,
+        &resources,
+        &resources,
+        None,
+        ClockSample::new(9000, Instant::now()),
+    )
+    .unwrap();
+    let original = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    let cancellation = Accounted {
+        id: request.activation.activation_id.clone(),
+        budget: original.clone(),
+    };
+    let report = tokio::time::timeout(
+        Duration::from_secs(10),
+        f.backend
+            .invoke_prepared_contained(request, active.prepared, &cancellation),
+    )
+    .await
+    .unwrap();
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    let GuestOutcome::Returned {
+        output,
+        consumption,
+        ..
+    } = report.outcome.unwrap()
+    else {
+        panic!("tiny ordinary component must return")
+    };
+    assert_eq!(output.as_ref(), b"[7]");
+    let snapshot = f.backend.resource_snapshot();
+    assert_eq!(snapshot.stores_created, 1);
+    assert_eq!(snapshot.live_stores, 0);
+    assert_eq!(snapshot.live_host_states, 0);
+    assert_eq!(snapshot.live_component_instances, 0);
+    assert_eq!(snapshot.live_temporary_buffers, 0);
+    assert_eq!(snapshot.active_invocations, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 0);
+    let original_peak = original.snapshot_at(Instant::now()).peak_memory_bytes;
+    assert!(consumption.peak_memory_bytes >= raw_capacity + 64);
+    assert_eq!(consumption.peak_memory_bytes, original_peak);
+    assert!(original_peak < 64 * 1024); // no maxDecoded/output blanket precharge
+    let retained = original.host_memory_bytes();
+    assert!(retained >= output.capacity() as u64);
+    assert!(retained < 4096);
+    assert_eq!(original.outstanding_reservations(), 1);
+    let clone = output.clone();
+    assert_eq!(clone.as_ptr(), output.as_ptr());
+    drop(output);
+    drop(f); // backend/cache no longer owns the actual result allocation
+    assert_eq!(original.host_memory_bytes(), retained);
+    drop(clone);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+}

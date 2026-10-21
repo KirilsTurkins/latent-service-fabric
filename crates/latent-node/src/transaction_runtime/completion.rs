@@ -86,10 +86,29 @@ impl CommandCompletion {
     pub async fn finish(self, outcome: ActivationOutcome) -> CommandCompletionDisposition {
         let identity = self.claim.record().clone();
         let retirement = self.claim.retirement();
+        // TransactionRetention prepaid its response/work envelope before guest
+        // execution. Preserve Value's original length-only VALUE_BYTES business
+        // contract before allocating a compact destination. The original source
+        // capacity stays charged by ResultPayload through the physical copy;
+        // destination capacity belongs to the already prepaid response/work set.
+        let too_large = match &outcome {
+            ActivationOutcome::Succeeded(success) => {
+                success.output.len() > latent_core::transaction_contract::VALUE_BYTES
+            }
+            ActivationOutcome::DeclaredError { error, .. } => {
+                error.payload.len() > latent_core::transaction_contract::VALUE_BYTES
+            }
+            ActivationOutcome::Failed { .. } => false,
+        };
+        if too_large {
+            drop(outcome);
+            drop(self.claim);
+            return retired(&self.host, identity, retirement, AtomicError::Limit).await;
+        }
         let prepared = match outcome {
             ActivationOutcome::Succeeded(success) => {
                 let value = Value {
-                    bytes: success.output,
+                    bytes: success.output.as_ref().to_vec(),
                     media_type: success.output_media_type,
                     metadata: success.metadata.into_iter().collect(),
                 };
@@ -97,7 +116,7 @@ impl CommandCompletion {
             }
             ActivationOutcome::DeclaredError { error, .. } => {
                 let value = Value {
-                    bytes: error.payload,
+                    bytes: error.payload.as_ref().to_vec(),
                     media_type: error.media_type,
                     metadata: error.metadata.into_iter().collect(),
                 };

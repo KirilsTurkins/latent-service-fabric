@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_host_codec_native.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind both unchanged C controls to their literal compiled component::c::tests module names; retain exact61 controls,31 stages,five products and strict discovery.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "77f8284310d8362570592f835bcab4ced7de3ad9da5b908f28fc1cc0b9a4b560"
+}

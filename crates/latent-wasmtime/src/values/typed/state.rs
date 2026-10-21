@@ -7,6 +7,8 @@ pub(super) struct State {
     pub(super) limits: ValueCodecLimits,
     pub(super) failure: Option<PlatformError>,
     remaining: usize,
+    pub(super) memory: super::super::memory::Escrow,
+    pub(super) memory_refused: bool,
 }
 
 impl State {
@@ -15,6 +17,8 @@ impl State {
             limits,
             failure: None,
             remaining: limits.max_decoded_value_bytes,
+            memory: Default::default(),
+            memory_refused: false,
         }
     }
 
@@ -30,7 +34,10 @@ impl State {
             .remaining
             .checked_sub(bytes)
             .ok_or_else(|| self.fail(limit()))?;
-        Ok(())
+        self.memory.add(bytes).map_err(|error| {
+            self.memory_refused = true;
+            self.fail(error)
+        })
     }
 
     pub(super) fn node<E: de::Error>(&mut self, depth: usize, prepaid: bool) -> Result<(), E> {
@@ -75,7 +82,9 @@ impl State {
     ) -> Result<(), E> {
         values
             .try_reserve_exact(additional)
-            .map_err(|_| self.fail(limit()))
+            .map_err(|_| self.fail(limit()))?;
+        self.memory.confirm();
+        Ok(())
     }
 
     /// Incremental collections use geometric growth capped by the declared item
@@ -102,6 +111,7 @@ impl State {
             .try_reserve_exact(text.len())
             .map_err(|_| self.fail(limit()))?;
         result.push_str(text);
+        self.memory.confirm();
         Ok(result)
     }
 }

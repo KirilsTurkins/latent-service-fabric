@@ -8,6 +8,7 @@ import tarfile
 import tomllib
 
 from tools import rust_standard_clock_profile as clock
+from tools import host_codec_wasmtime as codec_wasmtime
 from tools.dev_workflow.common import digest, encode, require
 from tools.rust_capsule_project import checked_path, inventory, read_file, write_json
 
@@ -25,10 +26,14 @@ PINS = {
     'wasmtime-environ': ('48.0.7', '805d6554eb6dd6e62891061a31383a89d69fd891f785e5ae68f0835a554b7a2a'),
     'wit-bindgen': ('0.62.0', '53cb4b5556c3a791e86838ea287782bdafa704d55b0e68b5b81a3a16b9ea5f4b'),
 }
+FORK_RECIPE = ('tools/host_codec_wasmtime.py',
+               'crates/vendor/wasmtime/UPSTREAM.latent.json',
+               'crates/vendor/wasmtime/latent-dynamic-memory.patch',
+               'crates/vendor/wasmtime/README.latent.md')
 RECIPE = ('tools/rust_standard_tls_profile.py', 'sdk/rust-standard-runtime/tls.rs',
           'sdk/rust-standard-runtime/activation-abi.json',
           'sdk/rust-standard-runtime/thread-abi.json',
-          'wit/platform/activation-runtime/package.wit', 'rust-toolchain.toml', 'Cargo.toml', 'Cargo.lock')
+          'wit/platform/activation-runtime/package.wit', 'rust-toolchain.toml', 'Cargo.toml', 'Cargo.lock') + FORK_RECIPE
 BRANCHES = (
     (b'cfg_select! {\n    any(', b'cfg_select! {\n    ' + SELECTOR + b''' => {
         mod os;
@@ -80,7 +85,7 @@ def overlay(original: dict[str, bytes], tls: bytes):
             'std/src/sys/thread_local/key/lsf.rs': tls}
 
 
-def tool_pins(inputs):
+def tool_pins(inputs, *, root=ROOT):
     require(tomllib.loads(inputs['rust-toolchain.toml'].decode())['toolchain']['channel'] == clock.RUST,
             'rust-tls-compiler-pin')
     packages = tomllib.loads(inputs['Cargo.lock'].decode())['package']
@@ -90,12 +95,34 @@ def tool_pins(inputs):
         version = value.get('version') if isinstance(value, dict) else value
         require(version == '=' + PINS[name][0],
                 'rust-tls-selected-engine-or-bindgen-pin')
+    pins = {name: {'version': p[0], 'archiveDigest': 'sha256:' + p[1]}
+            for name, p in PINS.items()}
+    local = isinstance(workspace['wasmtime'], dict) and 'path' in workspace['wasmtime']
+    if local:
+        require(workspace['wasmtime'] == codec_wasmtime.DEPENDENCY,
+                'rust-tls-local-engine-selection')
+        try:
+            checked = codec_wasmtime.verify(root)
+        except (ValueError, OSError):
+            require(False, 'rust-tls-local-engine-source')
+        require(all(inputs[name] == read_file(root / name)
+                    for name in ('Cargo.toml', 'Cargo.lock', *FORK_RECIPE)),
+                'rust-tls-local-engine-input')
+        pins['wasmtime'] = {'version': checked['version'],
+            'sourceKind': 'authenticated-local-fork', 'nativeCohort': checked['nativeCohort'],
+            'sourceRecordDigest': 'sha256:' + checked['recordSha256'],
+            'patchDigest': 'sha256:' + checked['patchSha256'],
+            'upstreamArchive': checked['upstreamArchive'],
+            'upstreamArchiveDigest': 'sha256:' + checked['upstreamSha256']}
     for name, (version, checksum) in PINS.items():
+        if name == 'wasmtime' and local:
+            continue
         require(any(p.get('name') == name and p.get('version') == version and p.get('checksum') == checksum
                     for p in packages), 'rust-tls-engine-or-bindgen-pin')
     abi = json.loads(inputs['sdk/rust-standard-runtime/activation-abi.json'])
     require(abi['target'] == clock.TARGET and abi['runtimeWitDigest'] == digest(inputs['wit/platform/activation-runtime/package.wit']),
             'rust-tls-canonical-abi-preimage')
+    return pins
 
 
 def prepare(archive: Path, output: Path, *, target=clock.TARGET, rust=clock.RUST):
@@ -104,7 +131,7 @@ def prepare(archive: Path, output: Path, *, target=clock.TARGET, rust=clock.RUST
     require(not output.exists() and not output.is_symlink(), 'rust-tls-output-must-be-fresh')
     original = originals(archive)
     inputs = {name: read_file(ROOT / name) for name in RECIPE}
-    tool_pins(inputs)
+    pins = tool_pins(inputs)
     selected = overlay(original, inputs['sdk/rust-standard-runtime/tls.rs'])
     output.mkdir(mode=0o700, parents=True)
     for directory, files in (('originals', original), ('overlay/library', selected)):
@@ -117,7 +144,7 @@ def prepare(archive: Path, output: Path, *, target=clock.TARGET, rust=clock.RUST
         'originalInputsDigest': digest(inventory(original)), 'originals': {name: digest(data) for name, data in original.items()},
         'selectedInputsDigest': digest(inventory(selected)), 'selected': {name: digest(data) for name, data in selected.items()},
         'recipeDigest': digest(inventory(inputs)), 'runtimeWitDigest': digest(inputs['wit/platform/activation-runtime/package.wit']),
-        'toolPins': {name: {'version': p[0], 'archiveDigest': 'sha256:' + p[1]} for name, p in PINS.items()},
+        'toolPins': pins,
         'candidateApis': ['std::thread_local!', 'std internal current Thread/Parker LocalPointer'],
         'contextSlot': 1, 'witBindgenContextSlotPreserved': 0, 'nativeHostTlsUsed': False,
         'originalLedgerOwner': 'native', 'entryAdmissionBeforeInitializer': True,
@@ -138,6 +165,7 @@ def prepare(archive: Path, output: Path, *, target=clock.TARGET, rust=clock.RUST
     value['identity'] = digest(encode(value))
     require(len(encode(value)) <= 65536, 'rust-tls-receipt-byte-limit')
     require({name: read_file(ROOT / name) for name in RECIPE} == inputs, 'rust-tls-recipe-mutated')
+    require(tool_pins(inputs) == pins, 'rust-tls-engine-source-mutated')
     require(originals(archive) == original, 'rust-tls-original-source-mutated')
     write_json(output / 'std-tls-source-overlay.json', value)
     return value

@@ -339,7 +339,7 @@ async fn successful_and_declared_outcomes_keep_payloads_and_owners_without_recor
                 error: DeclaredError {
                     code: "example".into(),
                     message: support::PRIVATE.into(),
-                    payload,
+                    payload: (payload).into(),
                     media_type: "text/plain".into(),
                     metadata: Metadata::new(),
                 },
@@ -347,7 +347,7 @@ async fn successful_and_declared_outcomes_keep_payloads_and_owners_without_recor
             }
         } else {
             ActivationOutcome::Succeeded(ActivationSuccess {
-                output: payload,
+                output: (payload).into(),
                 output_media_type: "text/plain".into(),
                 consumption: support::consumption(),
                 committed_state_version: None,

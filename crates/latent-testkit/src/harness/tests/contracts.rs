@@ -61,7 +61,7 @@ fn suite_compares_success_domain_and_platform_contracts_without_diagnostics_leak
         error: DeclaredError {
             code: "empty".to_owned(),
             message: "private domain details".to_owned(),
-            payload: b"domain".to_vec(),
+            payload: (b"domain".to_vec()).into(),
             media_type: "text/plain".to_owned(),
             metadata: Metadata::new(),
         },
@@ -181,7 +181,7 @@ fn success_payload_and_domain_payload_do_not_share_an_outcome_category() {
         error: DeclaredError {
             code: "error".to_owned(),
             message: String::new(),
-            payload: b"ok".to_vec(),
+            payload: (b"ok".to_vec()).into(),
             media_type: "text/plain".to_owned(),
             metadata: Metadata::new(),
         },

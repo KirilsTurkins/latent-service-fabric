@@ -626,7 +626,7 @@ pub(crate) fn map_execution_outcome(
             metadata.insert("cell-id".to_owned(), bounded_cell_id);
             metadata.insert("cell-disposition".to_owned(), disposition.to_owned());
             ActivationOutcome::Succeeded(ActivationSuccess {
-                output,
+                output: (output).into(),
                 output_media_type,
                 consumption,
                 committed_state_version: None,
@@ -1067,7 +1067,7 @@ mod tests {
         let declared = latent_core::DeclaredError {
             code: "guest.invalid-input".to_owned(),
             message: "the guest rejected the supplied value".to_owned(),
-            payload: br#"{"field":"name"}"#.to_vec(),
+            payload: (br#"{"field":"name"}"#.to_vec()).into(),
             media_type: "application/json".to_owned(),
             metadata: Metadata::from([("field".to_owned(), "name".to_owned())]),
         };

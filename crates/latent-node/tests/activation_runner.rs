@@ -556,7 +556,7 @@ fn envelope_with_id(activation_id: ActivationId, input: &str) -> ActivationEnvel
 
 fn returned(output: &[u8], consumption: BudgetConsumption) -> GuestOutcome {
     GuestOutcome::Returned {
-        output: output.to_vec(),
+        output: (output.to_vec()).into(),
         output_media_type: "text/plain".to_owned(),
         consumption,
     }

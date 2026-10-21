@@ -536,18 +536,6 @@ impl WasmtimeBackend {
                 ));
             }
         }
-        let temporary_buffer_guard = self.shared.resources.temporary_buffer();
-        let raw_input = input::RawInvocationInput::new(
-            std::mem::take(&mut request.activation.input),
-            input_trace,
-        );
-        let input = values::decode_params(
-            &function.params,
-            raw_input.bytes(),
-            &request.activation.input_media_type,
-            runtime.surface.value_codec_limits,
-        )?;
-
         let capabilities = match self
             .capability_session(
                 &runtime,
@@ -572,6 +560,29 @@ impl WasmtimeBackend {
             ));
         }
 
+        // Current capability authority is established before transferring or
+        // decoding input. A denied request owns no admitted codec allocation.
+        let codec_budget = accounting.budget().clone();
+        let temporary_buffer_guard = self.shared.resources.temporary_buffer();
+        let raw_input = input::RawInvocationInput::new_accounted(
+            std::mem::take(&mut request.activation.input),
+            input_trace,
+            &codec_budget,
+        )?;
+        let input = values::decode_params_accounted(
+            &function.params,
+            raw_input.bytes(),
+            &request.activation.input_media_type,
+            runtime.surface.value_codec_limits,
+            &codec_budget,
+        )?;
+
+        // Preparation retains the original signature/fuel ceiling. Actual
+        // native result allocations are admitted at their allocator seam.
+        let mut output =
+            values::OwnedValues::output_accounted(function.results.len(), &codec_budget)?;
+        let result_memory = output.lift_memory();
+
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
@@ -593,18 +604,19 @@ impl WasmtimeBackend {
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
 
         let component_instance_guard = self.shared.resources.component_instance();
-        let mut output = vec![Val::Bool(false); function.results.len()];
         if let Some(trace) = input_trace {
             trace.stage(InvocationInputPhase::BeforeCallExport);
         }
         let native_stack_scope = native_stack_observer.clone();
         let mut call_phase = CallPhase::Instantiate;
+        output.begin_lift();
         let call = call_export(
             &runtime,
             function,
             &mut store,
-            &input,
-            &mut output,
+            input.as_slice(),
+            output.as_mut_slice(),
+            result_memory,
             timing,
             setup_started,
             input_trace,
@@ -625,13 +637,13 @@ impl WasmtimeBackend {
                 .as_micros(),
         )
         .unwrap_or(u64::MAX);
+        let codec_capacity_error = output.finish_lift(call_result.is_ok()).err();
         let lifecycle_error = store
             .data_mut()
             .runtime
             .as_mut()
-            .and_then(|runtime| runtime.finalize().err());
-        let (consumption, accounting_error) =
-            invocation_accounting(&mut store, wall_time_micros, timing);
+            .and_then(|runtime| runtime.finalize().err())
+            .or(codec_capacity_error);
         let memory_exhausted = call_result
             .as_ref()
             .err()
@@ -639,12 +651,18 @@ impl WasmtimeBackend {
         timing.component_post_return_micros = elapsed_micros(component_post_return_started);
 
         let encoded = call_result.as_ref().ok().map(|()| {
-            values::encode_result(
+            values::encode_result_accounted(
                 &function.results,
-                &output,
+                output.as_slice(),
                 runtime.surface.value_codec_limits,
+                &codec_budget,
             )
         });
+        // Encoding owns real host buffers too. Observe the original ledger only
+        // after its successful allocations, while input, lifted values, output
+        // bytes, guest linear memory and native stacks still coexist.
+        let (consumption, accounting_error) =
+            invocation_accounting(&mut store, wall_time_micros, timing);
         // Capture the execution winner before cleanup signals unfinished child
         // owners. Cleanup cancellation cannot replace an existing trap, resource
         // failure, or bounded lifecycle failure with a different terminal cause.
@@ -1096,6 +1114,16 @@ impl ExecutionBackend for WasmtimeBackend {
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
     if error.chain().any(|cause| {
+        if let Some(error) = cause.downcast_ref::<crate::values::LiftMemoryError>() {
+            let error = &error.0;
+            if error.code == PlatformErrorCode::ResourceExhausted
+                && error.details.iter().any(|detail| {
+                    detail.fields.get("dimension").map(String::as_str) == Some("memory-bytes")
+                })
+            {
+                return true;
+            }
+        }
         matches!(
             cause.downcast_ref::<latent_core::BudgetError>(),
             Some(latent_core::BudgetError::Exhausted {
@@ -1156,6 +1184,7 @@ async fn call_export(
     store: &mut Store<HostState>,
     input: &[Val],
     output: &mut [Val],
+    result_memory: Option<Arc<dyn wasmtime::component::DynamicValueMemory>>,
     timing: &mut Phase0InvocationTiming,
     setup_started: Instant,
     input_trace: Option<&InputTrace>,
@@ -1176,7 +1205,13 @@ async fn call_export(
                     if let Some(trace) = input_trace {
                         trace.stage(InvocationInputPhase::GuestCallStart);
                     }
-                    func.call_async(&mut *store, input, output).await
+                    match result_memory {
+                        Some(memory) => {
+                            func.call_async_with_memory(&mut *store, input, output, memory)
+                                .await
+                        }
+                        None => func.call_async(&mut *store, input, output).await,
+                    }
                 }
                 None => Err(wasmtime::Error::msg(
                     "validated component function index is absent",
@@ -1194,7 +1229,7 @@ async fn call_export(
 
 fn classify_call_result(
     call_result: wasmtime::Result<()>,
-    encoded: Option<Result<values::EncodedResult, PlatformError>>,
+    encoded: Option<Result<values::EncodedResult<latent_core::ResultPayload>, PlatformError>>,
     stop: &StopControl,
     memory_exhausted: bool,
     consumption: BudgetConsumption,
@@ -1217,7 +1252,7 @@ fn classify_call_result(
     match call_result {
         Ok(()) => match encoded.expect("successful call encoded its values") {
             Ok(values::EncodedResult::Returned(output)) => Ok(GuestOutcome::Returned {
-                output,
+                output: (output).into(),
                 output_media_type: values::MEDIA_TYPE.to_owned(),
                 consumption,
             }),
@@ -1266,7 +1301,14 @@ fn invocation_accounting(
     } = store.data().host_call_timing();
     let consumption = BudgetConsumption {
         cpu_fuel: store.data().accounting.native_fuel_consumed(remaining_fuel),
-        peak_memory_bytes: store.data().limiter.peak_memory_bytes(),
+        peak_memory_bytes: store.data().limiter.peak_memory_bytes().max(
+            store
+                .data()
+                .accounting
+                .budget()
+                .snapshot_at(Instant::now())
+                .peak_memory_bytes,
+        ),
         wall_time_micros,
         log_bytes: store.data().logs.bytes(),
         ..BudgetConsumption::default()

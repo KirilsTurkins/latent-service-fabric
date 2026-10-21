@@ -78,6 +78,10 @@ impl WasmtimeConfig {
                 .to_owned(),
             ),
             ("value-codec".to_owned(), "canonical-json-v1".to_owned()),
+            (
+                "dynamic-value-memory".to_owned(),
+                wasmtime::component::DYNAMIC_VALUE_MEMORY_COHORT.to_owned(),
+            ),
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);

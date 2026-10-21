@@ -134,7 +134,7 @@ pub(crate) fn envelope() -> ActivationEnvelope {
 
 pub(super) fn success(bytes: &[u8]) -> ActivationOutcome {
     ActivationOutcome::Succeeded(ActivationSuccess {
-        output: bytes.to_vec(),
+        output: (bytes.to_vec()).into(),
         output_media_type: "text/plain".to_owned(),
         consumption: BudgetConsumption {
             cpu_fuel: 17,
