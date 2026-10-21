@@ -30,6 +30,7 @@ from tools.rust_wasi_http_runtime_fixture import SERVICE
 from tools.rust_wasi_http_profile import ACTIVATION, CLOCK, HTTP
 from tools.standard_http.observations import delta, require_zero_contact, validate as validate_peer
 from tools.standard_http.peer import Peer
+from tools.standard_http.protocol import Request
 from tools.standard_http.vectors import BY_ID, DOMAIN, PARTIAL, json_bytes, response as peer_response
 from tools.static_api.node import policy
 
@@ -525,6 +526,41 @@ def programme_selection(pressure_observation_only):
     return original, (('examples','waki'),('foreign','golem'))
 
 
+def closed_before_request(row):
+    # This proves no parsed request or written response, not zero received
+    # request bytes: the public peer does not expose a per-connection RX count.
+    require(type(row) is dict and set(row)=={'request','role','state','responseBytesWritten',
+        'receiveBufferBytes','sendBufferBytes','closeReason'}
+        and type(row['request']) is int and 1<=row['request']<=32
+        and row['role']=='primary' and row['state']=='closed'
+        and type(row['responseBytesWritten']) is int and row['responseBytesWritten']==0
+        and row['closeReason']=='remote-write-half-ended'
+        and all(type(row[k]) is int and 0<row[k]<=128*1024
+            for k in ('receiveBufferBytes','sendBufferBytes')),
+        'rust-http-exact-closed-before-request-parsed')
+    return row
+
+
+def golem_pressure_peer(before,after):
+    change=delta(before,after)
+    require(after['openConnections']==0 and change['acceptedConnections']==8
+        and change['startedRequests']==change['completedResponseWrites']==7
+        and change['rejectedRequests']==change['committedMutations']==change['connectionBoundRejections']==0
+        and len(change['requests'])==8,'rust-http-golem-pressure-eight-connections-seven-parsed')
+    completed=change['requests'][:-1];last=closed_before_request(change['requests'][-1])
+    request=Request();request.method=b'GET'
+    wire,suffix=peer_response(BY_ID['domain-json'],request,0)
+    require(suffix==b'' and all(row.get('vector')=='domain-json' and row.get('method')=='GET'
+        and row['role']=='primary' and row['state']=='closed'
+        and row.get('closeReason')=='response-write-complete' and row['responseBytesWritten']==len(wire)
+        and row.get('bodyBytes')==0 and row.get('authorizationPresent') is True
+        and row.get('cookiePresent') is False and row.get('proxyAuthorizationPresent') is False
+        for row in completed),'rust-http-golem-pressure-exact-seven-complete-authorized-json-responses')
+    return {'acceptedConnections':8,'parsedRequests':7,'completedResponseWrites':7,
+        'closedBeforeRequestParsed':last,'receivedRequestBytesProved':False,
+        'heldResponseCountProved':False,'timerTrapSiteProved':False}
+
+
 def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,label):
     _name,mode,path,_expected,contacts,vector,action=spec
     require(alias in {'alpha','delta'} and client_name in {'waki','golem'},'rust-http-closed-ordinary-client-selection')
@@ -602,13 +638,17 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
         if all(value.observation()['openConnections']==0 for value in peers.values()):break
     observations={name:value.observation() for name,value in peers.items()}
     if action=='capacity':retain_peer_observations(output,label,before,observations)
+    pressure_peer=(golem_pressure_peer(before[tenant],observations[tenant])
+        if action=='capacity' and client_name=='golem' else None)
+    parsed_contacts=pressure_peer['parsedRequests'] if pressure_peer else contacts
     for name,value in observations.items():
         change=delta(before[name],value)
         new=value['requests'][before[name]['acceptedConnections']:]
-        require(value['openConnections']==0 and change['startedRequests']==(contacts if name==tenant else 0)
+        require(value['openConnections']==0 and change['startedRequests']==(parsed_contacts if name==tenant else 0)
             and change['acceptedConnections']==(contacts if name==tenant else 0),'rust-http-exact-contact-and-physical-peer-close')
         if name!=tenant or contacts==0:require_zero_contact(before[name],value)
-        expected_vectors=[vector]*contacts if name==tenant else []
+        if pressure_peer and name==tenant:new=new[:-1]
+        expected_vectors=[vector]*parsed_contacts if name==tenant else []
         require([r.get('vector') for r in new]==expected_vectors
             and all(r['role']==role and r['state']=='closed'
                 and r['authorizationPresent'] is (role=='primary')
@@ -622,7 +662,7 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
     return {'case':label,'tenant':tenant,'client':client_name,'outsideCrate':alias,'specification':list(spec),
         'invocation':row,'libraryError':diagnostic,'pending':pending,'cancel':cancelled,'selectedRevision':pin,'budget':chosen['budget'],
         'terminalNativeTimer':terminal_timer,'actualActivation':activation,'observedContacts':contacts,
-        'malformedFramingPeer':framing,
+        'malformedFramingPeer':framing,'parsedPeerRequests':parsed_contacts,'pressurePeer':pressure_peer,
         'retirement':retired,'peerBefore':before,'peerAfter':observations}
 
 
@@ -672,25 +712,34 @@ def deployment(source,tenant):
     return value
 
 
-def check_peer_final(value,expected):
+def check_peer_final(value,expected,*,closed_before_parse=()):
     validate_peer(value)
+    require(type(closed_before_parse) in (tuple,list) and len(closed_before_parse)<=1,
+        'rust-http-one-explicit-pressure-unparsed-connection')
+    excluded={closed_before_request(row)['request']:row for row in closed_before_parse}
+    require(len(excluded)==len(closed_before_parse)
+        and all(key<=len(value['requests']) and value['requests'][key-1]==row for key,row in excluded.items()),
+        'rust-http-final-same-authenticated-unparsed-connection')
+    parsed=[row for row in value['requests'] if row['request'] not in excluded]
     require(value['state']=='stopped' and value['listeningOrigins']==value['openConnections']==0
-        and value['acceptedConnections']==value['startedRequests']==len(expected)
+        and value['acceptedConnections']==len(expected)+len(excluded) and value['startedRequests']==len(expected)
         and value['rejectedRequests']==value['connectionBoundRejections']==0
-        and [row.get('vector') for row in value['requests']]==expected
+        and [row.get('vector') for row in parsed]==expected
         and all(row['state']=='closed' and row.get('cookiePresent') is False
             and row.get('proxyAuthorizationPresent') is False
-            and row.get('authorizationPresent') is (row['role']=='primary') for row in value['requests']),
+            and row.get('authorizationPresent') is (row['role']=='primary') for row in parsed),
         'rust-http-final-exact-peer-contact-and-owner-ledger')
     require(value['committedMutations']==expected.count('commit-close'),
         'rust-http-uncertain-mutation-never-replayed')
-    for row in value['requests']:
+    for row in parsed:
         if row['vector']=='commit-close':
             require(row['mutationCommitted'] is True and row['bodyBytes']==4
                 and row['responseBytesWritten']==0 and row['closeReason']=='response-withheld-after-commit',
                 'rust-http-final-single-uncertain-mutation')
-    return {'contacts':len(expected),'mutations':value['committedMutations'],
+    result={'contacts':len(expected)+len(excluded),'mutations':value['committedMutations'],
         'completedWrites':value['completedResponseWrites'],'allClosed':True,'vectors':list(expected)}
+    if excluded:result.update(parsedRequests=len(expected),closedBeforeRequestParsed=list(excluded))
+    return result
 
 
 def provider_absence(signed,native,output,deadline):
@@ -947,6 +996,7 @@ def run(artifact,native,output,*,deadline,pressure_observation_only=False):
             require(publications['examples']!=publications['foreign'],'rust-http-no-cross-tenant-publication-identity')
             record['publications']=publications;record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
             expected={tenant:[] for tenant in TENANTS}
+            unparsed={tenant:[] for tenant in TENANTS}
             stage='ordinary-client-programme'
             # Alternating tenant executions exercise repeated A->B reuse; the
             # two outside coordinates alternate independently of either library.
@@ -974,7 +1024,11 @@ def run(artifact,native,output,*,deadline,pressure_observation_only=False):
                                     'qualification':False,'primaryFailurePreserved':True,'retentionStatus':'refused'})
                                 except BaseException:pass
                         raise
-                    expected[tenant].extend([spec[5]]*item['observedContacts']);record['cases'].append(item)
+                    expected[tenant].extend([spec[5]]*item['parsedPeerRequests']);record['cases'].append(item)
+                    if item['pressurePeer'] is not None:
+                        require(tenant=='foreign' and client_name=='golem' and spec[0]=='resource-capacity',
+                            'rust-http-unparsed-connection-only-original-golem-pressure')
+                        unparsed[tenant].append(item['pressurePeer']['closedBeforeRequestParsed'])
                     write_json(output/('case-'+label+'.json'),item)
                 if index==0 and not pressure_observation_only:
                     stage='queued-before-dispatch-cancel'
@@ -1000,7 +1054,7 @@ def run(artifact,native,output,*,deadline,pressure_observation_only=False):
                 observed=peer.close();public=json.dumps(observed,ensure_ascii=True).encode()
                 require(all(secret not in public and secret.removeprefix(b'Bearer ') not in public
                     for secret in secrets_to_protect),'rust-http-no-controlled-credential-retained')
-                record['peers'][tenant]=check_peer_final(observed,expected[tenant])
+                record['peers'][tenant]=check_peer_final(observed,expected[tenant],closed_before_parse=unparsed[tenant])
                 write_json(output/(tenant+'-peer-final.json'),observed)
             record['startup']=node.startup_record
         require(original=={name:file_identity(artifact/name) for name in original_names}

@@ -12,6 +12,54 @@ from tools.rust_capsule_project import canonical,digest
 
 
 class SourceAndNativeSeparation(unittest.TestCase):
+    def test_actual_pressure_requires_seven_complete_responses_and_one_exact_preparse_close(self):
+        actual=json.loads((Path(__file__).parent/'fixtures/rust-http-pressure-peer-7e9.json').read_bytes())
+        before,after=actual['before']['foreign'],actual['after']['foreign']
+        proof=node.golem_pressure_peer(before,after)
+        self.assertEqual((proof['acceptedConnections'],proof['parsedRequests'],proof['completedResponseWrites']),(8,7,7))
+        self.assertFalse(proof['heldResponseCountProved'])
+        self.assertFalse(proof['timerTrapSiteProved'])
+        self.assertFalse(proof['receivedRequestBytesProved'])
+        for kind in ('started','completed','connections','partial-response','wrong-vector','method',
+                'authorization','cookie','open','last-reason','last-response','last-parsed','last-credential'):
+            changed=copy.deepcopy(after)
+            if kind=='started':changed['startedRequests']=8
+            elif kind=='completed':changed['completedResponseWrites']=6
+            elif kind=='connections':changed['acceptedConnections']=9
+            elif kind=='partial-response':changed['requests'][0]['responseBytesWritten']-=1
+            elif kind=='wrong-vector':changed['requests'][0]['vector']='malformed-json'
+            elif kind=='method':changed['requests'][0]['method']='POST'
+            elif kind=='authorization':changed['requests'][0]['authorizationPresent']=False
+            elif kind=='cookie':changed['requests'][0]['cookiePresent']=True
+            elif kind=='open':changed['openConnections']=1
+            elif kind=='last-reason':changed['requests'][-1]['closeReason']='connection-lost'
+            elif kind=='last-response':changed['requests'][-1]['responseBytesWritten']=1
+            elif kind=='last-parsed':changed['requests'][-1]['vector']='domain-json'
+            else:changed['requests'][-1]['authorizationPresent']=False
+            with self.subTest(kind=kind),self.assertRaises(Exception):node.golem_pressure_peer(before,changed)
+
+    def test_final_peer_ledger_keeps_default_strict_and_requires_the_exact_pressure_row(self):
+        actual=json.loads((Path(__file__).parent/'fixtures/rust-http-pressure-peer-7e9.json').read_bytes())
+        before,after=actual['before']['foreign'],actual['after']['foreign']
+        pressure=node.golem_pressure_peer(before,after)['closedBeforeRequestParsed']
+        # Model only listener shutdown; every actual connection/response row is
+        # retained unchanged. This model is no replacement for hosted final stop.
+        stopped=copy.deepcopy(after);stopped.update(state='stopped',listeningOrigins=0)
+        with self.assertRaisesRegex(RuntimeError,'final-exact-peer-contact'):
+            node.check_peer_final(stopped,['domain-json']*8)
+        final=node.check_peer_final(stopped,['domain-json']*7,closed_before_parse=[pressure])
+        self.assertEqual((final['contacts'],final['parsedRequests'],final['closedBeforeRequestParsed']),(8,7,[8]))
+        for kind in ('duplicate','wrong-id','different-row','wrong-close','extra-complete','missing-complete'):
+            rows=[copy.deepcopy(pressure)];expected=['domain-json']*7
+            if kind=='duplicate':rows*=2
+            elif kind=='wrong-id':rows[0]['request']=7
+            elif kind=='different-row':rows[0]['receiveBufferBytes']+=1
+            elif kind=='wrong-close':rows[0]['closeReason']='connection-lost'
+            elif kind=='extra-complete':expected.append('domain-json')
+            else:expected.pop()
+            with self.subTest(kind=kind),self.assertRaises(Exception):
+                node.check_peer_final(stopped,expected,closed_before_parse=rows)
+
     def test_pressure_diagnostic_is_one_original_golem_case_and_default_plan_is_exact(self):
         cases,clients=node.programme_selection(False)
         self.assertEqual(cases,tuple(enumerate(node.cases())))

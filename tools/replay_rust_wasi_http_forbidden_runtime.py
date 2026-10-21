@@ -29,7 +29,7 @@ SOURCE='88b3c9c1d305eb8e308a7187600f782163bc6131'
 RUN,JOB=39623507324,119302796812
 PINS='docs/testing/evidence/rust-wasi-http-runtime-88b-retained.json'
 NODE_PATH='tools/rust_wasi_http_runtime_node.py'
-CURRENT_NODE={'sha256': 'sha256:1bebe2cdb416c8d64541f7b4e71217185c5094ab35fc2b1ab592c4544d4b8096', 'bytes': 69681}
+CURRENT_NODE={'sha256': 'sha256:ecc8ce33cdfcf709cd32b802b0abada8ed311cf5d0300097e86cca7c004fc25c', 'bytes': 73456}
 MATERIALS=('tools/replay_rust_wasi_http_forbidden_runtime.py',PINS,
     '.github/workflows/rust-wasi-http-forbidden-replay.yml',*original.MATERIALS)
 

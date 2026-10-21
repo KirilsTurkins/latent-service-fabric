@@ -124,3 +124,15 @@ control preserves charged retired timers through the private drain and proves
 that an ordinary infallible timer path can trap at its original ceiling; it is
 not an attribution of the actual guest instruction. See the
 [finite observation](evidence/rust-wasi-http-capacity-failure-2026-10-21.json).
+
+The [single pressure observation](evidence/rust-wasi-http-pressure-peer-2026-10-21.json)
+retains a further distinction: Golem charged eight outbound starts and accepted
+eight TCP connections, but only seven requests were parsed and received complete
+JSON response writes. The final connection closed before request parsing, with
+zero response bytes. All connections and the original physical/provider owners
+retired. This does not prove zero received request bytes, eight retained response
+objects, or a specific timer trap instruction. Only this exact pressure trap
+uses the explicit unparsed-connection ledger; ordinary calls and Waki retain
+their exact request, credential and response checks. The original full replay
+and diagnostic remain failed; a fresh full programme must pass the corrected
+reader and every original final gate.
