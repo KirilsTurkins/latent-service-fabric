@@ -64,6 +64,23 @@ class CThreadingCompatibility(unittest.TestCase):
         self.assertEqual(record['supplementalPort']['sourceDigest'], supplement.WIT_DIGEST)
         self.assertEqual(self.commands.run.call_args.args[:3],
                          ('c-thread-compatibility-proof', self.tool, '--c-thread-bind-v1'))
+        from tools import qualify_c_thread_runtime as qualification
+        from tools.phase3_resource_identity import file_identity
+        write_json(self.output / 'c-threading-derivation.json', self.derivation)
+        write_json(self.output / 'compatibility-report.json', {'status': 'blocked'})
+        assets = ((supplement.NAME, supplement.MEDIA),
+            ('compatibility-inspection.json', 'application/vnd.latent.guest.compatibility.inspection.v1+json'),
+            ('compatibility-report.json', 'application/vnd.latent.guest.compatibility.v1+json'))
+        layers = [{'path': name, 'source': name, 'role': 'asset', 'mediaType': media}
+                  for name, media in assets]
+        write_json(self.output / 'package-source.json', {'layers': layers})
+        component = file_identity(self.output / 'component.wasm')
+        evidence = qualification.supplement_evidence(self.output, component, self.derivation)
+        self.assertEqual(set(evidence), {name for name, _ in assets})
+        layers[0]['mediaType'] = 'application/foreign'
+        (self.output / 'package-source.json').write_bytes(encode({'layers': layers}))
+        with self.assertRaisesRegex(RuntimeError, 'package-assets'):
+            qualification.supplement_evidence(self.output, component, self.derivation)
 
     def test_no_selection_rust_profile_and_incomplete_proof_refuse_before_verifier(self):
         for profile in (None, False, 'single-threaded', 'rust-context40-sole-consumer-one-task-start-v1'):

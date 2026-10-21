@@ -16,6 +16,7 @@ from tools import c_capsule_build as compiler
 from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
 from tools.activation_stack_native_source import assert_current
 from tools.c_guest.threading import IMPORTS, PROFILE, RECIPE as THREAD_RECIPE
+from tools.c_guest import threading_compatibility as compatibility
 from tools.c_guest.threading_compatibility import RECIPE as COMPATIBILITY_RECIPE
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
@@ -61,6 +62,37 @@ def materials():
     return result
 
 
+def supplement_evidence(artifact, component, derivation):
+    supplement = read_json(artifact / compatibility.NAME, 65536)
+    inspection = file_identity(artifact / 'compatibility-inspection.json', 65536)
+    original = read_json(artifact / 'compatibility-inspection.json', 65536)
+    require(supplement['schemaVersion'] == 'latent.c.threading.compatibility-supplement.v1'
+            and supplement['selectedCompilerRuntimeProfile'] == PROFILE
+            and supplement['componentDigest'] == original['componentDigest'] == component['sha256']
+            and supplement['baseInspection'] == {'digest': inspection['sha256'], 'preserved': True}
+            and supplement['fullProofRecomputedByteExact'] is True
+            and supplement['baseInspectionReclassified'] is False
+            and supplement['signedQualification'] is False and supplement['authority'] == 'none'
+            and supplement['independentNativeGrantRequired'] is True
+            and supplement['hostProfileValidationRequired'] is True
+            and supplement['publicExport'] == derivation['publicExport']
+            and all(supplement[name] == derivation[name]
+                    for name in ('originalCoreDigest', 'derivedCoreDigest'))
+            and supplement['derivationDigest'] == file_identity(artifact / 'c-threading-derivation.json')['sha256']
+            and supplement['supplementalPort'] == {'interface': compatibility.PORT,
+                'source': compatibility.WIT, 'sourceDigest': compatibility.WIT_DIGEST,
+                'sourceBytes': compatibility.WIT_BYTES}, 'c-thread-packaged-supplement-proof')
+    layers = read_json(artifact / 'package-source.json')['layers']
+    assets = ((compatibility.NAME, compatibility.MEDIA),
+        ('compatibility-inspection.json', 'application/vnd.latent.guest.compatibility.inspection.v1+json'),
+        ('compatibility-report.json', 'application/vnd.latent.guest.compatibility.v1+json'))
+    for name, media in assets:
+        require([row for row in layers if row['path'] == name or row['source'] == name] == [
+            {'path': name, 'source': name, 'role': 'asset', 'mediaType': media}],
+            'c-thread-original-report-and-supplement-package-assets')
+    return {name: file_identity(artifact / name, 65536) for name, _ in assets}
+
+
 def build_evidence(artifact, source):
     marker = read_json(artifact / 'BUILD-COMPLETE.json')
     observed = read_json(artifact / 'build-observation.json')
@@ -89,10 +121,12 @@ def build_evidence(artifact, source):
                     and re.fullmatch(r'sha256:[0-9a-f]{64}', derivation[name])
                     for name in ('originalCoreDigest', 'derivedCoreDigest')),
             'c-thread-compiler-mechanism-not-runtime-qualification')
-    for name in ('compiler-inputs.json', 'c-threading-derivation.json', 'recipe-inputs.json'):
+    for name in ('compiler-inputs.json', 'c-threading-derivation.json',
+                 'c-threading-compatibility.json', 'recipe-inputs.json'):
         identity = file_identity(artifact / name, 16 * 1024**2)
         material = {'compiler-inputs.json': 'c-compiler-sysroot-and-isolation',
                     'c-threading-derivation.json': 'c-threading-derivation',
+                    'c-threading-compatibility.json': 'c-threading-compatibility',
                     'recipe-inputs.json': 'build-recipe'}[name]
         require([row for row in observed['materials'] if row['name'] == material] == [
             {'name': material, 'digest': identity['sha256'], 'size': identity['bytes']}],
@@ -104,6 +138,7 @@ def build_evidence(artifact, source):
             and all(row['optional'] is False for row in capsule['imports'])
             and capsule['exports'] == [fixture.API], 'c-thread-selected-normal-component-contract')
     return {'component': component, 'marker': marker, 'derivation': derivation,
+            'compatibilityAssets': supplement_evidence(artifact, component, derivation),
             'package': package_identity(artifact, marker)}
 
 
