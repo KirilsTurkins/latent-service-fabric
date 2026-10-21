@@ -436,6 +436,10 @@ class DotnetRuntimeDistribution(unittest.TestCase):
                 "closed-logging": ("dotnet-closed-logging-runtime", "closed-logging-runtime.wasm"),
                 "runtime-logging": ("dotnet-activation-logging-runtime", "activation-logging-runtime.wasm"),
                 "http-logging": ("dotnet-http-logging-runtime", "http-logging-runtime.wasm"),
+                "runtime-managed": ("dotnet-managed-activation-runtime", "managed-activation-runtime.wasm"),
+                "http-managed": ("dotnet-managed-http-runtime", "managed-http-runtime.wasm"),
+                "runtime-managed-logging": ("dotnet-managed-activation-logging-runtime", "managed-activation-logging-runtime.wasm"),
+                "http-managed-logging": ("dotnet-managed-http-logging-runtime", "managed-http-logging-runtime.wasm"),
             })
 
     def test_missing_selected_composer_fails_before_a_distribution_can_be_published(self):

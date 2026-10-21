@@ -13,6 +13,13 @@
     <Compile Include="TaskWait.cs" />
     <Compile Include="IdleTimerDriver.cs" />
     <Compile Include="ClosedFilesystem.cs" />
+    <Compile Include="ManagedWorkRuntime.cs" />
+    <Compile Include="ManagedWorkBindings.cs" />
+    <Compile Include="ManagedWorkCopy.cs" />
+    <Compile Include="ManagedWorkContext.cs" />
+    <Compile Include="ManagedWorkHooks.cs" />
+    <Compile Include="ManagedWorkPort.cs" />
+    <Compile Include="ManagedHttpWork.cs" />
     <Reference Include="Mono.Cecil" HintPath="$(LsfCecilPath)" />
   </ItemGroup>
 </Project>

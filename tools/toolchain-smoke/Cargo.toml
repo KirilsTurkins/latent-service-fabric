@@ -275,3 +275,35 @@ crate-type = ["cdylib"]
 test = false
 bench = false
 doc = false
+
+[[example]]
+name = "dotnet-managed-activation-runtime"
+path = "examples/dotnet_managed_activation_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "dotnet-managed-http-runtime"
+path = "examples/dotnet_managed_http_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "dotnet-managed-activation-logging-runtime"
+path = "examples/dotnet_managed_activation_logging_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "dotnet-managed-http-logging-runtime"
+path = "examples/dotnet_managed_http_logging_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false

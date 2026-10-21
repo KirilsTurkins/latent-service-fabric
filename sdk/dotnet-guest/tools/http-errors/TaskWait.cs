@@ -146,11 +146,11 @@ internal static class TaskWait
         return method;
     }
 
-    internal static int Run(string[] args, bool finiteSelected = false)
+    internal static int Run(string[] args, bool finiteSelected = false, bool managedSelected = false)
     {
         try
         {
-            Require(args.Length == 3 && args.All(value => value.Length is > 0 and <= 4096));
+            Require((!managedSelected || finiteSelected) && args.Length == 3 && args.All(value => value.Length is > 0 and <= 4096));
             var original = Path.GetFullPath(args[0]);
             var output = Path.GetFullPath(args[1]);
             var receipt = Path.GetFullPath(args[2]);
@@ -315,14 +315,23 @@ internal static class TaskWait
                 [zeroCacheMethod.FullName] = originalMethods[originalMap.Single(item => item.Value == zeroCacheMethod).Key] };
             var modifiedBodies = timerMethods.Append(zeroCacheMethod).ToDictionary(method => originalMap.Single(item => item.Value == method).Key,
                 method => BodyIdentity(method));
+            object? managedReceipt = null;
+            if (managedSelected)
+            {
+                var managed = ManagedWorkPort.Install(module, originalMethods);
+                foreach (var method in managed.Changed)
+                    modifiedBodies.Add(originalMap.Single(item => item.Value == method).Key, BodyIdentity(method));
+                managedReceipt = managed.Receipt;
+            }
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == (finiteSelected ? 10 : 9) && timerMethods.Length == 3 && modifiedBodies.Count == 4);
+            Require(generatedHelpers.Count == (managedSelected ? 77 : finiteSelected ? 10 : 9)
+                && timerMethods.Length == 3 && modifiedBodies.Count == (managedSelected ? 22 : 4));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
                 var methods = Methods(written);
-                Require(methods.Count == originalMethods.Count + (finiteSelected ? 10 : 9) &&
+                Require(methods.Count == originalMethods.Count + generatedHelpers.Count &&
                     methods.Values.Count(method => method.FullName == helper.FullName) == 1 &&
                     methods.Values.Count(method => method.FullName == pump.FullName) == 1);
                 foreach (var (name, identity) in originalMethods)
@@ -334,7 +343,7 @@ internal static class TaskWait
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
                 var addedFields = module.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName)
                     .Where(name => !originalFields.Contains(name)).ToHashSet();
-                Require(addedFields.Count == 5 && fields.Count == originalFields.Count + 5 &&
+                Require(addedFields.Count == (managedSelected ? 41 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
                     fields.Except(addedFields).ToHashSet().SetEquals(originalFields) && addedFields.IsSubsetOf(fields));
             }
             Require(FileDigest(original, 8 * 1024 * 1024) == SourceDigest);
@@ -348,8 +357,8 @@ internal static class TaskWait
                 completion = "actual-task-only", exceptionPropagation = "original-TaskAwaiter",
                 nestedTaskIdentity = "save-restore-finally", defaultClientComponentQualified = false,
                 callerContexts = "original-RunInternal-Default", contextNotifications = "original-runtime",
-                generatedHelperCount = finiteSelected ? 10 : 9, contextCallback = "same-CoreLib-ContextCallback(object)",
-                unchangedOriginalMethods = originalMethods.Count - 5, completeOriginalWaitRemainderPreserved = true,
+                generatedHelperCount = generatedHelpers.Count, contextCallback = "same-CoreLib-ContextCallback(object)",
+                unchangedOriginalMethods = originalMethods.Count - modifiedBodies.Count - 1, completeOriginalWaitRemainderPreserved = true,
                 timerDriver = "TimerQueue.SetNextTimer-only", timerDriverIdle = "Timer.ActiveCount==0",
                 timerDriverCancellation = "original-CancellationTokenSource-CancelAndDispose",
                 timerDriverIdentity = "original-task-reference-and-epoch", timerDriverCallbacks = "original-queued-user-callbacks-preserved",
@@ -362,6 +371,8 @@ internal static class TaskWait
             };
             var record = JsonSerializer.SerializeToElement(result).EnumerateObject()
                 .ToDictionary(property => property.Name, property => property.Value);
+            if (managedReceipt is not null)
+                record.Add("managedAcceptedWork", JsonSerializer.SerializeToElement(managedReceipt));
             if (finiteSelected)
             {
                 foreach (var (name, value) in new[] {

@@ -49,8 +49,8 @@ def selected(declared: list[str], bridge: dict | None) -> bool:
     return True
 
 
-def validate_receipt(value: dict, *, finite: bool = False) -> None:
-    if type(finite) is not bool:
+def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False) -> None:
+    if type(finite) is not bool or type(managed) is not bool or (managed and not finite):
         raise ValueError('task-wait-finite-selection')
     fixed = {'patch': PATCH, 'sourceDigest': SOURCE, 'cecilDigest': http_errors.CECIL_DIGEST,
         'method': METHOD, **BODY_IDENTITIES, 'maximumNestedWaits': 32,
@@ -74,6 +74,10 @@ def validate_receipt(value: dict, *, finite: bool = False) -> None:
             finiteWaitCleanup='private-linked-source-cancel-dispose-finally',
             zeroTimeout='query-only-before-cancellation', waitCancellation='original-token-only',
             publicWaitValidationAndExceptions='unchanged')
+    if managed:
+        from tools.dotnet_guest.managed_work import validate_rewrite
+        validate_rewrite(value.get('managedAcceptedWork'))
+        fixed.update(generatedHelperCount=77, unchangedOriginalMethods=44723, managedAcceptedWork=value['managedAcceptedWork'])
     bodies = value.get('timerDriverOriginalBodies')
     cache_bodies = value.get('zeroCacheOriginalBodies')
     body_names = {'System.Void System.Threading.TimerQueue::SetNextTimer(System.Int64,System.Int64)',
@@ -109,7 +113,8 @@ class Port:
         fields = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest',
             'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
         finite = self.evidence.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
-        validate_receipt({key: value for key, value in self.evidence.items() if key not in fields}, finite=finite)
+        managed = 'managedAcceptedWork' in self.evidence
+        validate_receipt({key: value for key, value in self.evidence.items() if key not in fields}, finite=finite, managed=managed)
         declarations = (runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM) if finite else (runtime.CLOCK, runtime.ACTIVATION)
         if (self.evidence['derived'] != self.identity or self.evidence['outputDigest'] != self.identity['digest']
                 or self.evidence['selection']['requiredDeclarations'] != sorted(declarations)):
@@ -163,10 +168,14 @@ class Port:
 
 
 def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list[str], bridge: dict | None,
-            project: Path, output: Path, evidence: Path, run, *, protect_inputs=None) -> Port | None:
+            project: Path, output: Path, evidence: Path, run, *, protect_inputs=None, managed: bool = False) -> Port | None:
+    if type(managed) is not bool:
+        raise ValueError('task-wait-managed-selection')
     if not selected(declared, bridge):
         return None
     finite = {runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM} <= set(declared)
+    if managed and not finite:
+        raise ValueError('task-wait-managed-authority-selection')
     tool = http_errors.verify_installed(sdk, tools)
     source = source_path(packages)
     source_identity = original(source)
@@ -177,9 +186,9 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
     target = read_file(sdk / 'tools/http-errors/TaskWait.targets', http_errors.MAX_RECEIPT)
     targets.write_bytes(target)
     run('task-wait-rewrite', dotnet, tools / 'http-errors/HttpErrors.dll',
-        '--finite-task-wait' if finite else '--task-wait', source, assembly, receipt)
+        '--managed-task-wait' if managed else '--finite-task-wait' if finite else '--task-wait', source, assembly, receipt)
     result = json.loads(read_file(receipt, http_errors.MAX_RECEIPT))
-    validate_receipt(result, finite=finite)
+    validate_receipt(result, finite=finite, managed=managed)
     identity = file_identity(assembly, 'task-wait-derived-corelib', MAX_ASSEMBLY)
     if identity['digest'] != result['outputDigest']:
         raise ValueError('task-wait-rewrite-output-drift')

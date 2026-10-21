@@ -148,8 +148,10 @@ def task_call(body: str) -> tuple[int, int, str]:
     raise ValueError('dotnet-async-export-pinned-entry-drift')
 
 
-def bridge_class(text: str, drain_call: str | None = None) -> tuple[str, int]:
+def bridge_class(text: str, drain_call: str | None = None, *, managed: bool = False) -> tuple[str, int]:
     """Keep upstream argument/result marshalling, changing only task lifetime."""
+    if type(managed) is not bool or (managed and drain_call is None):
+        raise ValueError('dotnet-managed-root-bridge-selection')
     calls = {}
     count = 0
 
@@ -181,6 +183,7 @@ def bridge_class(text: str, drain_call: str | None = None) -> tuple[str, int]:
         calls[helper] = (parameters,body[:invocation_start])
         count += 1
         return (match['indent'] + 'public static unsafe int ' + match['name'] + '(' + match['params'] + ') {\n'
+                + (match['indent'] + '    global::LsfManagedWorkRoot.Initialize();\n' if managed else '')
                 + match['indent'] + '    ' + helper + '(' + ', '.join(arguments) + ');\n'
                 + match['indent'] + '    return 0;\n' + match['indent'] + '}')
 
@@ -206,7 +209,11 @@ def bridge_class(text: str, drain_call: str | None = None) -> tuple[str, int]:
                 if len(returns) != 1:
                     raise ValueError('dotnet-retirement-task-return-shape')
                 start = returns[0].start()
-                body = body[:start]+returns[0][1]+drain_call+';\n'+body[start:]
+                sequence = ((returns[0][1]+'global::LsfManagedWorkRoot.Join();\n') if managed else '')
+                sequence += returns[0][1]+drain_call+';\n'
+                if managed:
+                    sequence += returns[0][1]+'global::LsfManagedWorkRoot.Finish();\n'
+                body = body[:start]+sequence+body[start:]
             # The pinned generator uses lifted record expressions as formal
             # parameter names. Keep its original raw core parameter list and
             # original argument lifting together instead of inventing a C#
@@ -232,7 +239,7 @@ def bridge_class(text: str, drain_call: str | None = None) -> tuple[str, int]:
     return result, count
 
 
-def bridge(synchronous: str, asynchronous: str, drain_call: str | None = None) -> tuple[str, int]:
+def bridge(synchronous: str, asynchronous: str, drain_call: str | None = None, *, managed: bool = False) -> tuple[str, int]:
     """Replace only complete export interop classes in baseline bindings."""
     baseline = {}
     for match in CLASS.finditer(synchronous):
@@ -245,7 +252,7 @@ def bridge(synchronous: str, asynchronous: str, drain_call: str | None = None) -
             continue
         if match['name'] not in baseline:
             raise ValueError('dotnet-async-export-missing-baseline-class')
-        adapted, amount = bridge_class(match[0], drain_call)
+        adapted, amount = bridge_class(match[0], drain_call, managed=managed)
         original = baseline[match['name']]
         replacements.append((original.start(), original.end(), adapted))
         count += amount
@@ -276,6 +283,71 @@ def retirement_call(directory) -> str | None:
     if len(matches) > 1:
         raise ValueError('dotnet-retirement-ambiguous-generated-import')
     return matches[0] if matches else None
+
+
+def managed_root_support(directory) -> str | None:
+    """Use genuine pinned bindings and normal static UnsafeAccessor metadata.
+
+    The three targets are added to the selected runtime CoreLib's actual Task
+    type. No extra facade, reflection lookup or application IL rewrite is used.
+    """
+    matches = []
+    identity = 'latent:dotnet-managed-work/owner@0.1.0'
+    for path in directory.glob('*.IOwnerImports.cs'):
+        text = path.read_text(encoding='utf-8')
+        namespace = re.search(r'(?m)^namespace ([A-Za-z_][A-Za-z0-9_.]*\.wit\.Imports\.latent\.dotnetManagedWork);$', text)
+        if namespace is None:
+            continue
+        signatures = ('public static unsafe Result<(ulong, ulong), uint> Reserve(uint kind, ulong parentGeneration, ulong parentId)',
+            'public static unsafe Result<None, uint> Settle(ulong generation, ulong id)',
+            'public static unsafe Result<None, uint> Close()', 'public static unsafe void Context(ulong generation, ulong id)')
+        interop = path.with_name(path.name.replace('IOwnerImports.cs', 'OwnerImportsInterop.cs')).read_text(encoding='utf-8')
+        entries = re.findall(r'DllImportAttribute\("'+re.escape(identity)+r'", EntryPoint = "([a-z]+)"\)', interop)
+        if any(text.count(signature) != 1 for signature in signatures) or entries != ['reserve', 'settle', 'close', 'context']:
+            raise ValueError('dotnet-managed-root-generated-binding-shape')
+        matches.append('global::'+namespace[1]+'.IOwnerImports')
+    if len(matches) > 1:
+        raise ValueError('dotnet-managed-root-ambiguous-generated-binding')
+    if not matches:
+        return None
+    owner = matches[0]
+    return '''// Compiler-owned selected bridge; generated WIT import functions remain unchanged.
+#nullable enable
+internal static class LsfManagedWorkRoot
+{
+    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod, Name = "LsfInstallAcceptedWork")]
+    private static extern void Install(global::System.Threading.Tasks.Task? type,
+        global::System.Func<int, ulong, ulong, (ulong, ulong)> reserve,
+        global::System.Action<ulong, ulong> settle, global::System.Action close,
+        global::System.Action<ulong, ulong> context);
+
+    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod, Name = "LsfJoinAcceptedWork")]
+    private static extern void JoinCore(global::System.Threading.Tasks.Task? type);
+
+    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod, Name = "LsfFinishAcceptedWork")]
+    private static extern void FinishCore(global::System.Threading.Tasks.Task? type);
+
+    private static (ulong, ulong) Reserve(int kind, ulong generation, ulong id)
+    {
+        var result = OWNER.Reserve(checked((uint)kind), generation, id);
+        if (!result.IsOk) throw new global::System.InvalidOperationException("managed-work-admission-refused");
+        return result.AsOk;
+    }
+    private static void Settle(ulong generation, ulong id)
+    {
+        var result = OWNER.Settle(generation, id);
+        if (!result.IsOk) throw new global::System.InvalidOperationException("managed-work-settlement-refused");
+    }
+    private static void Close()
+    {
+        var result = OWNER.Close();
+        if (!result.IsOk) throw new global::System.InvalidOperationException("managed-work-closing-refused");
+    }
+    internal static void Initialize() => Install(null, Reserve, Settle, Close, OWNER.Context);
+    internal static void Join() => JoinCore(null);
+    internal static void Finish() => FinishCore(null);
+}
+'''.replace('OWNER', owner)
 
 
 def memory_support(synchronous: str, asynchronous: str) -> str:
