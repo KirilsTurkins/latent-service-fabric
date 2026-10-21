@@ -77,3 +77,12 @@ configuration. The earlier twelve-object receipt remains bound to its original
 source. No object result proves real cache/RCU execution, lazy policy SID,
 AVC/audit or RX/SKB/page closure, kernel linking/boot, final-free retirement
 or an installed provider. Production enablement remains off.
+
+The separate `sidcache` selector composes that maintained prefix with the
+original SID-cache/LRU and audit context-string consumers. It compiles fifteen
+unlinked objects, adding `security/selinux/ss/sidtab.o` and requiring all forty
+prior private functions plus twelve new definitions. The original configuration
+must already have the 256-entry SID cache enabled; no cache/security setting is
+overridden. Mixed selectors refuse before archive acquisition. The same job,
+command, process, diagnostic and archive limits apply. Its real object outcome
+is pending; the supplemental serialized C reference is not Linux execution.
