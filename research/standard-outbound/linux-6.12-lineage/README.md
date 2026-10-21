@@ -1,5 +1,10 @@
 # Uninstalled Linux 6.12 lineage prerequisite
 
+The separately [authenticated maintained source](maintained-source.md) pins
+Linux 6.12.113 and its original configuration seed for the next consumer.
+Its bounded archive reader preserves the historical preimages below; it does
+not build, configure or qualify an installed kernel.
+
 The additive [prepaid backing/factory source](prepaid-factory.md) separates
 permanent backing from original activation occupancy and retains the actual
 accepted broker I/O owner in existing quarantine. Its protected source selection
