@@ -35,6 +35,18 @@ def observe(language, captured):
 
 
 class CompatibilityAttribution(unittest.TestCase):
+    def test_partial_owner_graph_omits_unknown_attribution_without_becoming_a_build_gate(self):
+        captured = {'sdk-lock.json': encode({'language': 'rust'}),
+            'latent.dependencies.lock.json': encode({'selection': {'runtimeProfile': 'closed'},
+                'artifacts': [{'name': 'unknown-package', 'digest': digest(b'partial')}],
+                'privateRepository': 'https://credential:secret@private.invalid/path'})}
+        rows, omitted = build.dependency_materials(captured, inventory(captured), 'rust')
+        self.assertEqual((rows, omitted), ([], 1))
+        selected = observe('rust', captured)
+        self.assertEqual(selected['omittedMaterials'], 1)
+        self.assertEqual(selected['qualification'], 'unknown')
+        self.assertNotIn('private.invalid', context.present(selected))
+
     def test_all_six_build_contexts_bind_exact_captured_package_version_and_both_identities(self):
         for language in report.LANGUAGES:
             with self.subTest(language=language):
