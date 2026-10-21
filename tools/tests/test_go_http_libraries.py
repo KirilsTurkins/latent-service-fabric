@@ -72,7 +72,7 @@ class HttpLibraryCapture(unittest.TestCase):
                 source = b'package app\nfunc Run(uint32,string) string { return "unchanged" }\n'
                 (app/'src/main.go').write_bytes(source)
                 (app/'vendor/lsf/sdk/go-guest').mkdir(parents=True)
-                (app/'vendor/lsf/sdk/go-guest/toolchain.lock.json').write_text('{"go":{"version":"go1.27.2"}}')
+                (app/'vendor/lsf/sdk/go-guest/toolchain.lock.json').write_text('{"go":{"version":"go1.27.3"}}')
                 go = root/'go'; go.write_bytes(b'pinned-go')
                 cache = root/'download'; cache.mkdir(); (cache/'captured.mod').write_bytes(b'captured')
                 closure = Mock(identity='captured-reviewed-graph')
@@ -82,7 +82,7 @@ class HttpLibraryCapture(unittest.TestCase):
                     calls.append(arguments)
                     self.assertLessEqual(seconds,120); self.assertEqual(maximum,65536)
                     self.assertEqual(environment['GOPROXY'],'off'); self.assertEqual(environment['GOFLAGS'],'-mod=readonly')
-                    if arguments[1] == 'version': return SimpleNamespace(stdout=b'go version go1.27.2 linux/amd64')
+                    if arguments[1] == 'version': return SimpleNamespace(stdout=b'go version go1.27.3 linux/amd64')
                     if arguments[1] == 'build':
                         self.assertNotIn('-overlay',arguments)
                         harness = read_file(Path(arguments[-1]))
@@ -187,7 +187,7 @@ class HttpLibraryCapture(unittest.TestCase):
                 source = b'package export_example\nfunc Run(uint32,string) string { return "original" }\n'
                 (app/'src/main.go').write_bytes(source)
                 sdk = app/'vendor/lsf/sdk/go-guest'; sdk.mkdir(parents=True)
-                (sdk/'toolchain.lock.json').write_text(json.dumps({'go':{'version':'go1.27.2'}}))
+                (sdk/'toolchain.lock.json').write_text(json.dumps({'go':{'version':'go1.27.3'}}))
                 go = root/'go'; go.write_bytes(b'original-pinned-go')
                 cache = root/'captured-downloads'; cache.mkdir()
                 captured = SimpleNamespace(files={'src/main.go':source},dependency_root=app,check_unchanged=Mock())
@@ -205,7 +205,7 @@ class HttpLibraryCapture(unittest.TestCase):
                     self.assertEqual((environment['GOOS'],environment['GOARCH']),('linux','amd64'))
                     self.assertLessEqual(seconds,120)
                     self.assertEqual(maximum,65536)
-                    if arguments[1] == 'version': return SimpleNamespace(stdout=b'go version go1.27.2 linux/amd64')
+                    if arguments[1] == 'version': return SimpleNamespace(stdout=b'go version go1.27.3 linux/amd64')
                     if arguments[1] == 'build':
                         self.assertNotIn('-overlay',arguments)
                         harness = read_file(Path(arguments[-1]))

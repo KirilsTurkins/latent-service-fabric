@@ -66,8 +66,8 @@
         }
       },
       {
-        "name": "Authenticate original Go archive and prepare only the maintained async compiler",
-        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-entropy-tools\"\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\npython3 -B -c 'import os; from pathlib import Path; from tools.qualify_go_entropy_retained import compiler_inputs; compiler_inputs(Path(os.environ[\"RUNNER_TEMP\"])/\"go-entropy-tools\")'\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+        "name": "Authenticate historical tools and prepare the maintained patched Go compiler",
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-entropy-tools\"\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\nmv \"$out/go.tar.gz\" \"$out/go1.27.2-historical.tar.gz\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz\necho \"65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz\" | sha256sum --check --strict\npython3 -B -c 'import os; from pathlib import Path; from tools.qualify_go_entropy_retained import compiler_inputs; compiler_inputs(Path(os.environ[\"RUNNER_TEMP\"])/\"go-entropy-tools\")'\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "env": {
@@ -97,7 +97,7 @@
   },
   "jobId": "retained-entropy",
   "kind": "job",
-  "reviewReason": "Review preserved current ordinary binary for exact future source-bound replay and remaining-budget cap within35min owning job.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

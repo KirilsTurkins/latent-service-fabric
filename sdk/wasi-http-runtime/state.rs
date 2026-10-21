@@ -12,7 +12,7 @@ use std::{
     task::{Context, Poll},
 };
 
-pub use super::limits::{CHUNK, MAX_BODY, MAX_HEADER_BYTES, MAX_HEADERS};
+pub use super::limits::{CHUNK, MAX_BODY, MAX_HEADERS, MAX_HEADER_BYTES};
 type Work = Pin<Box<dyn Future<Output = Completion>>>;
 enum Completion {
     Opened(Result<raw::Upload, raw::HttpError>),

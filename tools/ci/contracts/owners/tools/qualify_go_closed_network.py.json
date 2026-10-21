@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_closed_network.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Finite same-source upstream and closed WASI reference, exact tools before/after and no signed/provider qualification credit.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "32818e8df89a83fe91ec8cd6e4d9a1d7c3dc9a3c984df26dba0a315af88fd847"
+  "sha256": "db6f621c8f1fc3afa7c748cbcdd00d3be85d45cc3411826ff65d2a3d3229b950"
 }
