@@ -18,7 +18,7 @@ class TypeScriptLateFacilities(unittest.TestCase):
         usage = {k:0 for k in ('outboundRequests','childCalls','effectCount','stateReadBytes',
             'stateWriteBytes','blobReadBytes','blobWriteBytes')}
         usage.update(cpuFuel=1,peakMemoryBytes=1,logBytes=late.log_charge('test'))
-        row = {'activation':'test','exitCode':0,'processReaped':True,'decoded':[{'ok':late.EXPECTED}],
+        row = {'activation':'test','exitCode':0,'processReaped':True,'decoded':[late.EXPECTED],
             'response':{'outcomeKnown':True,'requestDispatched':True,
                 'data':{'resolvedRevision':revision,'consumption':usage}}}
         late.accepted(row,budget,revision,revision['releaseDigest'],late.EXPECTED)
@@ -29,7 +29,7 @@ class TypeScriptLateFacilities(unittest.TestCase):
             elif change == 'extra-log':u['logBytes'] += 1
             elif change == 'no-reap':bad['processReaped'] = False
             elif change == 'wrong-revision':bad['response']['data']['resolvedRevision']['publicationId'] = 'other'
-            elif change == 'wrong-result':bad['decoded'] = [{'ok':'root-only'}]
+            elif change == 'wrong-result':bad['decoded'] = ['root-only']
             elif change == 'outbound':u['outboundRequests'] = 1
             elif change == 'fuel':u['cpuFuel'] = 1001
             else:u['peakMemoryBytes'] = 1001

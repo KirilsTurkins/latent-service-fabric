@@ -71,7 +71,7 @@ def accepted(row, budget, revision, component, expected):
         and all(int(usage[key]) == 0 for key in ('outboundRequests','childCalls','effectCount',
             'stateReadBytes','stateWriteBytes','blobReadBytes','blobWriteBytes')),
         'resource-ts-late-original-envelope')
-    require(row['exitCode'] == 0 and row['decoded'] == [{'ok':expected}],
+    require(row['exitCode'] == 0 and row['decoded'] == [expected],
         'resource-ts-late-exact-ordinary-result')
     if expected == EXPECTED:
         require(int(usage['logBytes']) == log_charge(row['activation']),
