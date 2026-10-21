@@ -502,7 +502,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for name in dict.fromkeys((*RECIPE, *standard.source_build_inputs(runtime_profile)))}
     if http_runtime is not None:
         from tools import rust_wasi_http_inputs as http_inputs
-        recipe_files.update(http_inputs.source_files())
+        recipe_files.update(http_inputs.consumer_files())
     # The manifest/deployment seed is also an actual recipe input, not an
     # implicit dependency hidden outside the observation.
     for name in ("examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"):

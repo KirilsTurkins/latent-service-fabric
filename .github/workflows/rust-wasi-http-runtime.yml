@@ -1,0 +1,85 @@
+name: Rust standard WASI HTTP backend
+
+on:
+  push:
+    branches: ['feat/rust-wasi-http-profile-20261021']
+    paths:
+      - '.github/workflows/rust-wasi-http-runtime.yml'
+      - 'sdk/wasi-http-runtime/**'
+      - 'tools/rust_wasi_http_inputs.py'
+      - 'tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-wasi-http-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  standard-backend:
+    name: Compile exact standard WASI backend and bounded resource controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Check source ownership, original whole WIT and private bridge guards
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_rust_wasi_http_profile tools.tests.test_rust_wasi_http_inputs_prepared -v
+      - name: Execute only the actual bounded options and fields implementation controls
+        shell: bash
+        run: |
+          rustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o "$RUNNER_TEMP/rust-http-resource-controls"
+          "$RUNNER_TEMP/rust-http-resource-controls" --test-threads=1 | tee "$RUNNER_TEMP/rust-http-resource-controls.txt"
+      - name: Acquire only locked SDK compiler sources before offline compilation
+        run: cargo fetch --locked --target wasm32-unknown-unknown
+      - name: Compile and authenticate only the selected WASI backend
+        run: >-
+          python3 -B tools/rust_wasi_http_inputs.py
+          --output "$RUNNER_TEMP/rust-http-runtime"
+      - name: Retain bounded compiler observations without build cache or signer credentials
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-wasi-http-backend-${{ github.sha }}
+          path: |-
+            ${{ runner.temp }}/rust-http-resource-controls.txt
+            ${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json
+            ${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json
+            ${{ runner.temp }}/rust-http-runtime/source-inputs.json
+            ${{ runner.temp }}/rust-http-runtime/reference.wit.json
+            ${{ runner.temp }}/rust-http-runtime/adapter.wit.json
+            ${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm
+            ${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm
+            ${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt
+            ${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt
+          if-no-files-found: warn
+          retention-days: 3
