@@ -2,6 +2,7 @@
   "cases": [
     "ActivationStackNativeSource.test_actual_pinned_extraction_reverses_to_original_and_reports_separate_source",
     "ActivationStackNativeSource.test_foreign_complete_source_and_field_type_aliases_are_refused",
+    "ActivationStackNativeSource.test_only_the_pinned_two_test_defaults_extend_the_extracted_tree",
     "ActivationStackNativeSource.test_original_tree_requires_no_projection_and_preserves_compiled_identity"
   ],
   "guards": {
@@ -29,6 +30,18 @@
       ],
       "skipSites": []
     },
+    "ActivationStackNativeSource.test_only_the_pinned_two_test_defaults_extend_the_extracted_tree": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b3d085ea728a77df567c1a268ab923bbeed52246c0b8b5abf6e41334de1d3c6a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "ActivationStackNativeSource.test_original_tree_requires_no_projection_and_preserves_compiled_identity": {
       "bases": [
         "unittest.TestCase"
@@ -44,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_activation_stack_native_source.py",
-  "reviewReason": "Closed c713-or8473 whole-source identities with one fixed reversible config helper extraction; three source/data controls reject arbitrary trees, file edits and type aliases. No native product or guest qualification from these controls.",
+  "reviewReason": "Preserve the original three source controls and append the exact two-test-default projection with pinned inverse and adverse file changes; all original skip and fixture guards remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
