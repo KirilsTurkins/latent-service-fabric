@@ -171,7 +171,11 @@ def project(directory: Path, outside: Path, *, late_completion=False, runtime_pr
                 'nativeThreadsQualified':False,'compilerExecuted':False,'signedExecution':'pending'}
 
 
-def capture(app: Path, outside: Path, go: Path):
+def capture(app: Path, outside: Path, go: Path, *, runtime_profile=PROFILE):
+    from tools.go_guest.queues import PROFILE as QUEUE_PROFILE
+    require(runtime_profile in (PROFILE, QUEUE_PROFILE), 'resource-Go-closed-capture-profile')
+    descriptor=json.loads(read_file(app/'capsule-project.json'))
+    require(descriptor.get('runtimeProfile')==runtime_profile,'resource-Go-capture-project-profile')
     from tools import go_native_authoring as native, go_dependency_authoring as review
     from tools.go_application_dependencies import resolve
     sdk=read_file(app/'sdk-lock.json')
@@ -188,7 +192,7 @@ def capture(app: Path, outside: Path, go: Path):
             and not lock['executableInputs'],'resource-Go-exact-pure-transitive-graph')
     review.review(app,candidate,digest(read_file(candidate)))
     verified=verify_inputs(app,'go')
-    require(verified is not None and verified.lock['selection']['runtimeProfile']==PROFILE
+    require(verified is not None and verified.lock['selection']['runtimeProfile']==runtime_profile
             and read_file(app/'sdk-lock.json')==sdk,'resource-Go-exact-reviewed-profile')
     root=outside.resolve(strict=True)
     require(not outside.is_symlink() and all(not p.is_symlink() and p.resolve(strict=True).parent==root

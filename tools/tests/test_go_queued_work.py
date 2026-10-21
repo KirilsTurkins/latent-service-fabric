@@ -153,6 +153,45 @@ class QueuedWork(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'closed-Go-queue-ceiling'):
             node.configure({}, {}, language='typescript', go_queue_ceiling=9)
 
+    def test_capture_binds_selected_v6_profile_before_compilation_and_preserves_v5_default(self):
+        from types import SimpleNamespace
+        from tools import go_resource_runtime_fixture as fixture
+        from tools import go_native_authoring as native, go_dependency_authoring as review
+        from tools import go_application_dependencies as dependencies
+        from tools.dev_workflow.common import encode
+        for profile in (fixture.PROFILE,queues.PROFILE):
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                app,outside = root/'app',root/'outside'
+                app.mkdir();outside.mkdir()
+                (app/'sdk-lock.json').write_bytes(b'unchanged-sdk')
+                (app/'capsule-project.json').write_bytes(encode({'runtimeProfile':profile}))
+                (app/fixture.LOCK).write_bytes(b'accepted-controlled-lock')
+                for name in ('library','data'):(outside/name).mkdir()
+                lock = {'artifacts':[
+                    {'id':'library','metadata':{'module':fixture.PACKAGES[0],'version':'v0.0.0'},
+                     'role':'application','dependencies':['data']},
+                    {'id':'data','metadata':{'module':fixture.PACKAGES[1],'version':'v0.0.0'},
+                     'role':'application','dependencies':[]}], 'executableInputs':[]}
+                def resolve(_app,candidate,**_kwargs):
+                    candidate.write_bytes(encode(lock))
+                    return lock
+                verified = SimpleNamespace(lock={'selection':{'runtimeProfile':profile}},identity='controlled')
+                with patch.object(native,'edit'), patch.object(native,'create_lock'), \
+                        patch.object(dependencies,'resolve',side_effect=resolve),patch.object(review,'review'), \
+                        patch.object(fixture,'verify_inputs',return_value=verified):
+                    if profile == queues.PROFILE:
+                        with self.assertRaisesRegex(RuntimeError,'capture-project-profile'):
+                            fixture.capture(app,outside,root/'not-executed-go')
+                        self.assertTrue((outside/'library').exists())
+                        result = fixture.capture(app,outside,root/'not-executed-go',runtime_profile=profile)
+                    else:
+                        result = fixture.capture(app,outside,root/'not-executed-go')
+                    self.assertTrue(result['outsideOriginalsRemoved'])
+                    self.assertFalse((outside/'library').exists())
+                    self.assertFalse((outside/'data').exists())
+                    self.assertEqual((app/'sdk-lock.json').read_bytes(),b'unchanged-sdk')
+
     def test_incomplete_overlay_refuses_before_output(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

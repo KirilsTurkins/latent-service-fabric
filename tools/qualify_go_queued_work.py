@@ -54,7 +54,7 @@ def qualify(native_directory, output):
     stage = 'ordinary-unchanged-transitive-capture'
     try:
         app,record['fixture'] = fixture.project(output/'project',output/'outside',runtime_profile=PROFILE)
-        record['capture'] = fixture.capture(app,output/'outside',Path(go).resolve(strict=True))
+        record['capture'] = fixture.capture(app,output/'outside',Path(go).resolve(strict=True),runtime_profile=PROFILE)
         before = inventory(snapshot(app))
         binaries = {name if name in ('latent','latentd') else 'examples/'+name:path for name,path in native.items()}
         stage = 'one-fresh-normal-captured-v6-component'
