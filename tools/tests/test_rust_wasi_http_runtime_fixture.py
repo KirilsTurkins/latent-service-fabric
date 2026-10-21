@@ -82,6 +82,7 @@ class OrdinaryCapturedClients(unittest.TestCase):
 
     def test_capture_preserves_exact_published_code_review_and_removes_originals(self):
         lock=self.lock()
+        lock['artifacts'][4]['metadata']['executableKinds']=[['proc-macro']]
         result=self.captured(lock)
         self.assertTrue(result['originalLibrariesRemoved'])
         self.assertFalse(result['implicitExecutableApproval'])
@@ -96,6 +97,7 @@ class OrdinaryCapturedClients(unittest.TestCase):
         for choice in ('checksum','json-feature','executable','unseen'):
             with self.subTest(choice=choice):
                 lock=copy.deepcopy(self.lock())
+                lock['artifacts'][4]['metadata']['executableKinds']=[['proc-macro']]
                 if choice=='checksum':lock['artifacts'][2]['metadata']['vendorChecksum']['package']='0'*64
                 if choice=='json-feature':lock['artifacts'][2]['metadata']['features']=[]
                 if choice=='executable':lock['artifacts'].pop()

@@ -20,10 +20,46 @@ from tools.rust_wasi_http_profile import AUTHORITY
 SERVICE = 'rust-wasi-http'
 PACKAGE = 'outside-wasi-http-'
 LIBRARY = r'''use std::io::Read;
+use std::error::Error as _;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 static ENTRIES: AtomicU32 = AtomicU32::new(0);
 
+fn error_record(phase: &str, error: &(impl std::fmt::Debug + std::fmt::Display),
+    public: serde_json::Value) -> String {
+    let display = error.to_string();
+    let debug = format!("{error:?}");
+    let display_bound: String = display.chars().take(512).collect();
+    let debug_bound: String = debug.chars().take(1024).collect();
+    let truncated = display_bound != display || debug_bound != debug;
+    let value = serde_json::json!({"phase": phase, "display": display_bound,
+        "debug": debug_bound, "displayBytes": display.len(), "debugBytes": debug.len(),
+        "truncated": truncated, "public": public});
+    format!("library-error:{value}")
+}
+macro_rules! waki_error {
+    ($phase:expr, $error:expr) => {{
+        let error = $error;
+        let code = error.downcast_ref::<waki::ErrorCode>().map(|v| format!("{v:?}"));
+        let json = error.downcast_ref::<serde_json::Error>().is_some();
+        error_record($phase, &error,
+            serde_json::json!({"typedWasiErrorCode": code, "serdeJsonError": json}))
+    }};
+}
+fn golem_error(phase: &str, error: golem_wasi_http::Error) -> String {
+    let mut source = error.source();
+    let mut json = false;
+    for _ in 0..8 {
+        if let Some(value) = source {
+            json |= value.downcast_ref::<serde_json::Error>().is_some();
+            source = value.source();
+        } else { break; }
+    }
+    error_record(phase, &error, serde_json::json!({"isBuilder": error.is_builder(),
+        "isRequest": error.is_request(), "isBody": error.is_body(), "isDecode": error.is_decode(),
+        "isTimeout": error.is_timeout(), "isStatus": error.is_status(), "serdeJsonError": json,
+        "sourceDisplay": error.source().map(|v| v.to_string())}))
+}
 fn domain(status: u16, value: serde_json::Value) -> Result<String, String> {
     if status == 404 || status == 500 {
         if value["status"].as_u64() != Some(status as u64)
@@ -40,7 +76,9 @@ fn domain(status: u16, value: serde_json::Value) -> Result<String, String> {
 fn echo(status: u16, value: serde_json::Value) -> Result<String, String> {
     if status != 200 || value["method"].as_str() != Some("POST")
         || value["bodyBase64"].as_str() != Some("AAECAw==")
-        || value["customHeaderBase64"].as_str() != Some("cnVzdC1jbGllbnQ=") {
+        || value["customHeaderBase64"].as_str() != Some("cnVzdC1jbGllbnQ=")
+        || value["contentLengthPresent"].as_bool() != Some(true)
+        || value["contentTypePresent"].as_bool() != Some(false) {
         return Err("bad binary request conversion".into());
     }
     Ok("200:echo:POST:AAECAw==".into())
@@ -51,49 +89,84 @@ fn prefix(bytes: &[u8]) -> Result<String, String> {
 }
 fn waki(mode: &str, url: &str) -> Result<String, String> {
     let client = waki::Client::new();
+    if mode == "capacity" {
+        let mut held = Vec::new();
+        for _ in 0..9 {
+            match client.get(url).send() {
+                Ok(response) => held.push(response),
+                Err(error) => {
+                    let accepted = held.len();
+                    drop(held);
+                    return Ok(format!("capacity:{accepted}:{}", waki_error!("send", error)));
+                }
+            }
+        }
+        drop(held);
+        return Err("original resource envelope did not refuse nine held responses".into());
+    }
     let mut request = if mode == "post" || mode == "uncertain-post" {
         client.post(url).header("x-conformance", "rust-client").body(vec![0u8, 1, 2, 3])
     } else { client.get(url) };
     if mode == "reserved-auth" { request = request.header("authorization", "caller-field"); }
     if mode == "reserved-cookie" { request = request.header("cookie", "fixture=local"); }
     if mode == "timeout-option" { request = request.connect_timeout(Duration::from_millis(25)); }
-    let response = match request.send() { Ok(v) => v, Err(_) => return Ok("transport-error".into()) };
+    let response = match request.send() { Ok(v) => v, Err(error) => return Ok(waki_error!("send", error)) };
     let status = response.status_code();
     if mode == "trap-open" { panic!("controlled ordinary HTTP root trap"); }
     if mode == "root-drop" { drop(response); return Ok("root-dropped-body".into()); }
     if mode == "early-drop" {
-        let bytes = match response.chunk(4) { Ok(Some(v)) => v, _ => return Err("missing partial body".into()) };
+        let bytes = match response.chunk(4) { Ok(Some(v)) => v,
+            Ok(None) => return Err("missing partial body".into()),
+            Err(error) => return Ok(waki_error!("partial-read", error)) };
         drop(response); return prefix(&bytes);
     }
     if mode == "redirect" { drop(response); return Ok(format!("{status}:redirect-stopped")); }
     if mode == "post" {
         return match response.json::<serde_json::Value>() {
-            Ok(v) => echo(status, v), Err(_) => Ok("json-error".into()) };
+            Ok(v) => echo(status, v), Err(error) => Ok(waki_error!("json", error)) };
     }
     if mode == "json" || mode == "status" || mode == "malformed-json" {
         return match response.json::<serde_json::Value>() {
-            Ok(v) => domain(status, v), Err(_) => Ok("json-error".into()) };
+            Ok(v) => domain(status, v), Err(error) => Ok(waki_error!("json", error)) };
     }
     match response.body() {
         Ok(bytes) => Ok(format!("{status}:bytes:{}", bytes.len())),
-        Err(_) => Ok("transport-error".into()),
+        Err(error) => Ok(waki_error!("body", error)),
     }
 }
 fn golem(mode: &str, url: &str) -> Result<String, String> {
     let client = golem_wasi_http::Client::new();
+    if mode == "capacity" {
+        let mut held = Vec::new();
+        for _ in 0..9 {
+            match client.get(url).send() {
+                Ok(response) => held.push(response),
+                Err(error) => {
+                    let accepted = held.len();
+                    drop(held);
+                    return Ok(format!("capacity:{accepted}:{}", golem_error("send", error)));
+                }
+            }
+        }
+        drop(held);
+        return Err("original resource envelope did not refuse nine held responses".into());
+    }
     let mut request = if mode == "post" || mode == "uncertain-post" {
         client.post(url).header("x-conformance", "rust-client").body(vec![0u8, 1, 2, 3])
     } else { client.get(url) };
     if mode == "reserved-auth" { request = request.header("authorization", "caller-field"); }
     if mode == "reserved-cookie" { request = request.header("cookie", "fixture=local"); }
     if mode == "timeout-option" { request = request.timeout(Duration::from_millis(25)); }
-    let mut response = match request.send() { Ok(v) => v, Err(_) => return Ok("transport-error".into()) };
+    let mut response = match request.send() { Ok(v) => v, Err(error) => return Ok(golem_error("send", error)) };
     let status = response.status().as_u16();
     if mode == "trap-open" { panic!("controlled ordinary HTTP root trap"); }
     if mode == "root-drop" { drop(response); return Ok("root-dropped-body".into()); }
     if mode == "early-drop" {
         let mut bytes = [0u8; 4];
-        if response.read(&mut bytes).map_err(|_| "partial read failed")? != 4 {
+        let count = match response.read(&mut bytes) { Ok(v) => v,
+            Err(error) => return Ok(error_record("partial-read", &error,
+                serde_json::json!({"ioErrorKind": format!("{:?}", error.kind())}))) };
+        if count != 4 {
             return Err("missing partial body".into());
         }
         drop(response); return prefix(&bytes);
@@ -105,15 +178,15 @@ fn golem(mode: &str, url: &str) -> Result<String, String> {
     }
     if mode == "post" {
         return match response.json::<serde_json::Value>() {
-            Ok(v) => echo(status, v), Err(_) => Ok("json-error".into()) };
+            Ok(v) => echo(status, v), Err(error) => Ok(golem_error("json", error)) };
     }
     if mode == "json" || mode == "status" || mode == "malformed-json" {
         return match response.json::<serde_json::Value>() {
-            Ok(v) => domain(status, v), Err(_) => Ok("json-error".into()) };
+            Ok(v) => domain(status, v), Err(error) => Ok(golem_error("json", error)) };
     }
     match response.bytes() {
         Ok(bytes) => Ok(format!("{status}:bytes:{}", bytes.len())),
-        Err(_) => Ok("transport-error".into()),
+        Err(error) => Ok(golem_error("body", error)),
     }
 }
 pub fn request(client: &str, mode: &str, url: &str) -> Result<String, String> {
@@ -203,7 +276,8 @@ def capture(app: Path, outside: list[Path], specs: list[dict], cargo: Path) -> d
     for row in clients:
         require('json' in row['selectedFeatures'], 'rust-http-runtime-ordinary-library-json-required')
     executables=[r for r in lock['artifacts'] if r['role']=='build-tool']
-    require(len(executables)==15 and any(r['metadata'].get('package')=='waki-macros' for r in executables),
+    require(len(executables)==15 and any(r['metadata'].get('package')=='waki-macros'
+        and ['proc-macro'] in r['metadata'].get('executableKinds',[]) for r in executables),
         'rust-http-runtime-exact-captured-executable-closure')
     raw=read_file(candidate,8*1024**2)
     review.review(app,candidate,digest(raw))

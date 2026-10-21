@@ -70,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime_fixture.py",
-  "reviewReason": "Five new ordinary two-client captured-source, varied unseen coordinate, exact authority/budget and substitution/refusal controls; no compiled or signed compatibility claim.",
+  "reviewReason": "Complete the controlled proc-macro metadata within the two existing source-capture tests; preserve all five case names and execution guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }
