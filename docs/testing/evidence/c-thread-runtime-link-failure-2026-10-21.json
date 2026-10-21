@@ -103,5 +103,25 @@
       }
     ]
   },
-  "runtimeQualification": false
+  "runtimeQualification": false,
+  "subsequentBindingFailure": {
+    "source": "9a5fe499e225da41ca828d908c41d62b66cf42c3",
+    "run": 39590217692,
+    "job": 119189013507,
+    "artifact": {
+      "id": 12341946387,
+      "bytes": 25155,
+      "sha256": "sha256:716fbf425e03559bb204df3eb1091631eebccb04ceb1b40ce153e3a80596ee40",
+      "members": 39
+    },
+    "owningOutcome": "failure",
+    "actualError": "capsule contract generation failed: c-preimage-finite-nested-component",
+    "normalCLinkSucceeded": true,
+    "coreDerivationSucceeded": true,
+    "normalComponentizationSucceeded": true,
+    "originalOrFinalComponentBytesRetained": false,
+    "signedGuestExecuted": false,
+    "interpretation": "The finite proof reader refused nested component encoding. This failed run retained no component bytes; the historical889 generator graph is separate shape evidence, not the missing C17 graph.",
+    "correction": "One nested component with aggregate structural bounds plus raw non-container preflight before any typed reader; awaiting the corrected native producer and a fresh ordinary C programme."
+  }
 }

@@ -33,6 +33,15 @@ class CThreadRuntime(unittest.TestCase):
                 self.assertRaisesRegex(RuntimeError, 'current-native-source-must-match-producer'):
             qualification.native_evidence(products, Path('prepared'))
         products.native_products.assert_not_called()
+        # A new native tuple must be exact even when the historical f0 reader
+        # separately permits one frozen formatter-only comparison.
+        reviewed = json.loads((qualification.ROOT /
+            'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json').read_text())
+        with patch.object(qualification, 'git_source_identity', return_value=reviewed['compiledNativeSource']), \
+                patch.object(qualification, 'source_identity', return_value=reviewed['formattedConsumerSource']), \
+                self.assertRaisesRegex(RuntimeError, 'current-native-source-must-match-producer'):
+            qualification.native_evidence(products, Path('prepared'))
+        products.native_products.assert_not_called()
         products.verify_prepared.side_effect = RuntimeError('original receipt drift')
         with self.assertRaisesRegex(RuntimeError, '^original receipt drift$'):
             qualification.native_evidence(products, Path('prepared'))

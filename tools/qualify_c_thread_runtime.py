@@ -14,7 +14,6 @@ if __package__ in {None, ''}:
 
 from tools import c_capsule_build as compiler
 from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
-from tools.c_thread_native_source import compatibility, REVIEW as FORMAT_REVIEW
 from tools.c_guest.threading import IMPORTS, PROFILE, RECIPE as THREAD_RECIPE
 from tools.java_replay_materials import git_source_identity
 from tools.phase2_operator_process import require
@@ -28,7 +27,6 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 MATERIALS = (
     'tools/qualify_c_thread_runtime.py', 'tools/c_thread_runtime_fixture.py',
     'tools/c_thread_runtime_node.py', 'tools/c_thread_native_products.py',
-    'tools/c_thread_native_source.py', FORMAT_REVIEW,
     'tools/sdk_native_products_reader.py', 'tools/java_replay_materials.py',
     'tools/phase2_operator_canary.py', 'tools/phase2_operator_process.py',
     'tools/phase2_operator_scenario.py', 'tools/phase3_management_scenario.py',
@@ -110,7 +108,11 @@ def build_evidence(artifact, source):
 def native_evidence(products, prepared):
     before = products.verify_prepared(prepared)
     compiled_source = git_source_identity(products.SOURCE)
-    proof = compatibility(compiled_source, source_identity(ROOT))
+    consumer_source = source_identity(ROOT)
+    require(compiled_source == consumer_source,
+            'c-thread-current-native-source-must-match-producer')
+    proof = {'compiledNativeSource': compiled_source, 'consumerNativeSource': consumer_source,
+             'compiledSourceByteExact': True, 'reviewedFormatting': []}
     return before, proof, products.native_products(prepared)
 
 
