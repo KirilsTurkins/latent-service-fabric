@@ -24,9 +24,28 @@ pub(crate) struct CompilerEngineSettings {
     native_thread_profile: Option<NativeThreadProfile>,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-enum NativeThreadProfile {
+pub enum NativeThreadProfile {
     #[serde(rename = "rust-context40-sole-consumer-one-task-start-v1")]
     RustContext40SoleConsumerOneTaskStartV1,
+    #[serde(rename = "c-context144-sync-cooperative-v1")]
+    CContext144SyncCooperativeV1,
+}
+impl NativeThreadProfile {
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::RustContext40SoleConsumerOneTaskStartV1 => crate::component_threading::PROFILE,
+            Self::CContext144SyncCooperativeV1 => crate::component_threading::C_PROFILE,
+        }
+    }
+    pub(crate) const fn verification_bytes(self) -> usize {
+        match self {
+            Self::RustContext40SoleConsumerOneTaskStartV1 => 0,
+            Self::CContext144SyncCooperativeV1 => {
+                latent_component_threading::c_preimage::C_VERIFICATION_WORK_BYTES
+            }
+        }
+    }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -50,7 +69,7 @@ impl CompilerEngineSettings {
             activation_import_cancellation: config.activation_runtime.is_some(),
             native_thread_profile: config
                 .owned_native_threads
-                .then_some(NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+                .then_some(config.native_thread_profile),
         }
     }
     pub(crate) fn validate_compiler(&self) -> Result<(), PlatformError> {
@@ -109,6 +128,9 @@ impl CompilerEngineSettings {
     pub(crate) fn owned_native_threads(&self) -> bool {
         self.native_thread_profile.is_some()
     }
+    pub(crate) fn native_thread_profile(&self) -> Option<NativeThreadProfile> {
+        self.native_thread_profile
+    }
 }
 
 fn is_false(value: &bool) -> bool {
@@ -118,6 +140,34 @@ fn is_false(value: &bool) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn c_bootstrap_changes_only_the_explicit_closed_native_profile_field() {
+        let mut config = WasmtimeConfig {
+            owned_native_threads: true,
+            owned_native_stacks: true,
+            activation_runtime: Some(Default::default()),
+            ..WasmtimeConfig::default()
+        };
+        let rust = CompilerEngineSettings::from_config(&config);
+        let rust_json = serde_json::to_value(&rust).unwrap();
+        assert_eq!(
+            rust_json["nativeThreadProfile"],
+            crate::component_threading::PROFILE
+        );
+        config.native_thread_profile = NativeThreadProfile::CContext144SyncCooperativeV1;
+        let c = CompilerEngineSettings::from_config(&config);
+        c.validate_compiler().unwrap();
+        assert_eq!(
+            c.native_thread_profile(),
+            Some(NativeThreadProfile::CContext144SyncCooperativeV1)
+        );
+        let mut expected = rust_json;
+        expected["nativeThreadProfile"] = crate::component_threading::C_PROFILE.into();
+        assert_eq!(serde_json::to_value(&c).unwrap(), expected);
+        config.owned_native_threads = false;
+        assert!(config.validate().is_err());
+    }
 
     #[test]
     fn closed_native_profile_and_required_settings_validate_before_engine_allocation() {

@@ -696,7 +696,7 @@ pub(crate) mod tests {
         ) -> Result<(), reencode::Error<Self::Error>> {
             reencode::utils::parse_code_section(self, out, reader)?;
             let mut init = Function::new([]);
-            init.instruction(&Instruction::Call(9))
+            init.instruction(&Instruction::Call(self.first - 1))
                 .instruction(&Instruction::End);
             out.function(&init);
             let mut alloc = Function::new([]);

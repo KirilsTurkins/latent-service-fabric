@@ -403,10 +403,11 @@ impl WasmtimeBackend {
         validation.complete();
         // The reservation lives through all synchronous compilation and validation,
         // including unwind. No store or component instance is created here.
-        let reservation = match self.shared.cache.begin(
+        let reservation = match self.shared.cache.begin_with_verification(
             handle.clone(),
             artifact.component_bytes.len(),
             reserved_metadata,
+            self.config.thread_verification_bytes(),
         )? {
             PrepareAccess::Hit(runtime) => {
                 if runtime.eligibility != eligibility {

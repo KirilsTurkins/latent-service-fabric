@@ -118,6 +118,26 @@ pub struct EngineConfig {
     pub allocator: EngineAllocator,
     pub optimization: EngineOptimization,
     pub java_guest: bool,
+    pub threading_profile: EngineThreadingProfile,
+    pub activation_stack_accounting: EngineActivationStackAccounting,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+pub enum EngineActivationStackAccounting {
+    #[default]
+    #[serde(skip)]
+    EngineManaged,
+    #[serde(rename = "activation-owned-v1")]
+    ActivationOwnedV1,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+pub enum EngineThreadingProfile {
+    #[default]
+    #[serde(rename = "single-threaded")]
+    SingleThreaded,
+    #[serde(rename = "c-context144-sync-cooperative-v1")]
+    CContext144SyncCooperativeV1,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]

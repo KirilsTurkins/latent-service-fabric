@@ -56,6 +56,7 @@ pub(super) fn input(name: &str, identity: Option<CoalescingKey>) -> Admission {
         source_bytes: 8,
         metadata_bytes: 16,
         document_bytes: 0,
+        verification_bytes: 0,
     }
 }
 

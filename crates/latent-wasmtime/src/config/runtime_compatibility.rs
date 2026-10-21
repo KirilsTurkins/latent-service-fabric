@@ -16,7 +16,11 @@ impl WasmtimeConfig {
             self.maximum_memory_bytes,
             self.maximum_fuel,
         )?;
-        if self.angular_renderer {
+        if self.selected_thread_profile()
+            == Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1)
+        {
+            profile.with_c_cooperative_context()
+        } else if self.angular_renderer {
             profile.with_renderer(latent_manifest::RendererRequirement::angular())
         } else {
             Ok(profile)
