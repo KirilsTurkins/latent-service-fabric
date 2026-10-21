@@ -5,7 +5,7 @@ unchanged editable-project, declared-WIT, NativeAOT, package and signed-node
 path. It installs no application handler, synchronization context, executor,
 transport hook or hidden pump. It does not repeat the already qualified Flurl,
 Refit, private NuGet, HTTPS, synchronous-send, Task or finite-wait baselines.
-The original 9af full run and fc20 continuation remain failures. Fresh execution of the selected managed accepted-work derivation is pending; see [managed closing](dotnet-managed-closing.md) for the production contract and focused controls.
+The original 9af full run and fc20 continuation remain failures. The corrected selected managed accepted-work derivation passed all 20 mixed and 10 tenant cases at source `bac0d48fb447e1e021624b44712c3bd405542f02`; see the [retained actual evidence](evidence/dotnet-http-mixed-signed-2026-10-21.json) and [managed closing](dotnet-managed-closing.md).
 
 The existing workflow's explicit `mixed_content=true` selector builds one fresh
 component. Its first bounded node phase runs all 20 modes below; the second uses
@@ -116,3 +116,25 @@ These are causal CLR controls, not an observation of a private guest trap frame
 or physical WASI retirement. The owning job runs them against the pinned original
 HTTP assembly after normal compiler installation, before a fresh NativeAOT
 component. Guest mode 8 and every later original oracle remain mandatory.
+
+
+The successful owning [run 39560991123 / job 119091932506](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39560991123/job/119091932506)
+retains artifact `12327044961` (11,700,732 bytes, SHA-256
+`410d5c415b7656ff785583891cd0ac45191d082faaf69b76d2a9b02b22941aaa`).
+All 740 ZIP members and CRCs, 224 Git source preimages, 133 SDK inputs and the
+original 134 native/protocol materials were verified. The fresh component is
+`fca90809ad2804681419577e1f790d295181af4353d7b6ed278a6741b02a9b70`
+(5,432,239 bytes). The two unchanged published-client programmes retain their
+separate prior evidence and source attribution.
+
+All 30 calls preserve their exact signed revisions and budgets. The mixed phase
+makes 26 authorized contacts and the same-node tenant phase makes eight; both
+pre-entry grant refusals and the foreign-credential refusal remain separate.
+Every call retires all activation/service/cleanup/quota owners and all 18 active
+provider counters before reuse. Both nodes and all six peer processes stop cleanly.
+Mode 8 now returns the required `request-limit:transport-error` with zero outbound
+requests. Mode 11 retains a live cell/provider witness and the ordered actual
+Closing/child checkpoint, body gate release, body completion and awaited-finally
+checkpoint before returning root success. The original 9af, fc20 and 5da failures
+remain failures. This proves the selected finite programme, not full #746 or an
+unexecuted guest runtime-exhaustion case.

@@ -62,7 +62,13 @@ outbound requests per invocation, fuel, memory and deadlines remain unchanged.
 
 The original `9af3b431816650679c85f3da6ee4f5ad28a8473e` run and its `fc20` node-only
 continuation remain failures. Their request-limit and accepted-child traps do not
-become passing evidence from this source change. The selected production bridge
-and all mandatory mixed outcomes require fresh hosted execution. No post-retired
-Store callback, unrestricted managed thread, full timer saturation or whole
-Task-runtime qualification is claimed here.
+become passing evidence from this source change. The initial managed `5da` attempt
+also remains failed at its unchanged mode 8 oracle. After the source-bound failed
+request abort-cleanup repair, the [owning actual evidence](evidence/dotnet-http-mixed-signed-2026-10-21.json)
+at source `bac0d48fb447e1e021624b44712c3bd405542f02`, run `39560991123`,
+job `119091932506`, passes every original 20 mixed and 10 independent-tenant case.
+It includes actual mode 8 typed failure and mode 11 Closing/child/body/finally
+completion, 34 authorized contacts, 30 complete owner retirements and two clean,
+reaped nodes. The native products retain their original `6fd19eab` attribution.
+No post-retired Store callback, unrestricted managed thread, guest timer/queue
+exhaustion or whole Task-runtime qualification is claimed here.
