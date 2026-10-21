@@ -264,7 +264,7 @@ class GoRuntimeCosts(unittest.TestCase):
                 def run(self, stage, *args):
                     self.records.append({'stage': stage, 'exitCode': 0})
                     if stage == 'stack-reference-compiler-version':
-                        return b'go version go1.27.2 linux/amd64\n'
+                        return b'go version go1.27.3 linux/amd64\n'
                     check.assertEqual(args[1], 'build')
                     check.assertIn('-gcflags=lsf-cost-stack-proof=-m=2 -S', args)
                     (output / 'logs/01-stack-reference-compile-not-execute.stderr.txt').write_bytes(

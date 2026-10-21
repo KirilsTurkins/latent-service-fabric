@@ -188,7 +188,7 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict
         if hashlib.sha256(reference_before).hexdigest() != REFERENCE_GO_SHA:
             raise ValueError('Go-tls-cache-reference-compiler-preimage')
         reference = output / 'cache-reference'; reference.mkdir()
-        (reference / 'go.mod').write_bytes(b'module example.invalid/tlscache\n\ngo 1.27.2\n')
+        (reference / 'go.mod').write_bytes(b'module example.invalid/tlscache\n\ngo 1.27.3\n')
         cache_source = read_file(root / CACHE_TEMPLATE, 16384)
         cache_tests = read_file(root / CACHE_TESTS, 16384)
         (reference / 'cache.go').write_bytes(cache_reference_source(cache_source))
@@ -197,7 +197,7 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict
             GOTOOLCHAIN='local', GOENV='off', GOWORK='off', GOFLAGS='', GOPROXY='off',
             GOSUMDB='off', GOMAXPROCS='2', GOCACHE=str(reference / 'cache'))
         version = command([str(reference_go), 'version'], 'cache-go-version', 30, 4096, env=reference_env).decode().strip()
-        if version != 'go version go1.27.2 linux/amd64':
+        if version != 'go version go1.27.3 linux/amd64':
             raise ValueError('Go-tls-cache-reference-compiler-version')
         raw_reference = command([str(reference_go), '-C', str(reference), 'test', '-json',
             '-count=1', '-timeout=15s', './...'], 'cache-reference', 120, 1024 * 1024, env=reference_env)

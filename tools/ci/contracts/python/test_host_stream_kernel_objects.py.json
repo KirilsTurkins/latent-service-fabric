@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison",
+    "KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file",
+    "KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols",
+    "KernelObjectSelection.test_disabled_or_previously_enabled_private_bodies_never_count_as_compile",
+    "KernelObjectSelection.test_exact_optin_preserves_every_original_config_including_memcg",
+    "KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure",
+    "KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build",
+    "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols"
+  ],
+  "guards": {
+    "KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_disabled_or_previously_enabled_private_bodies_never_count_as_compile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_exact_optin_preserves_every_original_config_including_memcg": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_objects.py",
+  "reviewReason": "Retain all seven controls and add actual mixed-case upstream symbol preservation duplicate and unrelated-config drift refusal",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

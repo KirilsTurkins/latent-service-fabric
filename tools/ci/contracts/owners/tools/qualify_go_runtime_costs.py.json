@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_runtime_costs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual205 default async-v1 capsule has no activation import; preserve three runtime grants without adding invalid activation grant; explicitv5 still installs exact original activation provider/policy. Originalsix cases/source/budgets/native unchanged. Programme-path oldsource RED,19 focused PASS; new signed result pending.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d06809de6ee6361f4142ef19b968e25a764f99ff760d7ec3f578408964dfe469"
+  "sha256": "806d79ac8dc79700b111826f65adbf90dca232de8e10aeaa93591d43b69362e1"
 }

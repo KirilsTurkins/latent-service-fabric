@@ -26,7 +26,7 @@ def module_sources(nonce, version, role):
             and version in VERSIONS and role in {'root', 'leaf'}, 'private-Go-module-selection')
     identity = 'private.example.test/' + nonce + '/' + role
     child = 'private.example.test/' + nonce + '/leaf'
-    manifest = 'module ' + identity + '\n\ngo 1.27.2\n'
+    manifest = 'module ' + identity + '\n\ngo 1.27.3\n'
     if role == 'root':
         manifest += '\nrequire ' + child + ' ' + version + '\n'
         files = {'value.go': ('package ordinary\nimport leaf "' + child + '"\n'

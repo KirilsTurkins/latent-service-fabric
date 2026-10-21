@@ -112,7 +112,9 @@ def registry(payload: Path, cargo_home: Path) -> None:
             recorded.add(name)
 
 
-def recipe(payload: Path, language: str) -> None:
+def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> None:
+    require(type(rust_http_runtime) is bool and (not rust_http_runtime or language == 'rust'),
+            'rust-http-runtime-requires-rust-builder')
     owner = {"rust": rust_capsule_build, "c": c_capsule_build, "java": java_capsule_build,
              "dotnet": dotnet_build, "go": go_capsule_build, "typescript": typescript_build}[language]
     names = {*owner.RECIPE, *FRONTEND_DEPENDENCY_RECIPE, *AUTHORING_FRONTEND_RECIPE,
@@ -121,6 +123,10 @@ def recipe(payload: Path, language: str) -> None:
              "tools/dev_workflow/transaction_binding.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
     names.add(guest_compatibility_build.HOST_MANIFESTS[HOST_ABI])
+    if rust_http_runtime:
+        from tools.rust_wasi_http_inputs import consumer_files
+        names.update(consumer_files(ROOT))
+        names.add('tools/dev_rust_http_runtime.py')
     if language == "c":
         names.update(c_capsule_project.authoring_inputs(ROOT))
     if language in {"java", "dotnet", "go", "typescript"}:
