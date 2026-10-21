@@ -1,0 +1,238 @@
+{
+  "schemaVersion": "lsf.kernel-mandatory-audit-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "fs/inode.c": {
+      "bytes": 75338,
+      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+      "independentlyGitCorroborated": true
+    },
+    "include/net/netlabel.h": {
+      "bytes": 21017,
+      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/sock.h": {
+      "bytes": 85865,
+      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+      "independentlyGitCorroborated": true
+    },
+    "net/core/sock.c": {
+      "bytes": 111636,
+      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/af_inet.c": {
+      "bytes": 51938,
+      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/cipso_ipv4.c": {
+      "bytes": 63739,
+      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
+      "independentlyGitCorroborated": false
+    },
+    "net/netlabel/netlabel_kapi.c": {
+      "bytes": 38938,
+      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
+      "independentlyGitCorroborated": false
+    },
+    "net/socket.c": {
+      "bytes": 92491,
+      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+      "independentlyGitCorroborated": true
+    },
+    "security/security.c": {
+      "bytes": 180030,
+      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/netlabel.c": {
+      "bytes": 16481,
+      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/ebitmap.c": {
+      "bytes": 12211,
+      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/mls.c": {
+      "bytes": 16094,
+      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/services.c": {
+      "bytes": 97756,
+      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/netport.c": {
+      "bytes": 5952,
+      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/avc.c": {
+      "bytes": 31717,
+      "sha256": "e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
+      "gitBlob": "688ff9e63f514ec18b8096e59e0edd63ac6f5112"
+    },
+    "security/selinux/include/avc.h": {
+      "bytes": 4623,
+      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
+      "gitBlob": "96a614d47df8d1d67b0b033ebb90954653dfeab7"
+    },
+    "security/selinux/ss/sidtab.c": {
+      "bytes": 14675,
+      "sha256": "5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
+      "gitBlob": "c8848cbba81f24abbb2e0d07697ece10d2cc6637",
+      "independentlyGitCorroborated": false
+    },
+    "net/core/skbuff.c": {
+      "bytes": 189334,
+      "sha256": "6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
+      "gitBlob": "5608b5507b5bf03504a9093abaa865af2b82043e",
+      "independentlyGitCorroborated": true
+    },
+    "include/linux/skbuff.h": {
+      "bytes": 151887,
+      "sha256": "af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
+      "gitBlob": "df548a3d606570d38614fc45403133069ecb9cab",
+      "independentlyGitCorroborated": true
+    },
+    "net/netlink/af_netlink.c": {
+      "bytes": 71601,
+      "sha256": "2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
+      "gitBlob": "e250d4a3d03097f92c48c1741db405c8ea54899d",
+      "independentlyGitCorroborated": false
+    },
+    "kernel/audit.c": {
+      "bytes": 66999,
+      "sha256": "7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
+      "gitBlob": "df279dd2e45086b791852f2a46ceb52f24f0fd78",
+      "independentlyGitCorroborated": false
+    },
+    "security/lsm_audit.c": {
+      "bytes": 11088,
+      "sha256": "bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
+      "gitBlob": "849e832719e2151a060679db4fe993e13f42b997",
+      "independentlyGitCorroborated": false
+    }
+  },
+  "sections": {
+    "audit_buffer_free": {
+      "source": "kernel/audit.c",
+      "prefix": "static void audit_buffer_free(",
+      "bytes": 143,
+      "sha256": "cb76795047aa689e15c1b81c1ea95c1025802aed1a88b74f6ea0266923e4bee5",
+      "text": "static void audit_buffer_free(struct audit_buffer *ab)\n{\n\tif (!ab)\n\t\treturn;\n\n\tkfree_skb(ab->skb);\n\tkmem_cache_free(audit_buffer_cache, ab);\n}\n"
+    },
+    "audit_log_start": {
+      "source": "kernel/audit.c",
+      "prefix": "struct audit_buffer *audit_log_start(",
+      "bytes": 2248,
+      "sha256": "2b255bd7139968f98773766abfd15937aee6075d4930da0e8e01887dde4c509e",
+      "text": "struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,\n\t\t\t\t     int type)\n{\n\tstruct audit_buffer *ab;\n\tstruct timespec64 t;\n\tunsigned int serial;\n\n\tif (audit_initialized != AUDIT_INITIALIZED)\n\t\treturn NULL;\n\n\tif (unlikely(!audit_filter(type, AUDIT_FILTER_EXCLUDE)))\n\t\treturn NULL;\n\n\t/* NOTE: don't ever fail/sleep on these two conditions:\n\t * 1. auditd generated record - since we need auditd to drain the\n\t *    queue; also, when we are checking for auditd, compare PIDs using\n\t *    task_tgid_vnr() since auditd_pid is set in audit_receive_msg()\n\t *    using a PID anchored in the caller's namespace\n\t * 2. generator holding the audit_cmd_mutex - we don't want to block\n\t *    while holding the mutex, although we do penalize the sender\n\t *    later in audit_receive() when it is safe to block\n\t */\n\tif (!(auditd_test_task(current) || audit_ctl_owner_current())) {\n\t\tlong stime = audit_backlog_wait_time;\n\n\t\twhile (audit_backlog_limit &&\n\t\t\t(skb_queue_len_lockless(&audit_queue) > audit_backlog_limit)) {\n\t\t\t/* wake kauditd to try and flush the queue */\n\t\t\twake_up_interruptible(&kauditd_wait);\n\n\t\t\t/* sleep if we are allowed and we haven't exhausted our\n\t\t\t * backlog wait limit */\n\t\t\tif (gfpflags_allow_blocking(gfp_mask) && (stime > 0)) {\n\t\t\t\tlong rtime = stime;\n\n\t\t\t\tDECLARE_WAITQUEUE(wait, current);\n\n\t\t\t\tadd_wait_queue_exclusive(&audit_backlog_wait,\n\t\t\t\t\t\t\t &wait);\n\t\t\t\tset_current_state(TASK_UNINTERRUPTIBLE);\n\t\t\t\tstime = schedule_timeout(rtime);\n\t\t\t\tatomic_add(rtime - stime, &audit_backlog_wait_time_actual);\n\t\t\t\tremove_wait_queue(&audit_backlog_wait, &wait);\n\t\t\t} else {\n\t\t\t\tif (audit_rate_check() && printk_ratelimit())\n\t\t\t\t\tpr_warn(\"audit_backlog=%d > audit_backlog_limit=%d\\n\",\n\t\t\t\t\t\tskb_queue_len_lockless(&audit_queue),\n\t\t\t\t\t\taudit_backlog_limit);\n\t\t\t\taudit_log_lost(\"backlog limit exceeded\");\n\t\t\t\treturn NULL;\n\t\t\t}\n\t\t}\n\t}\n\n\tab = audit_buffer_alloc(ctx, gfp_mask, type);\n\tif (!ab) {\n\t\taudit_log_lost(\"out of memory in audit_log_start\");\n\t\treturn NULL;\n\t}\n\n\taudit_get_stamp(ab->ctx, &t, &serial);\n\t/* cancel dummy context to enable supporting records */\n\tif (ctx)\n\t\tctx->dummy = 0;\n\taudit_log_format(ab, \"audit(%llu.%03lu:%u): \",\n\t\t\t (unsigned long long)t.tv_sec, t.tv_nsec/1000000, serial);\n\n\treturn ab;\n}\n"
+    },
+    "audit_expand": {
+      "source": "kernel/audit.c",
+      "prefix": "static inline int audit_expand(",
+      "bytes": 367,
+      "sha256": "8df7027fb8f78f9be4f13f8f0f9a00b955562693afd018cee66f7f4fe6cf7ac0",
+      "text": "static inline int audit_expand(struct audit_buffer *ab, int extra)\n{\n\tstruct sk_buff *skb = ab->skb;\n\tint oldtail = skb_tailroom(skb);\n\tint ret = pskb_expand_head(skb, 0, extra, ab->gfp_mask);\n\tint newtail = skb_tailroom(skb);\n\n\tif (ret < 0) {\n\t\taudit_log_lost(\"out of memory in audit_expand\");\n\t\treturn 0;\n\t}\n\n\tskb->truesize += newtail - oldtail;\n\treturn newtail;\n}\n"
+    },
+    "audit_log_vformat": {
+      "source": "kernel/audit.c",
+      "prefix": "static void audit_log_vformat(",
+      "bytes": 854,
+      "sha256": "05092e6f65c16bf0353447360ab2b8cd535961069ff40759b8b9a0527dd2f679",
+      "text": "static void audit_log_vformat(struct audit_buffer *ab, const char *fmt,\n\t\t\t      va_list args)\n{\n\tint len, avail;\n\tstruct sk_buff *skb;\n\tva_list args2;\n\n\tif (!ab)\n\t\treturn;\n\n\tBUG_ON(!ab->skb);\n\tskb = ab->skb;\n\tavail = skb_tailroom(skb);\n\tif (avail == 0) {\n\t\tavail = audit_expand(ab, AUDIT_BUFSIZ);\n\t\tif (!avail)\n\t\t\tgoto out;\n\t}\n\tva_copy(args2, args);\n\tlen = vsnprintf(skb_tail_pointer(skb), avail, fmt, args);\n\tif (len >= avail) {\n\t\t/* The printk buffer is 1024 bytes long, so if we get\n\t\t * here and AUDIT_BUFSIZ is at least 1024, then we can\n\t\t * log everything that printk could have logged. */\n\t\tavail = audit_expand(ab,\n\t\t\tmax_t(unsigned int, AUDIT_BUFSIZ, 1+len-avail));\n\t\tif (!avail)\n\t\t\tgoto out_va_end;\n\t\tlen = vsnprintf(skb_tail_pointer(skb), avail, fmt, args2);\n\t}\n\tif (len > 0)\n\t\tskb_put(skb, len);\nout_va_end:\n\tva_end(args2);\nout:\n\treturn;\n}\n"
+    },
+    "audit_log_end": {
+      "source": "kernel/audit.c",
+      "prefix": "void audit_log_end(",
+      "bytes": 565,
+      "sha256": "576e1490682edb25745dbab2f188bdb88e73a053ff311c6bb02ee7ff101ee3ff",
+      "text": "void audit_log_end(struct audit_buffer *ab)\n{\n\tstruct sk_buff *skb;\n\tstruct nlmsghdr *nlh;\n\n\tif (!ab)\n\t\treturn;\n\n\tif (audit_rate_check()) {\n\t\tskb = ab->skb;\n\t\tab->skb = NULL;\n\n\t\t/* setup the netlink header, see the comments in\n\t\t * kauditd_send_multicast_skb() for length quirks */\n\t\tnlh = nlmsg_hdr(skb);\n\t\tnlh->nlmsg_len = skb->len - NLMSG_HDRLEN;\n\n\t\t/* queue the netlink packet and poke the kauditd thread */\n\t\tskb_queue_tail(&audit_queue, skb);\n\t\twake_up_interruptible(&kauditd_wait);\n\t} else\n\t\taudit_log_lost(\"rate limit exceeded\");\n\n\taudit_buffer_free(ab);\n}\n"
+    },
+    "avc_audit_post_callback": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_audit_post_callback(",
+      "bytes": 1612,
+      "sha256": "8c1b1fe33aa6f1e6d088aa96216f7dd3ce796d551869ccac496b84bb60478ac0",
+      "text": "static void avc_audit_post_callback(struct audit_buffer *ab, void *a)\n{\n\tstruct common_audit_data *ad = a;\n\tstruct selinux_audit_data *sad = ad->selinux_audit_data;\n\tchar *scontext = NULL;\n\tchar *tcontext = NULL;\n\tconst char *tclass = NULL;\n\tu32 scontext_len;\n\tu32 tcontext_len;\n\tint rc;\n\n\trc = security_sid_to_context(sad->ssid, &scontext,\n\t\t\t\t     &scontext_len);\n\tif (rc)\n\t\taudit_log_format(ab, \" ssid=%d\", sad->ssid);\n\telse\n\t\taudit_log_format(ab, \" scontext=%s\", scontext);\n\n\trc = security_sid_to_context(sad->tsid, &tcontext,\n\t\t\t\t     &tcontext_len);\n\tif (rc)\n\t\taudit_log_format(ab, \" tsid=%d\", sad->tsid);\n\telse\n\t\taudit_log_format(ab, \" tcontext=%s\", tcontext);\n\n\ttclass = secclass_map[sad->tclass-1].name;\n\taudit_log_format(ab, \" tclass=%s\", tclass);\n\n\tif (sad->denied)\n\t\taudit_log_format(ab, \" permissive=%u\", sad->result ? 0 : 1);\n\n\ttrace_selinux_audited(sad, scontext, tcontext, tclass);\n\tkfree(tcontext);\n\tkfree(scontext);\n\n\t/* in case of invalid context report also the actual context string */\n\trc = security_sid_to_context_inval(sad->ssid, &scontext,\n\t\t\t\t\t   &scontext_len);\n\tif (!rc && scontext) {\n\t\tif (scontext_len && scontext[scontext_len - 1] == '\\0')\n\t\t\tscontext_len--;\n\t\taudit_log_format(ab, \" srawcon=\");\n\t\taudit_log_n_untrustedstring(ab, scontext, scontext_len);\n\t\tkfree(scontext);\n\t}\n\n\trc = security_sid_to_context_inval(sad->tsid, &scontext,\n\t\t\t\t\t   &scontext_len);\n\tif (!rc && scontext) {\n\t\tif (scontext_len && scontext[scontext_len - 1] == '\\0')\n\t\t\tscontext_len--;\n\t\taudit_log_format(ab, \" trawcon=\");\n\t\taudit_log_n_untrustedstring(ab, scontext, scontext_len);\n\t\tkfree(scontext);\n\t}\n}\n"
+    },
+    "avc_audit_pre_callback": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_audit_pre_callback(",
+      "bytes": 694,
+      "sha256": "4dd6481bdc49b4a1d0a1fd1e4685feee531d96011cbd0daf213a75097ff20110",
+      "text": "static void avc_audit_pre_callback(struct audit_buffer *ab, void *a)\n{\n\tstruct common_audit_data *ad = a;\n\tstruct selinux_audit_data *sad = ad->selinux_audit_data;\n\tu32 av = sad->audited, perm;\n\tconst char *const *perms;\n\tu32 i;\n\n\taudit_log_format(ab, \"avc:  %s \", sad->denied ? \"denied\" : \"granted\");\n\n\tif (av == 0) {\n\t\taudit_log_format(ab, \" null\");\n\t\treturn;\n\t}\n\n\tperms = secclass_map[sad->tclass-1].perms;\n\n\taudit_log_format(ab, \" {\");\n\ti = 0;\n\tperm = 1;\n\twhile (i < (sizeof(av) * 8)) {\n\t\tif ((perm & av) && perms[i]) {\n\t\t\taudit_log_format(ab, \" %s\", perms[i]);\n\t\t\tav &= ~perm;\n\t\t}\n\t\ti++;\n\t\tperm <<= 1;\n\t}\n\n\tif (av)\n\t\taudit_log_format(ab, \" 0x%x\", av);\n\n\taudit_log_format(ab, \" } for \");\n}\n"
+    },
+    "avc_audit_required": {
+      "source": "security/selinux/include/avc.h",
+      "prefix": "static inline u32 avc_audit_required(",
+      "bytes": 1019,
+      "sha256": "6debfda4175650ac19a780e6e200dda33386b0f76a5d48ca3818ef26cadf5975",
+      "text": "static inline u32 avc_audit_required(u32 requested, struct av_decision *avd,\n\t\t\t\t     int result, u32 auditdeny, u32 *deniedp)\n{\n\tu32 denied, audited;\n\tdenied = requested & ~avd->allowed;\n\tif (unlikely(denied)) {\n\t\taudited = denied & avd->auditdeny;\n\t\t/*\n\t\t * auditdeny is TRICKY!  Setting a bit in\n\t\t * this field means that ANY denials should NOT be audited if\n\t\t * the policy contains an explicit dontaudit rule for that\n\t\t * permission.  Take notice that this is unrelated to the\n\t\t * actual permissions that were denied.  As an example lets\n\t\t * assume:\n\t\t *\n\t\t * denied == READ\n\t\t * avd.auditdeny & ACCESS == 0 (not set means explicit rule)\n\t\t * auditdeny & ACCESS == 1\n\t\t *\n\t\t * We will NOT audit the denial even though the denied\n\t\t * permission was READ and the auditdeny checks were for\n\t\t * ACCESS\n\t\t */\n\t\tif (auditdeny && !(auditdeny & avd->auditdeny))\n\t\t\taudited = 0;\n\t} else if (result)\n\t\taudited = denied = requested;\n\telse\n\t\taudited = requested & avd->auditallow;\n\t*deniedp = denied;\n\treturn audited;\n}\n"
+    },
+    "slow_avc_audit": {
+      "source": "security/selinux/avc.c",
+      "prefix": "noinline int slow_avc_audit(",
+      "bytes": 646,
+      "sha256": "5e6b0e5acb9b17bf1ae6eedf67f84513e6da28217fb39df67bd4f039af41220a",
+      "text": "noinline int slow_avc_audit(u32 ssid, u32 tsid, u16 tclass,\n\t\t\t    u32 requested, u32 audited, u32 denied, int result,\n\t\t\t    struct common_audit_data *a)\n{\n\tstruct common_audit_data stack_data;\n\tstruct selinux_audit_data sad;\n\n\tif (WARN_ON(!tclass || tclass >= ARRAY_SIZE(secclass_map)))\n\t\treturn -EINVAL;\n\n\tif (!a) {\n\t\ta = &stack_data;\n\t\ta->type = LSM_AUDIT_DATA_NONE;\n\t}\n\n\tsad.tclass = tclass;\n\tsad.requested = requested;\n\tsad.ssid = ssid;\n\tsad.tsid = tsid;\n\tsad.audited = audited;\n\tsad.denied = denied;\n\tsad.result = result;\n\n\ta->selinux_audit_data = &sad;\n\n\tcommon_lsm_audit(a, avc_audit_pre_callback, avc_audit_post_callback);\n\treturn 0;\n}\n"
+    },
+    "avc_audit": {
+      "source": "security/selinux/include/avc.h",
+      "prefix": "static inline int avc_audit(",
+      "bytes": 375,
+      "sha256": "287f8c46bcd850bbb94c6aac689e816e275cd6ef4de0446ed95df0f77d4d265c",
+      "text": "static inline int avc_audit(u32 ssid, u32 tsid, u16 tclass, u32 requested,\n\t\t\t    struct av_decision *avd, int result,\n\t\t\t    struct common_audit_data *a)\n{\n\tu32 audited, denied;\n\taudited = avc_audit_required(requested, avd, result, 0, &denied);\n\tif (likely(!audited))\n\t\treturn 0;\n\treturn slow_avc_audit(ssid, tsid, tclass, requested, audited, denied,\n\t\t\t      result, a);\n}\n"
+    },
+    "common_lsm_audit": {
+      "source": "security/lsm_audit.c",
+      "prefix": "void common_lsm_audit(",
+      "bytes": 498,
+      "sha256": "df3a161ddaac0531bd0e40331c2e35762d267c6bfc58c7ebfb6aac87d0228cd4",
+      "text": "void common_lsm_audit(struct common_audit_data *a,\n\tvoid (*pre_audit)(struct audit_buffer *, void *),\n\tvoid (*post_audit)(struct audit_buffer *, void *))\n{\n\tstruct audit_buffer *ab;\n\n\tif (a == NULL)\n\t\treturn;\n\t/* we use GFP_ATOMIC so we won't sleep */\n\tab = audit_log_start(audit_context(), GFP_ATOMIC | __GFP_NOWARN,\n\t\t\t     AUDIT_AVC);\n\n\tif (ab == NULL)\n\t\treturn;\n\n\tif (pre_audit)\n\t\tpre_audit(ab, a);\n\n\tdump_common_audit_data(ab, a);\n\n\tif (post_audit)\n\t\tpost_audit(ab, a);\n\n\taudit_log_end(ab);\n}\n"
+    },
+    "dump_common_audit_data": {
+      "source": "security/lsm_audit.c",
+      "prefix": "static void dump_common_audit_data(",
+      "bytes": 6024,
+      "sha256": "c628f099633360c88c70998d6cd0f554803ad421a856c901f415637ca2ceafb1",
+      "text": "static void dump_common_audit_data(struct audit_buffer *ab,\n\t\t\t\t   struct common_audit_data *a)\n{\n\tchar comm[sizeof(current->comm)];\n\n\t/*\n\t * To keep stack sizes in check force programmers to notice if they\n\t * start making this union too large!  See struct lsm_network_audit\n\t * as an example of how to deal with large data.\n\t */\n\tBUILD_BUG_ON(sizeof(a->u) > sizeof(void *)*2);\n\n\taudit_log_format(ab, \" pid=%d comm=\", task_tgid_nr(current));\n\taudit_log_untrustedstring(ab, memcpy(comm, current->comm, sizeof(comm)));\n\n\tswitch (a->type) {\n\tcase LSM_AUDIT_DATA_NONE:\n\t\treturn;\n\tcase LSM_AUDIT_DATA_IPC:\n\t\taudit_log_format(ab, \" ipc_key=%d \", a->u.ipc_id);\n\t\tbreak;\n\tcase LSM_AUDIT_DATA_CAP:\n\t\taudit_log_format(ab, \" capability=%d \", a->u.cap);\n\t\tbreak;\n\tcase LSM_AUDIT_DATA_PATH: {\n\t\tstruct inode *inode;\n\n\t\taudit_log_d_path(ab, \" path=\", &a->u.path);\n\n\t\tinode = d_backing_inode(a->u.path.dentry);\n\t\tif (inode) {\n\t\t\taudit_log_format(ab, \" dev=\");\n\t\t\taudit_log_untrustedstring(ab, inode->i_sb->s_id);\n\t\t\taudit_log_format(ab, \" ino=%lu\", inode->i_ino);\n\t\t}\n\t\tbreak;\n\t}\n\tcase LSM_AUDIT_DATA_FILE: {\n\t\tstruct inode *inode;\n\n\t\taudit_log_d_path(ab, \" path=\", &a->u.file->f_path);\n\n\t\tinode = file_inode(a->u.file);\n\t\tif (inode) {\n\t\t\taudit_log_format(ab, \" dev=\");\n\t\t\taudit_log_untrustedstring(ab, inode->i_sb->s_id);\n\t\t\taudit_log_format(ab, \" ino=%lu\", inode->i_ino);\n\t\t}\n\t\tbreak;\n\t}\n\tcase LSM_AUDIT_DATA_IOCTL_OP: {\n\t\tstruct inode *inode;\n\n\t\taudit_log_d_path(ab, \" path=\", &a->u.op->path);\n\n\t\tinode = a->u.op->path.dentry->d_inode;\n\t\tif (inode) {\n\t\t\taudit_log_format(ab, \" dev=\");\n\t\t\taudit_log_untrustedstring(ab, inode->i_sb->s_id);\n\t\t\taudit_log_format(ab, \" ino=%lu\", inode->i_ino);\n\t\t}\n\n\t\taudit_log_format(ab, \" ioctlcmd=0x%hx\", a->u.op->cmd);\n\t\tbreak;\n\t}\n\tcase LSM_AUDIT_DATA_DENTRY: {\n\t\tstruct inode *inode;\n\n\t\taudit_log_format(ab, \" name=\");\n\t\tspin_lock(&a->u.dentry->d_lock);\n\t\taudit_log_untrustedstring(ab, a->u.dentry->d_name.name);\n\t\tspin_unlock(&a->u.dentry->d_lock);\n\n\t\tinode = d_backing_inode(a->u.dentry);\n\t\tif (inode) {\n\t\t\taudit_log_format(ab, \" dev=\");\n\t\t\taudit_log_untrustedstring(ab, inode->i_sb->s_id);\n\t\t\taudit_log_format(ab, \" ino=%lu\", inode->i_ino);\n\t\t}\n\t\tbreak;\n\t}\n\tcase LSM_AUDIT_DATA_INODE: {\n\t\tstruct dentry *dentry;\n\t\tstruct inode *inode;\n\n\t\trcu_read_lock();\n\t\tinode = a->u.inode;\n\t\tdentry = d_find_alias_rcu(inode);\n\t\tif (dentry) {\n\t\t\taudit_log_format(ab, \" name=\");\n\t\t\tspin_lock(&dentry->d_lock);\n\t\t\taudit_log_untrustedstring(ab, dentry->d_name.name);\n\t\t\tspin_unlock(&dentry->d_lock);\n\t\t}\n\t\taudit_log_format(ab, \" dev=\");\n\t\taudit_log_untrustedstring(ab, inode->i_sb->s_id);\n\t\taudit_log_format(ab, \" ino=%lu\", inode->i_ino);\n\t\trcu_read_unlock();\n\t\tbreak;\n\t}\n\tcase LSM_AUDIT_DATA_TASK: {\n\t\tstruct task_struct *tsk = a->u.tsk;\n\t\tif (tsk) {\n\t\t\tpid_t pid = task_tgid_nr(tsk);\n\t\t\tif (pid) {\n\t\t\t\tchar comm[sizeof(tsk->comm)];\n\t\t\t\taudit_log_format(ab, \" opid=%d ocomm=\", pid);\n\t\t\t\taudit_log_untrustedstring(ab,\n\t\t\t\t    memcpy(comm, tsk->comm, sizeof(comm)));\n\t\t\t}\n\t\t}\n\t\tbreak;\n\t}\n\tcase LSM_AUDIT_DATA_NET:\n\t\tif (a->u.net->sk) {\n\t\t\tconst struct sock *sk = a->u.net->sk;\n\t\t\tconst struct unix_sock *u;\n\t\t\tstruct unix_address *addr;\n\t\t\tint len = 0;\n\t\t\tchar *p = NULL;\n\n\t\t\tswitch (sk->sk_family) {\n\t\t\tcase AF_INET: {\n\t\t\t\tconst struct inet_sock *inet = inet_sk(sk);\n\n\t\t\t\tprint_ipv4_addr(ab, inet->inet_rcv_saddr,\n\t\t\t\t\t\tinet->inet_sport,\n\t\t\t\t\t\t\"laddr\", \"lport\");\n\t\t\t\tprint_ipv4_addr(ab, inet->inet_daddr,\n\t\t\t\t\t\tinet->inet_dport,\n\t\t\t\t\t\t\"faddr\", \"fport\");\n\t\t\t\tbreak;\n\t\t\t}\n#if IS_ENABLED(CONFIG_IPV6)\n\t\t\tcase AF_INET6: {\n\t\t\t\tconst struct inet_sock *inet = inet_sk(sk);\n\n\t\t\t\tprint_ipv6_addr(ab, &sk->sk_v6_rcv_saddr,\n\t\t\t\t\t\tinet->inet_sport,\n\t\t\t\t\t\t\"laddr\", \"lport\");\n\t\t\t\tprint_ipv6_addr(ab, &sk->sk_v6_daddr,\n\t\t\t\t\t\tinet->inet_dport,\n\t\t\t\t\t\t\"faddr\", \"fport\");\n\t\t\t\tbreak;\n\t\t\t}\n#endif\n\t\t\tcase AF_UNIX:\n\t\t\t\tu = unix_sk(sk);\n\t\t\t\taddr = smp_load_acquire(&u->addr);\n\t\t\t\tif (!addr)\n\t\t\t\t\tbreak;\n\t\t\t\tif (u->path.dentry) {\n\t\t\t\t\taudit_log_d_path(ab, \" path=\", &u->path);\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t\tlen = addr->len-sizeof(short);\n\t\t\t\tp = &addr->name->sun_path[0];\n\t\t\t\taudit_log_format(ab, \" path=\");\n\t\t\t\tif (*p)\n\t\t\t\t\taudit_log_untrustedstring(ab, p);\n\t\t\t\telse\n\t\t\t\t\taudit_log_n_hex(ab, p, len);\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\n\t\tswitch (a->u.net->family) {\n\t\tcase AF_INET:\n\t\t\tprint_ipv4_addr(ab, a->u.net->v4info.saddr,\n\t\t\t\t\ta->u.net->sport,\n\t\t\t\t\t\"saddr\", \"src\");\n\t\t\tprint_ipv4_addr(ab, a->u.net->v4info.daddr,\n\t\t\t\t\ta->u.net->dport,\n\t\t\t\t\t\"daddr\", \"dest\");\n\t\t\tbreak;\n\t\tcase AF_INET6:\n\t\t\tprint_ipv6_addr(ab, &a->u.net->v6info.saddr,\n\t\t\t\t\ta->u.net->sport,\n\t\t\t\t\t\"saddr\", \"src\");\n\t\t\tprint_ipv6_addr(ab, &a->u.net->v6info.daddr,\n\t\t\t\t\ta->u.net->dport,\n\t\t\t\t\t\"daddr\", \"dest\");\n\t\t\tbreak;\n\t\t}\n\t\tif (a->u.net->netif > 0) {\n\t\t\tstruct net_device *dev;\n\n\t\t\t/* NOTE: we always use init's namespace */\n\t\t\tdev = dev_get_by_index(&init_net, a->u.net->netif);\n\t\t\tif (dev) {\n\t\t\t\taudit_log_format(ab, \" netif=%s\", dev->name);\n\t\t\t\tdev_put(dev);\n\t\t\t}\n\t\t}\n\t\tbreak;\n#ifdef CONFIG_KEYS\n\tcase LSM_AUDIT_DATA_KEY:\n\t\taudit_log_format(ab, \" key_serial=%u\", a->u.key_struct.key);\n\t\tif (a->u.key_struct.key_desc) {\n\t\t\taudit_log_format(ab, \" key_desc=\");\n\t\t\taudit_log_untrustedstring(ab, a->u.key_struct.key_desc);\n\t\t}\n\t\tbreak;\n#endif\n\tcase LSM_AUDIT_DATA_KMOD:\n\t\taudit_log_format(ab, \" kmod=\");\n\t\taudit_log_untrustedstring(ab, a->u.kmod_name);\n\t\tbreak;\n\tcase LSM_AUDIT_DATA_IBPKEY: {\n\t\tstruct in6_addr sbn_pfx;\n\n\t\tmemset(&sbn_pfx.s6_addr, 0,\n\t\t       sizeof(sbn_pfx.s6_addr));\n\t\tmemcpy(&sbn_pfx.s6_addr, &a->u.ibpkey->subnet_prefix,\n\t\t       sizeof(a->u.ibpkey->subnet_prefix));\n\t\taudit_log_format(ab, \" pkey=0x%x subnet_prefix=%pI6c\",\n\t\t\t\t a->u.ibpkey->pkey, &sbn_pfx);\n\t\tbreak;\n\t}\n\tcase LSM_AUDIT_DATA_IBENDPORT:\n\t\taudit_log_format(ab, \" device=%s port_num=%u\",\n\t\t\t\t a->u.ibendport->dev_name,\n\t\t\t\t a->u.ibendport->port);\n\t\tbreak;\n\tcase LSM_AUDIT_DATA_LOCKDOWN:\n\t\taudit_log_format(ab, \" lockdown_reason=\\\"%s\\\"\",\n\t\t\t\t lockdown_reasons[a->u.reason]);\n\t\tbreak;\n\tcase LSM_AUDIT_DATA_ANONINODE:\n\t\taudit_log_format(ab, \" anonclass=%s\", a->u.anonclass);\n\t\tbreak;\n\t} /* switch (a->type) */\n}\n"
+    }
+  },
+  "auditBufferDefinition": {
+    "text": "struct audit_buffer {\n\tstruct sk_buff       *skb;\t/* formatted skb ready to send */\n\tstruct audit_context *ctx;\t/* NULL or associated context */\n\tgfp_t\t\t     gfp_mask;\n};\n",
+    "sha256": "4a89a45fa2dd11fa0dd62970ee74f226de28d2fe39d27ae11c588be5e468a3b0"
+  },
+  "kernelBuilt": false,
+  "actualAuditExecuted": false,
+  "actualLinuxRcuExecuted": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

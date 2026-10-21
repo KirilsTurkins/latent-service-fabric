@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (inputs.netport != true && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true))) }}",
+    "if": "${{ inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (inputs.netport != true && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true)))) }}",
     "name": "Twelve actual maintained objects with nested Netlabel owners and SELinux enabled",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -56,7 +56,7 @@
   },
   "jobId": "netlabel-objects",
   "kind": "job",
-  "reviewReason": "Add one exclusive sixteen-object AVC-over-SID source lane under original20min/900s/300s/-j2/-Werror/security/config/archive/output bounds. Preserve all four prior job bodies except selector exclusions, old commands/cases/guards and default/offline refusals. Retain every15/52 SID target, add one AVC object and9 definitions. Preserve cache_anchor/SID lifetime and explicit kind allowlists; audit remains unimplemented, no link/boot/installation/closure credit.",
+  "reviewReason": "Add one exclusive20-object mandatory audit/SKB source compile lane, preserving5old job bodies except exclusiveif and all25old test guards. Keep61existing globals plus8(6private and2originalNetlink), originalAUDIT/AUDITSYSCALL=y, NETLABEL=y andSIDcache256 withoutoverride; same20min/900s/300s/-j2/-Werror/config/security/archive/process/diagnostic bounds. Source implementation true is separate from actualAuditExecuted=false/fullclosure=false; no link/boot/installation credit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

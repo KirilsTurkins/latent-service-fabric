@@ -59,6 +59,9 @@ int lsf_factory_sidcache_candidate(struct lsf_factory_context *, unsigned int,
 int lsf_factory_sidcache_current(struct lsf_factory_context *,
                                 struct lsf_prepaid_ticket, lsf_u64, void **);
 void lsf_prepaid_sidcache_drain(struct lsf_factory_context *);
+struct sk_buff;
+struct sk_buff *lsf_prepaid_audit_skb_new(struct lsf_factory_blob, unsigned int);
+int lsf_factory_audit_head_current(const void *, unsigned long, struct lsf_factory_blob *);
 
 
 int lsf_factory_avc_member(const void *, unsigned int, unsigned long,

@@ -214,7 +214,9 @@ static inline int lsf_prepaid_child_allocate(struct lsf_prepaid *pool,
 {
     if (((kind < LSF_PREPAID_LABEL || kind > LSF_PREPAID_IP_OPTIONS) &&
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
-         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)) ||
+         kind != LSF_PREPAID_AUDIT_STRING && kind != LSF_PREPAID_AUDIT_SKB &&
+         kind != LSF_PREPAID_AUDIT_HEAD && kind != LSF_PREPAID_AUDIT_BUFFER &&
+         !lsf_prepaid_avc_kind(kind)) ||
         !lsf_prepaid_allocate(pool, key, bytes, 1, parent, ticket, offset))
         return 0;
     pool->records[ticket->slot].kind = kind;
@@ -234,7 +236,9 @@ static inline int lsf_prepaid_blob_find(struct lsf_prepaid *pool,
         offset >= LSF_BACKING_BYTES ||
         ((kind < LSF_PREPAID_INODE_BLOB || kind > LSF_PREPAID_IP_OPTIONS) &&
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
-         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)))
+         kind != LSF_PREPAID_AUDIT_STRING && kind != LSF_PREPAID_AUDIT_SKB &&
+         kind != LSF_PREPAID_AUDIT_HEAD && kind != LSF_PREPAID_AUDIT_BUFFER &&
+         !lsf_prepaid_avc_kind(kind)))
         return 0;
     for (i = 1; i < LSF_ALLOCATION_SLOTS; ++i) {
         struct lsf_prepaid_view *record = &pool->records[i];
@@ -550,7 +554,9 @@ static inline int lsf_prepaid_blob_finish(struct lsf_prepaid *pool,
         record->kind != kind || !context->live ||
         ((kind < LSF_PREPAID_INODE_BLOB || kind > LSF_PREPAID_IP_OPTIONS) &&
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
-         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)) ||
+         kind != LSF_PREPAID_AUDIT_STRING && kind != LSF_PREPAID_AUDIT_SKB &&
+         kind != LSF_PREPAID_AUDIT_HEAD && kind != LSF_PREPAID_AUDIT_BUFFER &&
+         !lsf_prepaid_avc_kind(kind)) ||
         record->deferred > LSF_PREPAID_PUBLISHED ||
         (kind == LSF_PREPAID_INODE_BLOB && record->deferred != LSF_PREPAID_QUEUED) ||
         (kind == LSF_PREPAID_IP_OPTIONS && record->deferred == LSF_PREPAID_PUBLISHED) ||

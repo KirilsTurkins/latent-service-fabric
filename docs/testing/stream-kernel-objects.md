@@ -113,3 +113,42 @@ binds all 64 archive members, 100 Git materials and unchanged security
 configuration. Its mandatory audit entry remains an unimplemented
 declaration, and complete allocation/final-free closure and production
 installation remain unavailable.
+
+
+The separate default-false `audit` selector composes mandatory audit formatting,
+AVC callbacks and charged SKB ownership. Its exclusive job retains all five
+earlier job step bodies, all sixteen prior targets and all 61 prior function
+definitions. It adds `skbuff.o`, `audit.o`, `lsm_audit.o` and `af_netlink.o`:
+twenty objects and 69 defined global functions (67 private functions and the
+two original Netlink delivery entry points). The derivation authenticates
+23 whole inputs and records all 45 outputs. AUDIT and AUDITSYSCALL must already
+be enabled before and after selection; only the private factory symbol may
+change. The existing archive, warning, `-j2`, 900/300-second, owned-process and
+bounded-diagnostic limits remain. Its actual hosted result is recorded below.
+Source implementation and supplemental serialized C controls do not establish
+Linux audit execution, delivery, complete physical closure or installation.
+
+The first audit object attempt failed before completing the object set because
+the private include imported the default `pr_fmt` before audit.c defined its
+original macro. The [failed observation](evidence/kernel-audit-object-header-order-failure-2026-10-21.json)
+retains the original artifact. The correction moves only that include after
+the maintained audit headers; the original macro and `-Werror` remain.
+
+The second attempt compiled the audit formatter, then exposed the same header
+ordering issue in skbuff.c and a const mismatch with its original read-only
+`skb_zcopy` getter. The [failed SKB observation](evidence/kernel-audit-skb-compile-failure-2026-10-21.json)
+retains both compiler diagnostics. The correction retains the copy API const
+contract, original getter, all ownership guards and warning policy.
+
+
+The corrected audit mode passed at exact source
+`ad6b07f0947490cc05a3c65431683a462d798cae`, run `39555684280`, job
+`119074798425`: twenty unlinked x86-64 objects, all 69 global function
+definitions, 99 hosted source/controller controls and 25 clean owned commands.
+The [compiled observation](evidence/kernel-audit-objects-compiled-2026-10-21.json)
+binds all 76 artifact members, 23 whole inputs, 45 derived identities and the
+unchanged security/audit configuration. Independent ELF/config/source readers
+accepted the retained bytes. Supplemental C layout, policy, queue, clock,
+atomic/lock and RCU doubles remain separate from actual Linux execution.
+Kernel link/boot, actual audit delivery and RCU, complete allocation/final-free
+closure and installed operation remain unqualified.
