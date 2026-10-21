@@ -24,7 +24,7 @@ from tools.run_rust_capsule_workflow import write_workflow_receipt
 SOURCES = ('tools/qualify_resource_late_facilities.py', 'tools/resource_late_facilities.py',
     'tools/fixtures/java-resource-late/Library.java', 'tools/fixtures/dotnet-resource-late/Library.cs',
     'tools/release_preparation_cli_native_products.py', 'tools/sdk_native_products_reader.py',
-    'tools/dotnet_http_mixed_node.py', *late.ACCOUNTING,
+    'tools/dotnet_http_mixed_node.py', 'tools/java_http_release_preparation.py', *late.ACCOUNTING,
     '.github/workflows/java-resource-runtime.yml', '.github/workflows/dotnet-resource-runtime.yml')
 
 
@@ -109,7 +109,10 @@ def qualify(language, native_directory, tools, output):
             observed = base.execute(artifact, native, output/'node', late_completion=True, deadline=commands.deadline)
             require(runtime_inputs(ROOT) == runtime_before and read_file(tools/'runtime-inputs.json') == runtime_before,
                 'resource-late-final-dotnet-runtime-source')
-        require(observed['status'] == 'passed' and len(observed['runtimeGrantDenials']) == 2
+        require(observed['status'] == 'passed' and observed['lateFacilitiesOnly'] is True
+            and observed['originalProgrammePassed'] is False and len(observed['preparation']) == 2
+            and set(observed['preparation']) == {'examples', 'foreign'}
+            and len(observed['runtimeGrantDenials']) == 2
             and observed['programme']['status'] == 'passed' and len(observed['programme']['cases']) == 4
             and inventory(snapshot(app)) == before
             and inventory(snapshot(ROOT/('sdk/'+language+'-guest'))) == sdk_before

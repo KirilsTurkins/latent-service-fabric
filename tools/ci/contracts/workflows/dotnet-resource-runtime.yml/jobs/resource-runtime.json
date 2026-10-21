@@ -7,6 +7,7 @@
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.late_facilities }}",
     "name": "Signed managed resources tasks clocks entropy and logging",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -98,7 +99,7 @@
   },
   "jobId": "resource-runtime",
   "kind": "job",
-  "reviewReason": "Add separate bounded managed resource callbacks qualification: unchanged explicit runtime/entropy limits, current pinned NativeAOT compiler, original source77 native products; no host rebuild, no implicit authority or whole-ticket claim.",
+  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-runtime.yml"
 }

@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "ResourceLateWorkflows.test_lanes_require_explicit_boolean_and_exact_historical_native_source_before_verification",
+    "ResourceLateWorkflows.test_removing_only_reviewed_selector_and_job_restores_both_original_workflows"
+  ],
+  "guards": {
+    "ResourceLateWorkflows.test_lanes_require_explicit_boolean_and_exact_historical_native_source_before_verification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a58e8520a805b5f3a30bb7546b0ade7e84e44a55a1cc0f3ed6424bf2b8e308dc",
+        "class:setup-sha256:a92488b33f5c21c87e4e952b7964f8f613aae9f6bdfc77197a045791dfd25dc9"
+      ],
+      "skipSites": []
+    },
+    "ResourceLateWorkflows.test_removing_only_reviewed_selector_and_job_restores_both_original_workflows": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a58e8520a805b5f3a30bb7546b0ade7e84e44a55a1cc0f3ed6424bf2b8e308dc",
+        "class:setup-sha256:a92488b33f5c21c87e4e952b7964f8f613aae9f6bdfc77197a045791dfd25dc9"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_resource_late_workflows.py",
+  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -9,13 +9,14 @@ import argparse
 import os
 from pathlib import Path
 import shutil
-import subprocess
 import sys
 
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import dotnet_resource_runtime_fixture as managed
+from tools.build_observation import build_environment
+from tools.build_process import run_bounded_result
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.resource_late_facilities import EXPECTED
@@ -30,6 +31,7 @@ def execute(language, output):
     output = fresh(output)
     record = {'schemaVersion': 'latent.resource-late-reference.v1', 'language': language,
         'signedGuestQualification': False, 'sourceIdentities': {}, 'commands': [], 'cases': []}
+    environment = build_environment(output)
 
     def source(name, target):
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -37,8 +39,8 @@ def execute(language, output):
         record['sourceIdentities'][name] = file_identity(target)
 
     def run(label, args, timeout=120):
-        completed = subprocess.run([str(arg) for arg in args], cwd=output,
-            capture_output=True, timeout=timeout, check=False)
+        completed = run_bounded_result([str(arg) for arg in args], cwd=output,
+            env=environment, timeout_seconds=timeout, max_output_bytes=1024**2)
         require(len(completed.stdout) <= 1024**2 and len(completed.stderr) <= 1024**2,
             'resource-late-reference-bounded-public-output')
         for suffix, raw in (('stdout', completed.stdout), ('stderr', completed.stderr)):
@@ -53,6 +55,9 @@ def execute(language, output):
         home = Path(os.environ['JAVA_HOME'])
         extension = '.exe' if os.name == 'nt' else ''
         javac, java = (home/'bin'/(name+extension) for name in ('javac', 'java'))
+        run('runtime-version', [java, '-version'])
+        version = run('compiler-version', [javac, '--version']).stdout.decode().strip()
+        require(version.startswith('javac 25.'), 'resource-late-reference-java25')
         source('tools/fixtures/java-resource-late/Library.java', output/'Library.java')
         source('examples/java-resource-runtime/child/Data.java', output/'Data.java')
         (output/'Main.java').write_text('public final class Main { public static void main(String[] args) {'

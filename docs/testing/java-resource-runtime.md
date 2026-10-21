@@ -154,3 +154,7 @@ receipts and both original JAR identities are identical. The unchanged public
 13-case programme now passes, establishing the bounded contract counterfactual.
 No particular old trap variant was observed. Cancellation/deadline have positive
 pending evidence; the short clear sleep itself is not claimed to have suspended.
+
+The separate [accepted late-facility programme](java-dotnet-late-facilities.md)
+keeps the original joined programme intact and tests callback completion after
+an ordinary cancellation/disposal request. Its new signed execution is pending.

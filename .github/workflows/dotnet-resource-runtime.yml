@@ -5,6 +5,11 @@ on:
     branches: ['feat/dotnet-resource-runtime-20261020']
     paths: ['.github/workflows/dotnet-resource-runtime.yml']
   workflow_dispatch:
+    inputs:
+      late_facilities:
+        description: One fresh ordinary managed component for accepted callbacks after DisposeAsync
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,6 +21,7 @@ concurrency:
 
 jobs:
   resource-runtime:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.late_facilities }}
     name: Signed managed resources tasks clocks entropy and logging
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -109,3 +115,104 @@ jobs:
             ${{ runner.temp }}/dotnet-resource-runtime/node/foreign-controls/*.json
             ${{ runner.temp }}/dotnet-resource-runtime/node/signed/my-greeting/build-observation.json
             ${{ runner.temp }}/dotnet-resource-runtime/node/signed/release-set.json
+
+  late-facilities:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities }}
+    name: Accepted managed Timer facilities after pending DisposeAsync and fresh two tenants
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Fetch only the immutable producer source before its verification
+        run: git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e
+      - name: Check finite authority pending-owner and compiler-material boundaries
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_resource_late_facilities tools.tests.test_resource_late_workflows tools.tests.test_java_http_release_preparation tools.tests.test_dotnet_resource_runtime_fixture tools.tests.test_dotnet_resource_timer_observer tools.tests.test_dotnet_resource_runtime -v
+      - name: Install the normal captured compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Prepare the pinned compiler and small current closed-runtime adapters
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-resource-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-resource-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-resource-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-resource-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Authenticate the frozen 6fd products without a native host rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/dotnet-resource-native"
+      - name: Check the exact ordinary callback source on the reference CLR
+        run: python3 -B tools/resource_late_reference_controls.py --language dotnet --output "$RUNNER_TEMP/dotnet-resource-late-reference"
+      - name: Capture one fresh offline NativeAOT component and run only late facilities
+        run: |
+          python3 -B tools/qualify_resource_late_facilities.py --language dotnet \
+            --native "$RUNNER_TEMP/dotnet-resource-native" --tools "$RUNNER_TEMP/dotnet-resource-tools" \
+            --output "$RUNNER_TEMP/dotnet-resource-late"
+      - name: Retain bounded public build identities and raw lifecycle outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-resource-late-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/dotnet-resource-native/*.json
+            ${{ runner.temp }}/dotnet-resource-late-reference/*.json
+            ${{ runner.temp }}/dotnet-resource-late-reference/*.stdout
+            ${{ runner.temp }}/dotnet-resource-late-reference/*.stderr
+            ${{ runner.temp }}/dotnet-resource-tools/INSTALL-COMPLETE.json
+            ${{ runner.temp }}/dotnet-resource-tools/runtime-inputs.json
+            ${{ runner.temp }}/dotnet-resource-tools/wasi-sdk.json
+            ${{ runner.temp }}/dotnet-resource-tools/logs/**
+            ${{ runner.temp }}/dotnet-resource-late/*.json
+            ${{ runner.temp }}/dotnet-resource-late/build/*.json
+            ${{ runner.temp }}/dotnet-resource-late/build/component.wasm
+            ${{ runner.temp }}/dotnet-resource-late/build/native-aot-original.wasm
+            ${{ runner.temp }}/dotnet-resource-late/build/derived-*.dll
+            ${{ runner.temp }}/dotnet-resource-late/build/package/**
+            ${{ runner.temp }}/dotnet-resource-late/build/logs/**
+            ${{ runner.temp }}/dotnet-resource-late/node/*.json
+            ${{ runner.temp }}/dotnet-resource-late/node/node-stderr.txt
+            ${{ runner.temp }}/dotnet-resource-late/node/commands/logs/**
+            ${{ runner.temp }}/dotnet-resource-late/node/examples-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-late/node/foreign-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-late/node/signed/my-greeting/build-observation.json
+            ${{ runner.temp }}/dotnet-resource-late/node/signed/release-set.json

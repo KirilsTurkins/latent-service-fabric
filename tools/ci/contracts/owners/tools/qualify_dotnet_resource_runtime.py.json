@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_resource_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all original managed resource fixture controls and guards; prune only known root/child bin/obj outputs BEFORE portable-path validation after actual19ff MSBuild capture failure. Add original-source refusal counterexample; keep aggregate source limits and all runtime/compiler authority gates.",
+  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6dd5cbb08c16dcd113369fabe457ee19b22734fe438684776b76be322d59c995"
+  "sha256": "3a1895cd37048e17549ae046e7c2da5251117464fbe97e1cc210c33dca9e41d1"
 }

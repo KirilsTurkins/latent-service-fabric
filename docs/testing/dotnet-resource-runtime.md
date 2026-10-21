@@ -68,3 +68,7 @@ fresh real Pending records within the original configured limits, including
 positive Wait/Timer counts, plus the unchanged physical/provider barriers.
 Unknown, duplicate, stale, overflow and zero-owner records remain refusals.
 This correction does not qualify managed Task accounting or change a capacity.
+
+The separate [accepted late-facility programme](java-dotnet-late-facilities.md)
+keeps the original joined programme intact and tests callback completion after
+an ordinary cancellation/disposal request. Its new signed execution is pending.

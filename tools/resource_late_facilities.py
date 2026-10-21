@@ -11,7 +11,7 @@ import subprocess
 from tools.dotnet_http_mixed_node import natural
 from tools.phase2_operator_process import require
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
-from tools.rust_capsule_node import call, sample, selected_revision
+from tools.rust_capsule_node import finish_call, sample, selected_revision, start_call
 from tools.rust_capsule_project import ROOT, digest, read_file, write_json
 
 COMMON = '|readers=2|binary=00ff80410d0a|text=1|empty=1|entropy=8|wall64=1|closed=1'
@@ -83,7 +83,7 @@ def programme(clients, targets, probe, output, component, language):
     require(language in EXPECTED, 'resource-late-supported-language')
     prefix = 'j' if language == 'java' else 'n'
     record = {'status': 'incomplete', 'cases': [], 'attempts': [],
-        'lateCompletionKind': 'entered ordinary TimerTask cancel(false)' if language == 'java'
+        'lateCompletionKind': 'entered ordinary TimerTask.cancel() returning false' if language == 'java'
             else 'entered ordinary Timer callback with incomplete self-DisposeAsync',
         'callbackAfterStoreRetirementClaimed': False, 'nativeWaitPendingClaimed': False,
         'consoleFlushQueuePresent': False, 'fullTicketQualification': False}
@@ -96,18 +96,31 @@ def programme(clients, targets, probe, output, component, language):
             ('foreign', 'late', 'l-b'), ('examples', 'fresh', 'f-a')):
         client, target = clients[tenant], targets[tenant]; label = prefix+suffix
         pin = selected_revision(client, target)
+        pending = None
         try:
-            row = call(client, target, 'greeting', 'greet', ['resource-runtime:'+mode], label)
+            pending = start_call(client, target, 'greeting', 'greet', ['resource-runtime:'+mode], label)
+            row = finish_call(client, pending)
             record['attempts'].append({'tenant': tenant, 'mode': mode, 'invocation': row}); checkpoint()
             checked(row, language, mode, target['budget'], component, pin)
             record['cases'].append({'tenant': tenant, 'mode': mode, 'invocation': row,
                 'retirement': retired(client, probe, target, output, label)})
             checkpoint()
         except BaseException as error:
+            if pending is not None:
+                pending.close()
+                # Fixed public fixture only; the existing Process bounds each
+                # stream at 32 KiB. Retain the first failure without masking it.
+                for index, suffix in ((0, 'stdout'), (1, 'stderr')):
+                    raw = bytes(pending.buffers[index])
+                    if len(raw) <= 32768:
+                        (output/('failed-'+label+'-'+suffix+'.txt')).write_bytes(raw)
             record.update(status='failed', failedTenant=tenant, failedMode=mode,
                 errorCategory=type(error).__name__)
             checkpoint()
             raise
+        finally:
+            if pending is not None:
+                pending.close()
     require(len(record['cases']) == 4, 'resource-late-four-actual-late-and-fresh-outcomes')
     record.update(status='passed', sameNode=True, singleExecutionCell=True,
         lateAfterCancelOrDisposeBeforePhysicalRetirement=True)

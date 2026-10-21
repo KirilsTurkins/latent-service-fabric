@@ -143,6 +143,10 @@ def execute(artifact,native,output,deadline,*,diagnostic=False,late_completion=F
                     require(published['outcomeKnown'] and published['data']['release']['digest']==before['component']['sha256'],
                         'resource-java-fresh-component-admitted')
                     publications[tenant]=published['data']['operation']['publication']['id']
+                    if late_completion:
+                        from tools.java_http_release_preparation import prepare
+                        record.setdefault('preparation', {})[tenant] = prepare(selected,
+                            publications[tenant], tenant, before['component']['sha256'], output)
                     manifest=selected.directory/'resource-deployment.json'
                     write_json(manifest,tenants.scoped_deployment(read_json(signed/'my-greeting/deployment.json'),tenant))
                     target=deploy(selected,manifest,publications[tenant])
@@ -181,6 +185,8 @@ def execute(artifact,native,output,deadline,*,diagnostic=False,late_completion=F
             and sum(client.calls for client in clients.values())<=384,'resource-java-final-identity-and-retirement')
         record.update(status='diagnostic-observed' if diagnostic else 'passed',diagnosticOnly=diagnostic,
             originalProgrammePassed=not (diagnostic or late_completion),build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
+        if late_completion:
+            record['lateFacilitiesOnly'] = True
         write_workflow_receipt(output/('diagnostic.json' if diagnostic else 'qualified.json'),record);return record
     except BaseException as error:
         record.update(status='failed',stage=stage,errorCategory=type(error).__name__,commands=commands.records)
