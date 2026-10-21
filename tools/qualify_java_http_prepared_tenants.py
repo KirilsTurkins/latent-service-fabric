@@ -11,7 +11,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import java_http_retained_component as component
-from tools import release_preparation_native_products as native
+from tools import release_preparation_cli_native_products as native
 from tools.java_http_tenant_node import run as tenant_controls
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
@@ -22,7 +22,7 @@ from tools.sdk_native_products_reader import MATERIALS as NATIVE_MATERIALS
 MATERIALS = tuple(dict.fromkeys((*ORIGINAL_MATERIALS,
     'tools/qualify_java_http_prepared_tenants.py', 'tools/java_http_release_preparation.py',
     'tools/java_http_retained_component.py', component.PINS,
-    'tools/release_preparation_native_products.py',
+    'tools/release_preparation_cli_native_products.py',
     '.github/workflows/java-http-fiber-lifecycle.yml')))
 
 
@@ -87,7 +87,7 @@ def run(output, prepared_native, prepared_component):
                 'publicationPreparation': result['preparation']},
             'full688Qualified': False, 'full741Qualified': False,
             'limitations': ['Historical aa56 component and original compiler observations remain unchanged.',
-                'Current native/API inputs are exactly the explicit protocol-attested 21b producer.',
+                'Current native/API inputs are exactly the explicit protocol-attested 6fd CLI-dispatch producer.',
                 'Finite plain-HTTP tenant programme only; whole Java/runtime and HTTPS remain separate.']}
         write_json(output/'qualification.json', final)
         return final

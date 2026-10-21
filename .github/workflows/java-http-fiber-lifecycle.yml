@@ -423,11 +423,13 @@ jobs:
           tools.tests.test_java_http_release_preparation
           tools.tests.test_java_http_prepared_tenants
           tools.tests.test_java_http_tenants -v
+      - name: Check separately versioned CLI preparation native tuple
+        run: python3 -B -m unittest tools.tests.test_release_preparation_cli_native_products -v
       - name: Authenticate the exact protocol-inclusive native producer without rebuilding
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          python3 -B tools/release_preparation_native_products.py
+          python3 -B tools/release_preparation_cli_native_products.py
           --output "$RUNNER_TEMP/java-prepared-native"
       - name: Authenticate only fixed original Java component and signing inputs without compiling
         env:
