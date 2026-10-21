@@ -48,6 +48,11 @@
           "tools/tests/test_java_array_gc_roots.py",
           "tools/tests/test_java_phase_surface.py",
           "tools/tests/fixtures/java_phase_surface_0bdb.json",
+          "tools/java_http_mixed_fixture.py",
+          "tools/java_http_mixed_node.py",
+          "tools/qualify_java_http_mixed.py",
+          "tools/fixtures/java-http-mixed-bodies/**",
+          "tools/tests/test_java_http_mixed.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -56,6 +61,11 @@
           "java_http_fibers": {
             "default": false,
             "description": "Fresh ordinary Java HTTP/fiber component with authenticated native products",
+            "type": "boolean"
+          },
+          "java_http_mixed_bodies": {
+            "default": false,
+            "description": "One fresh ordinary Java body-ownership and original-limit component",
             "type": "boolean"
           },
           "java_http_phases": {
@@ -82,11 +92,12 @@
   },
   "requiredJobs": [
     "http-fiber-lifecycle",
+    "http-mixed-bodies",
     "http-phase-clients",
     "http-prepared-tenants",
     "http-public-spi"
   ],
-  "reviewReason": "Add one default-false node-only prepared tenant campaign; all original workflow jobs, inputs, conditions, commands and timeouts deep-equal after removing only this input/job. Reuse authenticated native and component products without compiling.",
+  "reviewReason": "Add one default-false manual mixed-body programme; preserve all existing jobs, commands and guards",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

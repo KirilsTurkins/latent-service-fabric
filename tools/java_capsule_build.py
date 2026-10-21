@@ -14,7 +14,7 @@ from tools import (guest_compatibility_build, guest_resources, guest_dependency_
                    guest_authoring_frontend, java_http_client, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
-from tools.java_guest import compiler_diagnostics
+from tools.java_guest import compiler_diagnostics, c_failure_context
 from tools.java_guest import resources as java_resources
 from tools.application_dependencies import prepare, verify_inputs
 from tools.application_dependency_approval import request as execution_request, approve as approve_execution
@@ -313,7 +313,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     marker["javaRuntimeProfile"] = runtime_profile
                 write_json(output / "BUILD-COMPLETE.json", marker)
             finally:
-                if compiler_dir.is_dir(): retain_logs(compiler_dir, output)
+                if compiler_dir.is_dir():
+                    retain_logs(compiler_dir, output)
+                    c_failure_context.retain_component_inputs(compiler, temporary / 'compiled', output, failure_contexts)
         return output
     except BaseException as error:
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
