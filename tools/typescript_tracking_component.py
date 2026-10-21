@@ -89,11 +89,49 @@ def validate_build(directory):
         'tracking-component-original-build')
 
 
-def record(members):
+def package_sources(directory, members, *, restore=False):
+    """Restore omitted WIT sources only from byte-identical archived layers."""
+    declaration = read_json(directory/'package-source.json')
+    inputs = read_json(directory/'package-inputs.json')
+    restored = {}
+    require(type(declaration.get('layers')) is list and len(declaration['layers']) <= 32,
+        'tracking-component-package-source-count')
+    for layer in declaration['layers']:
+        name = layer['source']
+        require(name == layer['path'] and type(name) is str and ':' not in name
+            and '\\' not in name and not PurePosixPath(name).is_absolute()
+            and not any(p in ('','..','.') for p in PurePosixPath(name).parts),
+            'tracking-component-package-source-path')
+        if name in members:
+            require(file_identity(directory/name,16*1024**2) == members[name],
+                'tracking-component-original-package-source')
+            continue
+        archive_name = 'package/layers/'+name
+        require(name.startswith('wit/') and archive_name in members
+            and members[archive_name]['bytes'] <= 1024**2,
+            'tracking-component-only-authenticated-wit-restoration')
+        identity = members[archive_name]
+        require(inputs[name] == {'digest':identity['sha256'],'size':identity['bytes']}
+            and file_identity(directory/archive_name,1024**2) == identity,
+            'tracking-component-package-layer-source-identity')
+        target = directory/name
+        if restore:
+            target.parent.mkdir(parents=True,exist_ok=True)
+            with target.open('xb') as output:output.write(read_file(directory/archive_name,1024**2))
+        require(file_identity(target,1024**2) == identity,'tracking-component-restored-source-preimage')
+        require(name not in restored,'tracking-component-duplicate-source')
+        restored[name] = identity
+    require(len(restored) == 5 and sum(row['bytes'] for row in restored.values()) <= 1024**2,
+        'tracking-component-exact-original-five-wit-sources')
+    return restored
+
+
+def record(members, restored):
     return {'profile': 'typescript-tracking-component-reuse-v1', 'source': SOURCE,
         'run': RUN, 'job': JOB, 'artifact': ARTIFACT, 'archiveBytes': ARCHIVE_BYTES,
         'archiveDigest': 'sha256:'+ARCHIVE_SHA, 'crcMembers': 327, 'members': members,
-        'component': COMPONENT, 'compilerOrEngineRebuilt': False, 'credentialsRetained': False,
+        'component': COMPONENT, 'restoredOriginalPackageSources':restored,
+        'compilerOrEngineRebuilt': False, 'credentialsRetained': False,
         'newHostAccountingQualified': False}
 
 
@@ -103,7 +141,7 @@ def verify_prepared(directory):
         require(file_identity(directory/'build'/name, 16*1024**2) == identity,
             'tracking-component-retained-member')
     validate_build(directory/'build')
-    value = record(expected)
+    value = record(expected,package_sources(directory/'build',expected))
     require(read_json(directory/'acquisition.json') == value, 'tracking-component-retained-receipt')
     return value
 
@@ -133,7 +171,8 @@ def prepare(output):
     members = unpack(raw, output/'build')
     with (output/'original-artifact.zip').open('xb') as target:
         target.write(raw)
-    value = record(members)
+    restored = package_sources(output/'build',members,restore=True)
+    value = record(members,restored)
     write_json(output/'acquisition.json', value)
     require(verify_prepared(output) == value, 'tracking-component-final-recheck')
     return value

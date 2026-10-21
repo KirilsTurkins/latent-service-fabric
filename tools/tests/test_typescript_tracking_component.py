@@ -50,6 +50,34 @@ class TrackingComponent(unittest.TestCase):
                 component.unpack(b'changed original archive', destination)
             self.assertFalse(destination.exists())
 
+    def test_missing_signing_sources_restore_only_exact_archived_wit_layers(self):
+        import hashlib
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            names = [f'wit/{index}.wit' for index in range(5)]
+            members, inputs = {}, {}
+            for index,name in enumerate(names):
+                path = root/'package/layers'/name
+                path.parent.mkdir(parents=True,exist_ok=True)
+                raw = ('package test:fixture'+str(index)+';\n').encode()
+                path.write_bytes(raw)
+                identity = {'bytes':len(raw),'sha256':'sha256:'+hashlib.sha256(raw).hexdigest()}
+                members['package/layers/'+name] = identity
+                inputs[name] = {'size':len(raw),'digest':identity['sha256']}
+            declaration = {'layers':[{'source':name,'path':name} for name in names]}
+            (root/'package-source.json').write_text(json.dumps(declaration))
+            (root/'package-inputs.json').write_text(json.dumps(inputs))
+            restored = component.package_sources(root,members,restore=True)
+            self.assertEqual(len(restored),5)
+            self.assertEqual(component.package_sources(root,members),restored)
+            (root/names[0]).write_bytes(b'changed')
+            with self.assertRaises(WorkflowError):component.package_sources(root,members)
+            declaration['layers'][0]['source'] = declaration['layers'][0]['path'] = 'missing-component.wasm'
+            (root/'package-source.json').write_text(json.dumps(declaration))
+            with self.assertRaisesRegex(WorkflowError,'only-authenticated-wit'):
+                component.package_sources(root,members)
+
 
 if __name__ == '__main__':
     unittest.main()
