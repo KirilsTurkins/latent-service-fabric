@@ -81,6 +81,10 @@ def accounting_sources(producer):
     return sources
 
 
+def checkpoint(path, value):
+    path.write_bytes((json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode())
+
+
 def accepted(row, budget, revision, component, expected):
     require(row['processReaped'] is True and row['response']['outcomeKnown'] is True
             and row['response']['requestDispatched'] is True
@@ -118,12 +122,12 @@ def programme(clients, targets, probe, output, component):
         revision = runtime.selected_revision(client, target)
         row = runtime.call(client, target, template, function, [prefix + mode], label)
         result['attempts'].append({'tenant': tenant, 'mode': mode, 'invocation': row})
-        write_json(output / 'programme-progress.json', result)
+        checkpoint(output / 'programme-progress.json', result)
         expected = EXPECTED if mode == 'late' else fixture.EXPECTED['fresh']
         accepted(row, target['budget'], revision, component, expected)
         result['cases'].append({'tenant': tenant, 'mode': mode, 'invocation': row,
             'retirement': runtime.retire(client, probe, target, output, label)})
-        write_json(output / 'programme-progress.json', result)
+        checkpoint(output / 'programme-progress.json', result)
     require(len(result['cases']) == 4, 'resource-late-four-admitted-outcomes')
     result['status'] = 'passed'
     write_json(output / 'programme.json', result)
