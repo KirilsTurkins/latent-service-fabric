@@ -152,3 +152,38 @@ accepted the retained bytes. Supplemental C layout, policy, queue, clock,
 atomic/lock and RCU doubles remain separate from actual Linux execution.
 Kernel link/boot, actual audit delivery and RCU, complete allocation/final-free
 closure and installed operation remain unqualified.
+
+The separate default-false `bind` selector preserves all six earlier jobs' step
+bodies and all 20 audit targets and their definitions. It adds the real maintained
+`inet_hashtables.o` and `inet_connection_sock.o` translation units: 22 unlinked
+objects and 75 GLOBAL FUNC definitions (72 private and three original, including
+`inet_csk_get_port`). The closed prefix inherits the actual socket's original
+owner before bind-bucket publication and returns views only at the original
+empty-list or unused-candidate cleanup sites. Port selection, normal allocation,
+shared-cache hits, lock order and TIMEWAIT callers remain authoritative.
+
+This mode passed at exact source
+`6ed2ab49bf5195acb0b8841372a9a655de24c356`, run `39559206353`, job
+`119086135069`: all 22 objects, 75 function definitions, 118 hosted
+source/controller cases and 27 completed/cleaned commands. The
+[compiled observation](evidence/kernel-bind-objects-compiled-2026-10-21.json)
+binds 82 artifact members, 157 Git materials, 27 complete upstream inputs and
+51 derived identities, retaining all 45 prior audit outputs. All 4,309 config
+values are preserved except the private factory n-to-y selection; security,
+Netlabel, the 256-entry SID cache, AUDIT and AUDITSYSCALL were already enabled.
+Separate serialized C doubles retain the old allocator RED and 25 passing
+mechanism cases; they do not execute actual Linux port/TIMEWAIT behavior.
+
+An inherited development Python failure expected only five factory poison
+writes after the audit prefix added a guarded sixth store for invalid head
+spans. The exact source oracle now requires six and checks that the added store
+follows original-birth lookup and byte-span validation. All eleven affected
+module cases pass with unchanged case/guard inventory. That test is outside
+this owning job's 118-case selection; its exact source revision is recorded
+separately, without relabelling the compiled source.
+
+Route/XFRM/metrics, remaining RX/page/SKB and complete supported-platform
+ownership are still required. No kernel was linked or booted, no real audit,
+port/TIMEWAIT or RCU behavior was executed, and no trusted factory, complete
+physical-closure proof or final-free installation was supplied. The complete
+consumer and production provider remain unavailable under unchanged limits.
