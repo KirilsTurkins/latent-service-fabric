@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_rust_wasi_http_forbidden_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Parent source review approved the exact retained failure correction and additive adversarial controls; all prior commands, cases, caps and guards remain.",
+  "reviewReason": "Parent full-source review approved this exact bounded corrective programme; original commands, controls, limits and prior failure evidence remain. New native producer rebuilds only three affected products with separate two-product ancestry.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7eb567fe6c5df47160b29ae1d5976c3ab532c8b6f4c965834c941f502bbde215"
+  "sha256": "b21754922535a41e5f2a3e1b077336ae2a8129ec003ca1ae45fc272dcad2b272"
 }

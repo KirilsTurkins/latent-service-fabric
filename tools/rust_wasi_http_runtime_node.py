@@ -367,6 +367,49 @@ def golem_timer_pending(stderr,mode):
         'waitPending':pending[-1],'proof':'actual original wait_for Poll::Pending with task/wait/timer charged'}
 
 
+def golem_terminal_timer(stderr,mode,positive,action=''):
+    require(type(stderr) is bytes and len(stderr)<=MAXIMUM_STDERR and mode in {'pending','drain'}
+        and action in {'','release','trap','cancel','deadline'},'rust-http-bounded-terminal-timer-input')
+    observed=timer_observer.observe(stderr)
+    require(observed['status']=='observed' and not observed['overflow']
+        and observed['invalidMarkerCount']==0,'rust-http-valid-original-terminal-timer-records')
+    rows=observed['records']
+    sequences=[int(line.split(b'|')[3]) for line in stderr.splitlines() if line.startswith(TIMER_PREFIX)]
+    require(type(positive) is dict and type(positive.get('waitPending')) is dict
+        and set(positive['waitPending'])=={'mode','event','sequence','tasks','waits','timers'}
+        and all(type(positive['waitPending'][key]) is int for key in ('sequence','tasks','waits','timers')),
+        'rust-http-typed-original-positive-pending-record')
+    require(sequences==list(range(1,len(rows)+1)) and positive['waitPending'] in rows
+        and positive['waitPending']['mode']==mode and positive['waitPending']['event']=='wait-pending'
+        and all(1<=positive['waitPending'][key]<=RUNTIME_LIMITS[key] for key in ('tasks','waits','timers')),
+        'rust-http-current-positive-pending-and-ordered-terminal-records')
+    closes=[row for row in rows if row['mode']==mode and row['event']=='root-close']
+    require(len(closes)<=1 and all(row['sequence']>positive['waitPending']['sequence'] for row in closes),
+        'rust-http-no-stale-or-duplicate-guest-close')
+    forced=action in {'cancel','deadline'}
+    require(not forced or {'cancel':'pending','deadline':'drain'}[action]==mode,
+        'rust-http-exact-forced-terminal-observer-mode')
+    # RootClose is emitted only by the guest activation.close import. Forced
+    # host termination can stop the app before its compiler-owned root drain;
+    # it must still pass the exact public terminal and full retirement gates.
+    require(forced or bool(closes),'rust-http-original-native-root-close-after-real-pending')
+    return {'nativeRecords':observed,'guestCloseStatus':'observed' if closes else 'not-observed',
+        'forcedHostTermination':forced,'guestCloseSynthesized':False,
+        'physicalRetirementProvenByMarker':False}
+
+
+def retain_terminal_timer(node,output,label):
+    node.drain();stderr=bytes(node.buffers[1])
+    markers=[line for line in stderr.splitlines() if line.startswith(TIMER_PREFIX)]
+    write_json(output/('terminal-native-timer-'+label+'.json'),{
+        'qualification':False,'scope':'actual-bounded-native-observer-before-terminal-assertion',
+        'stderrBytes':len(stderr),'stderrDigest':digest(stderr),
+        'markersTruncated':len(markers)>16 or any(len(line)>128 for line in markers),
+        'markerLines':[base64.b64encode(line[:128]).decode('ascii') for line in markers[:16]],
+        'parsed':timer_observer.observe(stderr)})
+    return stderr
+
+
 def retain_partial(process,node,output,label):
     """Diagnostic bytes from this owned public-fixture CLI, never an outcome.
 
@@ -518,12 +561,8 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
     require(action!='cancel' or cancelled is not None,'rust-http-cancel-receipt-required')
     terminal_timer=None
     if native_mode:
-        node.drain();terminal_timer=timer_observer.observe(bytes(node.buffers[1]))
-        require(terminal_timer['status']=='observed' and not terminal_timer['overflow']
-            and terminal_timer['invalidMarkerCount']==0
-            and any(r['mode']==native_mode and r['event']=='root-close'
-                and r['sequence']>pending['transitiveTimer']['waitPending']['sequence']
-                for r in terminal_timer['records']),'rust-http-original-native-root-close-after-real-pending')
+        stderr=retain_terminal_timer(node,output,label)
+        terminal_timer=golem_terminal_timer(stderr,native_mode,pending['transitiveTimer'],action)
     for _ in range(64):
         for value in peers.values():value.poll(.002)
         if all(value.observation()['openConnections']==0 for value in peers.values()):break

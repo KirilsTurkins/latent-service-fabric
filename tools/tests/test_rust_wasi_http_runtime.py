@@ -596,6 +596,54 @@ class RuntimeOracles(unittest.TestCase):
             with self.subTest(raw=raw),self.assertRaises(Exception):node.golem_timer_pending(raw,'pending')
         self.assertIsNone(node.golem_timer_pending(record(mode=b'drain'),'pending'))
 
+    def test_forced_host_terminal_never_synthesizes_guest_close_and_other_paths_still_require_it(self):
+        prefix=node.TIMER_PREFIX
+        pending=prefix+b'|pending|wait-pending|1|1|1|1\n'
+        positive=node.golem_timer_pending(pending,'pending')
+        with self.assertRaisesRegex(RuntimeError,'root-close-after-real-pending'):
+            node.golem_terminal_timer(pending,'pending',positive)
+        proof=node.golem_terminal_timer(pending,'pending',positive,'cancel')
+        self.assertEqual(proof['guestCloseStatus'],'not-observed')
+        self.assertTrue(proof['forcedHostTermination'])
+        self.assertFalse(proof['guestCloseSynthesized'])
+        self.assertFalse(proof['physicalRetirementProvenByMarker'])
+        closed=pending+prefix+b'|pending|root-close|2|0|0|0\n'
+        self.assertEqual(node.golem_terminal_timer(closed,'pending',positive)['guestCloseStatus'],'observed')
+        for action in ('release','trap'):
+            with self.subTest(action=action),self.assertRaisesRegex(RuntimeError,'root-close-after-real-pending'):
+                node.golem_terminal_timer(pending,'pending',positive,action)
+        with self.assertRaisesRegex(RuntimeError,'exact-forced-terminal-observer-mode'):
+            node.golem_terminal_timer(pending,'pending',positive,'deadline')
+        for raw in (b'',pending+prefix+b'|overflow\n',pending+pending,
+            pending.replace(b'|1|1|1|1',b'|2|1|1|1'),
+            prefix+b'|pending|root-close|1|0|0|0\n'+prefix+b'|pending|wait-pending|2|1|1|1\n',
+            prefix+b'|pending|root-close|2|0|0|0\n'+pending,
+            closed+prefix+b'|pending|root-close|3|0|0|0\n',
+            pending.replace(b'|1|1|1|1',b'|1|9|1|1')):
+            with self.subTest(raw=raw),self.assertRaises(RuntimeError):
+                node.golem_terminal_timer(raw,'pending',positive,'cancel')
+        changed=copy.deepcopy(positive);changed['waitPending']['tasks']=True
+        with self.assertRaisesRegex(RuntimeError,'typed-original-positive'):
+            node.golem_terminal_timer(pending,'pending',changed,'cancel')
+        deadline=prefix+b'|drain|wait-pending|1|1|1|1\n'
+        self.assertEqual(node.golem_terminal_timer(deadline,'drain',node.golem_timer_pending(deadline,'drain'),
+            'deadline')['guestCloseStatus'],'not-observed')
+
+    def test_terminal_timer_observation_is_retained_before_a_strict_terminal_refusal(self):
+        raw=node.TIMER_PREFIX+b'|pending|wait-pending|1|1|1|1\n'
+        positive=node.golem_timer_pending(raw,'pending')
+        host=Mock(buffers=[bytearray(),bytearray(raw)])
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)
+            with self.assertRaisesRegex(RuntimeError,'root-close-after-real-pending'):
+                stderr=node.retain_terminal_timer(host,output,'controlled')
+                node.golem_terminal_timer(stderr,'pending',positive)
+            retained=json.loads((output/'terminal-native-timer-controlled.json').read_bytes())
+            self.assertFalse(retained['qualification'])
+            self.assertFalse(retained['markersTruncated'])
+            self.assertEqual(retained['stderrDigest'],digest(raw))
+            self.assertEqual(retained['parsed']['records'],positive['nativeRecords']['records'])
+
     def test_two_tenant_configuration_binds_only_three_exact_authorities_and_policy_ids(self):
         values={'workers':{'runtime':1,'control':1},'cells':[{'capacity':1,'queueCapacity':2}],
             'credentials':[{'tenant':'examples'}],'providers':{'formatVersion':1,'bindings':[],
