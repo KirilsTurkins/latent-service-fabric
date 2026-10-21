@@ -13,6 +13,28 @@ INPUTS = json.loads((Path(__file__).parent/'fixtures/rust-http-limit-model-input
 
 
 class RustHttpLimitControls(unittest.TestCase):
+    def test_ordinary_baseline_requires_real_pending_without_inventing_guest_close(self):
+        prefix=node.original.TIMER_PREFIX
+        raw=b'\n'.join(prefix+row for row in (
+            b'|pending|start-accepted|1|1|1|1', b'|pending|next-entered|2|1|1|1',
+            b'|pending|wait-pending|3|1|1|1'))+b'\n'
+        proof=node.baseline_timer(raw)
+        self.assertEqual(proof['guestCloseStatus'],'not-observed')
+        self.assertFalse(proof['guestCloseSynthesized'])
+        self.assertFalse(proof['forcedHostTermination'])
+        # The old full64 non-forced reader remains strict and refuses this model.
+        with self.assertRaisesRegex(RuntimeError,'root-close-after-real-pending'):
+            node.original.golem_terminal_timer(raw,'pending',{'waitPending':proof['waitPending']},'release')
+        closed=raw+prefix+b'|pending|root-close|4|0|0|0\n'
+        self.assertEqual(node.baseline_timer(closed)['guestCloseStatus'],'observed')
+        for invalid in (b'', raw.replace(b'wait-pending',b'next-entered'),
+                raw.replace(b'|3|1|1|1',b'|4|1|1|1'),
+                raw.replace(b'|3|1|1|1',b'|3|0|1|1'),
+                raw.replace(b'pending',b'drain'),
+                prefix+b'|pending|root-close|1|0|0|0\n'+raw,
+                closed+prefix+b'|overflow\n'):
+            with self.subTest(invalid=invalid),self.assertRaises(RuntimeError):node.baseline_timer(invalid)
+
     def test_only_the_named_owner_ceiling_changes_and_defaults_are_preserved(self):
         value={'providers':{'activationRuntime':{'limits':dict(node.original.RUNTIME_LIMITS)},
             'httpStreaming':{'unmodified':'provider'}},'cells':[{'capacity':1,'queueCapacity':2}],

@@ -75,7 +75,7 @@ def task_outcome(row, revision, budget):
     require(evidence['observedAcceptedResponses'] == 1, 'rust-limit-exact-one-retained-task-response')
     return {'acceptedResponses': 1, 'typedPublicError': evidence['publicError'],
             'changedCeiling': {'tasks': 1}, 'otherCeilingsChanged': False,
-            'taskSource': 'sdk/wasi-http-runtime/state.rs::State::admit',
+            'taskSource': 'sdk/wasi-http-runtime/state.rs::Exchange::admit',
             'publicErrorAloneProvesOwnerKind': False}
 
 
@@ -99,6 +99,31 @@ def timer_outcome(row, revision, budget, positive):
     return {'changedCeiling': {'timers': 1}, 'observedOutboundStarts': 2,
             'realFirstTimerPending': True, 'trapInstructionProved': False,
             'genericTrapAloneProvesOwnerKind': False}
+
+
+def baseline_timer(stderr):
+    """Ordinary Rust drain settles owners; it does not call activation.close."""
+    require(type(stderr) is bytes and len(stderr) <= original.MAXIMUM_STDERR,
+        'rust-limit-bounded-baseline-timer-source')
+    observed = original.timer_observer.observe(stderr)
+    require(observed['status'] == 'observed' and observed['invalidMarkerCount'] == 0
+        and not observed['overflow'], 'rust-limit-valid-baseline-timer-records')
+    rows = observed['records']
+    sequences = [int(line.split(b'|')[3]) for line in stderr.splitlines()
+        if line.startswith(original.TIMER_PREFIX)]
+    require(sequences == list(range(1, len(rows) + 1))
+        and all(row['mode'] == 'pending' for row in rows), 'rust-limit-current-baseline-timer-sequence')
+    pending = [row for row in rows if row['event'] == 'wait-pending'
+        and all(1 <= row[key] <= original.RUNTIME_LIMITS[key] for key in ('tasks', 'waits', 'timers'))]
+    closes = [row for row in rows if row['event'] == 'root-close']
+    require(pending and len(closes) <= 1
+        and all(row['sequence'] > pending[-1]['sequence'] for row in closes),
+        'rust-limit-live-baseline-timer-no-stale-close')
+    return {'nativeRecords': observed, 'waitPending': pending[-1],
+        'guestCloseStatus': 'observed' if closes else 'not-observed',
+        'guestCloseSynthesized': False, 'forcedHostTermination': False,
+        'drainContract': 'compiler-private-drain-retired-owner-settlement',
+        'physicalRetirementProvenByMarker': False}
 
 
 def boundary_call(client, node, target, peers, tenant, phase, probe, output):
@@ -251,10 +276,9 @@ def run(artifact, native, output, *, deadline):
                             'evidence':file_identity(phase_output/('case-'+item['case']+'.json'))})
                     spec=next(s for s in original.cases() if s[0]=='partial-complete')
                     item=original.invoke(clients['foreign'],node,targets['foreign'],peers,'foreign','golem','delta',spec,probe,phase_output,'node-stop-pending')
-                    node.drain();raw=bytes(node.buffers[1]);observed=original.timer_observer.observe(raw)
-                    waits=[r for r in observed['records'] if r['mode']=='pending' and r['event']=='wait-pending']
-                    require(waits,'rust-limit-baseline-actual-default-timer-pending')
-                    terminal=original.golem_terminal_timer(raw,'pending',{'waitPending':waits[0]},'release')
+                    # Retain bounded native bytes before any new baseline assertion.
+                    raw=original.retain_terminal_timer(node,phase_output,'baseline')
+                    terminal=baseline_timer(raw)
                     write_json(phase_output/'baseline-real-timer.json',{'case':item,'terminal':terminal})
                     record['attempts'].append({'phase':phase,'client':'golem','kind':'real-timer-pending-release'})
                 else:
