@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "latent.sdk.release-preparation-cli-native-evidence.v1",
+  "sourceRevision": "6fd19eab2c224fc31481d03de5008de4d3e4429e",
+  "run": 39516047085,
+  "job": 118948325038,
+  "artifact": {
+    "id": 12308282426,
+    "bytes": 66196624,
+    "sha256": "sha256:2a8bdd8946a06ccc9f15ab599cdc869a450cc7c459c07a095e3cfb942f9518f1"
+  },
+  "verifiedArchiveMembers": 49,
+  "verifiedExpandedBytes": 303640461,
+  "nativeSource": {
+    "sha256": "sha256:4a0631c0abb07cfbf4a32d41d6376c2e89861f73c97eb38d7c8d8b8a869aab82",
+    "files": 3318,
+    "bytes": 26118205,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "auxiliaryMaterials": {
+    "files": 134,
+    "bytes": 862830
+  },
+  "authoritativeProtocol": {
+    "files": 20,
+    "bytes": 361396
+  },
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:253198f40836c349fe82b28363ca312a3ed51f9b022866623be995a967acece9",
+      "bytes": 25782
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:02cd78c08043387f8c0d2a5bbf1624357b3071d3b9565fca92748876c4edf643",
+      "bytes": 22275
+    }
+  },
+  "normalNativeProducts": 5,
+  "rustControlsPassed": 50,
+  "pythonControlsPassed": 15,
+  "ignoredOrSkipped": 0,
+  "guestComponentsCompiled": false,
+  "signedGuestQualification": false,
+  "twelveCaseTenantProgramme": "pending",
+  "priorSuccessfulNativeSource": "21b2c84c74881701149115dd8511063c85800b47",
+  "priorSuccessfulNativeRun": 39509107706,
+  "priorFailedConsumerRun": 39514296963,
+  "priorFailedConsumerJob": 118942636746,
+  "priorFailedConsumerArtifact": {
+    "id": 12307672432,
+    "bytes": 30211,
+    "sha256": "sha256:452268ee968aea04bb38a0f0ee70544b6cff169a3a9d2858099bfae04a2d1d63"
+  },
+  "priorConsumerFailure": "release prepare refused locally as not-management; no dispatch, no tenant cases or HTTP contacts",
+  "cliDispatchCorrection": "actual parsed PrepareRelease is classified as a management operation before normal authorized transport",
+  "unchangedProductsComparedWith21b": [
+    "latentd",
+    "examples/package",
+    "examples/capsule_contracts",
+    "examples/capsule_authoring"
+  ]
+}
