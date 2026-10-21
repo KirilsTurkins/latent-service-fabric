@@ -20,7 +20,8 @@
           "feat/stream-kernel-route-cache-20261021",
           "feat/stream-kernel-packet-prefix-20261021",
           "feat/stream-kernel-device-closure-20261021",
-          "feat/stream-kernel-device-setup-20261021"
+          "feat/stream-kernel-device-setup-20261021",
+          "feat/stream-kernel-device-registration-20261021"
         ],
         "paths": [
           ".github/workflows/stream-kernel-objects.yml",
@@ -41,6 +42,18 @@
           "tools/tests/fixtures/host_stream_kernel_device.json",
           "tools/host_stream_kernel_device_firmware.py",
           "tools/tests/fixtures/host_stream_kernel_device_firmware.json",
+          "tools/host_stream_kernel_device_core.py",
+          "tools/tests/fixtures/host_stream_kernel_device_core.json",
+          "tools/host_stream_kernel_device_capabilities.py",
+          "tools/tests/fixtures/host_stream_kernel_device_capabilities.json",
+          "tools/host_stream_kernel_device_registration.py",
+          "tools/tests/fixtures/host_stream_kernel_device_registration.json",
+          "tools/host_stream_kernel_device_sysfs.py",
+          "tools/tests/fixtures/host_stream_kernel_device_sysfs.json",
+          "tools/host_stream_kernel_device_uevent.py",
+          "tools/tests/fixtures/host_stream_kernel_device_uevent.json",
+          "tools/host_stream_kernel_device_uevent_delivery.py",
+          "tools/tests/fixtures/host_stream_kernel_device_uevent_delivery.json",
           "research/standard-outbound/linux-6.12-lineage/**"
         ]
       },
@@ -86,6 +99,11 @@
             "description": "Compile the closed copied-TCP linear packet source profile",
             "type": "boolean"
           },
+          "registration": {
+            "default": false,
+            "description": "Compile the closed registration sysfs IDR and uevent source-only profile",
+            "type": "boolean"
+          },
           "route": {
             "default": false,
             "description": "Compile the closed IPv4 route source profile with original reference owners",
@@ -117,12 +135,13 @@
     "netlabel-objects",
     "netport-objects",
     "packet-objects",
+    "registration-objects",
     "route-cache-objects",
     "route-objects",
     "selected-objects",
     "sidcache-objects"
   ],
-  "reviewReason": "Reviewed cached ACPI reference and prepaid cleanup continuation source; exclusive37object compile preserves all prior profiles cases commands security and bounds; no runtime installed or shared-queue physical qualification",
+  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

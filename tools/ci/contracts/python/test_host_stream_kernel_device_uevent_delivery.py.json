@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "KernelDeviceUeventDeliverySource.test_copy_and_retirement_dispatch_precede_old_shape_and_allocator_access",
+    "KernelDeviceUeventDeliverySource.test_env_and_actual_path_span_are_checked_before_string_read_and_skb_birth",
+    "KernelDeviceUeventDeliverySource.test_exact_wholes_definitions_parent_projections_and_false_gates",
+    "KernelDeviceUeventDeliverySource.test_filter_refusal_does_not_bypass_real_lsm_and_socket_filter_is_checked_under_rcu",
+    "KernelDeviceUeventDeliverySource.test_main_event_validates_actual_origin_before_any_array_deref_callback_or_allocation",
+    "KernelDeviceUeventDeliverySource.test_new_births_retain_original_bank_parent_even_after_descriptor_close",
+    "KernelDeviceUeventDeliverySource.test_no_caller_selected_actor_or_ordinary_callback_substitution",
+    "KernelDeviceUeventDeliverySource.test_projected_config_off_duplicates_are_exact_originals",
+    "KernelDeviceUeventDeliverySource.test_real_active_lsm_identities_are_checked_before_original_mandatory_dispatch",
+    "KernelDeviceUeventDeliverySource.test_real_filter_name_uevent_sequence_and_broadcast_are_still_called",
+    "KernelDeviceUeventDeliverySource.test_rehashed_members_and_enablement_claims_refuse",
+    "KernelDeviceUeventDeliverySource.test_shape_is_authenticated_before_shared_info_or_new_head_allocation",
+    "KernelDeviceUeventDeliverySource.test_unknown_changed_duplicate_and_crlf_definitions_fail_closed",
+    "KernelDeviceUeventDeliverySource.test_wrappers_preserve_entire_ordinary_bodies_and_unsupported_operations_refuse_early"
+  ],
+  "guards": {
+    "KernelDeviceUeventDeliverySource.test_copy_and_retirement_dispatch_precede_old_shape_and_allocator_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_env_and_actual_path_span_are_checked_before_string_read_and_skb_birth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_exact_wholes_definitions_parent_projections_and_false_gates": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_filter_refusal_does_not_bypass_real_lsm_and_socket_filter_is_checked_under_rcu": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_main_event_validates_actual_origin_before_any_array_deref_callback_or_allocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_new_births_retain_original_bank_parent_even_after_descriptor_close": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_no_caller_selected_actor_or_ordinary_callback_substitution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_projected_config_off_duplicates_are_exact_originals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_real_active_lsm_identities_are_checked_before_original_mandatory_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_real_filter_name_uevent_sequence_and_broadcast_are_still_called": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_rehashed_members_and_enablement_claims_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_shape_is_authenticated_before_shared_info_or_new_head_allocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_unknown_changed_duplicate_and_crlf_definitions_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceUeventDeliverySource.test_wrappers_preserve_entire_ordinary_bodies_and_unsupported_operations_refuse_early": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e46bddce012609946eaf291588e2c6e952e7163e1e5678e1b862a306716a9db7",
+        "class:setup-sha256:80b33095218b6b55045afc9095c00744e32f69de5d2fad925cf7adedf3b65909"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_device_uevent_delivery.py",
+  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
