@@ -35,11 +35,14 @@ internal static class Program
             return TaskWait.Run(args[1..]);
         if (args.Length == 4 && args[0] == "--finite-task-wait")
             return TaskWait.Run(args[1..], finiteSelected: true);
+        if (args.Length == 4 && args[0] == "--managed-task-wait")
+            return TaskWait.Run(args[1..], finiteSelected: true, managedSelected: true);
         if (args.Length == 5 && args[0] == "--closed-filesystem")
             return ClosedFilesystem.Run(args[1..]);
         try
         {
-            var synchronousRead = args.Length == 4 && args[0] == "--sync-read";
+            var managedWork = args.Length == 4 && args[0] == "--managed-sync-read";
+            var synchronousRead = args.Length == 4 && (args[0] == "--sync-read" || managedWork);
             if (synchronousRead) args = args[1..];
             if (args.Length != 3 || args.Any(path => path.Length is 0 or > 4096))
                 throw new InvalidDataException("http-error-patch-arguments");
@@ -128,6 +131,10 @@ internal static class Program
             converter.Body.GetILProcessor().InsertAfter(originalReturn, Instruction.Create(OpCodes.Ret));
             var selectedMethods = module.GetTypes().SelectMany(type => type.Methods)
                 .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method));
+            object? requiredContent = managedWork ? ManagedHttpWork.Apply(module) : null;
+            if (managedWork)
+                selectedMethods = module.GetTypes().SelectMany(type => type.Methods)
+                    .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             // Reopen the serialized product before issuing a receipt. Relocated
             // method tokens may change; branch, catch and helper semantics may not.
@@ -153,6 +160,8 @@ internal static class Program
             })!.AsObject();
             if (syncRead is not null)
                 result["synchronousRead"] = JsonSerializer.SerializeToNode(syncRead);
+            if (requiredContent is not null)
+                result["requiredContentWork"] = JsonSerializer.SerializeToNode(requiredContent);
             using var receiptOutput = new FileStream(receipt, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             JsonSerializer.Serialize(receiptOutput, result);
             Console.WriteLine(JsonSerializer.Serialize(result));

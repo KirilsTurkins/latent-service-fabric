@@ -7,7 +7,7 @@
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
-    "if": "github.event_name == 'workflow_dispatch' && inputs.fresh_component",
+    "if": "github.event_name == 'workflow_dispatch' && inputs.fresh_component && !inputs.mixed_content",
     "name": "Signed ordinary Flurl Refit and outside NuGet clients",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -99,7 +99,7 @@
   },
   "jobId": "published-http",
   "kind": "job",
-  "reviewReason": "Keep original compiler commands and all20 signed plus2 denial gates; authenticate original successful7e3 component and replay after only unique progress filenames, without guest or native recompilation.",
+  "reviewReason": "Explicit review: sole condition adds default-false mixed_content exclusion; every original step command timeout environment and default path is unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

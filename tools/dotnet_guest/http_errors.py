@@ -341,17 +341,22 @@ def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: 
     target_identity = read_file(sdk / "tools/http-errors/HttpErrors.targets", MAX_RECEIPT)
     targets.write_bytes(target_identity)
     source_identity = inventory(snapshot(sdk / "tools/http-errors"))
-    mode = ("--sync-read",) if task_wait_port is not None else ()
+    managed = task_wait_port is not None and 'managedAcceptedWork' in task_wait_port.evidence
+    mode = ("--managed-sync-read",) if managed else ("--sync-read",) if task_wait_port is not None else ()
     run("http-errors-rewrite", dotnet, tools / "http-errors/HttpErrors.dll", *mode, originals[0], assembly, receipt)
     result = json.loads(read_file(receipt, MAX_RECEIPT))
     if (set(result) != {"patch", "sourceDigest", "outputDigest", "cecilDigest", "method", "categories",
                        "arbitraryPayloadDisclosure", "defaultClientComponentQualified"} |
-                       ({"synchronousRead"} if task_wait_port is not None else set())
+                       ({"synchronousRead"} if task_wait_port is not None else set()) |
+                       ({"requiredContentWork"} if managed else set())
             or result["patch"] != "latent.dotnet.http-errors.v1" or result["sourceDigest"] != SOURCE_DIGEST
             or result["cecilDigest"] != CECIL_DIGEST or result["categories"] != list(MARKERS)
             or result["method"] != METHOD
             or result["arbitraryPayloadDisclosure"] is not False or result["defaultClientComponentQualified"] is not False):
         raise ValueError("http-error-port-rewrite-receipt")
+    if managed:
+        from tools.dotnet_guest.managed_work import validate_http_rewrite
+        validate_http_rewrite(result['requiredContentWork'])
     if task_wait_port is not None:
         validate_sync_read(result["synchronousRead"])
         task_wait_port.recheck()
