@@ -3,6 +3,9 @@
  * lock and RCU doubles. Not Linux layout, concurrency, LSM or final-free proof. */
 #include "reference-io.h"
 #include <stdbool.h>
+/* Exact macro shape observed in the maintained Kbuild failure. It must never
+ * rewrite a private local ticket declaration as a function declaration. */
+#define current get_current()
 #include "prepaid.h"
 #define CONFIG_LSF_STREAM_FACTORY 1
 #define EOPNOTSUPP 95

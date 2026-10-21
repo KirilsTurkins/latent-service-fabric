@@ -64,6 +64,11 @@ private:
   bool rollback_pending_ = false;
   Retirement rollback_retirement_ = nullptr;
   void* rollback_record_ = nullptr;
+  JobOwners retired_{};
+  bool retirement_pending_ = false;
+  bool retired_executed_ = false;
+  Retirement retired_callback_ = nullptr;
+  void* retired_record_ = nullptr;
   bool running_ = false;
   bool stopped_ = false;
 
@@ -85,8 +90,31 @@ private:
     }
   }
 
-  static void acknowledge(Job& job) {
-    if (job.retirement) job.retirement(job.retirement_record, job.phase == Phase::Retired);
+  bool acknowledgeRetired(JSContext* cx) {
+    if (!retirement_pending_) return true;
+    const bool acknowledged = retired_executed_
+        ? accounting_.completed(cx, retired_)
+        : accounting_.cancelled(cx, retired_);
+    if (!acknowledged || live(retired_)) return false;
+    retirement_pending_ = false;
+    auto callback = retired_callback_;
+    auto* record = retired_record_;
+    retired_callback_ = nullptr;
+    retired_record_ = nullptr;
+    if (callback) callback(record, retired_executed_);
+    return true;
+  }
+
+  bool retireCurrent(JSContext* cx) {
+    // Only one frame can retire at a time. Its actual rooted callable and
+    // tracking allocation disappear before the exact tokens can be refunded.
+    retired_ = current_->owners;
+    retired_executed_ = current_->phase == Phase::Retired;
+    retired_callback_ = current_->retirement;
+    retired_record_ = current_->retirement_record;
+    retirement_pending_ = true;
+    current_.reset();
+    return acknowledgeRetired(cx);
   }
 
 public:
@@ -169,12 +197,10 @@ public:
       // frame is now retired; settlement happens after that boundary in either
       // outcome, without changing the original exception or root stop cause.
       current_->phase = Phase::Retired;
-      if (!accounting_.completed(cx, current_->owners) || live(current_->owners)) {
+      if (!retireCurrent(cx)) {
         stopped_ = true;
         break;
       }
-      acknowledge(*current_);
-      current_.reset();
       if (!called) {
         stopped_ = true;
         break;
@@ -184,7 +210,7 @@ public:
   }
 
   bool empty() const override {
-    return !head_ && !current_ && !rollback_pending_;
+    return !head_ && !current_ && !rollback_pending_ && !retirement_pending_;
   }
   bool isDrainingStopped() const override { return stopped_; }
 
@@ -200,23 +226,19 @@ public:
       rollback_retirement_ = nullptr;
       rollback_record_ = nullptr;
     }
+    if (!acknowledgeRetired(cx)) return false;
     if (current_) {
       // The running frame must have returned before a cancellation or a failed
       // settlement is retried. Mutable acknowledged flags prevent double
       // refunds when a previous transition retired only one of its owners.
       if (current_->phase == Phase::Executing) return false;
-      const bool settled = current_->phase == Phase::Retired
-          ? accounting_.completed(cx, current_->owners)
-          : accounting_.cancelled(cx, current_->owners);
-      if (!settled || live(current_->owners)) return false;
-      acknowledge(*current_);
-      current_.reset();
+      if (!retireCurrent(cx)) return false;
     }
     while (head_) {
-      if (!accounting_.cancelled(cx, head_->owners) || live(head_->owners)) return false;
-      acknowledge(*head_);
-      auto next = std::move(head_->next);
-      head_ = std::move(next);
+      current_ = std::move(head_);
+      head_ = std::move(current_->next);
+      if (!head_) tail_ = nullptr;
+      if (!retireCurrent(cx)) return false;
     }
     tail_ = nullptr;
     return true;

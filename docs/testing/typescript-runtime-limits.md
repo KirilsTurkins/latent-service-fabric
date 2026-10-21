@@ -51,3 +51,20 @@ These measurements apply to the explicit profiles above, not minimum client
 requirements. Earlier controller failures remain failures. This programme does
 not establish late-completion or cross-tenant isolation and does not close the
 complete SDK or Fetch matrices.
+
+Tracking allocations now retire before their exact broker acknowledgements.
+Promise and reaction tables detach and destroy each nonphysical record first;
+the job queue also destroys its rooted callable and tracking allocation after
+the actual frame returns, or before acknowledging queued cancellation. A fixed
+slot preserves each outstanding owner and its acknowledged flags if settlement
+fails. Retrying cleanup needs no new allocation and does not replay the frame
+or refund an owner twice. GC callbacks still make no host calls.
+
+The nine `test_typescript_record_retirement.py` controls compile these actual
+C++ classes with serialized JS lifetime doubles. They check allocation death,
+callable-root destruction, partial acknowledgements and once-only callbacks.
+They qualify tracking lifetime only; engine/GC semantics and signed execution
+retain their separate evidence. Earlier engine products retain their original
+source identities and are not relabelled as containing this correction.
+The [reference observation](evidence/typescript-tracking-retirement-reference-2026-10-21.json)
+binds the exact source files and original-failing/corrected-passing results.

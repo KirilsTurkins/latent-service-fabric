@@ -30,6 +30,8 @@ class PromiseRecords final {
   std::unique_ptr<Record> records_;
   NativeOwner failed_admission_{};
   bool failed_admission_pending_ = false;
+  NativeOwner retired_owner_{};
+  bool retirement_pending_ = false;
   bool stopped_ = false;
 
 public:
@@ -114,6 +116,11 @@ public:
           failed_admission_.live) return false;
       failed_admission_pending_ = false;
     }
+    if (retirement_pending_) {
+      if (!accounting_.acknowledgeRetirement(cx, retired_owner_) ||
+          retired_owner_.live) return false;
+      retirement_pending_ = false;
+    }
     auto* link = &records_;
     while (*link) {
       auto* record = link->get();
@@ -121,10 +128,16 @@ public:
         link = &record->next;
         continue;
       }
-      if (!accounting_.acknowledgeRetirement(cx, record->owner) ||
-          record->owner.live) return false;
-      auto next = std::move(record->next);
-      *link = std::move(next);
+      // The GC object is gone; keep its exact charge until this tracking
+      // allocation is also destroyed. A fixed slot retains failed acks.
+      retired_owner_ = record->owner;
+      retirement_pending_ = true;
+      auto physical = std::move(*link);
+      *link = std::move(physical->next);
+      physical.reset();
+      if (!accounting_.acknowledgeRetirement(cx, retired_owner_) ||
+          retired_owner_.live) { stopped_ = true; return false; }
+      retirement_pending_ = false;
     }
     return true;
   }
@@ -136,7 +149,7 @@ public:
     return false;
   }
   bool hasRetainedRetirement() const {
-    if (failed_admission_pending_) return true;
+    if (failed_admission_pending_ || retirement_pending_) return true;
     for (auto* record = records_.get(); record; record = record->next.get()) {
       if (!record->physical && record->owner.live) return true;
     }

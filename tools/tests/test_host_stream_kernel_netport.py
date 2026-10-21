@@ -142,6 +142,14 @@ class KernelNetport(unittest.TestCase):
         self.assertIn('#ifdef LSF_OLD_NETPORT', body)
         self.assertIn('lsf_prepaid_netport_drain(', body)
 
+    def test_actual_linux_current_macro_cannot_rewrite_private_ticket_local(self):
+        source = self.owned('prepaid.h')
+        selected = source[source.index('static inline int lsf_prepaid_netport_current'):source.index('static inline int lsf_prepaid_blob_finish')]
+        self.assertIn('struct lsf_prepaid_ticket observed_ticket;', selected)
+        self.assertNotRegex(selected, r'\bcurrent\b')
+        reference = self.owned('netport-reference.c')
+        self.assertLess(reference.index('#define current get_current()'), reference.index('#include "prepaid.h"'))
+
 
 if __name__ == '__main__':
     unittest.main()

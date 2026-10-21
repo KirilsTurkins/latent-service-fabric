@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ (github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true }}",
+    "if": "${{ inputs.netport != true && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true) }}",
     "name": "Twelve actual maintained objects with nested Netlabel owners and SELinux enabled",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -56,7 +56,7 @@
   },
   "jobId": "netlabel-objects",
   "kind": "job",
-  "reviewReason": "Reviewed closed exclusive Netlabel object-only mode: original six job body/default and all original commands/config/security/process bounds preserved; twelve targets, thirty-four globals, NETLABEL already enabled, no link boot installation or physical qualification.",
+  "reviewReason": "Exclusive Netport14 source-only Kbuild profile; retain both earlier complete job bodies, all twelve old source controls, original security/config/command bounds and all old required globals. Four additive closed-selector controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

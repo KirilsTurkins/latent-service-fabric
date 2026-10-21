@@ -67,7 +67,7 @@ and no cache statistic is used as physical-free evidence.
 
 ## Evidence and remaining chain
 
-Eleven focused source controls and all fifty unchanged Netlabel/protocol/
+Twelve focused source controls and all fifty unchanged Netlabel/protocol/
 factory/outer controls pass. The supplemental freestanding C reference executes
 ten selected actual factory definitions plus the selected maintained hash,
 find, insert, slow/fast SID lookup and flush bodies. The original generic cache
@@ -77,10 +77,26 @@ cross-context hit, stale generation, published-return refusal, late birth and
 flush/callback between snapshot and lock acquisition. A first reference attempt
 retains its unused-variable compile error; the corrected attempt is separate.
 
+The first real fourteen-object Kbuild attempt reached the selected configuration
+and failed because a local ticket named `current` expanded through Linux's
+`current` macro. The correction renames only that local to `observed_ticket`.
+The reference now includes the observed macro shape. An additional compiler
+control rejects the exact old header and compiles the corrected header with
+strict warnings; the original nineteen lifetime controls still pass. The first
+syntax-only probe's Zig wrapper warning is retained separately and is not
+positive evidence.
+
 The reference uses explicit serialized type/list/policy/lock/RCU doubles. It
 does not execute Linux policy, actual spinlocks or Linux RCU, and does not
-establish real geometry, allocation bounds or physical final free. No hosted
-kernel/object/host campaign has run for this new prefix yet.
+establish real geometry, allocation bounds or physical final free. The corrected
+source `358ffe5c56790f86e29d2fe63185a606054cb92e` passed the actual hosted
+fourteen-object job `119036670283` in run `39543596597`: 14 x86-64 objects,
+40 private global functions, 29 exact derived identities, all 42 hosted
+source/controller tests and 19 clean owned commands. All 58 artifact members
+were independently read and hashed; the 4,309-symbol configuration differs
+only by enabling the private candidate. SELinux and Netlabel remain enabled.
+The original failed object attempt is retained separately. This compiles the
+real private cache prefix without executing Linux cache, policy or RCU paths.
 
 The authenticated source also exposes remaining real allocation paths:
 
