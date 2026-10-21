@@ -1,6 +1,6 @@
 {
   "schemaVersion": "latent.guest.runtime-capabilities.v1",
-  "sourceBaseline": "e600f474416b59d2420838fa6933569a4a3077c5",
+  "sourceBaseline": "5a2888acffbd3579083da35c08dc1630c2096ead",
   "informationalOnly": true,
   "usedByResolutionBuildAdmission": false,
   "qualifiedStatusMeaning": "Only the exact finite original programme linked in evidence; source-bound historical receipts are not current-host rebuild claims.",
@@ -262,10 +262,11 @@
       "evidence": [
         "docs/testing/rust-wasi-http-runtime.md",
         "docs/testing/evidence/rust-wasi-http-signed-2026-10-21.json",
-        "docs/testing/evidence/rust-wasi-http-installed-2026-10-21.json"
+        "docs/testing/evidence/rust-wasi-http-installed-2026-10-21.json",
+        "docs/testing/evidence/rust-wasi-http-limits-2026-10-22.json"
       ],
-      "finiteBounds": "Explicit async public contract and selected WASI HTTP runtime beneath unchanged Waki 0.5.1/Golem 0.2.0. Sixty-four attempts at 16MiB/8 outbound, eight tasks/timers, plus a separate six-attempt installed recipe; original 88b guest, 526 backend and c713 native identities remain separate.",
-      "remaining": "Individual signed memory/Task/Timer saturation is still pending. No arbitrary executor, std::thread, raw socket/TLS, current host rebuild or fully released frontend qualification is inferred."
+      "finiteBounds": "Explicit async public contract and selected WASI HTTP runtime beneath unchanged Waki 0.5.1/Golem 0.2.0. Sixty-four attempts at 16MiB/8 outbound, eight tasks/timers, plus a separate six-attempt installed recipe; original 88b guest, 526 backend and c713 native identities remain separate. A separate nine-attempt programme at source 7003c123 qualifies individual memory/Task/Timer differentials, positive controls and matched fresh calls; 17 physical retirement observations and all 18 active provider counters are retained. Memory public detail is empty and the Timer instruction remains unknown.",
+      "remaining": "No arbitrary executor, std::thread, raw socket/TLS, current host rebuild or fully released frontend qualification is inferred."
     },
     {
       "language": "rust",
