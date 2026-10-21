@@ -247,12 +247,13 @@ def library_error(payload,client_name,expected):
                 and code=='set_first_byte_timeout'),'rust-http-exact-unsupported-option-setter-not-other-error')
         exact=True
     elif expected=='error:request-denied':
-        require(phase=='send' and not public['serdeJsonError'] and code=='HttpRequestDenied',
+        require(phase=='send' and not public['serdeJsonError'] and code=='ErrorCode::HttpRequestDenied',
             'rust-http-real-request-denied-not-unavailable')
         exact=True
     elif expected=='error:reserved-header':
         require(phase=='send' and not public['serdeJsonError']
-            and (value['debug']=='Forbidden' if client_name=='waki' else code=='Forbidden'),
+            and (value['display']==value['debug']=='HeaderError::Forbidden' and code is None
+                if client_name=='waki' else code=='HeaderError::Forbidden'),
             'rust-http-real-forbidden-header-not-transport-or-permission')
         exact=True
     elif expected=='error:json-decode':
@@ -262,15 +263,15 @@ def library_error(payload,client_name,expected):
         exact=True
     elif expected=='error:resource-capacity':
         require(phase=='send' and not public['serdeJsonError']
-            and code=='InternalError(Some("latent-runtime-resource-exhausted"))',
+            and code=='ErrorCode::InternalError(Some("latent-runtime-resource-exhausted"))',
             'rust-http-real-original-runtime-resource-capacity-not-permission-or-unsupported')
         exact=True
     else:
         require(expected in {'error:body-or-protocol','error:response-size','error:uncertain-post'}
             and not public['serdeJsonError'],'rust-http-closed-library-error-oracle')
-        selected=({'HttpProtocolError','HttpResponseIncomplete'} if expected=='error:body-or-protocol'
-            else {'InternalError(Some("latent-http-response-too-large"))'} if expected=='error:response-size'
-            else {'InternalError(Some("latent-http-uncertain"))','HttpResponseIncomplete'})
+        selected=({'ErrorCode::HttpProtocolError','ErrorCode::HttpResponseIncomplete'} if expected=='error:body-or-protocol'
+            else {'ErrorCode::InternalError(Some("latent-http-response-too-large"))'} if expected=='error:response-size'
+            else {'ErrorCode::InternalError(Some("latent-http-uncertain"))','ErrorCode::HttpResponseIncomplete'})
         exact=phase=='send' and code in selected
         if client_name=='golem' and phase=='body' and public['isBody'] is True:
             # Unlike Waki's opaque resource-handle Debug, Golem Body::buffer
@@ -704,6 +705,51 @@ def queued_cancel(client,node,target,peers,probe,output):
             if process is not None:close_call(process,primary_failure=primary_failure)
 
 
+def compact_record(record,output):
+    """Bind original per-case evidence without copying it into the aggregate."""
+    def reference(name,value):
+        path=output/name
+        require(read_json(path,262144)==value,'rust-http-summary-original-evidence-required')
+        return {'path':name,**file_identity(path,262144)}
+    result=dict(record)
+    allowed={tenant+'-'+spec[0] for tenant in TENANTS for spec in cases()}
+    allowed.update(tenant+'-cross-fresh' for tenant in TENANTS)
+    require(len(record['cases'])<=52 and len(record['preEntryRefusals'])<=8,
+        'rust-http-summary-original-case-count-bounds')
+    result['cases']=[]
+    for item in record['cases']:
+        require(item['case'] in allowed,'rust-http-summary-owned-case-name')
+        result['cases'].append({key:item[key] for key in ('case','tenant','client','observedContacts')}
+            | {'evidence':reference('case-'+item['case']+'.json',item)})
+    result['preEntryRefusals']=[]
+    for item in record['preEntryRefusals']:
+        require(item['tenant'] in TENANTS and item['case'] in
+            {'ungranted','missing-http','missing-clock','missing-activation'},
+            'rust-http-summary-owned-refusal-name')
+        result['preEntryRefusals'].append({'tenant':item['tenant'],'case':item['case'],
+            'evidence':reference('pre-entry-'+item['tenant']+'-'+item['case']+'.json',item)})
+    if 'queuedCancel' in record:
+        result['queuedCancel']={'evidence':reference('queued-before-dispatch.json',record['queuedCancel'])}
+    if 'providerAbsence' in record:
+        value=record['providerAbsence']
+        result['providerAbsence']={'status':value['status'],'httpProviderInstalled':value['httpProviderInstalled'],
+            'invocations':[{'client':item['client']} for item in value['invocations']],
+            'evidence':reference('provider-absence/qualification.json',value)}
+    result['evidenceLayout']='individual-original-records-with-sha256-and-byte-length'
+    return result
+
+
+def retain_failed_record(output,record):
+    # Reporting must never replace the original controller failure, including
+    # when collection or its bounded serialization refuses.
+    try:write_json(output/'FAILED.json',compact_record(record,output))
+    except BaseException:
+        try:write_json(output/'FAILED.json',{'schemaVersion':record['schemaVersion'],
+            'status':'failed','stage':record['stage'],'qualification':False,
+            'summaryRetentionRefused':True,'originalFailurePreserved':True})
+        except BaseException:pass
+
+
 def run(artifact,native,output,*,deadline):
     output=fresh(output)
     original_names=('component.wasm','BUILD-COMPLETE.json','source-inputs.json','recipe-inputs.json',
@@ -820,9 +866,9 @@ def run(artifact,native,output,*,deadline):
             invocationAttempts=len(record['cases'])+len(record['preEntryRefusals'])+4,
             preEntryRefusalsCount=len(record['preEntryRefusals'])+3,
             ordinaryLibraryCases=len(record['cases']),queuedBeforeGuestCancelled=1,providerAbsenceRefusals=2)
-        write_json(output/'qualification.json',record);return record
+        summary=compact_record(record,output)
+        write_json(output/'qualification.json',summary);return summary
     except BaseException:
         record.update(status='failed',stage=stage)
-        try:write_json(output/'FAILED.json',record)
-        except OSError:pass
+        retain_failed_record(output,record)
         raise

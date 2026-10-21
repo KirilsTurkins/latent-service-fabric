@@ -260,10 +260,10 @@ class RuntimeOracles(unittest.TestCase):
             return 'library-error:'+json.dumps(value)
         cases=[('waki','error:timeout-option',payload('waki','send','failed to set connect_timeout','failed to set connect_timeout')),
             ('golem','error:timeout-option',payload('golem','send','error sending request','real upstream request debug',sourceDisplay='set_first_byte_timeout')),
-            ('waki','error:request-denied',payload('waki','send','HttpRequestDenied','HttpRequestDenied',typedWasiErrorCode='HttpRequestDenied')),
-            ('golem','error:request-denied',payload('golem','send','error sending request','real upstream request debug',sourceDisplay='HttpRequestDenied')),
-            ('waki','error:reserved-header',payload('waki','send','Forbidden','Forbidden')),
-            ('golem','error:reserved-header',payload('golem','send','error sending request','real upstream request debug',sourceDisplay='Forbidden')),
+            ('waki','error:request-denied',payload('waki','send','ErrorCode::HttpRequestDenied','ErrorCode::HttpRequestDenied',typedWasiErrorCode='ErrorCode::HttpRequestDenied')),
+            ('golem','error:request-denied',payload('golem','send','error sending request','real upstream request debug',sourceDisplay='ErrorCode::HttpRequestDenied')),
+            ('waki','error:reserved-header',payload('waki','send','HeaderError::Forbidden','HeaderError::Forbidden')),
+            ('golem','error:reserved-header',payload('golem','send','error sending request','real upstream request debug',sourceDisplay='HeaderError::Forbidden')),
             ('waki','error:json-decode',payload('waki','json','expected value','Error("expected value", line: 1, column: 1)',serdeJsonError=True)),
             ('golem','error:json-decode',payload('golem','json','error decoding response body','real serde source debug',isRequest=False,isDecode=True,serdeJsonError=True))]
         for client,expected,value in cases:
@@ -297,6 +297,92 @@ class RuntimeOracles(unittest.TestCase):
             changed['public']['sourceDisplay']=substitute
             with self.subTest(substitute=substitute),self.assertRaises(Exception):
                 node.library_error('library-error:'+json.dumps(changed),'golem','error:response-size')
+
+    def test_actual_waki_header_error_requires_its_complete_exact_public_format(self):
+        evidence=json.loads((qualification.ROOT/'docs/testing/evidence/rust-wasi-http-forbidden-reader-failure-2026-10-21.json').read_bytes())
+        row=evidence['actualInvocation'];payload=row['decoded'][0]['ok'].removeprefix('fresh:waki:')
+        actual=json.loads(payload.removeprefix('library-error:'))
+        self.assertFalse(actual['debug']=='Forbidden') # exact failed original reader
+        self.assertEqual(row['response']['data']['consumption']['outboundRequests'],0)
+        self.assertTrue(row['processReaped'])
+        self.assertTrue(node.library_error(payload,'waki','error:reserved-header')['exactUnderlyingCategoryProven'])
+        for field,value in (('debug','Forbidden'),('display','Forbidden'),
+                ('typedWasiErrorCode','HttpRequestDenied'),('phase','body'),('serdeJsonError',True)):
+            changed=copy.deepcopy(actual)
+            if field in ('typedWasiErrorCode','serdeJsonError'):changed['public'][field]=value
+            else:
+                changed[field]=value
+                if field!='phase':changed[field+'Bytes']=len(value.encode())
+            with self.subTest(field=field),self.assertRaises(RuntimeError):
+                node.library_error('library-error:'+json.dumps(changed),'waki','error:reserved-header')
+
+    def test_source_authenticated_library_formatters_refuse_unprefixed_or_wrong_typed_variants(self):
+        proof=json.loads((qualification.ROOT/'docs/testing/evidence/rust-wasi-http-library-formatter-source-2026-10-21.json').read_bytes())
+        self.assertEqual((proof['compileExitCode'],proof['runExitCode']),(0,0))
+        self.assertFalse(proof['guestOrNativeProductExecuted'])
+        for client in ('waki','golem'):
+            for code in proof['formatterStrings']:
+                expected=('error:reserved-header' if code=='HeaderError::Forbidden' else
+                    'error:request-denied' if code=='ErrorCode::HttpRequestDenied' else
+                    'error:resource-capacity' if 'latent-runtime-resource-exhausted' in code else
+                    'error:response-size' if 'latent-http-response-too-large' in code else
+                    'error:uncertain-post' if 'latent-http-uncertain' in code else 'error:body-or-protocol')
+                public=({'typedWasiErrorCode':None if code=='HeaderError::Forbidden' else code,
+                    'serdeJsonError':False} if client=='waki' else {'isBuilder':False,'isRequest':True,
+                    'isBody':False,'isDecode':False,'isTimeout':False,'isStatus':False,
+                    'serdeJsonError':False,'sourceDisplay':code})
+                value={'phase':'send','display':code,'debug':code,'displayBytes':len(code),
+                    'debugBytes':len(code),'public':public,'truncated':False}
+                self.assertTrue(node.library_error('library-error:'+json.dumps(value),client,expected)['exactUnderlyingCategoryProven'])
+                changed=copy.deepcopy(value);short=code.split('::',1)[1]
+                changed.update(display=short,debug=short,displayBytes=len(short),debugBytes=len(short))
+                if client=='golem':changed['public']['sourceDisplay']=short
+                elif public['typedWasiErrorCode'] is not None:changed['public']['typedWasiErrorCode']=short
+                with self.subTest(client=client,code=code),self.assertRaises(RuntimeError):
+                    node.library_error('library-error:'+json.dumps(changed),client,expected)
+
+    def test_full52_case_aggregate_is_bounded_without_losing_original_per_case_values(self):
+        record={'schemaVersion':'latent.rust.wasi-http.node.v1','status':'passed',
+            'cases':[],'preEntryRefusals':[],'guestExecutions':53,'invocationAttempts':64}
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)
+            for tenant,client in (('examples','waki'),('foreign','golem')):
+                labels=[tenant+'-'+spec[0] for spec in node.cases()]+[tenant+'-cross-fresh']
+                for label in labels:
+                    item={'case':label,'tenant':tenant,'client':client,'observedContacts':1,
+                        'invocation':{'controlledPublicEvidence':'x'*20000}}
+                    record['cases'].append(item);node.write_json(output/('case-'+label+'.json'),item)
+            self.assertGreater(len(json.dumps(record).encode()),262144)
+            summary=node.compact_record(record,output)
+            self.assertEqual((len(summary['cases']),summary['guestExecutions'],summary['invocationAttempts']),(52,53,64))
+            node.write_json(output/'qualification.json',summary)
+            self.assertLess((output/'qualification.json').stat().st_size,32768)
+            for original,reference in zip(record['cases'],summary['cases']):
+                path=output/reference['evidence']['path']
+                self.assertEqual(json.loads(path.read_bytes()),original)
+                self.assertEqual(node.file_identity(path,262144),{k:reference['evidence'][k] for k in ('sha256','bytes')})
+            first=output/summary['cases'][0]['evidence']['path']
+            first.write_text('{}',encoding='utf-8')
+            with self.assertRaisesRegex(RuntimeError,'original-evidence-required'):
+                node.compact_record(record,output)
+
+    def test_failed_summary_collection_never_masks_the_primary_controller_failure(self):
+        class PrimaryFailure(RuntimeError):pass
+        with tempfile.TemporaryDirectory() as temporary:
+            record={'schemaVersion':'latent.rust.wasi-http.node.v1','status':'failed','stage':'examples-reserved-auth'}
+            with patch.object(node,'compact_record',side_effect=ValueError('injected summary refusal')):
+                node.retain_failed_record(Path(temporary),record)
+            fallback=json.loads((Path(temporary)/'FAILED.json').read_bytes())
+            self.assertTrue(fallback['originalFailurePreserved'])
+            self.assertTrue(fallback['summaryRetentionRefused'])
+            self.assertFalse(fallback['qualification'])
+            with patch.object(node,'compact_record',side_effect=ValueError('injected summary refusal')), \
+                    patch.object(node,'write_json',side_effect=OSError('injected disk refusal')), \
+                    self.assertRaisesRegex(PrimaryFailure,'original controller failure'):
+                try:raise PrimaryFailure('original controller failure')
+                except PrimaryFailure:
+                    node.retain_failed_record(Path(temporary),record)
+                    raise
 
     def row(self,action=''):
         code={'trap':'guest-trap','cancel':'cancelled','deadline':'deadline-exceeded'}.get(action)
@@ -396,7 +482,7 @@ class RuntimeOracles(unittest.TestCase):
         for client in ('waki','golem'):
             row,_spec,revision,budget=self.row()
             spec=next(r for r in node.cases() if r[0]=='resource-capacity')
-            code='InternalError(Some("latent-runtime-resource-exhausted"))'
+            code='ErrorCode::InternalError(Some("latent-runtime-resource-exhausted"))'
             public=({'typedWasiErrorCode':code,'serdeJsonError':False} if client=='waki' else {
                 'isBuilder':False,'isRequest':True,'isBody':False,'isDecode':False,'isTimeout':False,
                 'isStatus':False,'serdeJsonError':False,'sourceDisplay':code})

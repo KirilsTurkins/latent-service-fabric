@@ -1,0 +1,71 @@
+{
+  "actualCompilerSource": "88b3c9c1d305eb8e308a7187600f782163bc6131",
+  "actualExecutableApproval": "sha256:4c88e5fce6512c50b8d7b88ebd6ba470554220a195beae034c9b9c67b01411a2",
+  "wakiGeneratorCrate": {
+    "url": "https://static.crates.io/crates/wit-bindgen-rust/wit-bindgen-rust-0.34.0.crate",
+    "sha256": "sha256:f6919521fc7807f927a739181db93100ca7ed03c29509b84d5f96b27b2e49a9a",
+    "bytes": 39694
+  },
+  "wakiDebugAlgorithm": "Exact captured0.34.0 interface.rs1497 emits f.debug_tuple(Type::Case), field(payload), finish; error Display uses Debug.",
+  "golemConversion": "Exact upstream conversions.rs From<types::ErrorCode/HeaderError> uses Kind::Request and io::Error::other(format!(\"{:?}\",value)); records sourceDisplay unmodified.",
+  "sourcePreimages": {
+    "wit-bindgen-rust-0.34.0\\src\\interface.rs": {
+      "sha256": "sha256:ca1e134295d3be2f2217fef2d9e16277a05150429c352fa4ba2eb8343c1c32aa",
+      "bytes": 82728
+    },
+    "wit-bindgen-rust-0.34.0\\src\\lib.rs": {
+      "sha256": "sha256:92471c1cf3bf3146fb32cc5d73b0ad356ddc4688a2fd3c13f12868135bd1f424",
+      "bytes": 49358
+    },
+    "wasip2-1.0.4+wasi-0.2.12\\src\\proxy.rs": {
+      "sha256": "sha256:0f934c0b643edbbcae7828eaa6ff821921c6fa55d204811267b5926ab90126c0",
+      "bytes": 460783
+    },
+    "waki-0.5.1\\src\\lib.rs": {
+      "sha256": "sha256:662d1d49a1ff0d1b49b71709df07ea69cc67eedfa94ed0caa3e4cb563e02a7ea",
+      "bytes": 1734
+    },
+    "waki-0.5.1\\src\\request.rs": {
+      "sha256": "sha256:9d680aeeca448eb69c9482b46ae73a283229c15a164b246badb5a4620a4c5cbb",
+      "bytes": 7976
+    },
+    "waki-0.5.1\\wit\\deps\\http\\types.wit": {
+      "sha256": "sha256:d4d9eb5f4837ead879e40664aced1836c0f880315289ef728659bceebc1e1a56",
+      "bytes": 27303
+    },
+    "waki-0.5.1\\src\\common\\header.rs": {
+      "sha256": "sha256:733748c8ab86b6686d03d84d55ee7416cfd3a71ea68f3489335632364ed4a8c2",
+      "bytes": 979
+    },
+    "golem-wasi-http-0.2.0\\src\\error.rs": {
+      "sha256": "sha256:33925070c89536e95904178c490957f33313e33449b880a4eda8e68c432cc80e",
+      "bytes": 8984
+    },
+    "golem-wasi-http-0.2.0\\src\\lib.rs": {
+      "sha256": "sha256:b8672a75f420eae9d5b1cebc8c56027506db4bb840cd942929c861b8c6633bad",
+      "bytes": 1821
+    },
+    "golem-wasi-http-0.2.0\\src\\wasi\\conversions.rs": {
+      "sha256": "sha256:75fb9a560e525664fca6c63419ca0f2777507b96bfcc3e32e49ab32613afcbb9",
+      "bytes": 1504
+    },
+    "golem-wasi-http-0.2.0\\src\\wasi\\sync_client.rs": {
+      "sha256": "sha256:6f7e8de2f0b6da159164a58c3a1ed0a2a78376d06fac18d0123909d300c0f167",
+      "bytes": 13216
+    }
+  },
+  "formatterStrings": [
+    "HeaderError::Forbidden",
+    "ErrorCode::HttpRequestDenied",
+    "ErrorCode::HttpProtocolError",
+    "ErrorCode::HttpResponseIncomplete",
+    "ErrorCode::InternalError(Some(\"latent-runtime-resource-exhausted\"))",
+    "ErrorCode::InternalError(Some(\"latent-http-response-too-large\"))",
+    "ErrorCode::InternalError(Some(\"latent-http-uncertain\"))"
+  ],
+  "compileExitCode": 0,
+  "runExitCode": 0,
+  "oldUnprefixedPredicatesFalse": true,
+  "newExactPredicatesTrue": true,
+  "guestOrNativeProductExecuted": false
+}

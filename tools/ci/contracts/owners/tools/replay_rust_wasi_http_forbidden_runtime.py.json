@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_rust_wasi_http_forbidden_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed source-authenticated exact Type::Case formatting for both pinned clients; original phases, flags, variants and details remain strict; bounded aggregate references preserve original per-case evidence and unchanged64 attempts.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "be6be4446018773d2ab014f93d94cc7ed61cc64adbfc661fe540c35afaddcb3e"
+}
