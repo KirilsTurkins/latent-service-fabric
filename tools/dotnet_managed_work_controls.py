@@ -17,7 +17,8 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, snapsh
 
 FIXTURE = 'sdk/dotnet-guest/tests/fixtures/managed-work-state-control'
 SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.cs',
-    'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs', 'sdk/dotnet-guest/global.json')
+    'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
+    'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
     'enqueue-failure-releases-both', 'continuation-failure-before-acceptance',
@@ -61,6 +62,52 @@ def verify(dotnet: Path, output: Path) -> dict:
     return value
 
 
+TIMER_CASES = (
+    'native-storage-refusal-rolls-back-root', 'timer-admission-before-mutation-and-fresh',
+    'change-reuses-original-owner', 'failed-change-rolls-back-unused-owner',
+    'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
+    'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
+    'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
+    'timer-structural-bound-before-ledger')
+
+
+def verify_timers(dotnet: Path, output: Path) -> dict:
+    output = fresh(Path(output).absolute())
+    fixture = 'sdk/dotnet-guest/tests/fixtures/managed-timer-state-control'
+    names = (fixture+'/Control.csproj', fixture+'/Program.cs', fixture+'/Bindings.cs',
+        'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
+        'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json')
+    source = output/'source'
+    for name in names:
+        path = source/name; path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(read_file(ROOT/name))
+    before = inventory(snapshot(source))
+    config = source/'sdk/dotnet-guest/nuget.config'
+    config.write_text('<configuration><packageSources><clear/></packageSources></configuration>', encoding='utf8')
+    before = inventory(snapshot(source))
+    project = source/fixture/'Control.csproj'
+    commands = Commands(project.parent, output, build_environment(output), deadline_seconds=300, command_seconds=120)
+    require(commands.run('timer-control-dotnet-version', dotnet, '--version').strip() == b'10.0.100',
+        'managed-timer-state-control-sdk')
+    commands.run('timer-control-build', dotnet, 'build', project, '-c', 'Release',
+        '--output', output/'bin', '--artifacts-path', output/'artifacts',
+        '-p:RestoreConfigFile='+str(config), '-p:NuGetAudit=false', '-nodeReuse:false')
+    rows = []
+    for name in TIMER_CASES:
+        raw = commands.run('timer-control-'+name, dotnet, output/'bin/Control.dll', name)
+        expected = {'control': name, 'passed': True, 'registryCore': 'production-source',
+            'nativeLedger': 'explicit-test-port', 'timerProducerState': 'explicit-test-port',
+            'actualClrTasks': True, 'guestQualified': False}
+        require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-timer-state-control-result')
+        rows.append(expected)
+    require(inventory(snapshot(source)) == before, 'managed-timer-state-control-source-changed')
+    value = {'profile': 'dotnet-managed-timer-state-controls-v1', 'source': json.loads(before),
+        'cases': rows, 'commands': commands.records, 'guestQualified': False,
+        'originalCoreLibProducerAndNativeLedgerQualified': False}
+    write_json(output/'timer-state-controls.json', value)
+    return value
+
+
 def verify_abort(dotnet: Path, tools: Path, output: Path) -> dict:
     """Run the real source-bound rewriter over exact original cleanup bodies."""
     output = fresh(Path(output).absolute())
@@ -68,7 +115,7 @@ def verify_abort(dotnet: Path, tools: Path, output: Path) -> dict:
     names = (fixture+'/Control.csproj', fixture+'/Program.cs', 'sdk/dotnet-guest/global.json',
         *('sdk/dotnet-guest/tools/http-errors/'+name for name in (
             'Program.cs', 'TaskWait.cs', 'IdleTimerDriver.cs', 'ClosedFilesystem.cs',
-            'ManagedWorkRuntime.cs', 'ManagedWorkBindings.cs', 'ManagedWorkCopy.cs',
+            'ManagedWorkRuntime.cs', 'ManagedWorkTimers.cs', 'ManagedWorkBindings.cs', 'ManagedWorkCopy.cs',
             'ManagedWorkContext.cs', 'ManagedWorkHooks.cs', 'ManagedWorkPort.cs', 'ManagedHttpWork.cs')))
     source = output/'source'
     for name in names:
@@ -132,10 +179,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dotnet', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--http-abort-tools', type=Path)
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--http-abort-tools', type=Path)
+    modes.add_argument('--timers', action='store_true')
     args = parser.parse_args()
     value = (verify_abort(args.dotnet.resolve(strict=True), args.http_abort_tools.resolve(strict=True), args.output)
-        if args.http_abort_tools is not None else verify(args.dotnet.resolve(strict=True), args.output))
+        if args.http_abort_tools is not None else verify_timers(args.dotnet.resolve(strict=True), args.output)
+        if args.timers else verify(args.dotnet.resolve(strict=True), args.output))
     print(json.dumps({'cases': len(value['cases']), 'guestQualified': False}))
 
 

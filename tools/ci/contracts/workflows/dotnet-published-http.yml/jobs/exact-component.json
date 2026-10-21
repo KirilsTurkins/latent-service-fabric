@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "(github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content",
+    "if": "(github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity",
     "name": "Original captured Flurl Refit component with corrected progress records",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -61,7 +61,7 @@
   },
   "jobId": "exact-component",
   "kind": "job",
-  "reviewReason": "Explicit review: sole condition adds default-false mixed_content exclusion; every original step command timeout environment and default path is unchanged.",
+  "reviewReason": "Explicit review: append only default-false owner_capacity exclusion; unchanged entire old job and original workflow hash restored by strict controls. No command, step, timeout, shell, cwd, permission or default path changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

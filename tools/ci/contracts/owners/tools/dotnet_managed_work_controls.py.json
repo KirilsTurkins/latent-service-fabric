@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_managed_work_controls.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve fifteen state controls and append actual production abort-rewriter RED GREEN and full rewrite over pinned original assembly.",
+  "reviewReason": "Preserve fifteen state and two actual abort-rewriter controls; add eleven production timer ownership state controls using explicit ports.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "80a1dca5807597bef97002cfd137c9dc31a0ec765b8c79e746533a264bb72360"
+  "sha256": "fda8360f422a3e5cbb3ed49b2384ca58fe7399b187a490f7c00c1ac428dc44c3"
 }

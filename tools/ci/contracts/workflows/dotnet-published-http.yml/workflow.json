@@ -26,6 +26,11 @@
             "default": false,
             "description": "One fresh default HttpClient content and accepted-work component without a native rebuild",
             "type": "boolean"
+          },
+          "owner_capacity": {
+            "default": false,
+            "description": "One fresh managed owner capacity component on the authenticated native6fd products",
+            "type": "boolean"
           }
         }
       }
@@ -38,9 +43,10 @@
   "requiredJobs": [
     "exact-component",
     "mixed-content",
+    "owner-capacity",
     "published-http"
   ],
-  "reviewReason": "Add explicit default-false mixed_content lane; all old commands and limits preserved, old jobs excluded only on the named manual selection, entire original model restored by focused control.",
+  "reviewReason": "Add default-false finite owner capacity lane; deep restoration proves all three previous job bodies and defaults unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

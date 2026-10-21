@@ -403,11 +403,13 @@ class SdkGraphTests(unittest.TestCase):
             "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj":
                 "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
             "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj":
-                "911feb03e1df0d43aa8874db9e1b79d884a98fd380449197daad63b70841c26b",
+                "f2c7a0583896978a564abc90af940b66400b733359221d3344fdfa1f5c0055ec",
             "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj":
-                "5ca77794f0d73192bb1e8b2e837ff7bc508a0c2024ba98f792c5fd2546285c86",
+                "e6a82918ae0965ae9267a2e167fd90001fdc02195874d76b6cbf94046d6e0ffd",
             "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj":
-                "767f3f787903c36bf878a0e9a612e1b0828e97d91aa8cb9d142729202882d869",
+                "1f288b33da1181d2d9ccb2ceb3f0363b5178be883c6b9eb6c05b6a98d2d5c225",
+            "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Control.csproj":
+                "b98c105dbc08bba94f2d49a3d28e10f4ce2d197f9b52a1939c82adf446f35a3c",
         }
         for path, checksum in expected.items():
             with self.subTest(path=path):
@@ -424,7 +426,7 @@ class SdkGraphTests(unittest.TestCase):
         packages, records = inventory(root)
         helper = xml.fromstring(read_file(root, "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"))
         self.assertEqual([item.attrib for item in helper.iter("Compile")],
-                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}, {"Include": "ManagedWorkRuntime.cs"}, {"Include": "ManagedWorkBindings.cs"}, {"Include": "ManagedWorkCopy.cs"}, {"Include": "ManagedWorkContext.cs"}, {"Include": "ManagedWorkHooks.cs"}, {"Include": "ManagedWorkPort.cs"}, {"Include": "ManagedHttpWork.cs"}])
+                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}, {"Include": "ManagedWorkRuntime.cs"}, {"Include": "ManagedWorkTimers.cs"}, {"Include": "ManagedWorkBindings.cs"}, {"Include": "ManagedWorkCopy.cs"}, {"Include": "ManagedWorkContext.cs"}, {"Include": "ManagedWorkHooks.cs"}, {"Include": "ManagedWorkPort.cs"}, {"Include": "ManagedHttpWork.cs"}])
         references = [item.attrib for item in helper.iter("Reference")]
         self.assertEqual(references, [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
@@ -438,7 +440,8 @@ class SdkGraphTests(unittest.TestCase):
         paths = ("sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
                  "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
                  "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj",
-                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj")
+                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj",
+                 "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Control.csproj")
         for path in paths:
             original = read_file(root, path)
             for change in (b'<PackageReference Include="Unreviewed" Version="1.0.0" />',
@@ -457,7 +460,8 @@ class SdkGraphTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         owned = ("sdk/dotnet-guest/probes/http-errors/", "sdk/dotnet-guest/tools/http-errors/",
                  "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/",
-                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/")
+                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/",
+                 "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/")
         legacy = [path for path in tracked_paths(root) if not path.startswith(owned)]
         with patch("tools.security_inventory.tracked_paths", return_value=legacy):
             packages, records = inventory(root)
@@ -466,7 +470,8 @@ class SdkGraphTests(unittest.TestCase):
                          {"sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
                           "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
                           "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj",
-                          "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj"})
+                          "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj",
+                          "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Control.csproj"})
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
                               "sdk/dotnet-guest/probes/smoke/packages.lock.json"), packages)
         for prefix in owned:
