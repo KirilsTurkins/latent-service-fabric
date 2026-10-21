@@ -127,3 +127,9 @@ change. The existing archive, warning, `-j2`, 900/300-second, owned-process and
 bounded-diagnostic limits remain. Its actual hosted outcome is pending.
 Source implementation and supplemental serialized C controls do not establish
 Linux audit execution, delivery, complete physical closure or installation.
+
+The first audit object attempt failed before completing the object set because
+the private include imported the default `pr_fmt` before audit.c defined its
+original macro. The [failed observation](evidence/kernel-audit-object-header-order-failure-2026-10-21.json)
+retains the original artifact. The correction moves only that include after
+the maintained audit headers; the original macro and `-Werror` remain.

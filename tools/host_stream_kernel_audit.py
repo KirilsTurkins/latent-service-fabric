@@ -167,7 +167,10 @@ def derive(inputs):
     audit = replace(audit, layout, layout+'\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'
         '#include "../net/audit-buffer-private.c"\n#endif\n')
     include = '#ifdef CONFIG_LSF_STREAM_FACTORY\n#include "../net/audit-private.h"\n#endif\n'
-    audit = include+audit+'\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'
+    # Retain the maintained translation unit's pr_fmt before any header can
+    # supply printk.h's default. The whole authenticated file binds this site.
+    audit = replace(audit, '#include "audit.h"\n', '#include "audit.h"\n'+include)
+    audit += '\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'
     audit += ''.join(private(section(original[AUDIT], name), name) for name in ('audit_log_start', 'audit_log_end'))
     outputs[AUDIT] = (audit+'#endif\n').encode()
     outputs[LSM] = (include+original[LSM]+'\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'

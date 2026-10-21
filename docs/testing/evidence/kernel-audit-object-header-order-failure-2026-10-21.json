@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "lsf.kernel-object-observation.v1",
+  "status": "failed",
+  "sourceCommit": "901d830b0cd39d31fc0c03ad4335b474c901f6e1",
+  "run": 39554898417,
+  "job": 119072277350,
+  "artifact": {
+    "id": 12325405943,
+    "bytes": 110400,
+    "sha256": "bf8cfc022cd8e8e647f59993502bd1f4df66cba90330be06068295d119b60919",
+    "crcMembers": 17
+  },
+  "failureStage": "twenty-audit-objects",
+  "cause": "Private audit include preceded the original pr_fmt definition and imported printk.h default first.",
+  "diagnostic": {
+    "bytes": 1932,
+    "sha256": "5f7cb5a4bb77f6ddb6f4c0658a9316c59015fb62a7d01b63dbbb1d2a851eac5f"
+  },
+  "correction": "Move only the private audit include after the maintained audit.h include; retain the original pr_fmt and -Werror.",
+  "officialArchive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "configuration": {
+    "baseline": {
+      "bytes": 143203,
+      "sha256": "239e925557d3d349ea4c47c028e14431063f964ce6e7809024b6e4e804c7b659"
+    },
+    "selected": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "onlyChangedSymbol": "CONFIG_LSF_STREAM_FACTORY",
+    "securityAndInetPreserved": [
+      "CONFIG_INET",
+      "CONFIG_SECURITY",
+      "CONFIG_SECURITY_NETWORK",
+      "CONFIG_SECURITY_SELINUX"
+    ]
+  },
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "actualAuditExecuted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "productionInstallation": false
+}
