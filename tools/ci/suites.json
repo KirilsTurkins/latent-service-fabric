@@ -4155,14 +4155,15 @@
         "semantics::host::tests::phase_semantics_bind_original_resource_owners_and_exact_versioned_extension",
         "semantics::authoring::tests::phase_nominal_owner_supports_normal_contract_derivation_without_legacy_operations",
         "semantics::host::tests::phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase",
-        "semantics::host::tests::phase_component_nominal_pruning_rejects_missing_or_changed_owned_types"
+        "semantics::host::tests::phase_component_nominal_pruning_rejects_missing_or_changed_owned_types",
+        "semantics::wasm::tests::canonical_creator_with_unverified_c_payload_never_opens_descriptive_threading_parser"
       ],
       "expectedIgnored": [],
       "id": "latent-packaging.lib.latent-packaging",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 90,
+      "minimumCases": 91,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [

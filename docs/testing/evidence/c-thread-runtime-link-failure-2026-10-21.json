@@ -151,5 +151,29 @@
     "signedGuestExecuted": false,
     "runtimeQualification": false,
     "correctionStatus": "source-only selected compiler/runtime profile supplement under review; original base inspection and ABI retained"
+  },
+  "subsequentPackagingFailure": {
+    "source": "f7fffd1a9c220e2efa564efec8840b6328c33ba1",
+    "run": 39617751987,
+    "job": 119283025642,
+    "artifact": {
+      "id": 12353882166,
+      "bytes": 1529771,
+      "sha256": "sha256:6a3c3e1363f90ad8b937189b05dd6137d4506d9c7fe4b51db4337c44e15e5797",
+      "members": 65,
+      "expandedBytes": 5758007
+    },
+    "owningOutcome": "failure",
+    "failedStage": "package",
+    "exactStderr": "unverified-native-thread-component",
+    "priorCommandsSucceeded": 22,
+    "normalCLinkSucceeded": true,
+    "fullComponentProofBindingSucceeded": true,
+    "originalBaseInspectionPreserved": true,
+    "selectedCompatibilitySupplementRecomputed": true,
+    "componentDigest": "sha256:7994eb43b13ad0af48aee081232fee33d05596ab82fc3933610bb59b51148fdf",
+    "signedGuestExecuted": false,
+    "runtimeQualification": false,
+    "correctionStatus": "Full verified C proof recognition in descriptive packaging; original Rust proof and independent host selection/grant unchanged. A new source-bound canonical native producer is pending."
   }
 }
