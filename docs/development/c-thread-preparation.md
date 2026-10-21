@@ -189,5 +189,15 @@ Rust 1.97.1 formatter, each Cargo package edition and the repository configurati
 [closed formatting comparison](../testing/evidence/c-thread-native-rustfmt-2026-10-21.json)
 binds the exact original and formatted hashes of two C transformer files, with the other
 3322 native files unchanged. The consumer admits only the two complete frozen
-source inventories; f0 remains the historical compiled source. This comparison
-does not claim that the formatted tree was compiled or rebuild the native products.
+source inventories for that historical comparison; f0 remains the original
+compiled source. This comparison does not claim that the formatted tree was compiled.
+
+The next ordinary C campaign uses the separate
+[c713 native tuple](../testing/evidence/activation-stack-native-2026-10-21.json).
+Its 132 Rust and 16 Python controls passed, including the complete sixty-case C
+proof suite, eleven exact C profile controls and eleven ordinary-worker controls.
+The shared source guard accepts only that exact native tree, the pinned reversible
+`install_stack_accounting` helper extraction, or that extraction plus two exact
+explicit enum defaults in the existing engine test. It records the compiled and
+current identities separately; the other 3324 or 3323 native files remain byte exact.
+All seventeen signed C lifecycle outcomes still require actual guest execution.

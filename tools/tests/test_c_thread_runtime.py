@@ -16,34 +16,33 @@ class CThreadRuntime(unittest.TestCase):
     def test_current_native_source_equality_is_required_before_any_product_use(self):
         from unittest.mock import Mock, patch
         from tools import qualify_c_thread_runtime as qualification
-        products = Mock(SOURCE='a' * 40)
+        from tools import activation_stack_native_source as guard
+        products = Mock(SOURCE=guard.SOURCE)
         products.verify_prepared.return_value = {'verified': 'frozen receipt'}
         products.native_products.return_value = {'latentd': Path('unexecuted')}
-        source = {'sha256': 'source', 'files': 1, 'bytes': 1}
-        with patch.object(qualification, 'git_source_identity', return_value=source), \
-                patch.object(qualification, 'source_identity', return_value=source):
+        proof = {'compiledSourceRevision': guard.SOURCE,
+                 'compiledNativeSource': guard.COMPILED, 'consumerNativeSource': guard.COMPILED,
+                 'compiledSourceByteExact': True, 'reviewedSourceChanges': []}
+        with patch.object(qualification, 'assert_current', return_value=proof):
             before, actual, native = qualification.native_evidence(products, Path('prepared'))
-        self.assertEqual((before, actual['compiledNativeSource'], actual['consumerNativeSource'], native),
-                         (products.verify_prepared.return_value, source, source,
-                          products.native_products.return_value))
-        self.assertIs(actual['compiledSourceByteExact'], True)
+        self.assertEqual((before, actual, native),
+                         (products.verify_prepared.return_value, proof, products.native_products.return_value))
         products.native_products.reset_mock()
-        with patch.object(qualification, 'git_source_identity', return_value=source), \
-                patch.object(qualification, 'source_identity', return_value={**source, 'sha256': 'foreign'}), \
-                self.assertRaisesRegex(RuntimeError, 'current-native-source-must-match-producer'):
-            qualification.native_evidence(products, Path('prepared'))
-        products.native_products.assert_not_called()
-        # A new native tuple must be exact even when the historical f0 reader
-        # separately permits one frozen formatter-only comparison.
         reviewed = json.loads((qualification.ROOT /
             'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json').read_text())
-        with patch.object(qualification, 'git_source_identity', return_value=reviewed['compiledNativeSource']), \
-                patch.object(qualification, 'source_identity', return_value=reviewed['formattedConsumerSource']), \
-                self.assertRaisesRegex(RuntimeError, 'current-native-source-must-match-producer'):
+        with patch.object(guard, 'git_source_identity', return_value=copy.deepcopy(guard.COMPILED)), \
+                patch.object(guard, 'source_identity', return_value=reviewed['formattedConsumerSource']), \
+                self.assertRaisesRegex(RuntimeError, 'exact-current-source'):
+            qualification.native_evidence(products, Path('prepared'))
+        products.native_products.assert_not_called()
+        products.SOURCE = 'f' * 40
+        with patch.object(qualification, 'assert_current', return_value=proof), \
+                self.assertRaisesRegex(RuntimeError, 'exact-native-producer'):
             qualification.native_evidence(products, Path('prepared'))
         products.native_products.assert_not_called()
         products.verify_prepared.side_effect = RuntimeError('original receipt drift')
-        with self.assertRaisesRegex(RuntimeError, '^original receipt drift$'):
+        with patch.object(qualification, 'assert_current', side_effect=AssertionError('receipt must be first')), \
+                self.assertRaisesRegex(RuntimeError, '^original receipt drift$'):
             qualification.native_evidence(products, Path('prepared'))
         products.native_products.assert_not_called()
 

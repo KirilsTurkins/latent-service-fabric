@@ -14,8 +14,8 @@ if __package__ in {None, ''}:
 
 from tools import c_capsule_build as compiler
 from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
+from tools.activation_stack_native_source import assert_current
 from tools.c_guest.threading import IMPORTS, PROFILE, RECIPE as THREAD_RECIPE
-from tools.java_replay_materials import git_source_identity
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
 from tools.qualify_sdk_scratch import package_identity
@@ -26,7 +26,8 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 # no old language qualification receipt is relabelled as this programme.
 MATERIALS = (
     'tools/qualify_c_thread_runtime.py', 'tools/c_thread_runtime_fixture.py',
-    'tools/c_thread_runtime_node.py', 'tools/c_thread_native_products.py',
+    'tools/c_thread_runtime_node.py', 'tools/activation_stack_native_products.py',
+    'tools/activation_stack_native_source.py',
     'tools/sdk_native_products_reader.py', 'tools/java_replay_materials.py',
     'tools/phase2_operator_canary.py', 'tools/phase2_operator_process.py',
     'tools/phase2_operator_scenario.py', 'tools/phase3_management_scenario.py',
@@ -107,19 +108,16 @@ def build_evidence(artifact, source):
 
 def native_evidence(products, prepared):
     before = products.verify_prepared(prepared)
-    compiled_source = git_source_identity(products.SOURCE)
-    consumer_source = source_identity(ROOT)
-    require(compiled_source == consumer_source,
-            'c-thread-current-native-source-must-match-producer')
-    proof = {'compiledNativeSource': compiled_source, 'consumerNativeSource': consumer_source,
-             'compiledSourceByteExact': True, 'reviewedFormatting': []}
+    proof = assert_current(ROOT)
+    require(products.SOURCE == proof['compiledSourceRevision'],
+            'c-thread-exact-native-producer')
     return before, proof, products.native_products(prepared)
 
 
 def qualify(prepared, output):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-thread-unprivileged-linux-python313')
-    from tools import c_thread_native_products as products
+    from tools import activation_stack_native_products as products
     output = output.absolute()
     require(output != ROOT and output not in ROOT.parents and ROOT not in output.parents,
             'c-thread-output-outside-checkout')
