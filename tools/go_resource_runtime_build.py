@@ -7,7 +7,9 @@ from tools.qualify_sdk_scratch import package_identity
 from tools.rust_capsule_project import read_json
 
 
-def build_evidence(artifact):
+def build_evidence(artifact, *, profile=PROFILE):
+    from tools.go_guest.queues import PROFILE as QUEUE_PROFILE
+    require(profile in (PROFILE, QUEUE_PROFILE), 'resource-Go-closed-runtime-profile')
     names=('BUILD-COMPLETE.json','build-observation.json','source-inputs.json',
            'recipe-inputs.json','package-inputs.json','standard-runtime-selection.json',
            'go-runtime-transformations.json','application-dependencies.json',
@@ -23,7 +25,7 @@ def build_evidence(artifact):
         and complete.get('sourceDigest')==identities['source-inputs.json']['sha256'],
         'resource-Go-normal-packaged-build-required')
     require(observation.get('parameters')=={'goPackage':'my-greeting','compiler':'componentize-go',
-        'target':'wasm32-wasip1','runtime':PROFILE,'locked':True,'ambientWasi':False},
+        'target':'wasm32-wasip1','runtime':profile,'locked':True,'ambientWasi':False},
         'resource-Go-exact-v5-build-parameters')
     materials=observation['materials']
     for material,filename in (('build-recipe','recipe-inputs.json'),('package-inputs','package-inputs.json'),
@@ -36,7 +38,7 @@ def build_evidence(artifact):
             {'name':material,'digest':identity['sha256'],'size':identity['bytes']}],
             'resource-Go-exact-build-material')
     guest_runtime_receipts.validate(selected,source=identities['source-inputs.json']['sha256'],
-        component=component['sha256'],language='go',profile=PROFILE,materials=[r for r in materials if r['name']!='standard-runtime-selection'])
+        component=component['sha256'],language='go',profile=profile,materials=[r for r in materials if r['name']!='standard-runtime-selection'])
     require(selected['graphState']=='captured' and selected['qualification']=='unknown'
         and selected['apiSupport']=='not-evaluated' and selected['authority']=='none',
         'resource-Go-selection-is-not-qualification-or-authority')

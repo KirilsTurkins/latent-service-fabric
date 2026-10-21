@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "InstalledRustHttp.test_changed_identity_closure_isolation_or_earlier_compile_cannot_authorize_installed_build",
+    "InstalledRustHttp.test_cleanup_failure_never_masks_original_and_cannot_turn_success_into_pass",
+    "InstalledRustHttp.test_completed_marker_cannot_be_reinterpreted_as_request_only_attempt",
+    "InstalledRustHttp.test_existing_registry_freshness_requires_two_separate_attempts_without_a_waiver",
+    "InstalledRustHttp.test_fixed_source_and_all_auxiliary_inputs_precede_installed_product_use",
+    "InstalledRustHttp.test_original_normal_producer_request_is_preserved_without_inferred_approval",
+    "InstalledRustHttp.test_outer_inventory_boundary_uses_the_genuine_checker_and_refuses_payload_or_source_drift",
+    "InstalledRustHttp.test_outer_namespace_has_no_network_or_checkout_mount_and_installed_isolated_entry",
+    "InstalledRustHttp.test_owning_cli_bootstraps_without_pythonpath_or_compiler_execution",
+    "InstalledRustHttp.test_real_controller_packaging_joins_actual_tool_and_preserves_original_compiler_records",
+    "InstalledRustHttp.test_selected_installed_rust_imports_include_linux_dispatch_without_controller_only_inventory"
+  ],
+  "guards": {
+    "InstalledRustHttp.test_changed_identity_closure_isolation_or_earlier_compile_cannot_authorize_installed_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_cleanup_failure_never_masks_original_and_cannot_turn_success_into_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_completed_marker_cannot_be_reinterpreted_as_request_only_attempt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_existing_registry_freshness_requires_two_separate_attempts_without_a_waiver": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_fixed_source_and_all_auxiliary_inputs_precede_installed_product_use": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_original_normal_producer_request_is_preserved_without_inferred_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_outer_inventory_boundary_uses_the_genuine_checker_and_refuses_payload_or_source_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_outer_namespace_has_no_network_or_checkout_mount_and_installed_isolated_entry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_owning_cli_bootstraps_without_pythonpath_or_compiler_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_real_controller_packaging_joins_actual_tool_and_preserves_original_compiler_records": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    },
+    "InstalledRustHttp.test_selected_installed_rust_imports_include_linux_dispatch_without_controller_only_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:21ecb1584149a5efcdb6a2e8ad51113f424f28897d85ba6f5788f265b602124b",
+        "class:setup-sha256:9fbba73bd610518af8173370dbd098ef0ee0538f5c0221b694494eca81074bb2"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_installed.py",
+  "reviewReason": "Root approved only explicit0700 on the real normal-provenance test fixture; original Linux private-state guard, all24 owning controls, compiler/normal packaging/signing paths and caps unchanged; retain failed a84 precompile run.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

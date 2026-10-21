@@ -102,9 +102,10 @@ class Compiler:
         activation = runtime_profile in PROFILES
         checkpoints = runtime_profile in CHECKPOINT_PROFILES
         timers = runtime_profile in TIMER_PROFILES
-        from tools.go_guest.activation import INITIALIZER_PROFILES, MANAGED_PROFILE
+        from tools.go_guest.activation import INITIALIZER_PROFILES, MANAGED_PROFILES, QUEUE_PROFILE
         initializers = runtime_profile in INITIALIZER_PROFILES
-        managed_idle = runtime_profile == MANAGED_PROFILE
+        managed_idle = runtime_profile in MANAGED_PROFILES
+        queued_work = runtime_profile == QUEUE_PROFILE
         if checkpoints and 'go-checkpoints' not in self.paths:
             raise ValueError('go-checkpoint-parser-not-prepared-before-compiler-containment')
         output.mkdir()
@@ -232,7 +233,7 @@ class Compiler:
                                    generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
                                    activation=activation, checkpoints=checkpoints, timers=timers, initializers=initializers,
                                    http_context=http_context, standard_log=standard_log, managed_idle=managed_idle,
-                                   network_context=network_context)
+                                   network_context=network_context, queued_work=queued_work)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
             if selected_module is not None and selected_module["tags"]:
                 self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])

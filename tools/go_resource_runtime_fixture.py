@@ -130,12 +130,15 @@ EXPECTED = {'parallel':'resource-go|parallel=first:80410d0a+second:00ff80410d0a|
             'clear':'resource-go|clear=00ff80410d0a|empty=0|fresh=1'}
 
 
-def project(directory: Path, outside: Path, *, late_completion=False):
+def project(directory: Path, outside: Path, *, late_completion=False, runtime_profile=PROFILE):
     require(type(late_completion) is bool, 'resource-Go-closed-late-selector')
+    from tools.go_guest.queues import PROFILE as QUEUE_PROFILE
+    require(runtime_profile in (PROFILE, QUEUE_PROFILE) and (not late_completion or runtime_profile == PROFILE),
+            'resource-Go-closed-runtime-profile')
     require(directory.parent.resolve(strict=True) == outside.parent.resolve(strict=True)
             and ROOT not in outside.parents and outside.parent.resolve(strict=True) != ROOT,
             'resource-Go-independent-originals')
-    app = create(directory,'greeting',runtime_profile=PROFILE);before=snapshot(app)
+    app = create(directory,'greeting',runtime_profile=runtime_profile);before=snapshot(app)
     outside.mkdir(mode=0o700)
     for name,identity in zip(('library','data'),PACKAGES,strict=True):
         target=outside/name;target.mkdir()
@@ -163,12 +166,16 @@ def project(directory: Path, outside: Path, *, late_completion=False):
     (app/'capsule-project.json').write_bytes((json.dumps(descriptor,indent=2)+'\n').encode())
     sdk=json.loads(before['sdk-lock.json']);sdk['template'].update(sourceDigest=digest(source),witDigest=digest(wit))
     (app/'sdk-lock.json').write_bytes((json.dumps(sdk,indent=2)+'\n').encode())
-    return app,{'profile':PROFILE,'source':digest(inventory(snapshot(app))),'outside':digest(inventory(snapshot(outside))),
+    return app,{'profile':runtime_profile,'source':digest(inventory(snapshot(app))),'outside':digest(inventory(snapshot(outside))),
                 'sdkLock':digest(read_file(app/'sdk-lock.json')),'applicationLoggerOrExecutorHook':False,
                 'nativeThreadsQualified':False,'compilerExecuted':False,'signedExecution':'pending'}
 
 
-def capture(app: Path, outside: Path, go: Path):
+def capture(app: Path, outside: Path, go: Path, *, runtime_profile=PROFILE):
+    from tools.go_guest.queues import PROFILE as QUEUE_PROFILE
+    require(runtime_profile in (PROFILE, QUEUE_PROFILE), 'resource-Go-closed-capture-profile')
+    descriptor=json.loads(read_file(app/'capsule-project.json'))
+    require(descriptor.get('runtimeProfile')==runtime_profile,'resource-Go-capture-project-profile')
     from tools import go_native_authoring as native, go_dependency_authoring as review
     from tools.go_application_dependencies import resolve
     sdk=read_file(app/'sdk-lock.json')
@@ -185,7 +192,7 @@ def capture(app: Path, outside: Path, go: Path):
             and not lock['executableInputs'],'resource-Go-exact-pure-transitive-graph')
     review.review(app,candidate,digest(read_file(candidate)))
     verified=verify_inputs(app,'go')
-    require(verified is not None and verified.lock['selection']['runtimeProfile']==PROFILE
+    require(verified is not None and verified.lock['selection']['runtimeProfile']==runtime_profile
             and read_file(app/'sdk-lock.json')==sdk,'resource-Go-exact-reviewed-profile')
     root=outside.resolve(strict=True)
     require(not outside.is_symlink() and all(not p.is_symlink() and p.resolve(strict=True).parent==root

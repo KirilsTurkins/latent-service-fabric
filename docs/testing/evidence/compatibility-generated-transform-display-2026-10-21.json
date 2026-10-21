@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "latent.compatibility.generated-transform-display.v1",
+  "status": "passed",
+  "sourceBase": "adad2bac379e2f9c5335c6df45f56b1b3ce01539",
+  "scope": "reader-only-original-contexts",
+  "guestBuilds": 0,
+  "guestInvocations": 0,
+  "packagesSigned": 0,
+  "authority": "none",
+  "fullTicketQualification": false,
+  "materials": {
+    "tools/guest_compatibility_context.py": {
+      "sha256": "sha256:a335b326d995de2e11cae5e302221d347fe108695d677c47478cc6ffb5a8c5ad",
+      "bytes": 8320
+    },
+    "tools/tests/test_guest_compatibility_attribution.py": {
+      "sha256": "sha256:7dead601dd74629103f513b710192a4869a37b9e20859afa2541549e1ffcfd35",
+      "bytes": 10134
+    }
+  },
+  "cases": [
+    {
+      "language": "c",
+      "originalContext": {
+        "sha256": "sha256:689a06be899cc96aba38daf5381b6e4cd1e689bf8fa5e580f40d5b860975c2b4",
+        "bytes": 3729
+      },
+      "contextIdentity": "sha256:f4035555e5e73f3a633c3e277e7a488a1a33a43d53408e36121b8b18279741a8",
+      "selectedRuntime": {
+        "state": "selected-unqualified",
+        "profile": "closed-synchronous-v1",
+        "receiptDigest": "sha256:a2c5cbdcfafa92355eab7e080c6f3349e80832804040b54fd88de93792fc3b26",
+        "receiptName": "standard-runtime-selection.json",
+        "ownerIssue": 744
+      },
+      "omittedMaterials": 0,
+      "originalTextSha256": "sha256:0ef097706c6c0a11daab928eb32bc3b9bf698420c58eb9db21ff5f1aabc1992e",
+      "currentTextSha256": "sha256:1e7c9afde2354bed4b949339dfa74971cc18da893d91c691783246de8baae065",
+      "addedGeneratedTransformLines": [
+        "Generated transformation: maintained-sdk-binding-generation; selected sha256:e45314736a5292b2368f9a13bba92d7faed3724f2076ee44ac39b726b2922f79; original sha256:1897244b42cf45429bebdfd34b0df9a7468f9a5c8490a82bde6ed2786208eeac; transformation sha256:6f7f9eb294a3b816f9e319ba65842aca9fa5674a636f94e23955ae98b2c2c1a4."
+      ],
+      "allOtherTextUnchanged": true,
+      "originalContextBytesUnchanged": true
+    },
+    {
+      "language": "rust",
+      "originalContext": {
+        "sha256": "sha256:84b979c83835f2ec36216b78939172eb2342b964737feb1df0670dd0fcfff165",
+        "bytes": 17828
+      },
+      "contextIdentity": "sha256:4eebfb3b6907390748496ca132841ec72424f861624a5d2fb62296565dfd8d25",
+      "selectedRuntime": {
+        "state": "selected-unqualified",
+        "profile": "wasm32-unknown-unknown-panic-abort-v1",
+        "receiptDigest": "sha256:d768fb0083a11f415ef0f50c873a7e2c68bddab6d0dd95ebf9dfb391242de7ad",
+        "receiptName": "standard-runtime-selection.json",
+        "ownerIssue": 743
+      },
+      "omittedMaterials": 144,
+      "originalTextSha256": "sha256:6bae9cde6a0c4dfa2639c1bedd1752333b4f32519c2aac40afe220b2fa85f7af",
+      "currentTextSha256": "sha256:23b8fe6f2cca66fe61d107308cd889b8d17bd39cf9cd4f2f6df04604144ad737",
+      "addedGeneratedTransformLines": [
+        "Generated transformation: maintained-sdk-binding-generation; selected sha256:2198a5c6afe4491d3fccb75648afaa7cbdc0ec6cd53f231c6d1167ccab973592; original sha256:97991f670526ee49e27118db92a5b908026e12f394fa26fb63c74ed77f665ef4; transformation sha256:00843fc3b9d56f0004cd0de02116d9bd5204aae80cf546c59c5d35cb1d7d9ca2."
+      ],
+      "allOtherTextUnchanged": true,
+      "originalContextBytesUnchanged": true
+    },
+    {
+      "language": "go",
+      "originalContext": {
+        "sha256": "sha256:49a950d7f876e8653672ed43fbce8efdf5bf9ebac6bce629dc8cbcc0d0a998e5",
+        "bytes": 5671
+      },
+      "contextIdentity": "sha256:4f80dd1e942e03c67fad1a87d1ba07112705d5c5f447e9d7fb70d274ce7360a6",
+      "selectedRuntime": {
+        "state": "selected-unqualified",
+        "profile": "go-component-activation-v6",
+        "receiptDigest": "sha256:c80d2d30d80c821729ce98a626ad5f97f2e0909e1f4357370099b236305991af",
+        "receiptName": "standard-runtime-selection.json",
+        "ownerIssue": 742
+      },
+      "omittedMaterials": 0,
+      "originalTextSha256": "sha256:14e5bc31a486e20130be66f0007987e0d44c0f3f6c9c7a7e1fa50aa33bed77d2",
+      "currentTextSha256": "sha256:3e14584f6d7ed053bf65acaf5fe686963cca44d63e67e5adf69c6800e9421c33",
+      "addedGeneratedTransformLines": [
+        "Generated transformation: maintained-sdk-binding-generation; selected sha256:a5c78c0de2f6cbbd51fd0674d5168792956a09a9cebf5be9d177b79a639ab5ae; original sha256:e61c947c84e1d47939d4dc09e8b554cf86831b27d1ca7aa6e211c619cdc8d783; transformation sha256:a5cc1a17e6d98a0e440101afe3c78afe237cf8c708c9d8e0cc6ba961d876390a."
+      ],
+      "allOtherTextUnchanged": true,
+      "originalContextBytesUnchanged": true
+    },
+    {
+      "language": "typescript",
+      "originalContext": {
+        "sha256": "sha256:9ff97ee564e0674f70a2a1e7b0721c072e7efb3f06c19ef4562092d41ab60817",
+        "bytes": 4524
+      },
+      "contextIdentity": "sha256:4ce684da9de6a6b3c0f06055a23512cde896f8d48441d2e88fc364e1c92ba20e",
+      "selectedRuntime": {
+        "state": "selected-unqualified",
+        "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+        "receiptDigest": "sha256:f7d9c1e704ea1f09cedcb667529aab8f84f2c6ea8d443aac6d1a82c6a76b20e9",
+        "receiptName": "standard-runtime-selection.json",
+        "ownerIssue": 745
+      },
+      "omittedMaterials": 0,
+      "originalTextSha256": "sha256:59190f8c8555160c986a8baa500fafac7e42c6a35965a7e5b9092120af1fc622",
+      "currentTextSha256": "sha256:6227f49a77a557991b6438ecabf645ed0718b254003401b60cf95f9a1cc3713d",
+      "addedGeneratedTransformLines": [
+        "Generated transformation: maintained-sdk-binding-generation; selected sha256:76f114de548388198ae7b0e5d6726e6b5c511688565e04ad64ccf8b54651d18c; original sha256:0e5cc11223a385825954f6ece52fcf3df043da1b97437d56e6eef3e7b03242be; transformation sha256:e09427412b6272d4df753639c85782f1db2cd94c28849e03c417a16e6d62c87c."
+      ],
+      "allOtherTextUnchanged": true,
+      "originalContextBytesUnchanged": true
+    },
+    {
+      "language": "java",
+      "originalContext": {
+        "sha256": "sha256:654ecb6d465c00f72926af2be58ca396c0349c8262e0858052a2ead2d8f7843f",
+        "bytes": 4789
+      },
+      "contextIdentity": "sha256:bd80fb1318405cd174fe5f84ef082300539b32b867f4386ba73a890de1558807",
+      "selectedRuntime": {
+        "state": "selected-unqualified",
+        "profile": "teavm-activation-fibers-io-v1",
+        "receiptDigest": "sha256:c8337254e06ac0cfac0cb98e0fba67333a3c10440b792e87f973c77bf046b4ff"
+      },
+      "omittedMaterials": 0,
+      "originalTextSha256": "sha256:7de2f1b9d92344dab1b2cb7a6bb9c5344532e4ebb3819a3e0e5643b44de52084",
+      "currentTextSha256": "sha256:7de2f1b9d92344dab1b2cb7a6bb9c5344532e4ebb3819a3e0e5643b44de52084",
+      "addedGeneratedTransformLines": [],
+      "allOtherTextUnchanged": true,
+      "originalContextBytesUnchanged": true
+    },
+    {
+      "language": "dotnet",
+      "originalContext": {
+        "sha256": "sha256:4b8a162d6cb81a52c94818d88948a6f089b02e260c34e9452a1825e1393af60c",
+        "bytes": 12957
+      },
+      "contextIdentity": "sha256:1d2db2c57b18c4130c8016e4c4d3b2ef6a9d58803355614477efc92e137bccce",
+      "selectedRuntime": {
+        "state": "selected-unqualified",
+        "profile": "runtime-managed",
+        "receiptDigest": "sha256:ee8691ba89b5fab2c2f7e3bcb6af99b45a22dd92d2f07e436c89235496548686"
+      },
+      "omittedMaterials": 0,
+      "originalTextSha256": "sha256:109b4d769c3507fe07132f0f2d82bca1bdf6eb69eee9163a9d9d370167b0f3f7",
+      "currentTextSha256": "sha256:109b4d769c3507fe07132f0f2d82bca1bdf6eb69eee9163a9d9d370167b0f3f7",
+      "addedGeneratedTransformLines": [],
+      "allOtherTextUnchanged": true,
+      "originalContextBytesUnchanged": true
+    }
+  ]
+}

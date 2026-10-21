@@ -23,6 +23,27 @@ KEYWORDS = frozenset(('as break const continue crate else enum extern false fn f
     'unsized virtual yield try union').split())
 
 
+def selected_contract(graph: dict) -> list[dict]:
+    """The explicit selected public contract must permit real blocking.
+
+    This checks actual component function types. It never upgrades a user's
+    synchronous contract merely because its implementation makes HTTP calls.
+    """
+    exports = profile.names(graph, 'exports')
+    if not exports or len(exports) > 32:
+        raise ValueError('rust-http-selected-export-count')
+    selected = []
+    for identity, interface in sorted(exports.items()):
+        functions = interface['functions']
+        if not functions or len(functions) > 128 or len(selected) + len(functions) > 128:
+            raise ValueError('rust-http-selected-function-count')
+        for name, function in functions.items():
+            if function.get('name') != name or function['kind'] != 'async-freestanding':
+                raise ValueError('rust-http-selected-explicit-async-export-required')
+            selected.append({'interface': identity, 'function': name, 'kind': function['kind']})
+    return selected
+
+
 def identifier(name: str) -> str:
     if type(name) is not str or not re.fullmatch(r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*', name) or len(name) > 128:
         raise ValueError('rust-http-root-identifier')
@@ -89,11 +110,11 @@ def argument(graph: dict, name: str, value) -> str:
 
 def forwarding_source(graph: dict) -> tuple[bytes, list[dict]]:
     exports = profile.names(graph, 'exports')
-    if not exports or len(exports) > 32:
+    if not exports or len(exports) > 32 or profile.RETIREMENT in exports:
         raise ValueError('rust-http-root-export-count')
     lines = [
         '#![cfg(target_arch = "wasm32")]',
-        'wit_bindgen::generate!({ path: "wit", world: "root" });',
+        'wit_bindgen::generate!({ path: "wit", world: "root", async: false });',
         'struct Root;',
     ]
     calls = []
@@ -120,13 +141,19 @@ def forwarding_source(graph: dict) -> tuple[bytes, list[dict]]:
                 arguments.append(argument(graph, param_name, param['type']))
             result = rust_type(graph, function.get('result'))
             symbol = identifier(name)
-            lines.append('    ' + ('async ' if asynchronous else '') + 'fn ' + symbol + '(' + ', '.join(declarations) + ') -> ' + result + ' {')
-            lines.append('        let result = ' + path + '::' + symbol + '(' + ', '.join(arguments) + ')' + ('.await' if asynchronous else '') + ';')
+            # The pinned generator's normal override selects the sync Core ABI
+            # while retaining the explicit async WIT function types. No Rust
+            # executor or future is injected into the ordinary call body.
+            lines.append('    fn ' + symbol + '(' + ', '.join(declarations) + ') -> ' + result + ' {')
+            lines.append('        let result = ' + path + '::' + symbol + '(' + ', '.join(arguments) + ');')
             lines.append('        latent::rust_http_retirement::owner::drain();')
             lines.extend(('        result', '    }'))
             calls.append({'interface': identity, 'function': name, 'asyncPublic': asynchronous,
                 'drainBeforeReturningValueOrError': True})
         lines.append('}')
+    mappings = ', '.join(json.dumps(name)+': generate'
+        for name in sorted({*exports, profile.RETIREMENT}))
+    lines[1] = 'wit_bindgen::generate!({ path: "wit", world: "root", async: false, with: { '+mappings+' } });'
     lines.append('export!(Root);')
     source = ('\n'.join(lines) + '\n').encode()
     if len(source) > 128*1024:
@@ -215,6 +242,100 @@ def compiler_lock(original: bytes, name: str) -> bytes:
     return output.encode()
 
 
+def normalized_lock(projected: bytes, normalized: bytes, name: str) -> dict:
+    """Permit Cargo's feature pruning, with no new package identity or edge."""
+    from tools.rust_capsule_project import digest
+    if type(name) is not str or re.fullmatch(r'lsf-owned-http-root-[a-f0-9]{16}', name) is None:
+        raise ValueError('rust-http-root-normalized-generated-root-name')
+
+    def rows(raw):
+        if len(raw) > 8*1024*1024:
+            raise ValueError('rust-http-root-normalized-lock-bound')
+        value = tomllib.loads(raw.decode())
+        if set(value) != {'version', 'package'} or value['version'] != 4 or not isinstance(value['package'], list):
+            raise ValueError('rust-http-root-normalized-lock-shape')
+        if not 1 <= len(value['package']) <= 4096:
+            raise ValueError('rust-http-root-normalized-package-bound')
+        result, indexed, edge_count = {}, {}, 0
+        for row in value['package']:
+            if (not isinstance(row, dict) or not {'name', 'version'} <= set(row)
+                    or set(row) - {'name', 'version', 'source', 'checksum', 'dependencies'}
+                    or any(type(row.get(k)) is not str or not 1 <= len(row[k]) <= 128
+                        for k in ('name', 'version'))
+                    or re.fullmatch(r'[A-Za-z0-9_-]+', row['name']) is None
+                    or any(type(row[k]) is not str or not 1 <= len(row[k]) <= 4096
+                        for k in ('source', 'checksum') if k in row)):
+                raise ValueError('rust-http-root-normalized-package-shape')
+            key = row['name'], row['version'], row.get('source')
+            deps = row.get('dependencies', [])
+            if (key in result or not isinstance(deps, list) or len(deps) > 256
+                    or any(type(d) is not str or len(d) > 4096 for d in deps)
+                    or len(set(deps)) != len(deps)):
+                raise ValueError('rust-http-root-normalized-package-duplicate-or-dependencies')
+            edge_count += len(deps)
+            if edge_count > 65536:
+                raise ValueError('rust-http-root-normalized-edge-bound')
+            result[key] = row
+            indexed.setdefault(row['name'], []).append(key)
+        return result, indexed
+
+    remaining_work = [262144]
+
+    def edges(row, indexed):
+        result = set()
+        for dependency in row.get('dependencies', []):
+            match = re.fullmatch(r'([A-Za-z0-9_-]+)(?: ([^ ()]+))?(?: \(([^\n]+)\))?', dependency)
+            if match is None:
+                raise ValueError('rust-http-root-normalized-dependency-shape')
+            candidates = indexed.get(match[1], ())
+            remaining_work[0] -= len(candidates) + 1
+            if remaining_work[0] < 0:
+                raise ValueError('rust-http-root-normalized-resolution-work-bound')
+            selected = [key for key in candidates
+                if (match[2] is None or key[1] == match[2])
+                and (match[3] is None or key[2] == match[3])]
+            if len(selected) != 1:
+                raise ValueError('rust-http-root-normalized-dependency-ambiguous-or-missing')
+            result.add(selected[0])
+        return result
+
+    before, before_index = rows(projected)
+    after, after_index = rows(normalized)
+    own = (name, '0.0.0', None)
+    starts = [key for key in before if key[:2] == ('wit-bindgen', '0.62.0')]
+    if (len(starts) != 1 or own not in before or own not in after
+            or before[own] != {'name': name, 'version': '0.0.0', 'dependencies': ['wit-bindgen']}
+            or after[own] != before[own] or not set(after) <= set(before)):
+        raise ValueError('rust-http-root-normalized-exact-generated-root-and-captured-packages')
+    removed_edges = 0
+    old_edges = {key: edges(row, before_index) for key, row in before.items()}
+    new_edges = {key: edges(row, after_index) for key, row in after.items()}
+    for key, row in after.items():
+        original = before[key]
+        if {k: v for k, v in row.items() if k != 'dependencies'} != {
+                k: v for k, v in original.items() if k != 'dependencies'}:
+            raise ValueError('rust-http-root-normalized-package-identity-drift')
+        old, new = old_edges[key], new_edges[key]
+        if not new <= old:
+            raise ValueError('rust-http-root-normalized-new-dependency-edge')
+        removed_edges += len(old - new)
+    if new_edges[own] != set(starts):
+        raise ValueError('rust-http-root-normalized-exact-bindgen-dependency')
+    reached, pending = set(), [own]
+    while pending:
+        key = pending.pop()
+        if key not in reached:
+            reached.add(key)
+            pending.extend(new_edges[key])
+    if reached != set(after):
+        raise ValueError('rust-http-root-normalized-unreachable-package')
+    return {'projectedLockDigest': digest(projected), 'normalizedLockDigest': digest(normalized),
+        'originalPackageCount': len(before), 'normalizedPackageCount': len(after),
+        'removedDependencyEdges': removed_edges, 'newPackageIdentities': 0,
+        'changedPackageSourceOrChecksums': 0, 'newDependencyEdges': 0,
+        'networkResolution': False, 'buildScriptsExecuted': False, 'compilation': False}
+
+
 def prepare_project(output, canonical: str, graph: dict, lock: bytes):
     from tools.rust_capsule_project import digest, fresh, inventory, write_json
     source, calls = forwarding_source(graph)
@@ -236,6 +357,7 @@ def prepare_project(output, canonical: str, graph: dict, lock: bytes):
         'name': name, 'files': json.loads(inventory(files)),
         'originalCapturedCargoLock': digest(lock), 'calls': calls,
         'publicResultPreserved': True, 'applicationSourceRewritten': False,
+        'rustBindingsAsync': False, 'publicContractKindsPreserved': True,
         'privateCallingConvention': 'sync-core-to-async-component-projection',
         'executionQualification': False}
     write_json(output/'source-proof.json', record)

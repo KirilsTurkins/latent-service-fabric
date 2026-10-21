@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "latent.rust.http.streamed-post-failure.v1",
+  "source": "cd0846feca31c52fd53cbe5af02975e8db8a402b",
+  "run": 39616665450,
+  "job": 119279463419,
+  "artifact": {
+    "id": 12352767147,
+    "bytes": 2294886,
+    "sha256": "sha256:112cc57c5048f1358d1e7983fa0eb7f43deea6c24f4f0d9422bbde862acea08f",
+    "members": 255,
+    "expandedBytes": 8671511
+  },
+  "owningOutcome": "failure",
+  "guestCompilationSource": "52654f7b86ef0043a8250dea39093d955ee9f480",
+  "componentDigest": "sha256:b92f9de1bf8ec60fbafe1fe44b97fba370180fd4f83d42b385bb6245a1033f2c",
+  "guestOrBackendOrNativeRebuilt": false,
+  "actualEarlyCases": [
+    {
+      "name": "examples-json",
+      "client": "waki",
+      "known": true,
+      "reaped": true,
+      "observedContacts": 1
+    },
+    {
+      "name": "foreign-json",
+      "client": "golem",
+      "known": true,
+      "reaped": true,
+      "observedContacts": 1
+    }
+  ],
+  "queuedBeforeGuestCancellationObserved": true,
+  "queuedFuel": "0",
+  "holderPositiveProviderAndPhysicalOwnersRetained": true,
+  "eightIndependentPreEntryRefusalsRetained": true,
+  "failedStage": "examples-post",
+  "actualDeclaredResult": [
+    {
+      "err": "bad binary request conversion"
+    }
+  ],
+  "actualExitCode": 3,
+  "actualOutboundRequests": 1,
+  "actualGuestEchoMetadataRetained": false,
+  "upstream": {
+    "waki-0.5.1": {
+      "crateSha256": "sha256:6e2db2daf1dfbadf228fd8b3c22b96a359135fd673b3d2c203274ee6a0df9c77",
+      "bytes": 41854,
+      "members": {
+        "src/common/request_and_response.rs": {
+          "sha256": "sha256:e780183061cab6b7fbad14e3e5952c73cd180f90fc2b11ce81d70c1955054212",
+          "bytes": 10517
+        },
+        "src/request.rs": {
+          "sha256": "sha256:9d680aeeca448eb69c9482b46ae73a283229c15a164b246badb5a4620a4c5cbb",
+          "bytes": 7976
+        }
+      }
+    },
+    "golem-wasi-http-0.2.0": {
+      "crateSha256": "sha256:6e80794383f6d363e1f756c5ec9fa6ca0459824e54f9eef53b6b03491fb9d166",
+      "bytes": 41372,
+      "members": {
+        "src/wasi/request.rs": {
+          "sha256": "sha256:59cda1dcd8f64fe8ed4f14f5ca980d152783a367e2980a4d155384c36c69a207",
+          "bytes": 15553
+        },
+        "src/wasi/sync_client.rs": {
+          "sha256": "sha256:6f7e8de2f0b6da159164a58c3a1ed0a2a78376d06fac18d0123909d300c0f167",
+          "bytes": 13216
+        }
+      }
+    }
+  },
+  "sourcePathIdentities": {
+    "sdk/wasi-http-runtime/types.rs": {
+      "sha256": "sha256:ae6c69ce364f8404645962233b0a88eaf5500dfd78386a010ec392d434a6c3ff",
+      "bytes": 23104
+    },
+    "crates/latent-http/src/execute/request.rs": {
+      "sha256": "sha256:3b4e126d96030bb165fa7d6c0f886b877ded874b6006b0e6b262419193531ebb",
+      "bytes": 5971
+    },
+    "tools/standard_http/protocol.py": {
+      "sha256": "sha256:495fb9756c377ba086627f51a69f5e1721fe21b83a5c16b4b97344f3d049b5c7",
+      "bytes": 6517
+    },
+    "tools/standard_http/vectors.py": {
+      "sha256": "sha256:1f5ac1374d9c008c789312a26d5e306aabdb6bbfde4f64d1863d02e8dd7b22f9",
+      "bytes": 5848
+    }
+  },
+  "productionChunkedDataControl": {
+    "bodyBase64": "AAECAw==",
+    "contentLengthPresent": false,
+    "contentTypePresent": false,
+    "customHeaderBase64": "cnVzdC1jbGllbnQ=",
+    "method": "POST"
+  },
+  "oldContentLengthTrue": "refused production peer data",
+  "proposedContentLengthFalse": "accepts same exact production peer data",
+  "otherExactPayloadAndHeaderChecksUnchanged": true,
+  "boundedRefusalDiagnostic": "controlled public echo metadata;512chars",
+  "freshGuestRuntimeConfirmation": "pending",
+  "full64Qualified": false
+}

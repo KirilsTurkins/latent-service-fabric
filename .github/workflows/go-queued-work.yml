@@ -1,0 +1,117 @@
+name: Go independently owned queued-work qualification
+'on':
+  push:
+    branches:
+    - feat/go-queue-owner-profile-20261021
+    paths:
+    - .github/workflows/go-queued-work.yml
+    - tools/qualify_go_queued_work.py
+    - tools/go_queue_node.py
+    - tools/go_guest/**
+    - sdk/go-guest/runtime/queue_bridge.go.in
+    - tools/go_resource_runtime_fixture.py
+    - tools/go_resource_runtime_build.py
+    - tools/resource_runtime_node.py
+    - tools/qualify_typescript_resource_runtime.py
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: go-queued-work-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  queued-work:
+    name: One signed Go v6 component with queue8 queue9 and queue16 original-ledger programmes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+        fetch-depth: 1
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: 3.13.5
+    - name: Fetch the exact current three-product and inherited two-product sources before validation
+      run: git fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23 f6251df89851de98cb869784d095ad5cc2e5b385
+    - name: Install original locked reader dependencies
+      run: python3 -m pip install -r tools/requirements.lock
+    - name: Preserve explicit Go profile and independent queue admission boundaries
+      run: python3 -B -m unittest tools.tests.test_go_queued_work tools.tests.test_go_managed_idle tools.tests.test_go_resource_runtime tools.tests.test_typescript_resource_runtime -v
+    - name: Install captured Go compiler namespace
+      run: 'sudo apt-get update
+
+        sudo apt-get install --yes bubblewrap
+
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+        '
+    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      with:
+        version: 1.254.0
+    - name: Authenticate original Go1.27.3 and componentize-go0.4.3 and prepare the maintained async compiler
+      run: 'set -euo pipefail
+
+        out="$RUNNER_TEMP/go-http-tenant-tools"
+
+        test ! -e "$out"
+
+        mkdir "$out"
+
+        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz
+
+        echo "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz" | sha256sum --check --strict
+
+        tar -xzf "$out/go.tar.gz" -C "$out"
+
+        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 --output "$out/componentize-go.tar.gz" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz
+
+        echo "1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz" | sha256sum --check --strict
+
+        tar -xzf "$out/componentize-go.tar.gz" -C "$out" componentize-go
+
+        echo "b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go" | sha256sum --check --strict
+
+        chmod 755 "$out/componentize-go"
+
+        test "$("$out/componentize-go" --version)" = ''componentize-go 0.4.3''
+
+        test "$(wasm-tools --version | cut -d '' '' -f 1,2)" = ''wasm-tools 1.254.0''
+
+        python3 -B tools/go_guest/runtime.py --prepare-compiler "$out/go" --output "$out/go-async"
+
+        echo "$out" >> "$GITHUB_PATH"
+
+        echo "$out/go-async/bin" >> "$GITHUB_PATH"
+
+        '
+    - name: Retrieve exactly three current and two inherited authenticated products without rebuilding the host
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/c_thread_admission_native_products.py --output "$RUNNER_TEMP/go-queue-native"
+    - name: Build one unchanged transitive Go v6 component and require25 signed queue and lifecycle outcomes
+      run: python3 -B tools/qualify_go_queued_work.py --native "$RUNNER_TEMP/go-queue-native" --output "$RUNNER_TEMP/go-queue-runtime"
+    - name: Retain bounded original construction and actual outcomes including failures
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: go-queued-work-${{ github.sha }}
+        retention-days: 3
+        if-no-files-found: warn
+        path: |
+          ${{ runner.temp }}/go-queue-native/*.json
+          ${{ runner.temp }}/go-queue-runtime/*.json
+          ${{ runner.temp }}/go-queue-runtime/build/*.json
+          ${{ runner.temp }}/go-queue-runtime/build/component.wasm
+          ${{ runner.temp }}/go-queue-runtime/build/component.wit
+          ${{ runner.temp }}/go-queue-runtime/build/package/**
+          ${{ runner.temp }}/go-queue-runtime/build/logs/**
+          ${{ runner.temp }}/go-queue-runtime/node-*/*.json
+          ${{ runner.temp }}/go-queue-runtime/node-*/node-stderr.txt
+          ${{ runner.temp }}/go-queue-runtime/node-*/commands/**
+          ${{ runner.temp }}/go-queue-runtime/node-*/examples-controls/*.json
+          ${{ runner.temp }}/go-queue-runtime/node-*/foreign-controls/*.json

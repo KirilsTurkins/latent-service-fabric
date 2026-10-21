@@ -110,6 +110,11 @@ certificate of general library compatibility. Compiler elimination requires a
 source identity and compiler evidence. A scan for an API name cannot prove
 reachability or elimination.
 
+Java and .NET offer explicit, default-off
+[compiler method observations](compiler-method-observations.md). Dependency or
+scanner retention stays separate from API support and actual execution; missing
+or incomplete observations remain unknown.
+
 The additive Rust diagnostics programme uses an outside captured crate and its
 transitive callback crate through the ordinary Cargo authoring and lock-review
 workflow. It removes the original sources before the network-disabled build,
@@ -185,6 +190,15 @@ identities. Symbols containing host paths or credential-like text are redacted.
 Displaying these observations does not alter their machine report or infer a
 cause, API elimination, qualified runtime or permission from a dependency name.
 
+Generated transformations with both recorded original and transformation digests
+are also displayed, including maintained SDK binding generation. Their selected,
+original and transformation identities stay separate. A generated tool input
+without those records is not presented as a transformation. The
+[six retained context observations](../testing/evidence/compatibility-generated-transform-display-2026-10-21.json)
+show the four previously hidden binding transformations; Java and .NET output
+stays identical. These are reader observations of original compiler contexts,
+with no additional build or execution qualification.
+
 Add `--outcomes output/compatibility-outcomes.json` to include the original
 invocation observations. The reader checks the closed diagnostic fields, numeric
 bounds, report/component identity and, when supplied, the matching context before
@@ -246,3 +260,27 @@ The separate [six-language API/runtime matrix](runtime-capabilities.md) identifi
 finite implemented and qualified surfaces, explicit profile limits and proposed
 ports without using sample package names as API eligibility. Its versioned data
 binds source files and original evidence; it installs no runtime or authority.
+
+The [six-language final-import control](../testing/evidence/six-language-final-import-controls-2026-10-21.json)
+checks actual retained C, Rust, Go, TypeScript, Java and .NET components with
+`wasm-tools 1.254.0` and the normal final-component inspector. Each original
+passes. A declaration-only suffix adds the callable
+`diagnostic:unknown/final-import@0.1.0` interface while preserving every original
+byte, core module, initializer and existing import. Both binaries validate; the
+inspector then rejects the added interface as `unknown-import` at link time.
+No guest is compiled, signed or executed by this check. Runtime compatibility,
+permission, fallback and physical retirement still require their own evidence.
+
+To reproduce, restore `component.wasm` and `capsule.json` for each language into
+`INPUTS/LANGUAGE/`, matching the exact file and origin identities in
+`tools/tests/fixtures/final-import-components.json`, then run:
+
+```sh
+python -B tools/qualify_guest_final_imports.py --inputs INPUTS --output NEW_OUTPUT --wasm-tools PATH_TO_WASM_TOOLS
+```
+
+The fresh output contains the original and changed components, actual WIT,
+refusal reports and bounded command diagnostics. The index-space decoder refuses
+unsupported forms or bounds; it never treats its own decoding as Wasm validation.
+The published record includes all 32 successful tool calls, source and original
+input hashes, and the two earlier control failures and their precise corrections.

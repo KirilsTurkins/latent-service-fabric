@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.pressure-peer-observation.v1",
+  "source": "7e9e775f94f0057741667f587a40ec97e1d0953d",
+  "run": 39666012133,
+  "job": 119451132493,
+  "outerConclusion": "failure",
+  "qualification": false,
+  "artifact": {
+    "id": 12376633412,
+    "bytes": 2085196,
+    "sha256": "sha256:2ecb67bdb2e03b1921227ce0f8dfdc3dfcafd059a97aa962427ff122435a3027",
+    "members": 100,
+    "expandedBytes": 7927221
+  },
+  "scope": "One diagnostic-only original Golem capacity call; no whole64 programme qualification",
+  "originalFull64Failure": {
+    "source": "9bd77c3962b7ab3417e2267cccdad43ec79ddf90",
+    "run": 39662940168,
+    "job": 119440404319,
+    "conclusion": "failure",
+    "successfulCases": 49,
+    "failure": "rust-http-exact-contact-and-physical-peer-close",
+    "originalQualificationPromoted": false
+  },
+  "actualPeer": {
+    "acceptedConnections": 8,
+    "startedRequests": 7,
+    "completedResponseWrites": 7,
+    "openConnections": 0,
+    "otherTenantContacts": 0,
+    "completedResponseBytesEach": 167,
+    "closedBeforeRequestParsed": {
+      "request": 8,
+      "role": "primary",
+      "state": "closed",
+      "responseBytesWritten": 0,
+      "receiveBufferBytes": 8192,
+      "sendBufferBytes": 8192,
+      "closeReason": "remote-write-half-ended"
+    },
+    "receivedRequestBytesProved": false,
+    "heldResponseCountProved": false,
+    "timerTrapSiteProved": false,
+    "limitingOwnerKindProven": false,
+    "physicalOwnerKindsZero": 5,
+    "providerCountersZero": 18,
+    "beforeContactSnapshot": {
+      "member": "rust-http-node-replay/node/peer-before-contact-foreign-resource-capacity.json",
+      "sha256": "sha256:2fa8088585e6fd571ee7035bfc972e315794097fb32406df9b8da67fbea72068",
+      "bytes": 9112
+    }
+  },
+  "sourceSemantics": {
+    "costChargedBeforeDNSConnectAndSendRequest": "crates/latent-http/src/streaming/exchange.rs:44-158",
+    "golemOutgoingHandleBeforeDeadlinePollable": "golem-wasi-http-0.2.0/src/wasi/sync_client.rs:208-280",
+    "peerRequestsStartOnlyAfterCompleteParsedHead": "tools/standard_http/peer.py:_start_request",
+    "eighthConnectionClose": "remote-write-half-ended; no parsed vector/method and zero response bytes, not proof of zero received request bytes"
+  },
+  "unchangedProducts": {
+    "component": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+    "nativeSource": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "backendSource": "52654f7b86ef0043a8250dea39093d955ee9f480",
+    "nativeBuilds": 0,
+    "guestCompiles": 0,
+    "backendBuilds": 0
+  },
+  "fullProgrammeBounds": {
+    "actualForeignConnectionsBeforePressure": 21,
+    "pressureLastConnection": 29,
+    "finalFreshConnection": 30,
+    "originalMaximumContacts": 32,
+    "protocolSourceAlreadyBound": "tools/standard_http/protocol.py"
+  },
+  "remainingQualification": "Fresh full64 replay required with the exact pressure-specific peer ledger and all original retirement/fresh/final gates."
+}

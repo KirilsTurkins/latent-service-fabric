@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_queued_work.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Use verified3plus2 native products with exactcurrentnative source and separate progress receipts",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "00f05e3f162e355b5ee8a23b4fc8904e3269d9e81c74a0e8909ac02f6744888b"
+}
