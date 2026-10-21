@@ -1,0 +1,35 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "sdk-explicit-fallback-${{ github.ref }}"
+    },
+    "name": "C and Go explicit application fallback",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/c-go-explicit-fallback-20261021"
+        ],
+        "paths": [
+          ".github/workflows/sdk-explicit-fallback.yml",
+          "tools/sdk_explicit_fallback_fixture.py",
+          "tools/sdk_explicit_fallback_node.py",
+          "tools/qualify_sdk_explicit_fallback.py",
+          "tools/tests/test_sdk_explicit_fallback.py"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "fallback"
+  ],
+  "reviewReason": "Reviewed finite explicit C/Go fallback after actual native Unsupported; two normal captured builds and eight signed outcomes with original budgets/retirement, no native build and no old27/33 replay.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/sdk-explicit-fallback.yml"
+}
