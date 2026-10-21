@@ -15,7 +15,8 @@
           ".github/workflows/rust-wasi-http-forbidden-replay.yml",
           "tools/replay_rust_wasi_http_forbidden_runtime.py",
           "tools/rust_wasi_http_runtime_node.py",
-          "tools/tests/test_rust_wasi_http_forbidden_runtime_replay.py"
+          "tools/tests/test_rust_wasi_http_forbidden_runtime_replay.py",
+          "tools/tests/test_rust_wasi_http_runtime.py"
         ]
       },
       "workflow_dispatch": null
@@ -28,7 +29,7 @@
   "requiredJobs": [
     "retained-guest"
   ],
-  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
+  "reviewReason": "Root approved one missing exact runtime-test push path; job commands, native/component/backend pins, tests, limits and oracles unchanged; prior test-only push did not start owning run.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-forbidden-replay.yml"
 }

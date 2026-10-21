@@ -9,6 +9,7 @@ on:
       - 'tools/replay_rust_wasi_http_forbidden_runtime.py'
       - 'tools/rust_wasi_http_runtime_node.py'
       - 'tools/tests/test_rust_wasi_http_forbidden_runtime_replay.py'
+      - 'tools/tests/test_rust_wasi_http_runtime.py'
 
 permissions:
   contents: read
