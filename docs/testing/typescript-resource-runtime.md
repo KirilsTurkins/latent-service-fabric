@@ -80,7 +80,7 @@ across independent tenant publications. Every case retains the original physical
 and eighteen-counter provider retirement barriers, followed by zero-contact peer
 and clean reaped node shutdown. The programme reuses the authenticated f0 native
 products and source-bound import engine/splicer; it rebuilds one component and
-performs no native or engine build. Signed execution is pending the owning job.
+performs no native or engine build. The signed six-outcome programme passed.
 No post-Store callback, exact instruction-after-return, `Poll::Pending`, native
 thread, asynchronous console flush or complete ticket result is claimed.
 
@@ -93,3 +93,24 @@ jobs passed in run `39540608310`; its overall cancelled boundary stays cancelled
 and supplies no qualification credit. All forty current engine SDK inputs and
 the source-built splicer match their original receipts. No engine is repinned,
 relabeled or rebuilt, and the earlier resource programme keeps its original pins.
+
+
+The [signed late-facility run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39593951578/job/119201530779)
+passed on source `91c43a476b2ade8bc40ef7206a2919657be4377d`.
+The [retained observation](evidence/typescript-resource-late-signed-2026-10-21.json)
+binds the complete 246-member artifact, 197 authenticated Git inputs, 111 recipe
+rows, 91 SDK files, 28 successful normal build commands and one 12,168,066-byte
+component. Both tenant callbacks completed their facilities with exact two-record
+charges of 557 and 553 bytes. All six outcomes have physical retirement and all
+eighteen active provider counters at zero; distinct tenant publications and the
+zero-contact peer and node finish clean and reaped.
+
+The intermediate `def560c` run remains a failure: its first guest callback
+succeeded, but the harness incorrectly expected a result wrapper instead of the
+TypeScript export's direct string. The focused correction retains the exact
+value, completion-log and budget requirements. Integration also applies only the
+two [reviewed C formatting changes](evidence/c-thread-native-rustfmt-2026-10-21.json)
+responsible for the existing development formatting failure. The other 3,322
+native inputs are byte exact, and the successful producer and historical
+compiler cancellation identities remain unchanged. This finite late-facility
+result does not close the remaining Java/.NET late rows or full #681/#736.
