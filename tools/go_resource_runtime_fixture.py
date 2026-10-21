@@ -130,7 +130,8 @@ EXPECTED = {'parallel':'resource-go|parallel=first:80410d0a+second:00ff80410d0a|
             'clear':'resource-go|clear=00ff80410d0a|empty=0|fresh=1'}
 
 
-def project(directory: Path, outside: Path):
+def project(directory: Path, outside: Path, *, late_completion=False):
+    require(type(late_completion) is bool, 'resource-Go-closed-late-selector')
     require(directory.parent.resolve(strict=True) == outside.parent.resolve(strict=True)
             and ROOT not in outside.parents and outside.parent.resolve(strict=True) != ROOT,
             'resource-Go-independent-originals')
@@ -141,7 +142,11 @@ def project(directory: Path, outside: Path):
         manifest='module '+identity+'\n\ngo 1.27.3\n'
         if name=='library':manifest+='require '+PACKAGES[1]+' v0.0.0\n'
         (target/'go.mod').write_bytes(manifest.encode())
-    (outside/'library/library.go').write_bytes(LIBRARY_SOURCE)
+    library = LIBRARY_SOURCE
+    if late_completion:
+        from tools.go_resource_late import library_source
+        library = library_source(library)
+    (outside/'library/library.go').write_bytes(library)
     (outside/'data/data.go').write_bytes(DATA_SOURCE)
     for name,raw in DATA.items():(outside/'data'/name).write_bytes(raw)
     source=before['src/main.go'];marker=b'func Greet(name string) wit.Result[string, string] {'
