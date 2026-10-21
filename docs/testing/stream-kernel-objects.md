@@ -342,3 +342,46 @@ capability, DMA, per-CPU, virtio/RX and prelookup allocation/free closure, trust
 bootstrap, sealed image/BTF, final-free installation and node/operator/provider
 conformance remain mandatory. No kernel is linked, booted or installed, no
 native SDK build is claimed, and all production/accounting gates remain false.
+
+
+## Compiled cached ACPI reference and deferred cleanup extension
+
+The separate `--firmware` selection preserves all eleven prior profiles, jobs,
+configuration checks and bounds. It adds five real ACPI/PCI translation units
+and requires 37 unlinked x86 objects and 145 defined GLOBAL functions: all prior
+32 objects/121 symbols, 15 private helpers and nine original lifetime, iterator,
+association and queue functions. The original security configuration, `-Werror`,
+`-j2`, deadlines and diagnostic bounds remain unchanged.
+
+The [owning run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39643337089)
+passed on source `e4af93bb0cbef1df2d6a0cc03d3ca40784c9131b`. Its
+[compact observation](evidence/kernel-device-firmware-objects-compiled-2026-10-21.json)
+binds 127 CRC-checked members, 209 exact Git materials, 71 complete maintained
+inputs, 55 definition preimages and 115 derived outputs. Ninety-one prior device
+outputs remain exact; four shared extensions reverse exactly. All 234 actual
+source/controller tests and 42 completed, cleaned commands passed. The same
+4,309-symbol configuration changes only `CONFIG_LSF_STREAM_FACTORY` from `n` to
+`y`; ACPI, SELinux, Netlabel, audit and XFRM remain enabled. The generic extra
+source cap stays 32; 13 additional fixed firmware paths use anchored reads from
+the same wholly authenticated private extraction, followed by full 71-file
+authentication before derivation. The earlier nine device paths and 4 MiB file/
+16 MiB aggregate bounds remain intact.
+
+The source replaces a borrowed cached companion with one prepaid descriptor and
+a real reference acquired inside the original iterator. Same-lock invalidation
+separates allocation lifetime from currentness. Deferred final put reserves the
+original continuation and runs after constructor unlock; descriptor and PCI
+owners remain live through actual put. Known queue closure refuses before
+descriptor/get admission; late dispatch uncertainty retains both owners.
+Thirty-eight supplemental serialized C controls passed, retaining original
+borrowed-pointer and prior-readiness-caller RED controls. Those explicit doubles
+provide no Linux workqueue, concurrency, device or physical capacity proof.
+
+Normal factory selection remains `NULL`. Full host-bridge/ACPI bootstrap and
+parent ownership, physical shared-worker/queue accounting, later consumer
+currentness, driver/DMA/virtio/per-CPU/prelookup RX closure, failed-open native
+owner retention and remaining neighbour/DNS/deferred chains are unfinished.
+Sealed image/layout/BTF, installed final-free production and node/operator/
+provider conformance remain mandatory. No kernel is linked, booted or installed;
+actual firmware execution, complete allocation closure and production gates
+remain false. This campaign builds no SDK native products.
