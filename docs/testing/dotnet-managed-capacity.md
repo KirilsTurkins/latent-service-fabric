@@ -13,3 +13,25 @@ Each accepted main case is followed by a fresh same-budget activation, all 18 ph
 The first capacity attempt, source `64102bcc65af07a0a4458c83807e86598f0346a9`, run `39577888602` / job `119147870666`, remains failed. Its first six signed outcomes pass Task and queue refusal/fresh controls and eight individual timer births/returns/refusal/reuse/fresh. The periodic case then returns an unreachable guest trap; this does not identify the original managed cause. The bounded artifact `12335198002` retains the successful component and raw results. A fixture-only diagnostic now converts only callback failures into the existing Task's exception and projects a finite closed code/stage. The original successful periodic body and exact oracle remain required; every diagnostic result is rejected. Failures outside that observable callback/task boundary may remain opaque. No production or native change is inferred from this diagnostic.
 
 The diagnostic attempt `03669e56d0927fb60384e8647c9b2c0a3513990e`, run `39580872537`, also remains failed without an observable callback/await cause. A bounded source control subsequently reproduces a separate precise deferred-parent defect using the actual Rust Timer/Owner sources: the lazy `wait_for` future captures its creator Task token, then validates it only on first poll after that Task can retire. The retained Wait owner now supplies the continuation token through actual future/drop lifetime. Initial admission still validates the original parent; invalid generation/currentness and Closing gates remain enforced. Six actual-source controls cover creator return, Closing, a later ambient Task, early drop and invalid parents with explicit test ledger/clock/pump/quota ports. Their old source has three failures at the original readiness assertion; corrected source passes all six. This is causal source evidence, not a substitute for the pending signed periodic/17-case result. The correction changes the guest adapter only; historical native products remain unchanged.
+
+
+The periodic failure retained at source `1b19f21db44e137b69a9ccf5aca4d58a7653c51a`
+reports the original queued-work resource-exhausted result (closed diagnostic
+code 61). It remains an unqualified diagnostic and preserves the original trap.
+
+The selected private timer driver now uses the authenticated CoreLib
+`NotOnCanceled` continuation option. Original `FireNextTimers` rearms before its
+inline callback. If that callback disables the periodic timer, cancellation
+previously queued a driver callback whose original body only returned. Together
+with the already queued poll check, that consumed both queue slots before the
+required disposal continuation could enter. Cancelled driver continuations now
+settle without being queued; successful and faulted waits retain their original
+callback, scheduler, identity and epoch checks.
+
+Six actual CLR controls copy the five generated driver methods. Their old
+test-only projection must reproduce the two-slot refusal; the current form must
+run the required continuation, still refuse a genuine third queued item, and
+accept fresh work at the same ceiling. Both success and fault paths are tested
+on both forms. Queue and native imports are explicit test ports; these controls
+give no signed guest qualification. The original seventeen signed outcomes,
+100 ms period and all owner and execution limits remain unchanged.

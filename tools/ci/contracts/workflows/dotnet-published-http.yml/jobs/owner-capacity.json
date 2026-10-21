@@ -85,6 +85,10 @@
         "shell": "bash"
       },
       {
+        "name": "Check the actual private timer driver against the original two queued slots",
+        "run": "python3 -B tools/dotnet_managed_work_controls.py --dotnet \"$(command -v dotnet)\" --timer-driver-tools \"$RUNNER_TEMP/capacity-tools\" --output \"$RUNNER_TEMP/timer-driver-controls\""
+      },
+      {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
@@ -102,7 +106,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-managed-capacity-${{ github.sha }}",
-          "path": "${{ runner.temp }}/capacity-native/*.json\n${{ runner.temp }}/managed-work-state-controls/state-controls.json\n${{ runner.temp }}/managed-work-state-controls/logs/**\n${{ runner.temp }}/managed-timer-state-controls/timer-state-controls.json\n${{ runner.temp }}/managed-timer-state-controls/logs/**\n${{ runner.temp }}/timer-wait-source-controls/timer-wait-source-controls.json\n${{ runner.temp }}/timer-wait-source-controls/logs/**\n${{ runner.temp }}/capacity-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/capacity-tools/runtime-inputs.json\n${{ runner.temp }}/capacity-tools/wasi-sdk.json\n${{ runner.temp }}/capacity-tools/logs/**\n${{ runner.temp }}/managed-capacity/*.json\n${{ runner.temp }}/managed-capacity/build/*.json\n${{ runner.temp }}/managed-capacity/build/compiler.*.txt\n${{ runner.temp }}/managed-capacity/build/component.wasm\n${{ runner.temp }}/managed-capacity/build/native-aot-raw.wasm\n${{ runner.temp }}/managed-capacity/build/native-aot-original.wasm\n${{ runner.temp }}/managed-capacity/build/derived-*.dll\n${{ runner.temp }}/managed-capacity/build/package/**\n${{ runner.temp }}/managed-capacity/build/wit/**\n${{ runner.temp }}/managed-capacity/build/logs/**\n${{ runner.temp }}/managed-capacity/node/*.json\n${{ runner.temp }}/managed-capacity/node/native-*/*.json\n${{ runner.temp }}/managed-capacity/node/native-*/controls/*.json\n${{ runner.temp }}/managed-capacity/node/native-*/controls/*-partial.stdout\n${{ runner.temp }}/managed-capacity/node/native-*/controls/*-partial.stderr\n",
+          "path": "${{ runner.temp }}/capacity-native/*.json\n${{ runner.temp }}/managed-work-state-controls/state-controls.json\n${{ runner.temp }}/managed-work-state-controls/logs/**\n${{ runner.temp }}/managed-timer-state-controls/timer-state-controls.json\n${{ runner.temp }}/managed-timer-state-controls/logs/**\n${{ runner.temp }}/timer-wait-source-controls/timer-wait-source-controls.json\n${{ runner.temp }}/timer-wait-source-controls/logs/**\n${{ runner.temp }}/timer-driver-controls/timer-driver-controls.json\n${{ runner.temp }}/timer-driver-controls/logs/**\n${{ runner.temp }}/capacity-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/capacity-tools/runtime-inputs.json\n${{ runner.temp }}/capacity-tools/wasi-sdk.json\n${{ runner.temp }}/capacity-tools/logs/**\n${{ runner.temp }}/managed-capacity/*.json\n${{ runner.temp }}/managed-capacity/build/*.json\n${{ runner.temp }}/managed-capacity/build/compiler.*.txt\n${{ runner.temp }}/managed-capacity/build/component.wasm\n${{ runner.temp }}/managed-capacity/build/native-aot-raw.wasm\n${{ runner.temp }}/managed-capacity/build/native-aot-original.wasm\n${{ runner.temp }}/managed-capacity/build/derived-*.dll\n${{ runner.temp }}/managed-capacity/build/package/**\n${{ runner.temp }}/managed-capacity/build/wit/**\n${{ runner.temp }}/managed-capacity/build/logs/**\n${{ runner.temp }}/managed-capacity/node/*.json\n${{ runner.temp }}/managed-capacity/node/native-*/*.json\n${{ runner.temp }}/managed-capacity/node/native-*/controls/*.json\n${{ runner.temp }}/managed-capacity/node/native-*/controls/*-partial.stdout\n${{ runner.temp }}/managed-capacity/node/native-*/controls/*-partial.stderr\n",
           "retention-days": 3
         }
       }
@@ -111,7 +115,7 @@
   },
   "jobId": "owner-capacity",
   "kind": "job",
-  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
+  "reviewReason": "Append six actual copied-driver CLR controls after compiler installation; retain every original seventeen-case programme command, condition, limit and evidence obligation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }
