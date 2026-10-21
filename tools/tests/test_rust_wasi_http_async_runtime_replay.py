@@ -10,6 +10,19 @@ from tools.phase2_operator_process import WorkflowError
 
 
 class RustHttpAsyncRuntimeReplay(unittest.TestCase):
+    def test_reused_backend_requires_actual_success_of_only_the_exact_original_step(self):
+        from tools import rust_wasi_http_current_backend as backend
+        name='Compile exactly one current source-bound standard backend'
+        step={'name':name,'number':12,'status':'completed','conclusion':'success'}
+        self.assertEqual(backend.backend_step({'steps':[step]}),name)
+        for key,value in (('name','Compile another backend'),('number',True),('number',11),
+                ('status','in_progress'),('conclusion','failure'),('conclusion','skipped')):
+            with self.subTest(key=key,value=value),self.assertRaises(WorkflowError):
+                backend.backend_step({'steps':[{**step,key:value}]})
+        for steps in ([],[step,step]):
+            with self.subTest(steps=steps),self.assertRaises(WorkflowError):
+                backend.backend_step({'steps':steps})
+
     def test_only_exact_failed_original_origin_is_accepted(self):
         pins=json.loads((ROOT/replay.PINS).read_bytes())
         branch='fix/rust-http-explicit-async-entry-20261021'

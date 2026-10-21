@@ -166,7 +166,7 @@ def verify_build(artifact,app,captured,approval,prepared):
         'composition':composition,'component':file_identity(artifact/'component.wasm',64*1024**2)}
 
 
-def qualify(native_directory,adapter_directory,output):
+def qualify(native_directory,adapter_directory,output,*,retained_backend=None):
     # This one owning lane uses actual emitted guest code. Refuse on Windows
     # before fresh output, executable approval or any tool/network operation.
     require(sys.platform=='linux' and sys.version_info>=(3,13),'rust-http-runtime-linux-python313')
@@ -191,14 +191,19 @@ def qualify(native_directory,adapter_directory,output):
     compatibility=native_compatibility(original_inputs['materials'],aux_current)
     binaries=products.native_products(native_directory)
     for path in binaries.values():path.chmod(0o700)
-    (adapter_directory/'component-composer/wac').chmod(0o700)
     tools,_identities=resolve_tools(tomllib.loads(read_file(ROOT/'tools/toolchain.toml').decode()),ROOT,build_environment(output))
-    prepared=runtime.Prepared(adapter_directory,tools['rustc'],tools['wasm-tools'])
     adapter_origin={'buildKind':'prepared-current-source',
         'producerReceipt':file_identity(adapter_directory/runtime.RECEIPT),
         'sourceInventory':file_identity(adapter_directory/'source-inputs.json'),
         'receiptRewritten':False,'historicalAdapterReceiptRebound':False}
-    names=dict.fromkeys((*RECIPE,*MATERIALS,*runtime.consumer_files()))
+    additional=()
+    if retained_backend is not None:
+        from tools import rust_wasi_http_current_backend as current_backend
+        adapter_origin=current_backend.verify(retained_backend,adapter_directory)
+        additional=current_backend.MATERIALS
+    (adapter_directory/'component-composer/wac').chmod(0o700)
+    prepared=runtime.Prepared(adapter_directory,tools['rustc'],tools['wasm-tools'])
+    names=dict.fromkeys((*RECIPE,*MATERIALS,*additional,*runtime.consumer_files()))
     materials={name:file_identity(ROOT/name) for name in names}
     native_files={name:file_identity(path,512*1024**2) for name,path in binaries.items()}
     record={'schemaVersion':'latent.rust.wasi-http.runtime-qualification.v1','status':'incomplete',
@@ -261,5 +266,7 @@ if __name__=='__main__':
     parser.add_argument('--native-products',type=Path,required=True)
     parser.add_argument('--http-runtime',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--retained-backend',type=Path)
     args=parser.parse_args()
-    print(qualify(args.native_products,args.http_runtime,args.output)['status'])
+    print(qualify(args.native_products,args.http_runtime,args.output,
+        retained_backend=args.retained_backend)['status'])
