@@ -1,0 +1,169 @@
+{
+  "waki": {
+    "invocation": {
+      "activation": "examples-resource-capacity",
+      "exitCode": 0,
+      "startedAtUnixMillis": "1792614109712",
+      "elapsedNanos": "86464089",
+      "decoded": [
+        {
+          "ok": "fresh:waki:capacity:8:library-error:{\"debug\":\"ErrorCode::InternalError(Some(\\\"latent-runtime-resource-exhausted\\\"))\",\"debugBytes\":67,\"display\":\"ErrorCode::InternalError(Some(\\\"latent-runtime-resource-exhausted\\\"))\",\"displayBytes\":67,\"phase\":\"send\",\"public\":{\"serdeJsonError\":false,\"typedWasiErrorCode\":\"ErrorCode::InternalError(Some(\\\"latent-runtime-resource-exhausted\\\"))\"},\"truncated\":false}"
+        }
+      ],
+      "response": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "examples-resource-capacity",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "449491",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 8,
+            "peakMemoryBytes": "9995232",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "72789"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "operator-workflow-test:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "442",
+            "data": "W3sib2siOiJmcmVzaDp3YWtpOmNhcGFjaXR5Ojg6bGlicmFyeS1lcnJvcjp7XCJkZWJ1Z1wiOlwiRXJyb3JDb2RlOjpJbnRlcm5hbEVycm9yKFNvbWUoXFxcImxhdGVudC1ydW50aW1lLXJlc291cmNlLWV4aGF1c3RlZFxcXCIpKVwiLFwiZGVidWdCeXRlc1wiOjY3LFwiZGlzcGxheVwiOlwiRXJyb3JDb2RlOjpJbnRlcm5hbEVycm9yKFNvbWUoXFxcImxhdGVudC1ydW50aW1lLXJlc291cmNlLWV4aGF1c3RlZFxcXCIpKVwiLFwiZGlzcGxheUJ5dGVzXCI6NjcsXCJwaGFzZVwiOlwic2VuZFwiLFwicHVibGljXCI6e1wic2VyZGVKc29uRXJyb3JcIjpmYWxzZSxcInR5cGVkV2FzaUVycm9yQ29kZVwiOlwiRXJyb3JDb2RlOjpJbnRlcm5hbEVycm9yKFNvbWUoXFxcImxhdGVudC1ydW50aW1lLXJlc291cmNlLWV4aGF1c3RlZFxcXCIpKVwifSxcInRydW5jYXRlZFwiOmZhbHNlfSJ9XQ==",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:8cee61f3b9c5706b7a9c676dc661f198f87c25cdadcca6ab792c0328a64a4097",
+            "releaseDigest": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+            "revisionId": "revision-v1:sha256:0348f0208940abeb175c0a390ad6f0dc1a6cd7a868effecd39c7bfb45af7b075",
+            "routeGeneration": "13"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    "selectedRevision": {
+      "publicationId": "publication:sha256:8cee61f3b9c5706b7a9c676dc661f198f87c25cdadcca6ab792c0328a64a4097",
+      "routeGeneration": "13",
+      "releaseDigest": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+      "revisionId": "revision-v1:sha256:0348f0208940abeb175c0a390ad6f0dc1a6cd7a868effecd39c7bfb45af7b075"
+    },
+    "budget": {
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "childCalls": 0,
+      "cpuFuel": 1000000000,
+      "effectCount": 0,
+      "logBytes": 0,
+      "memoryBytes": 16777216,
+      "outboundRequests": 8,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "wallTimeLimitMillis": 5000
+    }
+  },
+  "golem": {
+    "invocation": {
+      "activation": "foreign-resource-capacity",
+      "exitCode": 4,
+      "startedAtUnixMillis": "1792614109864",
+      "elapsedNanos": "82586740",
+      "decoded": null,
+      "response": {
+        "category": "platform-failure",
+        "command": "invoke",
+        "data": {
+          "activationId": "foreign-resource-capacity",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "543865",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 8,
+            "peakMemoryBytes": "9995232",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "67545"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:e47d8e4bc142be6961be52258b207caa6c2d7699fcce5d577b4d91a775b5d078",
+            "releaseDigest": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+            "revisionId": "revision-v1:sha256:c99f4131d04478f565c72d03550093aac42c526aafd19a5b849f8f1d5eb341a5",
+            "routeGeneration": "13"
+          },
+          "terminalState": "guest_trap"
+        },
+        "error": {
+          "code": "guest-trap",
+          "details": [
+            {
+              "fields": {
+                "code": "guest-trap"
+              },
+              "kind": "activation.guest-trap"
+            },
+            {
+              "fields": {
+                "kind": "unreachable-code"
+              },
+              "kind": "activation.guest-trap-kind"
+            }
+          ],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    "selectedRevision": {
+      "publicationId": "publication:sha256:e47d8e4bc142be6961be52258b207caa6c2d7699fcce5d577b4d91a775b5d078",
+      "routeGeneration": "13",
+      "releaseDigest": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+      "revisionId": "revision-v1:sha256:c99f4131d04478f565c72d03550093aac42c526aafd19a5b849f8f1d5eb341a5"
+    },
+    "budget": {
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "childCalls": 0,
+      "cpuFuel": 1000000000,
+      "effectCount": 0,
+      "logBytes": 0,
+      "memoryBytes": 16777216,
+      "outboundRequests": 8,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "wallTimeLimitMillis": 5000
+    }
+  },
+  "pendingTimer": {
+    "mode": "pending",
+    "event": "wait-pending",
+    "sequence": 1,
+    "tasks": 1,
+    "waits": 1,
+    "timers": 1
+  },
+  "source": {
+    "run": 39668260882,
+    "artifact": 12378817614,
+    "qualificationForNewLimits": false,
+    "note": "Original actual raw inputs. Unit controls model only explicit changed ceilings; no modeled row is runtime qualification."
+  }
+}
