@@ -8,10 +8,10 @@ int lsf_prepaid_device_uevent_ops_known(const struct kset_uevent_ops *candidate)
     return candidate == &device_uevent_ops;
 }
 
-int lsf_prepaid_device_uevent_device(const struct kobject *kobj)
+int lsf_prepaid_device_uevent_device(struct kobject *kobj)
 {
     struct lsf_device_registration_source source;
-    const struct device *dev;
+    struct device *dev;
     if (lsf_factory_device_uevent_kobject(kobj, &source) != 1 ||
         lsf_factory_device_uevent_current(source) != 1)
         return 0;
