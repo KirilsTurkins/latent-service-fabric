@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_owned_stack.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reuse the immutable successful TypeScript component and shared current native products; preserve all original five profiles, limits and result/retirement oracles, add the explicit existing RootOnly stack selection and verify its original Native and memory costs. No compiler, engine, guest or host build in this lane.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "250f567d289817c15800a32116b2e6fcb9082caecf86782b2eb194d1ec293a03"
+}

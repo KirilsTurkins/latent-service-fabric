@@ -1,0 +1,70 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Same TypeScript component and ceilings with activation-owned root stacks",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check original boundaries and refuse mixed or changed component provenance",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_runtime_limits tools.tests.test_typescript_tracking_component -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire the immutable previously built TypeScript component",
+        "run": "python3 -B tools/typescript_tracking_component.py --output \"$RUNNER_TEMP/typescript-original-component\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire the same reviewed C and RootOnly native products",
+        "run": "python3 -B - <<'PY'\nimport os, subprocess\nfrom pathlib import Path\nfrom tools import c_thread_native_products as native\nsubprocess.check_call(['git','fetch','--no-tags','--depth=1','origin',native.SOURCE])\nnative.prepare(Path(os.environ['RUNNER_TEMP'])/'typescript-owned-stack-native')\nPY\n"
+      },
+      {
+        "name": "Sign and replay the unchanged fifteen actual guest invocations",
+        "run": "python3 -B tools/qualify_typescript_owned_stack.py --acquired \"$RUNNER_TEMP/typescript-original-component\" --prepared \"$RUNNER_TEMP/typescript-owned-stack-native\" --output \"$RUNNER_TEMP/typescript-owned-stack\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain actual results and physical owner retirement",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-owned-stack-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-original-component/acquisition.json\n${{ runner.temp }}/typescript-owned-stack-native/*.json\n${{ runner.temp }}/typescript-owned-stack/*.json\n${{ runner.temp }}/typescript-owned-stack/node/*.json\n${{ runner.temp }}/typescript-owned-stack/node/*/*.json\n${{ runner.temp }}/typescript-owned-stack/node/*/controls/\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 15
+  },
+  "jobId": "original-ledger",
+  "kind": "job",
+  "reviewReason": "Reuse the immutable successful TypeScript component and shared current native products; preserve all original five profiles, limits and result/retirement oracles, add the explicit existing RootOnly stack selection and verify its original Native and memory costs. No compiler, engine, guest or host build in this lane.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-owned-stack.yml"
+}
