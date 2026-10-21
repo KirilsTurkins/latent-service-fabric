@@ -1,0 +1,70 @@
+name: TypeScript original activation stack accounting
+on:
+  push:
+    branches: ['feat/typescript-owned-stack-20261021']
+    paths:
+      - '.github/workflows/typescript-owned-stack.yml'
+      - 'tools/typescript_tracking_component.py'
+      - 'tools/qualify_typescript_owned_stack.py'
+      - 'tools/qualify_typescript_runtime_limits.py'
+      - 'tools/tests/test_typescript_tracking_component.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: typescript-owned-stack-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  original-ledger:
+    name: Same TypeScript component and ceilings with activation-owned root stacks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install locked Python controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check original boundaries and refuse mixed or changed component provenance
+        run: python3 -B -m unittest tools.tests.test_typescript_runtime_limits tools.tests.test_typescript_tracking_component -v
+      - name: Acquire the immutable previously built TypeScript component
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_tracking_component.py --output "$RUNNER_TEMP/typescript-original-component"
+      - name: Acquire the same reviewed C and RootOnly native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          import os, subprocess
+          from pathlib import Path
+          from tools import activation_stack_native_products as native
+          subprocess.check_call(['git','fetch','--no-tags','--depth=1','origin',native.SOURCE])
+          native.prepare(Path(os.environ['RUNNER_TEMP'])/'typescript-owned-stack-native')
+          PY
+      - name: Sign and replay the unchanged fifteen actual guest invocations
+        run: >-
+          python3 -B tools/qualify_typescript_owned_stack.py
+          --acquired "$RUNNER_TEMP/typescript-original-component"
+          --prepared "$RUNNER_TEMP/typescript-owned-stack-native"
+          --output "$RUNNER_TEMP/typescript-owned-stack"
+      - name: Retain actual results and physical owner retirement
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-owned-stack-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-original-component/acquisition.json
+            ${{ runner.temp }}/typescript-owned-stack-native/*.json
+            ${{ runner.temp }}/typescript-owned-stack/*.json
+            ${{ runner.temp }}/typescript-owned-stack/node/*.json
+            ${{ runner.temp }}/typescript-owned-stack/node/*/*.json
+            ${{ runner.temp }}/typescript-owned-stack/node/*/controls/
+          if-no-files-found: warn
+          retention-days: 7

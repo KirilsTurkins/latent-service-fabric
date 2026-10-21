@@ -34,10 +34,13 @@ SOURCES=('.github/workflows/typescript-runtime-limits.yml',cases.SOURCE,
     'tools/typescript_fetch_buffered.py','tools/qualify_typescript_fetch_conformance.py')
 
 
-def execute(artifact,native,output):
+def execute(artifact,native,output,*,activation_owned_stack=False):
+    require(type(activation_owned_stack) is bool,'typescript-limit-closed-stack-selection')
     output=fresh(output)
     result={'schemaVersion':'latent.typescript.runtime-limits.v1','status':'in-progress',
         'fullTicketQualification':False,'cases':[],'profiles':[]}
+    if activation_owned_stack:
+        result['activationStackAccounting']='activation-owned-v1'
     original=base.build_evidence(artifact);stage='sign'
     try:
         environment=build_environment(output);signed=output/'releases'
@@ -59,6 +62,8 @@ def execute(artifact,native,output):
                 config=base.configuration(work/'node',signed,startup,credential)
                 value=json.loads(config.read_bytes())
                 value['providers']['activationRuntime']['limits']=cases.limits(profile)
+                if activation_owned_stack:
+                    value.setdefault('engine',{})['activationStackAccounting']='activation-owned-v1'
                 config.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
                 client=RecordingClient(native['latent'],work/'client',cancellation,time.monotonic()+300,
                     evidence=observations/'controls',invocation_timeout_millis=120000,control_timeout_millis=125000)
@@ -81,6 +86,12 @@ def execute(artifact,native,output):
                         base.require_result(row,'ready|fresh=1',0)
                         if phase=='bootstrap':bootstrap=row
                     base.retire(client,probe,target,observations,phase)
+                    if activation_owned_stack:
+                        retained=json.loads((observations/('after-'+phase+'.json')).read_bytes())
+                        attributes=retained['inventory']['node']['attributes']
+                        require(attributes.get('lsf.activation-stack-accounting')=='activation-owned-v1'
+                            and 'lsf.native-thread-profile' not in attributes,
+                            'typescript-limit-root-stack-profile')
                     result['cases'].append({'profile':name,'phase':phase,'decoded':row['decoded'],
                         'terminal':(row['response'].get('error') or {}).get('code')})
                 shutdown=shutdown_owned_node(client,node)

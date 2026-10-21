@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_runtime_limits.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review bounded tracking-engine reuse, immutable successful producer jobs and exact native artifacts; preserve every original five-profile limit and all refusal/retirement oracles. Add adverse provenance controls without changing existing cases or guards.",
+  "reviewReason": "Reuse the immutable successful TypeScript component and shared current native products; preserve all original five profiles, limits and result/retirement oracles, add the explicit existing RootOnly stack selection and verify its original Native and memory costs. No compiler, engine, guest or host build in this lane.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d8e91b28bf5f728c3098b5873fcd5e664946c2a0ea20f107db89c24bfaf9083d"
+  "sha256": "f58fe32732fcfb0389e36781fb87cc9ebb01f6423a5c099c941676cc625c17b7"
 }
