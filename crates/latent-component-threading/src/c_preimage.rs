@@ -386,18 +386,59 @@ fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
     Ok(operators)
 }
 
+// This is a conservative byte envelope, not a type decoder or a rewriting pass.
+// Every unsigned count is either one byte (<128), or a suffix of a maximal
+// high-bit run ending in a low byte. The value of that whole run is at least
+// the suffix value, so this also bounds every preallocating reader's count.
+// Signed valtypes use their ordinary one-byte tags. Larger signed encodings,
+// indices and non-ASCII names may be refused by this first finite profile.
+// No type encoding contains a floating-point literal; f32/f64 are type tags.
+fn finite_type_encoding(bytes: &[u8]) -> Result<(), &'static str> {
+    let mut position = 0;
+    while position < bytes.len() {
+        if bytes[position] & 0x80 == 0 {
+            position += 1;
+            continue;
+        }
+        let mut value = 0u64;
+        let mut shift = 0;
+        loop {
+            let byte = *bytes
+                .get(position)
+                .ok_or("c-preimage-finite-type-integer-envelope")?;
+            position += 1;
+            value |= u64::from(byte & 0x7f) << shift;
+            if value > 256 {
+                return Err("c-preimage-finite-type-integer-envelope");
+            }
+            if byte & 0x80 == 0 {
+                break;
+            }
+            shift += 7;
+            if shift >= 35 {
+                return Err("c-preimage-finite-type-integer-envelope");
+            }
+        }
+    }
+    Ok(())
+}
+
 // This runs only AFTER the caller admits C_VERIFICATION_WORK_BYTES. It rejects
 // expansive shapes before invoking any full Validator or recomputing a core.
 fn finite_preflight(component: &[u8], original: &[u8]) -> Result<(), &'static str> {
     let accesses = bounded_core(original, true)?;
     let mut modules = 0;
     let mut rows = 0;
-    let mut depth = 0;
+    let mut depth = 0usize;
+    let mut encodings = [true; 2];
+    let mut is_component = true;
+    let mut components = 0;
     let mut instances = 0u32;
     let mut component_instances = 0u32;
     let mut aliases = 0u32;
     let mut canonical = 0u32;
     let mut type_prefixes = 0usize;
+    let mut type_bytes = 0usize;
     for payload in Parser::new(0).parse_all(component) {
         let payload = payload.map_err(|_| "c-preimage-finite-component")?;
         rows += 1;
@@ -424,9 +465,12 @@ fn finite_preflight(component: &[u8], original: &[u8]) -> Result<(), &'static st
             )?;
         }
         if matches!(payload, Payload::ComponentSection { .. }) {
-            return Err("c-preimage-finite-nested-component");
+            components += 1;
+            if components > 1 {
+                return Err("c-preimage-finite-nested-component-count");
+            }
         }
-        if depth == 0 {
+        if is_component {
             match &payload {
                 Payload::InstanceSection(reader) => {
                     instances = instances
@@ -457,9 +501,13 @@ fn finite_preflight(component: &[u8], original: &[u8]) -> Result<(), &'static st
                     let bytes = component
                         .get(start..end)
                         .ok_or("c-preimage-finite-type-range")?;
-                    if bytes.len() > 16 * 1024 {
+                    type_bytes = type_bytes
+                        .checked_add(bytes.len())
+                        .ok_or("c-preimage-finite-type-encoding-bytes")?;
+                    if type_bytes > 16 * 1024 {
                         return Err("c-preimage-finite-type-encoding-bytes");
                     }
+                    finite_type_encoding(bytes)?;
                     // A conservative raw-byte ceiling BEFORE recursive typed
                     // decoding. Every nested component/instance/module type
                     // necessarily consumes one of these prefixes. Counting
@@ -481,7 +529,11 @@ fn finite_preflight(component: &[u8], original: &[u8]) -> Result<(), &'static st
                 return Err("c-preimage-finite-component-container-bound");
             }
         }
-        if depth == 0
+        if is_component
+            && !matches!(
+                payload,
+                Payload::ModuleSection { .. } | Payload::ComponentSection { .. }
+            )
             && let Some((id, range)) = payload.as_section()
             && id != 0
             && id != 1
@@ -490,8 +542,18 @@ fn finite_preflight(component: &[u8], original: &[u8]) -> Result<(), &'static st
             return Err("c-preimage-finite-component-structure-bytes");
         }
         match payload {
-            Payload::ModuleSection { .. } => depth += 1,
-            Payload::End(_) if depth != 0 => depth -= 1,
+            Payload::ModuleSection { .. } | Payload::ComponentSection { .. } => {
+                if depth == encodings.len() {
+                    return Err("c-preimage-finite-encoding-depth");
+                }
+                encodings[depth] = is_component;
+                depth += 1;
+                is_component = matches!(payload, Payload::ComponentSection { .. });
+            }
+            Payload::End(_) if depth != 0 => {
+                depth -= 1;
+                is_component = encodings[depth];
+            }
             _ => {}
         }
     }
@@ -755,6 +817,115 @@ mod tests {
         assert_eq!(
             bounded_core(&module.finish(), true).unwrap_err(),
             "c-preimage-finite-offset"
+        );
+    }
+
+    #[test]
+    fn c_finite_type_envelope_accepts_original_generator_tags_and_refuses_declared_allocation_counts()
+     {
+        // Exact type-section payloads from authenticated ordinary889 component
+        // f040342f89261b8afe5de18668c5c479ef599907a5203f85945d147b383acff2.
+        // This is historical generator-shape data, not the unretained C9a5 core.
+        for encoded in [
+            "01420f016d08047461736b136d616e616765642d69646c652d776f726b6572086578656375746f720b7175657565642d776f726b04776169740574696d657206726573756c74066e617469766504000a6f776e65722d6b696e640300000172020a67656e65726174696f6e7702696477040005746f6b656e030002016d070b756e617661696c61626c65117065726d697373696f6e2d64656e696564127265736f757263652d6578686175737465640963616e63656c6c656408646561646c696e650d696e76616c69642d73746174650d696e76616c69642d746f6b656e0400056572726f72030004016b03016a01030105014002046b696e64010c636f6e74696e756174696f6e06000704000872656769737465720108016a000105014001056f776e65720300090400047061726b010a04000477616b65010a040006736574746c65010a",
+            "0142070203020101040005746f6b656e03000002030201020400056572726f72030002016a0001030140010c636f6e74696e756174696f6e01000404000573746172740105",
+            "0160017f00",
+            "026a017301734001046e616d65730004",
+            "026a017301734001046e616d65730000",
+            "026a017301734001046e616d65730002",
+        ] {
+            let bytes: Vec<u8> = encoded
+                .as_bytes()
+                .chunks_exact(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect();
+            finite_type_encoding(&bytes).unwrap();
+        }
+        // Primitive signed valtype tags and an unsigned256 remain intact.
+        finite_type_encoding(&[0x7f, 0x7e, 0x7d, 0x7c, 0x80, 0x02]).unwrap();
+        for bytes in [
+            vec![0x81, 0x02],
+            vec![0x80],
+            vec![0x80; 6],
+            vec![0x01, 0x42, 0xc0, 0x84, 0x3d], // one instance, forged1,000,000 decls
+            vec![0x01, 0x40, 0xc0, 0x84, 0x3d], // forged function parameter count
+            vec![0xc3, 0xa9, 0x00],
+        ] {
+            // unsupported wider UTF8 envelope
+            assert_eq!(
+                finite_type_encoding(&bytes).unwrap_err(),
+                "c-preimage-finite-type-integer-envelope"
+            );
+        }
+    }
+
+    #[test]
+    fn c_finite_component_preflight_accepts_one_generator_child_and_refuses_siblings_or_deeper_children()
+     {
+        let original = c_root::tests::fixture(69632, false, false);
+        let child = wasm_encoder::Component::new();
+        let mut outer = wasm_encoder::Component::new();
+        outer.section(&wasm_encoder::NestedComponentSection(&child));
+        finite_preflight(&outer.clone().finish(), &original).unwrap();
+        outer.section(&wasm_encoder::NestedComponentSection(&child));
+        assert_eq!(
+            finite_preflight(&outer.finish(), &original).unwrap_err(),
+            "c-preimage-finite-nested-component-count"
+        );
+        let mut middle = wasm_encoder::Component::new();
+        middle.section(&wasm_encoder::NestedComponentSection(&child));
+        let mut outer = wasm_encoder::Component::new();
+        outer.section(&wasm_encoder::NestedComponentSection(&middle));
+        assert_eq!(
+            finite_preflight(&outer.finish(), &original).unwrap_err(),
+            "c-preimage-finite-nested-component-count"
+        );
+    }
+
+    #[test]
+    fn c_finite_component_preflight_counts_nested_aliases_and_type_storage_before_typed_readers() {
+        let original = c_root::tests::fixture(69632, false, false);
+        let mut aliases = Vec::new();
+        256u32.encode(&mut aliases);
+        let mut more = Vec::new();
+        257u32.encode(&mut more);
+        let mut child = wasm_encoder::Component::new();
+        child.section(&wasm_encoder::RawSection { id: 6, data: &more });
+        let mut outer = wasm_encoder::Component::new();
+        outer.section(&wasm_encoder::RawSection {
+            id: 6,
+            data: &aliases,
+        });
+        outer.section(&wasm_encoder::NestedComponentSection(&child));
+        assert_eq!(
+            finite_preflight(&outer.finish(), &original).unwrap_err(),
+            "c-preimage-finite-component-container-bound"
+        );
+        let first = vec![0; 8192];
+        let second = vec![0; 8193];
+        let mut child = wasm_encoder::Component::new();
+        child.section(&wasm_encoder::RawSection {
+            id: 7,
+            data: &second,
+        });
+        let mut outer = wasm_encoder::Component::new();
+        outer.section(&wasm_encoder::RawSection {
+            id: 7,
+            data: &first,
+        });
+        outer.section(&wasm_encoder::NestedComponentSection(&child));
+        assert_eq!(
+            finite_preflight(&outer.finish(), &original).unwrap_err(),
+            "c-preimage-finite-type-encoding-bytes"
+        );
+        let mut outer = wasm_encoder::Component::new();
+        outer.section(&wasm_encoder::RawSection {
+            id: 7,
+            data: &[1, 0x42, 0xc0, 0x84, 0x3d],
+        });
+        assert_eq!(
+            finite_preflight(&outer.finish(), &original).unwrap_err(),
+            "c-preimage-finite-type-integer-envelope"
         );
     }
 
