@@ -31,3 +31,31 @@ resource-exhausted, then passed a fresh invocation under the same ceiling.
 The guest compiler ran once for17.299326 seconds. This programme does not alone
 establish complete GC/stack accounting, all late-wake behavior, socket support,
 or completion of #745/#736. The cancelled original boundary remains cancelled.
+
+
+## Original activation stack ledger
+
+The [ordinary-worker replay](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39603465482)
+passed all fifteen original invocations on source
+`85d7a036b4baf53b917cd353d4888ea6ff5f6d1c`, using the exact same component
+and five profiles above. The [source and raw cleanup observation](evidence/typescript-activation-owned-stack-signed-2026-10-21.json)
+binds all 234 archive members, thirteen qualification Git inputs, the compiled
+native producer's 3,325 source files and 134 auxiliary inputs. All fifteen
+physical-retirement barriers pass with all eighteen active counters zero;
+five nodes stop cleanly and peers receive no requests.
+
+With `activation-owned-v1`, actual root and ordinary async worker mappings use
+the original Native and memory limits. The same Promise Native ceiling now
+admits 52 records rather than 53 because the real root mapping consumes its
+own original-ledger record. Task12, queue14 and timer8 boundaries remain exact.
+The unchanged 64MiB memory profile observes an 11,627,104-byte bootstrap and
+66,153,056-byte exhaustion peak, then a fresh successful invocation. Native
+guest threads remain disabled; no budget was increased.
+
+The replay uses the separate authenticated `c713` native tuple; no component,
+engine or native product is rebuilt by this programme. Compiled and consumer
+source identities remain distinct across one exactly reversible configuration
+helper extraction. Final integration also spells two existing test defaults
+explicitly under a separate closed proof. The previous missing-WIT signing
+failure and strict-creator timer trap stay failed. This does not close the
+broader #736/#745 runtime or socket requirements.
