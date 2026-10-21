@@ -35,6 +35,8 @@ void *lsf_factory_blob_allocate(struct lsf_factory_context *, unsigned long,
 int lsf_factory_blob_lookup(const void *, unsigned int, struct lsf_factory_blob *);
 int lsf_factory_blob_queue(const void *);
 int lsf_factory_blob_finish(struct lsf_factory_blob, unsigned int);
+int lsf_factory_route_queue(const void *);
+int lsf_factory_route_return(const void *);
 void *lsf_factory_child_allocate(struct lsf_factory_blob, unsigned long,
                                 unsigned int);
 int lsf_factory_protocol_parent(const void *, struct lsf_factory_context *,
