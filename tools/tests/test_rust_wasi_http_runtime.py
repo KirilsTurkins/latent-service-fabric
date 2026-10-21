@@ -563,10 +563,14 @@ class RuntimeOracles(unittest.TestCase):
             for accepted in (1,5,8):
                 row['decoded']=[{'ok':f'fresh:{client}:capacity:{accepted}:library-error:'+json.dumps(error)}]
                 row['response']['data']['consumption']['outboundRequests']=accepted
-                proof=node.outcome(row,spec,client,revision,budget)
-                self.assertEqual(proof['observedAcceptedResponses'],accepted)
-                self.assertFalse(proof['limitingOwnerKindProven'])
-                self.assertFalse(proof['taskExhaustionClaimed'])
+                if client=='golem':
+                    with self.assertRaisesRegex(RuntimeError,'held-pressure-exact-unreachable-trap'):
+                        node.outcome(row,spec,client,revision,budget)
+                else:
+                    proof=node.outcome(row,spec,client,revision,budget)
+                    self.assertEqual(proof['observedAcceptedResponses'],accepted)
+                    self.assertFalse(proof['limitingOwnerKindProven'])
+                    self.assertFalse(proof['taskExhaustionClaimed'])
             for mutate in ('zero','ninth','count','unavailable','permission','unsupported'):
                 changed=copy.deepcopy(row);value=copy.deepcopy(error)
                 if mutate in {'zero','ninth'}:

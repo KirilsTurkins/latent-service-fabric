@@ -382,6 +382,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime.py",
-  "reviewReason": "Parent reviewed exact Golem-only capacity trap after eight outbound requests with no held-response or timer-site claim; Waki typed errors, all64 attempts, original budgets, physical/provider retirement and fresh gates retained.",
+  "reviewReason": "Correct only old synthetic Golem pressure model: real selected profile requires its exact actual trap; Waki accepted-count and all old adverses unchanged; original failed preflight retained, no production change.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
