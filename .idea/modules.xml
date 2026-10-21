@@ -72,6 +72,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.transaction-contract.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.transaction-contract.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-client.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-client.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-guest.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.typescript-guest.iml" group="LSF/sdk" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.sdk.wasi-http-runtime.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.sdk.wasi-http-runtime.iml" group="LSF/sdk" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.tools.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.tools.iml" group="LSF/tools" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.tools.angular-renderer-adapter.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.tools.angular-renderer-adapter.iml" group="LSF/tools" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.tools.native-fixture.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.tools.native-fixture.iml" group="LSF/tools" />
