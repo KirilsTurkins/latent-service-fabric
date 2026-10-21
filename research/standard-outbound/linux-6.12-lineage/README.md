@@ -260,3 +260,9 @@ the selected RCU return path. Its finite context drain revalidates each original
 birth under the original cache lock before deriving an address. Shared cache
 hits do not transfer charges. Lazy SID creation, AVC/audit and the remaining
 RX/platform/final-free chain are still unclosed; no installation is enabled.
+
+The [private AVC cache prefix](prepaid-avc.md) retains original prepaid births
+through nested permission graphs, policy-preserving replacement and queued RCU
+return. Both owned connect permission checks use the explicit socket source.
+The mandatory audit implementation and remaining active-security/RX/platform
+closure are still unavailable; supplemental C controls do not enable a profile.
