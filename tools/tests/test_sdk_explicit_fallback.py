@@ -18,6 +18,22 @@ def result(language='c', seed=7, alternate=42, trap=False):
 
 
 class ExplicitFallbackControls(unittest.TestCase):
+    def test_actual_frozen_reader_api_routes_compiler_and_signer_products(self):
+        from tools import qualify_sdk_explicit_fallback as qualifier
+        prepared = Path('controlled-prepared-products')
+        actual = qualifier.native.native_products(prepared)
+        selected = qualifier.selected_tools(actual)
+        self.assertEqual(selected, {
+            'capsule_contracts': prepared / 'native/examples-capsule_contracts',
+            'package': prepared / 'native/examples-package',
+            'capsule_authoring': prepared / 'native/examples-capsule_authoring'})
+        # Receipt keys are deliberately different from the callable reader API.
+        for changed in ({**actual, 'examples/package': actual['package']},
+                {k: v for k, v in actual.items() if k != 'capsule_contracts'},
+                {('examples/' + k if k == 'capsule_authoring' else k): v for k, v in actual.items()}):
+            with self.assertRaises(WorkflowError):
+                qualifier.selected_tools(changed)
+
     def test_normal_project_changes_only_the_application_source(self):
         for language in fixture.LANGUAGES:
             with self.subTest(language=language), tempfile.TemporaryDirectory() as temporary:

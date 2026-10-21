@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_sdk_explicit_fallback.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed finite explicit C/Go fallback after actual native Unsupported; two normal captured builds and eight signed outcomes with original budgets/retirement, no native build and no old27/33 replay.",
+  "reviewReason": "Actual76a4 prebuild KeyError: use unchanged frozen reader public API keys; preserve original fixture/budgets/eight outcomes and add actual reader-key adverse routing control; original failure retained, zero prior compiler or guest credit.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "05649931f2703fd9c7aa38b7dd3931a80002e92eea14f47b4d5cfdc562a65f6b"
+  "sha256": "84c880003bad17a35d04de573ad7408fff60214c244d418128ca4d1a4d4ac8bf"
 }

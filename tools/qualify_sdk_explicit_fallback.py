@@ -61,6 +61,13 @@ def compiled(artifact, before):
         'buildObservation': file_identity(artifact / 'build-observation.json')}
 
 
+def selected_tools(binaries):
+    """Use the reader API names, independently of its original receipt keys."""
+    require(set(binaries) == {'latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring'},
+        'fallback-exact-reader-product-api')
+    return {name: binaries[name] for name in ('capsule_contracts', 'package', 'capsule_authoring')}
+
+
 def qualify(products: Path, output: Path):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
         'fallback-unprivileged-linux-python313')
@@ -71,6 +78,7 @@ def qualify(products: Path, output: Path):
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=1100, command_seconds=900)
     origin = native.verify_prepared(products)
     binaries = native.native_products(products)
+    tools = selected_tools(binaries)
     for binary in binaries.values():
         binary.chmod(0o700)
     identities = {name: file_identity(path, 512 * 1024**2) for name, path in binaries.items()}
@@ -99,11 +107,11 @@ def qualify(products: Path, output: Path):
             artifact = location / 'build'
             commands.run(stage, sys.executable, '-B', ROOT / f'tools/{language}_capsule.py', 'build', app,
                 '--output', artifact, '--repository', REPOSITORY,
-                '--contracts-tool', binaries['examples/capsule_contracts'], '--packager', binaries['examples/package'])
+                '--contracts-tool', tools['capsule_contracts'], '--packager', tools['package'])
             entry['build'] = compiled(artifact, captured)
             stage = language + '-normal-neutral-signing'
             signed = location / 'signed'
-            commands.run(stage, binaries['examples/capsule_authoring'], 'demo-sign-neutral-resources', signed, artifact)
+            commands.run(stage, tools['capsule_authoring'], 'demo-sign-neutral-resources', signed, artifact)
             stage = language + '-four-actual-fallback-trap-fresh-outcomes'
             node = run(language, artifact, signed, binaries, location / 'node', commands.deadline)
             require(node['status'] == 'passed' and len(node['cases']) == 4
