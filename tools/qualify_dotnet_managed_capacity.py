@@ -25,6 +25,7 @@ from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file
 
 MATERIALS = (fixture.SOURCE, 'tools/dotnet_managed_capacity_fixture.py',
     'tools/dotnet_managed_capacity_node.py', 'tools/qualify_dotnet_managed_capacity.py',
+    'tools/dotnet_managed_work_controls.py', 'tools/fixtures/dotnet-timer-wait-control.rs',
     *shared.MATERIALS)
 
 

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_managed_work_controls.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve fifteen state and two actual abort-rewriter controls; add eleven production timer ownership state controls using explicit ports.",
+  "reviewReason": "Add six actual production Rust Timer/Owner lazy-poll lifetime controls with explicit ports; old CLR modes unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fda8360f422a3e5cbb3ed49b2384ca58fe7399b187a490f7c00c1ac428dc44c3"
+  "sha256": "6066d8d2827ebce8cc950afc924e0821c71772a46147ff6cae0eac003eb2b79e"
 }

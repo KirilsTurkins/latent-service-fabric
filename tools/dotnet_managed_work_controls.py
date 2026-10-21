@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import shutil
 import sys
 
 if __package__ in {None, ''}:
@@ -69,6 +70,49 @@ TIMER_CASES = (
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
     'timer-structural-bound-before-ledger')
+
+TIMER_WAIT_CASES = (
+    'accepted_wait_can_start_after_closing_and_parent_return',
+    'delayed_wait_outlives_its_creator_task',
+    'dropping_before_first_poll_releases_the_original_wait',
+    'invalid_constructor_parent_is_still_refused_without_leak',
+    'invalid_explicit_wait_token_is_never_ambiently_replaced',
+    'later_ambient_task_cannot_reparent_an_already_owned_wait')
+
+
+def verify_timer_wait(output: Path) -> dict:
+    """Compile the actual Rust Timer/Owner source with closed dependency ports."""
+    output = fresh(Path(output).absolute())
+    fixture = 'tools/fixtures/dotnet-timer-wait-control.rs'
+    names = (fixture, 'sdk/dotnet-guest/runtime/http/owner.rs',
+        'sdk/dotnet-guest/runtime/http/timer.rs')
+    source = output/'source'
+    for name in names:
+        path = source/name; path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(read_file(ROOT/name))
+    before = inventory(snapshot(source))
+    environment = build_environment(output)
+    environment.update(RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0')
+    commands = Commands(source, output, environment, deadline_seconds=120, command_seconds=60)
+    rustc = shutil.which('rustc', path=commands.environment['PATH'])
+    require(rustc is not None and commands.run('timer-wait-rustc-version', rustc, '--version').strip()
+        == b'rustc 1.97.1 (8bab26f4f 2026-07-14)', 'timer-wait-source-control-rustc')
+    executable = output/('timer-wait-control.exe' if sys.platform == 'win32' else 'timer-wait-control')
+    commands.run('timer-wait-source-compile', rustc, '--edition=2021', '--test', source/fixture, '-o', executable)
+    raw = commands.run('timer-wait-source-execute', executable, '--test-threads=1')
+    require(len(raw) <= 16384 and b'test result: ok. 6 passed; 0 failed; 0 ignored;' in raw,
+        'timer-wait-source-control-summary')
+    rows = []
+    for name in TIMER_WAIT_CASES:
+        require(raw.count(('test '+name+' ... ok').encode('ascii')) == 1, 'timer-wait-source-control-case')
+        rows.append({'control': name, 'passed': True, 'productionTimerOwnerSource': True,
+            'ledgerClockPumpQuota': 'explicit-test-ports', 'guestQualified': False})
+    require(inventory(snapshot(source)) == before, 'timer-wait-source-control-source-changed')
+    value = {'profile': 'dotnet-deferred-timer-source-controls-v1', 'source': json.loads(before),
+        'cases': rows, 'commands': commands.records, 'guestQualified': False,
+        'actualHostClockAndNativeLedgerQualified': False}
+    write_json(output/'timer-wait-source-controls.json', value)
+    return value
 
 
 def verify_timers(dotnet: Path, output: Path) -> dict:
@@ -182,8 +226,10 @@ def main() -> None:
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument('--http-abort-tools', type=Path)
     modes.add_argument('--timers', action='store_true')
+    modes.add_argument('--timer-wait-source', action='store_true')
     args = parser.parse_args()
-    value = (verify_abort(args.dotnet.resolve(strict=True), args.http_abort_tools.resolve(strict=True), args.output)
+    value = (verify_timer_wait(args.output) if args.timer_wait_source else
+        verify_abort(args.dotnet.resolve(strict=True), args.http_abort_tools.resolve(strict=True), args.output)
         if args.http_abort_tools is not None else verify_timers(args.dotnet.resolve(strict=True), args.output)
         if args.timers else verify(args.dotnet.resolve(strict=True), args.output))
     print(json.dumps({'cases': len(value['cases']), 'guestQualified': False}))

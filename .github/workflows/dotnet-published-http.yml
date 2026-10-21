@@ -315,6 +315,8 @@ jobs:
         run: python3 -B tools/dotnet_managed_work_controls.py --dotnet "$(command -v dotnet)" --output "$RUNNER_TEMP/managed-work-state-controls"
       - name: Execute actual timer ownership CLR state controls with explicit test ports
         run: python3 -B tools/dotnet_managed_work_controls.py --dotnet "$(command -v dotnet)" --timers --output "$RUNNER_TEMP/managed-timer-state-controls"
+      - name: Check actual deferred timer source after its creating task returns
+        run: python3 -B tools/dotnet_managed_work_controls.py --dotnet "$(command -v dotnet)" --timer-wait-source --output "$RUNNER_TEMP/timer-wait-source-controls"
       - name: Install the normal captured compiler isolation boundary
         run: |
           sudo apt-get update
@@ -352,6 +354,8 @@ jobs:
             ${{ runner.temp }}/managed-work-state-controls/logs/**
             ${{ runner.temp }}/managed-timer-state-controls/timer-state-controls.json
             ${{ runner.temp }}/managed-timer-state-controls/logs/**
+            ${{ runner.temp }}/timer-wait-source-controls/timer-wait-source-controls.json
+            ${{ runner.temp }}/timer-wait-source-controls/logs/**
             ${{ runner.temp }}/capacity-tools/INSTALL-COMPLETE.json
             ${{ runner.temp }}/capacity-tools/runtime-inputs.json
             ${{ runner.temp }}/capacity-tools/wasi-sdk.json
