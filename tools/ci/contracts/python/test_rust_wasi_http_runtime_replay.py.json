@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "RustHttpRuntimeReplay.test_exact_one_reader_pair_never_allows_an_unknown_compiler_or_helper_change",
+    "RustHttpRuntimeReplay.test_only_exact_failed_original_origin_is_accepted",
+    "RustHttpRuntimeReplay.test_restored_public_bytes_must_match_both_original_source_and_original_packaging"
+  ],
+  "guards": {
+    "RustHttpRuntimeReplay.test_exact_one_reader_pair_never_allows_an_unknown_compiler_or_helper_change": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498429dd9d07e20ef75b3a8f8b3248ce26e418346d7ea7a4760337f957c847d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpRuntimeReplay.test_only_exact_failed_original_origin_is_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498429dd9d07e20ef75b3a8f8b3248ce26e418346d7ea7a4760337f957c847d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpRuntimeReplay.test_restored_public_bytes_must_match_both_original_source_and_original_packaging": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0498429dd9d07e20ef75b3a8f8b3248ce26e418346d7ea7a4760337f957c847d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_runtime_replay.py",
+  "reviewReason": "Authenticate original8f compile and unchanged64 programme with exact empty-list API correction; no compilation",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -169,8 +169,12 @@ def unsigned(value):
 
 def usage(client,target):
     value=client.call('capability','list','--deployment',target['name'],'--include-node-usage')['data']
-    require(value['nodeUsage']['unavailable'] is False
-        and all(key in value['nodeUsage']['counters'] and unsigned(value['nodeUsage']['counters'][key])>=0 for key in ACTIVE_COUNTERS),'rust-http-required-provider-counters')
+    observed=value['nodeUsage']
+    require(type(observed) is dict and observed['scope']=='node'
+        and type(observed['unavailable']) is list and observed['unavailable']==[]
+        and type(observed['counters']) is dict
+        and all(key in observed['counters'] and unsigned(observed['counters'][key])>=0
+            for key in ACTIVE_COUNTERS),'rust-http-required-provider-counters')
     return value
 
 

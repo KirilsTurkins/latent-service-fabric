@@ -12,6 +12,27 @@ from tools.rust_capsule_project import canonical,digest
 
 
 class SourceAndNativeSeparation(unittest.TestCase):
+    def test_actual_available_usage_list_and_all_original_owner_counters_are_required(self):
+        path=Path(__file__).resolve().parents[2]/'docs/testing/evidence/rust-wasi-http-runtime-provider-counter-failure-2026-10-21.json'
+        actual=json.loads(path.read_bytes())['observedNodeUsage']
+        self.assertIsNot(actual['unavailable'],False) # exact retained payload: old reader RED
+        client=Mock();client.call.return_value={'data':{'nodeUsage':actual}}
+        self.assertEqual(node.usage(client,{'name':'controlled'})['nodeUsage'],actual)
+        self.assertEqual(len(node.ACTIVE_COUNTERS),18)
+        self.assertTrue(all(node.unsigned(actual['counters'][name])==0 for name in node.ACTIVE_COUNTERS))
+        for kind in ('false','none','missing','unavailable','scope','counter','negative','boolean'):
+            changed=copy.deepcopy(actual)
+            if kind=='false':changed['unavailable']=False
+            elif kind=='none':changed['unavailable']=None
+            elif kind=='missing':changed['unavailable']={}
+            elif kind=='unavailable':changed['unavailable']=['provider-io-no-retained-pool-owner']
+            elif kind=='scope':changed['scope']='tenant'
+            elif kind=='counter':changed['counters'].pop(node.ACTIVE_COUNTERS[0])
+            elif kind=='negative':changed['counters'][node.ACTIVE_COUNTERS[0]]='-1'
+            else:changed['counters'][node.ACTIVE_COUNTERS[0]]=True
+            client.call.return_value={'data':{'nodeUsage':changed}}
+            with self.subTest(kind=kind),self.assertRaises(Exception):node.usage(client,{'name':'controlled'})
+
     def test_actual_output_guard_receipt_and_original_compiler_success_are_both_required(self):
         from tools.rust_capsule_build import RustExecutableOutputs
         with tempfile.TemporaryDirectory() as temporary:
