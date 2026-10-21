@@ -184,7 +184,7 @@ def collect(compiler, project: Path, output: Path, selection: dict | None) -> di
     result = directory / 'methods.json'
     compiler.run('compiler-metadata-build', compiler.dotnet, 'build', directory / 'CompilerMetadata.csproj',
         '-c', 'Release', '--output', directory / 'bin', '--artifacts-path', directory / 'artifacts',
-        '-p:RestoreConfigFile=' + str(config), '-p:NuGetAudit=false', '-nodeReuse:false',
+        '-p:RestoreConfigFile=' + str(config), '-p:NuGetAudit=false', '-p:UseAppHost=false', '-nodeReuse:false',
         '-p:UseSharedCompilation=false', '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
     tool = directory / 'bin/CompilerMetadata.dll'; tool_bytes = read_file(tool, 4 * 1024 * 1024)
     compiler.run('compiler-metadata-read', compiler.dotnet, tool, manifest, result)

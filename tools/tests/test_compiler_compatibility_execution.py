@@ -31,6 +31,37 @@ def result(language='java', mode='init'):
 
 
 class CompilerExecution(unittest.TestCase):
+    def test_actual_class_query_ids_reach_the_exact_compiler_observation_reader(self):
+        import shutil
+        import subprocess
+        from tools.java_application_dependencies import deterministic_jar
+        from tools.java_guest import reachability
+        javac = shutil.which('javac')
+        if javac is None: self.skipTest('JDK required for passive class identity control')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); classes = root/'classes'; empty = root/'empty'; empty.mkdir()
+            subprocess.run([javac, '--release', '17', '-proc:none', '-d', str(classes),
+                *[str(ROOT/'tools/fixtures/compatibility-java'/name) for name in ('Core.java', 'Library.java')]],
+                check=True, capture_output=True, timeout=30)
+            classpath, capture, jars = {'artifacts': []}, {'originalJars': {}}, []
+            for package, owner in zip(node.fixture.JAVA_IDS, node.fixture.JAVA_CLASSES):
+                entries = {p.relative_to(classes).as_posix(): read_file(p)
+                    for p in classes.rglob('*.class') if p.relative_to(classes).as_posix().startswith(owner)}
+                raw = deterministic_jar(entries); jar = root/(owner.rsplit('/', 1)[1]+'.jar'); jar.write_bytes(raw)
+                jars.append(jar); package_digest = digest(raw)
+                capture['originalJars'][package] = {'digest': package_digest}
+                classpath['artifacts'].append({'id': package, 'originalDigest': package_digest,
+                    'entries': [{'path': name, 'digest': digest(body)} for name, body in entries.items()]})
+            _payload, index = reachability.queries(empty, tuple(jars))
+            marker = reachability.MARKER+'complete;'+','.join(row['id']+'='+(
+                'not-retained' if row['method'] == 'opaqueNative()I' else 'linked') for row in index['queries'])
+            value = reachability.bind(reachability.observation(marker, index), **{
+                key: digest(key.encode()) for key in ('source', 'component', 'compiler', 'recipe', 'graph')})
+            actual = observation.java_queries(value, classpath, capture)
+            self.assertEqual(len(actual['methods']), 8)
+            changed = copy.deepcopy(value); changed['methods'][0]['id'] = 'f'*64
+            with self.assertRaises(WorkflowError): observation.java_queries(changed, classpath, capture)
+
     def test_exact_signed_runtime_outputs_and_traps_cannot_be_replaced_by_graph_or_unknown(self):
         for language in ('java', 'dotnet'):
             for mode, _label in node.CASES:

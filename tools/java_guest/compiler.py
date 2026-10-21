@@ -120,6 +120,8 @@ def read_only_dependency_cache(path: Path) -> Path:
 
 
 class Compiler:
+    compiler_methods = False
+
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
                  offline_cache: Path | None = None, read_only_cache: Path | None = None,

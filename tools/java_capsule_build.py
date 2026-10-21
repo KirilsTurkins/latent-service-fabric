@@ -162,7 +162,6 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
                     additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
-                cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
                 if compiler is None:
                     compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                         sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",

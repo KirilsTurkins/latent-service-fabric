@@ -8,6 +8,7 @@ from __future__ import annotations
 from tools import compiler_compatibility_fixture as fixture
 from tools import guest_runtime_receipts, guest_compatibility, guest_compatibility_context
 from tools.build_snapshot import canonical
+from tools.dev_workflow.common import encode
 from tools.java_capsule_build import FIBER_IO_PROFILE
 from tools.java_guest import coroutine_patch
 from tools.dotnet_guest import closed_filesystem, managed_work, retirement, task_wait
@@ -53,7 +54,7 @@ def java_queries(value, classpath, capture):
     for package, owner, method, state in methods:
         entries = [row for row in artifacts[package]['entries'] if row['path'] == owner.replace('.', '/')+'.class']
         require(len(entries) == 1, 'compiler-diagnostics-exact-method-class')
-        identity = digest(canonical({'classDigest': entries[0]['digest'], 'owner': owner, 'method': method}))[7:]
+        identity = digest(encode({'classDigest': entries[0]['digest'], 'owner': owner, 'method': method}))[7:]
         row = selected.get(identity)
         require(row is not None and row['classDigest'] == entries[0]['digest']
             and row['packageDigest'] == artifacts[package]['originalDigest'] and row['state'] == state

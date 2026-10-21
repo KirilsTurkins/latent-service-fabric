@@ -12,6 +12,24 @@ from tools.java_guest import reachability as r
 
 
 class CompilerMethods(unittest.TestCase):
+    def test_normal_builder_preserves_the_selected_option_at_the_actual_compiler_constructor(self):
+        from tools.tests.test_java_activation_authoring import AuthoringSelection
+        from tools.java_guest.compiler import Compiler as JavaCompiler
+        from tools.dotnet_guest.compiler import Compiler as DotnetCompiler
+        for value in (False, True):
+            control = AuthoringSelection('test_default_builder_never_selects_activation_or_rewrites_application')
+            try:
+                control.setUp()
+                result = control.inspect_compile_boundary(compiler_methods=value)
+                if value: self.assertIs(result['inputs']['compiler_methods'], True)
+                else: self.assertNotIn('compiler_methods', result['inputs'])
+                self.assertEqual(result['compile'], {'application_classpath': ()})
+            finally: control.doCleanups()
+        # Existing compiler-boundary controls construct without __init__;
+        # default observation remains absent just as in a normal constructor.
+        self.assertIs(JavaCompiler.__new__(JavaCompiler).compiler_methods, False)
+        self.assertIs(DotnetCompiler.__new__(DotnetCompiler).compiler_methods, False)
+
     def test_both_normal_cli_diagnostic_options_are_default_false_and_explicit_selection_only(self):
         import ast
         import re

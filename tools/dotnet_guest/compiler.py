@@ -88,6 +88,8 @@ def packages(lock: dict, directory: Path, content_hash) -> dict[str, Path]:
 
 
 class Compiler:
+    compiler_methods = False
+
     def __init__(self, tools: Path, commands, vendor: Path, *, offline: bool = False, captured: bool = False,
                  compiler_methods: bool = False):
         if type(compiler_methods) is not bool:
