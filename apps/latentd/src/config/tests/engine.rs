@@ -1,6 +1,6 @@
 use latent_wasmtime::{CompilerOptimization, InstanceAllocator};
 
-use super::{CellConfig, MIB, config, document, input};
+use super::{config, document, input, CellConfig, MIB};
 use crate::config::{EngineAllocator, EngineConfig, EngineOptimization};
 
 #[test]

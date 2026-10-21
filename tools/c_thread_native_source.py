@@ -6,7 +6,7 @@ from tools.phase2_operator_process import require
 from tools.rust_capsule_project import ROOT, read_file
 
 REVIEW = 'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json'
-REVIEW_DIGEST = '898b105a63a35fa24d55e34e174ab1d4e52bc15786317112c0c76833c75d3a87'
+REVIEW_DIGEST = '73982acc618c60f3ebe17c482285e4fbb0c4f97048cf19b70e82609fb99603c2'
 
 
 def compatibility(compiled, current):

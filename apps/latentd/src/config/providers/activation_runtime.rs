@@ -1,9 +1,9 @@
 //! Explicit finite activation ownership installation. Configuration grants no
 //! clock, scheduling, HTTP or stream authority and creates no language executor.
-use latent_core::{ArtifactBlobDigest, PlatformError, activation_runtime::RuntimeLimits};
+use latent_core::{activation_runtime::RuntimeLimits, ArtifactBlobDigest, PlatformError};
 use serde::{Deserialize, Serialize};
 
-use super::{ConfiguredProviders, ProviderIdentity, invalid};
+use super::{invalid, ConfiguredProviders, ProviderIdentity};
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

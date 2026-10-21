@@ -29,11 +29,12 @@ use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
 pub use aot::{
-    AotCompatibilityKey, AotCompilationJob, AotCompilerLimits, AotJobControl, AotProcessLimits,
-    AotReceiptCacheLimits, AotReceiptCacheSnapshot, AotResourceLimits, AotResourceSnapshot,
-    AotSandboxLimits, ISOLATED_AOT_SANDBOX_PROFILE, IsolatedAotCompiler, NativeAotCacheConfig,
-    NativeAotSettings, NativeAotSnapshot, NativeImageLimits, NativeImageSnapshot,
-    TrustedAotCompilerAuthority, TrustedAotOutput, ValidatedAotProfile, run_aot_compiler_worker,
+    run_aot_compiler_worker, AotCompatibilityKey, AotCompilationJob, AotCompilerLimits,
+    AotJobControl, AotProcessLimits, AotReceiptCacheLimits, AotReceiptCacheSnapshot,
+    AotResourceLimits, AotResourceSnapshot, AotSandboxLimits, IsolatedAotCompiler,
+    NativeAotCacheConfig, NativeAotSettings, NativeAotSnapshot, NativeImageLimits,
+    NativeImageSnapshot, TrustedAotCompilerAuthority, TrustedAotOutput, ValidatedAotProfile,
+    ISOLATED_AOT_SANDBOX_PROFILE,
 };
 pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
 pub use cache::{
@@ -44,9 +45,9 @@ pub use compiler::CompilerObserver;
 #[cfg(feature = "development-clock-fixture")]
 pub use config::DevelopmentClockReadings;
 pub use config::{
-    BufferedWebValueProfile, CompilerOptimization, ExecutionIsolationProfile, GENERIC_BACKEND_ID,
-    InstanceAllocator, NativeThreadProfile, Phase0InstanceAllocator, Phase0WasmtimeConfig,
-    WASMTIME_VERSION, WasmtimeConfig,
+    BufferedWebValueProfile, CompilerOptimization, ExecutionIsolationProfile, InstanceAllocator,
+    NativeThreadProfile, Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig,
+    GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
 pub use factory::WasmtimeComponentEngineFactory;
@@ -57,8 +58,8 @@ pub use invocation_input_observer::{
     InvocationInputObserver, InvocationInputPhase, InvocationInputRecord, InvocationInputSnapshot,
 };
 pub use phase0::{
-    BACKEND_ID, ECHO_DOMAIN_ERROR_MEDIA_TYPE, ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD,
-    Phase0WasmtimeBackend, Phase0WasmtimeEngineFactory,
+    Phase0WasmtimeBackend, Phase0WasmtimeEngineFactory, BACKEND_ID, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD,
 };
 pub use preparation_observer::{
     PreparationCompilerSnapshot, PreparationObserver, PreparationObserverSnapshot,
@@ -69,7 +70,7 @@ pub use services::WasmtimeHostServices;
 pub use surface::{CONTEXT_IMPORT, LOG_IMPORT, MONOTONIC_CLOCK_IMPORT, WALL_CLOCK_IMPORT};
 pub use telemetry::TelemetryLogSink;
 pub use timing::{InvocationTimingStoreSnapshot, Phase0InvocationTiming};
-pub use values::{MEDIA_TYPE as WIT_VALUES_MEDIA_TYPE, ValueCodecLimits};
+pub use values::{ValueCodecLimits, MEDIA_TYPE as WIT_VALUES_MEDIA_TYPE};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WasmtimeEngineProfile {
@@ -115,7 +116,7 @@ pub trait AheadOfTimeCache: Send + Sync {
     ) -> BoxFuture<'a, Result<Option<AheadOfTimeArtifact>, PlatformError>>;
 
     fn put<'a>(&'a self, artifact: AheadOfTimeArtifact)
-    -> BoxFuture<'a, Result<(), PlatformError>>;
+        -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 pub trait PrecompiledArtifactValidator: Send + Sync {

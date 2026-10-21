@@ -7,12 +7,12 @@ use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::PreparationKey;
 use wasmtime::component::Component;
 
-use super::{Compilation, metadata_overflow};
+use super::{metadata_overflow, Compilation};
 use crate::aot::{
     image_budget::NativeImagePermit, loader::LoadedNative, supervisor::AotPreparedInput,
 };
 use crate::backend::readiness::worker_wait::WorkerWindow;
-use crate::backend::{PreparedRuntime, bounded_error};
+use crate::backend::{bounded_error, PreparedRuntime};
 use crate::cache::PrepareReservation;
 use crate::config::PHASE0_BACKEND_ID;
 use crate::containment::platform_error;

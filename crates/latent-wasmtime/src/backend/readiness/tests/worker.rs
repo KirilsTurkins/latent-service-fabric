@@ -49,12 +49,10 @@ async fn busy_compiler_worker_fails_once_without_replaying_owned_preparation() {
     let mut pending = f
         .backend
         .prepare_ready_from_repository(f.repository.clone(), f.key.clone());
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     assert_eq!(f.backend.compiler_snapshot().queued_jobs, 1);
     let fence = Fence::hold(&f.eligibility);
     release.send(()).unwrap();
@@ -92,24 +90,20 @@ async fn real_fence_opt_in_worker_waits_then_compiles_and_fetches_exactly_once()
         f.key.clone(),
         &Timer,
     );
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     assert_eq!(f.backend.compiler_snapshot().queued_jobs, 1);
     let fence = Fence::hold(&f.eligibility);
     release.send(()).unwrap();
     assert!(blocker.await.is_err());
     // The actual compiler worker must reach the failing real grant read.
     wait_running(&f).await;
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     assert_eq!(f.repository.verification_snapshot(), before);
     fence.release();
     let ready = tokio::time::timeout(Duration::from_secs(5), pending)
@@ -163,12 +157,10 @@ async fn worker_real_fence_wait_rejects_expiry_without_fetch() {
         f.key.clone(),
         &Timer,
     );
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     let fence = Fence::hold(&f.eligibility);
     release.send(()).unwrap();
     assert!(blocker.await.is_err());
@@ -197,12 +189,10 @@ async fn queued_worker_cannot_upgrade_original_grant_after_catalog_reverificatio
         f.key.clone(),
         &Timer,
     );
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     let mut policy = f.policy.clone();
     policy["generation"] = serde_json::json!(2);
     f.authority
@@ -308,12 +298,10 @@ async fn dropping_fenced_worker_wait_retires_job_and_source_before_fence_release
         f.key.clone(),
         &Timer,
     );
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     let fence = Fence::hold(&f.eligibility);
     release.send(()).unwrap();
     assert!(blocker.await.is_err());
@@ -338,12 +326,10 @@ async fn worker_window_consumed_in_queue_does_not_restart_at_first_busy_read() {
         f.key.clone(),
         &Timer,
     );
-    assert!(
-        pending
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(pending
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     // Real elapsed time, not the caller timer's paused/virtual domain.
     tokio::time::sleep(Duration::from_millis(5_020)).await;
     let fence = Fence::hold(&f.eligibility);
