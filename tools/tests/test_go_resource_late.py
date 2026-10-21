@@ -24,7 +24,7 @@ class GoResourceLate(unittest.TestCase):
             with self.subTest(selector=selector), self.assertRaises(WorkflowError):
                 execute(None, None, None, language='go', late_completion=selector)
         with self.assertRaises(WorkflowError):
-            execute(None, None, None, language='typescript', late_completion=True)
+            execute(None, None, None, language='unsupported', late_completion=True)
 
     def test_foreign_unknown_unreaped_unexecuted_and_overbudget_results_are_refused(self):
         component = 'sha256:' + 'a' * 64
